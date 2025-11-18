@@ -1,0 +1,1383 @@
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  UseGuards,
+  Request,
+  ParseUUIDPipe,
+  Query,
+  ValidationPipe,
+  HttpException,
+  UnauthorizedException,
+  BadRequestException,
+  ConflictException,
+  InternalServerErrorException,
+} from '@nestjs/common';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiParam,
+  ApiQuery,
+  ApiBody,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
+import { FleetService } from './fleet.service';
+import { CreateTruckDto } from './dto/create-truck.dto';
+import { CreateDriverDto } from './dto/create-driver.dto';
+import { AssignDriverDto } from './dto/assign-driver.dto';
+import { AssignRouteDto } from './dto/assign-route.dto';
+import { BulkAssignDto } from './dto/bulk-assign.dto';
+import { CreateRouteDto } from './dto/create-route.dto';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { RolesGuard } from '../auth/roles.guard';
+import { Roles } from '../auth/roles.decorator';
+import { UserRole } from '../../entities/user.entity';
+
+@ApiTags('Fleet Management')
+@ApiBearerAuth()
+@Controller('fleet')
+@UseGuards(JwtAuthGuard, RolesGuard)
+export class FleetController {
+  constructor(private readonly fleetService: FleetService) {}
+
+  // Truck endpoints
+  @Post('trucks')
+  // @Roles(UserRole.TRUCK_OWNER, UserRole.ADMIN, UserRole.SUPER_ADMIN) // Temporarily disabled for testing
+  @ApiOperation({
+    summary: 'Create a new truck',
+    description: 'Creates a new truck in the fleet',
+  })
+  @ApiBody({ type: CreateTruckDto, description: 'Truck creation data' })
+  @ApiResponse({ status: 201, description: 'Truck created successfully' })
+  @ApiResponse({ status: 400, description: 'Bad request - invalid data' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - insufficient permissions',
+  })
+  async createTruck(@Body(new ValidationPipe({ transform: true, whitelist: true, forbidNonWhitelisted: false })) createTruckDto: CreateTruckDto, @Request() req) {
+    try {
+      console.log('🚛 Create Truck Debug Info:');
+      console.log('Request headers authorization:', req.headers.authorization);
+      console.log('Request headers content-type:', req.headers['content-type']);
+      console.log('Raw request body:', JSON.stringify(req.body, null, 2));
+      console.log('Parsed createTruckDto:', JSON.stringify(createTruckDto, null, 2));
+      console.log('createTruckDto type:', typeof createTruckDto);
+      console.log('Request user:', req.user);
+      console.log('User ID:', req.user?.userId);
+      console.log('User role:', req.user?.role);
+      console.log('Tenant ID:', req.user?.tenantId);
+
+      // Validate user authentication
+      if (!req.user) {
+        throw new UnauthorizedException('User not authenticated. Please log in.');
+      }
+
+      if (!req.user.userId) {
+        throw new UnauthorizedException('User ID not found in authentication token.');
+      }
+
+      if (!req.user.tenantId) {
+        throw new BadRequestException('Tenant ID not found. User must be associated with a tenant.');
+      }
+
+      const truck = await this.fleetService.createTruck(
+        createTruckDto,
+        req.user.userId,
+        req.user.tenantId,
+      );
+
+      return {
+        message: 'Truck created successfully',
+        truck: {
+          id: truck.id,
+          plateNumber: truck.plateNumber,
+          make: truck.make,
+          model: truck.model,
+          status: truck.status,
+          capacityWeight: truck.capacityWeight,
+          capacityVolume: truck.capacityVolume,
+        },
+      };
+    } catch (error) {
+      console.error('❌ Error in createTruck controller:', error);
+      console.error('❌ Error stack:', error.stack);
+      console.error('❌ Error message:', error.message);
+      console.error('❌ Error name:', error.name);
+      if (error.response) {
+        console.error('❌ Error response:', error.response);
+      }
+      
+      // If it's already a NestJS HTTP exception, re-throw it
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
+      // Handle validation errors
+      if (error.name === 'ValidationError' || error.message?.includes('validation')) {
+        throw new BadRequestException({
+          message: 'Validation failed',
+          errors: error.message || 'Invalid truck data provided',
+        });
+      }
+
+      // Handle database errors
+      if (error.code === '23505') {
+        if (error.detail?.includes('vin')) {
+          throw new ConflictException('Truck with this VIN already exists');
+        } else if (error.detail?.includes('plateNumber')) {
+          throw new ConflictException('Truck with this plate number already exists');
+        }
+      }
+
+      // Generic error response
+      throw new InternalServerErrorException({
+        message: 'Failed to create truck',
+        error: error.message || 'An unexpected error occurred',
+        details: process.env.NODE_ENV === 'development' ? error.stack : undefined,
+      });
+    }
+  }
+
+  @Get('trucks')
+  @ApiOperation({
+    summary: 'Get all trucks',
+    description: 'Retrieves all trucks with optional filtering and pagination',
+  })
+  @ApiQuery({
+    name: 'search',
+    required: false,
+    description: 'Search in plate number, make, model',
+  })
+  @ApiQuery({
+    name: 'status',
+    required: false,
+    description: 'Filter by truck status',
+  })
+  @ApiQuery({
+    name: 'location',
+    required: false,
+    description: 'Filter by location',
+  })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    description: 'Page number for pagination',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    description: 'Number of items per page',
+  })
+  @ApiResponse({ status: 200, description: 'Trucks retrieved successfully' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async findAllTrucks(
+    @Request() req,
+    @Query('search') search?: string,
+    @Query('status') status?: string,
+    @Query('location') location?: string,
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+  ) {
+    console.log('🚛 Fleet Controller - findAllTrucks Debug:');
+    console.log('Request user:', req.user);
+    console.log('User ID:', req.user?.userId);
+    console.log('User role:', req.user?.role);
+    console.log('Tenant ID:', req.user?.tenantId);
+    console.log('Query params:', { search, status, location, page, limit });
+
+    if (!req.user?.tenantId) {
+      console.error('❌ No tenant ID found in request user');
+      throw new Error('Tenant ID not found in request');
+    }
+
+    const trucks = await this.fleetService.findAllTrucks(
+      req.user.tenantId,
+      req.user.userId,
+      { search, status, location, page, limit },
+    );
+
+    console.log('✅ Trucks retrieved successfully:', trucks.length);
+    return {
+      message: 'Trucks retrieved successfully',
+      trucks,
+    };
+  }
+
+  @Get('trucks/:id')
+  @ApiOperation({
+    summary: 'Get truck by ID',
+    description: 'Retrieves a specific truck by its ID',
+  })
+  @ApiParam({ name: 'id', description: 'Truck ID (UUID)' })
+  @ApiResponse({ status: 200, description: 'Truck retrieved successfully' })
+  @ApiResponse({ status: 404, description: 'Truck not found' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async findOneTruck(@Param('id', ParseUUIDPipe) id: string, @Request() req) {
+    const truck = await this.fleetService.findOneTruck(id, req.user.tenantId);
+    return {
+      message: 'Truck retrieved successfully',
+      truck,
+    };
+  }
+
+  @Patch('trucks/:id')
+  @ApiOperation({
+    summary: 'Update truck',
+    description: 'Updates an existing truck',
+  })
+  @ApiParam({ name: 'id', description: 'Truck ID (UUID)' })
+  @ApiBody({ type: CreateTruckDto, description: 'Truck update data' })
+  @ApiResponse({ status: 200, description: 'Truck updated successfully' })
+  @ApiResponse({ status: 404, description: 'Truck not found' })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - cannot update this truck',
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async updateTruck(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() updateTruckDto: Partial<CreateTruckDto>,
+    @Request() req,
+  ) {
+    const truck = await this.fleetService.updateTruck(
+      id,
+      updateTruckDto,
+      req.user.tenantId,
+      req.user.userId,
+    );
+
+    return {
+      message: 'Truck updated successfully',
+      truck: {
+        id: truck.id,
+        plateNumber: truck.plateNumber,
+        make: truck.make,
+        model: truck.model,
+        status: truck.status,
+        capacityWeight: truck.capacityWeight,
+        capacityVolume: truck.capacityVolume,
+      },
+    };
+  }
+
+  @Delete('trucks/:id')
+  @ApiOperation({
+    summary: 'Delete truck',
+    description: 'Deletes a truck from the fleet',
+  })
+  @ApiParam({ name: 'id', description: 'Truck ID (UUID)' })
+  @ApiResponse({ status: 200, description: 'Truck deleted successfully' })
+  @ApiResponse({ status: 404, description: 'Truck not found' })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - cannot delete this truck',
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async removeTruck(@Param('id', ParseUUIDPipe) id: string, @Request() req) {
+    await this.fleetService.removeTruck(id, req.user.tenantId, req.user.userId);
+    return {
+      message: 'Truck deleted successfully',
+    };
+  }
+
+  // Driver assignment endpoints
+  @Post('trucks/:id/assign-driver')
+  @ApiOperation({
+    summary: 'Assign driver to truck',
+    description: 'Assigns a driver to a specific truck',
+  })
+  @ApiParam({ name: 'id', description: 'Truck ID (UUID)' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        driverId: { type: 'string', description: 'Driver ID (UUID)' },
+        notes: { type: 'string', description: 'Assignment notes (optional)' },
+      },
+      required: ['driverId'],
+    },
+    description: 'Driver assignment data',
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Driver assigned to truck successfully',
+  })
+  @ApiResponse({ status: 404, description: 'Truck or driver not found' })
+  @ApiResponse({
+    status: 400,
+    description: 'Driver already assigned to this truck',
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async assignDriverToTruck(
+    @Param('id', ParseUUIDPipe) truckId: string,
+    @Body() assignDriverDto: { driverId: string; notes?: string },
+    @Request() req,
+  ) {
+    try {
+      console.log('🚛 Assign Driver to Truck Request:', {
+        truckId,
+        driverId: assignDriverDto.driverId,
+        userId: req.user?.userId,
+        tenantId: req.user?.tenantId,
+      });
+
+      // Validate user authentication
+      if (!req.user) {
+        throw new UnauthorizedException('User not authenticated. Please log in.');
+      }
+
+      if (!req.user.userId) {
+        throw new UnauthorizedException('User ID not found in authentication token.');
+      }
+
+      if (!req.user.tenantId) {
+        throw new BadRequestException('Tenant ID not found. User must be associated with a tenant.');
+      }
+
+      // Validate request body
+      if (!assignDriverDto.driverId) {
+        throw new BadRequestException('Driver ID is required');
+      }
+
+      const assignment = await this.fleetService.assignDriverToTruck(
+        truckId,
+        assignDriverDto.driverId,
+        req.user.tenantId,
+        req.user.userId,
+        assignDriverDto.notes,
+      );
+
+      return {
+        message: 'Driver assigned to truck successfully',
+        assignment,
+      };
+    } catch (error) {
+      console.error('❌ Error in assignDriverToTruck controller:', error);
+      console.error('❌ Error stack:', error.stack);
+      console.error('❌ Error message:', error.message);
+
+      // If it's already a NestJS HTTP exception, re-throw it
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
+      // Handle validation errors
+      if (error.name === 'ValidationError' || error.message?.includes('validation')) {
+        throw new BadRequestException({
+          message: 'Validation failed',
+          errors: error.message || 'Invalid assignment data provided',
+        });
+      }
+
+      // Generic error response - use string message so it's properly serialized
+      const errorMsg = error.message || 'An unexpected error occurred';
+      throw new InternalServerErrorException(
+        `Failed to assign driver to truck: ${errorMsg}`,
+      );
+    }
+  }
+
+  @Delete('trucks/:id/assign-driver/:driverId')
+  @ApiOperation({
+    summary: 'Unassign driver from truck',
+    description: 'Removes a driver assignment from a truck',
+  })
+  @ApiParam({ name: 'id', description: 'Truck ID (UUID)' })
+  @ApiParam({ name: 'driverId', description: 'Driver ID (UUID)' })
+  @ApiResponse({
+    status: 200,
+    description: 'Driver unassigned from truck successfully',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Truck, driver, or assignment not found',
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async unassignDriverFromTruck(
+    @Param('id', ParseUUIDPipe) truckId: string,
+    @Param('driverId', ParseUUIDPipe) driverId: string,
+    @Request() req,
+  ) {
+    try {
+      console.log('🚛 Unassign Driver from Truck Request:', {
+        truckId,
+        driverId,
+        userId: req.user?.userId,
+        tenantId: req.user?.tenantId,
+      });
+
+      // Validate user authentication
+      if (!req.user) {
+        throw new UnauthorizedException('User not authenticated. Please log in.');
+      }
+
+      if (!req.user.userId) {
+        throw new UnauthorizedException('User ID not found in authentication token.');
+      }
+
+      if (!req.user.tenantId) {
+        throw new BadRequestException('Tenant ID not found. User must be associated with a tenant.');
+      }
+
+      await this.fleetService.unassignDriverFromTruck(
+        truckId,
+        driverId,
+        req.user.tenantId,
+        req.user.userId,
+      );
+
+      return {
+        message: 'Driver unassigned from truck successfully',
+      };
+    } catch (error) {
+      console.error('❌ Error in unassignDriverFromTruck controller:', error);
+      console.error('❌ Error stack:', error.stack);
+      console.error('❌ Error message:', error.message);
+
+      // If it's already a NestJS HTTP exception, re-throw it
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
+      // Generic error response - use string message so it's properly serialized
+      const errorMsg = error.message || 'An unexpected error occurred';
+      throw new InternalServerErrorException(
+        `Failed to unassign driver from truck: ${errorMsg}`,
+      );
+    }
+  }
+
+  // Truck records endpoints
+  @Get('trucks/:id/records')
+  @ApiOperation({
+    summary: 'Get truck records',
+    description:
+      'Retrieves all records for a specific truck (documents, maintenance, inspections, etc.)',
+  })
+  @ApiParam({ name: 'id', description: 'Truck ID (UUID)' })
+  @ApiResponse({
+    status: 200,
+    description: 'Truck records retrieved successfully',
+  })
+  @ApiResponse({ status: 404, description: 'Truck not found' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async getTruckRecords(
+    @Param('id', ParseUUIDPipe) truckId: string,
+    @Request() req,
+  ) {
+    const records = await this.fleetService.getTruckRecords(
+      truckId,
+      req.user.tenantId,
+    );
+    return {
+      message: 'Truck records retrieved successfully',
+      records,
+    };
+  }
+
+  @Post('trucks/:id/documents')
+  @ApiOperation({
+    summary: 'Add truck document',
+    description: 'Adds a new document to a truck',
+  })
+  @ApiParam({ name: 'id', description: 'Truck ID (UUID)' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        name: { type: 'string', description: 'Document name' },
+        type: {
+          type: 'string',
+          description: 'Document type (insurance, registration, etc.)',
+        },
+        status: { type: 'string', description: 'Document status' },
+        issueDate: {
+          type: 'string',
+          format: 'date',
+          description: 'Issue date',
+        },
+        expiryDate: {
+          type: 'string',
+          format: 'date',
+          description: 'Expiry date',
+        },
+        fileUrl: { type: 'string', description: 'Document file URL' },
+        notes: { type: 'string', description: 'Additional notes' },
+      },
+      required: ['name', 'type', 'status'],
+    },
+    description: 'Document data',
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Document added to truck successfully',
+  })
+  @ApiResponse({ status: 404, description: 'Truck not found' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async addTruckDocument(
+    @Param('id', ParseUUIDPipe) truckId: string,
+    @Body() documentDto: any,
+    @Request() req,
+  ) {
+    const document = await this.fleetService.addTruckDocument(
+      truckId,
+      documentDto,
+      req.user.tenantId,
+      req.user.userId,
+    );
+
+    return {
+      message: 'Document added to truck successfully',
+      document,
+    };
+  }
+
+  @Get('trucks/:id/maintenance')
+  @ApiOperation({
+    summary: 'Get truck maintenance records',
+    description: 'Retrieves maintenance records for a specific truck',
+  })
+  @ApiParam({ name: 'id', description: 'Truck ID (UUID)' })
+  @ApiResponse({
+    status: 200,
+    description: 'Truck maintenance records retrieved successfully',
+  })
+  @ApiResponse({ status: 404, description: 'Truck not found' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async getTruckMaintenance(
+    @Param('id', ParseUUIDPipe) truckId: string,
+    @Request() req,
+  ) {
+    const maintenance = await this.fleetService.getTruckMaintenance(
+      truckId,
+      req.user.tenantId,
+    );
+    return {
+      message: 'Truck maintenance records retrieved successfully',
+      maintenance,
+    };
+  }
+
+  @Post('trucks/:id/maintenance')
+  @ApiOperation({
+    summary: 'Add truck maintenance record',
+    description: 'Adds a new maintenance record to a truck',
+  })
+  @ApiParam({ name: 'id', description: 'Truck ID (UUID)' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        type: {
+          type: 'string',
+          description: 'Maintenance type (preventive, corrective, etc.)',
+        },
+        title: { type: 'string', description: 'Maintenance title' },
+        description: { type: 'string', description: 'Maintenance description' },
+        date: {
+          type: 'string',
+          format: 'date',
+          description: 'Maintenance date',
+        },
+        cost: { type: 'number', description: 'Maintenance cost' },
+        nextDueDate: {
+          type: 'string',
+          format: 'date',
+          description: 'Next due date',
+        },
+        status: { type: 'string', description: 'Maintenance status' },
+        priority: { type: 'string', description: 'Priority level' },
+      },
+      required: ['type', 'title', 'description', 'date', 'cost'],
+    },
+    description: 'Maintenance record data',
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Maintenance record added successfully',
+  })
+  @ApiResponse({ status: 404, description: 'Truck not found' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async addTruckMaintenance(
+    @Param('id', ParseUUIDPipe) truckId: string,
+    @Body() maintenanceDto: any,
+    @Request() req,
+  ) {
+    const maintenance = await this.fleetService.addTruckMaintenance(
+      truckId,
+      maintenanceDto,
+      req.user.tenantId,
+      req.user.userId,
+    );
+
+    return {
+      message: 'Maintenance record added successfully',
+      maintenance,
+    };
+  }
+
+  // Driver endpoints
+  @Post('drivers')
+  @ApiOperation({
+    summary: 'Create a new driver',
+    description: 'Creates a new driver in the fleet with comprehensive information including license, certifications, and employment details',
+  })
+  @ApiBody({ type: CreateDriverDto, description: 'Driver creation data' })
+  @ApiResponse({ 
+    status: 201, 
+    description: 'Driver created successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        message: { type: 'string', example: 'Driver created successfully' },
+        driver: {
+          type: 'object',
+          properties: {
+            id: { type: 'string', format: 'uuid' },
+            firstName: { type: 'string' },
+            lastName: { type: 'string' },
+            email: { type: 'string' },
+            status: { type: 'string', enum: ['ACTIVE', 'INACTIVE', 'SUSPENDED', 'ON_LEAVE', 'TERMINATED', 'IN_TRANSIT'] },
+            licenseNumber: { type: 'string' }
+          }
+        }
+      }
+    }
+  })
+  @ApiResponse({ status: 400, description: 'Bad request - invalid data' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden - insufficient permissions' })
+  @ApiResponse({ status: 409, description: 'Conflict - driver with same license number or user already exists' })
+  async createDriver(@Body() createDriverDto: CreateDriverDto, @Request() req) {
+    try {
+      console.log('👤 Creating driver request:', {
+        driverData: createDriverDto,
+        userId: req.user?.userId,
+        tenantId: req.user?.tenantId,
+      });
+
+      // Validate user authentication
+      if (!req.user) {
+        throw new UnauthorizedException('User not authenticated. Please log in.');
+      }
+      if (!req.user.userId) {
+        throw new UnauthorizedException('User ID not found in authentication token.');
+      }
+      if (!req.user.tenantId) {
+        throw new BadRequestException('Tenant ID not found. User must be associated with a tenant.');
+      }
+
+      const driver = await this.fleetService.createDriver(
+        createDriverDto,
+        req.user.userId,
+        req.user.tenantId,
+      );
+
+      console.log('✅ Driver created successfully:', driver.id);
+
+      return {
+        message: 'Driver created successfully',
+        driver: {
+          id: driver.id,
+          firstName: driver.firstName,
+          lastName: driver.lastName,
+          email: driver.email,
+          status: driver.status,
+          licenseNumber: driver.licenseNumber,
+        },
+      };
+    } catch (error) {
+      console.error('❌ Error in createDriver controller:', error);
+      console.error('❌ Error message:', error.message);
+      console.error('❌ Error stack:', error.stack);
+      
+      // Re-throw known exceptions
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      
+      // Handle validation errors
+      if (error.name === 'ValidationError' || error.message?.includes('validation')) {
+        throw new BadRequestException({
+          message: 'Validation failed',
+          error: error.message || 'Invalid driver data provided',
+        });
+      }
+      
+      // Handle database constraint violations
+      if (error.code === '23505') { // Unique constraint violation
+        const detail = error.detail || '';
+        if (detail.includes('licenseNumber') || detail.includes('license_number')) {
+          throw new ConflictException('A driver with this license number already exists');
+        }
+        if (detail.includes('email')) {
+          throw new ConflictException('A driver with this email already exists');
+        }
+        throw new ConflictException('A driver with these details already exists');
+      }
+      
+      // Handle data too long errors
+      if (error.code === '22001') {
+        throw new BadRequestException('One or more fields exceed maximum length');
+      }
+      
+      // Generic error
+      throw new InternalServerErrorException({
+        message: 'Failed to create driver',
+        error: error.message || 'An unexpected error occurred',
+        details: process.env.NODE_ENV === 'development' ? error.stack : undefined,
+      });
+    }
+  }
+
+  @Get('drivers')
+  @ApiOperation({
+    summary: 'Get all drivers',
+    description: 'Retrieves all drivers with optional filtering and pagination. Supports search, status filtering, location filtering, and pagination.',
+  })
+  @ApiQuery({
+    name: 'search',
+    required: false,
+    description: 'Search in first name, last name, license number',
+    example: 'john'
+  })
+  @ApiQuery({
+    name: 'status',
+    required: false,
+    description: 'Filter by driver status',
+    enum: ['ACTIVE', 'INACTIVE', 'SUSPENDED', 'ON_LEAVE', 'TERMINATED', 'IN_TRANSIT'],
+    example: 'ACTIVE'
+  })
+  @ApiQuery({
+    name: 'location',
+    required: false,
+    description: 'Filter by location (city, state, or coordinates)',
+    example: 'New York'
+  })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    description: 'Page number for pagination (starts from 1)',
+    minimum: 1,
+    example: 1
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    description: 'Number of items per page (max 100)',
+    minimum: 1,
+    maximum: 100,
+    example: 20
+  })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Drivers retrieved successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        message: { type: 'string', example: 'Drivers retrieved successfully' },
+        drivers: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              id: { type: 'string', format: 'uuid' },
+              firstName: { type: 'string' },
+              lastName: { type: 'string' },
+              email: { type: 'string' },
+              phone: { type: 'string' },
+              status: { type: 'string', enum: ['ACTIVE', 'INACTIVE', 'SUSPENDED', 'ON_LEAVE', 'TERMINATED', 'IN_TRANSIT'] },
+              licenseNumber: { type: 'string' },
+              employmentType: { type: 'string', enum: ['FULL_TIME', 'PART_TIME', 'CONTRACT', 'OWNER_OPERATOR', 'FREELANCE'] },
+              rating: { type: 'number', minimum: 0, maximum: 5 },
+              safetyScore: { type: 'number', minimum: 0, maximum: 100 },
+              currentLocation: { type: 'object', description: 'GPS coordinates' }
+            }
+          }
+        }
+      }
+    }
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden - insufficient permissions' })
+  async findAllDrivers(
+    @Request() req,
+    @Query('search') search?: string,
+    @Query('status') status?: string,
+    @Query('location') location?: string,
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+  ) {
+    const drivers = await this.fleetService.findAllDrivers(
+      req.user.tenantId,
+      req.user.userId,
+      { search, status, location, page, limit },
+    );
+    return {
+      message: 'Drivers retrieved successfully',
+      drivers,
+    };
+  }
+
+  @Get('drivers/:id')
+  @ApiOperation({
+    summary: 'Get driver by ID',
+    description: 'Retrieves detailed information about a specific driver including profile, license, certifications, and performance metrics',
+  })
+  @ApiParam({ 
+    name: 'id', 
+    description: 'Driver ID (UUID)', 
+    example: '123e4567-e89b-12d3-a456-426614174000',
+    format: 'uuid'
+  })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Driver retrieved successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        message: { type: 'string', example: 'Driver retrieved successfully' },
+        driver: {
+          type: 'object',
+          properties: {
+            id: { type: 'string', format: 'uuid' },
+            firstName: { type: 'string' },
+            lastName: { type: 'string' },
+            email: { type: 'string' },
+            phone: { type: 'string' },
+            dateOfBirth: { type: 'string', format: 'date' },
+            address: { type: 'string' },
+            licenseNumber: { type: 'string' },
+            licenseExpiry: { type: 'string', format: 'date' },
+            status: { type: 'string', enum: ['ACTIVE', 'INACTIVE', 'SUSPENDED', 'ON_LEAVE', 'TERMINATED', 'IN_TRANSIT'] },
+            employmentType: { type: 'string', enum: ['FULL_TIME', 'PART_TIME', 'CONTRACT', 'OWNER_OPERATOR', 'FREELANCE'] },
+            rating: { type: 'number', minimum: 0, maximum: 5 },
+            safetyScore: { type: 'number', minimum: 0, maximum: 100 },
+            totalTrips: { type: 'number' },
+            totalDistance: { type: 'number' },
+            totalEarnings: { type: 'number' },
+            currentLocation: { type: 'object', description: 'GPS coordinates' },
+            certifications: { type: 'array', items: { type: 'object' } }
+          }
+        }
+      }
+    }
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden - insufficient permissions' })
+  @ApiResponse({ status: 404, description: 'Driver not found' })
+  async findOneDriver(@Param('id', ParseUUIDPipe) id: string, @Request() req) {
+    const driver = await this.fleetService.findOneDriver(id, req.user.tenantId);
+    return {
+      message: 'Driver retrieved successfully',
+      driver,
+    };
+  }
+
+  @Patch('drivers/:id')
+  @ApiOperation({
+    summary: 'Update driver',
+    description: 'Updates an existing driver. Only provided fields will be updated. Cannot update driver if currently on a trip.',
+  })
+  @ApiParam({ 
+    name: 'id', 
+    description: 'Driver ID (UUID)', 
+    example: '123e4567-e89b-12d3-a456-426614174000',
+    format: 'uuid'
+  })
+  @ApiBody({ 
+    type: CreateDriverDto, 
+    description: 'Driver update data - only provided fields will be updated',
+    required: false
+  })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Driver updated successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        message: { type: 'string', example: 'Driver updated successfully' },
+        driver: {
+          type: 'object',
+          properties: {
+            id: { type: 'string', format: 'uuid' },
+            firstName: { type: 'string' },
+            lastName: { type: 'string' },
+            email: { type: 'string' },
+            status: { type: 'string', enum: ['ACTIVE', 'INACTIVE', 'SUSPENDED', 'ON_LEAVE', 'TERMINATED', 'IN_TRANSIT'] },
+            licenseNumber: { type: 'string' },
+            updatedAt: { type: 'string', format: 'date-time' }
+          }
+        }
+      }
+    }
+  })
+  @ApiResponse({ status: 400, description: 'Bad request - invalid data or driver on trip' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden - cannot update this driver' })
+  @ApiResponse({ status: 404, description: 'Driver not found' })
+  @ApiResponse({ status: 409, description: 'Conflict - driver with same license number already exists' })
+  async updateDriver(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() updateDriverDto: Partial<CreateDriverDto>,
+    @Request() req,
+  ) {
+    const driver = await this.fleetService.updateDriver(
+      id,
+      updateDriverDto,
+      req.user.tenantId,
+      req.user.userId,
+    );
+
+    return {
+      message: 'Driver updated successfully',
+      driver: {
+        id: driver.id,
+        firstName: driver.firstName,
+        lastName: driver.lastName,
+        email: driver.email,
+        status: driver.status,
+        licenseNumber: driver.licenseNumber,
+      },
+    };
+  }
+
+  @Delete('drivers/:id')
+  @ApiOperation({
+    summary: 'Delete driver',
+    description: 'Soft deletes a driver from the fleet. Driver cannot be deleted if currently on a trip or has active assignments.',
+  })
+  @ApiParam({ 
+    name: 'id', 
+    description: 'Driver ID (UUID)', 
+    example: '123e4567-e89b-12d3-a456-426614174000',
+    format: 'uuid'
+  })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Driver deleted successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        message: { type: 'string', example: 'Driver deleted successfully' }
+      }
+    }
+  })
+  @ApiResponse({ status: 400, description: 'Bad request - cannot delete driver on trip or with active assignments' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden - cannot delete this driver' })
+  @ApiResponse({ status: 404, description: 'Driver not found' })
+  async removeDriver(@Param('id', ParseUUIDPipe) id: string, @Request() req) {
+    await this.fleetService.removeDriver(
+      id,
+      req.user.tenantId,
+      req.user.userId,
+    );
+    return {
+      message: 'Driver deleted successfully',
+    };
+  }
+
+  // Route endpoints
+  @Post('routes')
+  @ApiOperation({
+    summary: 'Create a new route',
+    description: 'Creates a new route in the fleet',
+  })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        name: { type: 'string', description: 'Route name' },
+        origin: { type: 'string', description: 'Route origin' },
+        destination: { type: 'string', description: 'Route destination' },
+        distance: { type: 'number', description: 'Route distance in miles' },
+        estimatedDuration: {
+          type: 'number',
+          description: 'Estimated duration in hours',
+        },
+        status: { type: 'string', description: 'Route status' },
+      },
+      required: ['name', 'origin', 'destination'],
+    },
+    description: 'Route creation data',
+  })
+  @ApiResponse({ status: 201, description: 'Route created successfully' })
+  @ApiResponse({ status: 400, description: 'Bad request - invalid data' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async createRoute(@Body() createRouteDto: any, @Request() req) {
+    const route = await this.fleetService.createRoute(
+      createRouteDto,
+      req.user.userId,
+      req.user.tenantId,
+    );
+
+    return {
+      message: 'Route created successfully',
+      route,
+    };
+  }
+
+  @Get('routes')
+  @ApiOperation({
+    summary: 'Get all routes',
+    description: 'Retrieves all routes in the fleet',
+  })
+  @ApiResponse({ status: 200, description: 'Routes retrieved successfully' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async findAllRoutes(@Request() req) {
+    const routes = await this.fleetService.findAllRoutes(req.user.tenantId);
+    return {
+      message: 'Routes retrieved successfully',
+      routes,
+    };
+  }
+
+  @Get('routes/:id')
+  @ApiOperation({
+    summary: 'Get route by ID',
+    description: 'Retrieves a specific route by its ID',
+  })
+  @ApiParam({ name: 'id', description: 'Route ID (UUID)' })
+  @ApiResponse({ status: 200, description: 'Route retrieved successfully' })
+  @ApiResponse({ status: 404, description: 'Route not found' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async findOneRoute(@Param('id', ParseUUIDPipe) id: string, @Request() req) {
+    const route = await this.fleetService.findOneRoute(id, req.user.tenantId);
+    return {
+      message: 'Route retrieved successfully',
+      route,
+    };
+  }
+
+  @Patch('routes/:id')
+  @ApiOperation({
+    summary: 'Update route',
+    description: 'Updates an existing route',
+  })
+  @ApiParam({ name: 'id', description: 'Route ID (UUID)' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        name: { type: 'string', description: 'Route name' },
+        origin: { type: 'string', description: 'Route origin' },
+        destination: { type: 'string', description: 'Route destination' },
+        distance: { type: 'number', description: 'Route distance in miles' },
+        estimatedDuration: {
+          type: 'number',
+          description: 'Estimated duration in hours',
+        },
+        status: { type: 'string', description: 'Route status' },
+      },
+    },
+    description: 'Route update data',
+  })
+  @ApiResponse({ status: 200, description: 'Route updated successfully' })
+  @ApiResponse({ status: 404, description: 'Route not found' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async updateRoute(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() updateRouteDto: any,
+    @Request() req,
+  ) {
+    const route = await this.fleetService.updateRoute(
+      id,
+      updateRouteDto,
+      req.user.tenantId,
+      req.user.userId,
+    );
+
+    return {
+      message: 'Route updated successfully',
+      route,
+    };
+  }
+
+  @Delete('routes/:id')
+  @ApiOperation({
+    summary: 'Delete route',
+    description: 'Deletes a route from the fleet',
+  })
+  @ApiParam({ name: 'id', description: 'Route ID (UUID)' })
+  @ApiResponse({ status: 200, description: 'Route deleted successfully' })
+  @ApiResponse({ status: 404, description: 'Route not found' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async removeRoute(@Param('id', ParseUUIDPipe) id: string, @Request() req) {
+    await this.fleetService.removeRoute(id, req.user.tenantId, req.user.userId);
+    return {
+      message: 'Route deleted successfully',
+    };
+  }
+
+  // Analytics endpoint
+  @Get('analytics')
+  @ApiOperation({
+    summary: 'Get fleet analytics',
+    description: 'Retrieves comprehensive analytics for the fleet',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Fleet analytics retrieved successfully',
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async getFleetAnalytics(@Request() req) {
+    const analytics = await this.fleetService.getFleetAnalytics(
+      req.user.tenantId,
+      req.user.userId,
+    );
+    return {
+      message: 'Fleet analytics retrieved successfully',
+      analytics,
+    };
+  }
+
+  // Bulk operations
+  @Post('trucks/bulk-assign')
+  @ApiOperation({
+    summary: 'Bulk assign to trucks',
+    description:
+      'Assigns multiple drivers or routes to multiple trucks in a single operation',
+  })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        truckIds: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'Array of truck IDs to assign to',
+        },
+        driverIds: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'Array of driver IDs to assign (for driver assignments)',
+        },
+        routeIds: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'Array of route IDs to assign (for route assignments)',
+        },
+        type: {
+          type: 'string',
+          enum: ['driver', 'route'],
+          description: 'Type of assignment (driver or route)',
+        },
+      },
+      required: ['truckIds', 'type'],
+    },
+    description: 'Bulk assignment data',
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Bulk assignment completed successfully',
+  })
+  @ApiResponse({ status: 400, description: 'Bad request - invalid data' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async bulkAssignToTrucks(@Body() bulkAssignDto: any, @Request() req) {
+    const result = await this.fleetService.bulkAssignToTrucks(
+      bulkAssignDto,
+      req.user.tenantId,
+      req.user.userId,
+    );
+
+    return {
+      message: 'Bulk assignment completed successfully',
+      result,
+    };
+  }
+
+  @Delete('trucks/bulk-unassign')
+  @ApiOperation({
+    summary: 'Bulk unassign from trucks',
+    description:
+      'Unassigns multiple drivers or routes from multiple trucks in a single operation',
+  })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        truckIds: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'Array of truck IDs to unassign from',
+        },
+        driverIds: {
+          type: 'array',
+          items: { type: 'string' },
+          description:
+            'Array of driver IDs to unassign (for driver unassignments)',
+        },
+        routeIds: {
+          type: 'array',
+          items: { type: 'string' },
+          description:
+            'Array of route IDs to unassign (for route unassignments)',
+        },
+        type: {
+          type: 'string',
+          enum: ['driver', 'route'],
+          description: 'Type of unassignment (driver or route)',
+        },
+      },
+      required: ['truckIds', 'type'],
+    },
+    description: 'Bulk unassignment data',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Bulk unassignment completed successfully',
+  })
+  @ApiResponse({ status: 400, description: 'Bad request - invalid data' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async bulkUnassignFromTrucks(@Body() bulkUnassignDto: any, @Request() req) {
+    const result = await this.fleetService.bulkUnassignFromTrucks(
+      bulkUnassignDto,
+      req.user.tenantId,
+      req.user.userId,
+    );
+
+    return {
+      message: 'Bulk unassignment completed successfully',
+      result,
+    };
+  }
+
+  // Route-Truck Assignment endpoints
+  @Post('routes/:routeId/assign-truck/:truckId')
+  @ApiOperation({ summary: 'Assign a route to a truck' })
+  @ApiParam({ name: 'routeId', description: 'Route ID' })
+  @ApiParam({ name: 'truckId', description: 'Truck ID' })
+  @ApiResponse({
+    status: 201,
+    description: 'Route assigned to truck successfully',
+  })
+  async assignRouteToTruck(
+    @Param('routeId', ParseUUIDPipe) routeId: string,
+    @Param('truckId', ParseUUIDPipe) truckId: string,
+    @Request() req,
+  ) {
+    const assignment = await this.fleetService.assignRouteToTruck(
+      routeId,
+      truckId,
+      req.user.userId,
+      req.user.tenantId,
+    );
+
+    return {
+      message: 'Route assigned to truck successfully',
+      assignment,
+    };
+  }
+
+  @Delete('routes/:routeId/unassign-truck/:truckId')
+  @ApiOperation({ summary: 'Unassign a route from a truck' })
+  @ApiParam({ name: 'routeId', description: 'Route ID' })
+  @ApiParam({ name: 'truckId', description: 'Truck ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Route unassigned from truck successfully',
+  })
+  async unassignRouteFromTruck(
+    @Param('routeId', ParseUUIDPipe) routeId: string,
+    @Param('truckId', ParseUUIDPipe) truckId: string,
+    @Request() req,
+  ) {
+    await this.fleetService.unassignRouteFromTruck(
+      routeId,
+      truckId,
+      req.user.userId,
+      req.user.tenantId,
+    );
+
+    return {
+      message: 'Route unassigned from truck successfully',
+    };
+  }
+
+  @Get('trucks/:truckId/routes')
+  @ApiOperation({ summary: 'Get all routes assigned to a truck' })
+  @ApiParam({ name: 'truckId', description: 'Truck ID' })
+  @ApiResponse({ status: 200, description: 'Routes retrieved successfully' })
+  async getTruckRoutes(
+    @Param('truckId', ParseUUIDPipe) truckId: string,
+    @Request() req,
+  ) {
+    const routes = await this.fleetService.getTruckRoutes(
+      truckId,
+      req.user.userId,
+      req.user.tenantId,
+    );
+
+    return {
+      message: 'Routes retrieved successfully',
+      routes,
+    };
+  }
+
+  @Get('routes/:routeId/assignments')
+  @ApiOperation({ summary: 'Get all truck assignments for a route' })
+  @ApiParam({ name: 'routeId', description: 'Route ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Route assignments retrieved successfully',
+  })
+  async getRouteAssignments(
+    @Param('routeId', ParseUUIDPipe) routeId: string,
+    @Request() req,
+  ) {
+    const assignments = await this.fleetService.getRouteAssignments(
+      routeId,
+      req.user.tenantId,
+    );
+
+    return {
+      message: 'Route assignments retrieved successfully',
+      assignments,
+    };
+  }
+
+  @Post('routes/bulk-assign')
+  @ApiOperation({ summary: 'Bulk assign routes to trucks' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        assignments: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              routeId: { type: 'string', format: 'uuid' },
+              truckId: { type: 'string', format: 'uuid' },
+            },
+          },
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 201, description: 'Bulk route assignment completed' })
+  async bulkAssignRoutes(
+    @Body() body: { assignments: { routeId: string; truckId: string }[] },
+    @Request() req,
+  ) {
+    const results = await this.fleetService.bulkAssignRoutes(
+      body.assignments,
+      req.user.userId,
+      req.user.tenantId,
+    );
+
+    return {
+      message: 'Bulk route assignment completed',
+      results,
+      successful: results.length,
+      total: body.assignments.length,
+    };
+  }
+}

@@ -1,0 +1,167 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    font-family: 'Inter', 'system-ui', 'sans-serif';
+  }
+  
+  body {
+    @apply bg-gray-50 text-gray-900;
+  }
+}
+
+@layer components {
+  /* Ensure map doesn't interfere with modals */
+  .fleet-map-container {
+    z-index: 1 !important;
+  }
+  
+  .fleet-map-container .leaflet-container {
+    z-index: 1 !important;
+  }
+  
+  .fleet-map-container .leaflet-control-container {
+    z-index: 2 !important;
+  }
+  
+  /* Ensure modals appear above map */
+  .modal-overlay {
+    z-index: 9999 !important;
+  }
+  
+  .btn {
+    @apply inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none;
+  }
+  
+  .btn-primary {
+    @apply bg-gradient-to-r from-primary-500 to-secondary-600 text-white hover:from-primary-600 hover:to-secondary-700 active:from-primary-700 active:to-secondary-800;
+  }
+  
+  .btn-secondary {
+    @apply bg-gray-100 text-gray-900 hover:bg-gray-200 active:bg-gray-300;
+  }
+  
+  .btn-outline {
+    @apply border border-gray-300 bg-transparent hover:bg-gray-50 active:bg-gray-100;
+  }
+  
+  /* Custom Scrollbar Styles */
+  .custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: #d1d5db #f9fafb;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: #f9fafb;
+    border-radius: 3px;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #d1d5db;
+    border-radius: 3px;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #9ca3af;
+  }
+  
+  .btn-ghost {
+    @apply hover:bg-gray-100 active:bg-gray-200;
+  }
+  
+  .btn-sm {
+    @apply h-8 px-3 text-xs;
+  }
+  
+  .btn-md {
+    @apply h-10 px-4 py-2;
+  }
+  
+  .btn-lg {
+    @apply h-12 px-6 text-base;
+  }
+  
+  .card {
+    @apply rounded-lg border border-gray-200 bg-white shadow-sm;
+  }
+  
+  .card-header {
+    @apply flex flex-col space-y-1.5 p-6;
+  }
+  
+  .card-title {
+    @apply text-2xl font-semibold leading-none tracking-tight;
+  }
+  
+  .card-description {
+    @apply text-sm text-gray-600;
+  }
+  
+  .card-content {
+    @apply p-6 pt-0;
+  }
+  
+  .card-footer {
+    @apply flex items-center p-6 pt-0;
+  }
+  
+  .input {
+    @apply flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-gray-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  
+  .label {
+    @apply text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70;
+  }
+  
+  .badge {
+    @apply inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2;
+  }
+  
+  .badge-primary {
+    @apply border-transparent bg-primary-100 text-primary-900 hover:bg-primary-200;
+  }
+  
+  .badge-secondary {
+    @apply border-transparent bg-gray-100 text-gray-900 hover:bg-gray-200;
+  }
+  
+  .badge-success {
+    @apply border-transparent bg-green-100 text-green-900 hover:bg-green-200;
+  }
+  
+  .badge-warning {
+    @apply border-transparent bg-yellow-100 text-yellow-900 hover:bg-yellow-200;
+  }
+  
+  .badge-error {
+    @apply border-transparent bg-red-100 text-red-900 hover:bg-red-200;
+  }
+
+  .filter-select-wrapper {
+    @apply flex flex-col gap-2;
+  }
+
+  .filter-select-label {
+    @apply pl-1 text-xs font-semibold uppercase tracking-wide text-slate-500;
+  }
+
+  .filter-select {
+    @apply appearance-none rounded-xl border border-slate-200 bg-white px-4 py-2.5 pr-10 text-sm font-medium text-slate-700 shadow-[0_15px_30px_-20px_rgba(15,23,42,0.45)] transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100;
+    background-image: none;
+  }
+
+  .filter-select:focus {
+    @apply border-blue-500 outline-none ring-2 ring-blue-100;
+  }
+
+  .filter-select[data-icon='true'] {
+    @apply pl-10;
+  }
+}

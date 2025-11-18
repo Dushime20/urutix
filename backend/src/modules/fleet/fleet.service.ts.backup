@@ -1,0 +1,933 @@
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+  BadRequestException,
+  ConflictException,
+} from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Truck, VehicleStatus, TruckType, FuelType } from '../../entities/truck.entity';
+import { Driver, DriverStatus } from '../../entities/driver.entity';
+import { Route } from '../../entities/route.entity';
+import { RouteTruck } from '../../entities/route-truck.entity';
+import { CreateTruckDto } from './dto/create-truck.dto';
+import { CreateDriverDto } from './dto/create-driver.dto';
+
+@Injectable()
+export class FleetService {
+  constructor(
+    @InjectRepository(Truck)
+    private readonly truckRepository: Repository<Truck>,
+    @InjectRepository(Driver)
+    private readonly driverRepository: Repository<Driver>,
+    @InjectRepository(Route)
+    private readonly routeRepository: Repository<Route>,
+    @InjectRepository(RouteTruck)
+    private readonly routeTruckRepository: Repository<RouteTruck>,
+  ) {}
+
+  // Truck operations
+  async createTruck(
+    createTruckDto: CreateTruckDto,
+    userId: string,
+    tenantId: string,
+  ): Promise<Truck> {
+    // Check for duplicate plate number within the same tenant
+    const existingByPlate = await this.truckRepository.findOne({
+      where: {
+        plateNumber: createTruckDto.plateNumber,
+        tenantId,
+        deletedAt: null,
+      },
+    });
+    if (existingByPlate) {
+      throw new ForbiddenException(
+        'Truck with this plate number already exists',
+      );
+    }
+
+    // Check for duplicate VIN (globally unique)
+    const existingByVin = await this.truckRepository.findOne({
+      where: {
+        vin: createTruckDto.vin,
+        deletedAt: null,
+      },
+    });
+    if (existingByVin) {
+      throw new ForbiddenException('Truck with this VIN already exists');
+    }
+
+    // Clean up empty enum values and provide defaults
+    const cleanedDto = {
+      ...createTruckDto,
+      truckType:
+        createTruckDto.truckType && createTruckDto.truckType.trim() !== ''
+          ? createTruckDto.truckType
+          : TruckType.FLATBED,
+      trailerType:
+        createTruckDto.trailerType && createTruckDto.trailerType.trim() !== ''
+          ? createTruckDto.trailerType
+          : null,
+      fuelType:
+        createTruckDto.fuelType && createTruckDto.fuelType.trim() !== ''
+          ? createTruckDto.fuelType
+          : FuelType.DIESEL,
+      // Clean up numeric fields
+      mileage:
+        typeof createTruckDto.mileage === 'string' &&
+        createTruckDto.mileage !== ''
+          ? parseInt(createTruckDto.mileage) || 0
+          : createTruckDto.mileage || 0,
+      year:
+        typeof createTruckDto.year === 'string' && createTruckDto.year !== ''
+          ? parseInt(createTruckDto.year)
+          : createTruckDto.year || 2023,
+      capacityWeight:
+        typeof createTruckDto.capacityWeight === 'string' &&
+        createTruckDto.capacityWeight !== ''
+          ? parseFloat(createTruckDto.capacityWeight)
+          : createTruckDto.capacityWeight || 0,
+      capacityVolume:
+        typeof createTruckDto.capacityVolume === 'string' &&
+        createTruckDto.capacityVolume !== ''
+          ? parseFloat(createTruckDto.capacityVolume)
+          : createTruckDto.capacityVolume || 0,
+      // Remove driver-related fields that shouldn't be in truck creation
+      firstName: undefined,
+      lastName: undefined,
+      licenseNumber: undefined,
+      licenseType: undefined,
+      experience: undefined,
+      contactInfo: undefined,
+    };
+
+    console.log('🧹 Cleaned truck data:', {
+      originalTruckType: createTruckDto.truckType,
+      cleanedTruckType: cleanedDto.truckType,
+      originalTrailerType: createTruckDto.trailerType,
+      cleanedTrailerType: cleanedDto.trailerType,
+      originalFuelType: createTruckDto.fuelType,
+      cleanedFuelType: cleanedDto.fuelType,
+      originalMileage: createTruckDto.mileage,
+      cleanedMileage: cleanedDto.mileage,
+      originalYear: createTruckDto.year,
+      cleanedYear: cleanedDto.year,
+      originalCapacityWeight: createTruckDto.capacityWeight,
+      cleanedCapacityWeight: cleanedDto.capacityWeight,
+      originalCapacityVolume: createTruckDto.capacityVolume,
+      cleanedCapacityVolume: cleanedDto.capacityVolume,
+    });
+
+    const truck = this.truckRepository.create({
+      ...cleanedDto,
+      ownerId: userId,
+      tenantId,
+      status: VehicleStatus.AVAILABLE,
+      equipmentList: createTruckDto.equipmentList || [],
+      maintenanceAlerts: [],
+      assignedDrivers: [],
+      assignedRoutes: [],
+      totalTrips: 0,
+      totalRevenue: 0,
+      averageRating: 0,
+      mileage: cleanedDto.mileage,
+    });
+
+    try {
+      return this.truckRepository.save(truck);
+    } catch (error) {
+      console.error('🚛 Database error during truck creation:', error);
+
+      // Handle database constraint violations
+      if (error.code === '23505') {
+        if (error.detail?.includes('vin')) {
+          throw new ForbiddenException('Truck with this VIN already exists');
+        } else if (error.detail?.includes('plateNumber')) {
+          throw new ForbiddenException(
+            'Truck with this plate number already exists',
+          );
+        } else {
+          throw new ForbiddenException(
+            'Truck with duplicate data already exists',
+          );
+        }
+      }
+
+      // Handle data too long errors
+      if (error.code === '22001') {
+        throw new ForbiddenException(
+          'VIN number must be exactly 17 characters long',
+        );
+      }
+
+      // Re-throw other errors
+      throw error;
+    }
+  }
+
+  async findAllTrucks(
+    tenantId: string,
+    userId?: string,
+    filters?: any,
+  ): Promise<Truck[]> {
+    const query = this.truckRepository
+      .createQueryBuilder('truck')
+      .leftJoinAndSelect('truck.owner', 'owner')
+      .where('truck.tenantId = :tenantId', { tenantId });
+
+    // Remove the userId filter to show all trucks in the tenant
+    // Only filter by userId if explicitly requested (for user-specific views)
+    // if (userId) {
+    //   query.andWhere('truck.ownerId = :userId', { userId });
+    // }
+
+    // Apply filters
+    if (filters?.search) {
+      query.andWhere(
+        '(truck.plateNumber LIKE :search OR truck.make LIKE :search OR truck.model LIKE :search)',
+        { search: `%${filters.search}%` },
+      );
+    }
+
+    if (filters?.status) {
+      query.andWhere('truck.status = :status', { status: filters.status });
+    }
+
+    if (filters?.location) {
+      query.andWhere('truck.currentLocation LIKE :location', {
+        location: `%${filters.location}%`,
+      });
+    }
+
+    // Apply pagination
+    if (filters?.page && filters?.limit) {
+      const skip = (filters.page - 1) * filters.limit;
+      query.skip(skip).take(filters.limit);
+    }
+
+    return query.getMany();
+  }
+
+  async findOneTruck(id: string, tenantId: string): Promise<Truck> {
+    const truck = await this.truckRepository.findOne({
+      where: { id, tenantId },
+      relations: ['owner'],
+    });
+
+    if (!truck) {
+      throw new NotFoundException('Truck not found');
+    }
+
+    return truck;
+  }
+
+  async updateTruck(
+    id: string,
+    updateTruckDto: Partial<CreateTruckDto>,
+    tenantId: string,
+    userId: string,
+  ): Promise<Truck> {
+    const truck = await this.findOneTruck(id, tenantId);
+
+    if (truck.ownerId !== userId) {
+      throw new ForbiddenException('You can only update your own trucks');
+    }
+
+    Object.assign(truck, updateTruckDto);
+    return this.truckRepository.save(truck);
+  }
+
+  async removeTruck(
+    id: string,
+    tenantId: string,
+    userId: string,
+  ): Promise<void> {
+    const truck = await this.findOneTruck(id, tenantId);
+
+    if (truck.ownerId !== userId) {
+      throw new ForbiddenException('You can only delete your own trucks');
+    }
+
+    if (truck.status !== VehicleStatus.AVAILABLE) {
+      throw new ForbiddenException(
+        'Can only delete trucks in AVAILABLE status',
+      );
+    }
+
+    await this.truckRepository.remove(truck);
+  }
+
+  // Driver operations
+  async createDriver(
+    createDriverDto: CreateDriverDto,
+    userId: string,
+    tenantId: string,
+  ): Promise<Driver> {
+    const driver = this.driverRepository.create({
+      ...createDriverDto,
+      userId,
+      employerId: userId,
+      tenantId,
+      status: DriverStatus.ACTIVE,
+      availabilityStatus: 'AVAILABLE',
+      emergencyContact: {},
+      licenseClasses: [],
+      endorsements: [],
+      restrictions: [],
+      certifications: [],
+      preferences: {},
+    });
+
+    return this.driverRepository.save(driver);
+  }
+
+  async findAllDrivers(
+    tenantId: string,
+    userId?: string,
+    filters?: any,
+  ): Promise<Driver[]> {
+    const query = this.driverRepository
+      .createQueryBuilder('driver')
+      .where('driver.tenantId = :tenantId', { tenantId });
+
+    if (userId) {
+      query.andWhere('driver.employerId = :userId', { userId });
+    }
+
+    // Apply filters
+    if (filters?.search) {
+      query.andWhere(
+        '(driver.firstName LIKE :search OR driver.lastName LIKE :search OR driver.licenseNumber LIKE :search)',
+        { search: `%${filters.search}%` },
+      );
+    }
+
+    if (filters?.status) {
+      query.andWhere('driver.status = :status', { status: filters.status });
+    }
+
+    if (filters?.location) {
+      query.andWhere('driver.currentLocation LIKE :location', {
+        location: `%${filters.location}%`,
+      });
+    }
+
+    // Apply pagination
+    if (filters?.page && filters?.limit) {
+      const skip = (filters.page - 1) * filters.limit;
+      query.skip(skip).take(filters.limit);
+    }
+
+    return query.getMany();
+  }
+
+  async findOneDriver(id: string, tenantId: string): Promise<Driver> {
+    const driver = await this.driverRepository.findOne({
+      where: { id, tenantId },
+    });
+
+    if (!driver) {
+      throw new NotFoundException('Driver not found');
+    }
+
+    return driver;
+  }
+
+  async updateDriver(
+    id: string,
+    updateDriverDto: Partial<CreateDriverDto>,
+    tenantId: string,
+    userId: string,
+  ): Promise<Driver> {
+    const driver = await this.findOneDriver(id, tenantId);
+
+    if (driver.employerId !== userId) {
+      throw new ForbiddenException('You can only update your own drivers');
+    }
+
+    Object.assign(driver, updateDriverDto);
+    return this.driverRepository.save(driver);
+  }
+
+  async removeDriver(
+    id: string,
+    tenantId: string,
+    userId: string,
+  ): Promise<void> {
+    const driver = await this.findOneDriver(id, tenantId);
+
+    if (driver.employerId !== userId) {
+      throw new ForbiddenException('You can only delete your own drivers');
+    }
+
+    if (driver.status !== DriverStatus.ACTIVE) {
+      throw new ForbiddenException('Can only delete drivers in ACTIVE status');
+    }
+
+    await this.driverRepository.remove(driver);
+  }
+
+  // Driver assignment operations
+  async assignDriverToTruck(
+    truckId: string,
+    driverId: string,
+    tenantId: string,
+    userId: string,
+    notes?: string,
+  ): Promise<any> {
+    const truck = await this.findOneTruck(truckId, tenantId);
+    const driver = await this.findOneDriver(driverId, tenantId);
+
+    // Check if driver is already assigned to this truck
+    const existingAssignment = truck.assignedDrivers?.find(
+      (d) => d.driverId === driverId,
+    );
+    if (existingAssignment) {
+      throw new ForbiddenException('Driver is already assigned to this truck');
+    }
+
+    // Add driver to truck's assigned drivers
+    if (!truck.assignedDrivers) {
+      truck.assignedDrivers = [];
+    }
+
+    truck.assignedDrivers.push({
+      driverId,
+      driverName: `${driver.firstName} ${driver.lastName}`,
+      assignmentDate: new Date(),
+      status: 'active',
+      notes,
+    });
+
+    await this.truckRepository.save(truck);
+
+    return {
+      truckId,
+      driverId,
+      driverName: `${driver.firstName} ${driver.lastName}`,
+      assignmentDate: new Date(),
+      status: 'active',
+      notes,
+    };
+  }
+
+  async unassignDriverFromTruck(
+    truckId: string,
+    driverId: string,
+    tenantId: string,
+    userId: string,
+  ): Promise<void> {
+    const truck = await this.findOneTruck(truckId, tenantId);
+
+    if (!truck.assignedDrivers) {
+      throw new NotFoundException('No drivers assigned to this truck');
+    }
+
+    const driverIndex = truck.assignedDrivers.findIndex(
+      (d) => d.driverId === driverId,
+    );
+    if (driverIndex === -1) {
+      throw new NotFoundException('Driver is not assigned to this truck');
+    }
+
+    truck.assignedDrivers.splice(driverIndex, 1);
+    await this.truckRepository.save(truck);
+  }
+
+  // Route assignment operations
+  async assignRouteToTruck(
+    truckId: string,
+    routeId: string,
+    tenantId: string,
+    userId: string,
+    notes?: string,
+  ): Promise<any> {
+    console.log('🚛 FleetService.assignRouteToTruck Debug:');
+    console.log('Truck ID:', truckId);
+    console.log('Route ID:', routeId);
+    console.log('Tenant ID:', tenantId);
+    console.log('User ID:', userId);
+    console.log('Notes:', notes);
+    
+    try {
+      const truck = await this.findOneTruck(truckId, tenantId);
+      console.log('✅ Truck found:', truck.id);
+
+      // Check if route is already assigned to this truck
+      const existingAssignment = truck.assignedRoutes?.find(
+        (r) => r.routeId === routeId,
+      );
+      
+      console.log('🔍 Existing assignments:', truck.assignedRoutes);
+      console.log('🔍 Checking for existing assignment with routeId:', routeId);
+      console.log('🔍 Existing assignment found:', !!existingAssignment);
+      
+      if (existingAssignment) {
+        console.log('❌ Route is already assigned to this truck');
+        throw new ForbiddenException('Route is already assigned to this truck');
+      }
+
+      // Add route to truck's assigned routes
+      if (!truck.assignedRoutes) {
+        console.log('➕ Initializing assignedRoutes array');
+        truck.assignedRoutes = [];
+      }
+
+      const newAssignment = {
+        routeId,
+        routeName: `Route ${routeId}`,
+        assignmentDate: new Date(),
+        status: 'active',
+        notes,
+      };
+      
+      console.log('➕ Adding new assignment:', newAssignment);
+      truck.assignedRoutes.push(newAssignment);
+
+      console.log('💾 Saving truck with updated assignments...');
+      await this.truckRepository.save(truck);
+      console.log('✅ Truck saved successfully');
+
+      return {
+        truckId,
+        routeId,
+        assignmentDate: new Date(),
+        status: 'active',
+        notes,
+      };
+    } catch (error) {
+      console.error('❌ Error in assignRouteToTruck:', error);
+      console.error('❌ Error type:', error.constructor.name);
+      console.error('❌ Error message:', error.message);
+      
+      if (error instanceof ForbiddenException) {
+        throw error;
+      }
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      throw new BadRequestException(`Failed to assign route to truck: ${error.message}`);
+    }
+  }
+
+  async unassignRouteFromTruck(
+    truckId: string,
+    routeId: string,
+    tenantId: string,
+    userId: string,
+  ): Promise<void> {
+    try {
+      const truck = await this.findOneTruck(truckId, tenantId);
+
+      if (!truck.assignedRoutes) {
+        throw new NotFoundException('No routes assigned to this truck');
+      }
+
+      const routeIndex = truck.assignedRoutes.findIndex(
+        (r) => r.routeId === routeId,
+      );
+      if (routeIndex === -1) {
+        throw new NotFoundException('Route is not assigned to this truck');
+      }
+
+      truck.assignedRoutes.splice(routeIndex, 1);
+      await this.truckRepository.save(truck);
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      throw new BadRequestException(`Failed to unassign route from truck: ${error.message}`);
+    }
+  }
+
+  // Truck records and documents
+  async getTruckRecords(truckId: string, tenantId: string): Promise<any> {
+    const truck = await this.findOneTruck(truckId, tenantId);
+    return {
+      maintenance: truck.maintenanceAlerts || [],
+      documents: [],
+      trips: [],
+    };
+  }
+
+  async addTruckDocument(
+    truckId: string,
+    documentData: any,
+    tenantId: string,
+    userId: string,
+  ): Promise<any> {
+    const truck = await this.findOneTruck(truckId, tenantId);
+    // Implementation for document storage would go here
+    return {
+      message: 'Document added successfully',
+      documentId: 'doc-' + Date.now(),
+    };
+  }
+
+  // Maintenance operations
+  async getTruckMaintenance(truckId: string, tenantId: string): Promise<any[]> {
+    const truck = await this.findOneTruck(truckId, tenantId);
+    return truck.maintenanceAlerts || [];
+  }
+
+  async addTruckMaintenance(
+    truckId: string,
+    maintenanceData: any,
+    tenantId: string,
+    userId: string,
+  ): Promise<any> {
+    const truck = await this.findOneTruck(truckId, tenantId);
+
+    if (!truck.maintenanceAlerts) {
+      truck.maintenanceAlerts = [];
+    }
+
+    const maintenance = {
+      id: 'maint-' + Date.now(),
+      ...maintenanceData,
+      createdAt: new Date(),
+      createdBy: userId,
+    };
+
+    truck.maintenanceAlerts.push(maintenance);
+    await this.truckRepository.save(truck);
+
+    return maintenance;
+  }
+
+  // Route operations (placeholder implementations)
+  async createRoute(
+    routeData: any,
+    userId: string,
+    tenantId: string,
+  ): Promise<any> {
+    // Normalize payload to match entity expectations
+    const normalizedStatus = (routeData?.status || 'active')
+      .toString()
+      .toLowerCase();
+    const route = this.routeRepository.create({
+      ...routeData,
+      status:
+        normalizedStatus === 'active' ||
+        normalizedStatus === 'inactive' ||
+        normalizedStatus === 'maintenance'
+          ? normalizedStatus
+          : 'inactive',
+      distance:
+        typeof routeData?.distance === 'string'
+          ? parseFloat(routeData.distance)
+          : Number(routeData?.distance ?? 0),
+      estimatedTime:
+        typeof routeData?.estimatedTime === 'string'
+          ? parseInt(routeData.estimatedTime)
+          : Number(routeData?.estimatedTime ?? 0),
+      isActive:
+        typeof routeData?.isActive === 'boolean'
+          ? routeData.isActive
+          : true,
+      assignedTrucks: Array.isArray(routeData?.assignedTrucks)
+        ? routeData.assignedTrucks
+        : [],
+      assignedDrivers: Array.isArray(routeData?.assignedDrivers)
+        ? routeData.assignedDrivers
+        : [],
+      tenantId,
+    });
+
+    try {
+      return await this.routeRepository.save(route);
+    } catch (error) {
+      console.error('❌ createRoute error:', {
+        message: error?.message,
+        code: error?.code,
+        detail: error?.detail,
+        table: error?.table,
+        constraint: error?.constraint,
+      });
+      // Unique constraint (tenantId + name)
+      if (error?.code === '23505') {
+        throw new ConflictException('Route with this name already exists');
+      }
+      // Not null violation
+      if (error?.code === '23502') {
+        throw new BadRequestException('Missing required route fields');
+      }
+
+      // Invalid enum or invalid numeric input
+      if (error?.code === '22P02' || error?.code === '22003' || error?.code === '22001') {
+        throw new BadRequestException('Invalid route data provided');
+      }
+
+      throw error;
+    }
+  }
+
+  async findAllRoutes(
+    tenantId: string,
+    userId?: string,
+    filters?: any,
+  ): Promise<any[]> {
+    const query = this.routeRepository
+      .createQueryBuilder('route')
+      .where('route.tenantId = :tenantId', { tenantId });
+
+    // Apply filters
+    if (filters?.search) {
+      query.andWhere(
+        '(route.name LIKE :search OR route.description LIKE :search)',
+        { search: `%${filters.search}%` },
+      );
+    }
+
+    // Apply pagination
+    if (filters?.page && filters?.limit) {
+      const skip = (filters.page - 1) * filters.limit;
+      query.skip(skip).take(filters.limit);
+    }
+
+    return query.getMany();
+  }
+
+  async findOneRoute(id: string, tenantId: string): Promise<any> {
+    const route = await this.routeRepository.findOne({
+      where: { id, tenantId },
+    });
+
+    if (!route) {
+      throw new NotFoundException('Route not found');
+    }
+
+    return route;
+  }
+
+  async updateRoute(
+    id: string,
+    updateData: any,
+    tenantId: string,
+    userId: string,
+  ): Promise<any> {
+    const route = await this.findOneRoute(id, tenantId);
+
+    // Normalize and assign updates safely
+    const normalizedStatus = (updateData?.status ?? route.status)
+      .toString()
+      .toLowerCase();
+    Object.assign(route, {
+      ...updateData,
+      status:
+        normalizedStatus === 'active' ||
+        normalizedStatus === 'inactive' ||
+        normalizedStatus === 'maintenance'
+          ? normalizedStatus
+          : route.status,
+      distance:
+        updateData?.distance !== undefined
+          ? typeof updateData.distance === 'string'
+            ? parseFloat(updateData.distance)
+            : Number(updateData.distance)
+          : route.distance,
+      estimatedTime:
+        updateData?.estimatedTime !== undefined
+          ? typeof updateData.estimatedTime === 'string'
+            ? parseInt(updateData.estimatedTime)
+            : Number(updateData.estimatedTime)
+          : route.estimatedTime,
+    });
+
+    try {
+      return await this.routeRepository.save(route);
+    } catch (error) {
+      console.error('❌ updateRoute error:', {
+        message: error?.message,
+        code: error?.code,
+        detail: error?.detail,
+        table: error?.table,
+        constraint: error?.constraint,
+      });
+      if (error?.code === '23505') {
+        throw new ConflictException('Route with this name already exists');
+      }
+      if (error?.code === '23502') {
+        throw new BadRequestException('Missing required route fields');
+      }
+      if (error?.code === '22P02' || error?.code === '22003' || error?.code === '22001') {
+        throw new BadRequestException('Invalid route data provided');
+      }
+      throw error;
+    }
+  }
+
+  async removeRoute(
+    id: string,
+    tenantId: string,
+    userId: string,
+  ): Promise<void> {
+    const route = await this.findOneRoute(id, tenantId);
+
+    await this.routeRepository.remove(route);
+  }
+
+  // Bulk operations
+  async bulkAssignToTrucks(
+    assignmentData: any,
+    tenantId: string,
+    userId: string,
+  ): Promise<any> {
+    return { message: 'Bulk assignment completed', affected: 0 };
+  }
+
+  async bulkUnassignFromTrucks(
+    unassignmentData: any,
+    tenantId: string,
+    userId: string,
+  ): Promise<any> {
+    return { message: 'Bulk unassignment completed', affected: 0 };
+  }
+
+  // Fleet analytics
+  async getFleetAnalytics(tenantId: string, userId: string) {
+    const trucks = await this.findAllTrucks(tenantId, userId);
+    const drivers = await this.findAllDrivers(tenantId, userId);
+
+    return {
+      totalTrucks: trucks.length,
+      availableTrucks: trucks.filter(
+        (t) => t.status === VehicleStatus.AVAILABLE,
+      ).length,
+      totalDrivers: drivers.length,
+      activeDrivers: drivers.filter((d) => d.status === DriverStatus.ACTIVE)
+        .length,
+      totalCapacity: trucks.reduce((sum, t) => sum + t.capacityWeight, 0),
+      averageTruckRating:
+        trucks.length > 0
+          ? trucks.reduce((sum, t) => sum + t.averageRating, 0) / trucks.length
+          : 0,
+      averageDriverRating:
+        drivers.length > 0
+          ? drivers.reduce((sum, d) => sum + d.rating, 0) / drivers.length
+          : 0,
+    };
+  }
+
+  // Route-Truck Assignment Methods
+  async assignRouteToTruck(
+    routeId: string,
+    truckId: string,
+    userId: string,
+    tenantId: string,
+  ): Promise<RouteTruck> {
+    // Verify the route exists and belongs to the tenant
+    const route = await this.routeRepository.findOne({
+      where: { id: routeId, tenantId },
+    });
+    if (!route) {
+      throw new NotFoundException('Route not found');
+    }
+
+    // Verify the truck exists and belongs to the user/tenant
+    const truck = await this.truckRepository.findOne({
+      where: { id: truckId, ownerId: userId, tenantId },
+    });
+    if (!truck) {
+      throw new NotFoundException('Truck not found or not owned by user');
+    }
+
+    // Check if assignment already exists
+    const existingAssignment = await this.routeTruckRepository.findOne({
+      where: { routeId, truckId, tenantId },
+    });
+    if (existingAssignment) {
+      throw new ConflictException('Truck is already assigned to this route');
+    }
+
+    // Create the assignment
+    const assignment = this.routeTruckRepository.create({
+      routeId,
+      truckId,
+      tenantId,
+    });
+
+    return await this.routeTruckRepository.save(assignment);
+  }
+
+  async unassignRouteFromTruck(
+    routeId: string,
+    truckId: string,
+    userId: string,
+    tenantId: string,
+  ): Promise<void> {
+    // Verify the truck belongs to the user
+    const truck = await this.truckRepository.findOne({
+      where: { id: truckId, ownerId: userId, tenantId },
+    });
+    if (!truck) {
+      throw new NotFoundException('Truck not found or not owned by user');
+    }
+
+    const assignment = await this.routeTruckRepository.findOne({
+      where: { routeId, truckId, tenantId },
+    });
+    if (!assignment) {
+      throw new NotFoundException('Route assignment not found');
+    }
+
+    await this.routeTruckRepository.remove(assignment);
+  }
+
+  async getTruckRoutes(
+    truckId: string,
+    userId: string,
+    tenantId: string,
+  ): Promise<Route[]> {
+    // Verify the truck belongs to the user
+    const truck = await this.truckRepository.findOne({
+      where: { id: truckId, ownerId: userId, tenantId },
+    });
+    if (!truck) {
+      throw new NotFoundException('Truck not found or not owned by user');
+    }
+
+    const assignments = await this.routeTruckRepository.find({
+      where: { truckId, tenantId },
+      relations: ['route'],
+    });
+
+    return assignments.map(assignment => assignment.route);
+  }
+
+  async getRouteAssignments(
+    routeId: string,
+    tenantId: string,
+  ): Promise<RouteTruck[]> {
+    return await this.routeTruckRepository.find({
+      where: { routeId, tenantId },
+      relations: ['route'],
+    });
+  }
+
+  async bulkAssignRoutes(
+    assignments: { routeId: string; truckId: string }[],
+    userId: string,
+    tenantId: string,
+  ): Promise<RouteTruck[]> {
+    const results: RouteTruck[] = [];
+
+    for (const assignment of assignments) {
+      try {
+        const result = await this.assignRouteToTruck(
+          assignment.routeId,
+          assignment.truckId,
+          userId,
+          tenantId,
+        );
+        results.push(result);
+      } catch (error) {
+        // Log error but continue with other assignments
+        console.error(`Failed to assign route ${assignment.routeId} to truck ${assignment.truckId}:`, error.message);
+      }
+    }
+
+    return results;
+  }
+}

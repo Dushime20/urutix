@@ -1,0 +1,598 @@
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import { Icon } from 'leaflet';
+import { FaTruck, FaMapMarkedAlt, FaClock, FaBox, FaUser, FaPhone, FaWifi, FaExclamationTriangle } from 'react-icons/fa';
+import 'leaflet/dist/leaflet.css';
+import { trackingWebSocket } from '../services/websocket';
+import type { ShipmentUpdate } from '../services/websocket';
+
+interface Shipment {
+  id: string;
+  cargoId: string;
+  cargoTitle: string;
+  status: 'IN_TRANSIT' | 'PICKED_UP' | 'DELIVERED' | 'DELAYED';
+  pickupLocation: {
+    name: string;
+    address: string;
+    latitude: number;
+    longitude: number;
+  };
+  deliveryLocation: {
+    name: string;
+    address: string;
+    latitude: number;
+    longitude: number;
+  };
+  currentLocation: {
+    latitude: number;
+    longitude: number;
+    timestamp: string;
+  };
+  driver: {
+    name: string;
+    phone: string;
+    photo?: string;
+  };
+  vehicle: {
+    plateNumber: string;
+    type: string;
+  };
+  estimatedDelivery: string;
+  actualPickup?: string;
+  actualDelivery?: string;
+  progress: number; // 0-100
+}
+
+const Tracking: React.FC = () => {
+  const [shipments, setShipments] = useState<Shipment[]>([]);
+  const [selectedShipment, setSelectedShipment] = useState<Shipment | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [wsConnected, setWsConnected] = useState(false);
+  const [wsError, setWsError] = useState<string | null>(null);
+  const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
+  const [showUpdateNotification, setShowUpdateNotification] = useState(false);
+  const unsubscribeRefs = useRef<Map<string, () => void>>(new Map());
+
+  // Initialize WebSocket connection
+  useEffect(() => {
+    const initializeWebSocket = async () => {
+      try {
+        await trackingWebSocket.connect();
+        setWsConnected(true);
+        setWsError(null);
+      } catch (error) {
+        console.error('Failed to connect to WebSocket:', error);
+        setWsError('Failed to connect to real-time service');
+        setWsConnected(false);
+      }
+    };
+
+    initializeWebSocket();
+
+    // Cleanup on unmount
+    return () => {
+      trackingWebSocket.disconnect();
+    };
+  }, []);
+
+  // Handle WebSocket updates
+  const handleShipmentUpdate = useCallback((update: ShipmentUpdate) => {
+    // Update last update timestamp
+    setLastUpdate(new Date());
+    
+    // Show update notification
+    setShowUpdateNotification(true);
+    setTimeout(() => setShowUpdateNotification(false), 3000);
+    
+    setShipments(prevShipments => {
+      return prevShipments.map(shipment => {
+        if (shipment.id === update.shipmentId) {
+          const updatedShipment = { ...shipment };
+          
+          switch (update.type) {
+            case 'LOCATION_UPDATE':
+              if (update.data.currentLocation) {
+                updatedShipment.currentLocation = update.data.currentLocation;
+              }
+              break;
+            case 'STATUS_UPDATE':
+              if (update.data.status) {
+                updatedShipment.status = update.data.status as any;
+              }
+              break;
+            case 'PROGRESS_UPDATE':
+              if (update.data.progress !== undefined) {
+                updatedShipment.progress = update.data.progress;
+              }
+              break;
+            case 'DELIVERY_UPDATE':
+              if (update.data.actualDelivery) {
+                updatedShipment.actualDelivery = update.data.actualDelivery;
+              }
+              if (update.data.actualPickup) {
+                updatedShipment.actualPickup = update.data.actualPickup;
+              }
+              break;
+          }
+          
+          return updatedShipment;
+        }
+        return shipment;
+      });
+    });
+  }, []);
+
+  // Subscribe to WebSocket updates for each shipment
+  useEffect(() => {
+    if (wsConnected && shipments.length > 0) {
+      // Clean up previous subscriptions
+      unsubscribeRefs.current.forEach(unsubscribe => unsubscribe());
+      unsubscribeRefs.current.clear();
+
+      // Subscribe to updates for each shipment
+      shipments.forEach(shipment => {
+        const unsubscribe = trackingWebSocket.subscribe(shipment.id, handleShipmentUpdate);
+        unsubscribeRefs.current.set(shipment.id, unsubscribe);
+      });
+    }
+
+    return () => {
+      unsubscribeRefs.current.forEach(unsubscribe => unsubscribe());
+      unsubscribeRefs.current.clear();
+    };
+  }, [wsConnected, shipments, handleShipmentUpdate]);
+
+  useEffect(() => {
+    // Simulate loading shipments
+    setTimeout(() => {
+      setShipments([
+        {
+          id: '1',
+          cargoId: 'CARGO-001',
+          cargoTitle: 'Electronics Shipment',
+          status: 'IN_TRANSIT',
+          pickupLocation: {
+            name: 'Nairobi Warehouse',
+            address: '123 Industrial Area, Nairobi',
+            latitude: -1.2921,
+            longitude: 36.8219,
+          },
+          deliveryLocation: {
+            name: 'Mombasa Port',
+            address: '456 Port Road, Mombasa',
+            latitude: -4.0435,
+            longitude: 39.6682,
+          },
+          currentLocation: {
+            latitude: -2.5,
+            longitude: 38.0,
+            timestamp: new Date().toISOString(),
+          },
+          driver: {
+            name: 'John Kamau',
+            phone: '+254700123456',
+          },
+          vehicle: {
+            plateNumber: 'KCA 123A',
+            type: 'Flatbed Truck',
+          },
+          estimatedDelivery: '2024-01-20T14:00:00Z',
+          actualPickup: '2024-01-18T08:30:00Z',
+          progress: 65,
+        },
+        {
+          id: '2',
+          cargoId: 'CARGO-002',
+          cargoTitle: 'Agricultural Products',
+          status: 'PICKED_UP',
+          pickupLocation: {
+            name: 'Kisumu Farm',
+            address: '789 Farm Road, Kisumu',
+            latitude: -0.0917,
+            longitude: 34.7680,
+          },
+          deliveryLocation: {
+            name: 'Nairobi Market',
+            address: '321 Market Street, Nairobi',
+            latitude: -1.2921,
+            longitude: 36.8219,
+          },
+          currentLocation: {
+            latitude: -0.5,
+            longitude: 36.0,
+            timestamp: new Date().toISOString(),
+          },
+          driver: {
+            name: 'Mary Wanjiku',
+            phone: '+254700654321',
+          },
+          vehicle: {
+            plateNumber: 'KCA 456B',
+            type: 'Refrigerated Truck',
+          },
+          estimatedDelivery: '2024-01-19T16:00:00Z',
+          actualPickup: '2024-01-18T10:15:00Z',
+          progress: 35,
+        },
+      ]);
+      setLoading(false);
+    }, 1000);
+  }, []);
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'IN_TRANSIT':
+        return 'text-blue-600 bg-blue-100';
+      case 'PICKED_UP':
+        return 'text-yellow-600 bg-yellow-100';
+      case 'DELIVERED':
+        return 'text-green-600 bg-green-100';
+      case 'DELAYED':
+        return 'text-red-600 bg-red-100';
+      default:
+        return 'text-gray-600 bg-gray-100';
+    }
+  };
+
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case 'IN_TRANSIT':
+        return 'In Transit';
+      case 'PICKED_UP':
+        return 'Picked Up';
+      case 'DELIVERED':
+        return 'Delivered';
+      case 'DELAYED':
+        return 'Delayed';
+      default:
+        return status;
+    }
+  };
+
+  const createCustomIcon = (color: string) => new Icon({
+    iconUrl: `data:image/svg+xml;base64,${btoa(`
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" fill="${color}"/>
+      </svg>
+    `)}`,
+    iconSize: [24, 24],
+    iconAnchor: [12, 24],
+  });
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header with WebSocket Status */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Live Tracking</h1>
+          <p className="text-gray-600">Track your shipments in real-time</p>
+        </div>
+        
+        {/* WebSocket Connection Status */}
+        <div className="flex items-center space-x-3">
+          {wsError && (
+            <div className="flex items-center space-x-2 px-3 py-2 bg-red-100 text-red-700 rounded-lg">
+              <FaExclamationTriangle className="w-4 h-4" />
+              <span className="text-sm">{wsError}</span>
+              <button
+                onClick={async () => {
+                  try {
+                    setWsError(null);
+                    await trackingWebSocket.connect();
+                    setWsConnected(true);
+                  } catch (error) {
+                    setWsError('Reconnection failed');
+                  }
+                }}
+                className="ml-2 px-2 py-1 bg-red-200 hover:bg-red-300 rounded text-xs font-medium"
+              >
+                Retry
+              </button>
+            </div>
+          )}
+          
+          <div className={`flex items-center space-x-2 px-3 py-2 rounded-lg ${
+            wsConnected 
+              ? 'bg-green-100 text-green-700' 
+              : 'bg-yellow-100 text-yellow-700'
+          }`}>
+            <FaWifi className={`w-4 h-4 ${wsConnected ? 'text-green-600' : 'text-yellow-600'}`} />
+            <span className="text-sm font-medium">
+              {wsConnected ? 'Live Updates' : 'Connecting...'}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Real-time Update Notification */}
+      {showUpdateNotification && wsConnected && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 animate-pulse">
+          <div className="flex items-center space-x-3">
+            <div className="w-3 h-3 bg-blue-500 rounded-full animate-ping"></div>
+            <div className="flex-1">
+              <p className="text-sm font-medium text-blue-800">
+                Real-time update received
+              </p>
+              <p className="text-xs text-blue-600">
+                Last updated: {lastUpdate?.toLocaleTimeString()}
+              </p>
+            </div>
+            <button
+              onClick={() => setShowUpdateNotification(false)}
+              className="text-blue-400 hover:text-blue-600"
+            >
+              ×
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Shipment List */}
+        <div className="lg:col-span-1">
+          <div className="bg-white rounded-lg border border-gray-200">
+            <div className="p-4 border-b border-gray-200">
+              <h2 className="text-lg font-semibold text-gray-900">Active Shipments</h2>
+              <p className="text-sm text-gray-600">{shipments.length} shipments in transit</p>
+            </div>
+            <div className="p-4 space-y-4">
+              {shipments.map((shipment) => (
+                <div
+                  key={shipment.id}
+                  className={`p-4 rounded-lg border cursor-pointer transition-colors ${
+                    selectedShipment?.id === shipment.id
+                      ? 'border-primary-500 bg-primary-50'
+                      : 'border-gray-200 hover:border-gray-300'
+                  }`}
+                  onClick={() => setSelectedShipment(shipment)}
+                >
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex items-center space-x-2">
+                      <div>
+                        <h3 className="font-medium text-gray-900">{shipment.cargoTitle}</h3>
+                        <p className="text-sm text-gray-600">#{shipment.cargoId}</p>
+                      </div>
+                      {/* Real-time update indicator */}
+                      {wsConnected && (
+                        <div className="flex items-center space-x-1">
+                          <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                          <span className="text-xs text-green-600 font-medium">LIVE</span>
+                        </div>
+                      )}
+                    </div>
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(shipment.status)}`}>
+                      {getStatusText(shipment.status)}
+                    </span>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <div className="flex items-center text-sm text-gray-600">
+                      <FaTruck className="w-4 h-4 mr-2" />
+                      <span>{shipment.vehicle.plateNumber}</span>
+                    </div>
+                    <div className="flex items-center text-sm text-gray-600">
+                      <FaUser className="w-4 h-4 mr-2" />
+                      <span>{shipment.driver.name}</span>
+                    </div>
+                    <div className="flex items-center text-sm text-gray-600">
+                      <FaClock className="w-4 h-4 mr-2" />
+                      <span>ETA: {new Date(shipment.estimatedDelivery).toLocaleString()}</span>
+                    </div>
+                  </div>
+
+                  {/* Progress Bar */}
+                  <div className="mt-3">
+                    <div className="flex justify-between text-xs text-gray-600 mb-1">
+                      <span>Progress</span>
+                      <div className="flex items-center space-x-2">
+                        <span>{shipment.progress}%</span>
+                        {wsConnected && (
+                          <div className="flex items-center space-x-1">
+                            <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
+                            <span className="text-green-600">Live</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div
+                        className="bg-primary-600 h-2 rounded-full transition-all duration-500 ease-out"
+                        style={{ width: `${shipment.progress}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Map and Details */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* Map */}
+          <div className="bg-white rounded-lg border border-gray-200 p-4">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Live Map</h2>
+            <div className="h-96 rounded-lg overflow-hidden">
+              <MapContainer
+                center={[-1.2921, 36.8219]}
+                zoom={6}
+                style={{ height: '100%', width: '100%' }}
+                scrollWheelZoom={true}
+              >
+                <TileLayer
+                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                />
+                
+                {/* Pickup and Delivery Markers */}
+                {selectedShipment && (
+                  <>
+                    <Marker
+                      position={[selectedShipment.pickupLocation.latitude, selectedShipment.pickupLocation.longitude]}
+                      icon={createCustomIcon('#10B981')}
+                    >
+                      <Popup>
+                        <div>
+                          <h3 className="font-medium">Pickup Location</h3>
+                          <p className="text-sm">{selectedShipment.pickupLocation.name}</p>
+                          <p className="text-xs text-gray-600">{selectedShipment.pickupLocation.address}</p>
+                        </div>
+                      </Popup>
+                    </Marker>
+                    
+                    <Marker
+                      position={[selectedShipment.deliveryLocation.latitude, selectedShipment.deliveryLocation.longitude]}
+                      icon={createCustomIcon('#EF4444')}
+                    >
+                      <Popup>
+                        <div>
+                          <h3 className="font-medium">Delivery Location</h3>
+                          <p className="text-sm">{selectedShipment.deliveryLocation.name}</p>
+                          <p className="text-xs text-gray-600">{selectedShipment.deliveryLocation.address}</p>
+                        </div>
+                      </Popup>
+                    </Marker>
+                    
+                    <Marker
+                      position={[selectedShipment.currentLocation.latitude, selectedShipment.currentLocation.longitude]}
+                      icon={createCustomIcon('#3B82F6')}
+                    >
+                      <Popup>
+                        <div>
+                          <h3 className="font-medium">Current Location</h3>
+                          <p className="text-sm">Driver: {selectedShipment.driver.name}</p>
+                          <p className="text-xs text-gray-600">
+                            Updated: {new Date(selectedShipment.currentLocation.timestamp).toLocaleString()}
+                          </p>
+                        </div>
+                      </Popup>
+                    </Marker>
+                  </>
+                )}
+              </MapContainer>
+            </div>
+          </div>
+
+          {/* Shipment Details */}
+          {selectedShipment && (
+            <div className="bg-white rounded-lg border border-gray-200 p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold text-gray-900">Shipment Details</h2>
+                {wsConnected && (
+                  <div className="flex items-center space-x-2 px-3 py-1 bg-green-100 text-green-700 rounded-full">
+                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                    <span className="text-sm font-medium">Live Tracking</span>
+                  </div>
+                )}
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <h3 className="font-medium text-gray-900 mb-3">Cargo Information</h3>
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-600">Cargo ID:</span>
+                      <span className="text-sm font-medium">{selectedShipment.cargoId}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-600">Title:</span>
+                      <span className="text-sm font-medium">{selectedShipment.cargoTitle}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-600">Status:</span>
+                      <span className={`text-sm font-medium px-2 py-1 rounded ${getStatusColor(selectedShipment.status)}`}>
+                        {getStatusText(selectedShipment.status)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-600">Progress:</span>
+                      <span className="text-sm font-medium">{selectedShipment.progress}%</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="font-medium text-gray-900 mb-3">Driver & Vehicle</h3>
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-600">Driver:</span>
+                      <span className="text-sm font-medium">{selectedShipment.driver.name}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-600">Phone:</span>
+                      <span className="text-sm font-medium">{selectedShipment.driver.phone}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-600">Vehicle:</span>
+                      <span className="text-sm font-medium">{selectedShipment.vehicle.plateNumber}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-600">Type:</span>
+                      <span className="text-sm font-medium">{selectedShipment.vehicle.type}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-6 pt-6 border-t border-gray-200">
+                <h3 className="font-medium text-gray-900 mb-3">Timeline</h3>
+                <div className="space-y-3">
+                  {selectedShipment.actualPickup && (
+                    <div className="flex items-center text-sm">
+                      <div className="w-3 h-3 bg-green-500 rounded-full mr-3"></div>
+                      <span className="text-gray-600">Picked up on {new Date(selectedShipment.actualPickup).toLocaleString()}</span>
+                    </div>
+                  )}
+                  <div className="flex items-center text-sm">
+                    <div className="w-3 h-3 bg-blue-500 rounded-full mr-3"></div>
+                    <span className="text-gray-600">Estimated delivery: {new Date(selectedShipment.estimatedDelivery).toLocaleString()}</span>
+                  </div>
+                  {selectedShipment.actualDelivery && (
+                    <div className="flex items-center text-sm">
+                      <div className="w-3 h-3 bg-green-500 rounded-full mr-3"></div>
+                      <span className="text-gray-600">Delivered on {new Date(selectedShipment.actualDelivery).toLocaleString()}</span>
+                    </div>
+                  )}
+                  
+                  {/* Real-time location updates */}
+                  {wsConnected && (
+                    <div className="flex items-center text-sm">
+                      <div className="w-3 h-3 bg-blue-500 rounded-full mr-3 animate-pulse"></div>
+                      <div className="flex-1">
+                        <span className="text-gray-600">
+                          Current location updated: {new Date(selectedShipment.currentLocation.timestamp).toLocaleString()}
+                        </span>
+                        {lastUpdate && (
+                          <div className="text-xs text-blue-600 mt-1">
+                            Last real-time update: {lastUpdate.toLocaleTimeString()}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="mt-6 pt-6 border-t border-gray-200">
+                <button className="flex items-center space-x-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700">
+                  <FaPhone className="w-4 h-4" />
+                  <span>Contact Driver</span>
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default Tracking; 

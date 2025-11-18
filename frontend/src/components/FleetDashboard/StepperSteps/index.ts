@@ -1,0 +1,12 @@
+export { default as BasicInformationStep } from './BasicInformationStep';
+export { SpecificationsStep } from './SpecificationsStep';
+export { CargoCapabilitiesStep } from './CargoCapabilitiesStep';
+export { LoadingEquipmentStep } from './LoadingEquipmentStep';
+export { SecurityMonitoringStep } from './SecurityMonitoringStep';
+export { CertificationsStep } from './CertificationsStep';
+export { RouteCapabilitiesStep } from './RouteCapabilitiesStep';
+export { CostStructureStep } from './CostStructureStep';
+export { default as EquipmentSafetyStep } from './EquipmentSafetyStep';
+export { default as TechnologyTrackingStep } from './TechnologyTrackingStep';
+export { default as DriverInformationStep } from './DriverInformationStep';
+export { default as ReviewSubmitStep } from './ReviewSubmitStep'; 

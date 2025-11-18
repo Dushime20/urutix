@@ -1,0 +1,33 @@
+import { Module } from '@nestjs/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { Bid } from '../../entities/bid.entity';
+import { Auction } from '../../entities/auction.entity';
+import { Load } from '../../entities/load.entity';
+import { User } from '../../entities/user.entity';
+import { Truck } from '../../entities/truck.entity';
+import { AuctionWatch } from '../../entities/auction-watch.entity';
+import { AuctionView } from '../../entities/auction-view.entity';
+import { BiddingService } from './bidding.service';
+import { BiddingController } from './bidding.controller';
+
+@Module({
+  imports: [
+    TypeOrmModule.forFeature([
+      Bid,
+      Auction,
+      Load,
+      User,
+      Truck,
+      AuctionWatch,
+      AuctionView,
+    ]),
+  ],
+  providers: [BiddingService],
+  controllers: [BiddingController],
+  exports: [BiddingService],
+})
+export class BiddingModule {
+  constructor() {
+    console.log('BiddingModule loaded successfully');
+  }
+}
