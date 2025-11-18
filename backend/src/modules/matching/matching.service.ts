@@ -693,7 +693,7 @@ export class MatchingService {
     }
 
     // Calculate utilization percentage for match reason (using kg for both)
-    const truckCapacityKg = Number(truck.capacityWeight) * 0.453592; // Convert lbs to kg
+    // truckCapacityKg is already declared above, reuse it
     const utilization = ((loadWeight / truckCapacityKg) * 100).toFixed(1);
     
     return {
