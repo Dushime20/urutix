@@ -25,24 +25,36 @@ export class OcrController {
   @Post('upload')
   @UseInterceptors(FileInterceptor('file'))
   async uploadAndExtract(@UploadedFile() file: Express.Multer.File) {
-    if (!file) {
-      throw new BadRequestException('No file uploaded');
-    }
+    try {
+      if (!file) {
+        throw new BadRequestException('No file uploaded');
+      }
 
-    // Check file type
-    const allowedTypes = [
-      'image/jpeg',
-      'image/png',
-      'image/gif',
-      'application/pdf',
-    ];
-    if (!allowedTypes.includes(file.mimetype)) {
+      // Check file type
+      const allowedTypes = [
+        'image/jpeg',
+        'image/jpg',
+        'image/png',
+        'image/gif',
+        'application/pdf',
+      ];
+      if (!allowedTypes.includes(file.mimetype)) {
+        throw new BadRequestException(
+          `Invalid file type: ${file.mimetype}. Only images and PDFs are allowed.`,
+        );
+      }
+
+      const result = await this.ocrService.extractFromFile(file);
+      return result;
+    } catch (error) {
+      console.error('OCR upload error:', error);
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
       throw new BadRequestException(
-        'Invalid file type. Only images and PDFs are allowed.',
+        `Failed to process file: ${error.message || 'Unknown error'}`,
       );
     }
-
-    return this.ocrService.extractFromFile(file);
   }
 
   @UseGuards(JwtAuthGuard)

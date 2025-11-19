@@ -636,10 +636,18 @@ export const fleetApi = {
   // Schedule maintenance
   async scheduleMaintenance(truckId: string, maintenanceData: {
     type: string;
+    title: string;
     description: string;
-    scheduledDate: string;
-    estimatedCost: number;
-    priority: 'low' | 'medium' | 'high';
+    date: string;
+    cost: number;
+    nextDueDate?: string;
+    status?: string;
+    priority?: string;
+    assignedTechnician?: string;
+    location?: string;
+    mileage?: number;
+    laborHours?: number;
+    notes?: string;
   }): Promise<any> {
     try {
       console.log('🔧 Scheduling maintenance for truck:', truckId);
@@ -660,6 +668,390 @@ export const fleetApi = {
     } catch (error) {
       console.error('❌ Error fetching maintenance history:', error);
       return [];
+    }
+  },
+
+  // Update maintenance record
+  async updateMaintenance(
+    truckId: string,
+    maintenanceId: string,
+    maintenanceData: {
+      type: string;
+      title: string;
+      description: string;
+      date: string;
+      cost: number;
+      nextDueDate?: string;
+      status?: string;
+      priority?: string;
+      assignedTechnician?: string;
+      location?: string;
+      mileage?: number;
+      laborHours?: number;
+      notes?: string;
+    },
+  ): Promise<any> {
+    try {
+      console.log('🔧 Updating maintenance record:', maintenanceId);
+      const response = await api.put(
+        `/fleet/trucks/${truckId}/maintenance/${maintenanceId}`,
+        maintenanceData,
+      );
+      console.log('✅ Maintenance updated successfully:', response.data);
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ Error updating maintenance:', error);
+      throw error;
+    }
+  },
+
+  // Schedule inspection
+  async scheduleInspection(truckId: string, inspectionData: {
+    type: string;
+    title: string;
+    inspector: string;
+    inspectionDate: string;
+    nextInspectionDate: string;
+    status: string;
+    score?: number;
+    cost?: number;
+    location?: string;
+    mileage?: number;
+    notes?: string;
+    isRequired?: boolean;
+  }): Promise<any> {
+    try {
+      console.log('🔍 Scheduling inspection for truck:', truckId);
+      const response = await api.post(`/fleet/trucks/${truckId}/inspections`, inspectionData);
+      console.log('✅ Inspection scheduled successfully:', response.data);
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ Error scheduling inspection:', error);
+      throw error;
+    }
+  },
+
+  // Get inspection history
+  async getInspectionHistory(truckId: string): Promise<any[]> {
+    try {
+      const response = await api.get(`/fleet/trucks/${truckId}/inspections`);
+      return response.data.inspections || [];
+    } catch (error) {
+      console.error('❌ Error fetching inspection history:', error);
+      return [];
+    }
+  },
+
+  // Update inspection record
+  async updateInspection(
+    truckId: string,
+    inspectionId: string,
+    inspectionData: {
+      type: string;
+      title: string;
+      inspector: string;
+      inspectionDate: string;
+      nextInspectionDate: string;
+      status: string;
+      score?: number;
+      cost?: number;
+      location?: string;
+      mileage?: number;
+      notes?: string;
+      isRequired?: boolean;
+    },
+  ): Promise<any> {
+    try {
+      console.log('🔍 Updating inspection record:', inspectionId);
+      const response = await api.put(
+        `/fleet/trucks/${truckId}/inspections/${inspectionId}`,
+        inspectionData,
+      );
+      console.log('✅ Inspection updated successfully:', response.data);
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ Error updating inspection:', error);
+      throw error;
+    }
+  },
+
+  // Schedule insurance
+  async scheduleInsurance(truckId: string, insuranceData: {
+    policyNumber: string;
+    insuranceCompany: string;
+    policyType: string;
+    coverageAmount: number;
+    startDate: string;
+    endDate: string;
+    status: string;
+    deductible?: number;
+    premium?: number;
+    agent?: string;
+    agentContact?: string;
+    autoRenewal?: boolean;
+    notes?: string;
+    documentUrl?: string;
+    documents?: string[];
+  }): Promise<any> {
+    try {
+      console.log('🛡️ Scheduling insurance for truck:', truckId);
+      const response = await api.post(`/fleet/trucks/${truckId}/insurance`, insuranceData);
+      console.log('✅ Insurance scheduled successfully:', response.data);
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ Error scheduling insurance:', error);
+      throw error;
+    }
+  },
+
+  // Get insurance history
+  async getInsuranceHistory(truckId: string): Promise<any[]> {
+    try {
+      const response = await api.get(`/fleet/trucks/${truckId}/insurance`);
+      return response.data.insurance || [];
+    } catch (error) {
+      console.error('❌ Error fetching insurance history:', error);
+      return [];
+    }
+  },
+
+  // Update insurance record
+  async updateInsurance(
+    truckId: string,
+    insuranceId: string,
+    insuranceData: {
+      policyNumber: string;
+      insuranceCompany: string;
+      policyType: string;
+      coverageAmount: number;
+      startDate: string;
+      endDate: string;
+      status: string;
+      deductible?: number;
+      premium?: number;
+      agent?: string;
+      agentContact?: string;
+      autoRenewal?: boolean;
+      notes?: string;
+      documentUrl?: string;
+      documents?: string[];
+    },
+  ): Promise<any> {
+    try {
+      console.log('🛡️ Updating insurance record:', insuranceId);
+      const response = await api.put(
+        `/fleet/trucks/${truckId}/insurance/${insuranceId}`,
+        insuranceData,
+      );
+      console.log('✅ Insurance updated successfully:', response.data);
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ Error updating insurance:', error);
+      throw error;
+    }
+  },
+
+  // Add fuel record
+  async addFuelRecord(truckId: string, fuelData: {
+    date: string;
+    fuelType: string;
+    quantity: number;
+    cost: number;
+    mileage: number;
+    location: string;
+    fuelEfficiency?: number;
+    driver?: string;
+    receipt?: string;
+    notes?: string;
+  }): Promise<any> {
+    try {
+      console.log('⛽ Adding fuel record for truck:', truckId);
+      const response = await api.post(`/fleet/trucks/${truckId}/fuel`, fuelData);
+      console.log('✅ Fuel record added successfully:', response.data);
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ Error adding fuel record:', error);
+      throw error;
+    }
+  },
+
+  // Get fuel history
+  async getFuelHistory(truckId: string): Promise<any[]> {
+    try {
+      const response = await api.get(`/fleet/trucks/${truckId}/fuel`);
+      return response.data.fuel || [];
+    } catch (error) {
+      console.error('❌ Error fetching fuel history:', error);
+      return [];
+    }
+  },
+
+  // Update fuel record
+  async updateFuelRecord(
+    truckId: string,
+    fuelId: string,
+    fuelData: {
+      date: string;
+      fuelType: string;
+      quantity: number;
+      cost: number;
+      mileage: number;
+      location: string;
+      fuelEfficiency?: number;
+      driver?: string;
+      receipt?: string;
+      notes?: string;
+    },
+  ): Promise<any> {
+    try {
+      console.log('⛽ Updating fuel record:', fuelId);
+      const response = await api.put(
+        `/fleet/trucks/${truckId}/fuel/${fuelId}`,
+        fuelData,
+      );
+      console.log('✅ Fuel record updated successfully:', response.data);
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ Error updating fuel record:', error);
+      throw error;
+    }
+  },
+
+  // Add tire record
+  async addTireRecord(truckId: string, tireData: {
+    position: string;
+    brand: string;
+    model: string;
+    size: string;
+    serialNumber?: string;
+    installationDate: string;
+    expectedLifespan: number;
+    currentMileage: number;
+    treadDepth: number;
+    pressure: number;
+    status: string;
+    replacementDate?: string;
+    cost?: number;
+    notes?: string;
+  }): Promise<any> {
+    try {
+      console.log('🛞 Adding tire record for truck:', truckId);
+      const response = await api.post(`/fleet/trucks/${truckId}/tires`, tireData);
+      console.log('✅ Tire record added successfully:', response.data);
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ Error adding tire record:', error);
+      throw error;
+    }
+  },
+
+  // Get tire history
+  async getTireHistory(truckId: string): Promise<any[]> {
+    try {
+      const response = await api.get(`/fleet/trucks/${truckId}/tires`);
+      return response.data.tires || [];
+    } catch (error) {
+      console.error('❌ Error fetching tire history:', error);
+      return [];
+    }
+  },
+
+  // Update tire record
+  async updateTireRecord(
+    truckId: string,
+    tireId: string,
+    tireData: {
+      position: string;
+      brand: string;
+      model: string;
+      size: string;
+      serialNumber?: string;
+      installationDate: string;
+      expectedLifespan: number;
+      currentMileage: number;
+      treadDepth: number;
+      pressure: number;
+      status: string;
+      replacementDate?: string;
+      cost?: number;
+      notes?: string;
+    },
+  ): Promise<any> {
+    try {
+      console.log('🛞 Updating tire record:', tireId);
+      const response = await api.put(
+        `/fleet/trucks/${truckId}/tires/${tireId}`,
+        tireData,
+      );
+      console.log('✅ Tire record updated successfully:', response.data);
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ Error updating tire record:', error);
+      throw error;
+    }
+  },
+
+  // Add compliance record
+  async addComplianceRecord(truckId: string, complianceData: {
+    regulation: string;
+    requirement: string;
+    dueDate: string;
+    status: string;
+    lastChecked: string;
+    nextCheck: string;
+    responsibleParty: string;
+    documentation?: string[];
+    notes?: string;
+  }): Promise<any> {
+    try {
+      console.log('📋 Adding compliance record for truck:', truckId);
+      const response = await api.post(`/fleet/trucks/${truckId}/compliance`, complianceData);
+      console.log('✅ Compliance record added successfully:', response.data);
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ Error adding compliance record:', error);
+      throw error;
+    }
+  },
+
+  // Get compliance history
+  async getComplianceHistory(truckId: string): Promise<any[]> {
+    try {
+      const response = await api.get(`/fleet/trucks/${truckId}/compliance`);
+      return response.data.compliance || [];
+    } catch (error) {
+      console.error('❌ Error fetching compliance history:', error);
+      return [];
+    }
+  },
+
+  // Update compliance record
+  async updateComplianceRecord(
+    truckId: string,
+    complianceId: string,
+    complianceData: {
+      regulation: string;
+      requirement: string;
+      dueDate: string;
+      status: string;
+      lastChecked: string;
+      nextCheck: string;
+      responsibleParty: string;
+      documentation?: string[];
+      notes?: string;
+    },
+  ): Promise<any> {
+    try {
+      console.log('📋 Updating compliance record:', complianceId);
+      const response = await api.put(
+        `/fleet/trucks/${truckId}/compliance/${complianceId}`,
+        complianceData,
+      );
+      console.log('✅ Compliance record updated successfully:', response.data);
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ Error updating compliance record:', error);
+      throw error;
     }
   },
 

@@ -52,16 +52,32 @@ export class OcrService {
   async extractFromFile(
     file: Express.Multer.File,
   ): Promise<{ text: string; confidence: number }> {
-    const tempPath = path.join(process.cwd(), 'temp', file.filename);
-
     try {
+      // Handle both memory and disk storage
+      let fileBuffer: Buffer;
+      if (file.buffer) {
+        // File is in memory
+        fileBuffer = file.buffer;
+      } else if (file.path) {
+        // File is on disk (from Multer disk storage)
+        fileBuffer = fs.readFileSync(file.path);
+      } else {
+        throw new Error('File buffer or path is missing');
+      }
+
       if (file.mimetype === 'application/pdf') {
-        const data = await pdfParse(file.buffer);
-        if (data.text && data.text.trim().length > 0) {
-          return { text: data.text, confidence: 0.9 };
-        } else {
-          // Fallback: render PDF as images and OCR
-          const loadingTask = pdfjsLib.getDocument({ data: file.buffer });
+        try {
+          const data = await pdfParse(fileBuffer);
+          if (data.text && data.text.trim().length > 0) {
+            return { text: data.text, confidence: 0.9 };
+          }
+        } catch (pdfError) {
+          console.warn('PDF text extraction failed, falling back to OCR:', pdfError);
+        }
+
+        // Fallback: render PDF as images and OCR
+        try {
+          const loadingTask = pdfjsLib.getDocument({ data: fileBuffer });
           const pdf = await loadingTask.promise;
           let fullText = '';
           let totalConfidence = 0;
@@ -83,21 +99,36 @@ export class OcrService {
             pageCount++;
           }
           await worker.terminate();
-          return { text: fullText, confidence: totalConfidence / pageCount };
+          return { text: fullText, confidence: totalConfidence / pageCount || 0.5 };
+        } catch (ocrError) {
+          console.error('PDF OCR failed:', ocrError);
+          throw new Error('Failed to extract text from PDF');
         }
       } else {
         // For images, use Tesseract
-        const worker = await createWorker('eng');
-        const {
-          data: { text, confidence },
-        } = await worker.recognize(file.buffer);
-        await worker.terminate();
-        return { text, confidence };
+        try {
+          const worker = await createWorker('eng');
+          const {
+            data: { text, confidence },
+          } = await worker.recognize(fileBuffer);
+          await worker.terminate();
+          return { text, confidence: confidence || 0.5 };
+        } catch (ocrError) {
+          console.error('Image OCR failed:', ocrError);
+          throw new Error('Failed to extract text from image');
+        }
       }
+    } catch (error) {
+      console.error('OCR extraction error:', error);
+      throw error;
     } finally {
-      // Clean up temp file
-      if (fs.existsSync(tempPath)) {
-        fs.unlinkSync(tempPath);
+      // Clean up temp file if it exists
+      if (file.path && fs.existsSync(file.path)) {
+        try {
+          fs.unlinkSync(file.path);
+        } catch (cleanupError) {
+          console.warn('Failed to clean up temp file:', cleanupError);
+        }
       }
     }
   }

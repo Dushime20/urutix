@@ -70,35 +70,51 @@ export class CreateTruckDto {
   @Min(0.1)
   maxHeight?: number;
 
+  @IsOptional()
   @IsString()
   @MaxLength(50)
-  registrationNumber: string;
+  registrationNumber?: string;
 
+  @IsOptional()
   @IsDateString()
-  registrationExpiry: Date;
+  registrationExpiry?: Date;
 
+  @IsOptional()
   @IsString()
   @MaxLength(50)
-  insurancePolicy: string;
+  insurancePolicy?: string;
 
+  @IsOptional()
   @IsDateString()
-  insuranceExpiry: Date;
+  insuranceExpiry?: Date;
 
   @IsOptional()
   @IsDateString()
   roadworthyCertExpiry?: Date;
 
-  @IsBoolean()
-  hasRefrigeration: boolean;
+  @IsOptional()
+  @IsEnum(VehicleStatus)
+  status?: VehicleStatus;
 
+  @IsOptional()
   @IsBoolean()
-  hasLiftGate: boolean;
+  hasRefrigeration?: boolean;
 
+  @IsOptional()
   @IsBoolean()
-  hasGps: boolean;
+  hasLiftGate?: boolean;
 
+  @IsOptional()
   @IsBoolean()
-  hasHazmatPermit: boolean;
+  hasGps?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  hasHazmatPermit?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  isActive?: boolean;
 
   @IsOptional()
   @IsArray()
@@ -117,6 +133,11 @@ export class CreateTruckDto {
   @IsNumber()
   @Min(0)
   mileage?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  fuelEfficiency?: number;
 
   // Cargo-specific specifications
   @IsOptional()

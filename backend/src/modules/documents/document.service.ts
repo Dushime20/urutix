@@ -22,49 +22,66 @@ export class DocumentService {
    * Create a new document
    */
   async createDocument(createDocumentDto: CreateDocumentDto, uploadedBy: string, tenantId: string): Promise<Document> {
-    // Validate entity exists
-    await this.validateEntityExists(createDocumentDto.entityType, createDocumentDto.entityId);
+    try {
+      // Validate entity exists
+      await this.validateEntityExists(createDocumentDto.entityType, createDocumentDto.entityId);
 
-    // Upload file if provided
-    let fileUrl = createDocumentDto.fileUrl;
-    if (createDocumentDto.file) {
-      const uploadResult = await this.fileUploadService.uploadFile(createDocumentDto.file, 'documents');
-      fileUrl = uploadResult.fileUrl;
-    }
+      // Upload file if provided
+      let fileUrl = createDocumentDto.fileUrl;
+      let thumbnailUrl = '';
+      if (createDocumentDto.file) {
+        const uploadResult = await this.fileUploadService.uploadFile(createDocumentDto.file, 'documents');
+        fileUrl = uploadResult.fileUrl;
+        thumbnailUrl = uploadResult.thumbnailUrl || fileUrl; // Use thumbnail if available, otherwise use fileUrl
+      } else if (fileUrl) {
+        // If fileUrl is provided but no file, use fileUrl as thumbnail for images
+        thumbnailUrl = fileUrl;
+      }
 
-    // Create document
-    const document = this.documentRepository.create({
-      ...createDocumentDto,
-      fileUrl,
-      uploadedBy,
-      tenantId,
-      status: DocumentStatus.PENDING,
-      currentVersion: 1,
-      versions: [{
-        version: 1,
-        fileUrl,
-        fileName: createDocumentDto.fileName,
-        fileSize: createDocumentDto.fileSize,
-        uploadedAt: new Date(),
+      // Ensure required fields have values
+      if (!fileUrl && !createDocumentDto.file) {
+        throw new BadRequestException('Either a file or fileUrl must be provided');
+      }
+
+      // Create document
+      const document = this.documentRepository.create({
+        ...createDocumentDto,
+        description: createDocumentDto.description || '',
+        fileUrl: fileUrl || '',
+        thumbnailUrl: thumbnailUrl || fileUrl || '', // Ensure thumbnailUrl is never null
         uploadedBy,
-        changeNotes: 'Initial upload'
-      }],
-      auditTrail: [{
-        action: 'CREATED',
-        performedBy: uploadedBy,
-        performedAt: new Date(),
-        details: { method: 'upload' }
-      }]
-    });
+        tenantId,
+        status: DocumentStatus.PENDING,
+        currentVersion: 1,
+        versions: [{
+          version: 1,
+          fileUrl: fileUrl || '',
+          fileName: createDocumentDto.fileName,
+          fileSize: createDocumentDto.fileSize || 0,
+          uploadedAt: new Date(),
+          uploadedBy,
+          changeNotes: 'Initial upload'
+        }],
+        auditTrail: [{
+          action: 'CREATED',
+          performedBy: uploadedBy,
+          performedAt: new Date(),
+          details: { method: 'upload' }
+        }]
+      });
 
-    const savedDocument = await this.documentRepository.save(document);
+      const savedDocument = await this.documentRepository.save(document);
 
-    // Send notification if required
-    if (createDocumentDto.sendNotification) {
-      await this.notifyDocumentUpload(savedDocument);
+      // Send notification if required
+      if (createDocumentDto.sendNotification) {
+        await this.notifyDocumentUpload(savedDocument);
+      }
+
+      return savedDocument;
+    } catch (error) {
+      console.error('Error in createDocument service:', error);
+      throw error;
     }
-
-    return savedDocument;
   }
 
   /**

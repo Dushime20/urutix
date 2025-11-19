@@ -701,6 +701,21 @@ export class Truck {
   maintenanceAlerts: any[];
 
   @Column('jsonb', { default: [] })
+  inspectionAlerts: any[];
+
+  @Column('jsonb', { default: [] })
+  insuranceAlerts: any[];
+
+  @Column('jsonb', { default: [] })
+  fuelAlerts: any[];
+
+  @Column('jsonb', { default: [] })
+  tireAlerts: any[];
+
+  @Column('jsonb', { default: [] })
+  complianceAlerts: any[];
+
+  @Column('jsonb', { default: [] })
   assignedDrivers: any[];
 
   @Column('jsonb', { default: [] })

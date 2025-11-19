@@ -4,10 +4,19 @@ import { setupSwagger } from './config/swagger.config';
 import { Request, NextFunction } from 'express';
 import * as morgan from 'morgan';
 import { v4 } from 'uuid';
+import { NestExpressApplication } from '@nestjs/platform-express';
+import { join } from 'path';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
   const port = process.env.PORT || 3000;
+
+  // Serve static files from uploads directory (must be before global prefix)
+  const uploadsPath = join(process.cwd(), 'uploads');
+  app.useStaticAssets(uploadsPath, {
+    prefix: '/uploads/',
+  });
+  console.log(`📁 Serving static files from: ${uploadsPath}`);
 
   // Configure CORS origins.
   // In development you can set ALLOWED_ORIGINS="http://localhost:5173,http://localhost:5713"

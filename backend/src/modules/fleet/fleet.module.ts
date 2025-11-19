@@ -1,15 +1,22 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ScheduleModule } from '@nestjs/schedule';
 import { Truck } from '../../entities/truck.entity';
 import { Driver } from '../../entities/driver.entity';
 import { Route } from '../../entities/route.entity';
 import { RouteTruck } from '../../entities/route-truck.entity';
 import { FleetService } from './fleet.service';
 import { FleetController } from './fleet.controller';
+import { FleetNotificationService } from './fleet-notification.service';
+import { NotificationModule } from '../notifications/notification.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Truck, Driver, Route, RouteTruck])],
-  providers: [FleetService],
+  imports: [
+    TypeOrmModule.forFeature([Truck, Driver, Route, RouteTruck]),
+    ScheduleModule.forRoot(),
+    NotificationModule,
+  ],
+  providers: [FleetService, FleetNotificationService],
   controllers: [FleetController],
   exports: [FleetService],
 })

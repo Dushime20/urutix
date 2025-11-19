@@ -423,6 +423,12 @@ export class DocumentApiService {
     return response.data;
   }
 
+  // Get document file URL for viewing (uses API endpoint)
+  getDocumentViewUrl(documentId: string): string {
+    const baseUrl = api.defaults.baseURL || 'http://localhost:3000/api';
+    return `${baseUrl}/documents/serve/${documentId}`;
+  }
+
   // Get document preview URL
   getDocumentPreviewUrl(document: Document): string {
     // For images, return the file URL directly

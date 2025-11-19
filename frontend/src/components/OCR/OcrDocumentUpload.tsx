@@ -8,7 +8,7 @@ import type { OcrExtractionResult } from '../../services/ocrApi';
 
 interface OcrDocumentUploadProps {
   documentType?: string;
-  onExtractionComplete?: (result: OcrExtractionResult) => void;
+  onExtractionComplete?: (result: OcrExtractionResult & { file?: File }) => void;
   onClose?: () => void;
 }
 
@@ -76,7 +76,7 @@ export const OcrDocumentUpload: React.FC<OcrDocumentUploadProps> = ({
       setResult(extractionResult);
       
       if (onExtractionComplete) {
-        onExtractionComplete(extractionResult);
+        onExtractionComplete({ ...extractionResult, file });
       }
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to process document');
@@ -96,7 +96,7 @@ export const OcrDocumentUpload: React.FC<OcrDocumentUploadProps> = ({
       setResult(extractionResult);
       
       if (onExtractionComplete) {
-        onExtractionComplete(extractionResult);
+        onExtractionComplete({ ...extractionResult, file });
       }
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to extract document data');

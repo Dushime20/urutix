@@ -27,7 +27,8 @@ export class CreateDocumentDto {
   title: string;
 
   @IsString()
-  description: string;
+  @IsOptional()
+  description?: string;
 
   @IsString()
   fileName: string;

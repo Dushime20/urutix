@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Post,
+  Put,
   Body,
   Patch,
   Param,
@@ -619,6 +620,902 @@ export class FleetController {
     return {
       message: 'Maintenance record added successfully',
       maintenance,
+    };
+  }
+
+  @Put('trucks/:id/maintenance/:maintenanceId')
+  @ApiOperation({
+    summary: 'Update truck maintenance record',
+    description: 'Updates an existing maintenance record for a truck',
+  })
+  @ApiParam({ name: 'id', description: 'Truck ID (UUID)' })
+  @ApiParam({ name: 'maintenanceId', description: 'Maintenance record ID' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        type: {
+          type: 'string',
+          description: 'Maintenance type (preventive, corrective, etc.)',
+        },
+        title: { type: 'string', description: 'Maintenance title' },
+        description: { type: 'string', description: 'Maintenance description' },
+        date: {
+          type: 'string',
+          format: 'date',
+          description: 'Maintenance date',
+        },
+        cost: { type: 'number', description: 'Maintenance cost' },
+        nextDueDate: {
+          type: 'string',
+          format: 'date',
+          description: 'Next due date',
+        },
+        status: { type: 'string', description: 'Maintenance status' },
+        priority: { type: 'string', description: 'Priority level' },
+        assignedTechnician: { type: 'string', description: 'Assigned technician' },
+        location: { type: 'string', description: 'Maintenance location/garage' },
+        mileage: { type: 'number', description: 'Vehicle mileage' },
+        laborHours: { type: 'number', description: 'Labor hours' },
+        notes: { type: 'string', description: 'Additional notes' },
+      },
+    },
+    description: 'Maintenance record update data',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Maintenance record updated successfully',
+  })
+  @ApiResponse({ status: 404, description: 'Truck or maintenance record not found' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async updateTruckMaintenance(
+    @Param('id', ParseUUIDPipe) truckId: string,
+    @Param('maintenanceId') maintenanceId: string,
+    @Body() maintenanceDto: any,
+    @Request() req,
+  ) {
+    const maintenance = await this.fleetService.updateTruckMaintenance(
+      truckId,
+      maintenanceId,
+      maintenanceDto,
+      req.user.tenantId,
+      req.user.userId,
+    );
+
+    return {
+      message: 'Maintenance record updated successfully',
+      maintenance,
+    };
+  }
+
+  @Get('trucks/:id/inspections')
+  @ApiOperation({
+    summary: 'Get truck inspection records',
+    description: 'Retrieves all inspection records for a specific truck',
+  })
+  @ApiParam({ name: 'id', description: 'Truck ID (UUID)' })
+  @ApiResponse({
+    status: 200,
+    description: 'Truck inspection records retrieved successfully',
+  })
+  @ApiResponse({ status: 404, description: 'Truck not found' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async getTruckInspections(
+    @Param('id', ParseUUIDPipe) truckId: string,
+    @Request() req,
+  ) {
+    const inspections = await this.fleetService.getTruckInspections(
+      truckId,
+      req.user.tenantId,
+    );
+
+    return {
+      message: 'Truck inspection records retrieved successfully',
+      inspections,
+    };
+  }
+
+  @Post('trucks/:id/inspections')
+  @ApiOperation({
+    summary: 'Add truck inspection record',
+    description: 'Adds a new inspection record to a truck',
+  })
+  @ApiParam({ name: 'id', description: 'Truck ID (UUID)' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        type: {
+          type: 'string',
+          description: 'Inspection type (annual, safety, etc.)',
+        },
+        title: { type: 'string', description: 'Inspection title' },
+        inspector: { type: 'string', description: 'Inspector name' },
+        inspectionDate: {
+          type: 'string',
+          format: 'date',
+          description: 'Inspection date',
+        },
+        nextInspectionDate: {
+          type: 'string',
+          format: 'date',
+          description: 'Next inspection date',
+        },
+        status: { type: 'string', description: 'Inspection status' },
+        score: { type: 'number', description: 'Inspection score (0-100)' },
+        cost: { type: 'number', description: 'Inspection cost' },
+        location: { type: 'string', description: 'Inspection location' },
+        mileage: { type: 'number', description: 'Vehicle mileage' },
+        notes: { type: 'string', description: 'Additional notes' },
+        isRequired: { type: 'boolean', description: 'Is inspection required' },
+      },
+      required: ['type', 'title', 'inspector', 'inspectionDate', 'nextInspectionDate', 'status'],
+    },
+    description: 'Inspection record data',
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Inspection record added successfully',
+  })
+  @ApiResponse({ status: 404, description: 'Truck not found' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async addTruckInspection(
+    @Param('id', ParseUUIDPipe) truckId: string,
+    @Body() inspectionDto: any,
+    @Request() req,
+  ) {
+    try {
+      console.log('🔍 Adding inspection for truck:', truckId);
+      console.log('🔍 Inspection data:', inspectionDto);
+      
+      const inspection = await this.fleetService.addTruckInspection(
+        truckId,
+        inspectionDto,
+        req.user.tenantId,
+        req.user.userId,
+      );
+
+      return {
+        message: 'Inspection record added successfully',
+        inspection,
+      };
+    } catch (error) {
+      console.error('❌ Error in addTruckInspection controller:', error);
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new InternalServerErrorException({
+        message: 'Failed to add inspection record',
+        error: error.message || 'An unexpected error occurred',
+      });
+    }
+  }
+
+  @Put('trucks/:id/inspections/:inspectionId')
+  @ApiOperation({
+    summary: 'Update truck inspection record',
+    description: 'Updates an existing inspection record for a truck',
+  })
+  @ApiParam({ name: 'id', description: 'Truck ID (UUID)' })
+  @ApiParam({ name: 'inspectionId', description: 'Inspection record ID' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        type: {
+          type: 'string',
+          description: 'Inspection type (annual, safety, etc.)',
+        },
+        title: { type: 'string', description: 'Inspection title' },
+        inspector: { type: 'string', description: 'Inspector name' },
+        inspectionDate: {
+          type: 'string',
+          format: 'date',
+          description: 'Inspection date',
+        },
+        nextInspectionDate: {
+          type: 'string',
+          format: 'date',
+          description: 'Next inspection date',
+        },
+        status: { type: 'string', description: 'Inspection status' },
+        score: { type: 'number', description: 'Inspection score (0-100)' },
+        cost: { type: 'number', description: 'Inspection cost' },
+        location: { type: 'string', description: 'Inspection location' },
+        mileage: { type: 'number', description: 'Vehicle mileage' },
+        notes: { type: 'string', description: 'Additional notes' },
+        isRequired: { type: 'boolean', description: 'Is inspection required' },
+      },
+    },
+    description: 'Inspection record update data',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Inspection record updated successfully',
+  })
+  @ApiResponse({ status: 404, description: 'Truck or inspection record not found' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async updateTruckInspection(
+    @Param('id', ParseUUIDPipe) truckId: string,
+    @Param('inspectionId') inspectionId: string,
+    @Body() inspectionDto: any,
+    @Request() req,
+  ) {
+    const inspection = await this.fleetService.updateTruckInspection(
+      truckId,
+      inspectionId,
+      inspectionDto,
+      req.user.tenantId,
+      req.user.userId,
+    );
+
+    return {
+      message: 'Inspection record updated successfully',
+      inspection,
+    };
+  }
+
+  @Get('trucks/:id/insurance')
+  @ApiOperation({
+    summary: 'Get truck insurance records',
+    description: 'Retrieves all insurance records for a specific truck',
+  })
+  @ApiParam({ name: 'id', description: 'Truck ID (UUID)' })
+  @ApiResponse({
+    status: 200,
+    description: 'Truck insurance records retrieved successfully',
+  })
+  @ApiResponse({ status: 404, description: 'Truck not found' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async getTruckInsurance(
+    @Param('id', ParseUUIDPipe) truckId: string,
+    @Request() req,
+  ) {
+    const insurance = await this.fleetService.getTruckInsurance(
+      truckId,
+      req.user.tenantId,
+    );
+
+    return {
+      message: 'Truck insurance records retrieved successfully',
+      insurance,
+    };
+  }
+
+  @Post('trucks/:id/insurance')
+  @ApiOperation({
+    summary: 'Add truck insurance record',
+    description: 'Adds a new insurance record to a truck',
+  })
+  @ApiParam({ name: 'id', description: 'Truck ID (UUID)' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        policyNumber: { type: 'string', description: 'Policy number' },
+        insuranceCompany: { type: 'string', description: 'Insurance company name' },
+        policyType: { type: 'string', description: 'Policy type (liability, comprehensive, etc.)' },
+        coverageAmount: { type: 'number', description: 'Coverage amount' },
+        deductible: { type: 'number', description: 'Deductible amount' },
+        premium: { type: 'number', description: 'Premium amount' },
+        startDate: { type: 'string', format: 'date', description: 'Policy start date' },
+        endDate: { type: 'string', format: 'date', description: 'Policy end date' },
+        status: { type: 'string', description: 'Insurance status' },
+        agent: { type: 'string', description: 'Insurance agent name' },
+        agentContact: { type: 'string', description: 'Agent contact information' },
+        autoRenewal: { type: 'boolean', description: 'Auto renewal enabled' },
+        notes: { type: 'string', description: 'Additional notes' },
+        documentUrl: { type: 'string', description: 'Insurance document URL' },
+      },
+      required: ['policyNumber', 'insuranceCompany', 'policyType', 'coverageAmount', 'startDate', 'endDate', 'status'],
+    },
+    description: 'Insurance record data',
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Insurance record added successfully',
+  })
+  @ApiResponse({ status: 404, description: 'Truck not found' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async addTruckInsurance(
+    @Param('id', ParseUUIDPipe) truckId: string,
+    @Body() insuranceDto: any,
+    @Request() req,
+  ) {
+    try {
+      console.log('🛡️ Adding insurance for truck:', truckId);
+      console.log('🛡️ Insurance data:', insuranceDto);
+      
+      const insurance = await this.fleetService.addTruckInsurance(
+        truckId,
+        insuranceDto,
+        req.user.tenantId,
+        req.user.userId,
+      );
+
+      return {
+        message: 'Insurance record added successfully',
+        insurance,
+      };
+    } catch (error) {
+      console.error('❌ Error in addTruckInsurance controller:', error);
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new InternalServerErrorException({
+        message: 'Failed to add insurance record',
+        error: error.message || 'An unexpected error occurred',
+      });
+    }
+  }
+
+  @Put('trucks/:id/insurance/:insuranceId')
+  @ApiOperation({
+    summary: 'Update truck insurance record',
+    description: 'Updates an existing insurance record for a truck',
+  })
+  @ApiParam({ name: 'id', description: 'Truck ID (UUID)' })
+  @ApiParam({ name: 'insuranceId', description: 'Insurance record ID' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        policyNumber: { type: 'string', description: 'Policy number' },
+        insuranceCompany: { type: 'string', description: 'Insurance company name' },
+        policyType: { type: 'string', description: 'Policy type' },
+        coverageAmount: { type: 'number', description: 'Coverage amount' },
+        deductible: { type: 'number', description: 'Deductible amount' },
+        premium: { type: 'number', description: 'Premium amount' },
+        startDate: { type: 'string', format: 'date', description: 'Policy start date' },
+        endDate: { type: 'string', format: 'date', description: 'Policy end date' },
+        status: { type: 'string', description: 'Insurance status' },
+        agent: { type: 'string', description: 'Insurance agent name' },
+        agentContact: { type: 'string', description: 'Agent contact information' },
+        autoRenewal: { type: 'boolean', description: 'Auto renewal enabled' },
+        notes: { type: 'string', description: 'Additional notes' },
+        documentUrl: { type: 'string', description: 'Insurance document URL' },
+      },
+    },
+    description: 'Insurance record update data',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Insurance record updated successfully',
+  })
+  @ApiResponse({ status: 404, description: 'Truck or insurance record not found' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async updateTruckInsurance(
+    @Param('id', ParseUUIDPipe) truckId: string,
+    @Param('insuranceId') insuranceId: string,
+    @Body() insuranceDto: any,
+    @Request() req,
+  ) {
+    const insurance = await this.fleetService.updateTruckInsurance(
+      truckId,
+      insuranceId,
+      insuranceDto,
+      req.user.tenantId,
+      req.user.userId,
+    );
+
+    return {
+      message: 'Insurance record updated successfully',
+      insurance,
+    };
+  }
+
+  @Get('trucks/:id/fuel')
+  @ApiOperation({
+    summary: 'Get truck fuel records',
+    description: 'Retrieves all fuel records for a specific truck',
+  })
+  @ApiParam({ name: 'id', description: 'Truck ID (UUID)' })
+  @ApiResponse({
+    status: 200,
+    description: 'Truck fuel records retrieved successfully',
+  })
+  @ApiResponse({ status: 404, description: 'Truck not found' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async getTruckFuel(
+    @Param('id', ParseUUIDPipe) truckId: string,
+    @Request() req,
+  ) {
+    const fuel = await this.fleetService.getTruckFuel(
+      truckId,
+      req.user.tenantId,
+    );
+
+    return {
+      message: 'Truck fuel records retrieved successfully',
+      fuel,
+    };
+  }
+
+  @Post('trucks/:id/fuel')
+  @ApiOperation({
+    summary: 'Add truck fuel record',
+    description: 'Adds a new fuel record to a truck',
+  })
+  @ApiParam({ name: 'id', description: 'Truck ID (UUID)' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        date: {
+          type: 'string',
+          format: 'date',
+          description: 'Fuel purchase date',
+        },
+        fuelType: {
+          type: 'string',
+          description: 'Fuel type (diesel, gasoline, electric, hybrid)',
+        },
+        quantity: { type: 'number', description: 'Fuel quantity (gallons/liters)' },
+        cost: { type: 'number', description: 'Total fuel cost' },
+        mileage: { type: 'number', description: 'Vehicle mileage at time of purchase' },
+        location: { type: 'string', description: 'Fuel purchase location' },
+        fuelEfficiency: { type: 'number', description: 'Fuel efficiency (mpg)' },
+        driver: { type: 'string', description: 'Driver name' },
+        receipt: { type: 'string', description: 'Receipt URL or reference' },
+        notes: { type: 'string', description: 'Additional notes' },
+      },
+      required: ['date', 'fuelType', 'quantity', 'cost', 'mileage', 'location'],
+    },
+    description: 'Fuel record data',
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Fuel record added successfully',
+  })
+  @ApiResponse({ status: 404, description: 'Truck not found' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async addTruckFuel(
+    @Param('id', ParseUUIDPipe) truckId: string,
+    @Body() fuelDto: any,
+    @Request() req,
+  ) {
+    try {
+      console.log('⛽ Adding fuel record for truck:', truckId);
+      console.log('⛽ Fuel data:', fuelDto);
+      
+      const fuel = await this.fleetService.addTruckFuel(
+        truckId,
+        fuelDto,
+        req.user.tenantId,
+        req.user.userId,
+      );
+
+      return {
+        message: 'Fuel record added successfully',
+        fuel,
+      };
+    } catch (error) {
+      console.error('❌ Error in addTruckFuel controller:', error);
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new InternalServerErrorException({
+        message: 'Failed to add fuel record',
+        error: error.message || 'An unexpected error occurred',
+      });
+    }
+  }
+
+  @Put('trucks/:id/fuel/:fuelId')
+  @ApiOperation({
+    summary: 'Update truck fuel record',
+    description: 'Updates an existing fuel record for a truck',
+  })
+  @ApiParam({ name: 'id', description: 'Truck ID (UUID)' })
+  @ApiParam({ name: 'fuelId', description: 'Fuel record ID' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        date: {
+          type: 'string',
+          format: 'date',
+          description: 'Fuel purchase date',
+        },
+        fuelType: {
+          type: 'string',
+          description: 'Fuel type (diesel, gasoline, electric, hybrid)',
+        },
+        quantity: { type: 'number', description: 'Fuel quantity (gallons/liters)' },
+        cost: { type: 'number', description: 'Total fuel cost' },
+        mileage: { type: 'number', description: 'Vehicle mileage at time of purchase' },
+        location: { type: 'string', description: 'Fuel purchase location' },
+        fuelEfficiency: { type: 'number', description: 'Fuel efficiency (mpg)' },
+        driver: { type: 'string', description: 'Driver name' },
+        receipt: { type: 'string', description: 'Receipt URL or reference' },
+        notes: { type: 'string', description: 'Additional notes' },
+      },
+    },
+    description: 'Fuel record update data',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Fuel record updated successfully',
+  })
+  @ApiResponse({ status: 404, description: 'Truck or fuel record not found' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async updateTruckFuel(
+    @Param('id', ParseUUIDPipe) truckId: string,
+    @Param('fuelId') fuelId: string,
+    @Body() fuelDto: any,
+    @Request() req,
+  ) {
+    const fuel = await this.fleetService.updateTruckFuel(
+      truckId,
+      fuelId,
+      fuelDto,
+      req.user.tenantId,
+      req.user.userId,
+    );
+
+    return {
+      message: 'Fuel record updated successfully',
+      fuel,
+    };
+  }
+
+  @Get('trucks/:id/tires')
+  @ApiOperation({
+    summary: 'Get truck tire records',
+    description: 'Retrieves all tire records for a specific truck',
+  })
+  @ApiParam({ name: 'id', description: 'Truck ID (UUID)' })
+  @ApiResponse({
+    status: 200,
+    description: 'Truck tire records retrieved successfully',
+  })
+  @ApiResponse({ status: 404, description: 'Truck not found' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async getTruckTires(
+    @Param('id', ParseUUIDPipe) truckId: string,
+    @Request() req,
+  ) {
+    const tires = await this.fleetService.getTruckTires(
+      truckId,
+      req.user.tenantId,
+    );
+
+    return {
+      message: 'Truck tire records retrieved successfully',
+      tires,
+    };
+  }
+
+  @Post('trucks/:id/tires')
+  @ApiOperation({
+    summary: 'Add truck tire record',
+    description: 'Adds a new tire record to a truck',
+  })
+  @ApiParam({ name: 'id', description: 'Truck ID (UUID)' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        position: {
+          type: 'string',
+          enum: ['front_left', 'front_right', 'rear_left', 'rear_right', 'spare'],
+          description: 'Tire position',
+        },
+        brand: { type: 'string', description: 'Tire brand' },
+        model: { type: 'string', description: 'Tire model' },
+        size: { type: 'string', description: 'Tire size' },
+        serialNumber: { type: 'string', description: 'Tire serial number' },
+        installationDate: {
+          type: 'string',
+          format: 'date',
+          description: 'Installation date',
+        },
+        expectedLifespan: { type: 'number', description: 'Expected lifespan in miles' },
+        currentMileage: { type: 'number', description: 'Current mileage' },
+        treadDepth: { type: 'number', description: 'Tread depth in 32nds of an inch' },
+        pressure: { type: 'number', description: 'Tire pressure in PSI' },
+        status: {
+          type: 'string',
+          enum: ['good', 'fair', 'poor', 'replaced'],
+          description: 'Tire status',
+        },
+        replacementDate: {
+          type: 'string',
+          format: 'date',
+          description: 'Replacement date',
+        },
+        cost: { type: 'number', description: 'Tire cost' },
+        notes: { type: 'string', description: 'Additional notes' },
+      },
+      required: ['position', 'brand', 'model', 'size', 'installationDate', 'expectedLifespan', 'currentMileage', 'treadDepth', 'pressure', 'status'],
+    },
+    description: 'Tire record data',
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Tire record added successfully',
+  })
+  @ApiResponse({ status: 404, description: 'Truck not found' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async addTruckTire(
+    @Param('id', ParseUUIDPipe) truckId: string,
+    @Body() tireDto: any,
+    @Request() req,
+  ) {
+    try {
+      console.log('🛞 Adding tire record for truck:', truckId);
+      console.log('🛞 Tire data:', tireDto);
+      
+      const tire = await this.fleetService.addTruckTire(
+        truckId,
+        tireDto,
+        req.user.tenantId,
+        req.user.userId,
+      );
+
+      return {
+        message: 'Tire record added successfully',
+        tire,
+      };
+    } catch (error) {
+      console.error('❌ Error in addTruckTire controller:', error);
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new InternalServerErrorException({
+        message: 'Failed to add tire record',
+        error: error.message || 'An unexpected error occurred',
+      });
+    }
+  }
+
+  @Put('trucks/:id/tires/:tireId')
+  @ApiOperation({
+    summary: 'Update truck tire record',
+    description: 'Updates an existing tire record for a truck',
+  })
+  @ApiParam({ name: 'id', description: 'Truck ID (UUID)' })
+  @ApiParam({ name: 'tireId', description: 'Tire record ID' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        position: {
+          type: 'string',
+          enum: ['front_left', 'front_right', 'rear_left', 'rear_right', 'spare'],
+          description: 'Tire position',
+        },
+        brand: { type: 'string', description: 'Tire brand' },
+        model: { type: 'string', description: 'Tire model' },
+        size: { type: 'string', description: 'Tire size' },
+        serialNumber: { type: 'string', description: 'Tire serial number' },
+        installationDate: {
+          type: 'string',
+          format: 'date',
+          description: 'Installation date',
+        },
+        expectedLifespan: { type: 'number', description: 'Expected lifespan in miles' },
+        currentMileage: { type: 'number', description: 'Current mileage' },
+        treadDepth: { type: 'number', description: 'Tread depth in 32nds of an inch' },
+        pressure: { type: 'number', description: 'Tire pressure in PSI' },
+        status: {
+          type: 'string',
+          enum: ['good', 'fair', 'poor', 'replaced'],
+          description: 'Tire status',
+        },
+        replacementDate: {
+          type: 'string',
+          format: 'date',
+          description: 'Replacement date',
+        },
+        cost: { type: 'number', description: 'Tire cost' },
+        notes: { type: 'string', description: 'Additional notes' },
+      },
+    },
+    description: 'Tire record update data',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Tire record updated successfully',
+  })
+  @ApiResponse({ status: 404, description: 'Truck or tire record not found' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async updateTruckTire(
+    @Param('id', ParseUUIDPipe) truckId: string,
+    @Param('tireId') tireId: string,
+    @Body() tireDto: any,
+    @Request() req,
+  ) {
+    const tire = await this.fleetService.updateTruckTire(
+      truckId,
+      tireId,
+      tireDto,
+      req.user.tenantId,
+      req.user.userId,
+    );
+
+    return {
+      message: 'Tire record updated successfully',
+      tire,
+    };
+  }
+
+  @Get('trucks/:id/compliance')
+  @ApiOperation({
+    summary: 'Get truck compliance records',
+    description: 'Retrieves all compliance records for a specific truck',
+  })
+  @ApiParam({ name: 'id', description: 'Truck ID (UUID)' })
+  @ApiResponse({
+    status: 200,
+    description: 'Truck compliance records retrieved successfully',
+  })
+  @ApiResponse({ status: 404, description: 'Truck not found' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async getTruckCompliance(
+    @Param('id', ParseUUIDPipe) truckId: string,
+    @Request() req,
+  ) {
+    const compliance = await this.fleetService.getTruckCompliance(
+      truckId,
+      req.user.tenantId,
+    );
+
+    return {
+      message: 'Truck compliance records retrieved successfully',
+      compliance,
+    };
+  }
+
+  @Post('trucks/:id/compliance')
+  @ApiOperation({
+    summary: 'Add truck compliance record',
+    description: 'Adds a new compliance record to a truck',
+  })
+  @ApiParam({ name: 'id', description: 'Truck ID (UUID)' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        regulation: { type: 'string', description: 'Regulation name' },
+        requirement: { type: 'string', description: 'Compliance requirement' },
+        dueDate: {
+          type: 'string',
+          format: 'date',
+          description: 'Due date for compliance',
+        },
+        status: {
+          type: 'string',
+          enum: ['compliant', 'non_compliant', 'warning', 'critical', 'pending'],
+          description: 'Compliance status',
+        },
+        lastChecked: {
+          type: 'string',
+          format: 'date',
+          description: 'Last check date',
+        },
+        nextCheck: {
+          type: 'string',
+          format: 'date',
+          description: 'Next check date',
+        },
+        responsibleParty: { type: 'string', description: 'Responsible party' },
+        documentation: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'Documentation URLs',
+        },
+        notes: { type: 'string', description: 'Additional notes' },
+      },
+      required: ['regulation', 'requirement', 'dueDate', 'status', 'lastChecked', 'nextCheck', 'responsibleParty'],
+    },
+    description: 'Compliance record data',
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Compliance record added successfully',
+  })
+  @ApiResponse({ status: 404, description: 'Truck not found' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async addTruckCompliance(
+    @Param('id', ParseUUIDPipe) truckId: string,
+    @Body() complianceDto: any,
+    @Request() req,
+  ) {
+    try {
+      console.log('📋 Adding compliance record for truck:', truckId);
+      console.log('📋 Compliance data:', complianceDto);
+      
+      const compliance = await this.fleetService.addTruckCompliance(
+        truckId,
+        complianceDto,
+        req.user.tenantId,
+        req.user.userId,
+      );
+
+      return {
+        message: 'Compliance record added successfully',
+        compliance,
+      };
+    } catch (error) {
+      console.error('❌ Error in addTruckCompliance controller:', error);
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new InternalServerErrorException({
+        message: 'Failed to add compliance record',
+        error: error.message || 'An unexpected error occurred',
+      });
+    }
+  }
+
+  @Put('trucks/:id/compliance/:complianceId')
+  @ApiOperation({
+    summary: 'Update truck compliance record',
+    description: 'Updates an existing compliance record for a truck',
+  })
+  @ApiParam({ name: 'id', description: 'Truck ID (UUID)' })
+  @ApiParam({ name: 'complianceId', description: 'Compliance record ID' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        regulation: { type: 'string', description: 'Regulation name' },
+        requirement: { type: 'string', description: 'Compliance requirement' },
+        dueDate: {
+          type: 'string',
+          format: 'date',
+          description: 'Due date for compliance',
+        },
+        status: {
+          type: 'string',
+          enum: ['compliant', 'non_compliant', 'warning', 'critical', 'pending'],
+          description: 'Compliance status',
+        },
+        lastChecked: {
+          type: 'string',
+          format: 'date',
+          description: 'Last check date',
+        },
+        nextCheck: {
+          type: 'string',
+          format: 'date',
+          description: 'Next check date',
+        },
+        responsibleParty: { type: 'string', description: 'Responsible party' },
+        documentation: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'Documentation URLs',
+        },
+        notes: { type: 'string', description: 'Additional notes' },
+      },
+    },
+    description: 'Compliance record update data',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Compliance record updated successfully',
+  })
+  @ApiResponse({ status: 404, description: 'Truck or compliance record not found' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async updateTruckCompliance(
+    @Param('id', ParseUUIDPipe) truckId: string,
+    @Param('complianceId') complianceId: string,
+    @Body() complianceDto: any,
+    @Request() req,
+  ) {
+    const compliance = await this.fleetService.updateTruckCompliance(
+      truckId,
+      complianceId,
+      complianceDto,
+      req.user.tenantId,
+      req.user.userId,
+    );
+
+    return {
+      message: 'Compliance record updated successfully',
+      compliance,
     };
   }
 

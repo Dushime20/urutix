@@ -83,11 +83,25 @@ export class FileUploadService {
     const filePath = path.join(uploadPath, fileName);
 
     try {
-      // Write file to disk
-      fs.writeFileSync(filePath, file.buffer);
+      // Handle both memory and disk storage
+      let fileBuffer: Buffer;
+      if (file.buffer) {
+        // File is in memory
+        fileBuffer = file.buffer;
+        fs.writeFileSync(filePath, fileBuffer);
+      } else if (file.path) {
+        // File is on disk (from Multer disk storage)
+        fileBuffer = fs.readFileSync(file.path);
+        // Move file from temp location to final location
+        fs.copyFileSync(file.path, filePath);
+        // Clean up temp file
+        fs.unlinkSync(file.path);
+      } else {
+        throw new BadRequestException('File buffer or path is missing');
+      }
 
       // Calculate checksum
-      const checksum = this.calculateChecksum(file.buffer);
+      const checksum = this.calculateChecksum(fileBuffer);
 
       // Generate URLs
       const baseUrl = this.configService.get<string>('BASE_URL', 'http://localhost:3000');
@@ -128,11 +142,12 @@ export class FileUploadService {
       );
     }
 
-    if (!this.allowedMimeTypes.includes(file.mimetype)) {
-      throw new BadRequestException(
-        `File type ${file.mimetype} is not allowed. Allowed types: ${this.allowedMimeTypes.join(', ')}`
-      );
-    }
+    // MIME type validation removed to allow any document type
+    // if (!this.allowedMimeTypes.includes(file.mimetype)) {
+    //   throw new BadRequestException(
+    //     `File type ${file.mimetype} is not allowed. Allowed types: ${this.allowedMimeTypes.join(', ')}`
+    //   );
+    // }
   }
 
   private calculateChecksum(buffer: Buffer): string {

@@ -316,7 +316,33 @@ export class FleetService {
       throw new ForbiddenException('You can only update your own trucks');
     }
 
-    Object.assign(truck, updateTruckDto);
+    // Safely update only provided fields
+    const allowedFields = [
+      'plateNumber', 'vin', 'make', 'model', 'year', 'color',
+      'fuelType', 'capacityWeight', 'capacityVolume',
+      'maxLength', 'maxWidth', 'maxHeight',
+      'truckType', 'trailerType',
+      'registrationNumber', 'registrationExpiry',
+      'insurancePolicy', 'insuranceExpiry',
+      'roadworthyCertExpiry',
+      'status',
+      'hasRefrigeration', 'hasLiftGate', 'hasGps', 'hasHazmatPermit',
+      'mileage', 'fuelEfficiency',
+      'isActive',
+    ];
+
+    // Only update fields that are provided and allowed
+    allowedFields.forEach(field => {
+      if (updateTruckDto[field] !== undefined && updateTruckDto[field] !== null) {
+        // Handle date strings - convert to Date objects if needed
+        if (['registrationExpiry', 'insuranceExpiry', 'roadworthyCertExpiry'].includes(field)) {
+          truck[field] = updateTruckDto[field] ? new Date(updateTruckDto[field]) : null;
+        } else {
+          truck[field] = updateTruckDto[field];
+        }
+      }
+    });
+
     return this.truckRepository.save(truck);
   }
 
@@ -895,6 +921,588 @@ export class FleetService {
     await this.truckRepository.save(truck);
 
     return maintenance;
+  }
+
+  async updateTruckMaintenance(
+    truckId: string,
+    maintenanceId: string,
+    maintenanceData: any,
+    tenantId: string,
+    userId: string,
+  ): Promise<any> {
+    const truck = await this.findOneTruck(truckId, tenantId);
+
+    if (!truck.maintenanceAlerts || truck.maintenanceAlerts.length === 0) {
+      throw new NotFoundException('Maintenance record not found');
+    }
+
+    const maintenanceIndex = truck.maintenanceAlerts.findIndex(
+      (m: any) => m.id === maintenanceId,
+    );
+
+    if (maintenanceIndex === -1) {
+      throw new NotFoundException('Maintenance record not found');
+    }
+
+    const existingMaintenance = truck.maintenanceAlerts[maintenanceIndex];
+    const updatedMaintenance = {
+      ...existingMaintenance,
+      ...maintenanceData,
+      updatedAt: new Date(),
+      updatedBy: userId,
+    };
+
+    truck.maintenanceAlerts[maintenanceIndex] = updatedMaintenance;
+    await this.truckRepository.save(truck);
+
+    return updatedMaintenance;
+  }
+
+  async getTruckInspections(truckId: string, tenantId: string): Promise<any[]> {
+    const truck = await this.findOneTruck(truckId, tenantId);
+    return truck.inspectionAlerts || [];
+  }
+
+  async addTruckInspection(
+    truckId: string,
+    inspectionData: any,
+    tenantId: string,
+    userId: string,
+  ): Promise<any> {
+    try {
+      const truck = await this.findOneTruck(truckId, tenantId);
+
+      if (!truck.inspectionAlerts) {
+        truck.inspectionAlerts = [];
+      }
+
+      // Convert date strings to Date objects if needed
+      const processedData: any = { ...inspectionData };
+      if (processedData.inspectionDate && typeof processedData.inspectionDate === 'string') {
+        processedData.inspectionDate = new Date(processedData.inspectionDate);
+      }
+      if (processedData.nextInspectionDate && typeof processedData.nextInspectionDate === 'string') {
+        processedData.nextInspectionDate = new Date(processedData.nextInspectionDate);
+      }
+
+      const inspection = {
+        id: 'insp-' + Date.now(),
+        ...processedData,
+        createdAt: new Date(),
+        createdBy: userId,
+      };
+
+      truck.inspectionAlerts.push(inspection);
+      await this.truckRepository.save(truck);
+
+      return inspection;
+    } catch (error) {
+      console.error('❌ Error in addTruckInspection:', error);
+      console.error('❌ Error details:', {
+        message: error?.message,
+        code: error?.code,
+        detail: error?.detail,
+        stack: error?.stack,
+      });
+      if (error instanceof NotFoundException || error instanceof ForbiddenException) {
+        throw error;
+      }
+      throw new BadRequestException(`Failed to add inspection: ${error.message}`);
+    }
+  }
+
+  async updateTruckInspection(
+    truckId: string,
+    inspectionId: string,
+    inspectionData: any,
+    tenantId: string,
+    userId: string,
+  ): Promise<any> {
+    try {
+      const truck = await this.findOneTruck(truckId, tenantId);
+
+      if (!truck.inspectionAlerts || truck.inspectionAlerts.length === 0) {
+        throw new NotFoundException('Inspection record not found');
+      }
+
+      const inspectionIndex = truck.inspectionAlerts.findIndex(
+        (i: any) => i.id === inspectionId,
+      );
+
+      if (inspectionIndex === -1) {
+        throw new NotFoundException('Inspection record not found');
+      }
+
+      // Convert date strings to Date objects if needed
+      const processedData: any = { ...inspectionData };
+      if (processedData.inspectionDate && typeof processedData.inspectionDate === 'string') {
+        processedData.inspectionDate = new Date(processedData.inspectionDate);
+      }
+      if (processedData.nextInspectionDate && typeof processedData.nextInspectionDate === 'string') {
+        processedData.nextInspectionDate = new Date(processedData.nextInspectionDate);
+      }
+
+      const existingInspection = truck.inspectionAlerts[inspectionIndex];
+      const updatedInspection = {
+        ...existingInspection,
+        ...processedData,
+        updatedAt: new Date(),
+        updatedBy: userId,
+      };
+
+      truck.inspectionAlerts[inspectionIndex] = updatedInspection;
+      await this.truckRepository.save(truck);
+
+      return updatedInspection;
+    } catch (error) {
+      console.error('❌ Error in updateTruckInspection:', error);
+      if (error instanceof NotFoundException || error instanceof ForbiddenException) {
+        throw error;
+      }
+      throw new BadRequestException(`Failed to update inspection: ${error.message}`);
+    }
+  }
+
+  async getTruckInsurance(truckId: string, tenantId: string): Promise<any[]> {
+    const truck = await this.findOneTruck(truckId, tenantId);
+    return truck.insuranceAlerts || [];
+  }
+
+  async addTruckInsurance(
+    truckId: string,
+    insuranceData: any,
+    tenantId: string,
+    userId: string,
+  ): Promise<any> {
+    try {
+      const truck = await this.findOneTruck(truckId, tenantId);
+
+      if (!truck.insuranceAlerts) {
+        truck.insuranceAlerts = [];
+      }
+
+      // Convert date strings to Date objects if needed
+      const processedData: any = { ...insuranceData };
+      if (processedData.startDate && typeof processedData.startDate === 'string') {
+        processedData.startDate = new Date(processedData.startDate);
+      }
+      if (processedData.endDate && typeof processedData.endDate === 'string') {
+        processedData.endDate = new Date(processedData.endDate);
+      }
+
+      const insurance = {
+        id: 'ins-' + Date.now(),
+        ...processedData,
+        createdAt: new Date(),
+        createdBy: userId,
+      };
+
+      truck.insuranceAlerts.push(insurance);
+      await this.truckRepository.save(truck);
+
+      return insurance;
+    } catch (error) {
+      console.error('❌ Error in addTruckInsurance:', error);
+      console.error('❌ Error details:', {
+        message: error?.message,
+        code: error?.code,
+        detail: error?.detail,
+        stack: error?.stack,
+      });
+      if (error instanceof NotFoundException || error instanceof ForbiddenException) {
+        throw error;
+      }
+      throw new BadRequestException(`Failed to add insurance: ${error.message}`);
+    }
+  }
+
+  async updateTruckInsurance(
+    truckId: string,
+    insuranceId: string,
+    insuranceData: any,
+    tenantId: string,
+    userId: string,
+  ): Promise<any> {
+    try {
+      const truck = await this.findOneTruck(truckId, tenantId);
+
+      if (!truck.insuranceAlerts || truck.insuranceAlerts.length === 0) {
+        throw new NotFoundException('Insurance record not found');
+      }
+
+      const insuranceIndex = truck.insuranceAlerts.findIndex(
+        (i: any) => i.id === insuranceId,
+      );
+
+      if (insuranceIndex === -1) {
+        throw new NotFoundException('Insurance record not found');
+      }
+
+      // Convert date strings to Date objects if needed
+      const processedData: any = { ...insuranceData };
+      if (processedData.startDate && typeof processedData.startDate === 'string') {
+        processedData.startDate = new Date(processedData.startDate);
+      }
+      if (processedData.endDate && typeof processedData.endDate === 'string') {
+        processedData.endDate = new Date(processedData.endDate);
+      }
+
+      const existingInsurance = truck.insuranceAlerts[insuranceIndex];
+      const updatedInsurance = {
+        ...existingInsurance,
+        ...processedData,
+        updatedAt: new Date(),
+        updatedBy: userId,
+      };
+
+      truck.insuranceAlerts[insuranceIndex] = updatedInsurance;
+      await this.truckRepository.save(truck);
+
+      return updatedInsurance;
+    } catch (error) {
+      console.error('❌ Error in updateTruckInsurance:', error);
+      if (error instanceof NotFoundException || error instanceof ForbiddenException) {
+        throw error;
+      }
+      throw new BadRequestException(`Failed to update insurance: ${error.message}`);
+    }
+  }
+
+  async getTruckFuel(truckId: string, tenantId: string): Promise<any[]> {
+    const truck = await this.findOneTruck(truckId, tenantId);
+    return truck.fuelAlerts || [];
+  }
+
+  async addTruckFuel(
+    truckId: string,
+    fuelData: any,
+    tenantId: string,
+    userId: string,
+  ): Promise<any> {
+    try {
+      const truck = await this.findOneTruck(truckId, tenantId);
+
+      if (!truck.fuelAlerts) {
+        truck.fuelAlerts = [];
+      }
+
+      // Convert date strings to Date objects if needed
+      const processedData: any = { ...fuelData };
+      if (processedData.date && typeof processedData.date === 'string') {
+        processedData.date = new Date(processedData.date);
+      }
+
+      const fuel = {
+        id: 'fuel-' + Date.now(),
+        ...processedData,
+        createdAt: new Date(),
+        createdBy: userId,
+      };
+
+      truck.fuelAlerts.push(fuel);
+      await this.truckRepository.save(truck);
+
+      return fuel;
+    } catch (error) {
+      console.error('❌ Error in addTruckFuel:', error);
+      console.error('❌ Error details:', {
+        message: error?.message,
+        code: error?.code,
+        detail: error?.detail,
+        stack: error?.stack,
+      });
+      if (error instanceof NotFoundException || error instanceof ForbiddenException) {
+        throw error;
+      }
+      throw new BadRequestException(`Failed to add fuel record: ${error.message}`);
+    }
+  }
+
+  async updateTruckFuel(
+    truckId: string,
+    fuelId: string,
+    fuelData: any,
+    tenantId: string,
+    userId: string,
+  ): Promise<any> {
+    try {
+      const truck = await this.findOneTruck(truckId, tenantId);
+
+      if (!truck.fuelAlerts || truck.fuelAlerts.length === 0) {
+        throw new NotFoundException('Fuel record not found');
+      }
+
+      const fuelIndex = truck.fuelAlerts.findIndex(
+        (f: any) => f.id === fuelId,
+      );
+
+      if (fuelIndex === -1) {
+        throw new NotFoundException('Fuel record not found');
+      }
+
+      // Convert date strings to Date objects if needed
+      const processedData: any = { ...fuelData };
+      if (processedData.date && typeof processedData.date === 'string') {
+        processedData.date = new Date(processedData.date);
+      }
+
+      const existingFuel = truck.fuelAlerts[fuelIndex];
+      const updatedFuel = {
+        ...existingFuel,
+        ...processedData,
+        updatedAt: new Date(),
+        updatedBy: userId,
+      };
+
+      truck.fuelAlerts[fuelIndex] = updatedFuel;
+      await this.truckRepository.save(truck);
+
+      return updatedFuel;
+    } catch (error) {
+      console.error('❌ Error in updateTruckFuel:', error);
+      if (error instanceof NotFoundException || error instanceof ForbiddenException) {
+        throw error;
+      }
+      throw new BadRequestException(`Failed to update fuel record: ${error.message}`);
+    }
+  }
+
+  async getTruckTires(truckId: string, tenantId: string): Promise<any[]> {
+    const truck = await this.findOneTruck(truckId, tenantId);
+    return truck.tireAlerts || [];
+  }
+
+  async addTruckTire(
+    truckId: string,
+    tireData: any,
+    tenantId: string,
+    userId: string,
+  ): Promise<any> {
+    try {
+      const truck = await this.findOneTruck(truckId, tenantId);
+
+      if (!truck.tireAlerts) {
+        truck.tireAlerts = [];
+      }
+
+      // Convert date strings to Date objects if needed
+      const processedData: any = { ...tireData };
+      if (processedData.installationDate && typeof processedData.installationDate === 'string') {
+        processedData.installationDate = new Date(processedData.installationDate);
+      }
+      if (processedData.replacementDate && typeof processedData.replacementDate === 'string') {
+        processedData.replacementDate = new Date(processedData.replacementDate);
+      }
+      if (processedData.rotationHistory && Array.isArray(processedData.rotationHistory)) {
+        processedData.rotationHistory = processedData.rotationHistory.map((date: any) =>
+          typeof date === 'string' ? new Date(date) : date
+        );
+      }
+
+      const tire = {
+        id: 'tire-' + Date.now(),
+        ...processedData,
+        createdAt: new Date(),
+        createdBy: userId,
+      };
+
+      truck.tireAlerts.push(tire);
+      await this.truckRepository.save(truck);
+
+      return tire;
+    } catch (error) {
+      console.error('❌ Error in addTruckTire:', error);
+      console.error('❌ Error details:', {
+        message: error?.message,
+        code: error?.code,
+        detail: error?.detail,
+        stack: error?.stack,
+      });
+      if (error instanceof NotFoundException || error instanceof ForbiddenException) {
+        throw error;
+      }
+      throw new BadRequestException(`Failed to add tire record: ${error.message}`);
+    }
+  }
+
+  async updateTruckTire(
+    truckId: string,
+    tireId: string,
+    tireData: any,
+    tenantId: string,
+    userId: string,
+  ): Promise<any> {
+    try {
+      const truck = await this.findOneTruck(truckId, tenantId);
+
+      if (!truck.tireAlerts || truck.tireAlerts.length === 0) {
+        throw new NotFoundException('Tire record not found');
+      }
+
+      const tireIndex = truck.tireAlerts.findIndex(
+        (t: any) => t.id === tireId,
+      );
+
+      if (tireIndex === -1) {
+        throw new NotFoundException('Tire record not found');
+      }
+
+      // Convert date strings to Date objects if needed
+      const processedData: any = { ...tireData };
+      if (processedData.installationDate && typeof processedData.installationDate === 'string') {
+        processedData.installationDate = new Date(processedData.installationDate);
+      }
+      if (processedData.replacementDate && typeof processedData.replacementDate === 'string') {
+        processedData.replacementDate = new Date(processedData.replacementDate);
+      }
+      if (processedData.rotationHistory && Array.isArray(processedData.rotationHistory)) {
+        processedData.rotationHistory = processedData.rotationHistory.map((date: any) =>
+          typeof date === 'string' ? new Date(date) : date
+        );
+      }
+
+      const existingTire = truck.tireAlerts[tireIndex];
+      const updatedTire = {
+        ...existingTire,
+        ...processedData,
+        updatedAt: new Date(),
+        updatedBy: userId,
+      };
+
+      truck.tireAlerts[tireIndex] = updatedTire;
+      await this.truckRepository.save(truck);
+
+      return updatedTire;
+    } catch (error) {
+      console.error('❌ Error in updateTruckTire:', error);
+      if (error instanceof NotFoundException || error instanceof ForbiddenException) {
+        throw error;
+      }
+      throw new BadRequestException(`Failed to update tire record: ${error.message}`);
+    }
+  }
+
+  async getTruckCompliance(truckId: string, tenantId: string): Promise<any[]> {
+    const truck = await this.findOneTruck(truckId, tenantId);
+    return truck.complianceAlerts || [];
+  }
+
+  async addTruckCompliance(
+    truckId: string,
+    complianceData: any,
+    tenantId: string,
+    userId: string,
+  ): Promise<any> {
+    try {
+      const truck = await this.findOneTruck(truckId, tenantId);
+
+      if (!truck.complianceAlerts) {
+        truck.complianceAlerts = [];
+      }
+
+      // Convert date strings to Date objects if needed
+      const processedData: any = { ...complianceData };
+      if (processedData.dueDate && typeof processedData.dueDate === 'string') {
+        processedData.dueDate = new Date(processedData.dueDate);
+      }
+      if (processedData.lastChecked && typeof processedData.lastChecked === 'string') {
+        processedData.lastChecked = new Date(processedData.lastChecked);
+      }
+      if (processedData.nextCheck && typeof processedData.nextCheck === 'string') {
+        processedData.nextCheck = new Date(processedData.nextCheck);
+      }
+      if (processedData.penalties && Array.isArray(processedData.penalties)) {
+        processedData.penalties = processedData.penalties.map((penalty: any) => ({
+          ...penalty,
+          date: penalty.date && typeof penalty.date === 'string' ? new Date(penalty.date) : penalty.date,
+        }));
+      }
+
+      const compliance = {
+        id: 'comp-' + Date.now(),
+        ...processedData,
+        createdAt: new Date(),
+        createdBy: userId,
+      };
+
+      truck.complianceAlerts.push(compliance);
+      await this.truckRepository.save(truck);
+
+      return compliance;
+    } catch (error) {
+      console.error('❌ Error in addTruckCompliance:', error);
+      console.error('❌ Error details:', {
+        message: error?.message,
+        code: error?.code,
+        detail: error?.detail,
+        stack: error?.stack,
+      });
+      if (error instanceof NotFoundException || error instanceof ForbiddenException) {
+        throw error;
+      }
+      throw new BadRequestException(`Failed to add compliance record: ${error.message}`);
+    }
+  }
+
+  async updateTruckCompliance(
+    truckId: string,
+    complianceId: string,
+    complianceData: any,
+    tenantId: string,
+    userId: string,
+  ): Promise<any> {
+    try {
+      const truck = await this.findOneTruck(truckId, tenantId);
+
+      if (!truck.complianceAlerts || truck.complianceAlerts.length === 0) {
+        throw new NotFoundException('Compliance record not found');
+      }
+
+      const complianceIndex = truck.complianceAlerts.findIndex(
+        (c: any) => c.id === complianceId,
+      );
+
+      if (complianceIndex === -1) {
+        throw new NotFoundException('Compliance record not found');
+      }
+
+      // Convert date strings to Date objects if needed
+      const processedData: any = { ...complianceData };
+      if (processedData.dueDate && typeof processedData.dueDate === 'string') {
+        processedData.dueDate = new Date(processedData.dueDate);
+      }
+      if (processedData.lastChecked && typeof processedData.lastChecked === 'string') {
+        processedData.lastChecked = new Date(processedData.lastChecked);
+      }
+      if (processedData.nextCheck && typeof processedData.nextCheck === 'string') {
+        processedData.nextCheck = new Date(processedData.nextCheck);
+      }
+      if (processedData.penalties && Array.isArray(processedData.penalties)) {
+        processedData.penalties = processedData.penalties.map((penalty: any) => ({
+          ...penalty,
+          date: penalty.date && typeof penalty.date === 'string' ? new Date(penalty.date) : penalty.date,
+        }));
+      }
+
+      const existingCompliance = truck.complianceAlerts[complianceIndex];
+      const updatedCompliance = {
+        ...existingCompliance,
+        ...processedData,
+        updatedAt: new Date(),
+        updatedBy: userId,
+      };
+
+      truck.complianceAlerts[complianceIndex] = updatedCompliance;
+      await this.truckRepository.save(truck);
+
+      return updatedCompliance;
+    } catch (error) {
+      console.error('❌ Error in updateTruckCompliance:', error);
+      if (error instanceof NotFoundException || error instanceof ForbiddenException) {
+        throw error;
+      }
+      throw new BadRequestException(`Failed to update compliance record: ${error.message}`);
+    }
   }
 
   // Route operations (placeholder implementations)

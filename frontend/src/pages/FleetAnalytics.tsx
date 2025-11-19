@@ -83,16 +83,16 @@ const FleetAnalytics: React.FC = () => {
       if (analytics) {
         const statsData = [
           ['Metric', 'Value'],
-          ['Total Trucks', analytics.totalTrucks.toString()],
-          ['Available Trucks', analytics.availableTrucks.toString()],
-          ['Total Drivers', analytics.totalDrivers.toString()],
-          ['Active Drivers', analytics.activeDrivers.toString()],
-          ['Total Routes', analytics.totalRoutes.toString()],
-          ['Utilization Rate', `${analytics.utilizationRate.toFixed(1)}%`],
-          ['Total Revenue', `$${analytics.totalRevenue.toLocaleString()}`],
-          ['Average Rating', analytics.averageRating.toFixed(1)],
-          ['Maintenance Alerts', analytics.maintenanceAlerts.toString()],
-          ['Upcoming Inspections', analytics.upcomingInspections.toString()],
+          ['Total Trucks', (analytics.totalTrucks ?? 0).toString()],
+          ['Available Trucks', (analytics.availableTrucks ?? 0).toString()],
+          ['Total Drivers', (analytics.totalDrivers ?? 0).toString()],
+          ['Active Drivers', (analytics.activeDrivers ?? 0).toString()],
+          ['Total Routes', (analytics.totalRoutes ?? 0).toString()],
+          ['Utilization Rate', `${(analytics.utilizationRate ?? 0).toFixed(1)}%`],
+          ['Total Revenue', `$${(analytics.totalRevenue ?? 0).toLocaleString()}`],
+          ['Average Rating', (analytics.averageRating ?? 0).toFixed(1)],
+          ['Maintenance Alerts', (analytics.maintenanceAlerts ?? 0).toString()],
+          ['Upcoming Inspections', (analytics.upcomingInspections ?? 0).toString()],
         ];
 
         autoTable(pdf, {
@@ -121,11 +121,11 @@ const FleetAnalytics: React.FC = () => {
 
         const performanceData = [
           ['Category', 'Metric', 'Value'],
-          ['Fleet', 'Utilization Rate', `${analytics.utilizationRate.toFixed(1)}%`],
-          ['Fleet', 'Average Rating', analytics.averageRating.toFixed(1)],
-          ['Financial', 'Total Revenue', `$${analytics.totalRevenue.toLocaleString()}`],
-          ['Maintenance', 'Alerts', analytics.maintenanceAlerts.toString()],
-          ['Maintenance', 'Upcoming Inspections', analytics.upcomingInspections.toString()],
+          ['Fleet', 'Utilization Rate', `${(analytics.utilizationRate ?? 0).toFixed(1)}%`],
+          ['Fleet', 'Average Rating', (analytics.averageRating ?? 0).toFixed(1)],
+          ['Financial', 'Total Revenue', `$${(analytics.totalRevenue ?? 0).toLocaleString()}`],
+          ['Maintenance', 'Alerts', (analytics.maintenanceAlerts ?? 0).toString()],
+          ['Maintenance', 'Upcoming Inspections', (analytics.upcomingInspections ?? 0).toString()],
         ];
 
         autoTable(pdf, {
@@ -179,23 +179,23 @@ const FleetAnalytics: React.FC = () => {
   const stats = analytics ? [
     {
       title: 'Total Trucks',
-      value: analytics.totalTrucks.toString(),
-      change: `${analytics.availableTrucks} available`,
+      value: (analytics.totalTrucks ?? 0).toString(),
+      change: `${analytics.availableTrucks ?? 0} available`,
       changeType: 'positive' as const,
       icon: FaTruck,
       color: 'blue'
     },
     {
       title: 'Active Drivers',
-      value: analytics.activeDrivers.toString(),
-      change: `of ${analytics.totalDrivers} total`,
+      value: (analytics.activeDrivers ?? 0).toString(),
+      change: `of ${analytics.totalDrivers ?? 0} total`,
       changeType: 'positive' as const,
       icon: FaUsers,
       color: 'green'
     },
     {
       title: 'Total Revenue',
-      value: `$${analytics.totalRevenue.toLocaleString()}`,
+      value: `$${(analytics.totalRevenue ?? 0).toLocaleString()}`,
       change: `${dateRange}`,
       changeType: 'positive' as const,
       icon: FaDollarSign,
@@ -203,7 +203,7 @@ const FleetAnalytics: React.FC = () => {
     },
     {
       title: 'Utilization Rate',
-      value: `${analytics.utilizationRate.toFixed(1)}%`,
+      value: `${(analytics.utilizationRate ?? 0).toFixed(1)}%`,
       change: 'Fleet efficiency',
       changeType: 'positive' as const,
       icon: FaChartLine,
@@ -342,19 +342,19 @@ const FleetAnalytics: React.FC = () => {
             <div className="flex justify-between">
               <span className="text-sm text-gray-600">Utilization Rate</span>
               <span className="text-sm font-medium text-gray-900">
-                {analytics?.utilizationRate.toFixed(1)}%
+                {(analytics?.utilizationRate ?? 0).toFixed(1)}%
               </span>
             </div>
             <div className="flex justify-between">
               <span className="text-sm text-gray-600">Available Trucks</span>
               <span className="text-sm font-medium text-gray-900">
-                {analytics?.availableTrucks} / {analytics?.totalTrucks}
+                {analytics?.availableTrucks ?? 0} / {analytics?.totalTrucks ?? 0}
               </span>
             </div>
             <div className="flex justify-between">
               <span className="text-sm text-gray-600">Average Rating</span>
               <span className="text-sm font-medium text-gray-900">
-                {analytics?.averageRating.toFixed(1)}/5
+                {(analytics?.averageRating ?? 0).toFixed(1)}/5
               </span>
             </div>
           </div>
@@ -369,21 +369,21 @@ const FleetAnalytics: React.FC = () => {
             <div className="flex justify-between">
               <span className="text-sm text-gray-600">Active Drivers</span>
               <span className="text-sm font-medium text-gray-900">
-                {analytics?.activeDrivers} / {analytics?.totalDrivers}
+                {analytics?.activeDrivers ?? 0} / {analytics?.totalDrivers ?? 0}
               </span>
             </div>
             <div className="flex justify-between">
               <span className="text-sm text-gray-600">Driver Utilization</span>
               <span className="text-sm font-medium text-gray-900">
-                {analytics && analytics.totalDrivers > 0 
-                  ? ((analytics.activeDrivers / analytics.totalDrivers) * 100).toFixed(1)
+                {analytics && (analytics.totalDrivers ?? 0) > 0 
+                  ? (((analytics.activeDrivers ?? 0) / (analytics.totalDrivers ?? 1)) * 100).toFixed(1)
                   : 0}%
               </span>
             </div>
             <div className="flex justify-between">
               <span className="text-sm text-gray-600">Total Routes</span>
               <span className="text-sm font-medium text-gray-900">
-                {analytics?.totalRoutes}
+                {analytics?.totalRoutes ?? 0}
               </span>
             </div>
           </div>
@@ -398,19 +398,19 @@ const FleetAnalytics: React.FC = () => {
             <div className="flex justify-between">
               <span className="text-sm text-gray-600">Maintenance Alerts</span>
               <span className="text-sm font-medium text-red-600">
-                {analytics?.maintenanceAlerts}
+                {analytics?.maintenanceAlerts ?? 0}
               </span>
             </div>
             <div className="flex justify-between">
               <span className="text-sm text-gray-600">Upcoming Inspections</span>
               <span className="text-sm font-medium text-yellow-600">
-                {analytics?.upcomingInspections}
+                {analytics?.upcomingInspections ?? 0}
               </span>
             </div>
             <div className="flex justify-between">
               <span className="text-sm text-gray-600">Total Revenue</span>
               <span className="text-sm font-medium text-green-600">
-                ${analytics?.totalRevenue.toLocaleString()}
+                ${(analytics?.totalRevenue ?? 0).toLocaleString()}
               </span>
             </div>
           </div>

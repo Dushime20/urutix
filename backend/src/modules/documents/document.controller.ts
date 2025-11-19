@@ -17,7 +17,12 @@ import {
   UsePipes,
   ValidationPipe,
   Req,
+  Res,
+  NotFoundException,
 } from '@nestjs/common';
+import { Response } from 'express';
+import { join } from 'path';
+import * as fs from 'fs';
 import {
   ApiTags,
   ApiOperation,
@@ -95,36 +100,90 @@ export class DocumentController {
     }
   })
   @UseInterceptors(FileInterceptor('file'))
+  @UsePipes(new ValidationPipe({ transform: true, whitelist: true, forbidNonWhitelisted: false }))
   async createDocument(
-    @Body() createDocumentDto: CreateDocumentDto,
+    @Body() body: any,
     @UploadedFile(
       new ParseFilePipe({
         validators: [
           new MaxFileSizeValidator({ maxSize: 10 * 1024 * 1024 }), // 10MB
-          new FileTypeValidator({ fileType: '.(pdf|doc|docx|jpg|jpeg|png|txt)' }),
+          // FileTypeValidator removed to allow any document type
         ],
         fileIsRequired: false,
       }),
     )
     file?: Express.Multer.File,
+    @Req() req?: Request,
   ): Promise<Document> {
-    // Merge file data with DTO
-    if (file) {
-      createDocumentDto.file = file;
-      createDocumentDto.fileName = file.originalname;
-      createDocumentDto.fileSize = file.size;
-      createDocumentDto.mimeType = file.mimetype;
+    try {
+      // Parse form data (multipart/form-data sends everything as strings)
+      const createDocumentDto: CreateDocumentDto = {
+        entityType: body.entityType as any,
+        entityId: body.entityId,
+        documentType: body.documentType as any,
+        category: body.category as any,
+        priority: body.priority as any,
+        documentNumber: body.documentNumber,
+        title: body.title,
+        description: body.description || '',
+        fileName: file ? file.originalname : (body.fileName || body.title || 'document'),
+        originalFileName: file ? file.originalname : (body.originalFileName || body.fileName || body.title || 'document'),
+        fileUrl: body.fileUrl,
+        file: file,
+        fileSize: file ? file.size : (body.fileSize ? Number(body.fileSize) : 0),
+        mimeType: file ? (file.mimetype || 'application/octet-stream') : (body.mimeType || 'application/octet-stream'),
+        fileExtension: file ? (file.originalname.split('.').pop() || '') : body.fileExtension,
+        issueDate: body.issueDate ? new Date(body.issueDate) : undefined,
+        expiryDate: body.expiryDate ? new Date(body.expiryDate) : undefined,
+        requiresRenewal: body.requiresRenewal === 'true' || body.requiresRenewal === true,
+        renewalReminderDays: body.renewalReminderDays ? Number(body.renewalReminderDays) : undefined,
+        tags: body.tags ? (typeof body.tags === 'string' ? JSON.parse(body.tags) : body.tags) : undefined,
+        sendNotification: body.sendNotification === 'true' || body.sendNotification === true,
+      };
+
+      // Validate required fields
+      if (!createDocumentDto.entityType) {
+        throw new BadRequestException('entityType is required');
+      }
+      if (!createDocumentDto.entityId) {
+        throw new BadRequestException('entityId is required');
+      }
+      if (!createDocumentDto.documentType) {
+        throw new BadRequestException('documentType is required');
+      }
+      if (!createDocumentDto.category) {
+        throw new BadRequestException('category is required');
+      }
+      if (!createDocumentDto.title) {
+        throw new BadRequestException('title is required');
+      }
+      if (!file && !createDocumentDto.fileUrl) {
+        throw new BadRequestException('Either a file or fileUrl must be provided');
+      }
+
+      // Get user and tenant from request
+      const userId = req?.user?.userId;
+      const tenantId = req?.user?.tenantId;
+
+      if (!userId) {
+        throw new BadRequestException('User ID is required');
+      }
+      if (!tenantId) {
+        throw new BadRequestException('Tenant ID is required');
+      }
+
+      return await this.documentService.createDocument(
+        createDocumentDto,
+        userId,
+        tenantId
+      );
+    } catch (error) {
+      console.error('Error creating document:', error);
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      throw new BadRequestException(`Failed to create document: ${error.message}`);
     }
-
-    // TODO: Get user from context or pass as parameter
-    const userId = 'temp-user-id'; // Placeholder
-    const tenantId = 'temp-tenant-id'; // Placeholder
-
-    return this.documentService.createDocument(
-      createDocumentDto,
-      userId,
-      tenantId
-    );
   }
 
   @Get()
@@ -158,10 +217,25 @@ export class DocumentController {
   })
   async getDocuments(
     @Query() filterDto: DocumentFilterDto,
-  ): Promise<{ documents: Document[]; total: number }> {
-    // TODO: Get tenantId from context or pass as parameter
-    const tenantId = 'temp-tenant-id'; // Placeholder
-    return this.documentService.getDocuments(filterDto, tenantId);
+    @Req() req?: Request,
+  ): Promise<{ documents: Document[]; total: number; page?: number; limit?: number; totalPages?: number }> {
+    const tenantId = req?.user?.tenantId;
+    if (!tenantId) {
+      throw new BadRequestException('Tenant ID is required');
+    }
+    const result = await this.documentService.getDocuments(filterDto, tenantId);
+    
+    // Calculate pagination info for frontend compatibility
+    const page = filterDto.page || 1;
+    const limit = Math.min(filterDto.limit || 20, 100);
+    const totalPages = Math.ceil(result.total / limit);
+    
+    return {
+      ...result,
+      page,
+      limit,
+      totalPages,
+    };
   }
 
   @Get('search')
@@ -336,7 +410,7 @@ export class DocumentController {
       new ParseFilePipe({
         validators: [
           new MaxFileSizeValidator({ maxSize: 10 * 1024 * 1024 }), // 10MB
-          new FileTypeValidator({ fileType: '.(pdf|doc|docx|jpg|jpeg|png|txt)' }),
+          // FileTypeValidator removed to allow any document type
         ],
         fileIsRequired: false,
       }),
@@ -493,19 +567,78 @@ export class DocumentController {
   async downloadDocument(
     @Param('id') id: string,
     @Req() req: Request,
-  ): Promise<any> {
-    // This would typically return a file stream
-    // For now, we'll return the document info
+    @Res() res: Response,
+  ): Promise<void> {
     const document = await this.documentService.getDocumentById(id, req.user.tenantId);
-    return {
-      message: 'Download initiated',
-      document: {
-        id: document.id,
-        fileName: document.fileName,
-        fileUrl: document.fileUrl,
-        fileSize: document.fileSize,
-        mimeType: document.mimeType
-      }
-    };
+    
+    // Extract file path from fileUrl
+    const fileUrl = document.fileUrl;
+    if (!fileUrl) {
+      throw new NotFoundException('Document file not found');
+    }
+
+    // Extract relative path from URL (e.g., /uploads/documents/file.pdf)
+    let urlPath: string;
+    try {
+      const url = new URL(fileUrl);
+      urlPath = url.pathname;
+    } catch {
+      // If fileUrl is a relative path, use it directly
+      urlPath = fileUrl.startsWith('/') ? fileUrl : `/${fileUrl}`;
+    }
+    
+    const filePath = join(process.cwd(), urlPath);
+
+    if (!fs.existsSync(filePath)) {
+      throw new NotFoundException(`File not found on server: ${filePath}`);
+    }
+
+    res.setHeader('Content-Type', document.mimeType || 'application/octet-stream');
+    res.setHeader('Content-Disposition', `inline; filename="${document.fileName}"`);
+    res.sendFile(filePath);
+  }
+
+  @Get('serve/:id')
+  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN, UserRole.TRUCK_OWNER, UserRole.DRIVER, UserRole.CARGO_OWNER)
+  @ApiOperation({
+    summary: 'Serve document file',
+    description: 'Serve a document file for viewing (inline)'
+  })
+  @ApiParam({ name: 'id', type: String })
+  @ApiResponse({
+    status: 200,
+    description: 'Document file served successfully'
+  })
+  async serveDocument(
+    @Param('id') id: string,
+    @Req() req: Request,
+    @Res() res: Response,
+  ): Promise<void> {
+    const document = await this.documentService.getDocumentById(id, req.user.tenantId);
+    
+    const fileUrl = document.fileUrl;
+    if (!fileUrl) {
+      throw new NotFoundException('Document file not found');
+    }
+
+    // Extract relative path from URL
+    let urlPath: string;
+    try {
+      const url = new URL(fileUrl);
+      urlPath = url.pathname;
+    } catch {
+      urlPath = fileUrl.startsWith('/') ? fileUrl : `/${fileUrl}`;
+    }
+    
+    const filePath = join(process.cwd(), urlPath);
+
+    if (!fs.existsSync(filePath)) {
+      throw new NotFoundException(`File not found on server: ${filePath}`);
+    }
+
+    res.setHeader('Content-Type', document.mimeType || 'application/octet-stream');
+    res.setHeader('Content-Disposition', `inline; filename="${document.fileName}"`);
+    res.setHeader('Cache-Control', 'public, max-age=31536000');
+    res.sendFile(filePath);
   }
 }

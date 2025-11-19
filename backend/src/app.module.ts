@@ -23,6 +23,7 @@ import { InsuranceModule } from './modules/insurance/insurance.module';
 import { DocumentModule } from './modules/documents/document.module';
 import { NotificationModule } from './modules/notifications/notification.module';
 import { FileUploadModule } from './modules/file-upload/file-upload.module';
+import { OcrModule } from './modules/ocr/ocr.module';
 import { databaseConfig } from './config/database.config';
 import { ThrottlerModule } from '@nestjs/throttler';
 
@@ -51,6 +52,7 @@ import { ThrottlerModule } from '@nestjs/throttler';
   DocumentModule,
   NotificationModule,
   FileUploadModule,
+  OcrModule,
   ],
   controllers: [AppController],
   providers: [AppService],

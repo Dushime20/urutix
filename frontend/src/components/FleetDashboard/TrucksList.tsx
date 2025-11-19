@@ -56,6 +56,432 @@ interface SortConfig {
   direction: 'asc' | 'desc';
 }
 
+interface EditTruckFormProps {
+  truck: any;
+  onSave: (data: any) => void;
+  onCancel: () => void;
+}
+
+const EditTruckForm: React.FC<EditTruckFormProps> = ({ truck, onSave, onCancel }) => {
+  const [formData, setFormData] = useState({
+    plateNumber: truck.plateNumber || '',
+    make: truck.make || '',
+    model: truck.model || '',
+    year: truck.year || new Date().getFullYear(),
+    color: truck.color || '',
+    vin: truck.vin || '',
+    capacityWeight: truck.capacityWeight || 0,
+    capacityVolume: truck.capacityVolume || 0,
+    maxLength: truck.maxLength ? String(truck.maxLength) : '',
+    maxWidth: truck.maxWidth ? String(truck.maxWidth) : '',
+    maxHeight: truck.maxHeight ? String(truck.maxHeight) : '',
+    truckType: truck.truckType || 'FLATBED',
+    trailerType: truck.trailerType || '',
+    fuelType: truck.fuelType || 'DIESEL',
+    status: truck.status || 'AVAILABLE',
+    mileage: truck.mileage || 0,
+    fuelEfficiency: truck.fuelEfficiency ? String(truck.fuelEfficiency) : '',
+    registrationNumber: truck.registrationNumber || '',
+    registrationExpiry: truck.registrationExpiry ? new Date(truck.registrationExpiry).toISOString().split('T')[0] : '',
+    insurancePolicy: truck.insurancePolicy || '',
+    insuranceExpiry: truck.insuranceExpiry ? new Date(truck.insuranceExpiry).toISOString().split('T')[0] : '',
+    roadworthyCertExpiry: truck.roadworthyCertExpiry ? new Date(truck.roadworthyCertExpiry).toISOString().split('T')[0] : '',
+    hasRefrigeration: truck.hasRefrigeration || false,
+    hasLiftGate: truck.hasLiftGate || false,
+    hasGps: truck.hasGps || truck.hasGPS || false,
+    hasHazmatPermit: truck.hasHazmatPermit || false,
+    isActive: truck.isActive !== undefined ? truck.isActive : true,
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSave(formData);
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value, type } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : 
+              type === 'number' ? (value === '' ? '' : Number(value)) : value
+    }));
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Basic Information */}
+        <div className="space-y-4">
+          <h4 className="text-lg font-semibold text-gray-900 border-b border-gray-200 pb-2">Basic Information</h4>
+          <div className="space-y-3">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Plate Number *</label>
+              <input
+                type="text"
+                name="plateNumber"
+                value={formData.plateNumber}
+                onChange={handleChange}
+                required
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">VIN *</label>
+              <input
+                type="text"
+                name="vin"
+                value={formData.vin}
+                onChange={handleChange}
+                required
+                maxLength={17}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Make *</label>
+              <input
+                type="text"
+                name="make"
+                value={formData.make}
+                onChange={handleChange}
+                required
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Model *</label>
+              <input
+                type="text"
+                name="model"
+                value={formData.model}
+                onChange={handleChange}
+                required
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Year *</label>
+              <input
+                type="number"
+                name="year"
+                value={formData.year}
+                onChange={handleChange}
+                required
+                min="1900"
+                max={new Date().getFullYear() + 1}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Color</label>
+              <input
+                type="text"
+                name="color"
+                value={formData.color}
+                onChange={handleChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Status *</label>
+              <select
+                name="status"
+                value={formData.status}
+                onChange={handleChange}
+                required
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              >
+                <option value="AVAILABLE">Available</option>
+                <option value="IN_TRANSIT">In Transit</option>
+                <option value="MAINTENANCE">Maintenance</option>
+                <option value="OUT_OF_SERVICE">Out of Service</option>
+              </select>
+            </div>
+            <div className="flex items-center">
+              <input
+                type="checkbox"
+                name="isActive"
+                checked={formData.isActive}
+                onChange={handleChange}
+                className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
+              />
+              <label className="ml-2 text-sm font-medium text-gray-700">Active</label>
+            </div>
+          </div>
+        </div>
+
+        {/* Specifications */}
+        <div className="space-y-4">
+          <h4 className="text-lg font-semibold text-gray-900 border-b border-gray-200 pb-2">Specifications</h4>
+          <div className="space-y-3">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Capacity Weight (lbs) *</label>
+              <input
+                type="number"
+                name="capacityWeight"
+                value={formData.capacityWeight}
+                onChange={handleChange}
+                required
+                min="0"
+                step="0.01"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Capacity Volume (cu ft) *</label>
+              <input
+                type="number"
+                name="capacityVolume"
+                value={formData.capacityVolume}
+                onChange={handleChange}
+                required
+                min="0"
+                step="0.01"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Truck Type *</label>
+              <select
+                name="truckType"
+                value={formData.truckType}
+                onChange={handleChange}
+                required
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              >
+                <option value="FLATBED">Flatbed</option>
+                <option value="BOX_TRUCK">Box Truck</option>
+                <option value="REFRIGERATED">Refrigerated</option>
+                <option value="TANKER">Tanker</option>
+                <option value="HEAVY_HAUL">Heavy Haul</option>
+                <option value="VAN">Van</option>
+                <option value="DUMP_TRUCK">Dump Truck</option>
+                <option value="CRANE">Crane</option>
+                <option value="SPECIALIZED">Specialized</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Trailer Type</label>
+              <input
+                type="text"
+                name="trailerType"
+                value={formData.trailerType}
+                onChange={handleChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Fuel Type *</label>
+              <select
+                name="fuelType"
+                value={formData.fuelType}
+                onChange={handleChange}
+                required
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              >
+                <option value="DIESEL">Diesel</option>
+                <option value="GASOLINE">Gasoline</option>
+                <option value="ELECTRIC">Electric</option>
+                <option value="HYBRID">Hybrid</option>
+                <option value="CNG">CNG</option>
+                <option value="LPG">LPG</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Mileage</label>
+              <input
+                type="number"
+                name="mileage"
+                value={formData.mileage}
+                onChange={handleChange}
+                min="0"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Fuel Efficiency (mpg)</label>
+              <input
+                type="number"
+                name="fuelEfficiency"
+                value={formData.fuelEfficiency}
+                onChange={handleChange}
+                min="0"
+                step="0.1"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Dimensions */}
+        <div className="space-y-4">
+          <h4 className="text-lg font-semibold text-gray-900 border-b border-gray-200 pb-2">Dimensions (meters)</h4>
+          <div className="space-y-3">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Max Length</label>
+              <input
+                type="number"
+                name="maxLength"
+                value={formData.maxLength}
+                onChange={handleChange}
+                min="0"
+                step="0.01"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Max Width</label>
+              <input
+                type="number"
+                name="maxWidth"
+                value={formData.maxWidth}
+                onChange={handleChange}
+                min="0"
+                step="0.01"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Max Height</label>
+              <input
+                type="number"
+                name="maxHeight"
+                value={formData.maxHeight}
+                onChange={handleChange}
+                min="0"
+                step="0.01"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Compliance & Documents */}
+        <div className="space-y-4">
+          <h4 className="text-lg font-semibold text-gray-900 border-b border-gray-200 pb-2">Compliance & Documents</h4>
+          <div className="space-y-3">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Registration Number</label>
+              <input
+                type="text"
+                name="registrationNumber"
+                value={formData.registrationNumber}
+                onChange={handleChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Registration Expiry</label>
+              <input
+                type="date"
+                name="registrationExpiry"
+                value={formData.registrationExpiry}
+                onChange={handleChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Insurance Policy</label>
+              <input
+                type="text"
+                name="insurancePolicy"
+                value={formData.insurancePolicy}
+                onChange={handleChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Insurance Expiry</label>
+              <input
+                type="date"
+                name="insuranceExpiry"
+                value={formData.insuranceExpiry}
+                onChange={handleChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Roadworthy Cert Expiry</label>
+              <input
+                type="date"
+                name="roadworthyCertExpiry"
+                value={formData.roadworthyCertExpiry}
+                onChange={handleChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Capabilities */}
+        <div className="space-y-4">
+          <h4 className="text-lg font-semibold text-gray-900 border-b border-gray-200 pb-2">Capabilities</h4>
+          <div className="space-y-3">
+            <div className="flex items-center">
+              <input
+                type="checkbox"
+                name="hasRefrigeration"
+                checked={formData.hasRefrigeration}
+                onChange={handleChange}
+                className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
+              />
+              <label className="ml-2 text-sm font-medium text-gray-700">Has Refrigeration</label>
+            </div>
+            <div className="flex items-center">
+              <input
+                type="checkbox"
+                name="hasLiftGate"
+                checked={formData.hasLiftGate}
+                onChange={handleChange}
+                className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
+              />
+              <label className="ml-2 text-sm font-medium text-gray-700">Has Lift Gate</label>
+            </div>
+            <div className="flex items-center">
+              <input
+                type="checkbox"
+                name="hasGps"
+                checked={formData.hasGps}
+                onChange={handleChange}
+                className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
+              />
+              <label className="ml-2 text-sm font-medium text-gray-700">Has GPS</label>
+            </div>
+            <div className="flex items-center">
+              <input
+                type="checkbox"
+                name="hasHazmatPermit"
+                checked={formData.hasHazmatPermit}
+                onChange={handleChange}
+                className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
+              />
+              <label className="ml-2 text-sm font-medium text-gray-700">Has Hazmat Permit</label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Action Buttons */}
+      <div className="flex items-center justify-end gap-3 pt-6 border-t border-gray-200">
+        <button
+          type="button"
+          onClick={onCancel}
+          className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
+        >
+          Cancel
+        </button>
+        <button
+          type="submit"
+          className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 flex items-center gap-2"
+        >
+          <FaEdit className="w-4 h-4" />
+          Save Changes
+        </button>
+      </div>
+    </form>
+  );
+};
+
 export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigger }) => {
   const { user, accessToken, isLoading: authLoading } = useAuth();
   
@@ -74,6 +500,8 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
   const [showAssignRoute, setShowAssignRoute] = useState(false);
   const [showTruckDetails, setShowTruckDetails] = useState(false);
   const [showTruckRoutes, setShowTruckRoutes] = useState(false);
+  const [showEditTruck, setShowEditTruck] = useState(false);
+  const [editingTruck, setEditingTruck] = useState<any>(null);
   const [sortConfig, setSortConfig] = useState<SortConfig>({ key: 'name', direction: 'asc' });
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
@@ -536,6 +964,50 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
         bValue = b.name || b.plateNumber || '';
       }
 
+      // Handle date sorting (createdAt)
+      if (sortConfig.key === 'createdAt' || sortConfig.key === 'dateAdded') {
+        // Get createdAt from truck object (could be in different formats)
+        const aDateValue = a.createdAt || a.created_at || aValue;
+        const bDateValue = b.createdAt || b.created_at || bValue;
+        
+        // Convert to Date objects for proper comparison
+        let aDate = 0;
+        let bDate = 0;
+        
+        if (aDateValue) {
+          const aParsed = new Date(aDateValue).getTime();
+          aDate = isNaN(aParsed) ? 0 : aParsed;
+        }
+        
+        if (bDateValue) {
+          const bParsed = new Date(bDateValue).getTime();
+          bDate = isNaN(bParsed) ? 0 : bParsed;
+        }
+        
+        // If both are 0 (no date), keep original order
+        if (aDate === 0 && bDate === 0) {
+          return 0;
+        }
+        
+        // If one has no date, put it at the end
+        if (aDate === 0) {
+          return 1; // a goes to end
+        }
+        if (bDate === 0) {
+          return -1; // b goes to end
+        }
+        
+        // Compare dates
+        if (aDate < bDate) {
+          return sortConfig.direction === 'asc' ? -1 : 1;
+        }
+        if (aDate > bDate) {
+          return sortConfig.direction === 'asc' ? 1 : -1;
+        }
+        return 0;
+      }
+
+      // Handle string sorting
       if (typeof aValue === 'string') {
         aValue = aValue.toLowerCase();
         bValue = bValue.toLowerCase();
@@ -560,7 +1032,18 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
         truck.make?.toLowerCase().includes(search.toLowerCase()) ||
         truck.model?.toLowerCase().includes(search.toLowerCase());
 
-      const matchesStatus = !statusFilter || truck.status?.toLowerCase() === statusFilter.toLowerCase();
+      // Normalize status for comparison - handle enum values (uppercase with underscores)
+      let matchesStatus = true;
+      if (statusFilter) {
+        // Normalize both truck status and filter to uppercase for comparison
+        const truckStatus = (truck.status || '').toUpperCase().trim();
+        const filterStatus = statusFilter.toUpperCase().trim();
+        
+        // Direct comparison (both should be uppercase enum values)
+        // Also handle variations like "IN TRANSIT" vs "IN_TRANSIT"
+        matchesStatus = truckStatus === filterStatus || 
+                       truckStatus.replace(/_/g, ' ') === filterStatus.replace(/_/g, ' ');
+      }
 
       return matchesSearch && matchesStatus;
     });
@@ -1025,11 +1508,10 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
             >
               <option value="">All Status</option>
-              <option value="available">Available</option>
-              <option value="in_transit">In Transit</option>
-              <option value="maintenance">Maintenance</option>
-              <option value="offline">Offline</option>
-              <option value="assigned">Assigned</option>
+              <option value="AVAILABLE">Available</option>
+              <option value="IN_TRANSIT">In Transit</option>
+              <option value="MAINTENANCE">Maintenance</option>
+              <option value="OUT_OF_SERVICE">Out of Service</option>
             </select>
           </div>
           <div className="flex items-center gap-2">
@@ -1075,6 +1557,8 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
             <option value="year-asc">Year (Oldest)</option>
             <option value="capacityWeight-desc">Capacity (High-Low)</option>
             <option value="capacityWeight-asc">Capacity (Low-High)</option>
+            <option value="createdAt-desc">Date Added (Newest First)</option>
+            <option value="createdAt-asc">Date Added (Oldest First)</option>
           </select>
           <span className="ml-4 text-xs text-gray-500">
             Routes assigned: {filterTrucks(trucks).reduce((sum, t) => sum + (Array.isArray(t.assignedRoutes) ? t.assignedRoutes.length : 0), 0)}
@@ -1256,7 +1740,13 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
                   <FaFileAlt className="w-3 h-3" />
                   Records
                 </a>
-                <button className="flex-1 px-3 py-2 text-sm bg-gray-100 text-gray-700 rounded hover:bg-gray-200 flex items-center justify-center gap-1">
+                <button 
+                  onClick={() => {
+                    setEditingTruck(truck);
+                    setShowEditTruck(true);
+                  }}
+                  className="flex-1 px-3 py-2 text-sm bg-gray-100 text-gray-700 rounded hover:bg-gray-200 flex items-center justify-center gap-1"
+                >
                   <FaEdit className="w-3 h-3" />
                   Edit
                 </button>
@@ -1409,7 +1899,14 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
                         >
                           <FaFileAlt className="w-3 h-3" />
                         </a>
-                        <button className="text-gray-600 hover:text-gray-800 text-sm flex items-center gap-1" title="Edit">
+                        <button 
+                          onClick={() => {
+                            setEditingTruck(truck);
+                            setShowEditTruck(true);
+                          }}
+                          className="text-gray-600 hover:text-gray-800 text-sm flex items-center gap-1" 
+                          title="Edit"
+                        >
                           <FaEdit className="w-3 h-3" />
                         </button>
                       </div>
@@ -1882,9 +2379,9 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
                 </button>
                 <button
                   onClick={() => {
+                    setEditingTruck(selectedTruck);
                     setShowTruckDetails(false);
-                    setSelectedTruck(null);
-                    // Navigate to edit page or open edit modal
+                    setShowEditTruck(true);
                   }}
                   className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 flex items-center gap-2"
                 >
@@ -1892,6 +2389,102 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
                   Edit Truck
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Truck Modal */}
+      {showEditTruck && editingTruck && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-2xl font-bold text-gray-900">Edit Truck</h3>
+                <button
+                  onClick={() => {
+                    setShowEditTruck(false);
+                    setEditingTruck(null);
+                  }}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <FaTimesCircle className="w-6 h-6" />
+                </button>
+              </div>
+
+              <EditTruckForm
+                truck={editingTruck}
+                onSave={async (updatedData) => {
+                  try {
+                    // Clean the data: remove empty strings, convert dates, handle undefined values
+                    const cleanedData: any = {};
+                    
+                    // Copy all non-empty values
+                    Object.keys(updatedData).forEach(key => {
+                      const value = updatedData[key];
+                      
+                      // Handle date fields first - convert empty strings to undefined
+                      if (['registrationExpiry', 'insuranceExpiry', 'roadworthyCertExpiry'].includes(key)) {
+                        if (value === '' || !value) {
+                          return; // Don't send empty dates
+                        }
+                        cleanedData[key] = value; // Keep as ISO string
+                        return;
+                      }
+                      
+                      // Skip empty strings for optional fields
+                      if (value === '' && ['color', 'trailerType', 'registrationNumber', 'insurancePolicy'].includes(key)) {
+                        return; // Don't include empty optional fields
+                      }
+                      
+                      // Convert string numbers to actual numbers for numeric fields
+                      if (['maxLength', 'maxWidth', 'maxHeight', 'fuelEfficiency'].includes(key)) {
+                        if (value === '' || value === null || value === undefined) {
+                          return; // Don't send empty numeric optional fields
+                        }
+                        const numValue = Number(value);
+                        if (!isNaN(numValue)) {
+                          cleanedData[key] = numValue;
+                        }
+                        return;
+                      }
+                      
+                      // Handle mileage - default to 0 if empty
+                      if (key === 'mileage') {
+                        if (value === '' || value === null || value === undefined) {
+                          cleanedData[key] = 0;
+                        } else {
+                          cleanedData[key] = Number(value) || 0;
+                        }
+                        return;
+                      }
+                      
+                      // Don't send NaN values
+                      if (typeof value === 'number' && isNaN(value)) {
+                        return;
+                      }
+                      
+                      // Include all other valid values
+                      cleanedData[key] = value;
+                    });
+                    
+                    console.log('Sending cleaned truck update data:', cleanedData);
+                    await fleetApi.updateTruck(editingTruck.id, cleanedData);
+                    toast.success('Truck updated successfully');
+                    setShowEditTruck(false);
+                    setEditingTruck(null);
+                    loadData(); // Refresh the list
+                  } catch (error: any) {
+                    console.error('Error updating truck:', error);
+                    console.error('Error response:', error.response?.data);
+                    toast.error(error.response?.data?.message || error.message || 'Failed to update truck');
+                  }
+                }}
+                onCancel={() => {
+                  setShowEditTruck(false);
+                  setEditingTruck(null);
+                }}
+              />
             </div>
           </div>
         </div>
