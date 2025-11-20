@@ -1,8 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { fleetApi } from '../services/fleetApi';
 import type { Route } from '../services/fleetApi';
+import { useConfirmDialog } from '../hooks/useConfirmDialog';
 
 const RoutesPage: React.FC = () => {
+  const { confirm, DialogComponent } = useConfirmDialog();
   const [routes, setRoutes] = useState<Route[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -73,7 +75,14 @@ const RoutesPage: React.FC = () => {
   };
 
   const handleDelete = async (route: Route) => {
-    if (!window.confirm(`Delete route "${route.name}"?`)) return;
+    const confirmed = await confirm({
+      title: 'Delete Route',
+      message: `Are you sure you want to delete route "${route.name}"? This action cannot be undone.`,
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      variant: 'danger',
+    });
+    if (!confirmed) return;
     try {
       await fleetApi.deleteRoute(route.id);
       setRoutes((prev) => prev.filter((r) => r.id !== route.id));
@@ -120,7 +129,15 @@ const RoutesPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="p-6">
+      <div className="space-y-6">
+        <div className="mb-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="mb-2">Routes</h1>
+              <p className="text-sm text-gray-600">Manage and monitor your routes</p>
+            </div>
+          </div>
+        </div>
         <div className="animate-pulse">
           <div className="h-8 bg-gray-200 rounded w-1/4 mb-4" />
           <div className="space-y-3">
@@ -135,7 +152,15 @@ const RoutesPage: React.FC = () => {
 
   if (error) {
     return (
-      <div className="p-6">
+      <div className="space-y-6">
+        <div className="mb-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="mb-2">Routes</h1>
+              <p className="text-sm text-gray-600">Manage and monitor your routes</p>
+            </div>
+          </div>
+        </div>
         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
           <strong className="font-bold">Error:</strong>
           <span className="block sm:inline"> {error}</span>
@@ -145,56 +170,60 @@ const RoutesPage: React.FC = () => {
   }
 
   return (
-    <div className="p-6">
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Routes</h1>
-          <p className="text-gray-600">Manage and monitor your routes</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={loadRoutes}
-            className="px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200"
-          >
-            Refresh
-          </button>
-          <button
-            onClick={openCreate}
-            className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
-          >
-            New Route
-          </button>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="mb-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="mb-2">Routes</h1>
+            <p className="text-sm text-gray-600">Manage and monitor your routes</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={loadRoutes}
+              className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors flex items-center gap-2"
+            >
+              Refresh
+            </button>
+            <button
+              onClick={openCreate}
+              className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors flex items-center gap-2"
+            >
+              New Route
+            </button>
+          </div>
         </div>
       </div>
 
       {routes.length === 0 ? (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 text-center text-gray-600">
-          No routes available. Create routes in the backend or via API to see them here.
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
+          <p className="text-gray-600">No routes available. Create routes in the backend or via API to see them here.</p>
         </div>
       ) : (
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+          <div className="overflow-x-auto custom-table-wrapper">
+            <table className="custom-table min-w-full">
+              <thead>
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Origin</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Destination</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Distance (km)</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ETA (h)</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Assigned Trucks</th>
+                  <th>Name</th>
+                  <th>Origin</th>
+                  <th>Destination</th>
+                  <th>Distance (km)</th>
+                  <th>ETA (h)</th>
+                  <th>Status</th>
+                  <th>Assigned Trucks</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody>
                 {routes.map((route) => (
                   <tr key={route.id}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{route.name}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{route.origin}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{route.destination}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{route.distance}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{route.estimatedTime}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                    <td className="text-gray-900">{route.name}</td>
+                    <td className="text-gray-700">{route.origin}</td>
+                    <td className="text-gray-700">{route.destination}</td>
+                    <td className="text-gray-700">{route.distance}</td>
+                    <td className="text-gray-700">{route.estimatedTime}</td>
+                    <td>
                       <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
                         route.status?.toLowerCase() === 'active' ? 'bg-green-100 text-green-800' :
                         route.status?.toLowerCase() === 'inactive' ? 'bg-gray-100 text-gray-800' :
@@ -203,18 +232,18 @@ const RoutesPage: React.FC = () => {
                         {route.status}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{route.assignedTrucks?.length || 0}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-right">
+                    <td className="text-gray-700">{route.assignedTrucks?.length || 0}</td>
+                    <td>
                       <div className="flex items-center gap-2 justify-end">
                         <button
                           onClick={() => openEdit(route)}
-                          className="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded hover:bg-gray-200"
+                          className="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
                         >
                           Edit
                         </button>
                         <button
                           onClick={() => handleDelete(route)}
-                          className="px-3 py-1 text-sm bg-red-100 text-red-700 rounded hover:bg-red-200"
+                          className="px-3 py-1 text-sm bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors"
                         >
                           Delete
                         </button>
@@ -230,24 +259,36 @@ const RoutesPage: React.FC = () => {
 
       {/* Create/Edit Modal */}
       {showForm && (
-        <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-lg w-full max-w-2xl p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white border-b border-gray-200 p-6 flex items-center justify-between">
+              <h2 className="text-2xl font-bold text-gray-900">
                 {editing ? 'Edit Route' : 'New Route'}
               </h2>
-              <button onClick={() => { setShowForm(false); resetForm(); }} className="text-gray-500 hover:text-gray-700">✕</button>
+              <button 
+                onClick={() => { setShowForm(false); resetForm(); }} 
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
             </div>
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="p-6 space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
-                  <input className="w-full border rounded px-3 py-2" value={formData.name || ''} onChange={(e) => setFormData({ ...formData, name: e.target.value })} required />
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Name</label>
+                  <input 
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent" 
+                    value={formData.name || ''} 
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })} 
+                    required 
+                  />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
                   <select
-                    className="w-full border rounded px-3 py-2"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                     value={(formData.status as string) || 'ACTIVE'}
                     onChange={(e) => setFormData({ ...formData, status: e.target.value })}
                   >
@@ -257,34 +298,73 @@ const RoutesPage: React.FC = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Origin</label>
-                  <input className="w-full border rounded px-3 py-2" value={formData.origin || ''} onChange={(e) => setFormData({ ...formData, origin: e.target.value })} required />
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Origin</label>
+                  <input 
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent" 
+                    value={formData.origin || ''} 
+                    onChange={(e) => setFormData({ ...formData, origin: e.target.value })} 
+                    required 
+                  />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Destination</label>
-                  <input className="w-full border rounded px-3 py-2" value={formData.destination || ''} onChange={(e) => setFormData({ ...formData, destination: e.target.value })} required />
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Destination</label>
+                  <input 
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent" 
+                    value={formData.destination || ''} 
+                    onChange={(e) => setFormData({ ...formData, destination: e.target.value })} 
+                    required 
+                  />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Distance (km)</label>
-                  <input type="number" className="w-full border rounded px-3 py-2" value={formData.distance || 0} onChange={(e) => setFormData({ ...formData, distance: Number(e.target.value) })} min={0} />
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Distance (km)</label>
+                  <input 
+                    type="number" 
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent" 
+                    value={formData.distance || 0} 
+                    onChange={(e) => setFormData({ ...formData, distance: Number(e.target.value) })} 
+                    min={0} 
+                  />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">ETA (hours)</label>
-                  <input type="number" className="w-full border rounded px-3 py-2" value={formData.estimatedTime || 0} onChange={(e) => setFormData({ ...formData, estimatedTime: Number(e.target.value) })} min={0} />
+                  <label className="block text-sm font-medium text-gray-700 mb-2">ETA (hours)</label>
+                  <input 
+                    type="number" 
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent" 
+                    value={formData.estimatedTime || 0} 
+                    onChange={(e) => setFormData({ ...formData, estimatedTime: Number(e.target.value) })} 
+                    min={0} 
+                  />
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                <textarea className="w-full border rounded px-3 py-2" rows={3} value={formData.description || ''} onChange={(e) => setFormData({ ...formData, description: e.target.value })} />
+                <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                <textarea 
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent" 
+                  rows={3} 
+                  value={formData.description || ''} 
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })} 
+                />
               </div>
-              <div className="flex items-center justify-end gap-2">
-                <button type="button" onClick={() => { setShowForm(false); resetForm(); }} className="px-4 py-2 bg-gray-100 text-gray-700 rounded hover:bg-gray-200">Cancel</button>
-                <button type="submit" className="px-4 py-2 bg-primary-600 text-white rounded hover:bg-primary-700">{editing ? 'Save Changes' : 'Create Route'}</button>
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-200">
+                <button 
+                  type="button" 
+                  onClick={() => { setShowForm(false); resetForm(); }} 
+                  className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit" 
+                  className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+                >
+                  {editing ? 'Save Changes' : 'Create Route'}
+                </button>
               </div>
             </form>
           </div>
         </div>
       )}
+      {DialogComponent}
     </div>
   );
 };

@@ -21,6 +21,7 @@ import type { FleetItem as LocalFleetItem, FleetFilters as FleetFiltersType } fr
 import { FleetStatus } from '../../types/fleet';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { TruckAnalytics } from './TruckAnalytics';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 
 // Fix default marker icon for Leaflet in React
 import iconUrl from 'leaflet/dist/images/marker-icon.png';
@@ -43,6 +44,7 @@ export const FleetDashboard: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, isLoading: authLoading, accessToken } = useAuth();
+  const { confirm, DialogComponent } = useConfirmDialog();
   const [fleetItems, setFleetItems] = useState<LocalFleetItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -323,7 +325,14 @@ export const FleetDashboard: React.FC = () => {
   }, [editingFleetItem, activeTab]);
 
   const handleDeleteFleetItem = useCallback(async (fleetItemId: string) => {
-    if (!window.confirm('Are you sure you want to delete this fleet item?')) return;
+    const confirmed = await confirm({
+      title: 'Delete Fleet Item',
+      message: 'Are you sure you want to delete this fleet item? This action cannot be undone.',
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      variant: 'danger',
+    });
+    if (!confirmed) return;
     
     try {
       if (activeTab === 'trucks') {
@@ -665,6 +674,7 @@ export const FleetDashboard: React.FC = () => {
           activeTab={activeTab === 'drivers' ? 'drivers' : 'trucks'}
         />
       </div>
+      {DialogComponent}
     </ErrorBoundary>
   );
 }; 

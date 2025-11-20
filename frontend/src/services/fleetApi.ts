@@ -705,6 +705,19 @@ export const fleetApi = {
     }
   },
 
+  // Delete maintenance record
+  async deleteMaintenance(truckId: string, maintenanceId: string): Promise<boolean> {
+    try {
+      console.log('🗑️ Deleting maintenance record:', maintenanceId);
+      await api.delete(`/fleet/trucks/${truckId}/maintenance/${maintenanceId}`);
+      console.log('✅ Maintenance record deleted successfully');
+      return true;
+    } catch (error: any) {
+      console.error('❌ Error deleting maintenance record:', error);
+      throw error;
+    }
+  },
+
   // Schedule inspection
   async scheduleInspection(truckId: string, inspectionData: {
     type: string;
@@ -771,6 +784,19 @@ export const fleetApi = {
       return response.data;
     } catch (error: any) {
       console.error('❌ Error updating inspection:', error);
+      throw error;
+    }
+  },
+
+  // Delete inspection record
+  async deleteInspection(truckId: string, inspectionId: string): Promise<boolean> {
+    try {
+      console.log('🗑️ Deleting inspection record:', inspectionId);
+      await api.delete(`/fleet/trucks/${truckId}/inspections/${inspectionId}`);
+      console.log('✅ Inspection record deleted successfully');
+      return true;
+    } catch (error: any) {
+      console.error('❌ Error deleting inspection record:', error);
       throw error;
     }
   },
@@ -851,6 +877,19 @@ export const fleetApi = {
     }
   },
 
+  // Delete insurance record
+  async deleteInsurance(truckId: string, insuranceId: string): Promise<boolean> {
+    try {
+      console.log('🗑️ Deleting insurance record:', insuranceId);
+      await api.delete(`/fleet/trucks/${truckId}/insurance/${insuranceId}`);
+      console.log('✅ Insurance record deleted successfully');
+      return true;
+    } catch (error: any) {
+      console.error('❌ Error deleting insurance record:', error);
+      throw error;
+    }
+  },
+
   // Add fuel record
   async addFuelRecord(truckId: string, fuelData: {
     date: string;
@@ -913,6 +952,19 @@ export const fleetApi = {
       return response.data;
     } catch (error: any) {
       console.error('❌ Error updating fuel record:', error);
+      throw error;
+    }
+  },
+
+  // Delete fuel record
+  async deleteFuelRecord(truckId: string, fuelId: string): Promise<boolean> {
+    try {
+      console.log('🗑️ Deleting fuel record:', fuelId);
+      await api.delete(`/fleet/trucks/${truckId}/fuel/${fuelId}`);
+      console.log('✅ Fuel record deleted successfully');
+      return true;
+    } catch (error: any) {
+      console.error('❌ Error deleting fuel record:', error);
       throw error;
     }
   },
@@ -987,6 +1039,19 @@ export const fleetApi = {
       return response.data;
     } catch (error: any) {
       console.error('❌ Error updating tire record:', error);
+      throw error;
+    }
+  },
+
+  // Delete tire record
+  async deleteTireRecord(truckId: string, tireId: string): Promise<boolean> {
+    try {
+      console.log('🗑️ Deleting tire record:', tireId);
+      await api.delete(`/fleet/trucks/${truckId}/tires/${tireId}`);
+      console.log('✅ Tire record deleted successfully');
+      return true;
+    } catch (error: any) {
+      console.error('❌ Error deleting tire record:', error);
       throw error;
     }
   },
@@ -1198,5 +1263,157 @@ export const fleetApi = {
       console.error('❌ Error setting up driver subscription:', error);
       return () => {};
     }
-  }
+  },
+
+  // ===== SAFETY INCIDENTS APIs =====
+
+  // Get all safety incidents
+  async getSafetyIncidents(filters?: { status?: string; severity?: string }): Promise<any[]> {
+    try {
+      const params = new URLSearchParams();
+      if (filters?.status) params.append('status', filters.status);
+      if (filters?.severity) params.append('severity', filters.severity);
+
+      const response = await api.get(`/safety/incidents?${params.toString()}`);
+      return response.data.incidents || response.data || [];
+    } catch (error) {
+      console.error('❌ Error fetching safety incidents:', error);
+      return [];
+    }
+  },
+
+  // Create a new safety incident
+  async createSafetyIncident(incidentData: any): Promise<any> {
+    try {
+      const response = await api.post('/safety/incidents', incidentData);
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ Error creating safety incident:', error);
+      throw new Error(error.response?.data?.message || 'Failed to create safety incident');
+    }
+  },
+
+  // Update a safety incident
+  async updateSafetyIncident(incidentId: string, incidentData: any): Promise<any> {
+    try {
+      const response = await api.put(`/safety/incidents/${incidentId}`, incidentData);
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ Error updating safety incident:', error);
+      throw new Error(error.response?.data?.message || 'Failed to update safety incident');
+    }
+  },
+
+  // Delete a safety incident
+  async deleteSafetyIncident(incidentId: string): Promise<boolean> {
+    try {
+      await api.delete(`/safety/incidents/${incidentId}`);
+      return true;
+    } catch (error) {
+      console.error('❌ Error deleting safety incident:', error);
+      throw error;
+    }
+  },
+
+  // ===== SAFETY INSPECTIONS APIs =====
+
+  // Get all safety inspections
+  async getSafetyInspections(filters?: { status?: string; truckId?: string; inspectorId?: string }): Promise<any[]> {
+    try {
+      const params = new URLSearchParams();
+      if (filters?.status) params.append('status', filters.status);
+      if (filters?.truckId) params.append('truckId', filters.truckId);
+      if (filters?.inspectorId) params.append('inspectorId', filters.inspectorId);
+
+      const response = await api.get(`/safety/inspections?${params.toString()}`);
+      return response.data.inspections || response.data || [];
+    } catch (error) {
+      console.error('❌ Error fetching safety inspections:', error);
+      return [];
+    }
+  },
+
+  // Create a new safety inspection
+  async createSafetyInspection(inspectionData: any): Promise<any> {
+    try {
+      const response = await api.post('/safety/inspections', inspectionData);
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ Error creating safety inspection:', error);
+      throw new Error(error.response?.data?.message || 'Failed to create safety inspection');
+    }
+  },
+
+  // Update a safety inspection
+  async updateSafetyInspection(inspectionId: string, inspectionData: any): Promise<any> {
+    try {
+      const response = await api.put(`/safety/inspections/${inspectionId}`, inspectionData);
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ Error updating safety inspection:', error);
+      throw new Error(error.response?.data?.message || 'Failed to update safety inspection');
+    }
+  },
+
+  // Delete a safety inspection
+  async deleteSafetyInspection(inspectionId: string): Promise<boolean> {
+    try {
+      await api.delete(`/safety/inspections/${inspectionId}`);
+      return true;
+    } catch (error) {
+      console.error('❌ Error deleting safety inspection:', error);
+      throw error;
+    }
+  },
+
+  // ===== SAFETY TRAININGS APIs =====
+
+  // Get all safety trainings
+  async getSafetyTrainings(filters?: { status?: string; driverId?: string; type?: string }): Promise<any[]> {
+    try {
+      const params = new URLSearchParams();
+      if (filters?.status) params.append('status', filters.status);
+      if (filters?.driverId) params.append('driverId', filters.driverId);
+      if (filters?.type) params.append('type', filters.type);
+
+      const response = await api.get(`/safety/trainings?${params.toString()}`);
+      return response.data.trainings || response.data || [];
+    } catch (error) {
+      console.error('❌ Error fetching safety trainings:', error);
+      return [];
+    }
+  },
+
+  // Create a new safety training
+  async createSafetyTraining(trainingData: any): Promise<any> {
+    try {
+      const response = await api.post('/safety/trainings', trainingData);
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ Error creating safety training:', error);
+      throw new Error(error.response?.data?.message || 'Failed to create safety training');
+    }
+  },
+
+  // Update a safety training
+  async updateSafetyTraining(trainingId: string, trainingData: any): Promise<any> {
+    try {
+      const response = await api.put(`/safety/trainings/${trainingId}`, trainingData);
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ Error updating safety training:', error);
+      throw new Error(error.response?.data?.message || 'Failed to update safety training');
+    }
+  },
+
+  // Delete a safety training
+  async deleteSafetyTraining(trainingId: string): Promise<boolean> {
+    try {
+      await api.delete(`/safety/trainings/${trainingId}`);
+      return true;
+    } catch (error) {
+      console.error('❌ Error deleting safety training:', error);
+      throw error;
+    }
+  },
 }; 

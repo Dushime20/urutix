@@ -5,8 +5,10 @@ import { Toaster } from 'react-hot-toast';
 import Dashboard from './pages/Dashboard';
 import CargoDashboard from './pages/CargoDashboard';
 import FleetDashboard from './pages/FleetDashboard';
+import FleetOwnerDashboard from './pages/FleetOwnerDashboard';
 import FleetSafety from './pages/FleetSafety';
 import TruckBidsPage from './pages/TruckBidsPage';
+import FleetBidsPage from './pages/FleetBidsPage';
 import MyBidsPage from './pages/MyBidsPage';
 import DriversListPage from './pages/DriversListPage';
 import DriverDashboard from './pages/DriverDashboard';
@@ -205,13 +207,13 @@ function App() {
 
             {/* Fleet Dashboard Routes (under dashboard path) */}
             <Route path="/dashboard/fleet" element={<FleetOwnerLayout />}>
-              <Route index element={<FleetDashboard />} />
+              <Route index element={<FleetOwnerDashboard />} />
               <Route path="analytics" element={<FleetAnalytics />} />
               <Route path="trucks" element={<UnifiedFleetManagement />} />
               <Route path="trucks/create" element={<UnifiedFleetManagement />} />
               <Route path="trucks/:truckId/records" element={<TruckRecordsPage />} />
               <Route path="trips" element={<UnifiedFleetManagement />} />
-              <Route path="bids" element={<TruckBidsPage />} />
+              <Route path="bids" element={<FleetBidsPage />} />
               <Route path="drivers" element={<UnifiedDriverManagement />} />
               <Route path="drivers/create" element={<UnifiedDriverManagement />} />
               <Route path="assignments" element={<UnifiedDriverManagement />} />

@@ -24,6 +24,7 @@ import { DocumentModule } from './modules/documents/document.module';
 import { NotificationModule } from './modules/notifications/notification.module';
 import { FileUploadModule } from './modules/file-upload/file-upload.module';
 import { OcrModule } from './modules/ocr/ocr.module';
+import { SafetyModule } from './modules/safety/safety.module';
 import { databaseConfig } from './config/database.config';
 import { ThrottlerModule } from '@nestjs/throttler';
 
@@ -53,6 +54,7 @@ import { ThrottlerModule } from '@nestjs/throttler';
   NotificationModule,
   FileUploadModule,
   OcrModule,
+  SafetyModule,
   ],
   controllers: [AppController],
   providers: [AppService],

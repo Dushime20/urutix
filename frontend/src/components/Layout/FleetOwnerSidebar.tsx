@@ -38,7 +38,7 @@ const FleetOwnerSidebar: React.FC<FleetOwnerSidebarProps> = ({ isCollapsed, onTo
 
   const navigationItems = [
     {
-      section: 'Fleet Management',
+      section: '',
       items: [
         {
           name: 'Dashboard',
@@ -106,7 +106,7 @@ const FleetOwnerSidebar: React.FC<FleetOwnerSidebarProps> = ({ isCollapsed, onTo
       ]
     },
     {
-      section: 'Safety & Compliance',
+      section: '',
       items: [
         {
           name: 'Safety Records',
@@ -123,14 +123,8 @@ const FleetOwnerSidebar: React.FC<FleetOwnerSidebarProps> = ({ isCollapsed, onTo
       ]
     },
     {
-      section: 'Account & Settings',
+      section: '',
       items: [
-        {
-          name: 'Account & Settings',
-          path: '/dashboard/fleet/profile',
-          icon: FaUser,
-          description: 'Manage your account and preferences'
-        },
         {
           name: 'Help & Support',
           path: '/dashboard/fleet/support',
@@ -181,13 +175,13 @@ const FleetOwnerSidebar: React.FC<FleetOwnerSidebarProps> = ({ isCollapsed, onTo
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto py-6">
         {navigationItems.map((section, sectionIndex) => (
-          <div key={sectionIndex} className="mb-6 px-3">
+          <div key={sectionIndex} className="px-3">
             {!isCollapsed && section.section && section.section !== 'Driver Management' && (
-              <h3 className="mb-3 px-2 text-xs font-semibold uppercase tracking-wider text-gray-400">
+              <h3 className="mb-2 px-2 text-xs font-semibold uppercase tracking-wider text-gray-400">
                 {section.section}
               </h3>
             )}
-            <div className="space-y-2">
+            <div className="space-y-2 mb-4">
               {section.items.map((item, itemIndex) => {
                 const IconComponent = item.icon;
                 return (
@@ -198,7 +192,7 @@ const FleetOwnerSidebar: React.FC<FleetOwnerSidebarProps> = ({ isCollapsed, onTo
                     className={({ isActive }) =>
                       `group relative flex items-center ${isCollapsed ? 'justify-center p-2' : 'gap-3 px-3 py-2'} rounded-xl text-sm font-semibold transition-all duration-200 ${
                         isActive
-                          ? 'bg-primary-600 text-white shadow-lg shadow-primary-500/30'
+                          ? 'bg-primary-600 text-white'
                           : 'text-gray-600 hover:bg-primary-50/80 hover:text-primary-700'
                       }`
                     }
@@ -209,7 +203,7 @@ const FleetOwnerSidebar: React.FC<FleetOwnerSidebarProps> = ({ isCollapsed, onTo
                         <div
                           className={`flex h-9 w-9 items-center justify-center rounded-lg border text-base transition-all duration-200 ${
                             isActive
-                              ? 'border-white/40 bg-white text-primary-600 shadow-sm'
+                              ? 'border-white/40 bg-white text-primary-600'
                               : 'border-gray-200 bg-white text-gray-500 group-hover:border-primary-200 group-hover:text-primary-600'
                           }`}
                         >

@@ -14,6 +14,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import toast from 'react-hot-toast';
 import { fleetApi } from '../../services/fleetApi';
 import { MaintenanceType, InspectionType } from '../../types/fleet';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 
 interface TruckRecordsProps {
   truckId: string;
@@ -21,6 +22,7 @@ interface TruckRecordsProps {
 
 export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
   const { user } = useAuth();
+  const { confirm, DialogComponent } = useConfirmDialog();
   const [truck, setTruck] = useState<FleetItem | null>(null);
   const [activeTab, setActiveTab] = useState('overview');
   const [loading, setLoading] = useState(true);
@@ -558,8 +560,7 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
             { id: 'inspections', label: 'Inspections', icon: FaShieldAlt },
             { id: 'insurance', label: 'Insurance', icon: FaShieldAlt },
             { id: 'fuel', label: 'Fuel & Costs', icon: FaGasPump },
-            { id: 'tires', label: 'Tires', icon: FaTachometerAlt },
-            { id: 'compliance', label: 'Compliance', icon: FaCertificate }
+            { id: 'tires', label: 'Tires', icon: FaTachometerAlt }
           ].map(tab => (
             <button
               key={tab.id}
@@ -683,47 +684,57 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
                           {doc.status}
                         </span>
                         {doc.fileUrl && (
-                          <button
+                          <div className="relative group">
+                            <button
+                              onClick={async () => {
+                                setViewingDocument(doc);
+                                setLoadingDocumentView(true);
+                                setDocumentViewUrl(null);
+                                
+                                try {
+                                  // Fetch file as blob with authentication
+                                  const blob = await documentApi.downloadDocument(doc.id);
+                                  const url = URL.createObjectURL(blob);
+                                  setDocumentViewUrl(url);
+                                } catch (error: any) {
+                                  console.error('Error loading document:', error);
+                                  toast.error('Failed to load document');
+                                  // Fallback to direct URL
+                                  setDocumentViewUrl(doc.fileUrl);
+                                } finally {
+                                  setLoadingDocumentView(false);
+                                }
+                              }}
+                              className="text-gray-400 hover:text-gray-600"
+                            >
+                              <FaEye className="w-4 h-4" />
+                            </button>
+                            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-white text-gray-900 text-xs font-medium rounded-md shadow-lg border border-gray-200 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                              View Document
+                              <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-white"></div>
+                            </div>
+                          </div>
+                        )}
+                        <div className="relative group">
+                          <button 
                             onClick={async () => {
-                              setViewingDocument(doc);
-                              setLoadingDocumentView(true);
-                              setDocumentViewUrl(null);
-                              
                               try {
-                                // Fetch file as blob with authentication
-                                const blob = await documentApi.downloadDocument(doc.id);
-                                const url = URL.createObjectURL(blob);
-                                setDocumentViewUrl(url);
+                                await documentApi.deleteDocument(doc.id);
+                                toast.success('Document deleted successfully');
+                                loadDocuments();
                               } catch (error: any) {
-                                console.error('Error loading document:', error);
-                                toast.error('Failed to load document');
-                                // Fallback to direct URL
-                                setDocumentViewUrl(doc.fileUrl);
-                              } finally {
-                                setLoadingDocumentView(false);
+                                toast.error(error.response?.data?.message || 'Failed to delete document');
                               }
                             }}
-                            className="text-gray-400 hover:text-gray-600"
-                            title="View Document"
+                            className="text-gray-400 hover:text-red-600"
                           >
-                            <FaEye className="w-4 h-4" />
+                            <FaTrash className="w-4 h-4" />
                           </button>
-                        )}
-                        <button 
-                          onClick={async () => {
-                            try {
-                              await documentApi.deleteDocument(doc.id);
-                              toast.success('Document deleted successfully');
-                              loadDocuments();
-                            } catch (error: any) {
-                              toast.error(error.response?.data?.message || 'Failed to delete document');
-                            }
-                          }}
-                          className="text-gray-400 hover:text-red-600"
-                          title="Delete Document"
-                        >
-                          <FaTrash className="w-4 h-4" />
-                        </button>
+                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-white text-gray-900 text-xs font-medium rounded-md shadow-lg border border-gray-200 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                            Delete Document
+                            <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-white"></div>
+                          </div>
+                        </div>
                       </div>
                     </div>
                     {doc.description && (
@@ -810,13 +821,47 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${getPriorityColor(record.priority)}`}>
                         {record.priority}
                       </span>
-                      <button
-                        onClick={() => setEditingMaintenance(record)}
-                        className="text-gray-400 hover:text-gray-600"
-                        title="Edit Maintenance"
-                      >
-                        <FaEdit className="w-4 h-4" />
-                      </button>
+                      <div className="relative group">
+                        <button
+                          onClick={() => setEditingMaintenance(record)}
+                          className="text-gray-400 hover:text-gray-600"
+                        >
+                          <FaEdit className="w-4 h-4" />
+                        </button>
+                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-white text-gray-900 text-xs font-medium rounded-md shadow-lg border border-gray-200 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                          Edit Maintenance
+                          <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-white"></div>
+                        </div>
+                      </div>
+                      <div className="relative group">
+                        <button
+                          onClick={async () => {
+                            const confirmed = await confirm({
+                              title: 'Delete Maintenance Record',
+                              message: 'Are you sure you want to delete this maintenance record? This action cannot be undone.',
+                              confirmText: 'Delete',
+                              cancelText: 'Cancel',
+                              variant: 'danger',
+                            });
+                            if (confirmed) {
+                              try {
+                                await fleetApi.deleteMaintenance(truckId, record.id);
+                                toast.success('Maintenance record deleted successfully');
+                                loadMaintenanceRecords();
+                              } catch (error: any) {
+                                toast.error(error.response?.data?.message || 'Failed to delete maintenance record');
+                              }
+                            }
+                          }}
+                          className="text-gray-400 hover:text-red-600"
+                        >
+                          <FaTrash className="w-4 h-4" />
+                        </button>
+                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-white text-gray-900 text-xs font-medium rounded-md shadow-lg border border-gray-200 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                          Delete Maintenance
+                          <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-white"></div>
+                        </div>
+                      </div>
                     </div>
                   </div>
                   <div className="mt-3 grid grid-cols-2 gap-4 text-sm">
@@ -902,13 +947,47 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
                           Score: {record.score}
                         </span>
                       )}
-                      <button
-                        onClick={() => setEditingInspection(record)}
-                        className="text-gray-400 hover:text-gray-600"
-                        title="Edit Inspection"
-                      >
-                        <FaEdit className="w-4 h-4" />
-                      </button>
+                      <div className="relative group">
+                        <button
+                          onClick={() => setEditingInspection(record)}
+                          className="text-gray-400 hover:text-gray-600"
+                        >
+                          <FaEdit className="w-4 h-4" />
+                        </button>
+                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-white text-gray-900 text-xs font-medium rounded-md shadow-lg border border-gray-200 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                          Edit Inspection
+                          <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-white"></div>
+                        </div>
+                      </div>
+                      <div className="relative group">
+                        <button
+                          onClick={async () => {
+                            const confirmed = await confirm({
+                              title: 'Delete Inspection Record',
+                              message: 'Are you sure you want to delete this inspection record? This action cannot be undone.',
+                              confirmText: 'Delete',
+                              cancelText: 'Cancel',
+                              variant: 'danger',
+                            });
+                            if (confirmed) {
+                              try {
+                                await fleetApi.deleteInspection(truckId, record.id);
+                                toast.success('Inspection record deleted successfully');
+                                loadInspectionRecords();
+                              } catch (error: any) {
+                                toast.error(error.response?.data?.message || 'Failed to delete inspection record');
+                              }
+                            }
+                          }}
+                          className="text-gray-400 hover:text-red-600"
+                        >
+                          <FaTrash className="w-4 h-4" />
+                        </button>
+                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-white text-gray-900 text-xs font-medium rounded-md shadow-lg border border-gray-200 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                          Delete Inspection
+                          <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-white"></div>
+                        </div>
+                      </div>
                     </div>
                   </div>
                   <div className="mt-3 grid grid-cols-2 gap-4 text-sm">
@@ -991,13 +1070,47 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(record.status)}`}>
                         {record.status}
                       </span>
-                      <button
-                        onClick={() => setEditingInsurance(record)}
-                        className="text-gray-400 hover:text-gray-600"
-                        title="Edit Insurance"
-                      >
-                        <FaEdit className="w-4 h-4" />
-                      </button>
+                      <div className="relative group">
+                        <button
+                          onClick={() => setEditingInsurance(record)}
+                          className="text-gray-400 hover:text-gray-600"
+                        >
+                          <FaEdit className="w-4 h-4" />
+                        </button>
+                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-white text-gray-900 text-xs font-medium rounded-md shadow-lg border border-gray-200 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                          Edit Insurance
+                          <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-white"></div>
+                        </div>
+                      </div>
+                      <div className="relative group">
+                        <button
+                          onClick={async () => {
+                            const confirmed = await confirm({
+                              title: 'Delete Insurance Record',
+                              message: 'Are you sure you want to delete this insurance record? This action cannot be undone.',
+                              confirmText: 'Delete',
+                              cancelText: 'Cancel',
+                              variant: 'danger',
+                            });
+                            if (confirmed) {
+                              try {
+                                await fleetApi.deleteInsurance(truckId, record.id);
+                                toast.success('Insurance record deleted successfully');
+                                loadInsuranceRecords();
+                              } catch (error: any) {
+                                toast.error(error.response?.data?.message || 'Failed to delete insurance record');
+                              }
+                            }
+                          }}
+                          className="text-gray-400 hover:text-red-600"
+                        >
+                          <FaTrash className="w-4 h-4" />
+                        </button>
+                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-white text-gray-900 text-xs font-medium rounded-md shadow-lg border border-gray-200 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                          Delete Insurance
+                          <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-white"></div>
+                        </div>
+                      </div>
                     </div>
                   </div>
                   <div className="mt-3 grid grid-cols-2 gap-4 text-sm">
@@ -1082,13 +1195,47 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
                           <div className="text-right">
                             <span className="text-lg font-bold text-gray-900">${record.cost.toFixed(2)}</span>
                           </div>
-                          <button
-                            onClick={() => setEditingFuel(record)}
-                            className="text-gray-400 hover:text-gray-600"
-                            title="Edit Fuel Record"
-                          >
-                            <FaEdit className="w-4 h-4" />
-                          </button>
+                          <div className="relative group">
+                            <button
+                              onClick={() => setEditingFuel(record)}
+                              className="text-gray-400 hover:text-gray-600"
+                            >
+                              <FaEdit className="w-4 h-4" />
+                            </button>
+                            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-white text-gray-900 text-xs font-medium rounded-md shadow-lg border border-gray-200 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                              Edit Fuel Record
+                              <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-white"></div>
+                            </div>
+                          </div>
+                          <div className="relative group">
+                            <button
+                              onClick={async () => {
+                                const confirmed = await confirm({
+                                  title: 'Delete Fuel Record',
+                                  message: 'Are you sure you want to delete this fuel record? This action cannot be undone.',
+                                  confirmText: 'Delete',
+                                  cancelText: 'Cancel',
+                                  variant: 'danger',
+                                });
+                                if (confirmed) {
+                                  try {
+                                    await fleetApi.deleteFuelRecord(truckId, record.id);
+                                    toast.success('Fuel record deleted successfully');
+                                    loadFuelRecords();
+                                  } catch (error: any) {
+                                    toast.error(error.response?.data?.message || 'Failed to delete fuel record');
+                                  }
+                                }
+                              }}
+                              className="text-gray-400 hover:text-red-600"
+                            >
+                              <FaTrash className="w-4 h-4" />
+                            </button>
+                            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-white text-gray-900 text-xs font-medium rounded-md shadow-lg border border-gray-200 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                              Delete Fuel Record
+                              <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-white"></div>
+                            </div>
+                          </div>
                         </div>
                       </div>
                       <div className="mt-3 grid grid-cols-2 gap-4 text-sm">
@@ -1188,13 +1335,47 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
                           <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(tire.status)}`}>
                             {tire.status.charAt(0).toUpperCase() + tire.status.slice(1)}
                           </span>
-                          <button
-                            onClick={() => setEditingTire(tire)}
-                            className="text-gray-400 hover:text-gray-600"
-                            title="Edit Tire Record"
-                          >
-                            <FaEdit className="w-4 h-4" />
-                          </button>
+                          <div className="relative group">
+                            <button
+                              onClick={() => setEditingTire(tire)}
+                              className="text-gray-400 hover:text-gray-600"
+                            >
+                              <FaEdit className="w-4 h-4" />
+                            </button>
+                            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-white text-gray-900 text-xs font-medium rounded-md shadow-lg border border-gray-200 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                              Edit Tire Record
+                              <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-white"></div>
+                            </div>
+                          </div>
+                          <div className="relative group">
+                            <button
+                              onClick={async () => {
+                                const confirmed = await confirm({
+                                  title: 'Delete Tire Record',
+                                  message: 'Are you sure you want to delete this tire record? This action cannot be undone.',
+                                  confirmText: 'Delete',
+                                  cancelText: 'Cancel',
+                                  variant: 'danger',
+                                });
+                                if (confirmed) {
+                                  try {
+                                    await fleetApi.deleteTireRecord(truckId, tire.id);
+                                    toast.success('Tire record deleted successfully');
+                                    loadTireRecords();
+                                  } catch (error: any) {
+                                    toast.error(error.response?.data?.message || 'Failed to delete tire record');
+                                  }
+                                }
+                              }}
+                              className="text-gray-400 hover:text-red-600"
+                            >
+                              <FaTrash className="w-4 h-4" />
+                            </button>
+                            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-white text-gray-900 text-xs font-medium rounded-md shadow-lg border border-gray-200 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                              Delete Tire Record
+                              <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-white"></div>
+                            </div>
+                          </div>
                         </div>
                       </div>
                       <div className="mt-3 grid grid-cols-2 gap-4 text-sm">
@@ -1246,7 +1427,8 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
           </div>
         )}
 
-        {activeTab === 'compliance' && (
+        {/* Compliance tab hidden */}
+        {false && activeTab === 'compliance' && (
           <div className="p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-semibold text-gray-900">Compliance Records</h2>
@@ -1300,13 +1482,18 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
                           <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(record.status)}`}>
                             {record.status.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
                           </span>
-                          <button
-                            onClick={() => setEditingCompliance(record)}
-                            className="text-gray-400 hover:text-gray-600"
-                            title="Edit Compliance Record"
-                          >
-                            <FaEdit className="w-4 h-4" />
-                          </button>
+                          <div className="relative group">
+                            <button
+                              onClick={() => setEditingCompliance(record)}
+                              className="text-gray-400 hover:text-gray-600"
+                            >
+                              <FaEdit className="w-4 h-4" />
+                            </button>
+                            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-white text-gray-900 text-xs font-medium rounded-md shadow-lg border border-gray-200 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                              Edit Compliance Record
+                              <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-white"></div>
+                            </div>
+                          </div>
                         </div>
                       </div>
                       <div className="mt-3 grid grid-cols-2 gap-4 text-sm">
@@ -1431,28 +1618,34 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
                 </p>
               </div>
               <div className="flex items-center gap-3">
-                <button
-                  onClick={async () => {
-                    try {
-                      const blob = await documentApi.downloadDocument(viewingDocument.id);
-                      const url = URL.createObjectURL(blob);
-                      const a = document.createElement('a');
-                      a.href = url;
-                      a.download = viewingDocument.fileName;
-                      document.body.appendChild(a);
-                      a.click();
-                      document.body.removeChild(a);
-                      URL.revokeObjectURL(url);
-                    } catch (error: any) {
-                      toast.error('Failed to download document');
-                    }
-                  }}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
-                  title="Download Document"
-                >
-                  <FaDownload className="w-4 h-4" />
-                  Download
-                </button>
+                <div className="relative group">
+                  <button
+                    onClick={async () => {
+                      try {
+                        const blob = await documentApi.downloadDocument(viewingDocument.id);
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = viewingDocument.fileName;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
+                      } catch (error: any) {
+                        toast.error('Failed to download document');
+                      }
+                    }}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
+                  >
+                    <FaDownload className="w-4 h-4" />
+                    Download
+                  </button>
+                  <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-white text-gray-900 text-xs font-medium rounded-md shadow-lg border border-gray-200 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                    Download Document
+                    <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-white"></div>
+                  </div>
+                </div>
+              <div className="relative group">
                 <button
                   onClick={() => {
                     if (documentViewUrl) {
@@ -1462,10 +1655,14 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
                     setDocumentViewUrl(null);
                   }}
                   className="text-gray-400 hover:text-gray-600"
-                  title="Close"
                 >
                   <FaTimesCircle className="w-6 h-6" />
                 </button>
+                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-white text-gray-900 text-xs font-medium rounded-md shadow-lg border border-gray-200 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                  Close
+                  <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-white"></div>
+                </div>
+              </div>
               </div>
             </div>
 
@@ -1691,6 +1888,7 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
           }}
         />
       )}
+      {DialogComponent}
     </div>
   );
 };

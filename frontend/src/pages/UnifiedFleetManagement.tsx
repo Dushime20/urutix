@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { FaTruck, FaPlus, FaRoute, FaList, FaSpinner } from 'react-icons/fa';
+import { FaTruck, FaPlus, FaRoute, FaList, FaSpinner, FaEye, FaMapMarkerAlt, FaTimesCircle, FaSync, FaSearch } from 'react-icons/fa';
 import { TrucksList } from '../components/FleetDashboard/TrucksList';
 import FleetFormStepper from '../components/FleetDashboard/FleetFormStepper';
 import { fleetApi } from '../services/fleetApi';
@@ -10,7 +10,7 @@ import { cn } from '../utils/cn';
 
 const UnifiedFleetManagement: React.FC = () => {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState<'add-truck' | 'my-trucks' | 'active-trips'>('my-trucks');
+  const [activeTab, setActiveTab] = useState<'add-truck' | 'my-trucks' | 'active-trips' | 'view-trucks'>('my-trucks');
   const [showTruckForm, setShowTruckForm] = useState(false);
   const [editingTruck, setEditingTruck] = useState<any>(null);
   const [activeTrips, setActiveTrips] = useState<any[]>([]);
@@ -18,6 +18,7 @@ const UnifiedFleetManagement: React.FC = () => {
   const [trucks, setTrucks] = useState<any[]>([]);
   const [loadingTrucks, setLoadingTrucks] = useState(false);
   const [trucksListRefreshKey, setTrucksListRefreshKey] = useState(0);
+  const [viewTrucksSearch, setViewTrucksSearch] = useState('');
 
   // Load active trips
   const loadActiveTrips = useCallback(async () => {
@@ -125,15 +126,26 @@ const UnifiedFleetManagement: React.FC = () => {
   };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
+    <div className="space-y-6">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Truck Management</h1>
-        <p className="text-gray-600">Manage your trucks, view active trips, and add new vehicles</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1>Truck Management</h1>
+            <p className="text-sm text-gray-600">Manage your trucks, view active trips, and add new vehicles</p>
+          </div>
+          <button
+            onClick={handleCreateTruck}
+            className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors flex items-center gap-2 shadow-lg"
+          >
+            <FaPlus className="w-4 h-4" />
+            Add New Truck
+          </button>
+        </div>
       </div>
 
       {/* Navigation Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <button
           onClick={() => {
             setActiveTab('add-truck');
@@ -160,7 +172,7 @@ const UnifiedFleetManagement: React.FC = () => {
           </div>
           <h3
             className={cn(
-              "text-base font-semibold text-left",
+              "text-sm font-semibold text-left",
               activeTab === 'add-truck' ? "text-primary-900" : "text-gray-900"
             )}
           >
@@ -183,7 +195,7 @@ const UnifiedFleetManagement: React.FC = () => {
               : "border-gray-200 hover:border-primary-300 hover:bg-gray-50"
           )}
         >
-          <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center mb-2">
             <div
               className={cn(
                 "p-2 rounded-lg transition-colors",
@@ -194,24 +206,14 @@ const UnifiedFleetManagement: React.FC = () => {
             >
               <FaList className="w-5 h-5" />
             </div>
-            <span
-              className={cn(
-                "px-2.5 py-1 text-xs font-semibold rounded-full",
-                activeTab === 'my-trucks'
-                  ? "bg-primary-600 text-white"
-                  : "bg-gray-200 text-gray-700 group-hover:bg-primary-600 group-hover:text-white"
-              )}
-            >
-              {trucks.length}
-            </span>
           </div>
           <h3
             className={cn(
-              "text-base font-semibold text-left",
+              "text-sm font-semibold text-left",
               activeTab === 'my-trucks' ? "text-primary-900" : "text-gray-900"
             )}
           >
-            My Trucks
+            Manage Trucks
           </h3>
           {activeTab === 'my-trucks' && (
             <div className="absolute bottom-0 left-0 right-0 h-1 bg-primary-600 rounded-b-lg" />
@@ -254,7 +256,7 @@ const UnifiedFleetManagement: React.FC = () => {
           </div>
           <h3
             className={cn(
-              "text-base font-semibold text-left",
+              "text-sm font-semibold text-left",
               activeTab === 'active-trips' ? "text-primary-900" : "text-gray-900"
             )}
           >
@@ -264,61 +266,232 @@ const UnifiedFleetManagement: React.FC = () => {
             <div className="absolute bottom-0 left-0 right-0 h-1 bg-primary-600 rounded-b-lg" />
           )}
         </button>
+
+        <button
+          onClick={() => {
+            setActiveTab('view-trucks');
+            setShowTruckForm(false);
+          }}
+          className={cn(
+            "relative bg-white rounded-lg border-2 p-5 transition-all duration-200 hover:shadow-lg group",
+            activeTab === 'view-trucks'
+              ? "border-primary-600 shadow-md bg-primary-50"
+              : "border-gray-200 hover:border-primary-300 hover:bg-gray-50"
+          )}
+        >
+          <div className="flex items-center justify-between mb-2">
+            <div
+              className={cn(
+                "p-2 rounded-lg transition-colors",
+                activeTab === 'view-trucks'
+                  ? "bg-primary-100 text-primary-600"
+                  : "bg-gray-100 text-gray-600 group-hover:bg-primary-100 group-hover:text-primary-600"
+              )}
+            >
+              <FaEye className="w-5 h-5" />
+            </div>
+          </div>
+          <h3
+            className={cn(
+              "text-sm font-semibold text-left",
+              activeTab === 'view-trucks' ? "text-primary-900" : "text-gray-900"
+            )}
+          >
+            View Trucks
+          </h3>
+          {activeTab === 'view-trucks' && (
+            <div className="absolute bottom-0 left-0 right-0 h-1 bg-primary-600 rounded-b-lg" />
+          )}
+        </button>
       </div>
 
       {/* Content Container */}
-      <div className="bg-white rounded-lg border border-gray-200">
-        {/* Tab Content */}
-        <div className="p-6">
-          {activeTab === 'add-truck' && (
-            <div>
-              {!showTruckForm ? (
-                <div className="text-center py-12">
-                  <FaTruck className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Add New Truck</h3>
-                  <p className="text-gray-600 mb-6">Click the button below to start adding a new truck to your fleet</p>
+      {activeTab === 'add-truck' && (
+        <div>
+          {!showTruckForm ? (
+            <div className="text-center py-12">
+              <FaTruck className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+              <h3 className="mb-2">Add New Truck</h3>
+              <p className="text-gray-600 mb-6">Click the button below to start adding a new truck to your fleet</p>
+              <button
+                onClick={handleCreateTruck}
+                className="px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors flex items-center gap-2 mx-auto"
+              >
+                <FaPlus className="w-4 h-4" />
+                Add Truck
+              </button>
+            </div>
+          ) : null}
+          {/* FleetFormStepper renders as a modal overlay, so it's always rendered when showTruckForm is true */}
+          <FleetFormStepper
+            isOpen={showTruckForm}
+            onClose={handleTruckFormClose}
+            onSubmit={handleTruckFormSubmit}
+            initialData={editingTruck}
+            mode={editingTruck ? 'edit' : 'create'}
+            activeTab="trucks"
+          />
+        </div>
+      )}
+
+      {activeTab === 'my-trucks' && (
+        <TrucksList onAddTruck={handleCreateTruck} refreshTrigger={trucksListRefreshKey} />
+      )}
+
+      {activeTab === 'view-trucks' && (
+        <div>
+              <div className="mb-4 flex items-center justify-between gap-4">
+                <h2>View Trucks</h2>
+                <div className="flex items-center gap-3">
+                  {/* Search Box */}
+                  <div className="relative">
+                    <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <input
+                      type="text"
+                      placeholder="Search by plate number..."
+                      value={viewTrucksSearch}
+                      onChange={(e) => setViewTrucksSearch(e.target.value)}
+                      className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent w-64"
+                    />
+                  </div>
                   <button
-                    onClick={handleCreateTruck}
-                    className="px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors flex items-center gap-2 mx-auto"
+                    onClick={loadTrucks}
+                    className="px-5 py-2.5 bg-primary-600 text-white rounded-lg hover:bg-primary-700 active:bg-primary-800 transition-all duration-200 flex items-center gap-2.5 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-md font-medium text-sm"
+                    disabled={loadingTrucks}
                   >
-                    <FaPlus className="w-4 h-4" />
-                    Add Truck
+                    {loadingTrucks ? (
+                      <>
+                        <FaSpinner className="w-4 h-4 animate-spin" />
+                        <span>Refreshing...</span>
+                      </>
+                    ) : (
+                      <>
+                        <FaSync className="w-4 h-4" />
+                        <span>Refresh</span>
+                      </>
+                    )}
                   </button>
                 </div>
-              ) : null}
-              {/* FleetFormStepper renders as a modal overlay, so it's always rendered when showTruckForm is true */}
-              <FleetFormStepper
-                isOpen={showTruckForm}
-                onClose={handleTruckFormClose}
-                onSubmit={handleTruckFormSubmit}
-                initialData={editingTruck}
-                mode={editingTruck ? 'edit' : 'create'}
-                activeTab="trucks"
-              />
-            </div>
-          )}
+              </div>
 
-          {activeTab === 'my-trucks' && (
-            <div>
-              <TrucksList onAddTruck={handleCreateTruck} refreshTrigger={trucksListRefreshKey} />
-            </div>
-          )}
+              {loadingTrucks ? (
+                <div className="text-center py-12">
+                  <FaSpinner className="w-8 h-8 text-primary-600 animate-spin mx-auto mb-4" />
+                  <p className="text-gray-600">Loading trucks...</p>
+                </div>
+              ) : trucks.length === 0 ? (
+                <div className="text-center py-12 bg-gray-50 rounded-lg">
+                  <FaTruck className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">No Trucks Found</h3>
+                  <p className="text-gray-600">You don't have any trucks in your fleet yet</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-gray-200">
+                        <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Plate Number</th>
+                        <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Truck Type</th>
+                        <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Max Weight</th>
+                        <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Current Location</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {trucks
+                        .filter((truck) => {
+                          if (!viewTrucksSearch) return true;
+                          const searchLower = viewTrucksSearch.toLowerCase();
+                          return (
+                            truck.plateNumber?.toLowerCase().includes(searchLower) ||
+                            truck.truckType?.toLowerCase().includes(searchLower) ||
+                            truck.capacityWeight?.toString().includes(searchLower) ||
+                            (typeof truck.currentLocation === 'string' 
+                              ? truck.currentLocation.toLowerCase().includes(searchLower)
+                              : truck.currentLocation?.address?.toLowerCase().includes(searchLower))
+                          );
+                        })
+                        .map((truck) => (
+                        <tr
+                          key={truck.id}
+                          className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
+                        >
+                          <td className="py-3 px-4">
+                            <div className="flex items-center gap-2">
+                              <FaTruck className="w-4 h-4 text-gray-400" />
+                              <span className="font-medium text-gray-900">{truck.plateNumber || 'N/A'}</span>
+                            </div>
+                          </td>
+                          <td className="py-3 px-4">
+                            <span className="text-gray-700">
+                              {truck.truckType ? truck.truckType.replace(/_/g, ' ') : 'N/A'}
+                            </span>
+                          </td>
+                          <td className="py-3 px-4">
+                            <span className="text-gray-700">
+                              {truck.capacityWeight 
+                                ? `${Number(truck.capacityWeight).toLocaleString()} lbs`
+                                : 'N/A'}
+                            </span>
+                          </td>
+                          <td className="py-3 px-4">
+                            <div className="flex items-center gap-2">
+                              <FaMapMarkerAlt className="w-4 h-4 text-gray-400" />
+                              <span className="text-gray-700">
+                                {truck.currentLocation 
+                                  ? (typeof truck.currentLocation === 'string' 
+                                      ? truck.currentLocation 
+                                      : truck.currentLocation.address || 'N/A')
+                                  : 'Not specified'}
+                              </span>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                      {trucks.filter((truck) => {
+                        if (!viewTrucksSearch) return true;
+                        const searchLower = viewTrucksSearch.toLowerCase();
+                        return (
+                          truck.plateNumber?.toLowerCase().includes(searchLower) ||
+                          truck.truckType?.toLowerCase().includes(searchLower) ||
+                          truck.capacityWeight?.toString().includes(searchLower) ||
+                          (typeof truck.currentLocation === 'string' 
+                            ? truck.currentLocation.toLowerCase().includes(searchLower)
+                            : truck.currentLocation?.address?.toLowerCase().includes(searchLower))
+                        );
+                      }).length === 0 && viewTrucksSearch && (
+                        <tr>
+                          <td colSpan={4} className="py-8 text-center text-gray-500">
+                            No trucks found matching "{viewTrucksSearch}"
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+        </div>
+      )}
 
-          {activeTab === 'active-trips' && (
+      {activeTab === 'active-trips' && (
             <div>
               <div className="mb-4 flex items-center justify-between">
-                <h2 className="text-lg font-semibold text-gray-900">Active Trips</h2>
+                <h2>Active Trips</h2>
                 <button
                   onClick={loadActiveTrips}
-                  className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors flex items-center gap-2"
+                  className="px-4 py-2.5 bg-primary-600 text-white rounded-lg hover:bg-primary-700 active:bg-primary-800 transition-all duration-200 flex items-center gap-2 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-md font-medium text-sm"
                   disabled={loadingTrips}
                 >
                   {loadingTrips ? (
-                    <FaSpinner className="w-4 h-4 animate-spin" />
+                    <>
+                      <FaSpinner className="w-4 h-4 animate-spin" />
+                      <span>Refreshing...</span>
+                    </>
                   ) : (
-                    <FaRoute className="w-4 h-4" />
+                    <>
+                      <FaSync className="w-4 h-4" />
+                      <span>Refresh</span>
+                    </>
                   )}
-                  Refresh
                 </button>
               </div>
 
@@ -399,10 +572,8 @@ const UnifiedFleetManagement: React.FC = () => {
                   ))}
                 </div>
               )}
-            </div>
-          )}
         </div>
-      </div>
+      )}
 
       {/* Truck Form Modal (when opened from My Trucks tab) */}
       {showTruckForm && activeTab === 'my-trucks' && (

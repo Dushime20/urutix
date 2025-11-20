@@ -32,7 +32,8 @@ import {
   FaExclamationTriangle,
   FaCheckCircle,
   FaTimesCircle,
-  FaInfoCircle
+  FaInfoCircle,
+  FaQuestionCircle
 } from 'react-icons/fa';
 import { FiGrid, FiList, FiMoreVertical } from 'react-icons/fi';
 import type { FleetItem, Route } from '../../types/fleet';
@@ -45,6 +46,8 @@ console.log('🔍 TrucksList - fleetApi.fetchRoutes:', fleetApi.fetchRoutes);
 console.log('🔍 TrucksList - fleetApi type:', typeof fleetApi);
 import toast from 'react-hot-toast';
 import { useAuth } from '../../contexts/AuthContext';
+import { EmptyState } from './EmptyState';
+import { HelpTooltip } from './HelpTooltip';
 
 interface TrucksListProps {
   onAddTruck?: () => void;
@@ -112,7 +115,7 @@ const EditTruckForm: React.FC<EditTruckFormProps> = ({ truck, onSave, onCancel }
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Basic Information */}
         <div className="space-y-4">
-          <h4 className="text-lg font-semibold text-gray-900 border-b border-gray-200 pb-2">Basic Information</h4>
+          <h4 className="border-b border-gray-200 pb-2">Basic Information</h4>
           <div className="space-y-3">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Plate Number *</label>
@@ -1424,22 +1427,21 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
   
   return (
     <div>
-      {/* Header with actions */}
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold text-gray-900">Trucks Management</h2>
-        {onAddTruck && (
-          <button
-            onClick={onAddTruck}
-            className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors flex items-center gap-2"
-          >
-            <FaPlus className="w-4 h-4" />
-            Add New Truck
-          </button>
-        )}
-      </div>
-
       {/* Statistics Cards */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-4">
+        {trucks.length === 0 && !loading && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+            <div className="flex items-start gap-3">
+              <FaInfoCircle className="text-blue-600 mt-0.5 flex-shrink-0" />
+              <div className="flex-1">
+                <p className="text-sm text-blue-900 font-medium mb-1">Getting Started</p>
+                <p className="text-sm text-blue-800">
+                  Start by adding your first truck. You can add truck details, upload documents (registration, insurance), schedule maintenance, and track everything in one place.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
             <div className="flex items-center justify-between">
@@ -1494,7 +1496,7 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
               <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
               <input
                 type="text"
-                placeholder="Search trucks by name, plate number, make, or model..."
+                placeholder="Search by plate number, make, model..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
@@ -1583,7 +1585,7 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
                 <div className="flex items-center gap-3">
                   <FaTruck className="w-6 h-6 text-primary-600" />
                   <div>
-                    <h3 className="font-semibold text-gray-900">{truck.name || truck.plateNumber}</h3>
+                    <h3>{truck.name || truck.plateNumber}</h3>
                     <p className="text-sm text-gray-500">{truck.plateNumber}</p>
                   </div>
                 </div>
@@ -1672,16 +1674,21 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
                   <span className="text-sm font-medium text-gray-700">Route Assignment</span>
                   <div className="flex items-center gap-3">
                     {Array.isArray(truck.assignedRouteDetails) && truck.assignedRouteDetails.length > 0 && (
-                      <button
-                        onClick={() => {
-                          setSelectedTruck(truck);
-                          setShowTruckRoutes(true);
-                        }}
-                        className="text-blue-600 hover:text-blue-800 text-sm"
-                        title="View assigned routes"
-                      >
-                        View
-                      </button>
+                      <div className="relative group">
+                        <button
+                          onClick={() => {
+                            setSelectedTruck(truck);
+                            setShowTruckRoutes(true);
+                          }}
+                          className="text-blue-600 hover:text-blue-800 text-sm"
+                        >
+                          View
+                        </button>
+                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-white text-gray-900 text-xs font-medium rounded-md shadow-lg border border-gray-200 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                          View assigned routes
+                          <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-white"></div>
+                        </div>
+                      </div>
                     )}
                     <button
                       onClick={() => {
@@ -1862,53 +1869,78 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => {
-                            setSelectedTruck(truck);
-                            setShowTruckDetails(true);
-                          }}
-                          className="text-blue-600 hover:text-blue-800 text-sm flex items-center gap-1"
-                          title="View Details"
-                        >
-                          <FaEye className="w-3 h-3" />
-                        </button>
-                        <button
-                          onClick={() => {
-                            setSelectedTruck(truck);
-                            setShowAssignDriver(true);
-                          }}
-                          className="text-primary-600 hover:text-primary-800 text-sm flex items-center gap-1"
-                          title="Assign Driver"
-                        >
-                          <FaUserPlus className="w-3 h-3" />
-                        </button>
-                        <button
-                          onClick={() => {
-                            setSelectedTruck(truck);
-                            setShowAssignRoute(true);
-                          }}
-                          className="text-blue-600 hover:text-blue-800 text-sm flex items-center gap-1"
-                          title="Assign Route"
-                        >
-                          <FaRoute className="w-3 h-3" />
-                        </button>
-                        <a
-                          href={`/dashboard/fleet/trucks/${truck.id}/records`}
-                          className="text-green-600 hover:text-green-800 text-sm flex items-center gap-1"
-                          title="View Records"
-                        >
-                          <FaFileAlt className="w-3 h-3" />
-                        </a>
-                        <button 
-                          onClick={() => {
-                            setEditingTruck(truck);
-                            setShowEditTruck(true);
-                          }}
-                          className="text-gray-600 hover:text-gray-800 text-sm flex items-center gap-1" 
-                          title="Edit"
-                        >
-                          <FaEdit className="w-3 h-3" />
-                        </button>
+                        <div className="relative group">
+                          <button
+                            onClick={() => {
+                              setSelectedTruck(truck);
+                              setShowTruckDetails(true);
+                            }}
+                            className="text-blue-600 hover:text-blue-800 text-sm flex items-center gap-1"
+                          >
+                            <FaEye className="w-3 h-3" />
+                          </button>
+                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-white text-gray-900 text-xs font-medium rounded-md shadow-lg border border-gray-200 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                            View Details
+                            <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-white"></div>
+                          </div>
+                        </div>
+                        <div className="relative group">
+                          <button
+                            onClick={() => {
+                              setSelectedTruck(truck);
+                              setShowAssignDriver(true);
+                            }}
+                            className="text-primary-600 hover:text-primary-800 text-sm flex items-center gap-1"
+                          >
+                            <FaUserPlus className="w-3 h-3" />
+                          </button>
+                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-white text-gray-900 text-xs font-medium rounded-md shadow-lg border border-gray-200 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                            Assign Driver
+                            <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-white"></div>
+                          </div>
+                        </div>
+                        <div className="relative group">
+                          <button
+                            onClick={() => {
+                              setSelectedTruck(truck);
+                              setShowAssignRoute(true);
+                            }}
+                            className="text-blue-600 hover:text-blue-800 text-sm flex items-center gap-1"
+                          >
+                            <FaRoute className="w-3 h-3" />
+                          </button>
+                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-white text-gray-900 text-xs font-medium rounded-md shadow-lg border border-gray-200 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                            Assign Route
+                            <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-white"></div>
+                          </div>
+                        </div>
+                        <div className="relative group">
+                          <a
+                            href={`/dashboard/fleet/trucks/${truck.id}/records`}
+                            className="text-green-600 hover:text-green-800 text-sm flex items-center gap-1"
+                          >
+                            <FaFileAlt className="w-3 h-3" />
+                          </a>
+                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-white text-gray-900 text-xs font-medium rounded-md shadow-lg border border-gray-200 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                            View Records
+                            <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-white"></div>
+                          </div>
+                        </div>
+                        <div className="relative group">
+                          <button 
+                            onClick={() => {
+                              setEditingTruck(truck);
+                              setShowEditTruck(true);
+                            }}
+                            className="text-gray-600 hover:text-gray-800 text-sm flex items-center gap-1"
+                          >
+                            <FaEdit className="w-3 h-3" />
+                          </button>
+                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-white text-gray-900 text-xs font-medium rounded-md shadow-lg border border-gray-200 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                            Edit
+                            <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-white"></div>
+                          </div>
+                        </div>
                       </div>
                     </td>
                   </tr>
@@ -1995,7 +2027,7 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
           <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
             <div className="p-6">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900">Assign Driver to {selectedTruck.name}</h3>
+                <h3>Assign Driver to {selectedTruck.name}</h3>
                 <button
                   onClick={() => {
                     setShowAssignDriver(false);
@@ -2044,7 +2076,7 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
           <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
             <div className="p-6">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900">Assign Route to {selectedTruck.name}</h3>
+                <h3>Assign Route to {selectedTruck.name}</h3>
                 <button
                   onClick={() => {
                     setShowAssignRoute(false);
@@ -2108,7 +2140,7 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
           <div className="w-full max-w-md bg-white h-full shadow-xl overflow-y-auto">
             <div className="p-6 border-b">
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-gray-900">Routes for {selectedTruck.name || selectedTruck.plateNumber}</h3>
+                <h3>Routes for {selectedTruck.name || selectedTruck.plateNumber}</h3>
                 <button className="text-gray-400 hover:text-gray-600" onClick={() => { setShowTruckRoutes(false); setSelectedTruck(null); }}>
                   <FaTimesCircle className="w-5 h-5" />
                 </button>
@@ -2155,7 +2187,7 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
           <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               <div className="flex items-center justify-between mb-6">
-                <h3 className="text-2xl font-bold text-gray-900">Truck Details</h3>
+                <h2>Truck Details</h2>
                 <button
                   onClick={() => {
                     setShowTruckDetails(false);
@@ -2170,7 +2202,7 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Basic Information */}
                 <div className="space-y-4">
-                  <h4 className="text-lg font-semibold text-gray-900 border-b border-gray-200 pb-2">Basic Information</h4>
+                  <h4 className="border-b border-gray-200 pb-2">Basic Information</h4>
                   <div className="space-y-3">
                     <div className="flex justify-between">
                       <span className="text-gray-600">Name:</span>
@@ -2492,42 +2524,35 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
 
       {/* Empty State */}
       {paginatedTrucks().length === 0 && !loading && (
-        <div className="text-center py-12">
-          <div className="max-w-md mx-auto">
-            <FaTruck className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-xl font-medium text-gray-900 mb-2">No trucks found</h3>
-            <p className="text-gray-500 mb-6">
-              {search || statusFilter
-                ? 'No trucks match your current filters. Try adjusting your search criteria.'
-                : 'Get started by adding your first truck to the fleet.'
-              }
-            </p>
-            <div className="flex items-center justify-center gap-3">
-              {search || statusFilter ? (
-                <button 
-                  onClick={() => {
-                    setSearch('');
-                    setStatusFilter('');
-                    setCurrentPage(1);
-                  }} 
-                  className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
-                >
-                  Clear Filters
-                </button>
-              ) : (
-                onAddTruck && (
-                  <button 
-                    onClick={onAddTruck} 
-                    className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors flex items-center gap-2"
-                  >
-                    <FaPlus className="w-4 h-4" />
-                    Add New Truck
-                  </button>
-                )
-              )}
+        search || statusFilter ? (
+          <div className="text-center py-12">
+            <div className="max-w-md mx-auto">
+              <FaTruck className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-xl font-medium text-gray-900 mb-2">No trucks found</h3>
+              <p className="text-gray-500 mb-6">
+                No trucks match your current filters. Try adjusting your search criteria.
+              </p>
+              <button 
+                onClick={() => {
+                  setSearch('');
+                  setStatusFilter('');
+                  setCurrentPage(1);
+                }} 
+                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
+              >
+                Clear Filters
+              </button>
             </div>
           </div>
-        </div>
+        ) : (
+          <EmptyState
+            type="trucks"
+            onAction={onAddTruck}
+            actionLabel="Add Your First Truck"
+            title="No Trucks Yet"
+            description="Get started by adding your first truck to the fleet. You can add trucks, manage their details, track maintenance, and monitor their status all in one place."
+          />
+        )
       )}
       
       {/* Loading State */}
@@ -2548,7 +2573,7 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
             <div className="flex items-center justify-center gap-3">
               <button 
                 onClick={() => loadData()} 
-                className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 flex items-center gap-2"
+                className="px-4 py-2.5 bg-primary-600 text-white rounded-lg hover:bg-primary-700 active:bg-primary-800 transition-all duration-200 flex items-center gap-2 shadow-md hover:shadow-lg font-medium text-sm"
               >
                 <FaSync className="w-4 h-4" />
                 Try Again

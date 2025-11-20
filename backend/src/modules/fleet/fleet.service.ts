@@ -266,9 +266,10 @@ export class FleetService {
 
     // Apply filters
     if (filters?.search) {
+      const searchLower = filters.search.toLowerCase();
       query.andWhere(
-        '(truck.plateNumber LIKE :search OR truck.make LIKE :search OR truck.model LIKE :search)',
-        { search: `%${filters.search}%` },
+        '(LOWER(truck.plateNumber) LIKE :search OR LOWER(truck.make) LIKE :search OR LOWER(truck.model) LIKE :search)',
+        { search: `%${searchLower}%` },
       );
     }
 
@@ -277,8 +278,9 @@ export class FleetService {
     }
 
     if (filters?.location) {
-      query.andWhere('truck.currentLocation LIKE :location', {
-        location: `%${filters.location}%`,
+      const locationLower = filters.location.toLowerCase();
+      query.andWhere('LOWER(truck.currentLocation) LIKE :location', {
+        location: `%${locationLower}%`,
       });
     }
 
@@ -502,9 +504,10 @@ export class FleetService {
 
     // Apply filters
     if (filters?.search) {
+      const searchLower = filters.search.toLowerCase();
       query.andWhere(
-        '(driver.firstName LIKE :search OR driver.lastName LIKE :search OR driver.licenseNumber LIKE :search)',
-        { search: `%${filters.search}%` },
+        '(LOWER(driver.firstName) LIKE :search OR LOWER(driver.lastName) LIKE :search OR LOWER(driver.licenseNumber) LIKE :search)',
+        { search: `%${searchLower}%` },
       );
     }
 
@@ -513,8 +516,9 @@ export class FleetService {
     }
 
     if (filters?.location) {
-      query.andWhere('driver.currentLocation LIKE :location', {
-        location: `%${filters.location}%`,
+      const locationLower = filters.location.toLowerCase();
+      query.andWhere('LOWER(driver.currentLocation) LIKE :location', {
+        location: `%${locationLower}%`,
       });
     }
 
@@ -958,6 +962,38 @@ export class FleetService {
     return updatedMaintenance;
   }
 
+  async deleteTruckMaintenance(
+    truckId: string,
+    maintenanceId: string,
+    tenantId: string,
+    userId: string,
+  ): Promise<void> {
+    try {
+      const truck = await this.findOneTruck(truckId, tenantId);
+
+      if (!truck.maintenanceAlerts || truck.maintenanceAlerts.length === 0) {
+        throw new NotFoundException('Maintenance record not found');
+      }
+
+      const maintenanceIndex = truck.maintenanceAlerts.findIndex(
+        (m: any) => m.id === maintenanceId,
+      );
+
+      if (maintenanceIndex === -1) {
+        throw new NotFoundException('Maintenance record not found');
+      }
+
+      truck.maintenanceAlerts.splice(maintenanceIndex, 1);
+      await this.truckRepository.save(truck);
+    } catch (error) {
+      console.error('❌ Error in deleteTruckMaintenance:', error);
+      if (error instanceof NotFoundException || error instanceof ForbiddenException) {
+        throw error;
+      }
+      throw new BadRequestException(`Failed to delete maintenance record: ${error.message}`);
+    }
+  }
+
   async getTruckInspections(truckId: string, tenantId: string): Promise<any[]> {
     const truck = await this.findOneTruck(truckId, tenantId);
     return truck.inspectionAlerts || [];
@@ -1060,6 +1096,38 @@ export class FleetService {
         throw error;
       }
       throw new BadRequestException(`Failed to update inspection: ${error.message}`);
+    }
+  }
+
+  async deleteTruckInspection(
+    truckId: string,
+    inspectionId: string,
+    tenantId: string,
+    userId: string,
+  ): Promise<void> {
+    try {
+      const truck = await this.findOneTruck(truckId, tenantId);
+
+      if (!truck.inspectionAlerts || truck.inspectionAlerts.length === 0) {
+        throw new NotFoundException('Inspection record not found');
+      }
+
+      const inspectionIndex = truck.inspectionAlerts.findIndex(
+        (i: any) => i.id === inspectionId,
+      );
+
+      if (inspectionIndex === -1) {
+        throw new NotFoundException('Inspection record not found');
+      }
+
+      truck.inspectionAlerts.splice(inspectionIndex, 1);
+      await this.truckRepository.save(truck);
+    } catch (error) {
+      console.error('❌ Error in deleteTruckInspection:', error);
+      if (error instanceof NotFoundException || error instanceof ForbiddenException) {
+        throw error;
+      }
+      throw new BadRequestException(`Failed to delete inspection record: ${error.message}`);
     }
   }
 
@@ -1168,6 +1236,38 @@ export class FleetService {
     }
   }
 
+  async deleteTruckInsurance(
+    truckId: string,
+    insuranceId: string,
+    tenantId: string,
+    userId: string,
+  ): Promise<void> {
+    try {
+      const truck = await this.findOneTruck(truckId, tenantId);
+
+      if (!truck.insuranceAlerts || truck.insuranceAlerts.length === 0) {
+        throw new NotFoundException('Insurance record not found');
+      }
+
+      const insuranceIndex = truck.insuranceAlerts.findIndex(
+        (i: any) => i.id === insuranceId,
+      );
+
+      if (insuranceIndex === -1) {
+        throw new NotFoundException('Insurance record not found');
+      }
+
+      truck.insuranceAlerts.splice(insuranceIndex, 1);
+      await this.truckRepository.save(truck);
+    } catch (error) {
+      console.error('❌ Error in deleteTruckInsurance:', error);
+      if (error instanceof NotFoundException || error instanceof ForbiddenException) {
+        throw error;
+      }
+      throw new BadRequestException(`Failed to delete insurance record: ${error.message}`);
+    }
+  }
+
   async getTruckFuel(truckId: string, tenantId: string): Promise<any[]> {
     const truck = await this.findOneTruck(truckId, tenantId);
     return truck.fuelAlerts || [];
@@ -1264,6 +1364,38 @@ export class FleetService {
         throw error;
       }
       throw new BadRequestException(`Failed to update fuel record: ${error.message}`);
+    }
+  }
+
+  async deleteTruckFuel(
+    truckId: string,
+    fuelId: string,
+    tenantId: string,
+    userId: string,
+  ): Promise<void> {
+    try {
+      const truck = await this.findOneTruck(truckId, tenantId);
+
+      if (!truck.fuelAlerts || truck.fuelAlerts.length === 0) {
+        throw new NotFoundException('Fuel record not found');
+      }
+
+      const fuelIndex = truck.fuelAlerts.findIndex(
+        (f: any) => f.id === fuelId,
+      );
+
+      if (fuelIndex === -1) {
+        throw new NotFoundException('Fuel record not found');
+      }
+
+      truck.fuelAlerts.splice(fuelIndex, 1);
+      await this.truckRepository.save(truck);
+    } catch (error) {
+      console.error('❌ Error in deleteTruckFuel:', error);
+      if (error instanceof NotFoundException || error instanceof ForbiddenException) {
+        throw error;
+      }
+      throw new BadRequestException(`Failed to delete fuel record: ${error.message}`);
     }
   }
 
@@ -1379,6 +1511,38 @@ export class FleetService {
         throw error;
       }
       throw new BadRequestException(`Failed to update tire record: ${error.message}`);
+    }
+  }
+
+  async deleteTruckTire(
+    truckId: string,
+    tireId: string,
+    tenantId: string,
+    userId: string,
+  ): Promise<void> {
+    try {
+      const truck = await this.findOneTruck(truckId, tenantId);
+
+      if (!truck.tireAlerts || truck.tireAlerts.length === 0) {
+        throw new NotFoundException('Tire record not found');
+      }
+
+      const tireIndex = truck.tireAlerts.findIndex(
+        (t: any) => t.id === tireId,
+      );
+
+      if (tireIndex === -1) {
+        throw new NotFoundException('Tire record not found');
+      }
+
+      truck.tireAlerts.splice(tireIndex, 1);
+      await this.truckRepository.save(truck);
+    } catch (error) {
+      console.error('❌ Error in deleteTruckTire:', error);
+      if (error instanceof NotFoundException || error instanceof ForbiddenException) {
+        throw error;
+      }
+      throw new BadRequestException(`Failed to delete tire record: ${error.message}`);
     }
   }
 
@@ -1585,9 +1749,10 @@ export class FleetService {
 
     // Apply filters
     if (filters?.search) {
+      const searchLower = filters.search.toLowerCase();
       query.andWhere(
-        '(route.name LIKE :search OR route.description LIKE :search)',
-        { search: `%${filters.search}%` },
+        '(LOWER(route.name) LIKE :search OR LOWER(route.description) LIKE :search)',
+        { search: `%${searchLower}%` },
       );
     }
 

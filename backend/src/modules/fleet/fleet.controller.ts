@@ -688,6 +688,36 @@ export class FleetController {
     };
   }
 
+  @Delete('trucks/:id/maintenance/:maintenanceId')
+  @ApiOperation({
+    summary: 'Delete truck maintenance record',
+    description: 'Deletes a maintenance record for a truck',
+  })
+  @ApiParam({ name: 'id', description: 'Truck ID (UUID)' })
+  @ApiParam({ name: 'maintenanceId', description: 'Maintenance record ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Maintenance record deleted successfully',
+  })
+  @ApiResponse({ status: 404, description: 'Truck or maintenance record not found' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async deleteTruckMaintenance(
+    @Param('id', ParseUUIDPipe) truckId: string,
+    @Param('maintenanceId') maintenanceId: string,
+    @Request() req,
+  ) {
+    await this.fleetService.deleteTruckMaintenance(
+      truckId,
+      maintenanceId,
+      req.user.tenantId,
+      req.user.userId,
+    );
+
+    return {
+      message: 'Maintenance record deleted successfully',
+    };
+  }
+
   @Get('trucks/:id/inspections')
   @ApiOperation({
     summary: 'Get truck inspection records',
@@ -855,6 +885,36 @@ export class FleetController {
     };
   }
 
+  @Delete('trucks/:id/inspections/:inspectionId')
+  @ApiOperation({
+    summary: 'Delete truck inspection record',
+    description: 'Deletes an inspection record for a truck',
+  })
+  @ApiParam({ name: 'id', description: 'Truck ID (UUID)' })
+  @ApiParam({ name: 'inspectionId', description: 'Inspection record ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Inspection record deleted successfully',
+  })
+  @ApiResponse({ status: 404, description: 'Truck or inspection record not found' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async deleteTruckInspection(
+    @Param('id', ParseUUIDPipe) truckId: string,
+    @Param('inspectionId') inspectionId: string,
+    @Request() req,
+  ) {
+    await this.fleetService.deleteTruckInspection(
+      truckId,
+      inspectionId,
+      req.user.tenantId,
+      req.user.userId,
+    );
+
+    return {
+      message: 'Inspection record deleted successfully',
+    };
+  }
+
   @Get('trucks/:id/insurance')
   @ApiOperation({
     summary: 'Get truck insurance records',
@@ -1001,6 +1061,36 @@ export class FleetController {
     return {
       message: 'Insurance record updated successfully',
       insurance,
+    };
+  }
+
+  @Delete('trucks/:id/insurance/:insuranceId')
+  @ApiOperation({
+    summary: 'Delete truck insurance record',
+    description: 'Deletes an insurance record for a truck',
+  })
+  @ApiParam({ name: 'id', description: 'Truck ID (UUID)' })
+  @ApiParam({ name: 'insuranceId', description: 'Insurance record ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Insurance record deleted successfully',
+  })
+  @ApiResponse({ status: 404, description: 'Truck or insurance record not found' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async deleteTruckInsurance(
+    @Param('id', ParseUUIDPipe) truckId: string,
+    @Param('insuranceId') insuranceId: string,
+    @Request() req,
+  ) {
+    await this.fleetService.deleteTruckInsurance(
+      truckId,
+      insuranceId,
+      req.user.tenantId,
+      req.user.userId,
+    );
+
+    return {
+      message: 'Insurance record deleted successfully',
     };
   }
 
@@ -1156,6 +1246,36 @@ export class FleetController {
     return {
       message: 'Fuel record updated successfully',
       fuel,
+    };
+  }
+
+  @Delete('trucks/:id/fuel/:fuelId')
+  @ApiOperation({
+    summary: 'Delete truck fuel record',
+    description: 'Deletes a fuel record for a truck',
+  })
+  @ApiParam({ name: 'id', description: 'Truck ID (UUID)' })
+  @ApiParam({ name: 'fuelId', description: 'Fuel record ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Fuel record deleted successfully',
+  })
+  @ApiResponse({ status: 404, description: 'Truck or fuel record not found' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async deleteTruckFuel(
+    @Param('id', ParseUUIDPipe) truckId: string,
+    @Param('fuelId') fuelId: string,
+    @Request() req,
+  ) {
+    await this.fleetService.deleteTruckFuel(
+      truckId,
+      fuelId,
+      req.user.tenantId,
+      req.user.userId,
+    );
+
+    return {
+      message: 'Fuel record deleted successfully',
     };
   }
 
@@ -1337,6 +1457,36 @@ export class FleetController {
     return {
       message: 'Tire record updated successfully',
       tire,
+    };
+  }
+
+  @Delete('trucks/:id/tires/:tireId')
+  @ApiOperation({
+    summary: 'Delete truck tire record',
+    description: 'Deletes a tire record for a truck',
+  })
+  @ApiParam({ name: 'id', description: 'Truck ID (UUID)' })
+  @ApiParam({ name: 'tireId', description: 'Tire record ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Tire record deleted successfully',
+  })
+  @ApiResponse({ status: 404, description: 'Truck or tire record not found' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async deleteTruckTire(
+    @Param('id', ParseUUIDPipe) truckId: string,
+    @Param('tireId') tireId: string,
+    @Request() req,
+  ) {
+    await this.fleetService.deleteTruckTire(
+      truckId,
+      tireId,
+      req.user.tenantId,
+      req.user.userId,
+    );
+
+    return {
+      message: 'Tire record deleted successfully',
     };
   }
 

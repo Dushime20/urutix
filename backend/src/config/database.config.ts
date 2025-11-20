@@ -32,6 +32,9 @@ import { Borrower } from '../entities/Borrower';
 import { RouteTruck } from '../entities/route-truck.entity';
 import { AuctionView } from '../entities/auction-view.entity';
 import { AuctionWatch } from '../entities/auction-watch.entity';
+import { SafetyIncident } from '../entities/safety-incident.entity';
+import { SafetyInspection } from '../entities/safety-inspection.entity';
+import { SafetyTraining } from '../entities/safety-training.entity';
 
 // Financial entities
 import { Invoice, InvoiceItem } from '../modules/financial/entities/invoice.entity';
@@ -98,6 +101,10 @@ export const databaseConfig: TypeOrmModuleOptions = {
     // Unified Document and Notification entities
     Document,
     Notification,
+    // Safety entities
+    SafetyIncident,
+    SafetyInspection,
+    SafetyTraining,
   ],
   synchronize: false,
   autoLoadEntities: false,
@@ -159,6 +166,10 @@ export const testDatabaseConfig: TypeOrmModuleOptions = {
     // Unified Document and Notification entities
     Document,
     Notification,
+    // Safety entities
+    SafetyIncident,
+    SafetyInspection,
+    SafetyTraining,
   ],
   synchronize: true,
   autoLoadEntities: false,

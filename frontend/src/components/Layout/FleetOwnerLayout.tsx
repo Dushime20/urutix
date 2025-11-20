@@ -1,9 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
-import { FaBars, FaBell, FaUser, FaSearch, FaSignOutAlt, FaCog, FaTimes, FaCheck } from 'react-icons/fa';
+import { FaBars, FaBell, FaUser, FaSignOutAlt, FaCog, FaTimes, FaCheck, FaQuestionCircle } from 'react-icons/fa';
 import FleetOwnerSidebar from './FleetOwnerSidebar';
 import { useAuth } from '../../contexts/AuthContext';
 import { notificationApi, type Notification } from '../../services/notifications/notificationApi';
+import { HelpCenter } from '../FleetDashboard/HelpCenter';
+import FleetOwnerOnboarding from '../FleetDashboard/FleetOwnerOnboarding';
+import { FloatingHelpButton } from '../FleetDashboard/FloatingHelpButton';
 
 const FleetOwnerLayout: React.FC = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -12,6 +15,8 @@ const FleetOwnerLayout: React.FC = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loadingNotifications, setLoadingNotifications] = useState(false);
+  const [showHelpCenter, setShowHelpCenter] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
   const { user, isLoading, logout } = useAuth();
   const navigate = useNavigate();
   const userMenuRef = useRef<HTMLDivElement>(null);
@@ -28,6 +33,34 @@ const FleetOwnerLayout: React.FC = () => {
       navigate('/auth');
     }
   }, [isLoading, user, navigate]);
+
+  // Check if user needs onboarding
+  useEffect(() => {
+    if (user) {
+      const hasSeenOnboarding = localStorage.getItem('fleetOwnerOnboardingCompleted');
+      if (!hasSeenOnboarding) {
+        // Show onboarding after a short delay
+        setTimeout(() => {
+          setShowOnboarding(true);
+        }, 1000);
+      }
+    }
+  }, [user]);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      // Press ? to open help
+      if (e.key === '?' && !e.ctrlKey && !e.metaKey) {
+        setShowHelpCenter(true);
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyPress);
+    return () => {
+      document.removeEventListener('keydown', handleKeyPress);
+    };
+  }, []);
 
   // Fetch notifications
   useEffect(() => {
@@ -140,6 +173,16 @@ const FleetOwnerLayout: React.FC = () => {
     navigate('/auth');
   };
 
+  const handleOnboardingComplete = () => {
+    localStorage.setItem('fleetOwnerOnboardingCompleted', 'true');
+    setShowOnboarding(false);
+  };
+
+  const handleOnboardingSkip = () => {
+    localStorage.setItem('fleetOwnerOnboardingCompleted', 'true');
+    setShowOnboarding(false);
+  };
+
   return (
     <div className="flex h-screen bg-gray-50">
       {/* Sidebar */}
@@ -151,22 +194,24 @@ const FleetOwnerLayout: React.FC = () => {
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Header */}
-        <header className="bg-white border-b border-gray-200 px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              {/* Search Bar */}
-              <div className="relative">
-                <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <input
-                  type="text"
-                  placeholder="Search fleet, trucks, drivers..."
-                  className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent w-64"
-                />
-              </div>
-            </div>
-
+        <header className="bg-white border-b border-gray-200 px-6 py-3">
+          <div className="flex items-center justify-end">
             {/* User Menu */}
             <div className="flex items-center space-x-4">
+              {/* Help Center */}
+              <div className="relative group">
+                <button
+                  onClick={() => setShowHelpCenter(true)}
+                  className="p-2 rounded-lg hover:bg-gray-100 transition-colors relative"
+                >
+                  <FaQuestionCircle className="w-5 h-5 text-gray-600" />
+                </button>
+                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-white text-gray-900 text-xs font-medium rounded-md shadow-lg border border-gray-200 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                  Help Center (Press ?)
+                  <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-white"></div>
+                </div>
+              </div>
+
               {/* Notifications */}
               <div className="relative" ref={notificationRef}>
                 <button
@@ -347,6 +392,27 @@ const FleetOwnerLayout: React.FC = () => {
           <Outlet />
         </main>
       </div>
+
+      {/* Help Center Modal */}
+      {showHelpCenter && (
+        <HelpCenter
+          onClose={() => setShowHelpCenter(false)}
+          onRestartTour={() => {
+            setShowOnboarding(true);
+          }}
+        />
+      )}
+
+      {/* Onboarding Modal */}
+      {showOnboarding && (
+        <FleetOwnerOnboarding
+          onComplete={handleOnboardingComplete}
+          onSkip={handleOnboardingSkip}
+        />
+      )}
+
+      {/* Floating Help Button */}
+      <FloatingHelpButton />
     </div>
   );
 };

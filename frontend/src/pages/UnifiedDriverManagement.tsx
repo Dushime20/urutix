@@ -116,8 +116,8 @@ const UnifiedDriverManagement: React.FC = () => {
   return (
     <div className="space-y-6">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">My Drivers</h1>
-        <p className="text-gray-600">Manage your drivers, add new drivers, and assign them to trucks.</p>
+        <h1 className="mb-2">My Drivers</h1>
+        <p className="text-sm text-gray-600">Manage your drivers, add new drivers, and assign them to trucks.</p>
       </div>
 
       {/* Navigation Cards */}
@@ -148,7 +148,7 @@ const UnifiedDriverManagement: React.FC = () => {
           </div>
           <h3
             className={cn(
-              "text-sm font-semibold text-left",
+              "text-base font-semibold text-left",
               activeTab === 'add-driver' ? "text-primary-900" : "text-gray-900"
             )}
           >
@@ -195,7 +195,7 @@ const UnifiedDriverManagement: React.FC = () => {
           </div>
           <h3
             className={cn(
-              "text-sm font-semibold text-left",
+              "text-base font-semibold text-left",
               activeTab === 'my-drivers' ? "text-primary-900" : "text-gray-900"
             )}
           >
@@ -232,7 +232,7 @@ const UnifiedDriverManagement: React.FC = () => {
           </div>
           <h3
             className={cn(
-              "text-sm font-semibold text-left",
+              "text-base font-semibold text-left",
               activeTab === 'assignments' ? "text-primary-900" : "text-gray-900"
             )}
           >
@@ -269,7 +269,7 @@ const UnifiedDriverManagement: React.FC = () => {
           </div>
           <h3
             className={cn(
-              "text-sm font-semibold text-left",
+              "text-base font-semibold text-left",
               activeTab === 'ratings' ? "text-primary-900" : "text-gray-900"
             )}
           >
@@ -306,7 +306,7 @@ const UnifiedDriverManagement: React.FC = () => {
           </div>
           <h3
             className={cn(
-              "text-sm font-semibold text-left",
+              "text-base font-semibold text-left",
               activeTab === 'rewards' ? "text-primary-900" : "text-gray-900"
             )}
           >
@@ -343,7 +343,7 @@ const UnifiedDriverManagement: React.FC = () => {
           </div>
           <h3
             className={cn(
-              "text-sm font-semibold text-left",
+              "text-base font-semibold text-left",
               activeTab === 'scoring' ? "text-primary-900" : "text-gray-900"
             )}
           >
@@ -364,7 +364,7 @@ const UnifiedDriverManagement: React.FC = () => {
             {!showDriverForm ? (
               <div className="text-center py-12">
                 <FaUser className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Add New Driver</h3>
+                <h3 className="mb-2">Add New Driver</h3>
                 <p className="text-gray-600 mb-6">Click the button below to start adding a new driver to your fleet</p>
                 <button
                   onClick={handleCreateDriver}

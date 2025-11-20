@@ -4,22 +4,485 @@ import {
   FaChartLine, FaBell, FaPlus, FaEye, FaEdit, FaTrash, FaDownload,
   FaCarCrash, FaTools, FaCheckCircle, FaTimes, FaClock, FaCalendarAlt,
   FaMapMarkerAlt, FaUser, FaTruck, FaDollarSign, FaFileAlt, FaSearch,
-  FaFilter, FaSort, FaSortUp, FaSortDown, FaChartBar, FaChartPie
+  FaFilter, FaSort, FaSortUp, FaSortDown, FaChartBar, FaChartPie, FaSpinner
 } from 'react-icons/fa';
 import type { 
   SafetyIncident, SafetyInspection, DriverSafetyScore, SafetyTraining, 
   SafetyAlert, SafetyInspectionItem 
 } from '../../types/fleet';
+import { fleetApi } from '../../services/fleetApi';
+import { useAuth } from '../../contexts/AuthContext';
+import toast from 'react-hot-toast';
 
 interface SafetyManagementProps {
   fleetId?: string;
 }
 
 export const SafetyManagement: React.FC<SafetyManagementProps> = ({ fleetId }) => {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('overview');
   const [loading, setLoading] = useState(false);
   const [selectedIncident, setSelectedIncident] = useState<SafetyIncident | null>(null);
+  const [selectedInspection, setSelectedInspection] = useState<SafetyInspection | null>(null);
+  const [selectedTraining, setSelectedTraining] = useState<SafetyTraining | null>(null);
+  const [isEditingIncident, setIsEditingIncident] = useState(false);
+  const [isEditingInspection, setIsEditingInspection] = useState(false);
+  const [isEditingTraining, setIsEditingTraining] = useState(false);
   const [showIncidentModal, setShowIncidentModal] = useState(false);
+  const [showInspectionModal, setShowInspectionModal] = useState(false);
+  const [showTrainingModal, setShowTrainingModal] = useState(false);
+  const [showViewIncidentModal, setShowViewIncidentModal] = useState(false);
+  const [showViewInspectionModal, setShowViewInspectionModal] = useState(false);
+  const [showViewTrainingModal, setShowViewTrainingModal] = useState(false);
+  const [viewingIncident, setViewingIncident] = useState<SafetyIncident | null>(null);
+  const [viewingInspection, setViewingInspection] = useState<SafetyInspection | null>(null);
+  const [viewingTraining, setViewingTraining] = useState<SafetyTraining | null>(null);
+  const [incidents, setIncidents] = useState<SafetyIncident[]>([]);
+  const [inspections, setInspections] = useState<SafetyInspection[]>([]);
+  const [trainings, setTrainings] = useState<SafetyTraining[]>([]);
+  const [trucks, setTrucks] = useState<any[]>([]);
+  const [drivers, setDrivers] = useState<any[]>([]);
+  const [loadingIncidents, setLoadingIncidents] = useState(false);
+  const [loadingInspections, setLoadingInspections] = useState(false);
+  const [loadingTrainings, setLoadingTrainings] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [incidentsCount, setIncidentsCount] = useState(0);
+  const [inspectionsCount, setInspectionsCount] = useState(0);
+
+  // Form state for incident report
+  const [incidentForm, setIncidentForm] = useState({
+    type: 'accident' as 'accident' | 'near_miss' | 'injury' | 'property_damage' | 'traffic_violation',
+    severity: 'minor' as 'minor' | 'moderate' | 'major' | 'critical',
+    date: new Date().toISOString().split('T')[0],
+    location: '',
+    description: '',
+    driverId: '',
+    truckId: '',
+    weatherConditions: '',
+    roadConditions: '',
+    injuries: '',
+    propertyDamage: 0,
+    policeReport: false,
+    reportNumber: '',
+    status: 'reported' as 'reported' | 'investigating' | 'resolved' | 'closed',
+    assignedTo: '',
+    correctiveActions: [] as string[],
+    cost: 0,
+    insuranceClaim: false,
+    claimNumber: '',
+  });
+
+  // Load incidents from API
+  const loadIncidents = async () => {
+    setLoadingIncidents(true);
+    try {
+      const data = await fleetApi.getSafetyIncidents();
+      // Convert date strings to Date objects
+      const incidentsWithDates = data.map((inc: any) => ({
+        ...inc,
+        date: inc.date ? new Date(inc.date) : new Date(),
+      }));
+      setIncidents(incidentsWithDates);
+      setIncidentsCount(incidentsWithDates.length);
+    } catch (error) {
+      console.error('Error loading incidents:', error);
+      toast.error('Failed to load incidents');
+      setIncidentsCount(0);
+    } finally {
+      setLoadingIncidents(false);
+    }
+  };
+
+  // Load trucks and drivers for dropdowns
+  const loadTrucksAndDrivers = async () => {
+    try {
+      const [trucksData, driversData] = await Promise.all([
+        fleetApi.getTrucks({}),
+        fleetApi.getDrivers({}),
+      ]);
+      setTrucks(trucksData || []);
+      setDrivers(driversData || []);
+    } catch (error) {
+      console.error('Error loading trucks and drivers:', error);
+    }
+  };
+
+
+  // Handle form submission
+  const handleSubmitIncident = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitting(true);
+
+    try {
+      // Get driver and truck names
+      const selectedDriver = drivers.find(d => d.id === incidentForm.driverId);
+      const selectedTruck = trucks.find(t => t.id === incidentForm.truckId);
+
+      const incidentData = {
+        ...incidentForm,
+        driverName: selectedDriver ? `${selectedDriver.firstName} ${selectedDriver.lastName}` : '',
+        truckPlate: selectedTruck?.plateNumber || '',
+        date: new Date(incidentForm.date).toISOString(),
+      };
+
+      if (isEditingIncident && selectedIncident) {
+        await fleetApi.updateSafetyIncident(selectedIncident.id, incidentData);
+        toast.success('Incident updated successfully');
+      } else {
+        await fleetApi.createSafetyIncident(incidentData);
+        toast.success('Incident reported successfully');
+      }
+      
+      setShowIncidentModal(false);
+      resetForm();
+      setIsEditingIncident(false);
+      setSelectedIncident(null);
+      loadIncidents();
+    } catch (error: any) {
+      console.error('Error submitting incident:', error);
+      toast.error(error.message || 'Failed to save incident');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // Handle edit incident
+  const handleEditIncident = (incident: SafetyIncident) => {
+    setSelectedIncident(incident);
+    setIsEditingIncident(true);
+    
+    // Format date for datetime-local input
+    const incidentDate = incident.date instanceof Date 
+      ? incident.date 
+      : new Date(incident.date);
+    const dateStr = incidentDate.toISOString().slice(0, 16);
+    
+    setIncidentForm({
+      type: incident.type as any,
+      severity: incident.severity as any,
+      date: dateStr,
+      location: incident.location || '',
+      description: incident.description || '',
+      driverId: incident.driverId || '',
+      truckId: incident.truckId || '',
+      weatherConditions: incident.weatherConditions || '',
+      roadConditions: incident.roadConditions || '',
+      injuries: incident.injuries || '',
+      propertyDamage: incident.propertyDamage || 0,
+      policeReport: incident.policeReport || false,
+      reportNumber: incident.reportNumber || '',
+      status: incident.status as any,
+      assignedTo: incident.assignedTo || user?.name || '',
+      correctiveActions: incident.correctiveActions || [],
+      cost: incident.cost || 0,
+      insuranceClaim: incident.insuranceClaim || false,
+      claimNumber: incident.claimNumber || '',
+    });
+    
+    setShowIncidentModal(true);
+  };
+
+  // Form state for inspection
+  const [inspectionForm, setInspectionForm] = useState({
+    type: 'pre_trip' as 'pre_trip' | 'post_trip' | 'weekly' | 'monthly' | 'annual' | 'random',
+    inspector: user?.name || '',
+    inspectionDate: new Date().toISOString().split('T')[0],
+    truckId: '',
+    driverId: '',
+    status: 'passed' as 'passed' | 'failed' | 'conditional',
+    score: 0,
+    maxScore: 100,
+    items: [] as any[],
+    notes: '',
+    nextInspectionDate: '',
+    complianceStatus: 'compliant' as 'compliant' | 'non_compliant',
+  });
+
+  // Load inspections from API
+  const loadInspections = async () => {
+    setLoadingInspections(true);
+    try {
+      const data = await fleetApi.getSafetyInspections();
+      // Convert date strings to Date objects
+      const inspectionsWithDates = data.map((insp: any) => ({
+        ...insp,
+        inspectionDate: insp.inspectionDate ? new Date(insp.inspectionDate) : new Date(),
+        nextInspectionDate: insp.nextInspectionDate ? new Date(insp.nextInspectionDate) : null,
+      }));
+      setInspections(inspectionsWithDates);
+      setInspectionsCount(inspectionsWithDates.length);
+    } catch (error) {
+      console.error('Error loading inspections:', error);
+      toast.error('Failed to load inspections');
+      setInspectionsCount(0);
+    } finally {
+      setLoadingInspections(false);
+    }
+  };
+
+  // Load trainings from API
+  const loadTrainings = async () => {
+    setLoadingTrainings(true);
+    try {
+      const data = await fleetApi.getSafetyTrainings();
+      // Convert date strings to Date objects
+      const trainingsWithDates = data.map((train: any) => ({
+        ...train,
+        scheduledDate: train.scheduledDate ? new Date(train.scheduledDate) : new Date(),
+        nextDue: train.nextDue ? new Date(train.nextDue) : new Date(),
+        lastCompleted: train.lastCompleted ? new Date(train.lastCompleted) : null,
+      }));
+      setTrainings(trainingsWithDates);
+    } catch (error) {
+      console.error('Error loading trainings:', error);
+      toast.error('Failed to load trainings');
+    } finally {
+      setLoadingTrainings(false);
+    }
+  };
+
+  useEffect(() => {
+    loadIncidents();
+    loadInspections();
+    loadTrainings();
+    loadTrucksAndDrivers();
+  }, []);
+
+  // Handle inspection form submission
+  const handleSubmitInspection = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitting(true);
+
+    try {
+      // Get driver and truck names
+      const selectedDriver = drivers.find(d => d.id === inspectionForm.driverId);
+      const selectedTruck = trucks.find(t => t.id === inspectionForm.truckId);
+
+      const inspectionData = {
+        ...inspectionForm,
+        driverName: selectedDriver ? `${selectedDriver.firstName} ${selectedDriver.lastName}` : '',
+        truckPlate: selectedTruck?.plateNumber || '',
+        inspectionDate: new Date(inspectionForm.inspectionDate).toISOString(),
+        nextInspectionDate: inspectionForm.nextInspectionDate ? new Date(inspectionForm.nextInspectionDate).toISOString() : undefined,
+      };
+
+      if (isEditingInspection && selectedInspection) {
+        await fleetApi.updateSafetyInspection(selectedInspection.id, inspectionData);
+        toast.success('Inspection updated successfully');
+      } else {
+        await fleetApi.createSafetyInspection(inspectionData);
+        toast.success('Inspection scheduled successfully');
+      }
+      
+      setShowInspectionModal(false);
+      resetInspectionForm();
+      setIsEditingInspection(false);
+      setSelectedInspection(null);
+      loadInspections();
+    } catch (error: any) {
+      console.error('Error submitting inspection:', error);
+      toast.error(error.message || 'Failed to save inspection');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // Handle edit inspection
+  const handleEditInspection = (inspection: SafetyInspection) => {
+    setSelectedInspection(inspection);
+    setIsEditingInspection(true);
+    
+    // Format dates for inputs
+    const inspectionDate = inspection.inspectionDate instanceof Date 
+      ? inspection.inspectionDate 
+      : new Date(inspection.inspectionDate);
+    const dateStr = inspectionDate.toISOString().split('T')[0];
+    
+    const nextDateStr = inspection.nextInspectionDate 
+      ? (inspection.nextInspectionDate instanceof Date 
+          ? inspection.nextInspectionDate 
+          : new Date(inspection.nextInspectionDate)).toISOString().split('T')[0]
+      : '';
+    
+    setInspectionForm({
+      type: inspection.type as any,
+      inspector: inspection.inspector || user?.name || '',
+      inspectionDate: dateStr,
+      truckId: inspection.truckId || '',
+      driverId: inspection.driverId || '',
+      status: inspection.status as any,
+      score: inspection.score || 0,
+      maxScore: inspection.maxScore || 100,
+      items: inspection.items || [],
+      notes: inspection.notes || '',
+      nextInspectionDate: nextDateStr,
+      complianceStatus: inspection.complianceStatus as any,
+    });
+    
+    setShowInspectionModal(true);
+  };
+
+  const resetForm = () => {
+    setIncidentForm({
+      type: 'accident',
+      severity: 'minor',
+      date: new Date().toISOString().split('T')[0],
+      location: '',
+      description: '',
+      driverId: '',
+      truckId: '',
+      weatherConditions: '',
+      roadConditions: '',
+      injuries: '',
+      propertyDamage: 0,
+      policeReport: false,
+      reportNumber: '',
+      status: 'reported',
+      assignedTo: user?.name || '',
+      correctiveActions: [],
+      cost: 0,
+      insuranceClaim: false,
+      claimNumber: '',
+    });
+  };
+
+  const resetInspectionForm = () => {
+    setInspectionForm({
+      type: 'pre_trip',
+      inspector: user?.name || '',
+      inspectionDate: new Date().toISOString().split('T')[0],
+      truckId: '',
+      driverId: '',
+      status: 'passed',
+      score: 0,
+      maxScore: 100,
+      items: [],
+      notes: '',
+      nextInspectionDate: '',
+      complianceStatus: 'compliant',
+    });
+  };
+
+  // Form state for training
+  const [trainingForm, setTrainingForm] = useState({
+    type: 'defensive_driving' as 'defensive_driving' | 'hazmat' | 'first_aid' | 'emergency_procedures' | 'regulations' | 'technology',
+    title: '',
+    description: '',
+    duration: 1,
+    required: false,
+    frequency: 'once' as 'once' | 'annually' | 'biannually' | 'quarterly',
+    scheduledDate: new Date().toISOString().slice(0, 16), // YYYY-MM-DDTHH:MM
+    nextDue: new Date().toISOString().split('T')[0],
+    driverId: '',
+    instructor: user?.name || '',
+    status: 'pending' as 'completed' | 'pending' | 'overdue',
+    score: undefined as number | undefined,
+    certificate: '',
+  });
+
+  const resetTrainingForm = () => {
+    setTrainingForm({
+      type: 'defensive_driving',
+      title: '',
+      description: '',
+      duration: 1,
+      required: false,
+      frequency: 'once',
+      scheduledDate: new Date().toISOString().slice(0, 16),
+      nextDue: new Date().toISOString().split('T')[0],
+      driverId: '',
+      instructor: user?.name || '',
+      status: 'pending',
+      score: undefined,
+      certificate: '',
+    });
+  };
+
+  // Handle training form submission
+  const handleSubmitTraining = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitting(true);
+
+    try {
+      // Get driver name
+      const selectedDriver = drivers.find(d => d.id === trainingForm.driverId);
+
+      const trainingData = {
+        ...trainingForm,
+        driverName: selectedDriver ? `${selectedDriver.firstName} ${selectedDriver.lastName}` : '',
+        scheduledDate: new Date(trainingForm.scheduledDate).toISOString(),
+        nextDue: new Date(trainingForm.nextDue).toISOString(),
+      };
+
+      if (isEditingTraining && selectedTraining) {
+        await fleetApi.updateSafetyTraining(selectedTraining.id, trainingData);
+        toast.success('Training updated successfully');
+      } else {
+        await fleetApi.createSafetyTraining(trainingData);
+        toast.success('Training scheduled successfully');
+      }
+      
+      setShowTrainingModal(false);
+      resetTrainingForm();
+      setIsEditingTraining(false);
+      setSelectedTraining(null);
+      loadTrainings();
+    } catch (error: any) {
+      console.error('Error submitting training:', error);
+      toast.error(error.message || 'Failed to save training');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // Handle edit training
+  const handleEditTraining = (training: SafetyTraining) => {
+    setSelectedTraining(training);
+    setIsEditingTraining(true);
+    
+    // Format dates for inputs
+    const scheduledDate = training.scheduledDate instanceof Date 
+      ? training.scheduledDate 
+      : new Date(training.scheduledDate);
+    const scheduledDateStr = scheduledDate.toISOString().slice(0, 16);
+    
+    const nextDue = training.nextDue instanceof Date 
+      ? training.nextDue 
+      : new Date(training.nextDue);
+    const nextDueStr = nextDue.toISOString().split('T')[0];
+    
+    setTrainingForm({
+      type: training.type as any,
+      title: training.title || '',
+      description: training.description || '',
+      duration: training.duration || 1,
+      required: training.required || false,
+      frequency: training.frequency as any || 'once',
+      scheduledDate: scheduledDateStr,
+      nextDue: nextDueStr,
+      driverId: training.driverId || '',
+      instructor: training.instructor || user?.name || '',
+      status: training.status as any,
+      score: training.score,
+      certificate: training.certificate || '',
+    });
+    
+    setShowTrainingModal(true);
+  };
+
+  const handleModalClose = () => {
+    setShowIncidentModal(false);
+    resetForm();
+    setIsEditingIncident(false);
+    setSelectedIncident(null);
+  };
+
+  const handleInspectionModalClose = () => {
+    setShowInspectionModal(false);
+    resetInspectionForm();
+    setIsEditingInspection(false);
+    setSelectedInspection(null);
+  };
 
   // Mock data for demonstration
   const mockSafetyData = {
@@ -281,19 +744,15 @@ export const SafetyManagement: React.FC<SafetyManagementProps> = ({ fleetId }) =
   };
 
   return (
-    <div className="p-6">
+    <div className="space-y-6">
       {/* Header */}
       <div className="mb-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Safety Management</h1>
-            <p className="text-gray-600">Monitor and manage fleet safety performance</p>
+            <h1 className="mb-2">Safety Management</h1>
+            <p className="text-sm text-gray-600">Monitor and manage fleet safety performance</p>
           </div>
           <div className="flex items-center gap-2">
-            <button className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center gap-2">
-              <FaPlus className="w-4 h-4" />
-              Report Incident
-            </button>
             <button className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 flex items-center gap-2">
               <FaDownload className="w-4 h-4" />
               Export Report
@@ -303,7 +762,7 @@ export const SafetyManagement: React.FC<SafetyManagementProps> = ({ fleetId }) =
       </div>
 
       {/* Quick Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
           <div className="flex items-center">
             <FaShieldAlt className="w-8 h-8 text-green-600" />
@@ -318,7 +777,7 @@ export const SafetyManagement: React.FC<SafetyManagementProps> = ({ fleetId }) =
             <FaCarCrash className="w-8 h-8 text-red-600" />
             <div className="ml-3">
               <p className="text-sm font-medium text-gray-500">Incidents</p>
-              <p className="text-2xl font-bold text-gray-900">2</p>
+              <p className="text-2xl font-bold text-gray-900">{loadingIncidents ? '...' : incidentsCount}</p>
             </div>
           </div>
         </div>
@@ -327,16 +786,7 @@ export const SafetyManagement: React.FC<SafetyManagementProps> = ({ fleetId }) =
             <FaClipboardCheck className="w-8 h-8 text-blue-600" />
             <div className="ml-3">
               <p className="text-sm font-medium text-gray-500">Inspections</p>
-              <p className="text-2xl font-bold text-gray-900">18</p>
-            </div>
-          </div>
-        </div>
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-          <div className="flex items-center">
-            <FaBell className="w-8 h-8 text-orange-600" />
-            <div className="ml-3">
-              <p className="text-sm font-medium text-gray-500">Active Alerts</p>
-              <p className="text-2xl font-bold text-gray-900">2</p>
+              <p className="text-2xl font-bold text-gray-900">{loadingInspections ? '...' : inspectionsCount}</p>
             </div>
           </div>
         </div>
@@ -349,9 +799,7 @@ export const SafetyManagement: React.FC<SafetyManagementProps> = ({ fleetId }) =
             { id: 'overview', label: 'Overview', icon: FaChartLine },
             { id: 'incidents', label: 'Incidents', icon: FaCarCrash },
             { id: 'inspections', label: 'Inspections', icon: FaClipboardCheck },
-            { id: 'drivers', label: 'Driver Scores', icon: FaUserGraduate },
-            { id: 'training', label: 'Training', icon: FaUserGraduate },
-            { id: 'alerts', label: 'Alerts', icon: FaBell }
+            { id: 'training', label: 'Training', icon: FaUserGraduate }
           ].map(tab => (
             <button
               key={tab.id}
@@ -424,64 +872,89 @@ export const SafetyManagement: React.FC<SafetyManagementProps> = ({ fleetId }) =
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-semibold text-gray-900">Safety Incidents</h2>
               <button 
-                onClick={() => setShowIncidentModal(true)}
+                onClick={() => {
+                  resetForm();
+                  setShowIncidentModal(true);
+                }}
                 className="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700 flex items-center gap-1"
               >
                 <FaPlus className="w-3 h-3" />
                 Report Incident
               </button>
             </div>
-            <div className="space-y-4">
-              {mockSafetyData.incidents.map(incident => (
-                <div key={incident.id} className="border border-gray-200 rounded-lg p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <FaCarCrash className="w-6 h-6 text-red-600" />
-                      <div>
-                        <h3 className="font-medium text-gray-900">{incident.type.replace('_', ' ').toUpperCase()}</h3>
-                        <p className="text-sm text-gray-500">{incident.description}</p>
+            {loadingIncidents ? (
+              <div className="text-center py-12">
+                <FaSpinner className="w-8 h-8 text-primary-600 animate-spin mx-auto mb-4" />
+                <p className="text-sm text-gray-600">Loading incidents...</p>
+              </div>
+            ) : incidents.length === 0 ? (
+              <div className="text-center py-12 bg-gray-50 rounded-lg">
+                <FaCarCrash className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">No Incidents Reported</h3>
+                <p className="text-sm text-gray-600 mb-4">Click "Report Incident" to add a new safety incident</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {incidents.map(incident => (
+                  <div key={incident.id} className="border border-gray-200 rounded-lg p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <FaCarCrash className="w-6 h-6 text-red-600" />
+                        <div>
+                          <h3 className="font-medium text-gray-900">{incident.type.replace('_', ' ').toUpperCase()}</h3>
+                          <p className="text-sm text-gray-500">{incident.description}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getSeverityColor(incident.severity)}`}>
+                          {incident.severity}
+                        </span>
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(incident.status)}`}>
+                          {incident.status}
+                        </span>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getSeverityColor(incident.severity)}`}>
-                        {incident.severity}
-                      </span>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(incident.status)}`}>
-                        {incident.status}
-                      </span>
+                    <div className="mt-3 grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <span className="text-gray-500">Date:</span>
+                        <span className="ml-2">{incident.date instanceof Date ? incident.date.toLocaleDateString() : new Date(incident.date).toLocaleDateString()}</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-500">Location:</span>
+                        <span className="ml-2">{incident.location}</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-500">Driver:</span>
+                        <span className="ml-2">{incident.driverName || 'N/A'}</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-500">Cost:</span>
+                        <span className="ml-2">${(incident.cost || 0).toLocaleString()}</span>
+                      </div>
+                    </div>
+                    <div className="mt-3 flex gap-2">
+                      <button 
+                        onClick={() => {
+                          setViewingIncident(incident);
+                          setShowViewIncidentModal(true);
+                        }}
+                        className="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
+                      >
+                        <FaEye className="w-3 h-3 inline mr-1" />
+                        View Details
+                      </button>
+                      <button 
+                        onClick={() => handleEditIncident(incident)}
+                        className="px-2 py-1 text-xs bg-green-100 text-green-700 rounded hover:bg-green-200"
+                      >
+                        <FaEdit className="w-3 h-3 inline mr-1" />
+                        Update
+                      </button>
                     </div>
                   </div>
-                  <div className="mt-3 grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <span className="text-gray-500">Date:</span>
-                      <span className="ml-2">{incident.date.toLocaleDateString()}</span>
-                    </div>
-                    <div>
-                      <span className="text-gray-500">Location:</span>
-                      <span className="ml-2">{incident.location}</span>
-                    </div>
-                    <div>
-                      <span className="text-gray-500">Driver:</span>
-                      <span className="ml-2">{incident.driverName}</span>
-                    </div>
-                    <div>
-                      <span className="text-gray-500">Cost:</span>
-                      <span className="ml-2">${incident.cost.toLocaleString()}</span>
-                    </div>
-                  </div>
-                  <div className="mt-3 flex gap-2">
-                    <button className="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200">
-                      <FaEye className="w-3 h-3 inline mr-1" />
-                      View Details
-                    </button>
-                    <button className="px-2 py-1 text-xs bg-green-100 text-green-700 rounded hover:bg-green-200">
-                      <FaEdit className="w-3 h-3 inline mr-1" />
-                      Update
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
@@ -489,13 +962,31 @@ export const SafetyManagement: React.FC<SafetyManagementProps> = ({ fleetId }) =
           <div className="p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-semibold text-gray-900">Safety Inspections</h2>
-              <button className="px-3 py-1 bg-primary-600 text-white rounded text-sm hover:bg-primary-700">
-                <FaPlus className="w-3 h-3 inline mr-1" />
+              <button 
+                onClick={() => {
+                  resetInspectionForm();
+                  setShowInspectionModal(true);
+                }}
+                className="px-3 py-1 bg-primary-600 text-white rounded text-sm hover:bg-primary-700 flex items-center gap-1"
+              >
+                <FaPlus className="w-3 h-3" />
                 Schedule Inspection
               </button>
             </div>
-            <div className="space-y-4">
-              {mockSafetyData.inspections.map(inspection => (
+            {loadingInspections ? (
+              <div className="text-center py-12">
+                <FaSpinner className="w-8 h-8 text-primary-600 animate-spin mx-auto mb-4" />
+                <p className="text-sm text-gray-600">Loading inspections...</p>
+              </div>
+            ) : inspections.length === 0 ? (
+              <div className="text-center py-12 bg-gray-50 rounded-lg">
+                <FaClipboardCheck className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">No Inspections Scheduled</h3>
+                <p className="text-sm text-gray-600 mb-4">Click "Schedule Inspection" to add a new safety inspection</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {inspections.map(inspection => (
                 <div key={inspection.id} className="border border-gray-200 rounded-lg p-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
@@ -517,25 +1008,36 @@ export const SafetyManagement: React.FC<SafetyManagementProps> = ({ fleetId }) =
                   <div className="mt-3 grid grid-cols-2 gap-4 text-sm">
                     <div>
                       <span className="text-gray-500">Date:</span>
-                      <span className="ml-2">{inspection.inspectionDate.toLocaleDateString()}</span>
+                      <span className="ml-2">
+                        {inspection.inspectionDate instanceof Date 
+                          ? inspection.inspectionDate.toLocaleDateString() 
+                          : new Date(inspection.inspectionDate).toLocaleDateString()}
+                      </span>
                     </div>
                     <div>
                       <span className="text-gray-500">Truck:</span>
-                      <span className="ml-2">{inspection.truckPlate}</span>
+                      <span className="ml-2">{inspection.truckPlate || 'N/A'}</span>
                     </div>
                     <div>
                       <span className="text-gray-500">Driver:</span>
-                      <span className="ml-2">{inspection.driverName}</span>
+                      <span className="ml-2">{inspection.driverName || 'N/A'}</span>
                     </div>
                     <div>
                       <span className="text-gray-500">Next Due:</span>
-                      <span className="ml-2">{inspection.nextInspectionDate.toLocaleDateString()}</span>
+                      <span className="ml-2">
+                        {inspection.nextInspectionDate 
+                          ? (inspection.nextInspectionDate instanceof Date 
+                              ? inspection.nextInspectionDate.toLocaleDateString() 
+                              : new Date(inspection.nextInspectionDate).toLocaleDateString())
+                          : 'N/A'}
+                      </span>
                     </div>
                   </div>
-                  <div className="mt-3">
-                    <h4 className="text-sm font-medium text-gray-700 mb-2">Inspection Items:</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                      {inspection.items.map(item => (
+                  {inspection.items && inspection.items.length > 0 && (
+                    <div className="mt-3">
+                      <h4 className="text-sm font-medium text-gray-700 mb-2">Inspection Items:</h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                        {inspection.items.map((item: any) => (
                         <div key={item.id} className="flex items-center justify-between p-2 bg-gray-50 rounded">
                           <span className="text-xs">{item.item}</span>
                           <span className={`px-1 py-0.5 rounded text-xs font-medium ${
@@ -546,16 +1048,38 @@ export const SafetyManagement: React.FC<SafetyManagementProps> = ({ fleetId }) =
                             {item.status}
                           </span>
                         </div>
-                      ))}
+                        ))}
+                      </div>
                     </div>
+                  )}
+                  <div className="mt-3 flex gap-2">
+                    <button 
+                      onClick={() => {
+                        setViewingInspection(inspection);
+                        setShowViewInspectionModal(true);
+                      }}
+                      className="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
+                    >
+                      <FaEye className="w-3 h-3 inline mr-1" />
+                      View Details
+                    </button>
+                    <button 
+                      onClick={() => handleEditInspection(inspection)}
+                      className="px-2 py-1 text-xs bg-green-100 text-green-700 rounded hover:bg-green-200"
+                    >
+                      <FaEdit className="w-3 h-3 inline mr-1" />
+                      Update
+                    </button>
                   </div>
                 </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
-        {activeTab === 'drivers' && (
+        {/* Driver Scores tab hidden */}
+        {false && activeTab === 'drivers' && (
           <div className="p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-semibold text-gray-900">Driver Safety Scores</h2>
@@ -622,13 +1146,31 @@ export const SafetyManagement: React.FC<SafetyManagementProps> = ({ fleetId }) =
           <div className="p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-semibold text-gray-900">Safety Training</h2>
-              <button className="px-3 py-1 bg-primary-600 text-white rounded text-sm hover:bg-primary-700">
-                <FaPlus className="w-3 h-3 inline mr-1" />
+              <button 
+                onClick={() => {
+                  resetTrainingForm();
+                  setShowTrainingModal(true);
+                }}
+                className="px-3 py-1 bg-primary-600 text-white rounded text-sm hover:bg-primary-700 flex items-center gap-1"
+              >
+                <FaPlus className="w-3 h-3" />
                 Schedule Training
               </button>
             </div>
-            <div className="space-y-4">
-              {mockSafetyData.training.map(training => (
+            {loadingTrainings ? (
+              <div className="text-center py-12">
+                <FaSpinner className="w-8 h-8 text-primary-600 animate-spin mx-auto mb-4" />
+                <p className="text-sm text-gray-600">Loading trainings...</p>
+              </div>
+            ) : trainings.length === 0 ? (
+              <div className="text-center py-12 bg-gray-50 rounded-lg">
+                <FaUserGraduate className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">No Trainings Scheduled</h3>
+                <p className="text-sm text-gray-600 mb-4">Click "Schedule Training" to add a new safety training</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {trainings.map(training => (
                 <div key={training.id} className="border border-gray-200 rounded-lg p-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
@@ -660,20 +1202,63 @@ export const SafetyManagement: React.FC<SafetyManagementProps> = ({ fleetId }) =
                     </div>
                     <div>
                       <span className="text-gray-500">Last Completed:</span>
-                      <span className="ml-2">{training.lastCompleted?.toLocaleDateString() || 'N/A'}</span>
+                      <span className="ml-2">
+                        {training.lastCompleted 
+                          ? (training.lastCompleted instanceof Date 
+                              ? training.lastCompleted.toLocaleDateString() 
+                              : new Date(training.lastCompleted).toLocaleDateString())
+                          : 'N/A'}
+                      </span>
                     </div>
                     <div>
                       <span className="text-gray-500">Next Due:</span>
-                      <span className="ml-2">{training.nextDue.toLocaleDateString()}</span>
+                      <span className="ml-2">
+                        {training.nextDue instanceof Date 
+                          ? training.nextDue.toLocaleDateString() 
+                          : new Date(training.nextDue).toLocaleDateString()}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-gray-500">Scheduled Date:</span>
+                      <span className="ml-2">
+                        {training.scheduledDate instanceof Date 
+                          ? training.scheduledDate.toLocaleDateString() 
+                          : new Date(training.scheduledDate).toLocaleDateString()}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-gray-500">Instructor:</span>
+                      <span className="ml-2">{training.instructor || 'N/A'}</span>
                     </div>
                   </div>
+                  <div className="mt-3 flex gap-2">
+                    <button 
+                      onClick={() => {
+                        setViewingTraining(training);
+                        setShowViewTrainingModal(true);
+                      }}
+                      className="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
+                    >
+                      <FaEye className="w-3 h-3 inline mr-1" />
+                      View Details
+                    </button>
+                    <button 
+                      onClick={() => handleEditTraining(training)}
+                      className="px-2 py-1 text-xs bg-green-100 text-green-700 rounded hover:bg-green-200"
+                    >
+                      <FaEdit className="w-3 h-3 inline mr-1" />
+                      Update
+                    </button>
+                  </div>
                 </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
-        {activeTab === 'alerts' && (
+        {/* Alerts tab hidden */}
+        {false && activeTab === 'alerts' && (
           <div className="p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-semibold text-gray-900">Safety Alerts</h2>
@@ -728,6 +1313,1101 @@ export const SafetyManagement: React.FC<SafetyManagementProps> = ({ fleetId }) =
           </div>
         )}
       </div>
+
+      {/* Report Incident Modal */}
+      {showIncidentModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+              <h2 className="text-xl font-semibold text-gray-900">Report Safety Incident</h2>
+              <button
+                onClick={handleModalClose}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <FaTimes className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmitIncident} className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                {/* Incident Type */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Incident Type <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={incidentForm.type}
+                    onChange={(e) => setIncidentForm({ ...incidentForm, type: e.target.value as any })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    required
+                  >
+                    <option value="accident">Accident</option>
+                    <option value="near_miss">Near Miss</option>
+                    <option value="injury">Injury</option>
+                    <option value="property_damage">Property Damage</option>
+                    <option value="traffic_violation">Traffic Violation</option>
+                  </select>
+                </div>
+
+                {/* Severity */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Severity <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={incidentForm.severity}
+                    onChange={(e) => setIncidentForm({ ...incidentForm, severity: e.target.value as any })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    required
+                  >
+                    <option value="minor">Minor</option>
+                    <option value="moderate">Moderate</option>
+                    <option value="major">Major</option>
+                    <option value="critical">Critical</option>
+                  </select>
+                </div>
+
+                {/* Date */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Date <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="date"
+                    value={incidentForm.date}
+                    onChange={(e) => setIncidentForm({ ...incidentForm, date: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    required
+                  />
+                </div>
+
+                {/* Location */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Location <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={incidentForm.location}
+                    onChange={(e) => setIncidentForm({ ...incidentForm, location: e.target.value })}
+                    placeholder="Enter incident location"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    required
+                  />
+                </div>
+
+                {/* Driver */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Driver <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={incidentForm.driverId}
+                    onChange={(e) => setIncidentForm({ ...incidentForm, driverId: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    required
+                  >
+                    <option value="">Select Driver</option>
+                    {drivers.map((driver) => (
+                      <option key={driver.id} value={driver.id}>
+                        {driver.firstName} {driver.lastName} - {driver.licenseNumber}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Truck */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Truck <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={incidentForm.truckId}
+                    onChange={(e) => setIncidentForm({ ...incidentForm, truckId: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    required
+                  >
+                    <option value="">Select Truck</option>
+                    {trucks.map((truck) => (
+                      <option key={truck.id} value={truck.id}>
+                        {truck.plateNumber} - {truck.make} {truck.model}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Weather Conditions */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Weather Conditions</label>
+                  <input
+                    type="text"
+                    value={incidentForm.weatherConditions}
+                    onChange={(e) => setIncidentForm({ ...incidentForm, weatherConditions: e.target.value })}
+                    placeholder="e.g., Clear, Rainy, Foggy"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  />
+                </div>
+
+                {/* Road Conditions */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Road Conditions</label>
+                  <input
+                    type="text"
+                    value={incidentForm.roadConditions}
+                    onChange={(e) => setIncidentForm({ ...incidentForm, roadConditions: e.target.value })}
+                    placeholder="e.g., Dry, Wet, Icy"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  />
+                </div>
+
+                {/* Injuries */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Injuries</label>
+                  <input
+                    type="text"
+                    value={incidentForm.injuries}
+                    onChange={(e) => setIncidentForm({ ...incidentForm, injuries: e.target.value })}
+                    placeholder="Describe any injuries"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  />
+                </div>
+
+                {/* Property Damage */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Property Damage ($)</label>
+                  <input
+                    type="number"
+                    value={incidentForm.propertyDamage}
+                    onChange={(e) => setIncidentForm({ ...incidentForm, propertyDamage: parseFloat(e.target.value) || 0 })}
+                    min="0"
+                    step="0.01"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  />
+                </div>
+
+                {/* Cost */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Total Cost ($)</label>
+                  <input
+                    type="number"
+                    value={incidentForm.cost}
+                    onChange={(e) => setIncidentForm({ ...incidentForm, cost: parseFloat(e.target.value) || 0 })}
+                    min="0"
+                    step="0.01"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  />
+                </div>
+
+                {/* Police Report */}
+                <div className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={incidentForm.policeReport}
+                    onChange={(e) => setIncidentForm({ ...incidentForm, policeReport: e.target.checked })}
+                    className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
+                  />
+                  <label className="ml-2 text-sm font-medium text-gray-700">Police Report Filed</label>
+                </div>
+
+                {/* Report Number */}
+                {incidentForm.policeReport && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Police Report Number</label>
+                    <input
+                      type="text"
+                      value={incidentForm.reportNumber}
+                      onChange={(e) => setIncidentForm({ ...incidentForm, reportNumber: e.target.value })}
+                      placeholder="Enter report number"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    />
+                  </div>
+                )}
+
+                {/* Insurance Claim */}
+                <div className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={incidentForm.insuranceClaim}
+                    onChange={(e) => setIncidentForm({ ...incidentForm, insuranceClaim: e.target.checked })}
+                    className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
+                  />
+                  <label className="ml-2 text-sm font-medium text-gray-700">Insurance Claim Filed</label>
+                </div>
+
+                {/* Claim Number */}
+                {incidentForm.insuranceClaim && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Insurance Claim Number</label>
+                    <input
+                      type="text"
+                      value={incidentForm.claimNumber}
+                      onChange={(e) => setIncidentForm({ ...incidentForm, claimNumber: e.target.value })}
+                      placeholder="Enter claim number"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    />
+                  </div>
+                )}
+
+                {/* Assigned To */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Assigned To</label>
+                  <input
+                    type="text"
+                    value={incidentForm.assignedTo}
+                    onChange={(e) => setIncidentForm({ ...incidentForm, assignedTo: e.target.value })}
+                    placeholder="Enter assignee name"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  />
+                </div>
+              </div>
+
+              {/* Description */}
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Description <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  value={incidentForm.description}
+                  onChange={(e) => setIncidentForm({ ...incidentForm, description: e.target.value })}
+                  placeholder="Provide a detailed description of the incident"
+                  rows={4}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  required
+                />
+              </div>
+
+              {/* Form Actions */}
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-200">
+                <button
+                  type="button"
+                  onClick={handleModalClose}
+                  className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {submitting ? (
+                    <>
+                      <FaSpinner className="w-4 h-4 animate-spin" />
+                      Submitting...
+                    </>
+                  ) : (
+                    <>
+                      <FaCheckCircle className="w-4 h-4" />
+                      Report Incident
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Schedule Inspection Modal */}
+      {showInspectionModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+              <h2 className="text-xl font-semibold text-gray-900">
+                {isEditingInspection ? 'Edit Safety Inspection' : 'Schedule Safety Inspection'}
+              </h2>
+              <button
+                onClick={handleInspectionModalClose}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <FaTimes className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmitInspection} className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                {/* Inspection Type */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Inspection Type <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={inspectionForm.type}
+                    onChange={(e) => setInspectionForm({ ...inspectionForm, type: e.target.value as any })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    required
+                  >
+                    <option value="pre_trip">Pre-Trip</option>
+                    <option value="post_trip">Post-Trip</option>
+                    <option value="weekly">Weekly</option>
+                    <option value="monthly">Monthly</option>
+                    <option value="annual">Annual</option>
+                    <option value="random">Random</option>
+                  </select>
+                </div>
+
+                {/* Inspector */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Inspector <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={inspectionForm.inspector}
+                    onChange={(e) => setInspectionForm({ ...inspectionForm, inspector: e.target.value })}
+                    placeholder="Enter inspector name"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    required
+                  />
+                </div>
+
+                {/* Inspection Date */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Inspection Date <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="date"
+                    value={inspectionForm.inspectionDate}
+                    onChange={(e) => setInspectionForm({ ...inspectionForm, inspectionDate: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    required
+                  />
+                </div>
+
+                {/* Next Inspection Date */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Next Inspection Date</label>
+                  <input
+                    type="date"
+                    value={inspectionForm.nextInspectionDate}
+                    onChange={(e) => setInspectionForm({ ...inspectionForm, nextInspectionDate: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  />
+                </div>
+
+                {/* Truck */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Truck</label>
+                  <select
+                    value={inspectionForm.truckId}
+                    onChange={(e) => setInspectionForm({ ...inspectionForm, truckId: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  >
+                    <option value="">Select Truck</option>
+                    {trucks.map((truck) => (
+                      <option key={truck.id} value={truck.id}>
+                        {truck.plateNumber} - {truck.make} {truck.model}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Driver */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Driver</label>
+                  <select
+                    value={inspectionForm.driverId}
+                    onChange={(e) => setInspectionForm({ ...inspectionForm, driverId: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  >
+                    <option value="">Select Driver</option>
+                    {drivers.map((driver) => (
+                      <option key={driver.id} value={driver.id}>
+                        {driver.firstName} {driver.lastName} - {driver.licenseNumber}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Status */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Status <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={inspectionForm.status}
+                    onChange={(e) => setInspectionForm({ ...inspectionForm, status: e.target.value as any })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    required
+                  >
+                    <option value="passed">Passed</option>
+                    <option value="failed">Failed</option>
+                    <option value="conditional">Conditional</option>
+                  </select>
+                </div>
+
+                {/* Compliance Status */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Compliance Status</label>
+                  <select
+                    value={inspectionForm.complianceStatus}
+                    onChange={(e) => setInspectionForm({ ...inspectionForm, complianceStatus: e.target.value as any })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  >
+                    <option value="compliant">Compliant</option>
+                    <option value="non_compliant">Non-Compliant</option>
+                  </select>
+                </div>
+
+                {/* Score */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Score</label>
+                  <input
+                    type="number"
+                    value={inspectionForm.score}
+                    onChange={(e) => setInspectionForm({ ...inspectionForm, score: parseInt(e.target.value) || 0 })}
+                    min="0"
+                    max={inspectionForm.maxScore}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  />
+                </div>
+
+                {/* Max Score */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Max Score</label>
+                  <input
+                    type="number"
+                    value={inspectionForm.maxScore}
+                    onChange={(e) => setInspectionForm({ ...inspectionForm, maxScore: parseInt(e.target.value) || 100 })}
+                    min="0"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  />
+                </div>
+              </div>
+
+              {/* Notes */}
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Notes</label>
+                <textarea
+                  value={inspectionForm.notes}
+                  onChange={(e) => setInspectionForm({ ...inspectionForm, notes: e.target.value })}
+                  placeholder="Add inspection notes or observations"
+                  rows={4}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                />
+              </div>
+
+              {/* Form Actions */}
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-200">
+                <button
+                  type="button"
+                  onClick={handleInspectionModalClose}
+                  className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {submitting ? (
+                    <>
+                      <FaSpinner className="w-4 h-4 animate-spin" />
+                      Submitting...
+                    </>
+                  ) : (
+                    <>
+                      <FaCheckCircle className="w-4 h-4" />
+                      {isEditingInspection ? 'Update Inspection' : 'Schedule Inspection'}
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Schedule Training Modal */}
+      {showTrainingModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+              <h2 className="text-xl font-semibold text-gray-900">
+                {isEditingTraining ? 'Edit Safety Training' : 'Schedule Safety Training'}
+              </h2>
+              <button
+                onClick={() => {
+                  setShowTrainingModal(false);
+                  resetTrainingForm();
+                }}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <FaTimes className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmitTraining} className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                {/* Training Type */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Training Type <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={trainingForm.type}
+                    onChange={(e) => setTrainingForm({ ...trainingForm, type: e.target.value as any })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    required
+                  >
+                    <option value="defensive_driving">Defensive Driving</option>
+                    <option value="hazmat">HAZMAT</option>
+                    <option value="first_aid">First Aid</option>
+                    <option value="emergency_procedures">Emergency Procedures</option>
+                    <option value="regulations">Regulations</option>
+                    <option value="technology">Technology</option>
+                  </select>
+                </div>
+
+                {/* Title */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Title <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={trainingForm.title}
+                    onChange={(e) => setTrainingForm({ ...trainingForm, title: e.target.value })}
+                    placeholder="e.g., Defensive Driving Course 2024"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    required
+                  />
+                </div>
+
+                {/* Scheduled Date & Time */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Scheduled Date & Time <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="datetime-local"
+                    value={trainingForm.scheduledDate}
+                    onChange={(e) => setTrainingForm({ ...trainingForm, scheduledDate: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    required
+                  />
+                </div>
+
+                {/* Next Due Date */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Next Due Date <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="date"
+                    value={trainingForm.nextDue}
+                    onChange={(e) => setTrainingForm({ ...trainingForm, nextDue: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    required
+                  />
+                </div>
+
+                {/* Driver */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Driver</label>
+                  <select
+                    value={trainingForm.driverId}
+                    onChange={(e) => setTrainingForm({ ...trainingForm, driverId: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  >
+                    <option value="">Select Driver</option>
+                    {drivers.map((driver) => (
+                      <option key={driver.id} value={driver.id}>
+                        {driver.firstName} {driver.lastName} - {driver.licenseNumber}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Instructor */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Instructor <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={trainingForm.instructor}
+                    onChange={(e) => setTrainingForm({ ...trainingForm, instructor: e.target.value })}
+                    placeholder="Enter instructor name"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    required
+                  />
+                </div>
+
+                {/* Duration */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Duration (hours) <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    value={trainingForm.duration}
+                    onChange={(e) => setTrainingForm({ ...trainingForm, duration: parseInt(e.target.value) || 1 })}
+                    min="1"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    required
+                  />
+                </div>
+
+                {/* Frequency */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Frequency</label>
+                  <select
+                    value={trainingForm.frequency}
+                    onChange={(e) => setTrainingForm({ ...trainingForm, frequency: e.target.value as any })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  >
+                    <option value="once">Once</option>
+                    <option value="annually">Annually</option>
+                    <option value="biannually">Biannually</option>
+                    <option value="quarterly">Quarterly</option>
+                  </select>
+                </div>
+
+                {/* Required */}
+                <div className="col-span-1 md:col-span-2 flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="required"
+                    checked={trainingForm.required}
+                    onChange={(e) => setTrainingForm({ ...trainingForm, required: e.target.checked })}
+                    className="h-4 w-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
+                  />
+                  <label htmlFor="required" className="text-sm font-medium text-gray-700">Required Training</label>
+                </div>
+
+                {/* Status */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                  <select
+                    value={trainingForm.status}
+                    onChange={(e) => setTrainingForm({ ...trainingForm, status: e.target.value as any })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  >
+                    <option value="pending">Pending</option>
+                    <option value="completed">Completed</option>
+                    <option value="overdue">Overdue</option>
+                  </select>
+                </div>
+
+                {/* Score */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Score (%)</label>
+                  <input
+                    type="number"
+                    value={trainingForm.score || ''}
+                    onChange={(e) => setTrainingForm({ ...trainingForm, score: e.target.value ? parseInt(e.target.value) : undefined })}
+                    min="0"
+                    max="100"
+                    placeholder="Optional"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  />
+                </div>
+              </div>
+
+              {/* Description */}
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                <textarea
+                  value={trainingForm.description}
+                  onChange={(e) => setTrainingForm({ ...trainingForm, description: e.target.value })}
+                  placeholder="Add training description or notes"
+                  rows={4}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                />
+              </div>
+
+              {/* Form Actions */}
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-200">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowTrainingModal(false);
+                    resetTrainingForm();
+                  }}
+                  className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {submitting ? (
+                    <>
+                      <FaSpinner className="w-4 h-4 animate-spin" />
+                      Submitting...
+                    </>
+                  ) : (
+                    <>
+                      <FaCheckCircle className="w-4 h-4" />
+                      {isEditingTraining ? 'Update Training' : 'Schedule Training'}
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* View Incident Modal */}
+      {showViewIncidentModal && viewingIncident && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+              <h2 className="text-xl font-semibold text-gray-900">Incident Details</h2>
+              <button
+                onClick={() => {
+                  setShowViewIncidentModal(false);
+                  setViewingIncident(null);
+                }}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <FaTimes className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Incident Type</label>
+                  <p className="text-sm text-gray-900">{viewingIncident.type.replace('_', ' ').toUpperCase()}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Severity</label>
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${getSeverityColor(viewingIncident.severity)}`}>
+                    {viewingIncident.severity}
+                  </span>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                  <p className="text-sm text-gray-900">
+                    {viewingIncident.date instanceof Date 
+                      ? viewingIncident.date.toLocaleDateString() 
+                      : new Date(viewingIncident.date).toLocaleDateString()}
+                  </p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(viewingIncident.status)}`}>
+                    {viewingIncident.status}
+                  </span>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
+                  <p className="text-sm text-gray-900">{viewingIncident.location || 'N/A'}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Driver</label>
+                  <p className="text-sm text-gray-900">{viewingIncident.driverName || 'N/A'}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Truck</label>
+                  <p className="text-sm text-gray-900">{viewingIncident.truckPlate || 'N/A'}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Cost</label>
+                  <p className="text-sm text-gray-900">${(viewingIncident.cost || 0).toLocaleString()}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Weather Conditions</label>
+                  <p className="text-sm text-gray-900">{viewingIncident.weatherConditions || 'N/A'}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Road Conditions</label>
+                  <p className="text-sm text-gray-900">{viewingIncident.roadConditions || 'N/A'}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Property Damage</label>
+                  <p className="text-sm text-gray-900">${(viewingIncident.propertyDamage || 0).toLocaleString()}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Injuries</label>
+                  <p className="text-sm text-gray-900">{viewingIncident.injuries || 'N/A'}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Police Report</label>
+                  <p className="text-sm text-gray-900">{viewingIncident.policeReport ? 'Yes' : 'No'}</p>
+                  {viewingIncident.policeReport && viewingIncident.reportNumber && (
+                    <p className="text-xs text-gray-600 mt-1">Report #: {viewingIncident.reportNumber}</p>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Insurance Claim</label>
+                  <p className="text-sm text-gray-900">{viewingIncident.insuranceClaim ? 'Yes' : 'No'}</p>
+                  {viewingIncident.insuranceClaim && viewingIncident.claimNumber && (
+                    <p className="text-xs text-gray-600 mt-1">Claim #: {viewingIncident.claimNumber}</p>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Assigned To</label>
+                  <p className="text-sm text-gray-900">{viewingIncident.assignedTo || 'N/A'}</p>
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                <p className="text-sm text-gray-900 bg-gray-50 p-3 rounded-lg">{viewingIncident.description || 'N/A'}</p>
+              </div>
+              {viewingIncident.correctiveActions && viewingIncident.correctiveActions.length > 0 && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Corrective Actions</label>
+                  <ul className="list-disc list-inside text-sm text-gray-900 bg-gray-50 p-3 rounded-lg">
+                    {viewingIncident.correctiveActions.map((action, idx) => (
+                      <li key={idx}>{action}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              <div className="flex justify-end pt-4 border-t border-gray-200">
+                <button
+                  onClick={() => {
+                    setShowViewIncidentModal(false);
+                    setViewingIncident(null);
+                  }}
+                  className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* View Inspection Modal */}
+      {showViewInspectionModal && viewingInspection && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+              <h2 className="text-xl font-semibold text-gray-900">Inspection Details</h2>
+              <button
+                onClick={() => {
+                  setShowViewInspectionModal(false);
+                  setViewingInspection(null);
+                }}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <FaTimes className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Inspection Type</label>
+                  <p className="text-sm text-gray-900">{viewingInspection.type.replace('_', ' ').toUpperCase()}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Inspector</label>
+                  <p className="text-sm text-gray-900">{viewingInspection.inspector || 'N/A'}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Inspection Date</label>
+                  <p className="text-sm text-gray-900">
+                    {viewingInspection.inspectionDate instanceof Date 
+                      ? viewingInspection.inspectionDate.toLocaleDateString() 
+                      : new Date(viewingInspection.inspectionDate).toLocaleDateString()}
+                  </p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(viewingInspection.status)}`}>
+                    {viewingInspection.status}
+                  </span>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Truck</label>
+                  <p className="text-sm text-gray-900">{viewingInspection.truckPlate || 'N/A'}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Driver</label>
+                  <p className="text-sm text-gray-900">{viewingInspection.driverName || 'N/A'}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Score</label>
+                  <p className="text-sm text-gray-900">{viewingInspection.score}/{viewingInspection.maxScore}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Compliance Status</label>
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                    viewingInspection.complianceStatus === 'compliant' 
+                      ? 'bg-green-100 text-green-800' 
+                      : 'bg-red-100 text-red-800'
+                  }`}>
+                    {viewingInspection.complianceStatus}
+                  </span>
+                </div>
+                {viewingInspection.nextInspectionDate && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Next Inspection Date</label>
+                    <p className="text-sm text-gray-900">
+                      {viewingInspection.nextInspectionDate instanceof Date 
+                        ? viewingInspection.nextInspectionDate.toLocaleDateString() 
+                        : new Date(viewingInspection.nextInspectionDate).toLocaleDateString()}
+                    </p>
+                  </div>
+                )}
+              </div>
+              {viewingInspection.notes && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+                  <p className="text-sm text-gray-900 bg-gray-50 p-3 rounded-lg">{viewingInspection.notes}</p>
+                </div>
+              )}
+              {viewingInspection.items && viewingInspection.items.length > 0 && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Inspection Items</label>
+                  <div className="bg-gray-50 p-3 rounded-lg">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                      {viewingInspection.items.map((item: any, idx: number) => (
+                        <div key={idx} className="flex items-center justify-between p-2 bg-white rounded">
+                          <span className="text-xs font-medium">{item.item || item.category || 'N/A'}</span>
+                          <span className={`px-2 py-1 rounded text-xs font-medium ${
+                            item.status === 'pass' ? 'bg-green-100 text-green-800' :
+                            item.status === 'fail' ? 'bg-red-100 text-red-800' :
+                            'bg-gray-100 text-gray-800'
+                          }`}>
+                            {item.status || 'N/A'}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+              <div className="flex justify-end pt-4 border-t border-gray-200">
+                <button
+                  onClick={() => {
+                    setShowViewInspectionModal(false);
+                    setViewingInspection(null);
+                  }}
+                  className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* View Training Modal */}
+      {showViewTrainingModal && viewingTraining && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+              <h2 className="text-xl font-semibold text-gray-900">Training Details</h2>
+              <button
+                onClick={() => {
+                  setShowViewTrainingModal(false);
+                  setViewingTraining(null);
+                }}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <FaTimes className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Training Type</label>
+                  <p className="text-sm text-gray-900">{viewingTraining.type.replace('_', ' ').toUpperCase()}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
+                  <p className="text-sm text-gray-900">{viewingTraining.title || 'N/A'}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Scheduled Date</label>
+                  <p className="text-sm text-gray-900">
+                    {viewingTraining.scheduledDate instanceof Date 
+                      ? viewingTraining.scheduledDate.toLocaleDateString() 
+                      : new Date(viewingTraining.scheduledDate).toLocaleDateString()}
+                  </p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Next Due Date</label>
+                  <p className="text-sm text-gray-900">
+                    {viewingTraining.nextDue instanceof Date 
+                      ? viewingTraining.nextDue.toLocaleDateString() 
+                      : new Date(viewingTraining.nextDue).toLocaleDateString()}
+                  </p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Driver</label>
+                  <p className="text-sm text-gray-900">{viewingTraining.driverName || 'N/A'}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Instructor</label>
+                  <p className="text-sm text-gray-900">{viewingTraining.instructor || 'N/A'}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Duration</label>
+                  <p className="text-sm text-gray-900">{viewingTraining.duration} hours</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(viewingTraining.status)}`}>
+                    {viewingTraining.status}
+                  </span>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Frequency</label>
+                  <p className="text-sm text-gray-900">{viewingTraining.frequency || 'N/A'}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Required</label>
+                  <p className="text-sm text-gray-900">{viewingTraining.required ? 'Yes' : 'No'}</p>
+                </div>
+                {viewingTraining.score !== undefined && viewingTraining.score !== null && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Score</label>
+                    <p className="text-sm text-gray-900">{viewingTraining.score}%</p>
+                  </div>
+                )}
+                {viewingTraining.certificate && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Certificate</label>
+                    <p className="text-sm text-gray-900">{viewingTraining.certificate}</p>
+                  </div>
+                )}
+                {viewingTraining.lastCompleted && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Last Completed</label>
+                    <p className="text-sm text-gray-900">
+                      {viewingTraining.lastCompleted instanceof Date 
+                        ? viewingTraining.lastCompleted.toLocaleDateString() 
+                        : new Date(viewingTraining.lastCompleted).toLocaleDateString()}
+                    </p>
+                  </div>
+                )}
+              </div>
+              {viewingTraining.description && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                  <p className="text-sm text-gray-900 bg-gray-50 p-3 rounded-lg">{viewingTraining.description}</p>
+                </div>
+              )}
+              <div className="flex justify-end pt-4 border-t border-gray-200">
+                <button
+                  onClick={() => {
+                    setShowViewTrainingModal(false);
+                    setViewingTraining(null);
+                  }}
+                  className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }; 
