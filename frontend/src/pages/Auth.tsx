@@ -202,7 +202,7 @@ const Auth = () => {
       {/* Full Page Background Logo */}
       <img src={logoUrutiX} alt="UrutiX Logo Background" className="pointer-events-none select-none fixed inset-0 w-full h-full object-cover opacity-10 z-0" style={{objectPosition: 'center'}} />
       {/* Centered Auth Form */}
-      <div className="w-full max-w-md px-4 sm:px-6 lg:px-8 relative z-10">
+      <div className="w-full max-w-4xl px-4 sm:px-6 lg:px-8 relative z-10">
         {/* Logo removed as per request */}
 
         {/* Form Container */}
@@ -270,7 +270,7 @@ const Auth = () => {
 
                 <button
                   type="submit"
-                  className="w-full bg-gradient-to-r from-primary-500 to-secondary-600 text-white font-semibold py-3 px-4 rounded-xl hover:from-primary-600 hover:to-secondary-700 focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                  className="w-full bg-primary-600 text-white font-semibold py-3 px-4 rounded-xl hover:bg-primary-700 focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
                   disabled={isLoading}
                 >
                   {isLoading ? (
@@ -332,143 +332,158 @@ const Auth = () => {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-2">
-                      First name
-                    </label>
-                    <input
-                      {...registerForm.register('firstName')}
-                      type="text"
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200"
-                      placeholder="First name"
-                    />
-                    {registerForm.formState.errors.firstName && (
-                      <p className="mt-2 text-sm text-red-600">{registerForm.formState.errors.firstName.message}</p>
-                    )}
-                  </div>
-
-                  <div>
-                    <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-2">
-                      Last name
-                    </label>
-                    <input
-                      {...registerForm.register('lastName')}
-                      type="text"
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200"
-                      placeholder="Last name"
-                    />
-                    {registerForm.formState.errors.lastName && (
-                      <p className="mt-2 text-sm text-red-600">{registerForm.formState.errors.lastName.message}</p>
-                    )}
-                  </div>
-                </div>
-
-                <div>
-                  <label htmlFor="companyName" className="block text-sm font-medium text-gray-700 mb-2">
-                    Company name
-                  </label>
-                  <CompanySearch
-                    value={registerForm.watch('companyName')}
-                    onChange={(value) => {
-                      registerForm.setValue('companyName', value);
-                      if (!value) {
-                        setSelectedTenant(null);
-                      }
-                    }}
-                    onSelect={(tenant) => {
-                      setSelectedTenant(tenant);
-                      registerForm.setValue('companyName', tenant.name);
-                    }}
-                    error={registerForm.formState.errors.companyName?.message}
-                    placeholder="Search for your company..."
-                  />
-                  {selectedTenant && (
-                    <div className="mt-2 p-3 bg-green-50 border border-green-200 rounded-lg">
-                      <div className="flex items-center space-x-2">
-                        <CheckCircle className="h-4 w-4 text-green-600" />
-                        <span className="text-sm text-green-800">
-                          Company found: {selectedTenant.name}
-                          {selectedTenant.city && ` • ${selectedTenant.city}`}
-                          {selectedTenant.country && ` • ${selectedTenant.country}`}
-                        </span>
-                      </div>
+                {/* Two Column Layout */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Left Column */}
+                  <div className="space-y-6">
+                    {/* First Name */}
+                    <div>
+                      <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-2">
+                        First name
+                      </label>
+                      <input
+                        {...registerForm.register('firstName')}
+                        type="text"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200"
+                        placeholder="First name"
+                      />
+                      {registerForm.formState.errors.firstName && (
+                        <p className="mt-2 text-sm text-red-600">{registerForm.formState.errors.firstName.message}</p>
+                      )}
                     </div>
-                  )}
-                </div>
 
-                <div>
-                  <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                    Email address
-                  </label>
-                  <input
-                    {...registerForm.register('email')}
-                    type="email"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200"
-                    placeholder="Enter your email"
-                  />
-                  {registerForm.formState.errors.email && (
-                    <p className="mt-2 text-sm text-red-600">{registerForm.formState.errors.email.message}</p>
-                  )}
-                </div>
+                    {/* Company Name */}
+                    <div>
+                      <label htmlFor="companyName" className="block text-sm font-medium text-gray-700 mb-2">
+                        Company name
+                      </label>
+                      <CompanySearch
+                        value={registerForm.watch('companyName')}
+                        onChange={(value) => {
+                          registerForm.setValue('companyName', value);
+                          if (!value) {
+                            setSelectedTenant(null);
+                          }
+                        }}
+                        onSelect={(tenant) => {
+                          setSelectedTenant(tenant);
+                          registerForm.setValue('companyName', tenant.name);
+                        }}
+                        error={registerForm.formState.errors.companyName?.message}
+                        placeholder="Search for your company..."
+                      />
+                      {selectedTenant && (
+                        <div className="mt-2 p-3 bg-green-50 border border-green-200 rounded-lg">
+                          <div className="flex items-center space-x-2">
+                            <CheckCircle className="h-4 w-4 text-green-600" />
+                            <span className="text-sm text-green-800">
+                              Company found: {selectedTenant.name}
+                              {selectedTenant.city && ` • ${selectedTenant.city}`}
+                              {selectedTenant.country && ` • ${selectedTenant.country}`}
+                            </span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
 
-                <div>
-                  <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-                    Password
-                  </label>
-                  <div className="relative">
-                    <input
-                      {...registerForm.register('password')}
-                      type={showPassword ? 'text' : 'password'}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 pr-12"
-                      placeholder="Create a password"
-                    />
-                    <button
-                      type="button"
-                      className="absolute inset-y-0 right-0 px-4 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
-                      onClick={() => setShowPassword(!showPassword)}
-                    >
-                      {showPassword ? <FaEyeSlash className="h-5 w-5" /> : <FaEye className="h-5 w-5" />}
-                    </button>
+                    {/* Password */}
+                    <div>
+                      <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+                        Password
+                      </label>
+                      <div className="relative">
+                        <input
+                          {...registerForm.register('password')}
+                          type={showPassword ? 'text' : 'password'}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 pr-12"
+                          placeholder="Create a password"
+                        />
+                        <button
+                          type="button"
+                          className="absolute inset-y-0 right-0 px-4 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
+                          onClick={() => setShowPassword(!showPassword)}
+                        >
+                          {showPassword ? <FaEyeSlash className="h-5 w-5" /> : <FaEye className="h-5 w-5" />}
+                        </button>
+                      </div>
+                      {registerForm.formState.errors.password && (
+                        <p className="mt-2 text-sm text-red-600">{registerForm.formState.errors.password.message}</p>
+                      )}
+                    </div>
                   </div>
-                  {registerForm.formState.errors.password && (
-                    <p className="mt-2 text-sm text-red-600">{registerForm.formState.errors.password.message}</p>
-                  )}
-                </div>
 
-                <div>
-                  <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
-                    Confirm password
-                  </label>
-                  <div className="relative">
-                    <input
-                      {...registerForm.register('confirmPassword')}
-                      type={showConfirmPassword ? 'text' : 'password'}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 pr-12"
-                      placeholder="Confirm your password"
-                    />
-                    <button
-                      type="button"
-                      className="absolute inset-y-0 right-0 px-4 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
-                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    >
-                      {showConfirmPassword ? <FaEyeSlash className="h-5 w-5" /> : <FaEye className="h-5 w-5" />}
-                    </button>
+                  {/* Right Column */}
+                  <div className="space-y-6">
+                    {/* Last Name */}
+                    <div>
+                      <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-2">
+                        Last name
+                      </label>
+                      <input
+                        {...registerForm.register('lastName')}
+                        type="text"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200"
+                        placeholder="Last name"
+                      />
+                      {registerForm.formState.errors.lastName && (
+                        <p className="mt-2 text-sm text-red-600">{registerForm.formState.errors.lastName.message}</p>
+                      )}
+                    </div>
+
+                    {/* Email */}
+                    <div>
+                      <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                        Email address
+                      </label>
+                      <input
+                        {...registerForm.register('email')}
+                        type="email"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200"
+                        placeholder="Enter your email"
+                      />
+                      {registerForm.formState.errors.email && (
+                        <p className="mt-2 text-sm text-red-600">{registerForm.formState.errors.email.message}</p>
+                      )}
+                    </div>
+
+                    {/* Confirm Password */}
+                    <div>
+                      <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
+                        Confirm password
+                      </label>
+                      <div className="relative">
+                        <input
+                          {...registerForm.register('confirmPassword')}
+                          type={showConfirmPassword ? 'text' : 'password'}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 pr-12"
+                          placeholder="Confirm your password"
+                        />
+                        <button
+                          type="button"
+                          className="absolute inset-y-0 right-0 px-4 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
+                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        >
+                          {showConfirmPassword ? <FaEyeSlash className="h-5 w-5" /> : <FaEye className="h-5 w-5" />}
+                        </button>
+                      </div>
+                      {registerForm.formState.errors.confirmPassword && (
+                        <p className="mt-2 text-sm text-red-600">{registerForm.formState.errors.confirmPassword.message}</p>
+                      )}
+                    </div>
                   </div>
-                  {registerForm.formState.errors.confirmPassword && (
-                    <p className="mt-2 text-sm text-red-600">{registerForm.formState.errors.confirmPassword.message}</p>
-                  )}
                 </div>
 
+                {/* Error Message */}
                 {error && (
                   <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm" role="alert">
                     {error}
                   </div>
                 )}
 
+                {/* Submit Button */}
                 <button
                   type="submit"
-                  className="w-full bg-gradient-to-r from-primary-500 to-secondary-600 text-white font-semibold py-3 px-4 rounded-xl hover:from-primary-600 hover:to-secondary-700 focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                  className="w-full bg-primary-600 text-white font-semibold py-3 px-4 rounded-xl hover:bg-primary-700 focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
                   disabled={isLoading}
                 >
                   {isLoading ? (
@@ -481,6 +496,7 @@ const Auth = () => {
                   )}
                 </button>
 
+                {/* Sign In Link */}
                 <div className="text-center">
                   <p className="text-sm text-gray-600">
                     Already have an account?{' '}
