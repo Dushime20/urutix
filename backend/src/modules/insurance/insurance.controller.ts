@@ -12,7 +12,12 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import { InsuranceService } from './insurance.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -29,7 +34,9 @@ export class InsuranceController {
   // ===== INSURANCE POLICIES =====
 
   @Get('policies')
-  @ApiOperation({ summary: 'Get all insurance policies with filters and pagination' })
+  @ApiOperation({
+    summary: 'Get all insurance policies with filters and pagination',
+  })
   @ApiResponse({ status: 200, description: 'Policies retrieved successfully' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async getPolicies(
@@ -103,7 +110,9 @@ export class InsuranceController {
   // ===== INSURANCE CLAIMS =====
 
   @Get('claims')
-  @ApiOperation({ summary: 'Get all insurance claims with filters and pagination' })
+  @ApiOperation({
+    summary: 'Get all insurance claims with filters and pagination',
+  })
   @ApiResponse({ status: 200, description: 'Claims retrieved successfully' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async getClaims(
@@ -179,7 +188,9 @@ export class InsuranceController {
   // ===== INSURANCE RENEWALS =====
 
   @Get('renewals')
-  @ApiOperation({ summary: 'Get all insurance renewals with filters and pagination' })
+  @ApiOperation({
+    summary: 'Get all insurance renewals with filters and pagination',
+  })
   @ApiResponse({ status: 200, description: 'Renewals retrieved successfully' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async getRenewals(
@@ -254,11 +265,12 @@ export class InsuranceController {
 
   @Get('dashboard/stats')
   @ApiOperation({ summary: 'Get insurance dashboard statistics' })
-  @ApiResponse({ status: 200, description: 'Statistics retrieved successfully' })
+  @ApiResponse({
+    status: 200,
+    description: 'Statistics retrieved successfully',
+  })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  async getDashboardStats(
-    @Query('dateRange') dateRange?: string,
-  ) {
+  async getDashboardStats(@Query('dateRange') dateRange?: string) {
     let dateRangeObj;
     if (dateRange) {
       const [start, end] = dateRange.split(',');
@@ -291,7 +303,7 @@ export class InsuranceController {
     @Body() body: { policyIds: string[]; status: string },
   ) {
     const { policyIds, status } = body;
-    
+
     if (!policyIds || !Array.isArray(policyIds) || !status) {
       throw new Error('Policy IDs array and status are required');
     }
@@ -313,7 +325,7 @@ export class InsuranceController {
   @ApiResponse({ status: 403, description: 'Forbidden' })
   async bulkDeletePolicies(@Body() body: { policyIds: string[] }) {
     const { policyIds } = body;
-    
+
     if (!policyIds || !Array.isArray(policyIds)) {
       throw new Error('Policy IDs array is required');
     }
@@ -337,7 +349,7 @@ export class InsuranceController {
     @Body() body: { claimIds: string[]; status: string },
   ) {
     const { claimIds, status } = body;
-    
+
     if (!claimIds || !Array.isArray(claimIds) || !status) {
       throw new Error('Claim IDs array and status are required');
     }
@@ -361,7 +373,7 @@ export class InsuranceController {
     @Body() body: { claimIds: string[]; adjuster: any },
   ) {
     const { claimIds, adjuster } = body;
-    
+
     if (!claimIds || !Array.isArray(claimIds) || !adjuster) {
       throw new Error('Claim IDs array and adjuster data are required');
     }

@@ -33,7 +33,7 @@ async function addInspectionAlertsColumn() {
 
     await queryRunner.release();
     await AppDataSource.destroy();
-    
+
     console.log('✅ Script completed successfully!');
     process.exit(0);
   } catch (error) {
@@ -43,4 +43,3 @@ async function addInspectionAlertsColumn() {
 }
 
 addInspectionAlertsColumn();
-

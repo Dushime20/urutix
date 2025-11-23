@@ -102,4 +102,3 @@ export class SafetyInspection {
   @Column({ type: 'timestamp', nullable: true })
   deletedAt: Date;
 }
-

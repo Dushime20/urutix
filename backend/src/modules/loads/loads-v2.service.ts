@@ -76,8 +76,12 @@ export class LoadsV2Service {
         createdAt: new Date(),
         updatedAt: new Date(),
         // Convert string dates to Date objects
-        pickupDate: createLoadDto.pickupDate ? new Date(createLoadDto.pickupDate) : undefined,
-        deliveryDate: createLoadDto.deliveryDate ? new Date(createLoadDto.deliveryDate) : undefined,
+        pickupDate: createLoadDto.pickupDate
+          ? new Date(createLoadDto.pickupDate)
+          : undefined,
+        deliveryDate: createLoadDto.deliveryDate
+          ? new Date(createLoadDto.deliveryDate)
+          : undefined,
         // Map V2 enums to entity enums
         cargoType: this.mapCargoTypeV2ToEntity(createLoadDto.cargoType),
         urgencyLevel: this.mapUrgencyLevelV2ToEntity(
@@ -124,12 +128,12 @@ export class LoadsV2Service {
         sortBy = 'createdAt',
         sortOrder = 'DESC',
         ...filters
-      } = queryDto as LoadQueryV2Dto;
+      } = queryDto;
 
-      const pageNum = page as number;
-      const limitNum = limit as number;
-      const sortByStr = sortBy as string;
-      const sortOrderStr = sortOrder as 'ASC' | 'DESC';
+      const pageNum = page;
+      const limitNum = limit;
+      const sortByStr = sortBy;
+      const sortOrderStr = sortOrder;
 
       const queryBuilder = this.loadRepository.createQueryBuilder('load');
 
@@ -426,7 +430,9 @@ export class LoadsV2Service {
         tenantId: load.tenantId,
       });
 
-      this.logger.log(`Load moved to created status: ${id} by user: ${user.id}`);
+      this.logger.log(
+        `Load moved to created status: ${id} by user: ${user.id}`,
+      );
 
       return this.mapToResponseDto(publishedLoad);
     } catch (error) {

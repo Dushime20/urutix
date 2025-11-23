@@ -12,7 +12,7 @@ export class WebhookService {
     url: string,
     payload: any,
     headers?: Record<string, string>,
-    method: 'POST' | 'PUT' | 'PATCH' = 'POST'
+    method: 'POST' | 'PUT' | 'PATCH' = 'POST',
   ): Promise<boolean> {
     try {
       this.logger.log(`Sending webhook to ${url}`);
@@ -22,7 +22,7 @@ export class WebhookService {
 
       // TODO: Implement actual webhook sending logic
       // This could use axios, node-fetch, or other HTTP clients
-      
+
       // For now, just log the webhook details
       return true;
     } catch (error) {
@@ -37,7 +37,7 @@ export class WebhookService {
       payload: any;
       headers?: Record<string, string>;
       method?: 'POST' | 'PUT' | 'PATCH';
-    }>
+    }>,
   ): Promise<Array<{ url: string; success: boolean; error?: string }>> {
     try {
       this.logger.log(`Sending bulk webhooks to ${webhooks.length} endpoints`);
@@ -49,7 +49,7 @@ export class WebhookService {
             webhook.url,
             webhook.payload,
             webhook.headers,
-            webhook.method
+            webhook.method,
           );
           results.push({
             url: webhook.url,
@@ -67,7 +67,7 @@ export class WebhookService {
       return results;
     } catch (error) {
       this.logger.error(`Failed to send bulk webhooks: ${error.message}`);
-      return webhooks.map(webhook => ({
+      return webhooks.map((webhook) => ({
         url: webhook.url,
         success: false,
         error: error.message,
@@ -88,14 +88,14 @@ export class WebhookService {
 
   async testWebhook(
     url: string,
-    testPayload: any = { test: true, timestamp: new Date().toISOString() }
+    testPayload: any = { test: true, timestamp: new Date().toISOString() },
   ): Promise<{ success: boolean; response?: any; error?: string }> {
     try {
       this.logger.log(`Testing webhook endpoint: ${url}`);
-      
+
       // TODO: Implement actual webhook testing
       // This would send a test payload and verify the response
-      
+
       return { success: true };
     } catch (error) {
       this.logger.error(`Webhook test failed: ${error.message}`);

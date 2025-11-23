@@ -13,7 +13,7 @@ export interface EnhancedMatchResult extends MatchResultDto {
   seasonalScore: number;
   driverPerformanceScore: number;
   equipmentCompatibilityScore: number;
-  
+
   // Market context
   marketContext: {
     averageCost: number;
@@ -22,14 +22,14 @@ export interface EnhancedMatchResult extends MatchResultDto {
     qualityPercentile: number;
     marketBalance: string;
   };
-  
+
   // Environmental impact
   environmentalImpact: {
     co2Emissions: number;
     fuelConsumption: number;
     ecoScore: number;
   };
-  
+
   // Risk assessment
   riskAssessment: {
     equipmentRisk: number;
@@ -39,10 +39,10 @@ export interface EnhancedMatchResult extends MatchResultDto {
     costRisk: number;
     totalRisk: number;
   };
-  
+
   // Success probability
   successProbability: number;
-  
+
   // Alternative matches
   alternativeMatches: EnhancedMatchResult[];
 }

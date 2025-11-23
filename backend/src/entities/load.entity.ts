@@ -573,23 +573,29 @@ export class Load {
 
   // Workflow methods
   canPublish(): boolean {
-    return this.status === LoadStatus.DRAFT && 
-           !!this.pickupLocation && 
-           !!this.deliveryLocation &&
-           !!this.pickupDate && 
-           !!this.deliveryDate;
+    return (
+      this.status === LoadStatus.DRAFT &&
+      !!this.pickupLocation &&
+      !!this.deliveryLocation &&
+      !!this.pickupDate &&
+      !!this.deliveryDate
+    );
   }
 
   canAssign(): boolean {
-    return this.status === LoadStatus.CREATED || 
-           this.status === LoadStatus.PUBLISHED || 
-           this.status === LoadStatus.PENDING_CONFIRMATION;
+    return (
+      this.status === LoadStatus.CREATED ||
+      this.status === LoadStatus.PUBLISHED ||
+      this.status === LoadStatus.PENDING_CONFIRMATION
+    );
   }
 
   canStart(): boolean {
-    return this.status === LoadStatus.ASSIGNED && 
-           !!this.assignedTruckId && 
-           !!this.assignedCarrierId;
+    return (
+      this.status === LoadStatus.ASSIGNED &&
+      !!this.assignedTruckId &&
+      !!this.assignedCarrierId
+    );
   }
 
   canDeliver(): boolean {
@@ -597,7 +603,12 @@ export class Load {
   }
 
   canCancel(): boolean {
-    return [LoadStatus.DRAFT, LoadStatus.CREATED, LoadStatus.PUBLISHED, LoadStatus.PENDING_CONFIRMATION].includes(this.status);
+    return [
+      LoadStatus.DRAFT,
+      LoadStatus.CREATED,
+      LoadStatus.PUBLISHED,
+      LoadStatus.PENDING_CONFIRMATION,
+    ].includes(this.status);
   }
 
   canRepost(): boolean {

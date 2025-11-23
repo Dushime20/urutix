@@ -1,8 +1,25 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In, Between, IsNull, Not } from 'typeorm';
-import { Notification, NotificationType, NotificationStatus, NotificationPriority, NotificationCategory, EntityType, NotificationChannel } from '../../entities/notification.entity';
-import { CreateNotificationDto, UpdateNotificationDto, NotificationFilterDto, NotificationSearchDto } from './dto/notification.dto';
+import {
+  Notification,
+  NotificationType,
+  NotificationStatus,
+  NotificationPriority,
+  NotificationCategory,
+  EntityType,
+  NotificationChannel,
+} from '../../entities/notification.entity';
+import {
+  CreateNotificationDto,
+  UpdateNotificationDto,
+  NotificationFilterDto,
+  NotificationSearchDto,
+} from './dto/notification.dto';
 import { EmailService } from './services/email.service';
 import { SmsService } from './services/sms.service';
 import { PushNotificationService } from './services/push-notification.service';
@@ -22,7 +39,9 @@ export class NotificationService {
   /**
    * Create a new notification
    */
-  async createNotification(createNotificationDto: CreateNotificationDto): Promise<Notification> {
+  async createNotification(
+    createNotificationDto: CreateNotificationDto,
+  ): Promise<Notification> {
     // Create notification
     const notification = this.notificationRepository.create({
       ...createNotificationDto,
@@ -35,10 +54,11 @@ export class NotificationService {
       analytics: {
         openCount: 0,
         clickCount: 0,
-      }
+      },
     });
 
-    const savedNotification = await this.notificationRepository.save(notification);
+    const savedNotification =
+      await this.notificationRepository.save(notification);
 
     // Send notification through specified channels
     await this.sendNotification(savedNotification);
@@ -50,15 +70,19 @@ export class NotificationService {
    * Send smart notification based on user behavior and context
    */
   async sendSmartNotification(
-    userId: string, 
-    type: string, 
+    userId: string,
+    type: string,
     data: any,
-    tenantId: string
+    tenantId: string,
   ): Promise<Notification> {
     // Analyze user behavior and context to determine notification strategy
     const userBehavior = await this.analyzeUserBehavior(userId, tenantId);
-    const notificationStrategy = this.determineNotificationStrategy(type, data, userBehavior);
-    
+    const notificationStrategy = this.determineNotificationStrategy(
+      type,
+      data,
+      userBehavior,
+    );
+
     // Create smart notification
     const smartNotification = this.notificationRepository.create({
       recipientId: userId,
@@ -77,8 +101,8 @@ export class NotificationService {
         smartFeatures: {
           userBehavior: userBehavior,
           strategy: notificationStrategy.name,
-          context: data.context
-        }
+          context: data.context,
+        },
       },
       status: NotificationStatus.PENDING,
       userPreferences: {
@@ -89,25 +113,29 @@ export class NotificationService {
       analytics: {
         openCount: 0,
         clickCount: 0,
-      }
+      },
     });
 
-    const savedNotification = await this.notificationRepository.save(smartNotification);
-    
+    const savedNotification =
+      await this.notificationRepository.save(smartNotification);
+
     // Send through optimal channels
     await this.sendNotification(savedNotification);
-    
+
     return savedNotification;
   }
 
   /**
    * Analyze user behavior for smart notifications
    */
-  private async analyzeUserBehavior(userId: string, tenantId: string): Promise<any> {
+  private async analyzeUserBehavior(
+    userId: string,
+    tenantId: string,
+  ): Promise<any> {
     const userNotifications = await this.notificationRepository.find({
       where: { recipientId: userId, tenantId },
       order: { createdAt: 'DESC' },
-      take: 50
+      take: 50,
     });
 
     const behavior = {
@@ -116,7 +144,7 @@ export class NotificationService {
       preferredCategories: this.getPreferredCategories(userNotifications),
       activeHours: this.getActiveHours(userNotifications),
       notificationVolume: userNotifications.length,
-      lastActivity: userNotifications[0]?.createdAt || new Date()
+      lastActivity: userNotifications[0]?.createdAt || new Date(),
     };
 
     return behavior;
@@ -125,9 +153,13 @@ export class NotificationService {
   /**
    * Determine optimal notification strategy
    */
-  private determineNotificationStrategy(type: string, data: any, userBehavior: any): any {
+  private determineNotificationStrategy(
+    type: string,
+    data: any,
+    userBehavior: any,
+  ): any {
     const strategies = {
-      'price_drop': {
+      price_drop: {
         name: 'Price Drop Alert',
         title: '🚨 Price Drop Alert!',
         message: `Great news! The price for your cargo ${data.cargoTitle} has dropped by ${data.priceReduction}%. This could save you money!`,
@@ -135,9 +167,12 @@ export class NotificationService {
         type: NotificationType.TRIP_UPDATE,
         category: NotificationCategory.BUSINESS,
         priority: NotificationPriority.HIGH,
-        channels: this.optimizeChannels(userBehavior.preferredChannels, 'price_drop')
+        channels: this.optimizeChannels(
+          userBehavior.preferredChannels,
+          'price_drop',
+        ),
       },
-      'route_optimization': {
+      route_optimization: {
         name: 'Route Optimization',
         title: '🛣️ Better Route Available',
         message: `We found a faster route for your cargo ${data.cargoTitle}. Save ${data.timeSaved} hours and ${data.fuelSaved}% fuel!`,
@@ -145,9 +180,12 @@ export class NotificationService {
         type: NotificationType.TRIP_ROUTE_CHANGE,
         category: NotificationCategory.TRIP,
         priority: NotificationPriority.NORMAL,
-        channels: this.optimizeChannels(userBehavior.preferredChannels, 'route_optimization')
+        channels: this.optimizeChannels(
+          userBehavior.preferredChannels,
+          'route_optimization',
+        ),
       },
-      'demand_spike': {
+      demand_spike: {
         name: 'Demand Spike',
         title: '📈 High Demand Alert',
         message: `High demand detected on route ${data.route}. Consider increasing your price by ${data.recommendedIncrease}% for better profitability.`,
@@ -155,9 +193,12 @@ export class NotificationService {
         type: NotificationType.SYSTEM_UPDATE,
         category: NotificationCategory.BUSINESS,
         priority: NotificationPriority.HIGH,
-        channels: this.optimizeChannels(userBehavior.preferredChannels, 'demand_spike')
+        channels: this.optimizeChannels(
+          userBehavior.preferredChannels,
+          'demand_spike',
+        ),
       },
-      'delivery_delay': {
+      delivery_delay: {
         name: 'Delivery Delay Warning',
         title: '⚠️ Delivery Delay Warning',
         message: `Your cargo ${data.cargoTitle} is experiencing delays. Estimated new delivery time: ${data.newDeliveryTime}.`,
@@ -165,9 +206,12 @@ export class NotificationService {
         type: NotificationType.TRIP_DELAY,
         category: NotificationCategory.TRIP,
         priority: NotificationPriority.HIGH,
-        channels: this.optimizeChannels(userBehavior.preferredChannels, 'delivery_delay')
+        channels: this.optimizeChannels(
+          userBehavior.preferredChannels,
+          'delivery_delay',
+        ),
       },
-      'market_opportunity': {
+      market_opportunity: {
         name: 'Market Opportunity',
         title: '💡 Market Opportunity',
         message: `New high-value cargo available on route ${data.route}. Estimated profit: $${data.estimatedProfit}. Act fast!`,
@@ -175,8 +219,11 @@ export class NotificationService {
         type: NotificationType.SYSTEM_UPDATE,
         category: NotificationCategory.BUSINESS,
         priority: NotificationPriority.NORMAL,
-        channels: this.optimizeChannels(userBehavior.preferredChannels, 'market_opportunity')
-      }
+        channels: this.optimizeChannels(
+          userBehavior.preferredChannels,
+          'market_opportunity',
+        ),
+      },
     };
 
     return strategies[type] || strategies['market_opportunity'];
@@ -185,34 +232,52 @@ export class NotificationService {
   /**
    * Optimize notification channels based on user behavior
    */
-  private optimizeChannels(preferredChannels: string[], notificationType: string): NotificationChannel[] {
+  private optimizeChannels(
+    preferredChannels: string[],
+    notificationType: string,
+  ): NotificationChannel[] {
     const channelPriorities = {
-      'price_drop': [NotificationChannel.PUSH, NotificationChannel.EMAIL, NotificationChannel.SMS],
-      'route_optimization': [NotificationChannel.PUSH, NotificationChannel.EMAIL],
-      'demand_spike': [NotificationChannel.PUSH, NotificationChannel.EMAIL],
-      'delivery_delay': [NotificationChannel.PUSH, NotificationChannel.SMS, NotificationChannel.EMAIL],
-      'market_opportunity': [NotificationChannel.PUSH, NotificationChannel.EMAIL]
+      price_drop: [
+        NotificationChannel.PUSH,
+        NotificationChannel.EMAIL,
+        NotificationChannel.SMS,
+      ],
+      route_optimization: [NotificationChannel.PUSH, NotificationChannel.EMAIL],
+      demand_spike: [NotificationChannel.PUSH, NotificationChannel.EMAIL],
+      delivery_delay: [
+        NotificationChannel.PUSH,
+        NotificationChannel.SMS,
+        NotificationChannel.EMAIL,
+      ],
+      market_opportunity: [NotificationChannel.PUSH, NotificationChannel.EMAIL],
     };
 
-    const typeChannels = channelPriorities[notificationType] || [NotificationChannel.PUSH, NotificationChannel.EMAIL];
-    
+    const typeChannels = channelPriorities[notificationType] || [
+      NotificationChannel.PUSH,
+      NotificationChannel.EMAIL,
+    ];
+
     // Filter based on user preferences
-    return typeChannels.filter(channel => preferredChannels.includes(channel));
+    return typeChannels.filter((channel) =>
+      preferredChannels.includes(channel),
+    );
   }
 
   /**
    * Get user's preferred notification channels
    */
-  private getPreferredChannels(notifications: Notification[]): NotificationChannel[] {
+  private getPreferredChannels(
+    notifications: Notification[],
+  ): NotificationChannel[] {
     const channelCounts = {};
-    notifications.forEach(notification => {
-      notification.channels.forEach(channel => {
+    notifications.forEach((notification) => {
+      notification.channels.forEach((channel) => {
         channelCounts[channel] = (channelCounts[channel] || 0) + 1;
       });
     });
 
     return Object.entries(channelCounts as Record<string, number>)
-      .sort((a, b) => (b[1] as number) - (a[1] as number))
+      .sort((a, b) => b[1] - a[1])
       .map(([channel]) => channel as NotificationChannel);
   }
 
@@ -220,15 +285,23 @@ export class NotificationService {
    * Calculate user's average response time to notifications
    */
   private calculateResponseTime(notifications: Notification[]): number {
-    const respondedNotifications = notifications.filter(n => (n.analytics?.openCount || 0) > 0);
+    const respondedNotifications = notifications.filter(
+      (n) => (n.analytics?.openCount || 0) > 0,
+    );
     if (respondedNotifications.length === 0) return 0;
 
-    const totalResponseTime = respondedNotifications.reduce((sum, notification) => {
-      const openedAt = (notification.analytics as any)?.openedAt || (notification.analytics as any)?.lastOpenedAt;
-      const responseTime = new Date(openedAt || notification.updatedAt).getTime() - 
-                          new Date(notification.createdAt).getTime();
-      return sum + responseTime;
-    }, 0);
+    const totalResponseTime = respondedNotifications.reduce(
+      (sum, notification) => {
+        const openedAt =
+          (notification.analytics as any)?.openedAt ||
+          (notification.analytics as any)?.lastOpenedAt;
+        const responseTime =
+          new Date(openedAt || notification.updatedAt).getTime() -
+          new Date(notification.createdAt).getTime();
+        return sum + responseTime;
+      },
+      0,
+    );
 
     return totalResponseTime / respondedNotifications.length; // in milliseconds
   }
@@ -238,12 +311,13 @@ export class NotificationService {
    */
   private getPreferredCategories(notifications: Notification[]): string[] {
     const categoryCounts = {};
-    notifications.forEach(notification => {
-      categoryCounts[notification.category] = (categoryCounts[notification.category] || 0) + 1;
+    notifications.forEach((notification) => {
+      categoryCounts[notification.category] =
+        (categoryCounts[notification.category] || 0) + 1;
     });
 
     return Object.entries(categoryCounts as Record<string, number>)
-      .sort((a, b) => (b[1] as number) - (a[1] as number))
+      .sort((a, b) => b[1] - a[1])
       .map(([category]) => category);
   }
 
@@ -252,17 +326,20 @@ export class NotificationService {
    */
   private getActiveHours(notifications: Notification[]): number[] {
     const interactionHours = notifications
-      .map(n => (n.analytics as any)?.openedAt || (n.analytics as any)?.lastOpenedAt)
+      .map(
+        (n) =>
+          (n.analytics as any)?.openedAt || (n.analytics as any)?.lastOpenedAt,
+      )
       .filter(Boolean)
       .map((d: Date | string) => new Date(d).getHours());
 
     const hourCounts = {};
-    interactionHours.forEach(hour => {
+    interactionHours.forEach((hour) => {
       hourCounts[hour] = (hourCounts[hour] || 0) + 1;
     });
 
     return Object.entries(hourCounts as Record<string, number>)
-      .sort((a, b) => (b[1] as number) - (a[1] as number))
+      .sort((a, b) => b[1] - a[1])
       .slice(0, 6)
       .map(([hour]) => parseInt(hour));
   }
@@ -270,73 +347,106 @@ export class NotificationService {
   /**
    * Get notifications with filtering and pagination
    */
-  async getNotifications(filterDto: NotificationFilterDto, tenantId: string): Promise<{ notifications: Notification[]; total: number }> {
-    const queryBuilder = this.notificationRepository.createQueryBuilder('notification')
+  async getNotifications(
+    filterDto: NotificationFilterDto,
+    tenantId: string,
+  ): Promise<{ notifications: Notification[]; total: number }> {
+    const queryBuilder = this.notificationRepository
+      .createQueryBuilder('notification')
       .where('notification.tenantId = :tenantId', { tenantId });
 
     // Apply filters
     if (filterDto.recipientId) {
-      queryBuilder.andWhere('notification.recipientId = :recipientId', { recipientId: filterDto.recipientId });
+      queryBuilder.andWhere('notification.recipientId = :recipientId', {
+        recipientId: filterDto.recipientId,
+      });
     }
 
     if (filterDto.entityType) {
-      queryBuilder.andWhere('notification.entityType = :entityType', { entityType: filterDto.entityType });
+      queryBuilder.andWhere('notification.entityType = :entityType', {
+        entityType: filterDto.entityType,
+      });
     }
 
     if (filterDto.entityId) {
-      queryBuilder.andWhere('notification.entityId = :entityId', { entityId: filterDto.entityId });
+      queryBuilder.andWhere('notification.entityId = :entityId', {
+        entityId: filterDto.entityId,
+      });
     }
 
     if (filterDto.notificationType) {
-      queryBuilder.andWhere('notification.notificationType = :notificationType', { notificationType: filterDto.notificationType });
+      queryBuilder.andWhere(
+        'notification.notificationType = :notificationType',
+        { notificationType: filterDto.notificationType },
+      );
     }
 
     if (filterDto.category) {
-      queryBuilder.andWhere('notification.category = :category', { category: filterDto.category });
+      queryBuilder.andWhere('notification.category = :category', {
+        category: filterDto.category,
+      });
     }
 
     if (filterDto.status) {
-      queryBuilder.andWhere('notification.status = :status', { status: filterDto.status });
+      queryBuilder.andWhere('notification.status = :status', {
+        status: filterDto.status,
+      });
     }
 
     if (filterDto.priority) {
-      queryBuilder.andWhere('notification.priority = :priority', { priority: filterDto.priority });
+      queryBuilder.andWhere('notification.priority = :priority', {
+        priority: filterDto.priority,
+      });
     }
 
     if (filterDto.isRead !== undefined) {
-      queryBuilder.andWhere('notification.isRead = :isRead', { isRead: filterDto.isRead });
+      queryBuilder.andWhere('notification.isRead = :isRead', {
+        isRead: filterDto.isRead,
+      });
     }
 
     if (filterDto.requiresAction !== undefined) {
-      queryBuilder.andWhere('notification.requiresAction = :requiresAction', { requiresAction: filterDto.requiresAction });
+      queryBuilder.andWhere('notification.requiresAction = :requiresAction', {
+        requiresAction: filterDto.requiresAction,
+      });
     }
 
     if (filterDto.channels && filterDto.channels.length > 0) {
-      queryBuilder.andWhere('notification.channels @> :channels', { channels: filterDto.channels });
+      queryBuilder.andWhere('notification.channels @> :channels', {
+        channels: filterDto.channels,
+      });
     }
 
     if (filterDto.search) {
       queryBuilder.andWhere(
         '(notification.title ILIKE :search OR notification.message ILIKE :search OR notification.shortMessage ILIKE :search)',
-        { search: `%${filterDto.search}%` }
+        { search: `%${filterDto.search}%` },
       );
     }
 
     // Apply date filters
     if (filterDto.createdAfter) {
-      queryBuilder.andWhere('notification.createdAt >= :createdAfter', { createdAfter: filterDto.createdAfter });
+      queryBuilder.andWhere('notification.createdAt >= :createdAfter', {
+        createdAfter: filterDto.createdAfter,
+      });
     }
 
     if (filterDto.createdBefore) {
-      queryBuilder.andWhere('notification.createdAt <= :createdBefore', { createdBefore: filterDto.createdBefore });
+      queryBuilder.andWhere('notification.createdAt <= :createdBefore', {
+        createdBefore: filterDto.createdBefore,
+      });
     }
 
     if (filterDto.scheduledAfter) {
-      queryBuilder.andWhere('notification.scheduledAt >= :scheduledAfter', { scheduledAfter: filterDto.scheduledAfter });
+      queryBuilder.andWhere('notification.scheduledAt >= :scheduledAfter', {
+        scheduledAfter: filterDto.scheduledAfter,
+      });
     }
 
     if (filterDto.scheduledBefore) {
-      queryBuilder.andWhere('notification.scheduledAt <= :scheduledBefore', { scheduledBefore: filterDto.scheduledBefore });
+      queryBuilder.andWhere('notification.scheduledAt <= :scheduledBefore', {
+        scheduledBefore: filterDto.scheduledBefore,
+      });
     }
 
     // Apply sorting
@@ -360,8 +470,12 @@ export class NotificationService {
   /**
    * Search notifications across all fields
    */
-  async searchNotifications(searchDto: NotificationSearchDto, tenantId: string): Promise<Notification[]> {
-    const queryBuilder = this.notificationRepository.createQueryBuilder('notification')
+  async searchNotifications(
+    searchDto: NotificationSearchDto,
+    tenantId: string,
+  ): Promise<Notification[]> {
+    const queryBuilder = this.notificationRepository
+      .createQueryBuilder('notification')
       .where('notification.tenantId = :tenantId', { tenantId });
 
     if (searchDto.query) {
@@ -373,24 +487,32 @@ export class NotificationService {
           notification.tags::text ILIKE :query OR
           notification.metadata::text ILIKE :query
         )`,
-        { query: `%${searchDto.query}%` }
+        { query: `%${searchDto.query}%` },
       );
     }
 
     if (searchDto.entityTypes && searchDto.entityTypes.length > 0) {
-      queryBuilder.andWhere('notification.entityType IN (:...entityTypes)', { entityTypes: searchDto.entityTypes });
+      queryBuilder.andWhere('notification.entityType IN (:...entityTypes)', {
+        entityTypes: searchDto.entityTypes,
+      });
     }
 
     if (searchDto.categories && searchDto.categories.length > 0) {
-      queryBuilder.andWhere('notification.category IN (:...categories)', { categories: searchDto.categories });
+      queryBuilder.andWhere('notification.category IN (:...categories)', {
+        categories: searchDto.categories,
+      });
     }
 
     if (searchDto.statuses && searchDto.statuses.length > 0) {
-      queryBuilder.andWhere('notification.status IN (:...statuses)', { statuses: searchDto.statuses });
+      queryBuilder.andWhere('notification.status IN (:...statuses)', {
+        statuses: searchDto.statuses,
+      });
     }
 
     if (searchDto.priorities && searchDto.priorities.length > 0) {
-      queryBuilder.andWhere('notification.priority IN (:...priorities)', { priorities: searchDto.priorities });
+      queryBuilder.andWhere('notification.priority IN (:...priorities)', {
+        priorities: searchDto.priorities,
+      });
     }
 
     // Apply relevance scoring
@@ -405,12 +527,15 @@ export class NotificationService {
           ELSE 10
         END
       )`,
-      'relevance_score'
+      'relevance_score',
     );
 
     queryBuilder.setParameter('exactQuery', searchDto.query);
     queryBuilder.setParameter('query', `%${searchDto.query}%`);
-    queryBuilder.setParameter('tagArray', searchDto.query ? [searchDto.query] : []);
+    queryBuilder.setParameter(
+      'tagArray',
+      searchDto.query ? [searchDto.query] : [],
+    );
 
     queryBuilder.orderBy('relevance_score', 'DESC');
     queryBuilder.addOrderBy('notification.createdAt', 'DESC');
@@ -425,9 +550,12 @@ export class NotificationService {
   /**
    * Get notification by ID
    */
-  async getNotificationById(id: string, tenantId: string): Promise<Notification> {
+  async getNotificationById(
+    id: string,
+    tenantId: string,
+  ): Promise<Notification> {
     const notification = await this.notificationRepository.findOne({
-      where: { id, tenantId }
+      where: { id, tenantId },
     });
 
     if (!notification) {
@@ -440,7 +568,12 @@ export class NotificationService {
   /**
    * Update notification
    */
-  async updateNotification(id: string, updateNotificationDto: UpdateNotificationDto, updatedBy: string, tenantId: string): Promise<Notification> {
+  async updateNotification(
+    id: string,
+    updateNotificationDto: UpdateNotificationDto,
+    updatedBy: string,
+    tenantId: string,
+  ): Promise<Notification> {
     const notification = await this.getNotificationById(id, tenantId);
 
     // Update fields
@@ -456,11 +589,17 @@ export class NotificationService {
   /**
    * Mark notification as read
    */
-  async markAsRead(id: string, userId: string, tenantId: string): Promise<Notification> {
+  async markAsRead(
+    id: string,
+    userId: string,
+    tenantId: string,
+  ): Promise<Notification> {
     const notification = await this.getNotificationById(id, tenantId);
 
     if (notification.recipientId !== userId) {
-      throw new BadRequestException('You can only mark your own notifications as read');
+      throw new BadRequestException(
+        'You can only mark your own notifications as read',
+      );
     }
 
     notification.isRead = true;
@@ -481,7 +620,11 @@ export class NotificationService {
   /**
    * Mark notification as delivered
    */
-  async markAsDelivered(id: string, channel: NotificationChannel, tenantId: string): Promise<Notification> {
+  async markAsDelivered(
+    id: string,
+    channel: NotificationChannel,
+    tenantId: string,
+  ): Promise<Notification> {
     const notification = await this.getNotificationById(id, tenantId);
 
     notification.status = NotificationStatus.DELIVERED;
@@ -499,7 +642,7 @@ export class NotificationService {
     notification.deliveryAttempts[channel.toLowerCase()].push({
       attempt: notification.deliveryAttempts[channel.toLowerCase()].length + 1,
       timestamp: new Date(),
-      status: 'DELIVERED'
+      status: 'DELIVERED',
     });
 
     notification.updatedAt = new Date();
@@ -510,7 +653,12 @@ export class NotificationService {
   /**
    * Mark notification as failed
    */
-  async markAsFailed(id: string, channel: NotificationChannel, error: string, tenantId: string): Promise<Notification> {
+  async markAsFailed(
+    id: string,
+    channel: NotificationChannel,
+    error: string,
+    tenantId: string,
+  ): Promise<Notification> {
     const notification = await this.getNotificationById(id, tenantId);
 
     notification.status = NotificationStatus.FAILED;
@@ -528,7 +676,7 @@ export class NotificationService {
       attempt: notification.deliveryAttempts[channel.toLowerCase()].length + 1,
       timestamp: new Date(),
       status: 'FAILED',
-      error
+      error,
     });
 
     notification.updatedAt = new Date();
@@ -539,11 +687,15 @@ export class NotificationService {
   /**
    * Get notifications by recipient
    */
-  async getNotificationsByRecipient(recipientId: string, tenantId: string, limit: number = 50): Promise<Notification[]> {
+  async getNotificationsByRecipient(
+    recipientId: string,
+    tenantId: string,
+    limit: number = 50,
+  ): Promise<Notification[]> {
     return this.notificationRepository.find({
       where: { recipientId, tenantId },
       order: { createdAt: 'DESC' },
-      take: limit
+      take: limit,
     });
   }
 
@@ -552,17 +704,21 @@ export class NotificationService {
    */
   async getUnreadCount(recipientId: string, tenantId: string): Promise<number> {
     return this.notificationRepository.count({
-      where: { recipientId, tenantId, isRead: false }
+      where: { recipientId, tenantId, isRead: false },
     });
   }
 
   /**
    * Get notifications by entity
    */
-  async getNotificationsByEntity(entityType: EntityType, entityId: string, tenantId: string): Promise<Notification[]> {
+  async getNotificationsByEntity(
+    entityType: EntityType,
+    entityId: string,
+    tenantId: string,
+  ): Promise<Notification[]> {
     return this.notificationRepository.find({
       where: { entityType, entityId, tenantId },
-      order: { createdAt: 'DESC' }
+      order: { createdAt: 'DESC' },
     });
   }
 
@@ -574,9 +730,9 @@ export class NotificationService {
       where: {
         tenantId,
         scheduledAt: Not(IsNull()),
-        status: NotificationStatus.PENDING
+        status: NotificationStatus.PENDING,
       },
-      order: { scheduledAt: 'ASC' }
+      order: { scheduledAt: 'ASC' },
     });
   }
 
@@ -587,16 +743,20 @@ export class NotificationService {
     return this.notificationRepository.find({
       where: {
         tenantId,
-        expiresAt: Between(new Date(0), new Date())
+        expiresAt: Between(new Date(0), new Date()),
       },
-      order: { expiresAt: 'ASC' }
+      order: { expiresAt: 'ASC' },
     });
   }
 
   /**
    * Delete notification
    */
-  async deleteNotification(id: string, deletedBy: string, tenantId: string): Promise<void> {
+  async deleteNotification(
+    id: string,
+    deletedBy: string,
+    tenantId: string,
+  ): Promise<void> {
     const notification = await this.getNotificationById(id, tenantId);
 
     // Soft delete
@@ -611,21 +771,25 @@ export class NotificationService {
   /**
    * Bulk mark notifications as read
    */
-  async bulkMarkAsRead(notificationIds: string[], userId: string, tenantId: string): Promise<Notification[]> {
+  async bulkMarkAsRead(
+    notificationIds: string[],
+    userId: string,
+    tenantId: string,
+  ): Promise<Notification[]> {
     const notifications = await this.notificationRepository.find({
-      where: { id: In(notificationIds), tenantId, recipientId: userId }
+      where: { id: In(notificationIds), tenantId, recipientId: userId },
     });
 
-    const updatedNotifications = notifications.map(notification => {
+    const updatedNotifications = notifications.map((notification) => {
       notification.isRead = true;
       notification.readAt = new Date();
-      
+
       if (!notification.analytics) {
         notification.analytics = { openCount: 0, clickCount: 0 };
       }
       notification.analytics.openCount += 1;
       notification.analytics.lastOpenedAt = new Date();
-      
+
       notification.updatedAt = new Date();
       return notification;
     });
@@ -668,7 +832,12 @@ export class NotificationService {
         }
       } catch (error) {
         console.error(`Failed to send notification through ${channel}:`, error);
-        await this.markAsFailed(notification.id, channel, error.message, notification.tenantId);
+        await this.markAsFailed(
+          notification.id,
+          channel,
+          error.message,
+          notification.tenantId,
+        );
       }
     }
 
@@ -679,14 +848,30 @@ export class NotificationService {
   /**
    * Send email notification
    */
-  private async sendEmailNotification(notification: Notification): Promise<void> {
+  private async sendEmailNotification(
+    notification: Notification,
+  ): Promise<void> {
     try {
       // TODO: Get recipient email from user context or notification metadata
-      const recipientEmail = notification.metadata?.recipientEmail || 'placeholder@example.com';
-      await this.emailService.sendEmail(recipientEmail, notification.title || 'Notification', notification.message);
-      await this.markAsDelivered(notification.id, NotificationChannel.EMAIL, notification.tenantId);
+      const recipientEmail =
+        notification.metadata?.recipientEmail || 'placeholder@example.com';
+      await this.emailService.sendEmail(
+        recipientEmail,
+        notification.title || 'Notification',
+        notification.message,
+      );
+      await this.markAsDelivered(
+        notification.id,
+        NotificationChannel.EMAIL,
+        notification.tenantId,
+      );
     } catch (error) {
-      await this.markAsFailed(notification.id, NotificationChannel.EMAIL, error.message, notification.tenantId);
+      await this.markAsFailed(
+        notification.id,
+        NotificationChannel.EMAIL,
+        error.message,
+        notification.tenantId,
+      );
       throw error;
     }
   }
@@ -697,11 +882,21 @@ export class NotificationService {
   private async sendSmsNotification(notification: Notification): Promise<void> {
     try {
       // TODO: Get recipient phone from user context or notification metadata
-      const recipientPhone = notification.metadata?.recipientPhone || '+1234567890';
+      const recipientPhone =
+        notification.metadata?.recipientPhone || '+1234567890';
       await this.smsService.sendSms(recipientPhone, notification.message);
-      await this.markAsDelivered(notification.id, NotificationChannel.SMS, notification.tenantId);
+      await this.markAsDelivered(
+        notification.id,
+        NotificationChannel.SMS,
+        notification.tenantId,
+      );
     } catch (error) {
-      await this.markAsFailed(notification.id, NotificationChannel.SMS, error.message, notification.tenantId);
+      await this.markAsFailed(
+        notification.id,
+        NotificationChannel.SMS,
+        error.message,
+        notification.tenantId,
+      );
       throw error;
     }
   }
@@ -709,14 +904,30 @@ export class NotificationService {
   /**
    * Send push notification
    */
-  private async sendPushNotification(notification: Notification): Promise<void> {
+  private async sendPushNotification(
+    notification: Notification,
+  ): Promise<void> {
     try {
       // TODO: Get device token from user context or notification metadata
-      const deviceToken = notification.metadata?.deviceToken || 'placeholder-device-token';
-      await this.pushNotificationService.sendPushNotification(deviceToken, notification.title || 'Notification', notification.message);
-      await this.markAsDelivered(notification.id, NotificationChannel.PUSH, notification.tenantId);
+      const deviceToken =
+        notification.metadata?.deviceToken || 'placeholder-device-token';
+      await this.pushNotificationService.sendPushNotification(
+        deviceToken,
+        notification.title || 'Notification',
+        notification.message,
+      );
+      await this.markAsDelivered(
+        notification.id,
+        NotificationChannel.PUSH,
+        notification.tenantId,
+      );
     } catch (error) {
-      await this.markAsFailed(notification.id, NotificationChannel.PUSH, error.message, notification.tenantId);
+      await this.markAsFailed(
+        notification.id,
+        NotificationChannel.PUSH,
+        error.message,
+        notification.tenantId,
+      );
       throw error;
     }
   }
@@ -724,12 +935,26 @@ export class NotificationService {
   /**
    * Send webhook notification
    */
-  private async sendWebhookNotification(notification: Notification): Promise<void> {
+  private async sendWebhookNotification(
+    notification: Notification,
+  ): Promise<void> {
     try {
-      await this.webhookService.sendWebhook(notification.actionUrl, notification.message);
-      await this.markAsDelivered(notification.id, NotificationChannel.WEBHOOK, notification.tenantId);
+      await this.webhookService.sendWebhook(
+        notification.actionUrl,
+        notification.message,
+      );
+      await this.markAsDelivered(
+        notification.id,
+        NotificationChannel.WEBHOOK,
+        notification.tenantId,
+      );
     } catch (error) {
-      await this.markAsFailed(notification.id, NotificationChannel.WEBHOOK, error.message, notification.tenantId);
+      await this.markAsFailed(
+        notification.id,
+        NotificationChannel.WEBHOOK,
+        error.message,
+        notification.tenantId,
+      );
       throw error;
     }
   }
@@ -738,7 +963,8 @@ export class NotificationService {
    * Process scheduled notifications
    */
   async processScheduledNotifications(): Promise<void> {
-    const scheduledNotifications = await this.getScheduledNotifications('system'); // Use system tenant for global processing
+    const scheduledNotifications =
+      await this.getScheduledNotifications('system'); // Use system tenant for global processing
 
     for (const notification of scheduledNotifications) {
       if (notification.scheduledAt && notification.scheduledAt <= new Date()) {
@@ -746,7 +972,7 @@ export class NotificationService {
         notification.status = NotificationStatus.PENDING;
         notification.scheduledAt = null;
         await this.notificationRepository.save(notification);
-        
+
         // Send the notification
         await this.sendNotification(notification);
       }

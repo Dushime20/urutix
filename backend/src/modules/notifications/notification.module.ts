@@ -9,11 +9,15 @@ import { PushNotificationService } from './services/push-notification.service';
 import { WebhookService } from './services/webhook.service';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([Notification]),
-  ],
+  imports: [TypeOrmModule.forFeature([Notification])],
   controllers: [NotificationController],
-  providers: [NotificationService, EmailService, SmsService, PushNotificationService, WebhookService],
+  providers: [
+    NotificationService,
+    EmailService,
+    SmsService,
+    PushNotificationService,
+    WebhookService,
+  ],
   exports: [NotificationService],
 })
 export class NotificationModule {}

@@ -21,9 +21,20 @@ import {
   ApiBearerAuth,
 } from '@nestjs/swagger';
 import { SafetyService } from './safety.service';
-import { CreateSafetyIncidentDto, IncidentStatus, IncidentSeverity } from './dto/create-safety-incident.dto';
-import { CreateSafetyInspectionDto, InspectionStatus } from './dto/create-safety-inspection.dto';
-import { CreateSafetyTrainingDto, TrainingStatus, TrainingType } from './dto/create-safety-training.dto';
+import {
+  CreateSafetyIncidentDto,
+  IncidentStatus,
+  IncidentSeverity,
+} from './dto/create-safety-incident.dto';
+import {
+  CreateSafetyInspectionDto,
+  InspectionStatus,
+} from './dto/create-safety-inspection.dto';
+import {
+  CreateSafetyTrainingDto,
+  TrainingStatus,
+  TrainingType,
+} from './dto/create-safety-training.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 
@@ -99,10 +110,7 @@ export class SafetyController {
   @ApiResponse({ status: 200, description: 'Incident details' })
   @ApiResponse({ status: 404, description: 'Incident not found' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  async getIncident(
-    @Param('id', ParseUUIDPipe) id: string,
-    @Request() req,
-  ) {
+  async getIncident(@Param('id', ParseUUIDPipe) id: string, @Request() req) {
     try {
       const incident = await this.safetyService.findOneIncident(
         id,
@@ -148,10 +156,7 @@ export class SafetyController {
   @ApiResponse({ status: 200, description: 'Incident deleted successfully' })
   @ApiResponse({ status: 404, description: 'Incident not found' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  async deleteIncident(
-    @Param('id', ParseUUIDPipe) id: string,
-    @Request() req,
-  ) {
+  async deleteIncident(@Param('id', ParseUUIDPipe) id: string, @Request() req) {
     try {
       await this.safetyService.deleteIncident(id, req.user.tenantId);
       return {
@@ -227,10 +232,7 @@ export class SafetyController {
   @ApiResponse({ status: 200, description: 'Inspection details' })
   @ApiResponse({ status: 404, description: 'Inspection not found' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  async getInspection(
-    @Param('id', ParseUUIDPipe) id: string,
-    @Request() req,
-  ) {
+  async getInspection(@Param('id', ParseUUIDPipe) id: string, @Request() req) {
     try {
       const inspection = await this.safetyService.findOneInspection(
         id,
@@ -355,10 +357,7 @@ export class SafetyController {
   @ApiResponse({ status: 200, description: 'Training details' })
   @ApiResponse({ status: 404, description: 'Training not found' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  async getTraining(
-    @Param('id', ParseUUIDPipe) id: string,
-    @Request() req,
-  ) {
+  async getTraining(@Param('id', ParseUUIDPipe) id: string, @Request() req) {
     try {
       const training = await this.safetyService.findOneTraining(
         id,
@@ -404,10 +403,7 @@ export class SafetyController {
   @ApiResponse({ status: 200, description: 'Training deleted successfully' })
   @ApiResponse({ status: 404, description: 'Training not found' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  async deleteTraining(
-    @Param('id', ParseUUIDPipe) id: string,
-    @Request() req,
-  ) {
+  async deleteTraining(@Param('id', ParseUUIDPipe) id: string, @Request() req) {
     try {
       await this.safetyService.deleteTraining(id, req.user.tenantId);
       return {
@@ -419,4 +415,3 @@ export class SafetyController {
     }
   }
 }
-

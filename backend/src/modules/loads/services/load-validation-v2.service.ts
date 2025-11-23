@@ -650,7 +650,11 @@ export class LoadValidationV2Service {
 
     const validTransitions = {
       [LoadStatus.DRAFT]: [LoadStatus.CREATED, LoadStatus.CANCELLED],
-      [LoadStatus.CREATED]: [LoadStatus.PUBLISHED, LoadStatus.ASSIGNED, LoadStatus.CANCELLED],
+      [LoadStatus.CREATED]: [
+        LoadStatus.PUBLISHED,
+        LoadStatus.ASSIGNED,
+        LoadStatus.CANCELLED,
+      ],
       [LoadStatus.PUBLISHED]: [
         LoadStatus.ASSIGNED,
         LoadStatus.DRAFT,

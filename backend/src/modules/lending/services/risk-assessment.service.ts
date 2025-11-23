@@ -20,8 +20,10 @@ export interface RiskScore {
 @Injectable()
 export class RiskAssessmentService {
   constructor(
-    @InjectRepository(LoanRequest) private readonly loanRequestRepository: Repository<LoanRequest>,
-    @InjectRepository(Borrower) private readonly borrowerRepository: Repository<Borrower>,
+    @InjectRepository(LoanRequest)
+    private readonly loanRequestRepository: Repository<LoanRequest>,
+    @InjectRepository(Borrower)
+    private readonly borrowerRepository: Repository<Borrower>,
     @InjectRepository(Trip) private readonly tripRepository: Repository<Trip>,
     @InjectRepository(Load) private readonly loadRepository: Repository<Load>,
   ) {}
@@ -45,5 +47,3 @@ export class RiskAssessmentService {
     };
   }
 }
-
-

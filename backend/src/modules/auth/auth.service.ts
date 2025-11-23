@@ -229,7 +229,8 @@ export class AuthService {
     let payload: any;
     try {
       payload = await this.jwtService.verifyAsync(refreshToken, {
-        secret: this.configService.get('JWT_REFRESH_SECRET') || 'your-refresh-secret',
+        secret:
+          this.configService.get('JWT_REFRESH_SECRET') || 'your-refresh-secret',
       });
     } catch (err) {
       throw new UnauthorizedException('Invalid refresh token');
@@ -502,7 +503,8 @@ export class AuthService {
         expiresIn: accessTokenExpiry,
       }),
       this.jwtService.signAsync(payload, {
-        secret: this.configService.get('JWT_REFRESH_SECRET') || 'your-refresh-secret',
+        secret:
+          this.configService.get('JWT_REFRESH_SECRET') || 'your-refresh-secret',
         expiresIn: refreshTokenExpiry,
       }),
     ]);

@@ -175,7 +175,12 @@ export class InsuranceClaim {
 
   // Computed properties
   get isOpen(): boolean {
-    return [ClaimStatus.PENDING, ClaimStatus.INVESTIGATING, ClaimStatus.UNDER_REVIEW, ClaimStatus.SETTLEMENT_PENDING].includes(this.status);
+    return [
+      ClaimStatus.PENDING,
+      ClaimStatus.INVESTIGATING,
+      ClaimStatus.UNDER_REVIEW,
+      ClaimStatus.SETTLEMENT_PENDING,
+    ].includes(this.status);
   }
 
   get isClosed(): boolean {
@@ -205,6 +210,8 @@ export class InsuranceClaim {
   }
 
   get isUrgent(): boolean {
-    return this.priority === ClaimPriority.URGENT || this.daysSinceIncident > 30;
+    return (
+      this.priority === ClaimPriority.URGENT || this.daysSinceIncident > 30
+    );
   }
 }

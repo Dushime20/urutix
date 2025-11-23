@@ -165,15 +165,28 @@ export class TrackingEvent {
   }
 
   isGeofenceEvent(): boolean {
-    return [TrackingEventType.GEOFENCE_ENTER, TrackingEventType.GEOFENCE_EXIT].includes(this.type);
+    return [
+      TrackingEventType.GEOFENCE_ENTER,
+      TrackingEventType.GEOFENCE_EXIT,
+    ].includes(this.type);
   }
 
   isAlertEvent(): boolean {
-    return [TrackingEventType.DELAY, TrackingEventType.INCIDENT, TrackingEventType.ALERT].includes(this.type);
+    return [
+      TrackingEventType.DELAY,
+      TrackingEventType.INCIDENT,
+      TrackingEventType.ALERT,
+    ].includes(this.type);
   }
 
   getFormattedAddress(): string {
-    const parts = [this.address, this.city, this.state, this.postalCode, this.country];
+    const parts = [
+      this.address,
+      this.city,
+      this.state,
+      this.postalCode,
+      this.country,
+    ];
     return parts.filter(Boolean).join(', ');
   }
 

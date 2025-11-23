@@ -59,32 +59,38 @@ export class DocumentController {
   constructor(private readonly documentService: DocumentService) {}
 
   @Post()
-  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN, UserRole.TRUCK_OWNER, UserRole.DRIVER, UserRole.CARGO_OWNER)
+  @Roles(
+    UserRole.ADMIN,
+    UserRole.SUPER_ADMIN,
+    UserRole.TRUCK_OWNER,
+    UserRole.DRIVER,
+    UserRole.CARGO_OWNER,
+  )
   @ApiOperation({
     summary: 'Create a new document',
-    description: 'Upload and create a new document for any entity type'
+    description: 'Upload and create a new document for any entity type',
   })
   @ApiResponse({
     status: 201,
     description: 'Document created successfully',
-    type: Document
+    type: Document,
   })
   @ApiResponse({
     status: 400,
-    description: 'Bad request - validation error'
+    description: 'Bad request - validation error',
   })
   @ApiResponse({
     status: 401,
-    description: 'Unauthorized'
+    description: 'Unauthorized',
   })
   @ApiResponse({
     status: 403,
-    description: 'Forbidden - insufficient permissions'
+    description: 'Forbidden - insufficient permissions',
   })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
     description: 'Document creation data',
-    type: CreateDocumentDto
+    type: CreateDocumentDto,
   })
   @ApiBody({
     description: 'Document file to upload',
@@ -94,13 +100,19 @@ export class DocumentController {
         file: {
           type: 'string',
           format: 'binary',
-          description: 'Document file to upload'
-        }
-      }
-    }
+          description: 'Document file to upload',
+        },
+      },
+    },
   })
   @UseInterceptors(FileInterceptor('file'))
-  @UsePipes(new ValidationPipe({ transform: true, whitelist: true, forbidNonWhitelisted: false }))
+  @UsePipes(
+    new ValidationPipe({
+      transform: true,
+      whitelist: true,
+      forbidNonWhitelisted: false,
+    }),
+  )
   async createDocument(
     @Body() body: any,
     @UploadedFile(
@@ -118,27 +130,43 @@ export class DocumentController {
     try {
       // Parse form data (multipart/form-data sends everything as strings)
       const createDocumentDto: CreateDocumentDto = {
-        entityType: body.entityType as any,
+        entityType: body.entityType,
         entityId: body.entityId,
-        documentType: body.documentType as any,
-        category: body.category as any,
-        priority: body.priority as any,
+        documentType: body.documentType,
+        category: body.category,
+        priority: body.priority,
         documentNumber: body.documentNumber,
         title: body.title,
         description: body.description || '',
-        fileName: file ? file.originalname : (body.fileName || body.title || 'document'),
-        originalFileName: file ? file.originalname : (body.originalFileName || body.fileName || body.title || 'document'),
+        fileName: file
+          ? file.originalname
+          : body.fileName || body.title || 'document',
+        originalFileName: file
+          ? file.originalname
+          : body.originalFileName || body.fileName || body.title || 'document',
         fileUrl: body.fileUrl,
         file: file,
-        fileSize: file ? file.size : (body.fileSize ? Number(body.fileSize) : 0),
-        mimeType: file ? (file.mimetype || 'application/octet-stream') : (body.mimeType || 'application/octet-stream'),
-        fileExtension: file ? (file.originalname.split('.').pop() || '') : body.fileExtension,
+        fileSize: file ? file.size : body.fileSize ? Number(body.fileSize) : 0,
+        mimeType: file
+          ? file.mimetype || 'application/octet-stream'
+          : body.mimeType || 'application/octet-stream',
+        fileExtension: file
+          ? file.originalname.split('.').pop() || ''
+          : body.fileExtension,
         issueDate: body.issueDate ? new Date(body.issueDate) : undefined,
         expiryDate: body.expiryDate ? new Date(body.expiryDate) : undefined,
-        requiresRenewal: body.requiresRenewal === 'true' || body.requiresRenewal === true,
-        renewalReminderDays: body.renewalReminderDays ? Number(body.renewalReminderDays) : undefined,
-        tags: body.tags ? (typeof body.tags === 'string' ? JSON.parse(body.tags) : body.tags) : undefined,
-        sendNotification: body.sendNotification === 'true' || body.sendNotification === true,
+        requiresRenewal:
+          body.requiresRenewal === 'true' || body.requiresRenewal === true,
+        renewalReminderDays: body.renewalReminderDays
+          ? Number(body.renewalReminderDays)
+          : undefined,
+        tags: body.tags
+          ? typeof body.tags === 'string'
+            ? JSON.parse(body.tags)
+            : body.tags
+          : undefined,
+        sendNotification:
+          body.sendNotification === 'true' || body.sendNotification === true,
       };
 
       // Validate required fields
@@ -158,7 +186,9 @@ export class DocumentController {
         throw new BadRequestException('title is required');
       }
       if (!file && !createDocumentDto.fileUrl) {
-        throw new BadRequestException('Either a file or fileUrl must be provided');
+        throw new BadRequestException(
+          'Either a file or fileUrl must be provided',
+        );
       }
 
       // Get user and tenant from request
@@ -175,32 +205,67 @@ export class DocumentController {
       return await this.documentService.createDocument(
         createDocumentDto,
         userId,
-        tenantId
+        tenantId,
       );
     } catch (error) {
       console.error('Error creating document:', error);
       if (error instanceof BadRequestException) {
         throw error;
       }
-      throw new BadRequestException(`Failed to create document: ${error.message}`);
+      throw new BadRequestException(
+        `Failed to create document: ${error.message}`,
+      );
     }
   }
 
   @Get()
-  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN, UserRole.TRUCK_OWNER, UserRole.DRIVER, UserRole.CARGO_OWNER)
+  @Roles(
+    UserRole.ADMIN,
+    UserRole.SUPER_ADMIN,
+    UserRole.TRUCK_OWNER,
+    UserRole.DRIVER,
+    UserRole.CARGO_OWNER,
+  )
   @ApiOperation({
     summary: 'Get documents with filtering and pagination - Updated',
-    description: 'Retrieve documents with advanced filtering, sorting, and pagination'
+    description:
+      'Retrieve documents with advanced filtering, sorting, and pagination',
   })
-  @ApiQuery({ name: 'entityType', required: false, enum: ['USER', 'DRIVER', 'TRUCK', 'CARGO', 'TRIP'] })
+  @ApiQuery({
+    name: 'entityType',
+    required: false,
+    enum: ['USER', 'DRIVER', 'TRUCK', 'CARGO', 'TRIP'],
+  })
   @ApiQuery({ name: 'entityId', required: false, type: String })
-  @ApiQuery({ name: 'documentType', required: false, enum: ['DRIVER_LICENSE', 'VEHICLE_REGISTRATION', 'CARGO_MANIFEST'] })
-  @ApiQuery({ name: 'category', required: false, enum: ['IDENTITY', 'LICENSE', 'INSURANCE', 'CERTIFICATION'] })
-  @ApiQuery({ name: 'status', required: false, enum: ['PENDING', 'VERIFIED', 'REJECTED', 'EXPIRED'] })
-  @ApiQuery({ name: 'priority', required: false, enum: ['LOW', 'NORMAL', 'HIGH', 'URGENT'] })
+  @ApiQuery({
+    name: 'documentType',
+    required: false,
+    enum: ['DRIVER_LICENSE', 'VEHICLE_REGISTRATION', 'CARGO_MANIFEST'],
+  })
+  @ApiQuery({
+    name: 'category',
+    required: false,
+    enum: ['IDENTITY', 'LICENSE', 'INSURANCE', 'CERTIFICATION'],
+  })
+  @ApiQuery({
+    name: 'status',
+    required: false,
+    enum: ['PENDING', 'VERIFIED', 'REJECTED', 'EXPIRED'],
+  })
+  @ApiQuery({
+    name: 'priority',
+    required: false,
+    enum: ['LOW', 'NORMAL', 'HIGH', 'URGENT'],
+  })
   @ApiQuery({ name: 'search', required: false, type: String })
   @ApiQuery({ name: 'page', required: false, type: Number, minimum: 1 })
-  @ApiQuery({ name: 'limit', required: false, type: Number, minimum: 1, maximum: 100 })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    minimum: 1,
+    maximum: 100,
+  })
   @ApiResponse({
     status: 200,
     description: 'Documents retrieved successfully',
@@ -209,27 +274,33 @@ export class DocumentController {
       properties: {
         documents: {
           type: 'array',
-          items: { $ref: '#/components/schemas/Document' }
+          items: { $ref: '#/components/schemas/Document' },
         },
-        total: { type: 'number' }
-      }
-    }
+        total: { type: 'number' },
+      },
+    },
   })
   async getDocuments(
     @Query() filterDto: DocumentFilterDto,
     @Req() req?: Request,
-  ): Promise<{ documents: Document[]; total: number; page?: number; limit?: number; totalPages?: number }> {
+  ): Promise<{
+    documents: Document[];
+    total: number;
+    page?: number;
+    limit?: number;
+    totalPages?: number;
+  }> {
     const tenantId = req?.user?.tenantId;
     if (!tenantId) {
       throw new BadRequestException('Tenant ID is required');
     }
     const result = await this.documentService.getDocuments(filterDto, tenantId);
-    
+
     // Calculate pagination info for frontend compatibility
     const page = filterDto.page || 1;
     const limit = Math.min(filterDto.limit || 20, 100);
     const totalPages = Math.ceil(result.total / limit);
-    
+
     return {
       ...result,
       page,
@@ -239,19 +310,32 @@ export class DocumentController {
   }
 
   @Get('search')
-  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN, UserRole.TRUCK_OWNER, UserRole.DRIVER, UserRole.CARGO_OWNER)
+  @Roles(
+    UserRole.ADMIN,
+    UserRole.SUPER_ADMIN,
+    UserRole.TRUCK_OWNER,
+    UserRole.DRIVER,
+    UserRole.CARGO_OWNER,
+  )
   @ApiOperation({
     summary: 'Search documents across all fields',
-    description: 'Full-text search across document titles, descriptions, and metadata with relevance scoring'
+    description:
+      'Full-text search across document titles, descriptions, and metadata with relevance scoring',
   })
   @ApiQuery({ name: 'query', required: false, type: String })
   @ApiQuery({ name: 'entityTypes', required: false, type: [String] })
   @ApiQuery({ name: 'categories', required: false, type: [String] })
-  @ApiQuery({ name: 'limit', required: false, type: Number, minimum: 1, maximum: 100 })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    minimum: 1,
+    maximum: 100,
+  })
   @ApiResponse({
     status: 200,
     description: 'Search results',
-    type: [Document]
+    type: [Document],
   })
   async searchDocuments(
     @Query() searchDto: DocumentSearchDto,
@@ -262,46 +346,63 @@ export class DocumentController {
   }
 
   @Get('expiring')
-  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN, UserRole.TRUCK_OWNER, UserRole.CARGO_OWNER)
+  @Roles(
+    UserRole.ADMIN,
+    UserRole.SUPER_ADMIN,
+    UserRole.TRUCK_OWNER,
+    UserRole.CARGO_OWNER,
+  )
   @ApiOperation({
     summary: 'Get documents expiring soon',
-    description: 'Retrieve documents that are expiring within a specified number of days'
+    description:
+      'Retrieve documents that are expiring within a specified number of days',
   })
   @ApiQuery({ name: 'days', required: false, type: Number, default: 30 })
   @ApiResponse({
     status: 200,
     description: 'Documents expiring soon',
-    type: [Document]
+    type: [Document],
   })
   async getDocumentsExpiringSoon(
     @Query('days') days: number = 30,
     @Req() req: Request,
   ): Promise<Document[]> {
-    return this.documentService.getDocumentsExpiringSoon(days, req.user.tenantId);
+    return this.documentService.getDocumentsExpiringSoon(
+      days,
+      req.user.tenantId,
+    );
   }
 
   @Get('renewal')
-  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN, UserRole.TRUCK_OWNER, UserRole.CARGO_OWNER)
+  @Roles(
+    UserRole.ADMIN,
+    UserRole.SUPER_ADMIN,
+    UserRole.TRUCK_OWNER,
+    UserRole.CARGO_OWNER,
+  )
   @ApiOperation({
     summary: 'Get documents requiring renewal',
-    description: 'Retrieve documents that require renewal'
+    description: 'Retrieve documents that require renewal',
   })
   @ApiResponse({
     status: 200,
     description: 'Documents requiring renewal',
-    type: [Document]
+    type: [Document],
   })
-  async getDocumentsRequiringRenewal(
-    @Req() req: Request,
-  ): Promise<Document[]> {
+  async getDocumentsRequiringRenewal(@Req() req: Request): Promise<Document[]> {
     return this.documentService.getDocumentsRequiringRenewal(req.user.tenantId);
   }
 
   @Get('statistics')
-  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN, UserRole.TRUCK_OWNER, UserRole.CARGO_OWNER)
+  @Roles(
+    UserRole.ADMIN,
+    UserRole.SUPER_ADMIN,
+    UserRole.TRUCK_OWNER,
+    UserRole.CARGO_OWNER,
+  )
   @ApiOperation({
     summary: 'Get document statistics',
-    description: 'Retrieve comprehensive statistics about documents'
+    description: 'Retrieve comprehensive statistics about documents',
   })
   @ApiResponse({
     status: 200,
@@ -313,28 +414,35 @@ export class DocumentController {
         verified: { type: 'number' },
         expired: { type: 'number' },
         pending: { type: 'number' },
-        breakdown: { type: 'array' }
-      }
-    }
+        breakdown: { type: 'array' },
+      },
+    },
   })
-  async getDocumentStatistics(
-    @Req() req: Request,
-  ): Promise<any> {
+  async getDocumentStatistics(@Req() req: Request): Promise<any> {
     return this.documentService.getDocumentStatistics(req.user.tenantId);
   }
 
   @Get('entity/:entityType/:entityId')
-  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN, UserRole.TRUCK_OWNER, UserRole.DRIVER, UserRole.CARGO_OWNER)
+  @Roles(
+    UserRole.ADMIN,
+    UserRole.SUPER_ADMIN,
+    UserRole.TRUCK_OWNER,
+    UserRole.DRIVER,
+    UserRole.CARGO_OWNER,
+  )
   @ApiOperation({
     summary: 'Get documents by entity',
-    description: 'Retrieve all documents for a specific entity'
+    description: 'Retrieve all documents for a specific entity',
   })
-  @ApiParam({ name: 'entityType', enum: ['USER', 'DRIVER', 'TRUCK', 'CARGO', 'TRIP'] })
+  @ApiParam({
+    name: 'entityType',
+    enum: ['USER', 'DRIVER', 'TRUCK', 'CARGO', 'TRIP'],
+  })
   @ApiParam({ name: 'entityId', type: String })
   @ApiResponse({
     status: 200,
     description: 'Documents for the entity',
-    type: [Document]
+    type: [Document],
   })
   async getDocumentsByEntity(
     @Param('entityType') entityType: string,
@@ -344,25 +452,31 @@ export class DocumentController {
     return this.documentService.getDocumentsByEntity(
       entityType as any,
       entityId,
-      req.user.tenantId
+      req.user.tenantId,
     );
   }
 
   @Get(':id')
-  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN, UserRole.TRUCK_OWNER, UserRole.DRIVER, UserRole.CARGO_OWNER)
+  @Roles(
+    UserRole.ADMIN,
+    UserRole.SUPER_ADMIN,
+    UserRole.TRUCK_OWNER,
+    UserRole.DRIVER,
+    UserRole.CARGO_OWNER,
+  )
   @ApiOperation({
     summary: 'Get document by ID',
-    description: 'Retrieve a specific document by its ID'
+    description: 'Retrieve a specific document by its ID',
   })
   @ApiParam({ name: 'id', type: String })
   @ApiResponse({
     status: 200,
     description: 'Document retrieved successfully',
-    type: Document
+    type: Document,
   })
   @ApiResponse({
     status: 404,
-    description: 'Document not found'
+    description: 'Document not found',
   })
   async getDocumentById(
     @Param('id') id: string,
@@ -372,16 +486,22 @@ export class DocumentController {
   }
 
   @Put(':id')
-  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN, UserRole.TRUCK_OWNER, UserRole.DRIVER, UserRole.CARGO_OWNER)
+  @Roles(
+    UserRole.ADMIN,
+    UserRole.SUPER_ADMIN,
+    UserRole.TRUCK_OWNER,
+    UserRole.DRIVER,
+    UserRole.CARGO_OWNER,
+  )
   @ApiOperation({
     summary: 'Update document',
-    description: 'Update an existing document with new information or file'
+    description: 'Update an existing document with new information or file',
   })
   @ApiParam({ name: 'id', type: String })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
     description: 'Document update data',
-    type: UpdateDocumentDto
+    type: UpdateDocumentDto,
   })
   @ApiBody({
     description: 'Document update data with optional file',
@@ -391,15 +511,15 @@ export class DocumentController {
         file: {
           type: 'string',
           format: 'binary',
-          description: 'New document file (optional)'
-        }
-      }
-    }
+          description: 'New document file (optional)',
+        },
+      },
+    },
   })
   @ApiResponse({
     status: 200,
     description: 'Document updated successfully',
-    type: Document
+    type: Document,
   })
   @UseInterceptors(FileInterceptor('file'))
   async updateDocument(
@@ -428,7 +548,7 @@ export class DocumentController {
       id,
       updateDocumentDto,
       req.user.userId,
-      req.user.tenantId
+      req.user.tenantId,
     );
   }
 
@@ -436,14 +556,14 @@ export class DocumentController {
   @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN, UserRole.TRUCK_OWNER)
   @ApiOperation({
     summary: 'Verify document',
-    description: 'Mark a document as verified with verification notes'
+    description: 'Mark a document as verified with verification notes',
   })
   @ApiParam({ name: 'id', type: String })
   @ApiBody({ type: DocumentVerificationDto })
   @ApiResponse({
     status: 200,
     description: 'Document verified successfully',
-    type: Document
+    type: Document,
   })
   async verifyDocument(
     @Param('id') id: string,
@@ -454,7 +574,7 @@ export class DocumentController {
       id,
       verificationData,
       req.user.userId,
-      req.user.tenantId
+      req.user.tenantId,
     );
   }
 
@@ -462,14 +582,14 @@ export class DocumentController {
   @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN, UserRole.TRUCK_OWNER)
   @ApiOperation({
     summary: 'Reject document',
-    description: 'Mark a document as rejected with rejection reason'
+    description: 'Mark a document as rejected with rejection reason',
   })
   @ApiParam({ name: 'id', type: String })
   @ApiBody({ type: DocumentRejectionDto })
   @ApiResponse({
     status: 200,
     description: 'Document rejected successfully',
-    type: Document
+    type: Document,
   })
   async rejectDocument(
     @Param('id') id: string,
@@ -480,7 +600,7 @@ export class DocumentController {
       id,
       rejectionData,
       req.user.userId,
-      req.user.tenantId
+      req.user.tenantId,
     );
   }
 
@@ -488,13 +608,13 @@ export class DocumentController {
   @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN, UserRole.TRUCK_OWNER)
   @ApiOperation({
     summary: 'Archive document',
-    description: 'Archive a document (soft delete)'
+    description: 'Archive a document (soft delete)',
   })
   @ApiParam({ name: 'id', type: String })
   @ApiResponse({
     status: 200,
     description: 'Document archived successfully',
-    type: Document
+    type: Document,
   })
   async archiveDocument(
     @Param('id') id: string,
@@ -503,7 +623,7 @@ export class DocumentController {
     return this.documentService.archiveDocument(
       id,
       req.user.userId,
-      req.user.tenantId
+      req.user.tenantId,
     );
   }
 
@@ -511,12 +631,13 @@ export class DocumentController {
   @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
   @ApiOperation({
     summary: 'Delete document',
-    description: 'Permanently delete a document (soft delete for verified documents)'
+    description:
+      'Permanently delete a document (soft delete for verified documents)',
   })
   @ApiParam({ name: 'id', type: String })
   @ApiResponse({
     status: 200,
-    description: 'Document deleted successfully'
+    description: 'Document deleted successfully',
   })
   async deleteDocument(
     @Param('id') id: string,
@@ -525,21 +646,26 @@ export class DocumentController {
     return this.documentService.deleteDocument(
       id,
       req.user.userId,
-      req.user.tenantId
+      req.user.tenantId,
     );
   }
 
   @Post('bulk/status')
-  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN, UserRole.TRUCK_OWNER, UserRole.CARGO_OWNER)
+  @Roles(
+    UserRole.ADMIN,
+    UserRole.SUPER_ADMIN,
+    UserRole.TRUCK_OWNER,
+    UserRole.CARGO_OWNER,
+  )
   @ApiOperation({
     summary: 'Bulk update document status',
-    description: 'Update the status of multiple documents at once'
+    description: 'Update the status of multiple documents at once',
   })
   @ApiBody({ type: BulkDocumentUpdateDto })
   @ApiResponse({
     status: 200,
     description: 'Documents updated successfully',
-    type: [Document]
+    type: [Document],
   })
   async bulkUpdateStatus(
     @Body() bulkUpdateDto: BulkDocumentUpdateDto,
@@ -549,28 +675,36 @@ export class DocumentController {
       bulkUpdateDto.documentIds,
       bulkUpdateDto.status,
       req.user.userId,
-      req.user.tenantId
+      req.user.tenantId,
     );
   }
 
   @Get('download/:id')
-  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN, UserRole.TRUCK_OWNER, UserRole.DRIVER)
+  @Roles(
+    UserRole.ADMIN,
+    UserRole.SUPER_ADMIN,
+    UserRole.TRUCK_OWNER,
+    UserRole.DRIVER,
+  )
   @ApiOperation({
     summary: 'Download document',
-    description: 'Download a document file'
+    description: 'Download a document file',
   })
   @ApiParam({ name: 'id', type: String })
   @ApiResponse({
     status: 200,
-    description: 'Document file downloaded successfully'
+    description: 'Document file downloaded successfully',
   })
   async downloadDocument(
     @Param('id') id: string,
     @Req() req: Request,
     @Res() res: Response,
   ): Promise<void> {
-    const document = await this.documentService.getDocumentById(id, req.user.tenantId);
-    
+    const document = await this.documentService.getDocumentById(
+      id,
+      req.user.tenantId,
+    );
+
     // Extract file path from fileUrl
     const fileUrl = document.fileUrl;
     if (!fileUrl) {
@@ -586,36 +720,51 @@ export class DocumentController {
       // If fileUrl is a relative path, use it directly
       urlPath = fileUrl.startsWith('/') ? fileUrl : `/${fileUrl}`;
     }
-    
+
     const filePath = join(process.cwd(), urlPath);
 
     if (!fs.existsSync(filePath)) {
       throw new NotFoundException(`File not found on server: ${filePath}`);
     }
 
-    res.setHeader('Content-Type', document.mimeType || 'application/octet-stream');
-    res.setHeader('Content-Disposition', `inline; filename="${document.fileName}"`);
+    res.setHeader(
+      'Content-Type',
+      document.mimeType || 'application/octet-stream',
+    );
+    res.setHeader(
+      'Content-Disposition',
+      `inline; filename="${document.fileName}"`,
+    );
     res.sendFile(filePath);
   }
 
   @Get('serve/:id')
-  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN, UserRole.TRUCK_OWNER, UserRole.DRIVER, UserRole.CARGO_OWNER)
+  @Roles(
+    UserRole.ADMIN,
+    UserRole.SUPER_ADMIN,
+    UserRole.TRUCK_OWNER,
+    UserRole.DRIVER,
+    UserRole.CARGO_OWNER,
+  )
   @ApiOperation({
     summary: 'Serve document file',
-    description: 'Serve a document file for viewing (inline)'
+    description: 'Serve a document file for viewing (inline)',
   })
   @ApiParam({ name: 'id', type: String })
   @ApiResponse({
     status: 200,
-    description: 'Document file served successfully'
+    description: 'Document file served successfully',
   })
   async serveDocument(
     @Param('id') id: string,
     @Req() req: Request,
     @Res() res: Response,
   ): Promise<void> {
-    const document = await this.documentService.getDocumentById(id, req.user.tenantId);
-    
+    const document = await this.documentService.getDocumentById(
+      id,
+      req.user.tenantId,
+    );
+
     const fileUrl = document.fileUrl;
     if (!fileUrl) {
       throw new NotFoundException('Document file not found');
@@ -629,15 +778,21 @@ export class DocumentController {
     } catch {
       urlPath = fileUrl.startsWith('/') ? fileUrl : `/${fileUrl}`;
     }
-    
+
     const filePath = join(process.cwd(), urlPath);
 
     if (!fs.existsSync(filePath)) {
       throw new NotFoundException(`File not found on server: ${filePath}`);
     }
 
-    res.setHeader('Content-Type', document.mimeType || 'application/octet-stream');
-    res.setHeader('Content-Disposition', `inline; filename="${document.fileName}"`);
+    res.setHeader(
+      'Content-Type',
+      document.mimeType || 'application/octet-stream',
+    );
+    res.setHeader(
+      'Content-Disposition',
+      `inline; filename="${document.fileName}"`,
+    );
     res.setHeader('Cache-Control', 'public, max-age=31536000');
     res.sendFile(filePath);
   }

@@ -192,13 +192,13 @@ export class MLPricingService {
       );
 
       // Evaluate model performance
-      const performanceMetrics = await this.evaluateModel(
+      const performanceMetrics = this.evaluateModel(
         trainingResult.model,
         engineeredFeatures.testData,
       );
 
       // Check for bias
-      const biasMetrics = await this.detectBiasMetrics(
+      const biasMetrics = this.detectBiasMetrics(
         trainingResult.model,
         engineeredFeatures.testData,
       );
@@ -275,10 +275,10 @@ export class MLPricingService {
       const performance = this.calculatePerformanceMetrics(recentPredictions);
 
       // Check for data drift
-      const driftMetrics = await this.checkDataDrift(model, tenantId);
+      const driftMetrics = this.checkDataDrift(model, tenantId);
 
       // Check for bias drift
-      const biasDrift = await this.checkBiasDrift(model, tenantId);
+      const biasDrift = this.checkBiasDrift(model, tenantId);
 
       return {
         modelId,
@@ -339,7 +339,7 @@ export class MLPricingService {
       );
 
       // Compare performance
-      const performanceComparison = await this.compareModels(
+      const performanceComparison = this.compareModels(
         currentModel.id,
         trainResult.modelId,
         tenantId,
@@ -389,7 +389,7 @@ export class MLPricingService {
       const mlModel = await this.loadModel(model);
 
       // Generate explanations
-      const explanations = await this.generateExplanations(mlModel, prediction);
+      const explanations = this.generateExplanations(mlModel, prediction);
 
       return {
         prediction,
@@ -430,7 +430,7 @@ export class MLPricingService {
       });
 
       // Analyze bias across different dimensions
-      const biasAnalysis = await this.analyzeBias(recentPredictions);
+      const biasAnalysis = this.analyzeBias(recentPredictions);
 
       // Generate recommendations
       const recommendations = this.generateBiasRecommendations(biasAnalysis);
@@ -757,10 +757,11 @@ export class MLPricingService {
       trainingTime: Math.random() * 1000 + 100,
       trainingSamples: engineeredFeatures.features.length,
       validationSamples: Math.floor(engineeredFeatures.features.length * 0.2),
-      testSamples: engineeredFeatures.testData.length,
-      epochs: hyperparameters?.epochs || 100,
-      batchSize: hyperparameters?.batchSize || 32,
-      learningRate: hyperparameters?.learningRate || 0.001,
+      testSamples: (engineeredFeatures.testData as unknown[]).length,
+      epochs: (hyperparameters as { epochs?: number })?.epochs || 100,
+      batchSize: (hyperparameters as { batchSize?: number })?.batchSize || 32,
+      learningRate:
+        (hyperparameters as { learningRate?: number })?.learningRate || 0.001,
       lossHistory: Array.from({ length: 10 }, () => Math.random()),
       accuracyHistory: Array.from({ length: 10 }, () => Math.random()),
     };
@@ -773,7 +774,21 @@ export class MLPricingService {
     };
   }
 
-  private async evaluateModel(model: any, testData: any[]): Promise<any> {
+  private evaluateModel(
+    _model: unknown,
+    _testData: unknown[],
+  ): {
+    mse: number;
+    mae: number;
+    rmse: number;
+    r2: number;
+    mape: number;
+    accuracy: number;
+    precision: number;
+    recall: number;
+    f1Score: number;
+    crossValidationScore: number;
+  } {
     // Mock model evaluation
     return {
       mse: Math.random() * 1000,
@@ -789,7 +804,18 @@ export class MLPricingService {
     };
   }
 
-  private async detectBiasMetrics(model: any, testData: any[]): Promise<any> {
+  private detectBiasMetrics(
+    _model: unknown,
+    _testData: unknown[],
+  ): {
+    genderBias: number;
+    ageBias: number;
+    locationBias: number;
+    incomeBias: number;
+    overallBias: number;
+    biasDetected: boolean;
+    biasMitigationApplied: boolean;
+  } {
     // Mock bias detection
     return {
       genderBias: Math.random() * 0.2,
@@ -830,10 +856,15 @@ export class MLPricingService {
     };
   }
 
-  private async checkDataDrift(
-    model: PricingModel,
-    tenantId: string,
-  ): Promise<any> {
+  private checkDataDrift(
+    _model: PricingModel,
+    _tenantId: string,
+  ): {
+    featureDrift: Record<string, number>;
+    predictionDrift: number;
+    dataDrift: number;
+    conceptDrift: number;
+  } {
     // Mock data drift detection
     return {
       featureDrift: {
@@ -846,10 +877,14 @@ export class MLPricingService {
     };
   }
 
-  private async checkBiasDrift(
-    model: PricingModel,
-    tenantId: string,
-  ): Promise<any> {
+  private checkBiasDrift(
+    _model: PricingModel,
+    _tenantId: string,
+  ): {
+    biasDrift: number;
+    biasThreshold: number;
+    biasDetected: boolean;
+  } {
     // Mock bias drift detection
     return {
       biasDrift: Math.random() * 0.1,
@@ -858,11 +893,15 @@ export class MLPricingService {
     };
   }
 
-  private async compareModels(
-    model1Id: string,
-    model2Id: string,
-    tenantId: string,
-  ): Promise<any> {
+  private compareModels(
+    _model1Id: string,
+    _model2Id: string,
+    _tenantId: string,
+  ): {
+    newModelBetter: boolean;
+    performanceImprovement: number;
+    accuracyComparison: { model1: number; model2: number };
+  } {
     // Mock model comparison
     return {
       newModelBetter: Math.random() > 0.3,
@@ -873,7 +912,7 @@ export class MLPricingService {
 
   private async activateModel(
     modelId: string,
-    tenantId: string,
+    _tenantId: string,
   ): Promise<void> {
     await this.pricingModelRepository.update(modelId, {
       status: ModelStatus.ACTIVE,
@@ -882,25 +921,36 @@ export class MLPricingService {
 
   private async deactivateModel(
     modelId: string,
-    tenantId: string,
+    _tenantId: string,
   ): Promise<void> {
     await this.pricingModelRepository.update(modelId, {
       status: ModelStatus.INACTIVE,
     });
   }
 
-  private async generateExplanations(
-    model: any,
+  private generateExplanations(
+    _model: unknown,
     prediction: PricingPrediction,
-  ): Promise<any> {
+  ): {
+    shapValues: Record<string, number> | null;
+    limeExplanation: unknown;
+  } {
     // Mock explanation generation
     return {
-      shapValues: prediction.shapValues,
-      limeExplanation: prediction.limeExplanation,
+      shapValues: prediction.shapValues || null,
+      limeExplanation: prediction.limeExplanation || null,
     };
   }
 
-  private async analyzeBias(predictions: PricingPrediction[]): Promise<any> {
+  private analyzeBias(_predictions: PricingPrediction[]): {
+    genderBias: number;
+    ageBias: number;
+    locationBias: number;
+    incomeBias: number;
+    overallBias: number;
+    biasDetected: boolean;
+    biasMitigationApplied: boolean;
+  } {
     // Mock bias analysis
     return {
       genderBias: Math.random() * 0.2,
@@ -913,7 +963,9 @@ export class MLPricingService {
     };
   }
 
-  private generateBiasRecommendations(biasAnalysis: any): string[] {
+  private generateBiasRecommendations(biasAnalysis: {
+    overallBias: number;
+  }): string[] {
     const recommendations: string[] = [];
 
     if (biasAnalysis.overallBias > 0.1) {
@@ -928,27 +980,41 @@ export class MLPricingService {
   }
 
   // Utility methods for feature engineering
-  private calculateRouteEfficiency(routeComplexity: any): number {
+  private calculateRouteEfficiency(routeComplexity: {
+    urbanPercentage?: number;
+    tollRoads?: number;
+  }): number {
     return (
       1 -
-      (routeComplexity.urbanPercentage * 0.3 + routeComplexity.tollRoads * 0.1)
+      ((routeComplexity.urbanPercentage || 0) * 0.3 +
+        (routeComplexity.tollRoads || 0) * 0.1)
     );
   }
 
-  private calculateMarketVolatility(marketConditions: any): number {
+  private calculateMarketVolatility(marketConditions: {
+    marketVolatility?: number;
+  }): number {
     return marketConditions.marketVolatility || 0.1;
   }
 
-  private calculateDriverEfficiency(driverMetrics: any): number {
+  private calculateDriverEfficiency(driverMetrics: {
+    driverRating?: number;
+    safetyScore?: number;
+    onTimeDeliveryRate?: number;
+  }): number {
     return (
-      (driverMetrics.driverRating * 0.4 +
-        driverMetrics.safetyScore * 0.3 +
-        driverMetrics.onTimeDeliveryRate * 0.3) /
+      ((driverMetrics.driverRating || 0) * 0.4 +
+        (driverMetrics.safetyScore || 0) * 0.3 +
+        (driverMetrics.onTimeDeliveryRate || 0) * 0.3) /
       100
     );
   }
 
-  private calculateEnvironmentalRisk(environmentalFactors: any): number {
+  private calculateEnvironmentalRisk(environmentalFactors: {
+    weatherConditions?: string;
+    trafficConditions?: string;
+    roadConditions?: string;
+  }): number {
     let risk = 0;
     if (environmentalFactors.weatherConditions === 'adverse') risk += 0.3;
     if (environmentalFactors.trafficConditions === 'heavy') risk += 0.2;
@@ -958,18 +1024,24 @@ export class MLPricingService {
 
   private calculateUncertainty(features: PricingFeatures): number {
     // Calculate uncertainty based on feature quality and market conditions
-    return features.marketConditions.marketVolatility * 0.5 + 0.1;
+    const volatility =
+      (features.marketConditions as { marketVolatility?: number })
+        ?.marketVolatility || 0.1;
+    return volatility * 0.5 + 0.1;
   }
 
   private prepareModelInput(
     features: PricingFeatures,
-    modelConfig: PricingModel,
-  ): any {
+    _modelConfig: PricingModel,
+  ): Record<string, unknown> {
     // Convert features to model input format
-    return Object.keys(features).reduce((input, key) => {
-      input[key] = features[key];
-      return input;
-    }, {});
+    return Object.keys(features).reduce(
+      (input: Record<string, unknown>, key) => {
+        input[key] = (features as unknown as Record<string, unknown>)[key];
+        return input;
+      },
+      {},
+    );
   }
 
   private applyBusinessRules(
@@ -990,48 +1062,73 @@ export class MLPricingService {
     return adjustedPrediction;
   }
 
-  private mockPrediction(features: any): number {
+  private mockPrediction(features: {
+    distance?: number;
+    weight?: number;
+    marketConditions?: { demandLevel?: number };
+  }): number {
     // Mock prediction (in real implementation, use actual ML model)
-    const basePrice = features.distance * 2.5;
-    const weightFactor = features.weight / 1000; // per 1000 lbs
-    const marketFactor = features.marketConditions?.demandLevel || 1.0;
+    const basePrice = (features.distance || 0) * 2.5;
+    const weightFactor = (features.weight || 0) / 1000; // per 1000 lbs
+    const marketFactor =
+      (features.marketConditions as { demandLevel?: number })?.demandLevel ||
+      1.0;
 
     return basePrice * (1 + weightFactor * 0.1) * marketFactor;
   }
 
-  private engineerFeaturesForTrip(data: any): any {
+  private engineerFeaturesForTrip(data: {
+    trip?: { totalDistance?: number };
+    load?: { weight?: number; volume?: number };
+  }): {
+    distance: number | undefined;
+    weight: number | undefined;
+    volume: number | undefined;
+  } {
     // Feature engineering for a single trip
     return {
-      distance: data.trip.totalDistance,
-      weight: data.load.weight,
-      volume: data.load.volume,
+      distance: data.trip?.totalDistance,
+      weight: data.load?.weight,
+      volume: data.load?.volume,
       // Add more engineered features
     };
   }
 
-  private selectFeatures(features: any[]): string[] {
+  private selectFeatures(_features: unknown[]): string[] {
     // Feature selection logic
     return ['distance', 'weight', 'volume', 'marketDemand', 'fuelPrice'];
   }
 
   private calculateScalingParams(
-    features: any[],
+    features: Array<Record<string, unknown>>,
     selectedFeatures: string[],
-  ): any {
+  ): Record<
+    string,
+    { mean: number; std: number }
+  > {
     // Calculate scaling parameters
-    return selectedFeatures.reduce((params, feature) => {
-      const values = features
-        .map((f) => f[feature])
-        .filter((v) => v !== undefined);
-      params[feature] = {
-        mean: values.reduce((sum, v) => sum + v, 0) / values.length,
-        std: Math.sqrt(
-          values.reduce((sum, v) => sum + (v - params[feature].mean) ** 2, 0) /
-            values.length,
-        ),
-      };
-      return params;
-    }, {});
+    return selectedFeatures.reduce(
+      (
+        params: Record<string, { mean: number; std: number }>,
+        feature: string,
+      ) => {
+        const values = features
+          .map((f) => f[feature] as number | undefined)
+          .filter((v): v is number => v !== undefined && typeof v === 'number');
+        if (values.length > 0) {
+          const mean = values.reduce((sum, v) => sum + v, 0) / values.length;
+          params[feature] = {
+            mean,
+            std: Math.sqrt(
+              values.reduce((sum, v) => sum + (v - mean) ** 2, 0) /
+                values.length,
+            ),
+          };
+        }
+        return params;
+      },
+      {},
+    );
   }
 
   private generateFeatureImportance(

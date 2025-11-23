@@ -5,7 +5,7 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   OneToMany,
-  Index
+  Index,
 } from 'typeorm';
 
 export enum LenderStatus {

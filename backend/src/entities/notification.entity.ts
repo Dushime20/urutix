@@ -13,13 +13,13 @@ export enum NotificationType {
   SYSTEM_MAINTENANCE = 'SYSTEM_MAINTENANCE',
   SYSTEM_UPDATE = 'SYSTEM_UPDATE',
   SYSTEM_ERROR = 'SYSTEM_ERROR',
-  
+
   // User notifications
   USER_WELCOME = 'USER_WELCOME',
   USER_VERIFICATION = 'USER_VERIFICATION',
   USER_PASSWORD_RESET = 'USER_PASSWORD_RESET',
   USER_ACCOUNT_LOCKED = 'USER_ACCOUNT_LOCKED',
-  
+
   // Driver notifications
   DRIVER_ASSIGNMENT = 'DRIVER_ASSIGNMENT',
   DRIVER_TRIP_START = 'DRIVER_TRIP_START',
@@ -28,21 +28,21 @@ export enum NotificationType {
   DRIVER_DOCUMENT_EXPIRY = 'DRIVER_DOCUMENT_EXPIRY',
   DRIVER_SAFETY_ALERT = 'DRIVER_SAFETY_ALERT',
   DRIVER_FATIGUE_WARNING = 'DRIVER_FATIGUE_WARNING',
-  
+
   // Vehicle notifications
   VEHICLE_MAINTENANCE_DUE = 'VEHICLE_MAINTENANCE_DUE',
   VEHICLE_INSPECTION_DUE = 'VEHICLE_INSPECTION_DUE',
   VEHICLE_INSURANCE_EXPIRY = 'VEHICLE_INSURANCE_EXPIRY',
   VEHICLE_REGISTRATION_EXPIRY = 'VEHICLE_REGISTRATION_EXPIRY',
   VEHICLE_BREAKDOWN = 'VEHICLE_BREAKDOWN',
-  
+
   // Cargo notifications
   CARGO_PICKUP_REMINDER = 'CARGO_PICKUP_REMINDER',
   CARGO_DELIVERY_UPDATE = 'CARGO_DELIVERY_UPDATE',
   CARGO_DELAY = 'CARGO_DELAY',
   CARGO_DAMAGE = 'CARGO_DAMAGE',
   CARGO_CUSTOMS_UPDATE = 'CARGO_CUSTOMS_UPDATE',
-  
+
   // Trip notifications
   TRIP_CREATED = 'TRIP_CREATED',
   TRIP_STARTED = 'TRIP_STARTED',
@@ -52,7 +52,7 @@ export enum NotificationType {
   TRIP_ROUTE_CHANGE = 'TRIP_ROUTE_CHANGE',
   TRIP_UPDATE = 'TRIP_UPDATE',
   TRIP_STATUS = 'TRIP_STATUS',
-  
+
   // Financial notifications
   PAYMENT_RECEIVED = 'PAYMENT_RECEIVED',
   PAYMENT_DUE = 'PAYMENT_DUE',
@@ -61,7 +61,7 @@ export enum NotificationType {
   EXPENSE_APPROVED = 'EXPENSE_APPROVED',
   EXPENSE_REJECTED = 'EXPENSE_REJECTED',
   PAYMENT = 'PAYMENT',
-  
+
   // Compliance notifications
   LICENSE_EXPIRY = 'LICENSE_EXPIRY',
   CERTIFICATION_EXPIRY = 'CERTIFICATION_EXPIRY',
@@ -69,29 +69,29 @@ export enum NotificationType {
   PERMIT_EXPIRY = 'PERMIT_EXPIRY',
   AUDIT_DUE = 'AUDIT_DUE',
   VIOLATION_ALERT = 'VIOLATION_ALERT',
-  
+
   // Business notifications
   CONTRACT_EXPIRY = 'CONTRACT_EXPIRY',
   AGREEMENT_UPDATE = 'AGREEMENT_UPDATE',
   POLICY_CHANGE = 'POLICY_CHANGE',
   NEW_FEATURE = 'NEW_FEATURE',
-  
+
   // Emergency notifications
   EMERGENCY_ALERT = 'EMERGENCY_ALERT',
   ACCIDENT_REPORT = 'ACCIDENT_REPORT',
   WEATHER_WARNING = 'WEATHER_WARNING',
   ROAD_CLOSURE = 'ROAD_CLOSURE',
-  
+
   // Document notifications
   DOCUMENT_UPLOADED = 'DOCUMENT_UPLOADED',
   DOCUMENT_VERIFIED = 'DOCUMENT_VERIFIED',
   DOCUMENT_REJECTED = 'DOCUMENT_REJECTED',
-  
+
   // Other
   GENERAL = 'GENERAL',
   REMINDER = 'REMINDER',
   ALERT = 'ALERT',
-  INFO = 'INFO'
+  INFO = 'INFO',
 }
 
 export enum NotificationPriority {
@@ -99,7 +99,7 @@ export enum NotificationPriority {
   NORMAL = 'NORMAL',
   HIGH = 'HIGH',
   URGENT = 'URGENT',
-  CRITICAL = 'CRITICAL'
+  CRITICAL = 'CRITICAL',
 }
 
 export enum NotificationCategory {
@@ -118,7 +118,7 @@ export enum NotificationCategory {
   SAFETY = 'SAFETY',
   PERFORMANCE = 'PERFORMANCE',
   MAINTENANCE = 'MAINTENANCE',
-  MARKETING = 'MARKETING'
+  MARKETING = 'MARKETING',
 }
 
 export enum NotificationStatus {
@@ -127,7 +127,7 @@ export enum NotificationStatus {
   DELIVERED = 'DELIVERED',
   READ = 'READ',
   FAILED = 'FAILED',
-  CANCELLED = 'CANCELLED'
+  CANCELLED = 'CANCELLED',
 }
 
 export enum NotificationChannel {
@@ -137,7 +137,7 @@ export enum NotificationChannel {
   PUSH = 'PUSH',
   WEBHOOK = 'WEBHOOK',
   SLACK = 'SLACK',
-  TEAMS = 'TEAMS'
+  TEAMS = 'TEAMS',
 }
 
 export enum EntityType {
@@ -151,7 +151,7 @@ export enum EntityType {
   SYSTEM = 'SYSTEM',
   DOCUMENT = 'DOCUMENT',
   PAYMENT = 'PAYMENT',
-  EXPENSE = 'EXPENSE'
+  EXPENSE = 'EXPENSE',
 }
 
 @Entity('notifications')
@@ -177,7 +177,7 @@ export class Notification {
   @Column({
     type: 'enum',
     enum: EntityType,
-    comment: 'Type of entity this notification is related to'
+    comment: 'Type of entity this notification is related to',
   })
   entityType: EntityType;
 
@@ -187,28 +187,28 @@ export class Notification {
   @Column({
     type: 'enum',
     enum: NotificationType,
-    comment: 'Specific type of notification'
+    comment: 'Specific type of notification',
   })
   notificationType: NotificationType;
 
   @Column({
     type: 'enum',
     enum: NotificationCategory,
-    comment: 'Category of notification for grouping'
+    comment: 'Category of notification for grouping',
   })
   category: NotificationCategory;
 
   @Column({
     type: 'enum',
     enum: NotificationPriority,
-    default: NotificationPriority.NORMAL
+    default: NotificationPriority.NORMAL,
   })
   priority: NotificationPriority;
 
   @Column({
     type: 'enum',
     enum: NotificationStatus,
-    default: NotificationStatus.PENDING
+    default: NotificationStatus.PENDING,
   })
   status: NotificationStatus;
 
@@ -395,7 +395,10 @@ export class Notification {
   }
 
   get isDelivered(): boolean {
-    return this.status === NotificationStatus.DELIVERED || this.status === NotificationStatus.READ;
+    return (
+      this.status === NotificationStatus.DELIVERED ||
+      this.status === NotificationStatus.READ
+    );
   }
 
   get isFailed(): boolean {
@@ -444,16 +447,16 @@ export class Notification {
 
   get isQuietHours(): boolean {
     if (!this.userPreferences.quietHours) return false;
-    
+
     const now = new Date();
-    const currentTime = now.toLocaleTimeString('en-US', { 
-      hour12: false, 
-      timeZone: this.userPreferences.quietHours.timezone 
+    const currentTime = now.toLocaleTimeString('en-US', {
+      hour12: false,
+      timeZone: this.userPreferences.quietHours.timezone,
     });
-    
+
     const start = this.userPreferences.quietHours.start;
     const end = this.userPreferences.quietHours.end;
-    
+
     if (start <= end) {
       return currentTime >= start && currentTime <= end;
     } else {

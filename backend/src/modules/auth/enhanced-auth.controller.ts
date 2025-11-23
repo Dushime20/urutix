@@ -135,7 +135,7 @@ export class EnhancedAuthController {
       // Record failed attempt for rate limiting
       this.rateLimitGuard.recordFailedAttempt(
         clientIp,
-        req.headers['user-agent'] as string,
+        req.headers['user-agent'],
       );
 
       this.logger.error(

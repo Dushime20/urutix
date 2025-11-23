@@ -36,7 +36,7 @@ export class AutoLoanGeneratorService {
   async checkAndGenerateAutoLoan(
     cargoId: string,
     tripId: string,
-    tenantId: string
+    tenantId: string,
   ): Promise<LoanRequest | null> {
     try {
       this.logger.log(`Checking auto-loan eligibility for cargo ${cargoId}`);
@@ -71,7 +71,9 @@ export class AutoLoanGeneratorService {
       });
 
       if (existingLoan) {
-        this.logger.log('Auto-loan already exists for this cargo-trip combination');
+        this.logger.log(
+          'Auto-loan already exists for this cargo-trip combination',
+        );
         return existingLoan;
       }
 
@@ -80,14 +82,14 @@ export class AutoLoanGeneratorService {
         tenantId,
         tripId,
         cargoId,
-        load.loadValue || load.offeredPrice || 0
+        load.loadValue || load.offeredPrice || 0,
       );
 
       // Check if auto-approval criteria are met
       const autoApprovalEligible = this.checkAutoApprovalEligibility(
         riskAssessment,
         config,
-        load.loadValue || load.offeredPrice || 0
+        load.loadValue || load.offeredPrice || 0,
       );
 
       // Generate loan request
@@ -98,12 +100,12 @@ export class AutoLoanGeneratorService {
         cargoId,
         tripId,
         riskAssessment,
-        autoApprovalEligible
+        autoApprovalEligible,
       );
 
       if (loanRequest) {
         this.logger.log(`Auto-loan generated successfully: ${loanRequest.id}`);
-        
+
         // Emit event for notification and further processing
         this.eventEmitter.emit('auto.loan.generated', {
           loanId: loanRequest.id,
@@ -159,7 +161,7 @@ export class AutoLoanGeneratorService {
   private checkAutoApprovalEligibility(
     riskAssessment: RiskScore,
     config: AutoLoanConfig,
-    cargoValue: number
+    cargoValue: number,
   ): boolean {
     // Check risk score threshold
     if (riskAssessment.overall_score < config.auto_approval_threshold) {
@@ -191,7 +193,7 @@ export class AutoLoanGeneratorService {
     cargoId: string,
     tripId: string,
     riskAssessment: RiskScore,
-    autoApprovalEligible: boolean
+    autoApprovalEligible: boolean,
   ): Promise<LoanRequest | null> {
     try {
       // Get lender policy for this tenant
@@ -208,12 +210,13 @@ export class AutoLoanGeneratorService {
       const loanAmount = this.calculateLoanAmount(
         load.loadValue || load.offeredPrice || 0,
         riskAssessment,
-        lenderPolicy
+        lenderPolicy,
       );
 
       // Calculate interest rate with risk adjustment
       const baseInterestRate = lenderPolicy.interest_rate;
-      const adjustedInterestRate = baseInterestRate + riskAssessment.interest_rate_adjustment;
+      const adjustedInterestRate =
+        baseInterestRate + riskAssessment.interest_rate_adjustment;
 
       // Create loan request
       const loanRequest = this.loanRequestRepository.create({
@@ -224,7 +227,7 @@ export class AutoLoanGeneratorService {
         approved_amount: autoApprovalEligible ? loanAmount : null,
         interest_amount: 0,
         idempotency_key: `auto_${cargoId}_${tripId}`,
-        status: autoApprovalEligible ? 'approved' : 'pending' as any,
+        status: autoApprovalEligible ? 'approved' : ('pending' as any),
         metadata: {
           risk_assessment: riskAssessment,
           auto_generation_reason: 'Load assigned and ready to ship',
@@ -256,7 +259,7 @@ export class AutoLoanGeneratorService {
   private calculateLoanAmount(
     cargoValue: number,
     riskAssessment: RiskScore,
-    lenderPolicy: LenderPolicy
+    lenderPolicy: LenderPolicy,
   ): number {
     // Start with cargo value percentage
     let loanAmount = cargoValue * (lenderPolicy.advance_percentage || 0.7);
@@ -279,7 +282,9 @@ export class AutoLoanGeneratorService {
     return Math.round(loanAmount / 100) * 100;
   }
 
-  private async createAutoDisbursement(loanRequest: LoanRequest): Promise<void> {
+  private async createAutoDisbursement(
+    loanRequest: LoanRequest,
+  ): Promise<void> {
     // This would create a disbursement record for auto-approved loans
     // Implementation depends on your disbursement entity structure
     this.logger.log(`Auto-disbursement created for loan ${loanRequest.id}`);
@@ -319,7 +324,7 @@ export class AutoLoanGeneratorService {
           const loan = await this.checkAndGenerateAutoLoan(
             load.id,
             load.trips?.[0]?.id || '',
-            tenantId
+            tenantId,
           );
           if (loan) generated++;
         } catch (error) {
@@ -329,7 +334,7 @@ export class AutoLoanGeneratorService {
       }
 
       this.logger.log(
-        `Bulk auto-loan generation completed: ${processed} processed, ${generated} generated, ${errors} errors`
+        `Bulk auto-loan generation completed: ${processed} processed, ${generated} generated, ${errors} errors`,
       );
 
       return { processed, generated, errors };

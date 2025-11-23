@@ -1,15 +1,28 @@
-import { IsString, IsNumber, IsOptional, IsArray, IsEnum, IsBoolean, IsDateString, IsObject, ValidateNested, Min, Max, IsUUID } from 'class-validator';
+import {
+  IsString,
+  IsNumber,
+  IsOptional,
+  IsArray,
+  IsEnum,
+  IsBoolean,
+  IsDateString,
+  IsObject,
+  ValidateNested,
+  Min,
+  Max,
+  IsUUID,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { 
-  LoadType, 
-  EquipmentType, 
-  CargoType, 
-  UrgencyLevel, 
-  Visibility, 
-  PaymentTerms, 
-  PackagingType, 
-  SpecialRequirements 
+import {
+  LoadType,
+  EquipmentType,
+  CargoType,
+  UrgencyLevel,
+  Visibility,
+  PaymentTerms,
+  PackagingType,
+  SpecialRequirements,
 } from '../../../entities/load.entity';
 
 export class LoadLocationDto {
@@ -17,9 +30,9 @@ export class LoadLocationDto {
   @IsString()
   id: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Location type',
-    enum: ['PICKUP', 'DELIVERY', 'STOP', 'REFUEL', 'REST']
+    enum: ['PICKUP', 'DELIVERY', 'STOP', 'REFUEL', 'REST'],
   })
   @IsString()
   type: 'PICKUP' | 'DELIVERY' | 'STOP' | 'REFUEL' | 'REST';
@@ -175,18 +188,18 @@ export class CargoDto {
   @IsNumber()
   valueAmount?: number;
 
-  @ApiPropertyOptional({ 
+  @ApiPropertyOptional({
     description: 'Packaging type',
-    enum: PackagingType
+    enum: PackagingType,
   })
   @IsOptional()
   @IsEnum(PackagingType)
   packagingType?: PackagingType;
 
-  @ApiPropertyOptional({ 
+  @ApiPropertyOptional({
     description: 'Special requirements',
     enum: SpecialRequirements,
-    isArray: true
+    isArray: true,
   })
   @IsOptional()
   @IsArray()
@@ -347,39 +360,39 @@ export class CreateLoadDto {
   @IsNumber()
   volume?: number;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Load type',
-    enum: LoadType
+    enum: LoadType,
   })
   @IsEnum(LoadType)
   loadType: LoadType;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Equipment type',
-    enum: EquipmentType
+    enum: EquipmentType,
   })
   @IsEnum(EquipmentType)
   equipmentType: EquipmentType;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Cargo type',
-    enum: CargoType
+    enum: CargoType,
   })
   @IsEnum(CargoType)
   cargoType: CargoType;
 
-  @ApiPropertyOptional({ 
+  @ApiPropertyOptional({
     description: 'Urgency level',
     enum: UrgencyLevel,
-    default: UrgencyLevel.NORMAL
+    default: UrgencyLevel.NORMAL,
   })
   @IsOptional()
   @IsEnum(UrgencyLevel)
   urgencyLevel?: UrgencyLevel;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Visibility',
-    enum: Visibility
+    enum: Visibility,
   })
   @IsEnum(Visibility)
   visibility: Visibility;
@@ -447,17 +460,17 @@ export class CreateLoadDto {
   @Type(() => PricingDto)
   pricing?: PricingDto;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Payment terms',
-    enum: PaymentTerms
+    enum: PaymentTerms,
   })
   @IsEnum(PaymentTerms)
   paymentTerms: PaymentTerms;
 
-  @ApiPropertyOptional({ 
+  @ApiPropertyOptional({
     description: 'Packaging type',
     enum: PackagingType,
-    default: PackagingType.PALLETIZED
+    default: PackagingType.PALLETIZED,
   })
   @IsOptional()
   @IsEnum(PackagingType)
@@ -522,7 +535,10 @@ export class CreateLoadDto {
   @IsBoolean()
   isStackable?: boolean;
 
-  @ApiPropertyOptional({ description: 'Requires humidity control', default: false })
+  @ApiPropertyOptional({
+    description: 'Requires humidity control',
+    default: false,
+  })
   @IsOptional()
   @IsBoolean()
   requiresHumidityControl?: boolean;
@@ -547,37 +563,58 @@ export class CreateLoadDto {
   @IsBoolean()
   isTimeCritical?: boolean;
 
-  @ApiPropertyOptional({ description: 'Requires GPS monitoring', default: false })
+  @ApiPropertyOptional({
+    description: 'Requires GPS monitoring',
+    default: false,
+  })
   @IsOptional()
   @IsBoolean()
   requiresGpsMonitoring?: boolean;
 
-  @ApiPropertyOptional({ description: 'Requires temperature monitoring', default: false })
+  @ApiPropertyOptional({
+    description: 'Requires temperature monitoring',
+    default: false,
+  })
   @IsOptional()
   @IsBoolean()
   requiresTemperatureMonitoring?: boolean;
 
-  @ApiPropertyOptional({ description: 'Requires low clearance route', default: false })
+  @ApiPropertyOptional({
+    description: 'Requires low clearance route',
+    default: false,
+  })
   @IsOptional()
   @IsBoolean()
   requiresLowClearanceRoute?: boolean;
 
-  @ApiPropertyOptional({ description: 'Requires escort vehicle', default: false })
+  @ApiPropertyOptional({
+    description: 'Requires escort vehicle',
+    default: false,
+  })
   @IsOptional()
   @IsBoolean()
   requiresEscortVehicle?: boolean;
 
-  @ApiPropertyOptional({ description: 'Requires pre-shipment inspection', default: false })
+  @ApiPropertyOptional({
+    description: 'Requires pre-shipment inspection',
+    default: false,
+  })
   @IsOptional()
   @IsBoolean()
   requiresPreShipmentInspection?: boolean;
 
-  @ApiPropertyOptional({ description: 'Requires delivery inspection', default: false })
+  @ApiPropertyOptional({
+    description: 'Requires delivery inspection',
+    default: false,
+  })
   @IsOptional()
   @IsBoolean()
   requiresDeliveryInspection?: boolean;
 
-  @ApiPropertyOptional({ description: 'Requires photographic documentation', default: false })
+  @ApiPropertyOptional({
+    description: 'Requires photographic documentation',
+    default: false,
+  })
   @IsOptional()
   @IsBoolean()
   requiresPhotographicDocumentation?: boolean;

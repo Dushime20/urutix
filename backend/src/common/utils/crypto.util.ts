@@ -16,7 +16,10 @@ export function encryptString(plaintext: string): string {
   const iv = crypto.randomBytes(IV_LENGTH);
   const key = getKey();
   const cipher = crypto.createCipheriv(ALGO, key, iv);
-  const encrypted = Buffer.concat([cipher.update(plaintext, 'utf8'), cipher.final()]);
+  const encrypted = Buffer.concat([
+    cipher.update(plaintext, 'utf8'),
+    cipher.final(),
+  ]);
   const authTag = cipher.getAuthTag();
   return Buffer.concat([iv, authTag, encrypted]).toString('base64');
 }
@@ -32,5 +35,3 @@ export function decryptString(ciphertextB64: string): string {
   const decrypted = Buffer.concat([decipher.update(data), decipher.final()]);
   return decrypted.toString('utf8');
 }
-
-

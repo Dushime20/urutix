@@ -17,10 +17,12 @@ export class PushNotificationService {
       sound?: string;
       priority?: 'high' | 'normal';
       ttl?: number;
-    }
+    },
   ): Promise<boolean> {
     try {
-      this.logger.log(`Sending push notification to ${Array.isArray(deviceTokens) ? deviceTokens.length : 1} device(s)`);
+      this.logger.log(
+        `Sending push notification to ${Array.isArray(deviceTokens) ? deviceTokens.length : 1} device(s)`,
+      );
       this.logger.log(`Title: ${title}`);
       this.logger.log(`Body: ${body}`);
       this.logger.log(`Data: ${JSON.stringify(data)}`);
@@ -28,7 +30,7 @@ export class PushNotificationService {
 
       // TODO: Implement actual push notification logic
       // This could use Firebase Cloud Messaging (FCM), Apple Push Notification Service (APNS), etc.
-      
+
       // For now, just log the push notification details
       return true;
     } catch (error) {
@@ -44,10 +46,12 @@ export class PushNotificationService {
       body: string;
       data?: Record<string, any>;
       options?: any;
-    }>
+    }>,
   ): Promise<Array<{ deviceToken: string; success: boolean; error?: string }>> {
     try {
-      this.logger.log(`Sending bulk push notifications to ${notifications.length} devices`);
+      this.logger.log(
+        `Sending bulk push notifications to ${notifications.length} devices`,
+      );
 
       const results = [];
       for (const notification of notifications) {
@@ -57,7 +61,7 @@ export class PushNotificationService {
             notification.title,
             notification.body,
             notification.data,
-            notification.options
+            notification.options,
           );
           results.push({
             deviceToken: notification.deviceToken,
@@ -74,8 +78,10 @@ export class PushNotificationService {
 
       return results;
     } catch (error) {
-      this.logger.error(`Failed to send bulk push notifications: ${error.message}`);
-      return notifications.map(notification => ({
+      this.logger.error(
+        `Failed to send bulk push notifications: ${error.message}`,
+      );
+      return notifications.map((notification) => ({
         deviceToken: notification.deviceToken,
         success: false,
         error: error.message,
@@ -85,14 +91,16 @@ export class PushNotificationService {
 
   async subscribeToTopic(
     deviceTokens: string | string[],
-    topic: string
+    topic: string,
   ): Promise<boolean> {
     try {
-      this.logger.log(`Subscribing ${Array.isArray(deviceTokens) ? deviceTokens.length : 1} device(s) to topic: ${topic}`);
-      
+      this.logger.log(
+        `Subscribing ${Array.isArray(deviceTokens) ? deviceTokens.length : 1} device(s) to topic: ${topic}`,
+      );
+
       // TODO: Implement topic subscription logic
       // This is useful for sending notifications to groups of users
-      
+
       return true;
     } catch (error) {
       this.logger.error(`Failed to subscribe to topic: ${error.message}`);
@@ -102,13 +110,15 @@ export class PushNotificationService {
 
   async unsubscribeFromTopic(
     deviceTokens: string | string[],
-    topic: string
+    topic: string,
   ): Promise<boolean> {
     try {
-      this.logger.log(`Unsubscribing ${Array.isArray(deviceTokens) ? deviceTokens.length : 1} device(s) from topic: ${topic}`);
-      
+      this.logger.log(
+        `Unsubscribing ${Array.isArray(deviceTokens) ? deviceTokens.length : 1} device(s) from topic: ${topic}`,
+      );
+
       // TODO: Implement topic unsubscription logic
-      
+
       return true;
     } catch (error) {
       this.logger.error(`Failed to unsubscribe from topic: ${error.message}`);

@@ -161,7 +161,9 @@ export class PolicyRenewal {
 
   get premiumChangePercentage(): number {
     if (!this.newPremium || !this.currentPremium) return 0;
-    return ((this.newPremium - this.currentPremium) / this.currentPremium) * 100;
+    return (
+      ((this.newPremium - this.currentPremium) / this.currentPremium) * 100
+    );
   }
 
   get isAutomatic(): boolean {
@@ -169,11 +171,18 @@ export class PolicyRenewal {
   }
 
   get requiresApproval(): boolean {
-    return this.renewalType === RenewalType.MANUAL || this.renewalType === RenewalType.UPGRADE;
+    return (
+      this.renewalType === RenewalType.MANUAL ||
+      this.renewalType === RenewalType.UPGRADE
+    );
   }
 
   get canAutoRenew(): boolean {
-    return this.autoRenew && this.status === RenewalStatus.PENDING && this.daysUntilRenewal <= 0;
+    return (
+      this.autoRenew &&
+      this.status === RenewalStatus.PENDING &&
+      this.daysUntilRenewal <= 0
+    );
   }
 
   get statusColor(): string {

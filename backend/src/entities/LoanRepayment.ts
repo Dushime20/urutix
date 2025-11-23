@@ -5,7 +5,7 @@ import {
   CreateDateColumn,
   ManyToOne,
   JoinColumn,
-  Index
+  Index,
 } from 'typeorm';
 import { decimalToNumberTransformer } from '../common/transformers/decimal.transformer';
 
@@ -18,13 +18,28 @@ export class LoanRepayment {
   @Column({ type: 'uuid' })
   loan_request_id: string;
 
-  @Column({ type: 'decimal', precision: 15, scale: 2, transformer: decimalToNumberTransformer })
+  @Column({
+    type: 'decimal',
+    precision: 15,
+    scale: 2,
+    transformer: decimalToNumberTransformer,
+  })
   amount: number;
 
-  @Column({ type: 'decimal', precision: 15, scale: 2, transformer: decimalToNumberTransformer })
+  @Column({
+    type: 'decimal',
+    precision: 15,
+    scale: 2,
+    transformer: decimalToNumberTransformer,
+  })
   interest_paid: number;
 
-  @Column({ type: 'decimal', precision: 15, scale: 2, transformer: decimalToNumberTransformer })
+  @Column({
+    type: 'decimal',
+    precision: 15,
+    scale: 2,
+    transformer: decimalToNumberTransformer,
+  })
   principal_paid: number;
 
   @Column({ type: 'timestamp' })

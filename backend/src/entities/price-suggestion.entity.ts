@@ -273,11 +273,11 @@ export class PriceSuggestion {
   // Helper methods
   isValid(): boolean {
     if (!this.validFrom && !this.validUntil) return true;
-    
+
     const now = new Date();
     if (this.validFrom && now < this.validFrom) return false;
     if (this.validUntil && now > this.validUntil) return false;
-    
+
     return true;
   }
 
@@ -306,13 +306,13 @@ export class PriceSuggestion {
 
   getFormattedRange(): string {
     if (!this.minAmount || !this.maxAmount) return this.getFormattedAmount();
-    
+
     const formatter = new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: this.currency,
       minimumFractionDigits: 2,
     });
-    
+
     return `${formatter.format(this.minAmount)} - ${formatter.format(this.maxAmount)}`;
   }
 
@@ -346,13 +346,15 @@ export class PriceSuggestion {
 
   isCompetitive(): boolean {
     if (!this.competitorAverage) return false;
-    const variance = Math.abs(this.suggestedAmount - this.competitorAverage) / this.competitorAverage;
+    const variance =
+      Math.abs(this.suggestedAmount - this.competitorAverage) /
+      this.competitorAverage;
     return variance <= 0.15; // Within 15% of competitor average
   }
 
   getMarketPosition(): 'low' | 'average' | 'high' {
     if (!this.competitorAverage) return 'average';
-    
+
     const ratio = this.suggestedAmount / this.competitorAverage;
     if (ratio < 0.9) return 'low';
     if (ratio > 1.1) return 'high';

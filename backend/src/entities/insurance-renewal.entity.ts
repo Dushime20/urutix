@@ -211,7 +211,12 @@ export class InsuranceRenewal {
     return this.daysUntilRenewal <= days && this.daysUntilRenewal >= 0;
   }
 
-  addTimelineEntry(action: string, description: string, performedBy: string, notes: string = ''): void {
+  addTimelineEntry(
+    action: string,
+    description: string,
+    performedBy: string,
+    notes: string = '',
+  ): void {
     if (!this.timeline) this.timeline = [];
     this.timeline.push({
       action,
@@ -240,7 +245,11 @@ export class InsuranceRenewal {
       sentDate: new Date(),
       status: 'sent',
     });
-    this.addTimelineEntry('Reminder Sent', `${type} reminder sent to ${recipient}`, 'System');
+    this.addTimelineEntry(
+      'Reminder Sent',
+      `${type} reminder sent to ${recipient}`,
+      'System',
+    );
   }
 
   updateStatus(newStatus: RenewalStatus, notes: string = ''): void {
@@ -248,10 +257,18 @@ export class InsuranceRenewal {
     if (notes) {
       this.addNote(`Status changed to ${newStatus}: ${notes}`, 'System', true);
     }
-    this.addTimelineEntry('Status Update', `Status changed to ${newStatus}`, 'System');
+    this.addTimelineEntry(
+      'Status Update',
+      `Status changed to ${newStatus}`,
+      'System',
+    );
   }
 
-  recordCustomerResponse(decision: CustomerDecision, notes: string = '', requestedChanges: string[] = []): void {
+  recordCustomerResponse(
+    decision: CustomerDecision,
+    notes: string = '',
+    requestedChanges: string[] = [],
+  ): void {
     this.customerResponse = {
       responded: true,
       responseDate: new Date(),
@@ -259,24 +276,28 @@ export class InsuranceRenewal {
       notes,
       requestedChanges,
     };
-    this.addTimelineEntry('Customer Response', `Customer ${decision} renewal`, 'Customer');
+    this.addTimelineEntry(
+      'Customer Response',
+      `Customer ${decision} renewal`,
+      'Customer',
+    );
   }
 
   calculateRiskScore(): number {
     let totalScore = 0;
     let totalWeight = 0;
-    
+
     if (this.riskAssessment?.factors) {
-      this.riskAssessment.factors.forEach(factor => {
+      this.riskAssessment.factors.forEach((factor) => {
         totalScore += factor.score * factor.weight;
         totalWeight += factor.weight;
       });
     }
-    
+
     if (totalWeight > 0) {
       this.riskAssessment.score = Math.round(totalScore / totalWeight);
     }
-    
+
     return this.riskAssessment?.score || 0;
   }
 }

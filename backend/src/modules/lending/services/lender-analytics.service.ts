@@ -26,7 +26,7 @@ export class LenderAnalyticsService {
   async getPortfolioMetrics(
     lenderId: string,
     startDate?: Date,
-    endDate?: Date
+    endDate?: Date,
   ): Promise<PortfolioMetrics> {
     try {
       const loans = await this.loanRequestRepository.find({
@@ -36,7 +36,7 @@ export class LenderAnalyticsService {
       const totalLoans = loans.length;
       const totalAmountDisbursed = loans.reduce(
         (sum, loan) => sum + (loan.approved_amount || 0),
-        0
+        0,
       );
 
       return {
@@ -45,7 +45,8 @@ export class LenderAnalyticsService {
         total_amount_repaid: 0,
         outstanding_balance: totalAmountDisbursed,
         recovery_rate: 0,
-        average_loan_size: totalLoans > 0 ? totalAmountDisbursed / totalLoans : 0,
+        average_loan_size:
+          totalLoans > 0 ? totalAmountDisbursed / totalLoans : 0,
         portfolio_yield: 0,
         default_rate: 0,
       };

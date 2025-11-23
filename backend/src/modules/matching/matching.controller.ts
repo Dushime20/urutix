@@ -213,13 +213,16 @@ export class MatchingController {
   async findMatches(@Body() matchRequestDto: MatchRequestDto, @Request() req) {
     try {
       this.logger.log('🔍 Finding matches for load:', matchRequestDto.loadId);
-      this.logger.log('📋 Request body:', JSON.stringify(matchRequestDto, null, 2));
+      this.logger.log(
+        '📋 Request body:',
+        JSON.stringify(matchRequestDto, null, 2),
+      );
       this.logger.log('👤 Request user:', JSON.stringify(req.user, null, 2));
       this.logger.log('📦 Request headers:', {
         'x-tenant-id': req.headers['x-tenant-id'],
         authorization: req.headers['authorization'] ? 'Present' : 'Missing',
       });
-      
+
       // Validate matchRequestDto
       if (!matchRequestDto || !matchRequestDto.loadId) {
         this.logger.error('❌ Invalid match request - missing loadId');
@@ -238,18 +241,22 @@ export class MatchingController {
         this.logger.error('❌ No tenantId found in request');
         this.logger.error('Request user:', req.user);
         this.logger.error('Request headers:', req.headers);
-        throw new BadRequestException('Tenant ID is required. Please ensure you are authenticated.');
+        throw new BadRequestException(
+          'Tenant ID is required. Please ensure you are authenticated.',
+        );
       }
 
       this.logger.log('✅ Using tenantId:', tenantId);
-      
+
       this.logger.log('🚀 Calling matchingService.findMatches...');
       const matches = await this.matchingService.findMatches(
         matchRequestDto,
         tenantId,
       );
 
-      this.logger.log(`✅ Found ${matches.length} matches for load ${matchRequestDto.loadId}`);
+      this.logger.log(
+        `✅ Found ${matches.length} matches for load ${matchRequestDto.loadId}`,
+      );
 
       return {
         message: 'Enhanced matches found successfully',
@@ -260,19 +267,22 @@ export class MatchingController {
       this.logger.error('Error in findMatches:', error);
       this.logger.error('Error message:', error.message);
       this.logger.error('Error stack:', error.stack);
-      
+
       // Re-throw known exceptions
-      if (error instanceof BadRequestException || 
-          error instanceof NotFoundException ||
-          error instanceof InternalServerErrorException) {
+      if (
+        error instanceof BadRequestException ||
+        error instanceof NotFoundException ||
+        error instanceof InternalServerErrorException
+      ) {
         throw error;
       }
-      
+
       // Wrap unknown errors
       throw new InternalServerErrorException({
         message: 'Failed to find matches',
         error: error.message || 'An unexpected error occurred',
-        details: process.env.NODE_ENV === 'development' ? error.stack : undefined,
+        details:
+          process.env.NODE_ENV === 'development' ? error.stack : undefined,
       });
     }
   }
@@ -922,9 +932,13 @@ export class MatchingController {
   @Get('market-intelligence/conditions')
   @ApiOperation({
     summary: 'Get real-time market conditions',
-    description: 'Retrieves current market conditions including demand, pricing, capacity utilization, and external factors.',
+    description:
+      'Retrieves current market conditions including demand, pricing, capacity utilization, and external factors.',
   })
-  @ApiResponse({ status: 200, description: 'Market conditions retrieved successfully' })
+  @ApiResponse({
+    status: 200,
+    description: 'Market conditions retrieved successfully',
+  })
   async getMarketConditions(@Request() req) {
     const tenantId = req.user?.tenantId || req.body?.tenantId;
     if (!tenantId) {
@@ -933,10 +947,14 @@ export class MatchingController {
 
     this.logger.log(`Market conditions request by tenant ${tenantId}`);
     try {
-      const conditions = await this.marketIntelligenceService.getCurrentConditions(tenantId);
+      const conditions =
+        await this.marketIntelligenceService.getCurrentConditions(tenantId);
       return conditions;
     } catch (error) {
-      this.logger.error(`Error getting market conditions: ${error.message}`, error.stack);
+      this.logger.error(
+        `Error getting market conditions: ${error.message}`,
+        error.stack,
+      );
       throw error;
     }
   }
@@ -944,9 +962,13 @@ export class MatchingController {
   @Get('market-intelligence/demand-hotspots')
   @ApiOperation({
     summary: 'Get demand hotspots analysis',
-    description: 'Identifies high-demand routes and provides recommendations for pricing and capacity.',
+    description:
+      'Identifies high-demand routes and provides recommendations for pricing and capacity.',
   })
-  @ApiResponse({ status: 200, description: 'Demand hotspots analysis retrieved successfully' })
+  @ApiResponse({
+    status: 200,
+    description: 'Demand hotspots analysis retrieved successfully',
+  })
   async getDemandHotspots(@Request() req) {
     const tenantId = req.user?.tenantId || req.body?.tenantId;
     if (!tenantId) {
@@ -955,10 +977,14 @@ export class MatchingController {
 
     this.logger.log(`Demand hotspots request by tenant ${tenantId}`);
     try {
-      const hotspots = await this.marketIntelligenceService.getDemandHotspots(tenantId);
+      const hotspots =
+        await this.marketIntelligenceService.getDemandHotspots(tenantId);
       return hotspots;
     } catch (error) {
-      this.logger.error(`Error getting demand hotspots: ${error.message}`, error.stack);
+      this.logger.error(
+        `Error getting demand hotspots: ${error.message}`,
+        error.stack,
+      );
       throw error;
     }
   }
@@ -966,9 +992,13 @@ export class MatchingController {
   @Get('market-intelligence/capacity-utilization')
   @ApiOperation({
     summary: 'Get capacity utilization analysis',
-    description: 'Analyzes fleet capacity utilization by region and provides optimization recommendations.',
+    description:
+      'Analyzes fleet capacity utilization by region and provides optimization recommendations.',
   })
-  @ApiResponse({ status: 200, description: 'Capacity utilization analysis retrieved successfully' })
+  @ApiResponse({
+    status: 200,
+    description: 'Capacity utilization analysis retrieved successfully',
+  })
   async getCapacityUtilization(@Request() req) {
     const tenantId = req.user?.tenantId || req.body?.tenantId;
     if (!tenantId) {
@@ -977,10 +1007,14 @@ export class MatchingController {
 
     this.logger.log(`Capacity utilization request by tenant ${tenantId}`);
     try {
-      const utilization = await this.marketIntelligenceService.getCapacityUtilization(tenantId);
+      const utilization =
+        await this.marketIntelligenceService.getCapacityUtilization(tenantId);
       return utilization;
     } catch (error) {
-      this.logger.error(`Error getting capacity utilization: ${error.message}`, error.stack);
+      this.logger.error(
+        `Error getting capacity utilization: ${error.message}`,
+        error.stack,
+      );
       throw error;
     }
   }
@@ -988,16 +1022,24 @@ export class MatchingController {
   @Get('market-intelligence/external-data')
   @ApiOperation({
     summary: 'Get external market data',
-    description: 'Retrieves real-time external data including fuel prices, weather, economic indicators, and regulatory updates.',
+    description:
+      'Retrieves real-time external data including fuel prices, weather, economic indicators, and regulatory updates.',
   })
-  @ApiResponse({ status: 200, description: 'External market data retrieved successfully' })
+  @ApiResponse({
+    status: 200,
+    description: 'External market data retrieved successfully',
+  })
   async getExternalMarketData() {
     this.logger.log('External market data request');
     try {
-      const externalData = await this.marketIntelligenceService.getExternalMarketData();
+      const externalData =
+        await this.marketIntelligenceService.getExternalMarketData();
       return externalData;
     } catch (error) {
-      this.logger.error(`Error getting external market data: ${error.message}`, error.stack);
+      this.logger.error(
+        `Error getting external market data: ${error.message}`,
+        error.stack,
+      );
       throw error;
     }
   }

@@ -17,54 +17,54 @@ export enum DocumentType {
   DRIVER_BACKGROUND_CHECK = 'DRIVER_BACKGROUND_CHECK',
   DRIVER_TRAINING_CERT = 'DRIVER_TRAINING_CERT',
   DRIVER_INSURANCE = 'DRIVER_INSURANCE',
-  
+
   // Vehicle-related documents
   VEHICLE_REGISTRATION = 'VEHICLE_REGISTRATION',
   VEHICLE_INSURANCE = 'VEHICLE_INSURANCE',
   VEHICLE_INSPECTION = 'VEHICLE_INSPECTION',
   VEHICLE_MAINTENANCE = 'VEHICLE_MAINTENANCE',
   VEHICLE_PERMIT = 'VEHICLE_PERMIT',
-  
+
   // Cargo-related documents
   CARGO_MANIFEST = 'CARGO_MANIFEST',
   CARGO_INSURANCE = 'CARGO_INSURANCE',
   CARGO_CUSTOMS = 'CARGO_CUSTOMS',
   CARGO_WEIGHT_CERT = 'CARGO_WEIGHT_CERT',
-  
+
   // Business documents
   BUSINESS_LICENSE = 'BUSINESS_LICENSE',
   BUSINESS_INSURANCE = 'BUSINESS_INSURANCE',
   BUSINESS_TAX_CERT = 'BUSINESS_TAX_CERT',
   BUSINESS_PERMIT = 'BUSINESS_PERMIT',
-  
+
   // User documents
   USER_ID_PROOF = 'USER_ID_PROOF',
   USER_ADDRESS_PROOF = 'USER_ADDRESS_PROOF',
   USER_BANK_DETAILS = 'USER_BANK_DETAILS',
-  
+
   // Trip documents
   TRIP_PERMIT = 'TRIP_PERMIT',
   TRIP_ROUTE_PLAN = 'TRIP_ROUTE_PLAN',
   TRIP_WEIGHT_TICKET = 'TRIP_WEIGHT_TICKET',
   POD = 'POD', // Proof of Delivery
-  
+
   // Financial documents
   INVOICE = 'INVOICE',
   RECEIPT = 'RECEIPT',
   PAYMENT_PROOF = 'PAYMENT_PROOF',
   EXPENSE_RECEIPT = 'EXPENSE_RECEIPT',
-  
+
   // Compliance documents
   SAFETY_CERT = 'SAFETY_CERT',
   ENVIRONMENTAL_CERT = 'ENVIRONMENTAL_CERT',
   QUALITY_CERT = 'QUALITY_CERT',
-  
+
   // Other
   CONTRACT = 'CONTRACT',
   AGREEMENT = 'AGREEMENT',
   POLICY = 'POLICY',
   MANUAL = 'MANUAL',
-  OTHER = 'OTHER'
+  OTHER = 'OTHER',
 }
 
 export enum DocumentStatus {
@@ -72,14 +72,14 @@ export enum DocumentStatus {
   VERIFIED = 'VERIFIED',
   REJECTED = 'REJECTED',
   EXPIRED = 'EXPIRED',
-  ARCHIVED = 'ARCHIVED'
+  ARCHIVED = 'ARCHIVED',
 }
 
 export enum DocumentPriority {
   LOW = 'LOW',
   NORMAL = 'NORMAL',
   HIGH = 'HIGH',
-  URGENT = 'URGENT'
+  URGENT = 'URGENT',
 }
 
 export enum DocumentCategory {
@@ -91,7 +91,7 @@ export enum DocumentCategory {
   FINANCIAL = 'FINANCIAL',
   OPERATIONAL = 'OPERATIONAL',
   LEGAL = 'LEGAL',
-  OTHER = 'OTHER'
+  OTHER = 'OTHER',
 }
 
 export enum EntityType {
@@ -102,7 +102,7 @@ export enum EntityType {
   TRIP = 'TRIP',
   COMPANY = 'COMPANY',
   TENANT = 'TENANT',
-  SYSTEM = 'SYSTEM'
+  SYSTEM = 'SYSTEM',
 }
 
 @Entity('documents')
@@ -122,7 +122,7 @@ export class Document {
   @Column({
     type: 'enum',
     enum: EntityType,
-    comment: 'Type of entity this document belongs to'
+    comment: 'Type of entity this document belongs to',
   })
   entityType: EntityType;
 
@@ -132,28 +132,28 @@ export class Document {
   @Column({
     type: 'enum',
     enum: DocumentType,
-    comment: 'Specific type of document'
+    comment: 'Specific type of document',
   })
   documentType: DocumentType;
 
   @Column({
     type: 'enum',
     enum: DocumentCategory,
-    comment: 'Category of document for grouping'
+    comment: 'Category of document for grouping',
   })
   category: DocumentCategory;
 
   @Column({
     type: 'enum',
     enum: DocumentStatus,
-    default: DocumentStatus.PENDING
+    default: DocumentStatus.PENDING,
   })
   status: DocumentStatus;
 
   @Column({
     type: 'enum',
     enum: DocumentPriority,
-    default: DocumentPriority.NORMAL
+    default: DocumentPriority.NORMAL,
   })
   priority: DocumentPriority;
 
@@ -316,7 +316,9 @@ export class Document {
   // Virtual properties for business logic
   get isExpiringSoon(): boolean {
     if (!this.expiryDate) return false;
-    const daysUntilExpiry = Math.ceil((this.expiryDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+    const daysUntilExpiry = Math.ceil(
+      (this.expiryDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24),
+    );
     return daysUntilExpiry <= this.renewalReminderDays;
   }
 

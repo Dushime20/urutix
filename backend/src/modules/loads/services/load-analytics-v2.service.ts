@@ -74,7 +74,7 @@ export class LoadAnalyticsV2Service {
       const activeLoads = loads.filter((load) =>
         [
           LoadStatus.CREATED,
-        LoadStatus.PUBLISHED,
+          LoadStatus.PUBLISHED,
           LoadStatus.ASSIGNED,
           LoadStatus.IN_TRANSIT,
         ].includes(load.status),

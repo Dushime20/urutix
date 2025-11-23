@@ -157,7 +157,9 @@ export class InsurancePolicy {
   get totalPremium(): number {
     const start = new Date(this.startDate);
     const end = new Date(this.endDate);
-    const months = (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth());
+    const months =
+      (end.getFullYear() - start.getFullYear()) * 12 +
+      (end.getMonth() - start.getMonth());
     return months * this.monthlyPremium;
   }
 }

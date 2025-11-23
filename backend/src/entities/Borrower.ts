@@ -51,5 +51,3 @@ export class Borrower {
   @OneToMany('LoanRequest', 'borrower')
   loans: any[];
 }
-
-

@@ -40,7 +40,9 @@ export class RepaymentProcessorService {
     private eventEmitter: EventEmitter2,
   ) {}
 
-  async calculateRepaymentSchedule(loanId: string): Promise<RepaymentCalculation> {
+  async calculateRepaymentSchedule(
+    loanId: string,
+  ): Promise<RepaymentCalculation> {
     try {
       const loan = await this.loanRequestRepository.findOne({
         where: { id: loanId },
@@ -69,11 +71,13 @@ export class RepaymentProcessorService {
         principal,
         totalInterest,
         termDays,
-        disbursement.created_at
+        disbursement.created_at,
       );
 
       // Find next payment due
-      const nextPaymentDue = installments.find(i => i.status === 'pending')?.due_date;
+      const nextPaymentDue = installments.find(
+        (i) => i.status === 'pending',
+      )?.due_date;
 
       // Calculate days overdue
       const daysOverdue = this.calculateDaysOverdue(loan);
@@ -97,7 +101,7 @@ export class RepaymentProcessorService {
     amount: number,
     paymentMethod: string,
     reference: string,
-    metadata?: any
+    metadata?: any,
   ): Promise<LoanRepayment> {
     try {
       const loan = await this.loanRequestRepository.findOne({
@@ -111,8 +115,11 @@ export class RepaymentProcessorService {
 
       // Validate payment amount
       const repaymentSchedule = await this.calculateRepaymentSchedule(loanId);
-      const outstandingAmount = this.calculateOutstandingAmount(loan, repaymentSchedule);
-      
+      const outstandingAmount = this.calculateOutstandingAmount(
+        loan,
+        repaymentSchedule,
+      );
+
       if (amount > outstandingAmount) {
         throw new Error('Payment amount exceeds outstanding balance');
       }
@@ -139,7 +146,9 @@ export class RepaymentProcessorService {
         loanId,
         amount,
         remainingBalance: outstandingAmount - amount,
-        repaymentId: Array.isArray(savedRepayment) ? savedRepayment[0]?.id : savedRepayment.id,
+        repaymentId: Array.isArray(savedRepayment)
+          ? savedRepayment[0]?.id
+          : savedRepayment.id,
       });
 
       this.logger.log(`Repayment processed: ${amount} for loan ${loanId}`);
@@ -216,10 +225,10 @@ export class RepaymentProcessorService {
     principal: number,
     totalInterest: number,
     termDays: number,
-    startDate: Date
+    startDate: Date,
   ): RepaymentSchedule[] {
     const installments: RepaymentSchedule[] = [];
-    
+
     // For simplicity, assume monthly installments
     const monthlyInstallments = Math.ceil(termDays / 30);
     const monthlyPrincipal = principal / monthlyInstallments;
@@ -259,12 +268,11 @@ export class RepaymentProcessorService {
 
   private calculateOutstandingAmount(
     loan: LoanRequest,
-    repaymentSchedule: RepaymentCalculation
+    repaymentSchedule: RepaymentCalculation,
   ): number {
-    const totalRepaid = loan.repayments?.reduce(
-      (sum, repayment) => sum + repayment.amount,
-      0
-    ) || 0;
+    const totalRepaid =
+      loan.repayments?.reduce((sum, repayment) => sum + repayment.amount, 0) ||
+      0;
 
     return repaymentSchedule.total_amount - totalRepaid;
   }
@@ -272,10 +280,13 @@ export class RepaymentProcessorService {
   private async updateLoanStatus(
     loan: LoanRequest,
     paymentAmount: number,
-    repaymentSchedule: RepaymentCalculation
+    repaymentSchedule: RepaymentCalculation,
   ): Promise<void> {
-    const outstandingAmount = this.calculateOutstandingAmount(loan, repaymentSchedule);
-    
+    const outstandingAmount = this.calculateOutstandingAmount(
+      loan,
+      repaymentSchedule,
+    );
+
     if (outstandingAmount <= 0) {
       // Loan fully repaid
       await this.loanRequestRepository.update(loan.id, {
@@ -300,7 +311,7 @@ export class RepaymentProcessorService {
   private async processOverdueLoan(loan: LoanRequest): Promise<void> {
     try {
       const daysOverdue = this.calculateDaysOverdue(loan);
-      
+
       if (daysOverdue > 90) {
         // Mark as defaulted
         await this.loanRequestRepository.update(loan.id, {
@@ -349,7 +360,7 @@ export class RepaymentProcessorService {
     // This would integrate with notification service
     // For now, just log the reminder
     this.logger.log(`Sending repayment reminder for loan ${loan.id}`);
-    
+
     this.eventEmitter.emit('loan.reminder.sent', {
       loanId: loan.id,
       amount: loan.approved_amount,

@@ -6,7 +6,7 @@ import {
   UpdateDateColumn,
   ManyToOne,
   JoinColumn,
-  Index
+  Index,
 } from 'typeorm';
 import { decimalToNumberTransformer } from '../common/transformers/decimal.transformer';
 
@@ -56,7 +56,13 @@ export class LoanDisbursement {
   @Column({ type: 'timestamp', nullable: true })
   next_retry_at: Date;
 
-  @Column({ type: 'decimal', precision: 15, scale: 2, nullable: true, transformer: decimalToNumberTransformer })
+  @Column({
+    type: 'decimal',
+    precision: 15,
+    scale: 2,
+    nullable: true,
+    transformer: decimalToNumberTransformer,
+  })
   amount: number;
 
   @Column({
@@ -75,7 +81,13 @@ export class LoanDisbursement {
   @Column({ type: 'int', nullable: true })
   credit_score: number;
 
-  @Column({ type: 'decimal', precision: 15, scale: 2, nullable: true, transformer: decimalToNumberTransformer })
+  @Column({
+    type: 'decimal',
+    precision: 15,
+    scale: 2,
+    nullable: true,
+    transformer: decimalToNumberTransformer,
+  })
   collateral_value: number;
 
   @Column({

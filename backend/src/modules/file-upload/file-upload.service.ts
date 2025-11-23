@@ -1,4 +1,8 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  NotFoundException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -36,18 +40,32 @@ export class FileUploadService {
 
   constructor(private configService: ConfigService) {
     this.uploadDir = this.configService.get<string>('UPLOAD_DIR', './uploads');
-    this.maxFileSize = this.configService.get<number>('MAX_FILE_SIZE', 10 * 1024 * 1024); // 10MB
+    this.maxFileSize = this.configService.get<number>(
+      'MAX_FILE_SIZE',
+      10 * 1024 * 1024,
+    ); // 10MB
     this.allowedMimeTypes = [
       // Images
-      'image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp',
+      'image/jpeg',
+      'image/jpg',
+      'image/png',
+      'image/gif',
+      'image/webp',
       // Documents
-      'application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      'text/plain', 'text/csv',
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/vnd.ms-excel',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'text/plain',
+      'text/csv',
       // Archives
-      'application/zip', 'application/x-rar-compressed', 'application/x-7z-compressed',
+      'application/zip',
+      'application/x-rar-compressed',
+      'application/x-7z-compressed',
       // Other
-      'application/json', 'application/xml'
+      'application/json',
+      'application/xml',
     ];
 
     // Ensure upload directory exists
@@ -62,7 +80,7 @@ export class FileUploadService {
 
   async uploadFile(
     file: Express.Multer.File,
-    subdirectory?: string
+    subdirectory?: string,
   ): Promise<FileUploadResult> {
     // Validate file
     this.validateFile(file);
@@ -70,12 +88,12 @@ export class FileUploadService {
     // Generate unique filename
     const fileExtension = path.extname(file.originalname);
     const fileName = `${uuidv4()}${fileExtension}`;
-    
+
     // Create subdirectory path
-    const uploadPath = subdirectory 
+    const uploadPath = subdirectory
       ? path.join(this.uploadDir, subdirectory)
       : this.uploadDir;
-    
+
     if (!fs.existsSync(uploadPath)) {
       fs.mkdirSync(uploadPath, { recursive: true });
     }
@@ -104,12 +122,19 @@ export class FileUploadService {
       const checksum = this.calculateChecksum(fileBuffer);
 
       // Generate URLs
-      const baseUrl = this.configService.get<string>('BASE_URL', 'http://localhost:3000');
+      const baseUrl = this.configService.get<string>(
+        'BASE_URL',
+        'http://localhost:3000',
+      );
       const fileUrl = `${baseUrl}/uploads/${subdirectory ? subdirectory + '/' : ''}${fileName}`;
-      
+
       let thumbnailUrl: string | undefined;
       if (this.isImage(file.mimetype)) {
-        thumbnailUrl = await this.generateThumbnail(filePath, fileName, subdirectory);
+        thumbnailUrl = await this.generateThumbnail(
+          filePath,
+          fileName,
+          subdirectory,
+        );
       }
 
       return {
@@ -138,7 +163,7 @@ export class FileUploadService {
 
     if (file.size > this.maxFileSize) {
       throw new BadRequestException(
-        `File size exceeds maximum allowed size of ${this.maxFileSize / (1024 * 1024)}MB`
+        `File size exceeds maximum allowed size of ${this.maxFileSize / (1024 * 1024)}MB`,
       );
     }
 
@@ -161,17 +186,23 @@ export class FileUploadService {
   private async generateThumbnail(
     filePath: string,
     fileName: string,
-    subdirectory?: string
+    subdirectory?: string,
   ): Promise<string> {
     // For now, we'll return the original file URL
     // In a production environment, you'd want to use a library like sharp or jimp
     // to generate actual thumbnails
-    const baseUrl = this.configService.get<string>('BASE_URL', 'http://localhost:3000');
+    const baseUrl = this.configService.get<string>(
+      'BASE_URL',
+      'http://localhost:3000',
+    );
     return `${baseUrl}/uploads/${subdirectory ? subdirectory + '/' : ''}${fileName}`;
   }
 
-  async getFileInfo(fileName: string, subdirectory?: string): Promise<FileInfo> {
-    const filePath = subdirectory 
+  async getFileInfo(
+    fileName: string,
+    subdirectory?: string,
+  ): Promise<FileInfo> {
+    const filePath = subdirectory
       ? path.join(this.uploadDir, subdirectory, fileName)
       : path.join(this.uploadDir, fileName);
 
@@ -180,7 +211,10 @@ export class FileUploadService {
     }
 
     const stats = fs.statSync(filePath);
-    const baseUrl = this.configService.get<string>('BASE_URL', 'http://localhost:3000');
+    const baseUrl = this.configService.get<string>(
+      'BASE_URL',
+      'http://localhost:3000',
+    );
     const fileUrl = `${baseUrl}/uploads/${subdirectory ? subdirectory + '/' : ''}${fileName}`;
 
     return {
@@ -204,9 +238,11 @@ export class FileUploadService {
       '.gif': 'image/gif',
       '.pdf': 'application/pdf',
       '.doc': 'application/msword',
-      '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      '.docx':
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
       '.xls': 'application/vnd.ms-excel',
-      '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      '.xlsx':
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       '.txt': 'text/plain',
       '.csv': 'text/csv',
       '.zip': 'application/zip',
@@ -219,7 +255,7 @@ export class FileUploadService {
   }
 
   async deleteFile(fileName: string, subdirectory?: string): Promise<void> {
-    const filePath = subdirectory 
+    const filePath = subdirectory
       ? path.join(this.uploadDir, subdirectory, fileName)
       : path.join(this.uploadDir, fileName);
 
@@ -229,15 +265,15 @@ export class FileUploadService {
   }
 
   async fileExists(fileName: string, subdirectory?: string): Promise<boolean> {
-    const filePath = subdirectory 
+    const filePath = subdirectory
       ? path.join(this.uploadDir, subdirectory, fileName)
       : path.join(this.uploadDir, fileName);
-    
+
     return fs.existsSync(filePath);
   }
 
   getFileStream(fileName: string, subdirectory?: string): fs.ReadStream {
-    const filePath = subdirectory 
+    const filePath = subdirectory
       ? path.join(this.uploadDir, subdirectory, fileName)
       : path.join(this.uploadDir, fileName);
 

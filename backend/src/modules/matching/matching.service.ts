@@ -1,5 +1,10 @@
 // --- Added for controller compatibility ---
-import { Injectable, NotFoundException, BadRequestException, InternalServerErrorException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
 import {
@@ -89,9 +94,12 @@ export class MatchingService {
   ): Promise<MatchResultDto[]> {
     try {
       console.log('🔍 MatchingService.findMatches called');
-      console.log('📋 MatchRequestDto:', JSON.stringify(matchRequestDto, null, 2));
+      console.log(
+        '📋 MatchRequestDto:',
+        JSON.stringify(matchRequestDto, null, 2),
+      );
       console.log('🏢 TenantId:', tenantId);
-      
+
       // Validate input
       if (!matchRequestDto || !matchRequestDto.loadId) {
         console.error('❌ Invalid matchRequestDto - missing loadId');
@@ -103,8 +111,13 @@ export class MatchingService {
         throw new BadRequestException('Tenant ID is required');
       }
 
-      console.log('🔍 Looking for load:', matchRequestDto.loadId, 'in tenant:', tenantId);
-      
+      console.log(
+        '🔍 Looking for load:',
+        matchRequestDto.loadId,
+        'in tenant:',
+        tenantId,
+      );
+
       // Get the load details
       // Note: pickupLocation and deliveryLocation are getters, not relations
       // They are computed from the locations JSONB array
@@ -125,23 +138,30 @@ export class MatchingService {
           pickupLocation: load.pickupLocation ? 'Yes' : 'No',
           deliveryLocation: load.deliveryLocation ? 'Yes' : 'No',
         });
-        
+
         // Log location details if they exist
         if (load.locations && load.locations.length > 0) {
-          console.log('📍 Load locations:', load.locations.map(loc => ({
-            type: loc.type,
-            sequence: loc.sequence,
-            hasCoordinates: !!loc.locationData?.coordinates,
-            address: loc.locationData?.address || 'N/A',
-          })));
+          console.log(
+            '📍 Load locations:',
+            load.locations.map((loc) => ({
+              type: loc.type,
+              sequence: loc.sequence,
+              hasCoordinates: !!loc.locationData?.coordinates,
+              address: loc.locationData?.address || 'N/A',
+            })),
+          );
         } else {
-          console.warn('⚠️ Load has no locations - this may affect distance calculations but matching will still work');
+          console.warn(
+            '⚠️ Load has no locations - this may affect distance calculations but matching will still work',
+          );
         }
       }
 
       if (!load) {
         console.error('❌ Load not found:', matchRequestDto.loadId);
-        throw new NotFoundException(`Load not found with ID: ${matchRequestDto.loadId}`);
+        throw new NotFoundException(
+          `Load not found with ID: ${matchRequestDto.loadId}`,
+        );
       }
 
       // Check if load status allows matching
@@ -150,7 +170,7 @@ export class MatchingService {
         LoadStatus.PUBLISHED,
         LoadStatus.PENDING_CONFIRMATION,
       ];
-      
+
       if (!allowedStatuses.includes(load.status)) {
         console.log('⚠️ Load status does not allow matching:', {
           loadId: load.id,
@@ -165,7 +185,9 @@ export class MatchingService {
       // Validate load has required fields
       if (!load.weight || load.weight <= 0) {
         console.error('❌ Load weight is invalid:', load.weight);
-        throw new BadRequestException('Load weight is required and must be greater than 0');
+        throw new BadRequestException(
+          'Load weight is required and must be greater than 0',
+        );
       }
 
       // Log delivery date info (but don't filter - expired loads might still need trucks)
@@ -177,9 +199,15 @@ export class MatchingService {
           deliveryDate: deliveryDate.toISOString(),
           now: now.toISOString(),
           isExpired,
-          daysUntilDelivery: isExpired 
-            ? Math.floor((now.getTime() - deliveryDate.getTime()) / (1000 * 60 * 60 * 24))
-            : Math.floor((deliveryDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)),
+          daysUntilDelivery: isExpired
+            ? Math.floor(
+                (now.getTime() - deliveryDate.getTime()) /
+                  (1000 * 60 * 60 * 24),
+              )
+            : Math.floor(
+                (deliveryDate.getTime() - now.getTime()) /
+                  (1000 * 60 * 60 * 24),
+              ),
         });
       }
 
@@ -193,7 +221,7 @@ export class MatchingService {
         isHazardous: load.isHazardous,
         requiresForklift: load.requiresForklift,
       });
-      
+
       // Get available trucks with enhanced filtering
       const availableTrucks = await this.getAvailableTrucks(
         load,
@@ -202,7 +230,7 @@ export class MatchingService {
       );
 
       console.log(`✅ Found ${availableTrucks.length} available trucks`);
-      
+
       if (availableTrucks.length === 0) {
         console.log('⚠️ No trucks found. Checking all trucks in tenant...');
         // Debug: Check all trucks in tenant regardless of status using query builder
@@ -217,7 +245,7 @@ export class MatchingService {
             'truck.isActive',
             'truck.tenantId',
           ]);
-        
+
         const allTrucks = await debugQuery.getMany();
         console.log(`📊 Total trucks in tenant: ${allTrucks.length}`);
         allTrucks.forEach((truck, index) => {
@@ -225,7 +253,8 @@ export class MatchingService {
           const truckCapacityLbs = Number(truck.capacityWeight);
           const truckCapacityKg = truckCapacityLbs * 0.453592; // Convert lbs to kg
           const loadWeightKg = Number(load.weight);
-          const canCarry = truckCapacityKg && loadWeightKg && loadWeightKg <= truckCapacityKg;
+          const canCarry =
+            truckCapacityKg && loadWeightKg && loadWeightKg <= truckCapacityKg;
           console.log(`🚛 All Truck ${index + 1}:`, {
             plateNumber: truck.plateNumber,
             capacityWeightLbs: truckCapacityLbs,
@@ -234,12 +263,15 @@ export class MatchingService {
             isActive: truck.isActive,
             loadWeightKg: loadWeightKg,
             canCarryLoad: canCarry,
-            reason: !canCarry ? (
-              !truckCapacityKg ? 'No capacity' :
-              !loadWeightKg ? 'No load weight' :
-              loadWeightKg > truckCapacityKg ? 'Too small (load exceeds capacity)' :
-              'Unknown'
-            ) : 'Can carry',
+            reason: !canCarry
+              ? !truckCapacityKg
+                ? 'No capacity'
+                : !loadWeightKg
+                  ? 'No load weight'
+                  : loadWeightKg > truckCapacityKg
+                    ? 'Too small (load exceeds capacity)'
+                    : 'Unknown'
+              : 'Can carry',
           });
         });
       }
@@ -301,11 +333,13 @@ export class MatchingService {
       return matches.slice(0, limit);
     } catch (error) {
       // Re-throw known exceptions
-      if (error instanceof BadRequestException || 
-          error instanceof NotFoundException) {
+      if (
+        error instanceof BadRequestException ||
+        error instanceof NotFoundException
+      ) {
         throw error;
       }
-      
+
       // Log and wrap unknown errors
       console.error('Error in findMatches service:', error);
       throw new InternalServerErrorException({
@@ -324,7 +358,7 @@ export class MatchingService {
       console.log('🔍 getAvailableTrucks called');
       console.log('📦 Load weight:', load.weight);
       console.log('🏢 TenantId:', tenantId);
-      
+
       // Build dynamic query based on load requirements
       // Note: Having a driver assigned (currentDriverId) does NOT make a truck unavailable
       // A truck with a driver is still available for matching
@@ -333,7 +367,7 @@ export class MatchingService {
         .where('truck.tenantId = :tenantId', { tenantId })
         .andWhere('truck.status = :status', { status: VehicleStatus.AVAILABLE })
         .andWhere('truck.isActive = :isActive', { isActive: true });
-      
+
       console.log('🔧 Query builder initialized with base conditions');
       console.log('🔧 Truck filters:', {
         tenantId,
@@ -341,64 +375,64 @@ export class MatchingService {
         isActive: true,
         note: 'Trucks with assigned drivers are still available for matching',
       });
-      
-          // Only add capacity filter if load.weight is valid
-          // Convert cargo weight from kg to lbs for database comparison
-          // (truck.capacityWeight is stored in lbs, cargo weight is in kg)
-          // 1 kg = 2.20462 lbs
-          if (load.weight && load.weight > 0) {
-            const loadWeightKg = Number(load.weight);
-            const loadWeightLbs = loadWeightKg * 2.20462; // Convert kg to lbs
-            console.log('🔍 Adding capacity filter:', {
-              loadWeightKg: load.weight,
-              loadWeightLbs: loadWeightLbs,
-              loadWeightType: typeof load.weight,
-              note: 'Converting cargo weight from kg to lbs for comparison with truck capacity (stored in lbs)',
-            });
-            queryBuilder.andWhere('truck.capacityWeight >= :minCapacity', {
-              minCapacity: loadWeightLbs,
-            });
-          } else {
-            console.warn('⚠️ Load weight is invalid, skipping capacity filter', {
-              weight: load.weight,
-              weightType: typeof load.weight,
-            });
-          }
 
-    // Add equipment requirements
-    if (load.requiresRefrigeration) {
-      queryBuilder.andWhere('truck.hasRefrigeration = :hasRefrigeration', {
-        hasRefrigeration: true,
-      });
-    }
+      // Only add capacity filter if load.weight is valid
+      // Convert cargo weight from kg to lbs for database comparison
+      // (truck.capacityWeight is stored in lbs, cargo weight is in kg)
+      // 1 kg = 2.20462 lbs
+      if (load.weight && load.weight > 0) {
+        const loadWeightKg = Number(load.weight);
+        const loadWeightLbs = loadWeightKg * 2.20462; // Convert kg to lbs
+        console.log('🔍 Adding capacity filter:', {
+          loadWeightKg: load.weight,
+          loadWeightLbs: loadWeightLbs,
+          loadWeightType: typeof load.weight,
+          note: 'Converting cargo weight from kg to lbs for comparison with truck capacity (stored in lbs)',
+        });
+        queryBuilder.andWhere('truck.capacityWeight >= :minCapacity', {
+          minCapacity: loadWeightLbs,
+        });
+      } else {
+        console.warn('⚠️ Load weight is invalid, skipping capacity filter', {
+          weight: load.weight,
+          weightType: typeof load.weight,
+        });
+      }
 
-    if (load.isHazardous) {
-      queryBuilder.andWhere('truck.hasHazmatPermit = :hasHazmat', {
-        hasHazmat: true,
-      });
-    }
+      // Add equipment requirements
+      if (load.requiresRefrigeration) {
+        queryBuilder.andWhere('truck.hasRefrigeration = :hasRefrigeration', {
+          hasRefrigeration: true,
+        });
+      }
 
-    if (load.requiresForklift) {
-      queryBuilder.andWhere('truck.hasLiftGate = :hasLiftGate', {
-        hasLiftGate: true,
-      });
-    }
+      if (load.isHazardous) {
+        queryBuilder.andWhere('truck.hasHazmatPermit = :hasHazmat', {
+          hasHazmat: true,
+        });
+      }
 
-    // Add truck type requirements
-    if (load.truckRequirements?.requiredTruckTypes?.length > 0) {
-      queryBuilder.andWhere('truck.truckType IN (:...truckTypes)', {
-        truckTypes: load.truckRequirements.requiredTruckTypes,
-      });
-    }
+      if (load.requiresForklift) {
+        queryBuilder.andWhere('truck.hasLiftGate = :hasLiftGate', {
+          hasLiftGate: true,
+        });
+      }
 
-    // Add distance filter if specified
-    if (criteria.maxDistance) {
-      // This would require geospatial query in real implementation
-      // For now, we'll filter after fetching
-    }
+      // Add truck type requirements
+      if (load.truckRequirements?.requiredTruckTypes?.length > 0) {
+        queryBuilder.andWhere('truck.truckType IN (:...truckTypes)', {
+          truckTypes: load.truckRequirements.requiredTruckTypes,
+        });
+      }
+
+      // Add distance filter if specified
+      if (criteria.maxDistance) {
+        // This would require geospatial query in real implementation
+        // For now, we'll filter after fetching
+      }
 
       console.log('🔍 Executing truck query...');
-      
+
       // Log the query before execution
       const querySql = queryBuilder.getSql();
       const queryParams = queryBuilder.getParameters();
@@ -410,18 +444,18 @@ export class MatchingService {
         isActive: true,
         minCapacity: load.weight ? Number(load.weight) : null,
       });
-      
+
       // Execute the query
       const trucks = await queryBuilder
         .leftJoinAndSelect('truck.owner', 'owner')
         .leftJoinAndSelect('truck.currentDriver', 'currentDriver')
         .getMany();
-      
+
       // Log the raw SQL that was actually executed
       console.log('📝 Actual executed query:', queryBuilder.getQuery());
 
       console.log(`✅ Query returned ${trucks.length} trucks`);
-      
+
       // Log details of each truck found
       trucks.forEach((truck, index) => {
         console.log(`🚛 Truck ${index + 1}:`, {
@@ -444,7 +478,11 @@ export class MatchingService {
           }
 
           // Rating filter
-          if (criteria.minRating && truck.averageRating && truck.averageRating < criteria.minRating * 5) {
+          if (
+            criteria.minRating &&
+            truck.averageRating &&
+            truck.averageRating < criteria.minRating * 5
+          ) {
             return false;
           }
 
@@ -471,7 +509,9 @@ export class MatchingService {
     trucks: Truck[],
     criteria: MatchRequestDto,
   ): Promise<MatchResultDto[]> {
-    console.log(`🎯 applyWeightedScoring: Processing ${trucks.length} trucks for load ${load.id}`);
+    console.log(
+      `🎯 applyWeightedScoring: Processing ${trucks.length} trucks for load ${load.id}`,
+    );
     const matches: MatchResultDto[] = [];
 
     for (const truck of trucks) {
@@ -479,19 +519,28 @@ export class MatchingService {
         console.log(`🔍 Scoring truck ${truck.plateNumber} (${truck.id})...`);
         const match = await this.scoreTruck(truck, load, criteria);
         if (match) {
-          console.log(`✅ Truck ${truck.plateNumber} scored: ${match.overallScore}`);
+          console.log(
+            `✅ Truck ${truck.plateNumber} scored: ${match.overallScore}`,
+          );
           matches.push(match);
         } else {
-          console.log(`❌ Truck ${truck.plateNumber} returned null from scoreTruck`);
+          console.log(
+            `❌ Truck ${truck.plateNumber} returned null from scoreTruck`,
+          );
         }
       } catch (error) {
-        console.error(`❌ Error scoring truck ${truck?.id} (${truck?.plateNumber}):`, error);
+        console.error(
+          `❌ Error scoring truck ${truck?.id} (${truck?.plateNumber}):`,
+          error,
+        );
         // Continue with next truck instead of failing entire matching
         continue;
       }
     }
 
-    console.log(`✅ applyWeightedScoring: Generated ${matches.length} matches from ${trucks.length} trucks`);
+    console.log(
+      `✅ applyWeightedScoring: Generated ${matches.length} matches from ${trucks.length} trucks`,
+    );
     return matches;
   }
 
@@ -642,7 +691,7 @@ export class MatchingService {
       const truckCapacityLbs = Number(truck.capacityWeight);
       const truckCapacityKg = truckCapacityLbs * 0.453592; // Convert lbs to kg
       const loadWeight = Number(load.weight); // Already in kg
-      
+
       console.log(`🔍 Capacity check for truck ${truck.plateNumber}:`, {
         truckCapacityLbs: truckCapacityLbs,
         truckCapacityKg: truckCapacityKg,
@@ -650,19 +699,26 @@ export class MatchingService {
         comparison: `${loadWeight} > ${truckCapacityKg} = ${loadWeight > truckCapacityKg}`,
         canCarry: loadWeight <= truckCapacityKg,
       });
-      
+
       // Use >= instead of > to allow exact matches (200kg truck can carry 200kg load)
       if (!truckCapacityKg || !loadWeight || loadWeight > truckCapacityKg) {
-        console.log(`❌ Truck ${truck.plateNumber} rejected: capacity check failed`, {
-          truckCapacityLbs,
-          truckCapacityKg,
-          loadWeight,
-          canCarry: loadWeight <= truckCapacityKg,
-          reason: !truckCapacityKg ? 'No truck capacity' : !loadWeight ? 'No load weight' : 'Load too heavy',
-        });
+        console.log(
+          `❌ Truck ${truck.plateNumber} rejected: capacity check failed`,
+          {
+            truckCapacityLbs,
+            truckCapacityKg,
+            loadWeight,
+            canCarry: loadWeight <= truckCapacityKg,
+            reason: !truckCapacityKg
+              ? 'No truck capacity'
+              : !loadWeight
+                ? 'No load weight'
+                : 'Load too heavy',
+          },
+        );
         return null; // Truck cannot carry this load
       }
-      
+
       console.log(`✅ Truck ${truck.plateNumber} passed capacity check:`, {
         truckCapacityLbs,
         truckCapacityKg,
@@ -672,60 +728,60 @@ export class MatchingService {
 
       // SIMPLIFIED: Only calculate capacity/weight score
       const capacityScore = this.calculateCapacityScore(truck, load);
-      
+
       // Overall score is based ONLY on weight/capacity matching
       const overallScore = capacityScore;
 
-    // Get driver info if requested
-    let driverInfo = {};
-    if (criteria.includeDrivers && truck.currentDriverId) {
-      const driver = await this.driverRepository.findOne({
-        where: { id: truck.currentDriverId },
-      });
-      if (driver) {
-        driverInfo = {
-          driverId: driver.id,
-          driverName: `${driver.firstName} ${driver.lastName}`,
-          driverRating: driver.rating,
-          driverLicenseNumber: driver.licenseNumber,
-        };
+      // Get driver info if requested
+      let driverInfo = {};
+      if (criteria.includeDrivers && truck.currentDriverId) {
+        const driver = await this.driverRepository.findOne({
+          where: { id: truck.currentDriverId },
+        });
+        if (driver) {
+          driverInfo = {
+            driverId: driver.id,
+            driverName: `${driver.firstName} ${driver.lastName}`,
+            driverRating: driver.rating,
+            driverLicenseNumber: driver.licenseNumber,
+          };
+        }
       }
-    }
 
-    // Calculate utilization percentage for match reason (using kg for both)
-    // truckCapacityKg is already declared above, reuse it
-    const utilization = ((loadWeight / truckCapacityKg) * 100).toFixed(1);
-    
-    return {
-      truckId: truck.id,
-      loadId: load.id,
-      overallScore,
-      capacityScore: capacityScore,
-      distanceScore: 0, // Not used in weight-only matching
-      equipmentScore: 0, // Not used in weight-only matching
-      ratingScore: 0, // Not used in weight-only matching
-      priceScore: 0, // Not used in weight-only matching
-      distanceKm: 0, // Not calculated for weight-only matching
-      estimatedCost: 0, // Not calculated for weight-only matching
-      estimatedRevenue: 0, // Not calculated for weight-only matching
-      profitMargin: 0, // Not calculated for weight-only matching
-      truckMake: truck.make || 'Unknown',
-      truckModel: truck.model || 'Unknown',
-      plateNumber: truck.plateNumber || 'N/A',
-      capacityWeight: truckCapacityKg, // Return capacity in kg for consistency
-      capacityVolume: truck.capacityVolume || 0,
-      truckRating: truck.averageRating || 0,
-      hasRefrigeration: truck.hasRefrigeration || false,
-      hasLiftGate: truck.hasLiftGate || false,
-      hasHazmatPermit: truck.hasHazmatPermit || false,
-      matchReason: `Weight match: Truck capacity (${truckCapacityKg.toFixed(1)}kg / ${Number(truck.capacityWeight).toFixed(1)}lbs) can carry cargo (${loadWeight}kg) - ${utilization}% utilization`,
-      confidence: capacityScore, // Confidence is same as capacity score for weight-only matching
-      successProbability: capacityScore, // Same as capacity score
-      estimatedDeliveryTime: null, // Not calculated for weight-only matching
-      riskScore: 0, // Not calculated for weight-only matching
-      recommendedPrice: 0, // Not calculated for weight-only matching
-      ...driverInfo,
-    } as MatchResultDto;
+      // Calculate utilization percentage for match reason (using kg for both)
+      // truckCapacityKg is already declared above, reuse it
+      const utilization = ((loadWeight / truckCapacityKg) * 100).toFixed(1);
+
+      return {
+        truckId: truck.id,
+        loadId: load.id,
+        overallScore,
+        capacityScore: capacityScore,
+        distanceScore: 0, // Not used in weight-only matching
+        equipmentScore: 0, // Not used in weight-only matching
+        ratingScore: 0, // Not used in weight-only matching
+        priceScore: 0, // Not used in weight-only matching
+        distanceKm: 0, // Not calculated for weight-only matching
+        estimatedCost: 0, // Not calculated for weight-only matching
+        estimatedRevenue: 0, // Not calculated for weight-only matching
+        profitMargin: 0, // Not calculated for weight-only matching
+        truckMake: truck.make || 'Unknown',
+        truckModel: truck.model || 'Unknown',
+        plateNumber: truck.plateNumber || 'N/A',
+        capacityWeight: truckCapacityKg, // Return capacity in kg for consistency
+        capacityVolume: truck.capacityVolume || 0,
+        truckRating: truck.averageRating || 0,
+        hasRefrigeration: truck.hasRefrigeration || false,
+        hasLiftGate: truck.hasLiftGate || false,
+        hasHazmatPermit: truck.hasHazmatPermit || false,
+        matchReason: `Weight match: Truck capacity (${truckCapacityKg.toFixed(1)}kg / ${Number(truck.capacityWeight).toFixed(1)}lbs) can carry cargo (${loadWeight}kg) - ${utilization}% utilization`,
+        confidence: capacityScore, // Confidence is same as capacity score for weight-only matching
+        successProbability: capacityScore, // Same as capacity score
+        estimatedDeliveryTime: null, // Not calculated for weight-only matching
+        riskScore: 0, // Not calculated for weight-only matching
+        recommendedPrice: 0, // Not calculated for weight-only matching
+        ...driverInfo,
+      } as MatchResultDto;
     } catch (error) {
       console.error('Error in scoreTruck:', error);
       console.error('Truck ID:', truck?.id);
@@ -800,13 +856,18 @@ export class MatchingService {
     try {
       if (!truck?.capacityWeight || truck.capacityWeight <= 0) return 0;
       if (!load?.weight || load.weight <= 0) return 0;
-      
-      const weightUtilization = load.weight / truck.capacityWeight;
-      const volumeUtilization = truck.capacityVolume && truck.capacityVolume > 0
-        ? (load.volume || 0) / truck.capacityVolume
-        : 0;
 
-      if (weightUtilization > 1 || (volumeUtilization > 1 && truck.capacityVolume > 0)) return 0;
+      const weightUtilization = load.weight / truck.capacityWeight;
+      const volumeUtilization =
+        truck.capacityVolume && truck.capacityVolume > 0
+          ? (load.volume || 0) / truck.capacityVolume
+          : 0;
+
+      if (
+        weightUtilization > 1 ||
+        (volumeUtilization > 1 && truck.capacityVolume > 0)
+      )
+        return 0;
 
       const maxUtilization = Math.max(weightUtilization, volumeUtilization);
 
@@ -825,7 +886,7 @@ export class MatchingService {
   private calculateEquipmentScore(truck: Truck, load: Load): number {
     try {
       if (!truck || !load) return 0.5;
-      
+
       let score = 1.0;
 
       // Check refrigeration requirement
@@ -870,7 +931,7 @@ export class MatchingService {
   private calculateTemperatureScore(truck: Truck, load: Load): number {
     try {
       if (!truck || !load) return 0.5;
-      
+
       if (!load.temperatureMin && !load.temperatureMax) return 1.0; // No temperature requirements
 
       if (!truck.hasRefrigeration) return 0; // No temperature control
@@ -887,7 +948,7 @@ export class MatchingService {
   private calculateSecurityScore(truck: Truck, load: Load): number {
     try {
       if (!truck || !load) return 0.5;
-      
+
       let score = 1.0;
 
       // GPS monitoring requirement
@@ -917,7 +978,7 @@ export class MatchingService {
   private calculateRouteScore(truck: Truck, load: Load): number {
     try {
       if (!truck || !load) return 0.5;
-      
+
       let score = 1.0;
 
       // Low clearance requirement
@@ -942,7 +1003,7 @@ export class MatchingService {
   private calculateTimeScore(truck: Truck, load: Load): number {
     try {
       if (!truck || !load) return 0.5;
-      
+
       if (!load.isTimeCritical) return 1.0;
 
       // Check truck availability and current location
@@ -956,7 +1017,8 @@ export class MatchingService {
 
   private calculateRatingScore(truck: Truck): number {
     try {
-      if (!truck || !truck.averageRating || truck.averageRating <= 0) return 0.5; // Default score if no rating
+      if (!truck || !truck.averageRating || truck.averageRating <= 0)
+        return 0.5; // Default score if no rating
       return Math.min(truck.averageRating / 5, 1.0);
     } catch (error) {
       console.error('Error in calculateRatingScore:', error);
@@ -989,7 +1051,7 @@ export class MatchingService {
   private calculateExperienceScore(truck: Truck, load: Load): number {
     try {
       if (!truck || !load) return 0.5;
-      
+
       let score = 0.5; // Base score
 
       // Experience with cargo type
@@ -1298,9 +1360,12 @@ export class MatchingService {
     if (!load.length || !load.width || !load.height) return 0.5; // Default score if dimensions not provided
 
     // Check if cargo fits in truck dimensions
-    const fitsLength = truck.maxLength && truck.maxLength > 0 && load.length <= truck.maxLength;
-    const fitsWidth = truck.maxWidth && truck.maxWidth > 0 && load.width <= truck.maxWidth;
-    const fitsHeight = truck.maxHeight && truck.maxHeight > 0 && load.height <= truck.maxHeight;
+    const fitsLength =
+      truck.maxLength && truck.maxLength > 0 && load.length <= truck.maxLength;
+    const fitsWidth =
+      truck.maxWidth && truck.maxWidth > 0 && load.width <= truck.maxWidth;
+    const fitsHeight =
+      truck.maxHeight && truck.maxHeight > 0 && load.height <= truck.maxHeight;
 
     if (fitsLength && fitsWidth && fitsHeight) {
       // Calculate utilization efficiency
@@ -1538,7 +1603,10 @@ export class MatchingService {
   async getMarketInsights(tenantId: string): Promise<any> {
     // Get market analytics for matching insights
     const publishedLoads = await this.loadRepository.count({
-      where: { tenantId, status: In([LoadStatus.CREATED, LoadStatus.PUBLISHED]) },
+      where: {
+        tenantId,
+        status: In([LoadStatus.CREATED, LoadStatus.PUBLISHED]),
+      },
     });
 
     const availableTrucks = await this.truckRepository.count({

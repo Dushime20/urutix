@@ -1,4 +1,16 @@
-import { IsString, IsEnum, IsNumber, IsDate, IsOptional, IsBoolean, IsArray, IsUUID, Min, MaxLength, IsObject } from 'class-validator';
+import {
+  IsString,
+  IsEnum,
+  IsNumber,
+  IsDate,
+  IsOptional,
+  IsBoolean,
+  IsArray,
+  IsUUID,
+  Min,
+  MaxLength,
+  IsObject,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { PolicyType, PolicyStatus } from '../entities/insurance-policy.entity';
@@ -18,7 +30,11 @@ export class CreatePolicyDto {
   @IsEnum(PolicyType)
   policyType: PolicyType;
 
-  @ApiProperty({ enum: PolicyStatus, description: 'Status of the policy', default: PolicyStatus.PENDING })
+  @ApiProperty({
+    enum: PolicyStatus,
+    description: 'Status of the policy',
+    default: PolicyStatus.PENDING,
+  })
   @IsOptional()
   @IsEnum(PolicyStatus)
   status?: PolicyStatus;
@@ -69,7 +85,10 @@ export class CreatePolicyDto {
   @IsObject()
   conditions?: Record<string, any>;
 
-  @ApiPropertyOptional({ description: 'Whether policy auto-renews', default: false })
+  @ApiPropertyOptional({
+    description: 'Whether policy auto-renews',
+    default: false,
+  })
   @IsOptional()
   @IsBoolean()
   autoRenew?: boolean;

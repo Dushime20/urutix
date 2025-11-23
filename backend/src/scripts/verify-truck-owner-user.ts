@@ -24,7 +24,8 @@ async function verifyOrCreateTruckOwner() {
 
     const email = 'truck.owner@test.com';
     const password = 'test123';
-    const tenantId = process.env.TENANT_ID || '00000000-0000-0000-0000-000000000001';
+    const tenantId =
+      process.env.TENANT_ID || '00000000-0000-0000-0000-000000000001';
 
     // Check if user exists
     let user = await userRepository.findOne({
@@ -34,10 +35,10 @@ async function verifyOrCreateTruckOwner() {
 
     if (!user) {
       console.log('👤 User does not exist. Creating truck owner user...');
-      
+
       // Hash password
       const passwordHash = await bcrypt.hash(password, 10);
-      
+
       // Create user
       user = new User();
       user.email = email;
@@ -46,7 +47,7 @@ async function verifyOrCreateTruckOwner() {
       user.role = UserRole.TRUCK_OWNER;
       user.status = UserStatus.ACTIVE;
       user.tenantId = tenantId;
-      
+
       user = await userRepository.save(user);
       console.log('✅ User created:', user.id);
 
@@ -57,7 +58,7 @@ async function verifyOrCreateTruckOwner() {
       profile.firstName = 'Truck';
       profile.lastName = 'Owner';
       profile.companyName = 'Test Trucking Company';
-      
+
       await profileRepository.save(profile);
       console.log('✅ Profile created');
     } else {
@@ -65,12 +66,12 @@ async function verifyOrCreateTruckOwner() {
       console.log('   Email:', user.email);
       console.log('   Role:', user.role);
       console.log('   Status:', user.status);
-      
+
       // Verify password
       if (user.passwordHash) {
         const isValid = await bcrypt.compare(password, user.passwordHash);
         console.log('   Password valid:', isValid);
-        
+
         if (!isValid) {
           console.log('⚠️  Password does not match. Updating password...');
           const newPasswordHash = await bcrypt.hash(password, 10);
@@ -109,7 +110,6 @@ async function verifyOrCreateTruckOwner() {
     console.log('   Role:', UserRole.TRUCK_OWNER);
     console.log('   Status:', UserStatus.ACTIVE);
     console.log('\n✅ Truck owner user is ready!');
-
   } catch (error) {
     console.error('❌ Error:', error);
     throw error;
@@ -132,4 +132,3 @@ if (require.main === module) {
 }
 
 export { verifyOrCreateTruckOwner };
-

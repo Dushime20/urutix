@@ -1,7 +1,7 @@
-import { MigrationInterface, QueryRunner } from "typeorm";
+import { MigrationInterface, QueryRunner } from 'typeorm';
 
 export class CreateRateLimits1710000000001 implements MigrationInterface {
-  name = 'CreateRateLimits1710000000001'
+  name = 'CreateRateLimits1710000000001';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`
@@ -24,18 +24,24 @@ export class CreateRateLimits1710000000001 implements MigrationInterface {
       );
     `);
 
-    await queryRunner.query(`CREATE INDEX IF NOT EXISTS "IDX_rate_limits_tenant_endpoint_createdAt" ON "rate_limits" ("tenantId", "endpoint", "createdAt");`);
-    await queryRunner.query(`CREATE INDEX IF NOT EXISTS "IDX_rate_limits_tenant_createdAt" ON "rate_limits" ("tenantId", "createdAt");`);
+    await queryRunner.query(
+      `CREATE INDEX IF NOT EXISTS "IDX_rate_limits_tenant_endpoint_createdAt" ON "rate_limits" ("tenantId", "endpoint", "createdAt");`,
+    );
+    await queryRunner.query(
+      `CREATE INDEX IF NOT EXISTS "IDX_rate_limits_tenant_createdAt" ON "rate_limits" ("tenantId", "createdAt");`,
+    );
 
     // Ensure uuid extension exists for uuid_generate_v4
     await queryRunner.query(`CREATE EXTENSION IF NOT EXISTS "uuid-ossp";`);
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_rate_limits_tenant_createdAt";`);
-    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_rate_limits_tenant_endpoint_createdAt";`);
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "IDX_rate_limits_tenant_createdAt";`,
+    );
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "IDX_rate_limits_tenant_endpoint_createdAt";`,
+    );
     await queryRunner.query(`DROP TABLE IF EXISTS "rate_limits";`);
   }
 }
-
-

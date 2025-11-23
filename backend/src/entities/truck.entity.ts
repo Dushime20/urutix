@@ -73,7 +73,10 @@ export enum TrailerType {
 }
 
 @Entity('trucks')
-@Index(['tenantId', 'plateNumber'], { unique: true, where: 'deleted_at IS NULL' })
+@Index(['tenantId', 'plateNumber'], {
+  unique: true,
+  where: 'deleted_at IS NULL',
+})
 @Index(['ownerId', 'status'])
 @Index(['status', 'currentTripId'])
 @Index(['truckType', 'capacityWeight'])
@@ -744,7 +747,7 @@ export class Truck {
 
   @Column({ default: true })
   isActive: boolean;
-  
+
   @CreateDateColumn()
   createdAt: Date;
 

@@ -7,7 +7,7 @@ import {
   ManyToOne,
   JoinColumn,
   OneToMany,
-  Index
+  Index,
 } from 'typeorm';
 import { decimalToNumberTransformer } from '../common/transformers/decimal.transformer';
 
@@ -41,10 +41,21 @@ export class LoanRequest {
   @Column({ type: 'uuid', nullable: true })
   lender_id: string;
 
-  @Column({ type: 'decimal', precision: 15, scale: 2, transformer: decimalToNumberTransformer })
+  @Column({
+    type: 'decimal',
+    precision: 15,
+    scale: 2,
+    transformer: decimalToNumberTransformer,
+  })
   requested_amount: number;
 
-  @Column({ type: 'decimal', precision: 15, scale: 2, nullable: true, transformer: decimalToNumberTransformer })
+  @Column({
+    type: 'decimal',
+    precision: 15,
+    scale: 2,
+    nullable: true,
+    transformer: decimalToNumberTransformer,
+  })
   approved_amount: number;
 
   @Column({
@@ -57,7 +68,13 @@ export class LoanRequest {
   @Column({ type: 'varchar', length: 255, unique: true })
   idempotency_key: string;
 
-  @Column({ type: 'decimal', precision: 15, scale: 2, nullable: true, transformer: decimalToNumberTransformer })
+  @Column({
+    type: 'decimal',
+    precision: 15,
+    scale: 2,
+    nullable: true,
+    transformer: decimalToNumberTransformer,
+  })
   interest_amount: number;
 
   @Column({ type: 'date', nullable: true })

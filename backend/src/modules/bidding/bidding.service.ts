@@ -120,7 +120,9 @@ export class BiddingService {
     }
 
     if (![LoadStatus.CREATED, LoadStatus.PUBLISHED].includes(load.status)) {
-      throw new BadRequestException('Only created or published loads can receive bids');
+      throw new BadRequestException(
+        'Only created or published loads can receive bids',
+      );
     }
 
     // Validate truck owner

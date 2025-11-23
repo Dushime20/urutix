@@ -9,7 +9,10 @@ export interface CacheOptions {
 @Injectable()
 export class CacheService {
   private readonly logger = new Logger(CacheService.name);
-  private readonly cache = new Map<string, { data: any; expiry: number; metadata: any }>();
+  private readonly cache = new Map<
+    string,
+    { data: any; expiry: number; metadata: any }
+  >();
   private readonly defaultTTL = 300; // 5 minutes
   private readonly maxCacheSize = 1000; // Maximum number of cached items
 
@@ -24,7 +27,7 @@ export class CacheService {
   async get<T>(key: string): Promise<T | null> {
     try {
       const cached = this.cache.get(key);
-      
+
       if (!cached) {
         return null;
       }
@@ -41,7 +44,6 @@ export class CacheService {
 
       this.logger.debug(`Cache hit for key: ${key}`);
       return cached.data as T;
-
     } catch (error) {
       this.logger.warn(`Cache get failed for key ${key}: ${error.message}`);
       return null;
@@ -51,11 +53,16 @@ export class CacheService {
   /**
    * Set value in cache
    */
-  async set(key: string, value: any, ttl?: number, options?: CacheOptions): Promise<void> {
+  async set(
+    key: string,
+    value: any,
+    ttl?: number,
+    options?: CacheOptions,
+  ): Promise<void> {
     try {
       const finalTTL = ttl || options?.ttl || this.defaultTTL;
-      const expiry = Date.now() + (finalTTL * 1000);
-      
+      const expiry = Date.now() + finalTTL * 1000;
+
       // Check cache size limit
       if (this.cache.size >= this.maxCacheSize) {
         this.evictLeastUsed();
@@ -77,7 +84,6 @@ export class CacheService {
       });
 
       this.logger.debug(`Cached value for key: ${key}, TTL: ${finalTTL}s`);
-
     } catch (error) {
       this.logger.warn(`Cache set failed for key ${key}: ${error.message}`);
     }
@@ -117,7 +123,9 @@ export class CacheService {
 
       return true;
     } catch (error) {
-      this.logger.warn(`Cache has check failed for key ${key}: ${error.message}`);
+      this.logger.warn(
+        `Cache has check failed for key ${key}: ${error.message}`,
+      );
       return false;
     }
   }
@@ -134,7 +142,8 @@ export class CacheService {
     try {
       const totalItems = this.cache.size;
       let totalSize = 0;
-      const namespaceStats: Record<string, { count: number; size: number }> = {};
+      const namespaceStats: Record<string, { count: number; size: number }> =
+        {};
 
       for (const [key, cached] of this.cache.entries()) {
         const namespace = cached.metadata.namespace;
@@ -184,7 +193,9 @@ export class CacheService {
             deletedCount++;
           }
         }
-        this.logger.log(`Cleared cache namespace: ${namespace}, deleted ${deletedCount} items`);
+        this.logger.log(
+          `Cleared cache namespace: ${namespace}, deleted ${deletedCount} items`,
+        );
       } else {
         // Clear all cache
         deletedCount = this.cache.size;
@@ -212,8 +223,7 @@ export class CacheService {
 
       // Simple pattern matching (you could use more sophisticated regex)
       const regex = new RegExp(pattern.replace(/\*/g, '.*'));
-      return keys.filter(key => regex.test(key));
-
+      return keys.filter((key) => regex.test(key));
     } catch (error) {
       this.logger.warn(`Failed to get cache keys: ${error.message}`);
       return [];
@@ -234,11 +244,14 @@ export class CacheService {
         }
       }
 
-      this.logger.log(`Invalidated ${invalidatedCount} cache keys matching pattern: ${pattern}`);
+      this.logger.log(
+        `Invalidated ${invalidatedCount} cache keys matching pattern: ${pattern}`,
+      );
       return invalidatedCount;
-
     } catch (error) {
-      this.logger.warn(`Failed to invalidate cache pattern ${pattern}: ${error.message}`);
+      this.logger.warn(
+        `Failed to invalidate cache pattern ${pattern}: ${error.message}`,
+      );
       return 0;
     }
   }
@@ -272,11 +285,15 @@ export class CacheService {
   private evictLeastUsed(): void {
     try {
       const entries = Array.from(this.cache.entries());
-      
+
       // Sort by access count and last accessed time
       entries.sort((a, b) => {
-        const aScore = (a[1].metadata.accessCount || 0) + (a[1].metadata.lastAccessed / 1000000);
-        const bScore = (b[1].metadata.accessCount || 0) + (b[1].metadata.lastAccessed / 1000000);
+        const aScore =
+          (a[1].metadata.accessCount || 0) +
+          a[1].metadata.lastAccessed / 1000000;
+        const bScore =
+          (b[1].metadata.accessCount || 0) +
+          b[1].metadata.lastAccessed / 1000000;
         return aScore - bScore;
       });
 
@@ -307,16 +324,24 @@ export class CacheService {
   /**
    * Preload cache with frequently accessed data
    */
-  async preload(namespace: string, data: Record<string, any>, ttl?: number): Promise<void> {
+  async preload(
+    namespace: string,
+    data: Record<string, any>,
+    ttl?: number,
+  ): Promise<void> {
     try {
       const promises = Object.entries(data).map(([key, value]) =>
-        this.set(`${namespace}:${key}`, value, ttl, { namespace })
+        this.set(`${namespace}:${key}`, value, ttl, { namespace }),
       );
 
       await Promise.all(promises);
-      this.logger.log(`Preloaded ${Object.keys(data).length} items for namespace: ${namespace}`);
+      this.logger.log(
+        `Preloaded ${Object.keys(data).length} items for namespace: ${namespace}`,
+      );
     } catch (error) {
-      this.logger.warn(`Cache preload failed for namespace ${namespace}: ${error.message}`);
+      this.logger.warn(
+        `Cache preload failed for namespace ${namespace}: ${error.message}`,
+      );
     }
   }
 

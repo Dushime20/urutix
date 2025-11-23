@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Between, Not } from 'typeorm';
+import { Repository, Not } from 'typeorm';
 import { PricingModel } from '../entities/pricing-model.entity';
 import { PricingPrediction } from '../entities/pricing-prediction.entity';
 import { ModelStatus } from '../entities/pricing-model.entity';
@@ -41,7 +41,15 @@ export class ModelMonitoringService {
       });
 
       // Calculate drift metrics
-      const driftMetrics = this.calculateDriftMetrics(recentPredictions, model);
+      const driftMetrics = this.calculateDriftMetrics(
+        recentPredictions,
+        model,
+      ) as {
+        featureDrift: Record<string, number>;
+        predictionDrift: number;
+        dataDrift: number;
+        conceptDrift: number;
+      };
 
       // Determine if drift is detected
       const driftDetected = this.isDriftDetected(
@@ -66,7 +74,9 @@ export class ModelMonitoringService {
         recommendations,
       };
     } catch (error) {
-      this.logger.error(`Drift detection failed: ${error.message}`);
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
+      this.logger.error(`Drift detection failed: ${errorMessage}`);
       throw error;
     }
   }
@@ -90,17 +100,22 @@ export class ModelMonitoringService {
 
       // Get recent predictions for performance analysis
       const recentPredictions = await this.pricingPredictionRepository.find({
-        where: { modelId, tenantId, actualPrice: Not(null) as any },
+        where: { modelId, tenantId, actualPrice: Not(null) },
         order: { createdAt: 'DESC' },
         take: 500,
       });
 
       // Calculate current performance
-      const currentPerformance =
-        this.calculatePerformanceMetrics(recentPredictions);
+      const currentPerformance = this.calculatePerformanceMetrics(
+        recentPredictions,
+      ) as { mae: number; mse: number; accuracy: number };
 
       // Compare with baseline performance
-      const baselinePerformance = model.performanceMetrics;
+      const baselinePerformance = (model.performanceMetrics || {
+        mae: 0,
+        mse: 0,
+        accuracy: 0,
+      }) as { mae: number; mse: number; accuracy: number };
       const degradationDetected = this.isPerformanceDegraded(
         currentPerformance,
         baselinePerformance,
@@ -118,8 +133,10 @@ export class ModelMonitoringService {
         recommendations,
       };
     } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
       this.logger.error(
-        `Performance degradation check failed: ${error.message}`,
+        `Performance degradation check failed: ${errorMessage}`,
       );
       throw error;
     }
@@ -188,7 +205,9 @@ export class ModelMonitoringService {
         nextRetrainingDate,
       };
     } catch (error) {
-      this.logger.error(`Retraining check failed: ${error.message}`);
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
+      this.logger.error(`Retraining check failed: ${errorMessage}`);
       throw error;
     }
   }
@@ -212,7 +231,7 @@ export class ModelMonitoringService {
 
       // Send email alerts
       if (alertConfig?.alertEmails?.length > 0) {
-        await this.sendEmailAlerts(
+        this.sendEmailAlerts(
           alertConfig.alertEmails,
           alertType,
           message,
@@ -222,7 +241,7 @@ export class ModelMonitoringService {
 
       // Send webhook alerts
       if (alertConfig?.alertWebhooks?.length > 0) {
-        await this.sendWebhookAlerts(
+        this.sendWebhookAlerts(
           alertConfig.alertWebhooks,
           alertType,
           message,
@@ -232,7 +251,9 @@ export class ModelMonitoringService {
 
       this.logger.log(`Alerts sent for model ${modelId}: ${alertType}`);
     } catch (error) {
-      this.logger.error(`Failed to send alerts: ${error.message}`);
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
+      this.logger.error(`Failed to send alerts: ${errorMessage}`);
       throw error;
     }
   }
@@ -251,13 +272,13 @@ export class ModelMonitoringService {
       });
 
       // Get recent alerts
-      const alerts = await this.getRecentAlerts(tenantId);
+      const alerts = this.getRecentAlerts(tenantId);
 
       // Get performance trends
-      const performanceTrends = await this.getPerformanceTrends(tenantId);
+      const performanceTrends = this.getPerformanceTrends(tenantId);
 
       // Get drift trends
-      const driftTrends = await this.getDriftTrends(tenantId);
+      const driftTrends = this.getDriftTrends(tenantId);
 
       return {
         activeModels,
@@ -266,7 +287,11 @@ export class ModelMonitoringService {
         driftTrends,
       };
     } catch (error) {
-      this.logger.error(`Failed to get monitoring dashboard: ${error.message}`);
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
+      this.logger.error(
+        `Failed to get monitoring dashboard: ${errorMessage}`,
+      );
       throw error;
     }
   }
@@ -316,7 +341,15 @@ export class ModelMonitoringService {
     };
   }
 
-  private isDriftDetected(driftMetrics: any, threshold: number): boolean {
+  private isDriftDetected(
+    driftMetrics: {
+      featureDrift: Record<string, number>;
+      predictionDrift: number;
+      dataDrift: number;
+      conceptDrift: number;
+    },
+    threshold: number,
+  ): boolean {
     return (
       driftMetrics.predictionDrift > threshold ||
       driftMetrics.dataDrift > threshold ||
@@ -328,7 +361,12 @@ export class ModelMonitoringService {
   }
 
   private generateDriftRecommendations(
-    driftMetrics: any,
+    driftMetrics: {
+      featureDrift: Record<string, number>;
+      predictionDrift: number;
+      dataDrift: number;
+      conceptDrift: number;
+    },
     driftDetected: boolean,
   ): string[] {
     const recommendations: string[] = [];
@@ -363,7 +401,11 @@ export class ModelMonitoringService {
     return recommendations;
   }
 
-  private calculatePerformanceMetrics(predictions: PricingPrediction[]): any {
+  private calculatePerformanceMetrics(predictions: PricingPrediction[]): {
+    mae: number;
+    mse: number;
+    accuracy: number;
+  } {
     if (predictions.length === 0) {
       return { mae: 0, mse: 0, accuracy: 0 };
     }
@@ -382,8 +424,8 @@ export class ModelMonitoringService {
   }
 
   private isPerformanceDegraded(
-    currentPerformance: any,
-    baselinePerformance: any,
+    currentPerformance: { mae: number; mse: number; accuracy: number },
+    baselinePerformance: { mae: number; mse: number; accuracy: number },
   ): boolean {
     const threshold = 0.05; // 5% degradation threshold
 
@@ -398,8 +440,8 @@ export class ModelMonitoringService {
   }
 
   private generatePerformanceRecommendations(
-    currentPerformance: any,
-    baselinePerformance: any,
+    currentPerformance: { mae: number; mse: number; accuracy: number },
+    baselinePerformance: { mae: number; mse: number; accuracy: number },
   ): string[] {
     const recommendations: string[] = [];
 
@@ -450,31 +492,37 @@ export class ModelMonitoringService {
     return nextDate;
   }
 
-  private async sendEmailAlerts(
+  private sendEmailAlerts(
     emails: string[],
     alertType: string,
     message: string,
-    model: PricingModel,
-  ): Promise<void> {
+    _model: PricingModel,
+  ): void {
     // Mock email sending
     this.logger.log(
       `Sending email alerts to ${emails.join(', ')}: ${alertType} - ${message}`,
     );
   }
 
-  private async sendWebhookAlerts(
+  private sendWebhookAlerts(
     webhooks: string[],
     alertType: string,
     message: string,
-    model: PricingModel,
-  ): Promise<void> {
+    _model: PricingModel,
+  ): void {
     // Mock webhook sending
     this.logger.log(
       `Sending webhook alerts to ${webhooks.join(', ')}: ${alertType} - ${message}`,
     );
   }
 
-  private async getRecentAlerts(tenantId: string): Promise<any[]> {
+  private getRecentAlerts(_tenantId: string): Array<{
+    id: string;
+    type: string;
+    message: string;
+    timestamp: Date;
+    severity: string;
+  }> {
     // Mock recent alerts
     return [
       {
@@ -487,7 +535,12 @@ export class ModelMonitoringService {
     ];
   }
 
-  private async getPerformanceTrends(tenantId: string): Promise<any[]> {
+  private getPerformanceTrends(_tenantId: string): Array<{
+    date: Date;
+    accuracy: number;
+    mae: number;
+    modelId: string;
+  }> {
     // Mock performance trends
     return [
       {
@@ -499,7 +552,13 @@ export class ModelMonitoringService {
     ];
   }
 
-  private async getDriftTrends(tenantId: string): Promise<any[]> {
+  private getDriftTrends(_tenantId: string): Array<{
+    date: Date;
+    predictionDrift: number;
+    dataDrift: number;
+    conceptDrift: number;
+    modelId: string;
+  }> {
     // Mock drift trends
     return [
       {
@@ -512,22 +571,22 @@ export class ModelMonitoringService {
     ];
   }
 
-  private calculatePredictionDrift(predictions: PricingPrediction[]): number {
+  private calculatePredictionDrift(_predictions: PricingPrediction[]): number {
     // Mock prediction drift calculation
     return Math.random() * 0.2;
   }
 
   private calculateDataDrift(
-    predictions: PricingPrediction[],
-    model: PricingModel,
+    _predictions: PricingPrediction[],
+    _model: PricingModel,
   ): number {
     // Mock data drift calculation
     return Math.random() * 0.15;
   }
 
   private calculateConceptDrift(
-    predictions: PricingPrediction[],
-    model: PricingModel,
+    _predictions: PricingPrediction[],
+    _model: PricingModel,
   ): number {
     // Mock concept drift calculation
     return Math.random() * 0.1;

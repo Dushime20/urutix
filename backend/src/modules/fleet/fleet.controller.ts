@@ -61,13 +61,26 @@ export class FleetController {
     status: 403,
     description: 'Forbidden - insufficient permissions',
   })
-  async createTruck(@Body(new ValidationPipe({ transform: true, whitelist: true, forbidNonWhitelisted: false })) createTruckDto: CreateTruckDto, @Request() req) {
+  async createTruck(
+    @Body(
+      new ValidationPipe({
+        transform: true,
+        whitelist: true,
+        forbidNonWhitelisted: false,
+      }),
+    )
+    createTruckDto: CreateTruckDto,
+    @Request() req,
+  ) {
     try {
       console.log('🚛 Create Truck Debug Info:');
       console.log('Request headers authorization:', req.headers.authorization);
       console.log('Request headers content-type:', req.headers['content-type']);
       console.log('Raw request body:', JSON.stringify(req.body, null, 2));
-      console.log('Parsed createTruckDto:', JSON.stringify(createTruckDto, null, 2));
+      console.log(
+        'Parsed createTruckDto:',
+        JSON.stringify(createTruckDto, null, 2),
+      );
       console.log('createTruckDto type:', typeof createTruckDto);
       console.log('Request user:', req.user);
       console.log('User ID:', req.user?.userId);
@@ -76,15 +89,21 @@ export class FleetController {
 
       // Validate user authentication
       if (!req.user) {
-        throw new UnauthorizedException('User not authenticated. Please log in.');
+        throw new UnauthorizedException(
+          'User not authenticated. Please log in.',
+        );
       }
 
       if (!req.user.userId) {
-        throw new UnauthorizedException('User ID not found in authentication token.');
+        throw new UnauthorizedException(
+          'User ID not found in authentication token.',
+        );
       }
 
       if (!req.user.tenantId) {
-        throw new BadRequestException('Tenant ID not found. User must be associated with a tenant.');
+        throw new BadRequestException(
+          'Tenant ID not found. User must be associated with a tenant.',
+        );
       }
 
       const truck = await this.fleetService.createTruck(
@@ -113,14 +132,17 @@ export class FleetController {
       if (error.response) {
         console.error('❌ Error response:', error.response);
       }
-      
+
       // If it's already a NestJS HTTP exception, re-throw it
       if (error instanceof HttpException) {
         throw error;
       }
 
       // Handle validation errors
-      if (error.name === 'ValidationError' || error.message?.includes('validation')) {
+      if (
+        error.name === 'ValidationError' ||
+        error.message?.includes('validation')
+      ) {
         throw new BadRequestException({
           message: 'Validation failed',
           errors: error.message || 'Invalid truck data provided',
@@ -132,7 +154,9 @@ export class FleetController {
         if (error.detail?.includes('vin')) {
           throw new ConflictException('Truck with this VIN already exists');
         } else if (error.detail?.includes('plateNumber')) {
-          throw new ConflictException('Truck with this plate number already exists');
+          throw new ConflictException(
+            'Truck with this plate number already exists',
+          );
         }
       }
 
@@ -140,7 +164,8 @@ export class FleetController {
       throw new InternalServerErrorException({
         message: 'Failed to create truck',
         error: error.message || 'An unexpected error occurred',
-        details: process.env.NODE_ENV === 'development' ? error.stack : undefined,
+        details:
+          process.env.NODE_ENV === 'development' ? error.stack : undefined,
       });
     }
   }
@@ -330,15 +355,21 @@ export class FleetController {
 
       // Validate user authentication
       if (!req.user) {
-        throw new UnauthorizedException('User not authenticated. Please log in.');
+        throw new UnauthorizedException(
+          'User not authenticated. Please log in.',
+        );
       }
 
       if (!req.user.userId) {
-        throw new UnauthorizedException('User ID not found in authentication token.');
+        throw new UnauthorizedException(
+          'User ID not found in authentication token.',
+        );
       }
 
       if (!req.user.tenantId) {
-        throw new BadRequestException('Tenant ID not found. User must be associated with a tenant.');
+        throw new BadRequestException(
+          'Tenant ID not found. User must be associated with a tenant.',
+        );
       }
 
       // Validate request body
@@ -369,7 +400,10 @@ export class FleetController {
       }
 
       // Handle validation errors
-      if (error.name === 'ValidationError' || error.message?.includes('validation')) {
+      if (
+        error.name === 'ValidationError' ||
+        error.message?.includes('validation')
+      ) {
         throw new BadRequestException({
           message: 'Validation failed',
           errors: error.message || 'Invalid assignment data provided',
@@ -415,15 +449,21 @@ export class FleetController {
 
       // Validate user authentication
       if (!req.user) {
-        throw new UnauthorizedException('User not authenticated. Please log in.');
+        throw new UnauthorizedException(
+          'User not authenticated. Please log in.',
+        );
       }
 
       if (!req.user.userId) {
-        throw new UnauthorizedException('User ID not found in authentication token.');
+        throw new UnauthorizedException(
+          'User ID not found in authentication token.',
+        );
       }
 
       if (!req.user.tenantId) {
-        throw new BadRequestException('Tenant ID not found. User must be associated with a tenant.');
+        throw new BadRequestException(
+          'Tenant ID not found. User must be associated with a tenant.',
+        );
       }
 
       await this.fleetService.unassignDriverFromTruck(
@@ -653,8 +693,14 @@ export class FleetController {
         },
         status: { type: 'string', description: 'Maintenance status' },
         priority: { type: 'string', description: 'Priority level' },
-        assignedTechnician: { type: 'string', description: 'Assigned technician' },
-        location: { type: 'string', description: 'Maintenance location/garage' },
+        assignedTechnician: {
+          type: 'string',
+          description: 'Assigned technician',
+        },
+        location: {
+          type: 'string',
+          description: 'Maintenance location/garage',
+        },
         mileage: { type: 'number', description: 'Vehicle mileage' },
         laborHours: { type: 'number', description: 'Labor hours' },
         notes: { type: 'string', description: 'Additional notes' },
@@ -666,7 +712,10 @@ export class FleetController {
     status: 200,
     description: 'Maintenance record updated successfully',
   })
-  @ApiResponse({ status: 404, description: 'Truck or maintenance record not found' })
+  @ApiResponse({
+    status: 404,
+    description: 'Truck or maintenance record not found',
+  })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async updateTruckMaintenance(
     @Param('id', ParseUUIDPipe) truckId: string,
@@ -699,7 +748,10 @@ export class FleetController {
     status: 200,
     description: 'Maintenance record deleted successfully',
   })
-  @ApiResponse({ status: 404, description: 'Truck or maintenance record not found' })
+  @ApiResponse({
+    status: 404,
+    description: 'Truck or maintenance record not found',
+  })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async deleteTruckMaintenance(
     @Param('id', ParseUUIDPipe) truckId: string,
@@ -779,7 +831,14 @@ export class FleetController {
         notes: { type: 'string', description: 'Additional notes' },
         isRequired: { type: 'boolean', description: 'Is inspection required' },
       },
-      required: ['type', 'title', 'inspector', 'inspectionDate', 'nextInspectionDate', 'status'],
+      required: [
+        'type',
+        'title',
+        'inspector',
+        'inspectionDate',
+        'nextInspectionDate',
+        'status',
+      ],
     },
     description: 'Inspection record data',
   })
@@ -797,7 +856,7 @@ export class FleetController {
     try {
       console.log('🔍 Adding inspection for truck:', truckId);
       console.log('🔍 Inspection data:', inspectionDto);
-      
+
       const inspection = await this.fleetService.addTruckInspection(
         truckId,
         inspectionDto,
@@ -863,7 +922,10 @@ export class FleetController {
     status: 200,
     description: 'Inspection record updated successfully',
   })
-  @ApiResponse({ status: 404, description: 'Truck or inspection record not found' })
+  @ApiResponse({
+    status: 404,
+    description: 'Truck or inspection record not found',
+  })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async updateTruckInspection(
     @Param('id', ParseUUIDPipe) truckId: string,
@@ -896,7 +958,10 @@ export class FleetController {
     status: 200,
     description: 'Inspection record deleted successfully',
   })
-  @ApiResponse({ status: 404, description: 'Truck or inspection record not found' })
+  @ApiResponse({
+    status: 404,
+    description: 'Truck or inspection record not found',
+  })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async deleteTruckInspection(
     @Param('id', ParseUUIDPipe) truckId: string,
@@ -953,21 +1018,46 @@ export class FleetController {
       type: 'object',
       properties: {
         policyNumber: { type: 'string', description: 'Policy number' },
-        insuranceCompany: { type: 'string', description: 'Insurance company name' },
-        policyType: { type: 'string', description: 'Policy type (liability, comprehensive, etc.)' },
+        insuranceCompany: {
+          type: 'string',
+          description: 'Insurance company name',
+        },
+        policyType: {
+          type: 'string',
+          description: 'Policy type (liability, comprehensive, etc.)',
+        },
         coverageAmount: { type: 'number', description: 'Coverage amount' },
         deductible: { type: 'number', description: 'Deductible amount' },
         premium: { type: 'number', description: 'Premium amount' },
-        startDate: { type: 'string', format: 'date', description: 'Policy start date' },
-        endDate: { type: 'string', format: 'date', description: 'Policy end date' },
+        startDate: {
+          type: 'string',
+          format: 'date',
+          description: 'Policy start date',
+        },
+        endDate: {
+          type: 'string',
+          format: 'date',
+          description: 'Policy end date',
+        },
         status: { type: 'string', description: 'Insurance status' },
         agent: { type: 'string', description: 'Insurance agent name' },
-        agentContact: { type: 'string', description: 'Agent contact information' },
+        agentContact: {
+          type: 'string',
+          description: 'Agent contact information',
+        },
         autoRenewal: { type: 'boolean', description: 'Auto renewal enabled' },
         notes: { type: 'string', description: 'Additional notes' },
         documentUrl: { type: 'string', description: 'Insurance document URL' },
       },
-      required: ['policyNumber', 'insuranceCompany', 'policyType', 'coverageAmount', 'startDate', 'endDate', 'status'],
+      required: [
+        'policyNumber',
+        'insuranceCompany',
+        'policyType',
+        'coverageAmount',
+        'startDate',
+        'endDate',
+        'status',
+      ],
     },
     description: 'Insurance record data',
   })
@@ -985,7 +1075,7 @@ export class FleetController {
     try {
       console.log('🛡️ Adding insurance for truck:', truckId);
       console.log('🛡️ Insurance data:', insuranceDto);
-      
+
       const insurance = await this.fleetService.addTruckInsurance(
         truckId,
         insuranceDto,
@@ -1021,16 +1111,30 @@ export class FleetController {
       type: 'object',
       properties: {
         policyNumber: { type: 'string', description: 'Policy number' },
-        insuranceCompany: { type: 'string', description: 'Insurance company name' },
+        insuranceCompany: {
+          type: 'string',
+          description: 'Insurance company name',
+        },
         policyType: { type: 'string', description: 'Policy type' },
         coverageAmount: { type: 'number', description: 'Coverage amount' },
         deductible: { type: 'number', description: 'Deductible amount' },
         premium: { type: 'number', description: 'Premium amount' },
-        startDate: { type: 'string', format: 'date', description: 'Policy start date' },
-        endDate: { type: 'string', format: 'date', description: 'Policy end date' },
+        startDate: {
+          type: 'string',
+          format: 'date',
+          description: 'Policy start date',
+        },
+        endDate: {
+          type: 'string',
+          format: 'date',
+          description: 'Policy end date',
+        },
         status: { type: 'string', description: 'Insurance status' },
         agent: { type: 'string', description: 'Insurance agent name' },
-        agentContact: { type: 'string', description: 'Agent contact information' },
+        agentContact: {
+          type: 'string',
+          description: 'Agent contact information',
+        },
         autoRenewal: { type: 'boolean', description: 'Auto renewal enabled' },
         notes: { type: 'string', description: 'Additional notes' },
         documentUrl: { type: 'string', description: 'Insurance document URL' },
@@ -1042,7 +1146,10 @@ export class FleetController {
     status: 200,
     description: 'Insurance record updated successfully',
   })
-  @ApiResponse({ status: 404, description: 'Truck or insurance record not found' })
+  @ApiResponse({
+    status: 404,
+    description: 'Truck or insurance record not found',
+  })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async updateTruckInsurance(
     @Param('id', ParseUUIDPipe) truckId: string,
@@ -1075,7 +1182,10 @@ export class FleetController {
     status: 200,
     description: 'Insurance record deleted successfully',
   })
-  @ApiResponse({ status: 404, description: 'Truck or insurance record not found' })
+  @ApiResponse({
+    status: 404,
+    description: 'Truck or insurance record not found',
+  })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async deleteTruckInsurance(
     @Param('id', ParseUUIDPipe) truckId: string,
@@ -1140,11 +1250,20 @@ export class FleetController {
           type: 'string',
           description: 'Fuel type (diesel, gasoline, electric, hybrid)',
         },
-        quantity: { type: 'number', description: 'Fuel quantity (gallons/liters)' },
+        quantity: {
+          type: 'number',
+          description: 'Fuel quantity (gallons/liters)',
+        },
         cost: { type: 'number', description: 'Total fuel cost' },
-        mileage: { type: 'number', description: 'Vehicle mileage at time of purchase' },
+        mileage: {
+          type: 'number',
+          description: 'Vehicle mileage at time of purchase',
+        },
         location: { type: 'string', description: 'Fuel purchase location' },
-        fuelEfficiency: { type: 'number', description: 'Fuel efficiency (mpg)' },
+        fuelEfficiency: {
+          type: 'number',
+          description: 'Fuel efficiency (mpg)',
+        },
         driver: { type: 'string', description: 'Driver name' },
         receipt: { type: 'string', description: 'Receipt URL or reference' },
         notes: { type: 'string', description: 'Additional notes' },
@@ -1167,7 +1286,7 @@ export class FleetController {
     try {
       console.log('⛽ Adding fuel record for truck:', truckId);
       console.log('⛽ Fuel data:', fuelDto);
-      
+
       const fuel = await this.fleetService.addTruckFuel(
         truckId,
         fuelDto,
@@ -1211,11 +1330,20 @@ export class FleetController {
           type: 'string',
           description: 'Fuel type (diesel, gasoline, electric, hybrid)',
         },
-        quantity: { type: 'number', description: 'Fuel quantity (gallons/liters)' },
+        quantity: {
+          type: 'number',
+          description: 'Fuel quantity (gallons/liters)',
+        },
         cost: { type: 'number', description: 'Total fuel cost' },
-        mileage: { type: 'number', description: 'Vehicle mileage at time of purchase' },
+        mileage: {
+          type: 'number',
+          description: 'Vehicle mileage at time of purchase',
+        },
         location: { type: 'string', description: 'Fuel purchase location' },
-        fuelEfficiency: { type: 'number', description: 'Fuel efficiency (mpg)' },
+        fuelEfficiency: {
+          type: 'number',
+          description: 'Fuel efficiency (mpg)',
+        },
         driver: { type: 'string', description: 'Driver name' },
         receipt: { type: 'string', description: 'Receipt URL or reference' },
         notes: { type: 'string', description: 'Additional notes' },
@@ -1318,7 +1446,13 @@ export class FleetController {
       properties: {
         position: {
           type: 'string',
-          enum: ['front_left', 'front_right', 'rear_left', 'rear_right', 'spare'],
+          enum: [
+            'front_left',
+            'front_right',
+            'rear_left',
+            'rear_right',
+            'spare',
+          ],
           description: 'Tire position',
         },
         brand: { type: 'string', description: 'Tire brand' },
@@ -1330,9 +1464,15 @@ export class FleetController {
           format: 'date',
           description: 'Installation date',
         },
-        expectedLifespan: { type: 'number', description: 'Expected lifespan in miles' },
+        expectedLifespan: {
+          type: 'number',
+          description: 'Expected lifespan in miles',
+        },
         currentMileage: { type: 'number', description: 'Current mileage' },
-        treadDepth: { type: 'number', description: 'Tread depth in 32nds of an inch' },
+        treadDepth: {
+          type: 'number',
+          description: 'Tread depth in 32nds of an inch',
+        },
         pressure: { type: 'number', description: 'Tire pressure in PSI' },
         status: {
           type: 'string',
@@ -1347,7 +1487,18 @@ export class FleetController {
         cost: { type: 'number', description: 'Tire cost' },
         notes: { type: 'string', description: 'Additional notes' },
       },
-      required: ['position', 'brand', 'model', 'size', 'installationDate', 'expectedLifespan', 'currentMileage', 'treadDepth', 'pressure', 'status'],
+      required: [
+        'position',
+        'brand',
+        'model',
+        'size',
+        'installationDate',
+        'expectedLifespan',
+        'currentMileage',
+        'treadDepth',
+        'pressure',
+        'status',
+      ],
     },
     description: 'Tire record data',
   })
@@ -1365,7 +1516,7 @@ export class FleetController {
     try {
       console.log('🛞 Adding tire record for truck:', truckId);
       console.log('🛞 Tire data:', tireDto);
-      
+
       const tire = await this.fleetService.addTruckTire(
         truckId,
         tireDto,
@@ -1402,7 +1553,13 @@ export class FleetController {
       properties: {
         position: {
           type: 'string',
-          enum: ['front_left', 'front_right', 'rear_left', 'rear_right', 'spare'],
+          enum: [
+            'front_left',
+            'front_right',
+            'rear_left',
+            'rear_right',
+            'spare',
+          ],
           description: 'Tire position',
         },
         brand: { type: 'string', description: 'Tire brand' },
@@ -1414,9 +1571,15 @@ export class FleetController {
           format: 'date',
           description: 'Installation date',
         },
-        expectedLifespan: { type: 'number', description: 'Expected lifespan in miles' },
+        expectedLifespan: {
+          type: 'number',
+          description: 'Expected lifespan in miles',
+        },
         currentMileage: { type: 'number', description: 'Current mileage' },
-        treadDepth: { type: 'number', description: 'Tread depth in 32nds of an inch' },
+        treadDepth: {
+          type: 'number',
+          description: 'Tread depth in 32nds of an inch',
+        },
         pressure: { type: 'number', description: 'Tire pressure in PSI' },
         status: {
           type: 'string',
@@ -1536,7 +1699,13 @@ export class FleetController {
         },
         status: {
           type: 'string',
-          enum: ['compliant', 'non_compliant', 'warning', 'critical', 'pending'],
+          enum: [
+            'compliant',
+            'non_compliant',
+            'warning',
+            'critical',
+            'pending',
+          ],
           description: 'Compliance status',
         },
         lastChecked: {
@@ -1557,7 +1726,15 @@ export class FleetController {
         },
         notes: { type: 'string', description: 'Additional notes' },
       },
-      required: ['regulation', 'requirement', 'dueDate', 'status', 'lastChecked', 'nextCheck', 'responsibleParty'],
+      required: [
+        'regulation',
+        'requirement',
+        'dueDate',
+        'status',
+        'lastChecked',
+        'nextCheck',
+        'responsibleParty',
+      ],
     },
     description: 'Compliance record data',
   })
@@ -1575,7 +1752,7 @@ export class FleetController {
     try {
       console.log('📋 Adding compliance record for truck:', truckId);
       console.log('📋 Compliance data:', complianceDto);
-      
+
       const compliance = await this.fleetService.addTruckCompliance(
         truckId,
         complianceDto,
@@ -1619,7 +1796,13 @@ export class FleetController {
         },
         status: {
           type: 'string',
-          enum: ['compliant', 'non_compliant', 'warning', 'critical', 'pending'],
+          enum: [
+            'compliant',
+            'non_compliant',
+            'warning',
+            'critical',
+            'pending',
+          ],
           description: 'Compliance status',
         },
         lastChecked: {
@@ -1647,7 +1830,10 @@ export class FleetController {
     status: 200,
     description: 'Compliance record updated successfully',
   })
-  @ApiResponse({ status: 404, description: 'Truck or compliance record not found' })
+  @ApiResponse({
+    status: 404,
+    description: 'Truck or compliance record not found',
+  })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async updateTruckCompliance(
     @Param('id', ParseUUIDPipe) truckId: string,
@@ -1673,11 +1859,12 @@ export class FleetController {
   @Post('drivers')
   @ApiOperation({
     summary: 'Create a new driver',
-    description: 'Creates a new driver in the fleet with comprehensive information including license, certifications, and employment details',
+    description:
+      'Creates a new driver in the fleet with comprehensive information including license, certifications, and employment details',
   })
   @ApiBody({ type: CreateDriverDto, description: 'Driver creation data' })
-  @ApiResponse({ 
-    status: 201, 
+  @ApiResponse({
+    status: 201,
     description: 'Driver created successfully',
     schema: {
       type: 'object',
@@ -1690,17 +1877,34 @@ export class FleetController {
             firstName: { type: 'string' },
             lastName: { type: 'string' },
             email: { type: 'string' },
-            status: { type: 'string', enum: ['ACTIVE', 'INACTIVE', 'SUSPENDED', 'ON_LEAVE', 'TERMINATED', 'IN_TRANSIT'] },
-            licenseNumber: { type: 'string' }
-          }
-        }
-      }
-    }
+            status: {
+              type: 'string',
+              enum: [
+                'ACTIVE',
+                'INACTIVE',
+                'SUSPENDED',
+                'ON_LEAVE',
+                'TERMINATED',
+                'IN_TRANSIT',
+              ],
+            },
+            licenseNumber: { type: 'string' },
+          },
+        },
+      },
+    },
   })
   @ApiResponse({ status: 400, description: 'Bad request - invalid data' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiResponse({ status: 403, description: 'Forbidden - insufficient permissions' })
-  @ApiResponse({ status: 409, description: 'Conflict - driver with same license number or user already exists' })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - insufficient permissions',
+  })
+  @ApiResponse({
+    status: 409,
+    description:
+      'Conflict - driver with same license number or user already exists',
+  })
   async createDriver(@Body() createDriverDto: CreateDriverDto, @Request() req) {
     try {
       console.log('👤 Creating driver request:', {
@@ -1711,13 +1915,19 @@ export class FleetController {
 
       // Validate user authentication
       if (!req.user) {
-        throw new UnauthorizedException('User not authenticated. Please log in.');
+        throw new UnauthorizedException(
+          'User not authenticated. Please log in.',
+        );
       }
       if (!req.user.userId) {
-        throw new UnauthorizedException('User ID not found in authentication token.');
+        throw new UnauthorizedException(
+          'User ID not found in authentication token.',
+        );
       }
       if (!req.user.tenantId) {
-        throw new BadRequestException('Tenant ID not found. User must be associated with a tenant.');
+        throw new BadRequestException(
+          'Tenant ID not found. User must be associated with a tenant.',
+        );
       }
 
       const driver = await this.fleetService.createDriver(
@@ -1743,42 +1953,58 @@ export class FleetController {
       console.error('❌ Error in createDriver controller:', error);
       console.error('❌ Error message:', error.message);
       console.error('❌ Error stack:', error.stack);
-      
+
       // Re-throw known exceptions
       if (error instanceof HttpException) {
         throw error;
       }
-      
+
       // Handle validation errors
-      if (error.name === 'ValidationError' || error.message?.includes('validation')) {
+      if (
+        error.name === 'ValidationError' ||
+        error.message?.includes('validation')
+      ) {
         throw new BadRequestException({
           message: 'Validation failed',
           error: error.message || 'Invalid driver data provided',
         });
       }
-      
+
       // Handle database constraint violations
-      if (error.code === '23505') { // Unique constraint violation
+      if (error.code === '23505') {
+        // Unique constraint violation
         const detail = error.detail || '';
-        if (detail.includes('licenseNumber') || detail.includes('license_number')) {
-          throw new ConflictException('A driver with this license number already exists');
+        if (
+          detail.includes('licenseNumber') ||
+          detail.includes('license_number')
+        ) {
+          throw new ConflictException(
+            'A driver with this license number already exists',
+          );
         }
         if (detail.includes('email')) {
-          throw new ConflictException('A driver with this email already exists');
+          throw new ConflictException(
+            'A driver with this email already exists',
+          );
         }
-        throw new ConflictException('A driver with these details already exists');
+        throw new ConflictException(
+          'A driver with these details already exists',
+        );
       }
-      
+
       // Handle data too long errors
       if (error.code === '22001') {
-        throw new BadRequestException('One or more fields exceed maximum length');
+        throw new BadRequestException(
+          'One or more fields exceed maximum length',
+        );
       }
-      
+
       // Generic error
       throw new InternalServerErrorException({
         message: 'Failed to create driver',
         error: error.message || 'An unexpected error occurred',
-        details: process.env.NODE_ENV === 'development' ? error.stack : undefined,
+        details:
+          process.env.NODE_ENV === 'development' ? error.stack : undefined,
       });
     }
   }
@@ -1786,33 +2012,41 @@ export class FleetController {
   @Get('drivers')
   @ApiOperation({
     summary: 'Get all drivers',
-    description: 'Retrieves all drivers with optional filtering and pagination. Supports search, status filtering, location filtering, and pagination.',
+    description:
+      'Retrieves all drivers with optional filtering and pagination. Supports search, status filtering, location filtering, and pagination.',
   })
   @ApiQuery({
     name: 'search',
     required: false,
     description: 'Search in first name, last name, license number',
-    example: 'john'
+    example: 'john',
   })
   @ApiQuery({
     name: 'status',
     required: false,
     description: 'Filter by driver status',
-    enum: ['ACTIVE', 'INACTIVE', 'SUSPENDED', 'ON_LEAVE', 'TERMINATED', 'IN_TRANSIT'],
-    example: 'ACTIVE'
+    enum: [
+      'ACTIVE',
+      'INACTIVE',
+      'SUSPENDED',
+      'ON_LEAVE',
+      'TERMINATED',
+      'IN_TRANSIT',
+    ],
+    example: 'ACTIVE',
   })
   @ApiQuery({
     name: 'location',
     required: false,
     description: 'Filter by location (city, state, or coordinates)',
-    example: 'New York'
+    example: 'New York',
   })
   @ApiQuery({
     name: 'page',
     required: false,
     description: 'Page number for pagination (starts from 1)',
     minimum: 1,
-    example: 1
+    example: 1,
   })
   @ApiQuery({
     name: 'limit',
@@ -1820,10 +2054,10 @@ export class FleetController {
     description: 'Number of items per page (max 100)',
     minimum: 1,
     maximum: 100,
-    example: 20
+    example: 20,
   })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Drivers retrieved successfully',
     schema: {
       type: 'object',
@@ -1839,20 +2073,45 @@ export class FleetController {
               lastName: { type: 'string' },
               email: { type: 'string' },
               phone: { type: 'string' },
-              status: { type: 'string', enum: ['ACTIVE', 'INACTIVE', 'SUSPENDED', 'ON_LEAVE', 'TERMINATED', 'IN_TRANSIT'] },
+              status: {
+                type: 'string',
+                enum: [
+                  'ACTIVE',
+                  'INACTIVE',
+                  'SUSPENDED',
+                  'ON_LEAVE',
+                  'TERMINATED',
+                  'IN_TRANSIT',
+                ],
+              },
               licenseNumber: { type: 'string' },
-              employmentType: { type: 'string', enum: ['FULL_TIME', 'PART_TIME', 'CONTRACT', 'OWNER_OPERATOR', 'FREELANCE'] },
+              employmentType: {
+                type: 'string',
+                enum: [
+                  'FULL_TIME',
+                  'PART_TIME',
+                  'CONTRACT',
+                  'OWNER_OPERATOR',
+                  'FREELANCE',
+                ],
+              },
               rating: { type: 'number', minimum: 0, maximum: 5 },
               safetyScore: { type: 'number', minimum: 0, maximum: 100 },
-              currentLocation: { type: 'object', description: 'GPS coordinates' }
-            }
-          }
-        }
-      }
-    }
+              currentLocation: {
+                type: 'object',
+                description: 'GPS coordinates',
+              },
+            },
+          },
+        },
+      },
+    },
   })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiResponse({ status: 403, description: 'Forbidden - insufficient permissions' })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - insufficient permissions',
+  })
   async findAllDrivers(
     @Request() req,
     @Query('search') search?: string,
@@ -1875,16 +2134,17 @@ export class FleetController {
   @Get('drivers/:id')
   @ApiOperation({
     summary: 'Get driver by ID',
-    description: 'Retrieves detailed information about a specific driver including profile, license, certifications, and performance metrics',
+    description:
+      'Retrieves detailed information about a specific driver including profile, license, certifications, and performance metrics',
   })
-  @ApiParam({ 
-    name: 'id', 
-    description: 'Driver ID (UUID)', 
+  @ApiParam({
+    name: 'id',
+    description: 'Driver ID (UUID)',
     example: '123e4567-e89b-12d3-a456-426614174000',
-    format: 'uuid'
+    format: 'uuid',
   })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Driver retrieved successfully',
     schema: {
       type: 'object',
@@ -1902,22 +2162,44 @@ export class FleetController {
             address: { type: 'string' },
             licenseNumber: { type: 'string' },
             licenseExpiry: { type: 'string', format: 'date' },
-            status: { type: 'string', enum: ['ACTIVE', 'INACTIVE', 'SUSPENDED', 'ON_LEAVE', 'TERMINATED', 'IN_TRANSIT'] },
-            employmentType: { type: 'string', enum: ['FULL_TIME', 'PART_TIME', 'CONTRACT', 'OWNER_OPERATOR', 'FREELANCE'] },
+            status: {
+              type: 'string',
+              enum: [
+                'ACTIVE',
+                'INACTIVE',
+                'SUSPENDED',
+                'ON_LEAVE',
+                'TERMINATED',
+                'IN_TRANSIT',
+              ],
+            },
+            employmentType: {
+              type: 'string',
+              enum: [
+                'FULL_TIME',
+                'PART_TIME',
+                'CONTRACT',
+                'OWNER_OPERATOR',
+                'FREELANCE',
+              ],
+            },
             rating: { type: 'number', minimum: 0, maximum: 5 },
             safetyScore: { type: 'number', minimum: 0, maximum: 100 },
             totalTrips: { type: 'number' },
             totalDistance: { type: 'number' },
             totalEarnings: { type: 'number' },
             currentLocation: { type: 'object', description: 'GPS coordinates' },
-            certifications: { type: 'array', items: { type: 'object' } }
-          }
-        }
-      }
-    }
+            certifications: { type: 'array', items: { type: 'object' } },
+          },
+        },
+      },
+    },
   })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiResponse({ status: 403, description: 'Forbidden - insufficient permissions' })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - insufficient permissions',
+  })
   @ApiResponse({ status: 404, description: 'Driver not found' })
   async findOneDriver(@Param('id', ParseUUIDPipe) id: string, @Request() req) {
     const driver = await this.fleetService.findOneDriver(id, req.user.tenantId);
@@ -1930,21 +2212,22 @@ export class FleetController {
   @Patch('drivers/:id')
   @ApiOperation({
     summary: 'Update driver',
-    description: 'Updates an existing driver. Only provided fields will be updated. Cannot update driver if currently on a trip.',
+    description:
+      'Updates an existing driver. Only provided fields will be updated. Cannot update driver if currently on a trip.',
   })
-  @ApiParam({ 
-    name: 'id', 
-    description: 'Driver ID (UUID)', 
+  @ApiParam({
+    name: 'id',
+    description: 'Driver ID (UUID)',
     example: '123e4567-e89b-12d3-a456-426614174000',
-    format: 'uuid'
+    format: 'uuid',
   })
-  @ApiBody({ 
-    type: CreateDriverDto, 
+  @ApiBody({
+    type: CreateDriverDto,
     description: 'Driver update data - only provided fields will be updated',
-    required: false
+    required: false,
   })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Driver updated successfully',
     schema: {
       type: 'object',
@@ -1957,19 +2240,38 @@ export class FleetController {
             firstName: { type: 'string' },
             lastName: { type: 'string' },
             email: { type: 'string' },
-            status: { type: 'string', enum: ['ACTIVE', 'INACTIVE', 'SUSPENDED', 'ON_LEAVE', 'TERMINATED', 'IN_TRANSIT'] },
+            status: {
+              type: 'string',
+              enum: [
+                'ACTIVE',
+                'INACTIVE',
+                'SUSPENDED',
+                'ON_LEAVE',
+                'TERMINATED',
+                'IN_TRANSIT',
+              ],
+            },
             licenseNumber: { type: 'string' },
-            updatedAt: { type: 'string', format: 'date-time' }
-          }
-        }
-      }
-    }
+            updatedAt: { type: 'string', format: 'date-time' },
+          },
+        },
+      },
+    },
   })
-  @ApiResponse({ status: 400, description: 'Bad request - invalid data or driver on trip' })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad request - invalid data or driver on trip',
+  })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiResponse({ status: 403, description: 'Forbidden - cannot update this driver' })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - cannot update this driver',
+  })
   @ApiResponse({ status: 404, description: 'Driver not found' })
-  @ApiResponse({ status: 409, description: 'Conflict - driver with same license number already exists' })
+  @ApiResponse({
+    status: 409,
+    description: 'Conflict - driver with same license number already exists',
+  })
   async updateDriver(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateDriverDto: Partial<CreateDriverDto>,
@@ -1998,27 +2300,35 @@ export class FleetController {
   @Delete('drivers/:id')
   @ApiOperation({
     summary: 'Delete driver',
-    description: 'Soft deletes a driver from the fleet. Driver cannot be deleted if currently on a trip or has active assignments.',
+    description:
+      'Soft deletes a driver from the fleet. Driver cannot be deleted if currently on a trip or has active assignments.',
   })
-  @ApiParam({ 
-    name: 'id', 
-    description: 'Driver ID (UUID)', 
+  @ApiParam({
+    name: 'id',
+    description: 'Driver ID (UUID)',
     example: '123e4567-e89b-12d3-a456-426614174000',
-    format: 'uuid'
+    format: 'uuid',
   })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Driver deleted successfully',
     schema: {
       type: 'object',
       properties: {
-        message: { type: 'string', example: 'Driver deleted successfully' }
-      }
-    }
+        message: { type: 'string', example: 'Driver deleted successfully' },
+      },
+    },
   })
-  @ApiResponse({ status: 400, description: 'Bad request - cannot delete driver on trip or with active assignments' })
+  @ApiResponse({
+    status: 400,
+    description:
+      'Bad request - cannot delete driver on trip or with active assignments',
+  })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiResponse({ status: 403, description: 'Forbidden - cannot delete this driver' })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - cannot delete this driver',
+  })
   @ApiResponse({ status: 404, description: 'Driver not found' })
   async removeDriver(@Param('id', ParseUUIDPipe) id: string, @Request() req) {
     await this.fleetService.removeDriver(

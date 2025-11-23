@@ -95,47 +95,51 @@ export class FleetService {
 
       // Clean up empty enum values and provide defaults
       const cleanedDto = {
-      ...createTruckDto,
-      truckType:
-        createTruckDto.truckType && createTruckDto.truckType.trim() !== ''
-          ? createTruckDto.truckType
-          : TruckType.FLATBED,
-      trailerType:
-        createTruckDto.trailerType && createTruckDto.trailerType.trim() !== ''
-          ? createTruckDto.trailerType
-          : null,
-      fuelType:
-        createTruckDto.fuelType && createTruckDto.fuelType.trim() !== ''
-          ? createTruckDto.fuelType
-          : FuelType.DIESEL,
-      // Clean up numeric fields
-      mileage:
-        typeof createTruckDto.mileage === 'string' &&
-        createTruckDto.mileage !== ''
-          ? parseInt(createTruckDto.mileage) || 0
-          : createTruckDto.mileage || 0,
-      year:
-        typeof createTruckDto.year === 'string' && createTruckDto.year !== ''
-          ? parseInt(createTruckDto.year)
-          : createTruckDto.year || 2023,
-      capacityWeight:
-        typeof createTruckDto.capacityWeight === 'string' &&
-        createTruckDto.capacityWeight !== ''
-          ? parseFloat(createTruckDto.capacityWeight)
-          : (createTruckDto.capacityWeight && createTruckDto.capacityWeight > 0) ? createTruckDto.capacityWeight : 1,
-      capacityVolume:
-        typeof createTruckDto.capacityVolume === 'string' &&
-        createTruckDto.capacityVolume !== ''
-          ? parseFloat(createTruckDto.capacityVolume)
-          : (createTruckDto.capacityVolume && createTruckDto.capacityVolume > 0) ? createTruckDto.capacityVolume : 1,
-      // Remove driver-related fields that shouldn't be in truck creation
-      firstName: undefined,
-      lastName: undefined,
-      licenseNumber: undefined,
-      licenseType: undefined,
-      experience: undefined,
-      contactInfo: undefined,
-    };
+        ...createTruckDto,
+        truckType:
+          createTruckDto.truckType && createTruckDto.truckType.trim() !== ''
+            ? createTruckDto.truckType
+            : TruckType.FLATBED,
+        trailerType:
+          createTruckDto.trailerType && createTruckDto.trailerType.trim() !== ''
+            ? createTruckDto.trailerType
+            : null,
+        fuelType:
+          createTruckDto.fuelType && createTruckDto.fuelType.trim() !== ''
+            ? createTruckDto.fuelType
+            : FuelType.DIESEL,
+        // Clean up numeric fields
+        mileage:
+          typeof createTruckDto.mileage === 'string' &&
+          createTruckDto.mileage !== ''
+            ? parseInt(createTruckDto.mileage) || 0
+            : createTruckDto.mileage || 0,
+        year:
+          typeof createTruckDto.year === 'string' && createTruckDto.year !== ''
+            ? parseInt(createTruckDto.year)
+            : createTruckDto.year || 2023,
+        capacityWeight:
+          typeof createTruckDto.capacityWeight === 'string' &&
+          createTruckDto.capacityWeight !== ''
+            ? parseFloat(createTruckDto.capacityWeight)
+            : createTruckDto.capacityWeight && createTruckDto.capacityWeight > 0
+              ? createTruckDto.capacityWeight
+              : 1,
+        capacityVolume:
+          typeof createTruckDto.capacityVolume === 'string' &&
+          createTruckDto.capacityVolume !== ''
+            ? parseFloat(createTruckDto.capacityVolume)
+            : createTruckDto.capacityVolume && createTruckDto.capacityVolume > 0
+              ? createTruckDto.capacityVolume
+              : 1,
+        // Remove driver-related fields that shouldn't be in truck creation
+        firstName: undefined,
+        lastName: undefined,
+        licenseNumber: undefined,
+        licenseType: undefined,
+        experience: undefined,
+        contactInfo: undefined,
+      };
 
       console.log('🧹 Cleaned truck data:', {
         originalTruckType: createTruckDto.truckType,
@@ -168,34 +172,57 @@ export class FleetService {
       };
 
       const truck = this.truckRepository.create({
-      ...cleanedDto,
-      ownerId: userId,
-      tenantId,
-      status: VehicleStatus.AVAILABLE,
-      equipmentList: createTruckDto.equipmentList || [],
-      maintenanceAlerts: [],
-      assignedDrivers: [],
-      assignedRoutes: [],
-      totalTrips: 0,
-      totalRevenue: 0,
-      averageRating: 0,
-      mileage: cleanedDto.mileage,
-      // Ensure dates are Date objects
-      registrationExpiry: convertToDate(cleanedDto.registrationExpiry) || new Date(),
-      insuranceExpiry: convertToDate(cleanedDto.insuranceExpiry) || new Date(),
-      roadworthyCertExpiry: cleanedDto.roadworthyCertExpiry ? convertToDate(cleanedDto.roadworthyCertExpiry) : undefined,
-      lastMaintenanceDate: cleanedDto.lastMaintenanceDate ? convertToDate(cleanedDto.lastMaintenanceDate) : undefined,
-      nextMaintenanceDate: cleanedDto.nextMaintenanceDate ? convertToDate(cleanedDto.nextMaintenanceDate) : undefined,
-      // Ensure boolean fields are actual booleans
-      hasRefrigeration: Boolean(cleanedDto.hasRefrigeration),
-      hasLiftGate: Boolean(cleanedDto.hasLiftGate),
-      hasGps: Boolean(cleanedDto.hasGps),
-      hasHazmatPermit: Boolean(cleanedDto.hasHazmatPermit),
-      hasSideRails: cleanedDto.hasSideRails !== undefined ? Boolean(cleanedDto.hasSideRails) : false,
-      hasTarps: cleanedDto.hasTarps !== undefined ? Boolean(cleanedDto.hasTarps) : false,
-      hasStraps: cleanedDto.hasStraps !== undefined ? Boolean(cleanedDto.hasStraps) : false,
-      hasChains: cleanedDto.hasChains !== undefined ? Boolean(cleanedDto.hasChains) : false,
-        hasWinch: cleanedDto.hasWinch !== undefined ? Boolean(cleanedDto.hasWinch) : false,
+        ...cleanedDto,
+        ownerId: userId,
+        tenantId,
+        status: VehicleStatus.AVAILABLE,
+        equipmentList: createTruckDto.equipmentList || [],
+        maintenanceAlerts: [],
+        assignedDrivers: [],
+        assignedRoutes: [],
+        totalTrips: 0,
+        totalRevenue: 0,
+        averageRating: 0,
+        mileage: cleanedDto.mileage,
+        // Ensure dates are Date objects
+        registrationExpiry:
+          convertToDate(cleanedDto.registrationExpiry) || new Date(),
+        insuranceExpiry:
+          convertToDate(cleanedDto.insuranceExpiry) || new Date(),
+        roadworthyCertExpiry: cleanedDto.roadworthyCertExpiry
+          ? convertToDate(cleanedDto.roadworthyCertExpiry)
+          : undefined,
+        lastMaintenanceDate: cleanedDto.lastMaintenanceDate
+          ? convertToDate(cleanedDto.lastMaintenanceDate)
+          : undefined,
+        nextMaintenanceDate: cleanedDto.nextMaintenanceDate
+          ? convertToDate(cleanedDto.nextMaintenanceDate)
+          : undefined,
+        // Ensure boolean fields are actual booleans
+        hasRefrigeration: Boolean(cleanedDto.hasRefrigeration),
+        hasLiftGate: Boolean(cleanedDto.hasLiftGate),
+        hasGps: Boolean(cleanedDto.hasGps),
+        hasHazmatPermit: Boolean(cleanedDto.hasHazmatPermit),
+        hasSideRails:
+          cleanedDto.hasSideRails !== undefined
+            ? Boolean(cleanedDto.hasSideRails)
+            : false,
+        hasTarps:
+          cleanedDto.hasTarps !== undefined
+            ? Boolean(cleanedDto.hasTarps)
+            : false,
+        hasStraps:
+          cleanedDto.hasStraps !== undefined
+            ? Boolean(cleanedDto.hasStraps)
+            : false,
+        hasChains:
+          cleanedDto.hasChains !== undefined
+            ? Boolean(cleanedDto.hasChains)
+            : false,
+        hasWinch:
+          cleanedDto.hasWinch !== undefined
+            ? Boolean(cleanedDto.hasWinch)
+            : false,
       });
 
       try {
@@ -237,7 +264,11 @@ export class FleetService {
     } catch (error) {
       console.error('❌ Error in createTruck service:', error);
       // If it's already a NestJS HTTP exception, re-throw it
-      if (error instanceof HttpException || error instanceof ForbiddenException || error instanceof BadRequestException) {
+      if (
+        error instanceof HttpException ||
+        error instanceof ForbiddenException ||
+        error instanceof BadRequestException
+      ) {
         throw error;
       }
       // Wrap other errors
@@ -320,25 +351,52 @@ export class FleetService {
 
     // Safely update only provided fields
     const allowedFields = [
-      'plateNumber', 'vin', 'make', 'model', 'year', 'color',
-      'fuelType', 'capacityWeight', 'capacityVolume',
-      'maxLength', 'maxWidth', 'maxHeight',
-      'truckType', 'trailerType',
-      'registrationNumber', 'registrationExpiry',
-      'insurancePolicy', 'insuranceExpiry',
+      'plateNumber',
+      'vin',
+      'make',
+      'model',
+      'year',
+      'color',
+      'fuelType',
+      'capacityWeight',
+      'capacityVolume',
+      'maxLength',
+      'maxWidth',
+      'maxHeight',
+      'truckType',
+      'trailerType',
+      'registrationNumber',
+      'registrationExpiry',
+      'insurancePolicy',
+      'insuranceExpiry',
       'roadworthyCertExpiry',
       'status',
-      'hasRefrigeration', 'hasLiftGate', 'hasGps', 'hasHazmatPermit',
-      'mileage', 'fuelEfficiency',
+      'hasRefrigeration',
+      'hasLiftGate',
+      'hasGps',
+      'hasHazmatPermit',
+      'mileage',
+      'fuelEfficiency',
       'isActive',
     ];
 
     // Only update fields that are provided and allowed
-    allowedFields.forEach(field => {
-      if (updateTruckDto[field] !== undefined && updateTruckDto[field] !== null) {
+    allowedFields.forEach((field) => {
+      if (
+        updateTruckDto[field] !== undefined &&
+        updateTruckDto[field] !== null
+      ) {
         // Handle date strings - convert to Date objects if needed
-        if (['registrationExpiry', 'insuranceExpiry', 'roadworthyCertExpiry'].includes(field)) {
-          truck[field] = updateTruckDto[field] ? new Date(updateTruckDto[field]) : null;
+        if (
+          [
+            'registrationExpiry',
+            'insuranceExpiry',
+            'roadworthyCertExpiry',
+          ].includes(field)
+        ) {
+          truck[field] = updateTruckDto[field]
+            ? new Date(updateTruckDto[field])
+            : null;
         } else {
           truck[field] = updateTruckDto[field];
         }
@@ -461,18 +519,29 @@ export class FleetService {
       if (error.code === '23505') {
         // Unique constraint violation
         const detail = error.detail || '';
-        if (detail.includes('licenseNumber') || detail.includes('license_number')) {
-          throw new ConflictException('A driver with this license number already exists');
+        if (
+          detail.includes('licenseNumber') ||
+          detail.includes('license_number')
+        ) {
+          throw new ConflictException(
+            'A driver with this license number already exists',
+          );
         }
         if (detail.includes('email')) {
-          throw new ConflictException('A driver with this email already exists');
+          throw new ConflictException(
+            'A driver with this email already exists',
+          );
         }
-        throw new ConflictException('A driver with these details already exists');
+        throw new ConflictException(
+          'A driver with these details already exists',
+        );
       }
 
       if (error.code === '22001') {
         // Data too long
-        throw new BadRequestException('One or more fields exceed maximum length');
+        throw new BadRequestException(
+          'One or more fields exceed maximum length',
+        );
       }
 
       if (error.code === '23502') {
@@ -484,7 +553,8 @@ export class FleetService {
       throw new InternalServerErrorException({
         message: 'Failed to create driver',
         error: error.message || 'An unexpected error occurred',
-        details: process.env.NODE_ENV === 'development' ? error.stack : undefined,
+        details:
+          process.env.NODE_ENV === 'development' ? error.stack : undefined,
       });
     }
   }
@@ -531,16 +601,21 @@ export class FleetService {
     // Explicitly select currentTruckId to ensure it's returned
     // This is important for filtering available drivers in the frontend
     const drivers = await query.getMany();
-    
+
     // Log for debugging
     console.log('📊 findAllDrivers - Total drivers:', drivers.length);
-    console.log('📊 Drivers with currentTruckId:', drivers.filter(d => d.currentTruckId).length);
-    drivers.forEach(driver => {
+    console.log(
+      '📊 Drivers with currentTruckId:',
+      drivers.filter((d) => d.currentTruckId).length,
+    );
+    drivers.forEach((driver) => {
       if (driver.currentTruckId) {
-        console.log(`  - Driver ${driver.firstName} ${driver.lastName} has currentTruckId: ${driver.currentTruckId}`);
+        console.log(
+          `  - Driver ${driver.firstName} ${driver.lastName} has currentTruckId: ${driver.currentTruckId}`,
+        );
       }
     });
-    
+
     return drivers;
   }
 
@@ -632,7 +707,9 @@ export class FleetService {
             (d) => d.driverId === driverId,
           );
           if (existingAssignment) {
-            throw new ConflictException('Driver is already assigned to this truck');
+            throw new ConflictException(
+              'Driver is already assigned to this truck',
+            );
           }
           // If currentTruckId matches but not in array, continue (might be stale data)
         } else {
@@ -640,7 +717,8 @@ export class FleetService {
           const currentTruck = await this.truckRepository.findOne({
             where: { id: driver.currentTruckId, tenantId },
           });
-          const currentTruckPlate = currentTruck?.plateNumber || driver.currentTruckId;
+          const currentTruckPlate =
+            currentTruck?.plateNumber || driver.currentTruckId;
           throw new ConflictException(
             `Driver is already assigned to another truck (${currentTruckPlate}). Please unassign the driver from the current truck first.`,
           );
@@ -670,7 +748,9 @@ export class FleetService {
       if (trucksWithDriver.length > 0) {
         const otherTrucks = trucksWithDriver.filter((t) => t.id !== truckId);
         if (otherTrucks.length > 0) {
-          const otherTruckPlates = otherTrucks.map((t) => t.plateNumber).join(', ');
+          const otherTruckPlates = otherTrucks
+            .map((t) => t.plateNumber)
+            .join(', ');
           throw new ConflictException(
             `Driver is already assigned to other truck(s): ${otherTruckPlates}. Please unassign the driver first.`,
           );
@@ -679,8 +759,8 @@ export class FleetService {
 
       // Add driver to truck's assigned drivers
       // Ensure assignedDrivers is initialized as an array
-      const currentAssignedDrivers = Array.isArray(truck.assignedDrivers) 
-        ? [...truck.assignedDrivers] 
+      const currentAssignedDrivers = Array.isArray(truck.assignedDrivers)
+        ? [...truck.assignedDrivers]
         : [];
 
       const assignmentData = {
@@ -697,30 +777,36 @@ export class FleetService {
       truck.assignedDrivers = currentAssignedDrivers;
 
       console.log('💾 Saving truck with assigned driver...');
-      console.log('📋 Assigned drivers array:', JSON.stringify(truck.assignedDrivers, null, 2));
-      
+      console.log(
+        '📋 Assigned drivers array:',
+        JSON.stringify(truck.assignedDrivers, null, 2),
+      );
+
       try {
         // Use update query for JSONB field to ensure it's properly saved
         // This is more reliable than save() for JSONB array updates
         await this.truckRepository.update(truck.id, {
           assignedDrivers: currentAssignedDrivers,
         });
-        
+
         // Update driver's currentTruckId to prevent assignment to other trucks
         await this.driverRepository.update(driver.id, {
           currentTruckId: truck.id,
         });
-        
+
         console.log('✅ Updated driver.currentTruckId to:', truck.id);
-        
+
         // Reload the truck to get the updated data
         const savedTruck = await this.truckRepository.findOne({
           where: { id: truck.id, tenantId },
         });
-        
+
         console.log('✅ Driver assigned successfully');
-        console.log('✅ Saved truck assigned drivers:', JSON.stringify(savedTruck?.assignedDrivers, null, 2));
-        
+        console.log(
+          '✅ Saved truck assigned drivers:',
+          JSON.stringify(savedTruck?.assignedDrivers, null, 2),
+        );
+
         if (!savedTruck) {
           throw new NotFoundException('Truck not found after update');
         }
@@ -730,12 +816,12 @@ export class FleetService {
         console.error('❌ Save error detail:', saveError.detail);
         console.error('❌ Save error message:', saveError.message);
         console.error('❌ Save error stack:', saveError.stack);
-        
+
         // Handle specific database errors
         if (saveError.code === '23505') {
           throw new ConflictException('Driver assignment conflict detected');
         }
-        
+
         throw saveError;
       }
 
@@ -765,7 +851,10 @@ export class FleetService {
 
       // Wrap other errors - use string message for better error handling
       const errorMsg = error.message || 'An unexpected error occurred';
-      console.error('❌ Wrapping error as InternalServerErrorException:', errorMsg);
+      console.error(
+        '❌ Wrapping error as InternalServerErrorException:',
+        errorMsg,
+      );
       throw new InternalServerErrorException(
         `Failed to assign driver to truck: ${errorMsg}`,
       );
@@ -808,34 +897,36 @@ export class FleetService {
 
       truck.assignedDrivers.splice(driverIndex, 1);
       console.log('💾 Saving truck after driver unassignment...');
-      
+
       // Update truck's assignedDrivers array
       await this.truckRepository.update(truck.id, {
         assignedDrivers: truck.assignedDrivers,
       });
-      
+
       // Clear driver's currentTruckId to make them available for other assignments
       await this.driverRepository.update(driverId, {
         currentTruckId: null,
       });
-      
+
       // Safety cleanup: Remove driver from any other trucks' assignedDrivers arrays
       // This handles edge cases where data might be inconsistent
       const allTrucks = await this.truckRepository.find({
         where: { tenantId },
         select: ['id', 'assignedDrivers'],
       });
-      
+
       for (const otherTruck of allTrucks) {
         if (otherTruck.id === truck.id) continue; // Already handled above
-        
+
         if (Array.isArray(otherTruck.assignedDrivers)) {
           const hasDriver = otherTruck.assignedDrivers.some(
             (d: any) => d.driverId === driverId,
           );
-          
+
           if (hasDriver) {
-            console.log(`🧹 Cleaning up orphaned driver assignment from truck ${otherTruck.id}`);
+            console.log(
+              `🧹 Cleaning up orphaned driver assignment from truck ${otherTruck.id}`,
+            );
             const cleanedDrivers = otherTruck.assignedDrivers.filter(
               (d: any) => d.driverId !== driverId,
             );
@@ -845,7 +936,7 @@ export class FleetService {
           }
         }
       }
-      
+
       console.log('✅ Cleared driver.currentTruckId');
       console.log('✅ Driver unassigned successfully');
     } catch (error) {
@@ -865,7 +956,10 @@ export class FleetService {
 
       // Wrap other errors - use string message for better error handling
       const errorMsg = error.message || 'An unexpected error occurred';
-      console.error('❌ Wrapping error as InternalServerErrorException:', errorMsg);
+      console.error(
+        '❌ Wrapping error as InternalServerErrorException:',
+        errorMsg,
+      );
       throw new InternalServerErrorException(
         `Failed to unassign driver from truck: ${errorMsg}`,
       );
@@ -987,10 +1081,15 @@ export class FleetService {
       await this.truckRepository.save(truck);
     } catch (error) {
       console.error('❌ Error in deleteTruckMaintenance:', error);
-      if (error instanceof NotFoundException || error instanceof ForbiddenException) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof ForbiddenException
+      ) {
         throw error;
       }
-      throw new BadRequestException(`Failed to delete maintenance record: ${error.message}`);
+      throw new BadRequestException(
+        `Failed to delete maintenance record: ${error.message}`,
+      );
     }
   }
 
@@ -1014,11 +1113,19 @@ export class FleetService {
 
       // Convert date strings to Date objects if needed
       const processedData: any = { ...inspectionData };
-      if (processedData.inspectionDate && typeof processedData.inspectionDate === 'string') {
+      if (
+        processedData.inspectionDate &&
+        typeof processedData.inspectionDate === 'string'
+      ) {
         processedData.inspectionDate = new Date(processedData.inspectionDate);
       }
-      if (processedData.nextInspectionDate && typeof processedData.nextInspectionDate === 'string') {
-        processedData.nextInspectionDate = new Date(processedData.nextInspectionDate);
+      if (
+        processedData.nextInspectionDate &&
+        typeof processedData.nextInspectionDate === 'string'
+      ) {
+        processedData.nextInspectionDate = new Date(
+          processedData.nextInspectionDate,
+        );
       }
 
       const inspection = {
@@ -1040,10 +1147,15 @@ export class FleetService {
         detail: error?.detail,
         stack: error?.stack,
       });
-      if (error instanceof NotFoundException || error instanceof ForbiddenException) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof ForbiddenException
+      ) {
         throw error;
       }
-      throw new BadRequestException(`Failed to add inspection: ${error.message}`);
+      throw new BadRequestException(
+        `Failed to add inspection: ${error.message}`,
+      );
     }
   }
 
@@ -1071,11 +1183,19 @@ export class FleetService {
 
       // Convert date strings to Date objects if needed
       const processedData: any = { ...inspectionData };
-      if (processedData.inspectionDate && typeof processedData.inspectionDate === 'string') {
+      if (
+        processedData.inspectionDate &&
+        typeof processedData.inspectionDate === 'string'
+      ) {
         processedData.inspectionDate = new Date(processedData.inspectionDate);
       }
-      if (processedData.nextInspectionDate && typeof processedData.nextInspectionDate === 'string') {
-        processedData.nextInspectionDate = new Date(processedData.nextInspectionDate);
+      if (
+        processedData.nextInspectionDate &&
+        typeof processedData.nextInspectionDate === 'string'
+      ) {
+        processedData.nextInspectionDate = new Date(
+          processedData.nextInspectionDate,
+        );
       }
 
       const existingInspection = truck.inspectionAlerts[inspectionIndex];
@@ -1092,10 +1212,15 @@ export class FleetService {
       return updatedInspection;
     } catch (error) {
       console.error('❌ Error in updateTruckInspection:', error);
-      if (error instanceof NotFoundException || error instanceof ForbiddenException) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof ForbiddenException
+      ) {
         throw error;
       }
-      throw new BadRequestException(`Failed to update inspection: ${error.message}`);
+      throw new BadRequestException(
+        `Failed to update inspection: ${error.message}`,
+      );
     }
   }
 
@@ -1124,10 +1249,15 @@ export class FleetService {
       await this.truckRepository.save(truck);
     } catch (error) {
       console.error('❌ Error in deleteTruckInspection:', error);
-      if (error instanceof NotFoundException || error instanceof ForbiddenException) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof ForbiddenException
+      ) {
         throw error;
       }
-      throw new BadRequestException(`Failed to delete inspection record: ${error.message}`);
+      throw new BadRequestException(
+        `Failed to delete inspection record: ${error.message}`,
+      );
     }
   }
 
@@ -1151,7 +1281,10 @@ export class FleetService {
 
       // Convert date strings to Date objects if needed
       const processedData: any = { ...insuranceData };
-      if (processedData.startDate && typeof processedData.startDate === 'string') {
+      if (
+        processedData.startDate &&
+        typeof processedData.startDate === 'string'
+      ) {
         processedData.startDate = new Date(processedData.startDate);
       }
       if (processedData.endDate && typeof processedData.endDate === 'string') {
@@ -1177,10 +1310,15 @@ export class FleetService {
         detail: error?.detail,
         stack: error?.stack,
       });
-      if (error instanceof NotFoundException || error instanceof ForbiddenException) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof ForbiddenException
+      ) {
         throw error;
       }
-      throw new BadRequestException(`Failed to add insurance: ${error.message}`);
+      throw new BadRequestException(
+        `Failed to add insurance: ${error.message}`,
+      );
     }
   }
 
@@ -1208,7 +1346,10 @@ export class FleetService {
 
       // Convert date strings to Date objects if needed
       const processedData: any = { ...insuranceData };
-      if (processedData.startDate && typeof processedData.startDate === 'string') {
+      if (
+        processedData.startDate &&
+        typeof processedData.startDate === 'string'
+      ) {
         processedData.startDate = new Date(processedData.startDate);
       }
       if (processedData.endDate && typeof processedData.endDate === 'string') {
@@ -1229,10 +1370,15 @@ export class FleetService {
       return updatedInsurance;
     } catch (error) {
       console.error('❌ Error in updateTruckInsurance:', error);
-      if (error instanceof NotFoundException || error instanceof ForbiddenException) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof ForbiddenException
+      ) {
         throw error;
       }
-      throw new BadRequestException(`Failed to update insurance: ${error.message}`);
+      throw new BadRequestException(
+        `Failed to update insurance: ${error.message}`,
+      );
     }
   }
 
@@ -1261,10 +1407,15 @@ export class FleetService {
       await this.truckRepository.save(truck);
     } catch (error) {
       console.error('❌ Error in deleteTruckInsurance:', error);
-      if (error instanceof NotFoundException || error instanceof ForbiddenException) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof ForbiddenException
+      ) {
         throw error;
       }
-      throw new BadRequestException(`Failed to delete insurance record: ${error.message}`);
+      throw new BadRequestException(
+        `Failed to delete insurance record: ${error.message}`,
+      );
     }
   }
 
@@ -1311,10 +1462,15 @@ export class FleetService {
         detail: error?.detail,
         stack: error?.stack,
       });
-      if (error instanceof NotFoundException || error instanceof ForbiddenException) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof ForbiddenException
+      ) {
         throw error;
       }
-      throw new BadRequestException(`Failed to add fuel record: ${error.message}`);
+      throw new BadRequestException(
+        `Failed to add fuel record: ${error.message}`,
+      );
     }
   }
 
@@ -1332,9 +1488,7 @@ export class FleetService {
         throw new NotFoundException('Fuel record not found');
       }
 
-      const fuelIndex = truck.fuelAlerts.findIndex(
-        (f: any) => f.id === fuelId,
-      );
+      const fuelIndex = truck.fuelAlerts.findIndex((f: any) => f.id === fuelId);
 
       if (fuelIndex === -1) {
         throw new NotFoundException('Fuel record not found');
@@ -1360,10 +1514,15 @@ export class FleetService {
       return updatedFuel;
     } catch (error) {
       console.error('❌ Error in updateTruckFuel:', error);
-      if (error instanceof NotFoundException || error instanceof ForbiddenException) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof ForbiddenException
+      ) {
         throw error;
       }
-      throw new BadRequestException(`Failed to update fuel record: ${error.message}`);
+      throw new BadRequestException(
+        `Failed to update fuel record: ${error.message}`,
+      );
     }
   }
 
@@ -1380,9 +1539,7 @@ export class FleetService {
         throw new NotFoundException('Fuel record not found');
       }
 
-      const fuelIndex = truck.fuelAlerts.findIndex(
-        (f: any) => f.id === fuelId,
-      );
+      const fuelIndex = truck.fuelAlerts.findIndex((f: any) => f.id === fuelId);
 
       if (fuelIndex === -1) {
         throw new NotFoundException('Fuel record not found');
@@ -1392,10 +1549,15 @@ export class FleetService {
       await this.truckRepository.save(truck);
     } catch (error) {
       console.error('❌ Error in deleteTruckFuel:', error);
-      if (error instanceof NotFoundException || error instanceof ForbiddenException) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof ForbiddenException
+      ) {
         throw error;
       }
-      throw new BadRequestException(`Failed to delete fuel record: ${error.message}`);
+      throw new BadRequestException(
+        `Failed to delete fuel record: ${error.message}`,
+      );
     }
   }
 
@@ -1419,15 +1581,26 @@ export class FleetService {
 
       // Convert date strings to Date objects if needed
       const processedData: any = { ...tireData };
-      if (processedData.installationDate && typeof processedData.installationDate === 'string') {
-        processedData.installationDate = new Date(processedData.installationDate);
+      if (
+        processedData.installationDate &&
+        typeof processedData.installationDate === 'string'
+      ) {
+        processedData.installationDate = new Date(
+          processedData.installationDate,
+        );
       }
-      if (processedData.replacementDate && typeof processedData.replacementDate === 'string') {
+      if (
+        processedData.replacementDate &&
+        typeof processedData.replacementDate === 'string'
+      ) {
         processedData.replacementDate = new Date(processedData.replacementDate);
       }
-      if (processedData.rotationHistory && Array.isArray(processedData.rotationHistory)) {
-        processedData.rotationHistory = processedData.rotationHistory.map((date: any) =>
-          typeof date === 'string' ? new Date(date) : date
+      if (
+        processedData.rotationHistory &&
+        Array.isArray(processedData.rotationHistory)
+      ) {
+        processedData.rotationHistory = processedData.rotationHistory.map(
+          (date: any) => (typeof date === 'string' ? new Date(date) : date),
         );
       }
 
@@ -1450,10 +1623,15 @@ export class FleetService {
         detail: error?.detail,
         stack: error?.stack,
       });
-      if (error instanceof NotFoundException || error instanceof ForbiddenException) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof ForbiddenException
+      ) {
         throw error;
       }
-      throw new BadRequestException(`Failed to add tire record: ${error.message}`);
+      throw new BadRequestException(
+        `Failed to add tire record: ${error.message}`,
+      );
     }
   }
 
@@ -1471,9 +1649,7 @@ export class FleetService {
         throw new NotFoundException('Tire record not found');
       }
 
-      const tireIndex = truck.tireAlerts.findIndex(
-        (t: any) => t.id === tireId,
-      );
+      const tireIndex = truck.tireAlerts.findIndex((t: any) => t.id === tireId);
 
       if (tireIndex === -1) {
         throw new NotFoundException('Tire record not found');
@@ -1481,15 +1657,26 @@ export class FleetService {
 
       // Convert date strings to Date objects if needed
       const processedData: any = { ...tireData };
-      if (processedData.installationDate && typeof processedData.installationDate === 'string') {
-        processedData.installationDate = new Date(processedData.installationDate);
+      if (
+        processedData.installationDate &&
+        typeof processedData.installationDate === 'string'
+      ) {
+        processedData.installationDate = new Date(
+          processedData.installationDate,
+        );
       }
-      if (processedData.replacementDate && typeof processedData.replacementDate === 'string') {
+      if (
+        processedData.replacementDate &&
+        typeof processedData.replacementDate === 'string'
+      ) {
         processedData.replacementDate = new Date(processedData.replacementDate);
       }
-      if (processedData.rotationHistory && Array.isArray(processedData.rotationHistory)) {
-        processedData.rotationHistory = processedData.rotationHistory.map((date: any) =>
-          typeof date === 'string' ? new Date(date) : date
+      if (
+        processedData.rotationHistory &&
+        Array.isArray(processedData.rotationHistory)
+      ) {
+        processedData.rotationHistory = processedData.rotationHistory.map(
+          (date: any) => (typeof date === 'string' ? new Date(date) : date),
         );
       }
 
@@ -1507,10 +1694,15 @@ export class FleetService {
       return updatedTire;
     } catch (error) {
       console.error('❌ Error in updateTruckTire:', error);
-      if (error instanceof NotFoundException || error instanceof ForbiddenException) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof ForbiddenException
+      ) {
         throw error;
       }
-      throw new BadRequestException(`Failed to update tire record: ${error.message}`);
+      throw new BadRequestException(
+        `Failed to update tire record: ${error.message}`,
+      );
     }
   }
 
@@ -1527,9 +1719,7 @@ export class FleetService {
         throw new NotFoundException('Tire record not found');
       }
 
-      const tireIndex = truck.tireAlerts.findIndex(
-        (t: any) => t.id === tireId,
-      );
+      const tireIndex = truck.tireAlerts.findIndex((t: any) => t.id === tireId);
 
       if (tireIndex === -1) {
         throw new NotFoundException('Tire record not found');
@@ -1539,10 +1729,15 @@ export class FleetService {
       await this.truckRepository.save(truck);
     } catch (error) {
       console.error('❌ Error in deleteTruckTire:', error);
-      if (error instanceof NotFoundException || error instanceof ForbiddenException) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof ForbiddenException
+      ) {
         throw error;
       }
-      throw new BadRequestException(`Failed to delete tire record: ${error.message}`);
+      throw new BadRequestException(
+        `Failed to delete tire record: ${error.message}`,
+      );
     }
   }
 
@@ -1569,17 +1764,28 @@ export class FleetService {
       if (processedData.dueDate && typeof processedData.dueDate === 'string') {
         processedData.dueDate = new Date(processedData.dueDate);
       }
-      if (processedData.lastChecked && typeof processedData.lastChecked === 'string') {
+      if (
+        processedData.lastChecked &&
+        typeof processedData.lastChecked === 'string'
+      ) {
         processedData.lastChecked = new Date(processedData.lastChecked);
       }
-      if (processedData.nextCheck && typeof processedData.nextCheck === 'string') {
+      if (
+        processedData.nextCheck &&
+        typeof processedData.nextCheck === 'string'
+      ) {
         processedData.nextCheck = new Date(processedData.nextCheck);
       }
       if (processedData.penalties && Array.isArray(processedData.penalties)) {
-        processedData.penalties = processedData.penalties.map((penalty: any) => ({
-          ...penalty,
-          date: penalty.date && typeof penalty.date === 'string' ? new Date(penalty.date) : penalty.date,
-        }));
+        processedData.penalties = processedData.penalties.map(
+          (penalty: any) => ({
+            ...penalty,
+            date:
+              penalty.date && typeof penalty.date === 'string'
+                ? new Date(penalty.date)
+                : penalty.date,
+          }),
+        );
       }
 
       const compliance = {
@@ -1601,10 +1807,15 @@ export class FleetService {
         detail: error?.detail,
         stack: error?.stack,
       });
-      if (error instanceof NotFoundException || error instanceof ForbiddenException) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof ForbiddenException
+      ) {
         throw error;
       }
-      throw new BadRequestException(`Failed to add compliance record: ${error.message}`);
+      throw new BadRequestException(
+        `Failed to add compliance record: ${error.message}`,
+      );
     }
   }
 
@@ -1635,17 +1846,28 @@ export class FleetService {
       if (processedData.dueDate && typeof processedData.dueDate === 'string') {
         processedData.dueDate = new Date(processedData.dueDate);
       }
-      if (processedData.lastChecked && typeof processedData.lastChecked === 'string') {
+      if (
+        processedData.lastChecked &&
+        typeof processedData.lastChecked === 'string'
+      ) {
         processedData.lastChecked = new Date(processedData.lastChecked);
       }
-      if (processedData.nextCheck && typeof processedData.nextCheck === 'string') {
+      if (
+        processedData.nextCheck &&
+        typeof processedData.nextCheck === 'string'
+      ) {
         processedData.nextCheck = new Date(processedData.nextCheck);
       }
       if (processedData.penalties && Array.isArray(processedData.penalties)) {
-        processedData.penalties = processedData.penalties.map((penalty: any) => ({
-          ...penalty,
-          date: penalty.date && typeof penalty.date === 'string' ? new Date(penalty.date) : penalty.date,
-        }));
+        processedData.penalties = processedData.penalties.map(
+          (penalty: any) => ({
+            ...penalty,
+            date:
+              penalty.date && typeof penalty.date === 'string'
+                ? new Date(penalty.date)
+                : penalty.date,
+          }),
+        );
       }
 
       const existingCompliance = truck.complianceAlerts[complianceIndex];
@@ -1662,10 +1884,15 @@ export class FleetService {
       return updatedCompliance;
     } catch (error) {
       console.error('❌ Error in updateTruckCompliance:', error);
-      if (error instanceof NotFoundException || error instanceof ForbiddenException) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof ForbiddenException
+      ) {
         throw error;
       }
-      throw new BadRequestException(`Failed to update compliance record: ${error.message}`);
+      throw new BadRequestException(
+        `Failed to update compliance record: ${error.message}`,
+      );
     }
   }
 

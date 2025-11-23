@@ -10,7 +10,12 @@ import { NotificationModule } from '../notifications/notification.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([SafetyIncident, SafetyInspection, SafetyTraining, Notification]),
+    TypeOrmModule.forFeature([
+      SafetyIncident,
+      SafetyInspection,
+      SafetyTraining,
+      Notification,
+    ]),
     NotificationModule,
   ],
   providers: [SafetyService],
@@ -18,4 +23,3 @@ import { NotificationModule } from '../notifications/notification.module';
   exports: [SafetyService],
 })
 export class SafetyModule {}
-

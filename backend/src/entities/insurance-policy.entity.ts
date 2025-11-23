@@ -149,19 +149,22 @@ export class InsurancePolicy {
   }
 
   get calculatedStatus(): PolicyStatus {
-    if (this.status === PolicyStatus.CANCELLED || this.status === PolicyStatus.SUSPENDED) {
+    if (
+      this.status === PolicyStatus.CANCELLED ||
+      this.status === PolicyStatus.SUSPENDED
+    ) {
       return this.status;
     }
-    
+
     const now = new Date();
     if (this.endDate < now) {
       return PolicyStatus.EXPIRED;
     }
-    
+
     if (this.startDate > now) {
       return PolicyStatus.PENDING;
     }
-    
+
     return PolicyStatus.ACTIVE;
   }
 
@@ -177,28 +180,32 @@ export class InsurancePolicy {
 
   calculateRenewalPremium(): number {
     let basePremium = this.premium;
-    
+
     // Adjust based on claims history
     if (this.claimsCount > 0) {
       const claimsRatio = this.totalClaimsAmount / this.coverageAmount;
-      if (claimsRatio > 0.1) { // More than 10% of coverage used
+      if (claimsRatio > 0.1) {
+        // More than 10% of coverage used
         basePremium *= 1.2; // 20% increase
       }
     }
-    
+
     // Adjust based on policy age
-    const policyAge = (new Date().getTime() - new Date(this.startDate).getTime()) / (1000 * 60 * 60 * 24 * 365);
-    if (policyAge > 3) { // Policy older than 3 years
+    const policyAge =
+      (new Date().getTime() - new Date(this.startDate).getTime()) /
+      (1000 * 60 * 60 * 24 * 365);
+    if (policyAge > 3) {
+      // Policy older than 3 years
       basePremium *= 1.1; // 10% increase
     }
-    
+
     return Math.round(basePremium * 100) / 100; // Round to 2 decimal places
   }
 
   // Relations
-  @OneToMany(() => InsuranceClaim, claim => claim.policy)
+  @OneToMany(() => InsuranceClaim, (claim) => claim.policy)
   claims: InsuranceClaim[];
 
-  @OneToMany(() => InsuranceRenewal, renewal => renewal.policy)
+  @OneToMany(() => InsuranceRenewal, (renewal) => renewal.policy)
   renewals: InsuranceRenewal[];
 }

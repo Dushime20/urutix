@@ -384,12 +384,12 @@ export class LocationEnrichmentIntegratedService {
     let maxTruckHeight = 4.5;
     let maxTruckWeight = 20;
     let specialInstructions = '';
-    let distanceFromHighway = ((latPattern + lngPattern) % 5) + 0.5;
+    const distanceFromHighway = ((latPattern + lngPattern) % 5) + 0.5;
     let trafficPattern = 'MODERATE';
     let bestAccessTime = '8AM-10AM, 2PM-4PM';
-    let restrictions: string[] = [];
-    let fuelStationsNearby = Math.floor((latPattern + lngPattern) % 5) + 1;
-    let restAreasNearby = Math.floor((latPattern + lngPattern) % 3) + 1;
+    const restrictions: string[] = [];
+    const fuelStationsNearby = Math.floor((latPattern + lngPattern) % 5) + 1;
+    const restAreasNearby = Math.floor((latPattern + lngPattern) % 3) + 1;
 
     // Determine characteristics based on coordinates and geocoding data
     if (latPattern > 0.7 && lngPattern > 0.6) {

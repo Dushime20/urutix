@@ -1,7 +1,23 @@
-import { IsString, IsEnum, IsNumber, IsDate, IsOptional, IsBoolean, IsArray, IsUUID, Min, MaxLength, IsUrl } from 'class-validator';
+import {
+  IsString,
+  IsEnum,
+  IsNumber,
+  IsDate,
+  IsOptional,
+  IsBoolean,
+  IsArray,
+  IsUUID,
+  Min,
+  MaxLength,
+  IsUrl,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { ClaimType, ClaimStatus, ClaimPriority } from '../entities/insurance-claim.entity';
+import {
+  ClaimType,
+  ClaimStatus,
+  ClaimPriority,
+} from '../entities/insurance-claim.entity';
 
 export class CreateClaimDto {
   @ApiProperty({ description: 'Claim number (unique identifier)' })
@@ -13,12 +29,20 @@ export class CreateClaimDto {
   @IsEnum(ClaimType)
   claimType: ClaimType;
 
-  @ApiProperty({ enum: ClaimStatus, description: 'Status of the claim', default: ClaimStatus.PENDING })
+  @ApiProperty({
+    enum: ClaimStatus,
+    description: 'Status of the claim',
+    default: ClaimStatus.PENDING,
+  })
   @IsOptional()
   @IsEnum(ClaimStatus)
   status?: ClaimStatus;
 
-  @ApiProperty({ enum: ClaimPriority, description: 'Priority level of the claim', default: ClaimPriority.MEDIUM })
+  @ApiProperty({
+    enum: ClaimPriority,
+    description: 'Priority level of the claim',
+    default: ClaimPriority.MEDIUM,
+  })
   @IsOptional()
   @IsEnum(ClaimPriority)
   priority?: ClaimPriority;
@@ -128,7 +152,10 @@ export class CreateClaimDto {
   @IsString()
   witnessStatement?: string;
 
-  @ApiPropertyOptional({ description: 'Whether the insured is at fault', default: false })
+  @ApiPropertyOptional({
+    description: 'Whether the insured is at fault',
+    default: false,
+  })
   @IsOptional()
   @IsBoolean()
   isFault?: boolean;

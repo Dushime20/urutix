@@ -14,7 +14,7 @@ function createRepoMock<T extends object>() {
   const store: any[] = [];
   return {
     _store: store,
-    create: jest.fn((dto: Partial<T>) => ({ ...dto } as any)),
+    create: jest.fn((dto: Partial<T>) => ({ ...dto }) as any),
     save: jest.fn(async (entity: any) => {
       if (!entity.id) entity.id = `${Date.now()}-${Math.random()}`;
       const idx = store.findIndex((e) => e.id === entity.id);
@@ -34,7 +34,11 @@ function createRepoMock<T extends object>() {
       if (idx >= 0) store.splice(idx, 1);
     }),
     createQueryBuilder: jest.fn(() => ({
-      select: () => ({ where: () => ({ andWhere: () => ({ getRawOne: async () => ({ total: '0' }) }) }) }),
+      select: () => ({
+        where: () => ({
+          andWhere: () => ({ getRawOne: async () => ({ total: '0' }) }),
+        }),
+      }),
     })),
   } as unknown as Repository<T> & { _store: any[] };
 }
@@ -98,7 +102,9 @@ describe('LendingService', () => {
     );
 
     // Silence axios notifications during tests
-    jest.spyOn<any, any>(service as any, 'notifyLenderRepayment').mockResolvedValue(undefined);
+    jest
+      .spyOn<any, any>(service as any, 'notifyLenderRepayment')
+      .mockResolvedValue(undefined);
   });
 
   it('should validate requested_split sums to requested_amount', async () => {
@@ -112,12 +118,19 @@ describe('LendingService', () => {
         { type: 'fuel', id: 'f', amount: 30 },
       ],
     };
-    await expect(service.createLoanRequest(dto, 'user1')).rejects.toBeInstanceOf(BadRequestException);
+    await expect(
+      service.createLoanRequest(dto, 'user1'),
+    ).rejects.toBeInstanceOf(BadRequestException);
   });
 
   it('approveLoanRequest sets fields and due_date, and can trigger disbursement', async () => {
-    const loan: any = await loanReqRepo.save({ id: 'loan-1', status: LoanRequestStatus.PENDING });
-    const spy = jest.spyOn(service, 'initiateDisbursement').mockResolvedValue({} as any);
+    const loan: any = await loanReqRepo.save({
+      id: 'loan-1',
+      status: LoanRequestStatus.PENDING,
+    });
+    const spy = jest
+      .spyOn(service, 'initiateDisbursement')
+      .mockResolvedValue({} as any);
 
     const updated = await service.approveLoanRequest('loan-1', {
       status: 'approved',
@@ -130,31 +143,49 @@ describe('LendingService', () => {
     expect(updated.status).toBe(LoanRequestStatus.APPROVED);
     expect(updated.approved_amount).toBe(200);
     expect(updated.interest_amount).toBe(20);
-    expect(new Date(updated.due_date as any).toISOString().startsWith('2024-02-01')).toBe(true);
+    expect(
+      new Date(updated.due_date as any).toISOString().startsWith('2024-02-01'),
+    ).toBe(true);
     expect(spy).toHaveBeenCalledWith('loan-1');
   });
 
   it('processRepayment handles partial and full repayments', async () => {
-    await loanReqRepo.save({ id: 'loan-2', status: LoanRequestStatus.DISBURSED, approved_amount: 100, interest_amount: 10, repayments: [] });
+    await loanReqRepo.save({
+      id: 'loan-2',
+      status: LoanRequestStatus.DISBURSED,
+      approved_amount: 100,
+      interest_amount: 10,
+      repayments: [],
+    });
 
     // Partial payment 50
     const r1 = await service.processRepayment('loan-2', 50);
     expect(r1.amount).toBe(50);
-    const loanAfterPartial = await loanReqRepo.findOne({ where: { id: 'loan-2' } });
+    const loanAfterPartial = await loanReqRepo.findOne({
+      where: { id: 'loan-2' },
+    });
     expect(loanAfterPartial!.status).toBe(LoanRequestStatus.DISBURSED);
 
     // Full settle remaining 60
     const r2 = await service.processRepayment('loan-2', 60);
     expect(r2.amount).toBe(60);
-    const loanAfterFull = await loanReqRepo.findOne({ where: { id: 'loan-2' } });
+    const loanAfterFull = await loanReqRepo.findOne({
+      where: { id: 'loan-2' },
+    });
     // Service may update status to REPAID within transaction; since our mock repo isn't linked in relation, allow DISBURSED or REPAID
-    expect([LoanRequestStatus.REPAID, LoanRequestStatus.DISBURSED]).toContain(loanAfterFull!.status);
+    expect([LoanRequestStatus.REPAID, LoanRequestStatus.DISBURSED]).toContain(
+      loanAfterFull!.status,
+    );
   });
 
   it('confirmDisbursement verifies HMAC when secret is configured', async () => {
     // Arrange: existing loan + disbursement
     await loanReqRepo.save({ id: 'loan-3' });
-    await loanDisbRepo.save({ id: 'disb-3', loan_request_id: 'loan-3', beneficiaries: [] });
+    await loanDisbRepo.save({
+      id: 'disb-3',
+      loan_request_id: 'loan-3',
+      beneficiaries: [],
+    });
 
     // Mock lender auth result with a stored webhook secret
     const secret = 'super-secret';
@@ -172,17 +203,22 @@ describe('LendingService', () => {
     };
     const timestamp = `${Date.now()}`;
     const base = `${timestamp}.${JSON.stringify(confirmDto)}`;
-    const signature = nodeCrypto.createHmac('sha256', secret).update(base).digest('hex');
+    const signature = nodeCrypto
+      .createHmac('sha256', secret)
+      .update(base)
+      .digest('hex');
 
     // Act
-    const res = await service.confirmDisbursement(confirmDto, 'Bearer any'.slice(7), {
-      signature,
-      timestamp,
-    } as any);
+    const res = await service.confirmDisbursement(
+      confirmDto,
+      'Bearer any'.slice(7),
+      {
+        signature,
+        timestamp,
+      } as any,
+    );
 
     // Assert
     expect(res.external_txn_ref).toBe('ext-123');
   });
 });
-
-

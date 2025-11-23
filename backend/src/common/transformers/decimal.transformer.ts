@@ -3,5 +3,3 @@ export const decimalToNumberTransformer = {
   from: (value: string | null): number | null =>
     value === null || value === undefined ? null : parseFloat(value as any),
 };
-
-

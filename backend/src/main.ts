@@ -23,14 +23,27 @@ async function bootstrap() {
   // otherwise we fall back to sensible localhost entries.
   const allowedOrigins = process.env.ALLOWED_ORIGINS
     ? process.env.ALLOWED_ORIGINS.split(',').map((o) => o.trim())
-    : ['http://localhost:5173', `http://localhost:${port}`, 'http://localhost:5713'];
+    : [
+        'http://localhost:5173',
+        `http://localhost:${port}`,
+        'http://localhost:5713',
+      ];
 
   // Enable CORS for HTTP requests
   app.enableCors({
     origin: allowedOrigins,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'x-tenant-id', 'X-Tenant-ID', 'Accept', 'Origin', 'Cache-Control', 'X-Requested-With'],
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'x-tenant-id',
+      'X-Tenant-ID',
+      'Accept',
+      'Origin',
+      'Cache-Control',
+      'X-Requested-With',
+    ],
   });
 
   // Global prefix

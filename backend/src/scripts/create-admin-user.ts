@@ -137,7 +137,7 @@ async function resetCargoUserPassword() {
   const passwordHash = await bcrypt.hash(plainPassword, 10);
   const tenantId = '00000000-0000-0000-0000-000000000001';
 
-  let user = await userRepo.findOne({ where: { email, tenantId } });
+  const user = await userRepo.findOne({ where: { email, tenantId } });
   if (user) {
     user.passwordHash = passwordHash;
     user.status = UserStatus.ACTIVE;

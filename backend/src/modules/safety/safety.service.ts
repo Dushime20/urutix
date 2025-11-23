@@ -6,10 +6,33 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { SafetyIncident, IncidentType, IncidentSeverity, IncidentStatus } from '../../entities/safety-incident.entity';
-import { SafetyInspection, InspectionType, InspectionStatus, ComplianceStatus } from '../../entities/safety-inspection.entity';
-import { SafetyTraining, TrainingType, TrainingFrequency, TrainingStatus } from '../../entities/safety-training.entity';
-import { Notification, NotificationStatus, NotificationType, NotificationPriority, NotificationCategory, EntityType, NotificationChannel } from '../../entities/notification.entity';
+import {
+  SafetyIncident,
+  IncidentType,
+  IncidentSeverity,
+  IncidentStatus,
+} from '../../entities/safety-incident.entity';
+import {
+  SafetyInspection,
+  InspectionType,
+  InspectionStatus,
+  ComplianceStatus,
+} from '../../entities/safety-inspection.entity';
+import {
+  SafetyTraining,
+  TrainingType,
+  TrainingFrequency,
+  TrainingStatus,
+} from '../../entities/safety-training.entity';
+import {
+  Notification,
+  NotificationStatus,
+  NotificationType,
+  NotificationPriority,
+  NotificationCategory,
+  EntityType,
+  NotificationChannel,
+} from '../../entities/notification.entity';
 import { CreateSafetyIncidentDto } from './dto/create-safety-incident.dto';
 import { CreateSafetyInspectionDto } from './dto/create-safety-inspection.dto';
 import { CreateSafetyTrainingDto } from './dto/create-safety-training.dto';
@@ -51,7 +74,9 @@ export class SafetyService {
       return await this.incidentRepository.save(incident);
     } catch (error) {
       console.error('❌ Error creating safety incident:', error);
-      throw new BadRequestException(`Failed to create safety incident: ${error.message}`);
+      throw new BadRequestException(
+        `Failed to create safety incident: ${error.message}`,
+      );
     }
   }
 
@@ -76,21 +101,29 @@ export class SafetyService {
       }
 
       if (filters?.severity) {
-        query.andWhere('incident.severity = :severity', { severity: filters.severity });
+        query.andWhere('incident.severity = :severity', {
+          severity: filters.severity,
+        });
       }
 
       if (filters?.startDate) {
-        query.andWhere('incident.date >= :startDate', { startDate: filters.startDate });
+        query.andWhere('incident.date >= :startDate', {
+          startDate: filters.startDate,
+        });
       }
 
       if (filters?.endDate) {
-        query.andWhere('incident.date <= :endDate', { endDate: filters.endDate });
+        query.andWhere('incident.date <= :endDate', {
+          endDate: filters.endDate,
+        });
       }
 
       return await query.getMany();
     } catch (error) {
       console.error('❌ Error fetching safety incidents:', error);
-      throw new BadRequestException(`Failed to fetch safety incidents: ${error.message}`);
+      throw new BadRequestException(
+        `Failed to fetch safety incidents: ${error.message}`,
+      );
     }
   }
 
@@ -125,10 +158,7 @@ export class SafetyService {
     return await this.incidentRepository.save(incident);
   }
 
-  async deleteIncident(
-    incidentId: string,
-    tenantId: string,
-  ): Promise<void> {
+  async deleteIncident(incidentId: string, tenantId: string): Promise<void> {
     const incident = await this.findOneIncident(incidentId, tenantId);
     incident.deletedAt = new Date();
     await this.incidentRepository.save(incident);
@@ -147,17 +177,22 @@ export class SafetyService {
         tenantId,
         createdBy: userId,
         inspectionDate: new Date(createDto.inspectionDate),
-        nextInspectionDate: createDto.nextInspectionDate ? new Date(createDto.nextInspectionDate) : null,
+        nextInspectionDate: createDto.nextInspectionDate
+          ? new Date(createDto.nextInspectionDate)
+          : null,
         score: createDto.score || 0,
         maxScore: createDto.maxScore || 100,
         items: createDto.items || [],
-        complianceStatus: createDto.complianceStatus || ComplianceStatus.COMPLIANT,
+        complianceStatus:
+          createDto.complianceStatus || ComplianceStatus.COMPLIANT,
       });
 
       return await this.inspectionRepository.save(inspection);
     } catch (error) {
       console.error('❌ Error creating safety inspection:', error);
-      throw new BadRequestException(`Failed to create safety inspection: ${error.message}`);
+      throw new BadRequestException(
+        `Failed to create safety inspection: ${error.message}`,
+      );
     }
   }
 
@@ -177,21 +212,29 @@ export class SafetyService {
         .orderBy('inspection.inspectionDate', 'DESC');
 
       if (filters?.status) {
-        query.andWhere('inspection.status = :status', { status: filters.status });
+        query.andWhere('inspection.status = :status', {
+          status: filters.status,
+        });
       }
 
       if (filters?.truckId) {
-        query.andWhere('inspection.truckId = :truckId', { truckId: filters.truckId });
+        query.andWhere('inspection.truckId = :truckId', {
+          truckId: filters.truckId,
+        });
       }
 
       if (filters?.inspectorId) {
-        query.andWhere('inspection.inspector = :inspectorId', { inspectorId: filters.inspectorId });
+        query.andWhere('inspection.inspector = :inspectorId', {
+          inspectorId: filters.inspectorId,
+        });
       }
 
       return await query.getMany();
     } catch (error) {
       console.error('❌ Error fetching safety inspections:', error);
-      throw new BadRequestException(`Failed to fetch safety inspections: ${error.message}`);
+      throw new BadRequestException(
+        `Failed to fetch safety inspections: ${error.message}`,
+      );
     }
   }
 
@@ -255,7 +298,9 @@ export class SafetyService {
         createdBy: userId,
         scheduledDate,
         nextDue,
-        lastCompleted: createDto.lastCompleted ? new Date(createDto.lastCompleted) : null,
+        lastCompleted: createDto.lastCompleted
+          ? new Date(createDto.lastCompleted)
+          : null,
         status: createDto.status || TrainingStatus.PENDING,
         required: createDto.required || false,
       });
@@ -268,7 +313,9 @@ export class SafetyService {
       return savedTraining;
     } catch (error) {
       console.error('❌ Error creating safety training:', error);
-      throw new BadRequestException(`Failed to create safety training: ${error.message}`);
+      throw new BadRequestException(
+        `Failed to create safety training: ${error.message}`,
+      );
     }
   }
 
@@ -284,15 +331,15 @@ export class SafetyService {
 
       // Only schedule if reminder date is in the future
       if (reminderDate > new Date()) {
-        const trainingDateStr = trainingDate.toLocaleDateString('en-US', { 
-          weekday: 'long', 
-          year: 'numeric', 
-          month: 'long', 
-          day: 'numeric' 
+        const trainingDateStr = trainingDate.toLocaleDateString('en-US', {
+          weekday: 'long',
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
         });
-        const trainingTimeStr = trainingDate.toLocaleTimeString('en-US', { 
-          hour: '2-digit', 
-          minute: '2-digit' 
+        const trainingTimeStr = trainingDate.toLocaleTimeString('en-US', {
+          hour: '2-digit',
+          minute: '2-digit',
         });
 
         // Create notification directly using repository since we need tenantId
@@ -347,7 +394,9 @@ export class SafetyService {
       }
 
       if (filters?.driverId) {
-        query.andWhere('training.driverId = :driverId', { driverId: filters.driverId });
+        query.andWhere('training.driverId = :driverId', {
+          driverId: filters.driverId,
+        });
       }
 
       if (filters?.type) {
@@ -357,7 +406,9 @@ export class SafetyService {
       return await query.getMany();
     } catch (error) {
       console.error('❌ Error fetching safety trainings:', error);
-      throw new BadRequestException(`Failed to fetch safety trainings: ${error.message}`);
+      throw new BadRequestException(
+        `Failed to fetch safety trainings: ${error.message}`,
+      );
     }
   }
 
@@ -398,13 +449,9 @@ export class SafetyService {
     return await this.trainingRepository.save(training);
   }
 
-  async deleteTraining(
-    trainingId: string,
-    tenantId: string,
-  ): Promise<void> {
+  async deleteTraining(trainingId: string, tenantId: string): Promise<void> {
     const training = await this.findOneTraining(trainingId, tenantId);
     training.deletedAt = new Date();
     await this.trainingRepository.save(training);
   }
 }
-

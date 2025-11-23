@@ -29,7 +29,7 @@ export class NotificationsService {
     tenantId: string,
   ): Promise<Notification> {
     const notification = this.notificationRepository.create({
-      notificationType: createNotificationDto.type as NotificationType,
+      notificationType: createNotificationDto.type,
       priority: createNotificationDto.priority || NotificationPriority.NORMAL,
       title: createNotificationDto.subject ?? '',
       message: createNotificationDto.content ?? '',
@@ -65,7 +65,7 @@ export class NotificationsService {
     const createdNotifications: Notification[] = notifications.map(
       (notification) =>
         this.notificationRepository.create({
-          notificationType: notification.type as NotificationType,
+          notificationType: notification.type,
           priority: notification.priority || NotificationPriority.NORMAL,
           title: notification.subject ?? '',
           message: notification.content ?? '',
@@ -113,7 +113,9 @@ export class NotificationsService {
     // Apply filters
     if (filter) {
       if (filter.type) {
-        query.andWhere('notification.notificationType = :type', { type: filter.type });
+        query.andWhere('notification.notificationType = :type', {
+          type: filter.type,
+        });
       }
 
       if (filter.priority) {
@@ -256,7 +258,8 @@ export class NotificationsService {
 
     const notificationTypes = notifications.reduce(
       (acc, notification) => {
-        acc[notification.notificationType] = (acc[notification.notificationType] || 0) + 1;
+        acc[notification.notificationType] =
+          (acc[notification.notificationType] || 0) + 1;
         return acc;
       },
       {} as Record<string, number>,

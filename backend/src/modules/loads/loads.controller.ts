@@ -169,13 +169,19 @@ export class LoadsController {
 
       // Validate user authentication
       if (!req.user) {
-        throw new UnauthorizedException('User not authenticated. Please log in.');
+        throw new UnauthorizedException(
+          'User not authenticated. Please log in.',
+        );
       }
       if (!req.user.userId) {
-        throw new UnauthorizedException('User ID not found in authentication token.');
+        throw new UnauthorizedException(
+          'User ID not found in authentication token.',
+        );
       }
       if (!req.user.tenantId) {
-        throw new BadRequestException('Tenant ID not found. User must be associated with a tenant.');
+        throw new BadRequestException(
+          'Tenant ID not found. User must be associated with a tenant.',
+        );
       }
 
       const load = await this.loadsService.create(
@@ -194,35 +200,43 @@ export class LoadsController {
       console.error('❌ Error in create controller:', error);
       console.error('❌ Error message:', error.message);
       console.error('❌ Error stack:', error.stack);
-      
+
       // Re-throw known exceptions
       if (error instanceof HttpException) {
         throw error;
       }
-      
+
       // Handle validation errors
-      if (error.name === 'ValidationError' || error.message?.includes('validation')) {
+      if (
+        error.name === 'ValidationError' ||
+        error.message?.includes('validation')
+      ) {
         throw new BadRequestException({
           message: 'Validation failed',
           error: error.message || 'Invalid load data provided',
         });
       }
-      
+
       // Handle database constraint violations
-      if (error.code === '23505') { // Unique constraint violation
+      if (error.code === '23505') {
+        // Unique constraint violation
         throw new ConflictException('A load with these details already exists');
       }
-      
-      if (error.code === '22001') { // Data too long
-        throw new BadRequestException('One or more fields exceed maximum length');
+
+      if (error.code === '22001') {
+        // Data too long
+        throw new BadRequestException(
+          'One or more fields exceed maximum length',
+        );
       }
-      
+
       // Generic error
       throw new HttpException(
         {
           message: 'Failed to create load',
           error: error.message || 'An unexpected error occurred',
-          details: process.env.NODE_ENV === 'development' ? error.stack : undefined,
+          details:
+            process.env.NODE_ENV === 'development' ? error.stack : undefined,
         },
         error.status || HttpStatus.INTERNAL_SERVER_ERROR,
       );
@@ -524,13 +538,19 @@ export class LoadsController {
 
       // Validate user authentication
       if (!req.user) {
-        throw new UnauthorizedException('User not authenticated. Please log in.');
+        throw new UnauthorizedException(
+          'User not authenticated. Please log in.',
+        );
       }
       if (!req.user.userId) {
-        throw new UnauthorizedException('User ID not found in authentication token.');
+        throw new UnauthorizedException(
+          'User ID not found in authentication token.',
+        );
       }
       if (!req.user.tenantId) {
-        throw new BadRequestException('Tenant ID not found. User must be associated with a tenant.');
+        throw new BadRequestException(
+          'Tenant ID not found. User must be associated with a tenant.',
+        );
       }
 
       const load = await this.loadsService.useTemplate(
@@ -550,26 +570,30 @@ export class LoadsController {
       console.error('❌ Error in useTemplate controller:', error);
       console.error('❌ Error message:', error.message);
       console.error('❌ Error stack:', error.stack);
-      
+
       // Re-throw known exceptions
       if (error instanceof HttpException) {
         throw error;
       }
-      
+
       // Handle validation errors
-      if (error.name === 'ValidationError' || error.message?.includes('validation')) {
+      if (
+        error.name === 'ValidationError' ||
+        error.message?.includes('validation')
+      ) {
         throw new BadRequestException({
           message: 'Validation failed',
           error: error.message || 'Invalid template data provided',
         });
       }
-      
+
       // Generic error
       throw new HttpException(
         {
           message: 'Failed to use template',
           error: error.message || 'An unexpected error occurred',
-          details: process.env.NODE_ENV === 'development' ? error.stack : undefined,
+          details:
+            process.env.NODE_ENV === 'development' ? error.stack : undefined,
         },
         error.status || HttpStatus.INTERNAL_SERVER_ERROR,
       );
@@ -716,11 +740,7 @@ export class LoadsController {
         );
       }
 
-      const result = await this.loadsService.findAll(
-        tenantId,
-        userId,
-        query,
-      );
+      const result = await this.loadsService.findAll(tenantId, userId, query);
 
       return {
         ...result,
@@ -728,12 +748,12 @@ export class LoadsController {
       };
     } catch (error) {
       console.error(`Error in findAll: ${error.message}`, error.stack);
-      
+
       // If it's already an HttpException, re-throw it
       if (error instanceof HttpException) {
         throw error;
       }
-      
+
       throw new HttpException(
         error.message || 'Failed to retrieve loads',
         error.status || HttpStatus.INTERNAL_SERVER_ERROR,
@@ -1174,7 +1194,8 @@ export class LoadsController {
   @Post(':loadId/documents')
   @ApiOperation({
     summary: 'Upload document',
-    description: 'Uploads a document (BOL, POD, invoice, customs, etc.) for a load',
+    description:
+      'Uploads a document (BOL, POD, invoice, customs, etc.) for a load',
   })
   @ApiParam({ name: 'loadId', description: 'Load ID' })
   @ApiConsumes('multipart/form-data')
@@ -1183,15 +1204,15 @@ export class LoadsController {
     schema: {
       type: 'object',
       properties: {
-        type: { 
-          type: 'string', 
+        type: {
+          type: 'string',
           enum: Object.values(DocumentType),
-          description: 'Document type'
+          description: 'Document type',
         },
-        file: { 
-          type: 'string', 
+        file: {
+          type: 'string',
           format: 'binary',
-          description: 'Document file'
+          description: 'Document file',
         },
         description: { type: 'string' },
         metadata: { type: 'string', description: 'JSON stringified metadata' },
@@ -1205,15 +1226,18 @@ export class LoadsController {
   async uploadDocument(
     @Param('loadId', ParseUUIDPipe) loadId: string,
     @UploadedFile() file: Express.Multer.File,
-    @Body() documentData: {
+    @Body()
+    documentData: {
       type: DocumentType;
       description?: string;
       metadata?: string;
     },
     @Req() req: Request,
   ): Promise<{ message: string; document: any }> {
-    const metadata = documentData.metadata ? JSON.parse(documentData.metadata) : undefined;
-    
+    const metadata = documentData.metadata
+      ? JSON.parse(documentData.metadata)
+      : undefined;
+
     const document = await this.loadsService.uploadDocument(
       loadId,
       {
@@ -1286,7 +1310,8 @@ export class LoadsController {
   @ApiResponse({ status: 404, description: 'Load not found' })
   async updateLocation(
     @Param('loadId', ParseUUIDPipe) loadId: string,
-    @Body() locationData: {
+    @Body()
+    locationData: {
       latitude: number;
       longitude: number;
       timestamp: Date;
@@ -1320,7 +1345,10 @@ export class LoadsController {
     description: 'Retrieves the complete tracking history for a load',
   })
   @ApiParam({ name: 'loadId', description: 'Load ID' })
-  @ApiResponse({ status: 200, description: 'Tracking history retrieved successfully' })
+  @ApiResponse({
+    status: 200,
+    description: 'Tracking history retrieved successfully',
+  })
   @ApiResponse({ status: 404, description: 'Load not found' })
   async getTrackingHistory(
     @Param('loadId', ParseUUIDPipe) loadId: string,
@@ -1346,16 +1374,16 @@ export class LoadsController {
     schema: {
       type: 'object',
       properties: {
-        type: { 
-          type: 'string', 
+        type: {
+          type: 'string',
           enum: Object.values(AlertType),
-          description: 'Alert type'
+          description: 'Alert type',
         },
         description: { type: 'string' },
-        severity: { 
-          type: 'string', 
+        severity: {
+          type: 'string',
           enum: Object.values(AlertSeverity),
-          description: 'Alert severity'
+          description: 'Alert severity',
         },
         occurredAt: { type: 'string', format: 'date-time' },
         location: {
@@ -1383,7 +1411,8 @@ export class LoadsController {
   @ApiResponse({ status: 404, description: 'Load not found' })
   async createAlert(
     @Param('loadId', ParseUUIDPipe) loadId: string,
-    @Body() alertData: {
+    @Body()
+    alertData: {
       type: AlertType;
       description: string;
       severity?: AlertSeverity;
@@ -1404,13 +1433,15 @@ export class LoadsController {
     },
     @Req() req: Request,
   ): Promise<{ message: string; alert: any }> {
-    const metadata = alertData.metadata ? JSON.parse(alertData.metadata) : undefined;
-    
+    const metadata = alertData.metadata
+      ? JSON.parse(alertData.metadata)
+      : undefined;
+
     const alert = await this.loadsService.createAlert(
       loadId,
       {
         ...alertData,
-        severity: alertData.severity || 'MEDIUM' as any,
+        severity: alertData.severity || ('MEDIUM' as any),
         occurredAt: alertData.occurredAt || new Date(),
         metadata,
       },
@@ -1455,17 +1486,20 @@ export class LoadsController {
     schema: {
       type: 'object',
       properties: {
-        status: { 
-          type: 'string', 
+        status: {
+          type: 'string',
           enum: ['open', 'acknowledged', 'in_progress', 'resolved', 'closed'],
-          description: 'New alert status'
+          description: 'New alert status',
         },
         notes: { type: 'string' },
       },
       required: ['status'],
     },
   })
-  @ApiResponse({ status: 200, description: 'Alert status updated successfully' })
+  @ApiResponse({
+    status: 200,
+    description: 'Alert status updated successfully',
+  })
   @ApiResponse({ status: 400, description: 'Invalid status update' })
   @ApiResponse({ status: 404, description: 'Load or alert not found' })
   async updateAlertStatus(
@@ -1496,8 +1530,14 @@ export class LoadsController {
     description: 'Retrieves the current pricing suggestion for a load',
   })
   @ApiParam({ name: 'loadId', description: 'Load ID' })
-  @ApiResponse({ status: 200, description: 'Price suggestion retrieved successfully' })
-  @ApiResponse({ status: 404, description: 'Load or price suggestion not found' })
+  @ApiResponse({
+    status: 200,
+    description: 'Price suggestion retrieved successfully',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Load or price suggestion not found',
+  })
   async getPriceSuggestion(
     @Param('loadId', ParseUUIDPipe) loadId: string,
     @Req() req: Request,
@@ -1513,9 +1553,22 @@ export class LoadsController {
     description: 'Retrieves the complete audit log for a load',
   })
   @ApiParam({ name: 'loadId', description: 'Load ID' })
-  @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page number' })
-  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page' })
-  @ApiResponse({ status: 200, description: 'Audit records retrieved successfully' })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Page number',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Items per page',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Audit records retrieved successfully',
+  })
   @ApiResponse({ status: 404, description: 'Load not found' })
   async getLoadHistory(
     @Param('loadId', ParseUUIDPipe) loadId: string,
@@ -1729,10 +1782,14 @@ export class LoadsController {
     try {
       console.log('Controller: Starting save as draft...');
       console.log('Controller: User ID:', req.user.userId);
-      
-      const result = await this.loadsService.saveAsDraft(createLoadDto, req.user.userId);
+
+      const result = await this.loadsService.saveAsDraft(
+        createLoadDto,
+        req.user.userId,
+      );
       return {
-        message: 'Cargo draft saved successfully. You can continue editing and publish when ready.',
+        message:
+          'Cargo draft saved successfully. You can continue editing and publish when ready.',
         load: result,
       };
     } catch (error) {
@@ -1792,10 +1849,15 @@ export class LoadsController {
       console.log('Controller: Starting update draft...');
       console.log('Controller: Draft ID:', id);
       console.log('Controller: User ID:', req.user.userId);
-      
-      const result = await this.loadsService.updateDraft(id, updateLoadDto, req.user.userId);
+
+      const result = await this.loadsService.updateDraft(
+        id,
+        updateLoadDto,
+        req.user.userId,
+      );
       return {
-        message: 'Cargo draft updated successfully. Continue editing or publish when ready.',
+        message:
+          'Cargo draft updated successfully. Continue editing or publish when ready.',
         load: result,
       };
     } catch (error) {
@@ -1822,8 +1884,16 @@ export class LoadsController {
     - User wants to manage multiple draft cargos
     `,
   })
-  @ApiQuery({ name: 'page', required: false, description: 'Page number (default: 1)' })
-  @ApiQuery({ name: 'limit', required: false, description: 'Items per page (default: 20)' })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    description: 'Page number (default: 1)',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    description: 'Items per page (default: 20)',
+  })
   @ApiResponse({
     status: 200,
     description: 'Draft cargo retrieved successfully',
@@ -1842,8 +1912,12 @@ export class LoadsController {
       console.log('Controller: Getting user drafts...');
       console.log('Controller: User ID:', req.user.userId);
       console.log('Controller: Page:', page, 'Limit:', limit);
-      
-      return await this.loadsService.getUserDrafts(req.user.userId, page, limit);
+
+      return await this.loadsService.getUserDrafts(
+        req.user.userId,
+        page,
+        limit,
+      );
     } catch (error) {
       console.error('Controller: Error getting user drafts:', error);
       throw error;
@@ -1883,7 +1957,8 @@ export class LoadsController {
   })
   @ApiResponse({
     status: 400,
-    description: 'Bad request - Validation failed or cargo not ready for created status',
+    description:
+      'Bad request - Validation failed or cargo not ready for created status',
   })
   @ApiResponse({
     status: 404,
@@ -1901,10 +1976,11 @@ export class LoadsController {
       console.log('Controller: Starting move draft to created status...');
       console.log('Controller: Draft ID:', id);
       console.log('Controller: User ID:', req.user.userId);
-      
+
       const result = await this.loadsService.publishDraft(id, req.user.userId);
       return {
-        message: 'Cargo moved to created status successfully! It is now ready for matching and publishing to truck owners.',
+        message:
+          'Cargo moved to created status successfully! It is now ready for matching and publishing to truck owners.',
         load: result,
       };
     } catch (error) {
@@ -1951,7 +2027,7 @@ export class LoadsController {
       console.log('Controller: Starting delete draft...');
       console.log('Controller: Draft ID:', id);
       console.log('Controller: User ID:', req.user.userId);
-      
+
       await this.loadsService.deleteDraft(id, req.user.userId);
       return {
         message: 'Cargo draft deleted successfully.',

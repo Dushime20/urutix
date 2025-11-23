@@ -28,11 +28,36 @@ import {
   TimeWindow,
   Cargo,
 } from '../../entities/load.entity';
-import { Document, DocumentType, DocumentStatus, DocumentPriority, DocumentCategory, EntityType } from '../../entities/document.entity';
-import { TrackingEvent, TrackingEventType, GeofenceType } from '../../entities/tracking-event.entity';
-import { Alert, AlertType, AlertSeverity, AlertStatus } from '../../entities/alert.entity';
-import { AuditEvent, AuditAction, AuditEntityType } from '../../entities/audit-event.entity';
-import { PriceSuggestion, PricingModel, PricingConfidence, PricingStatus } from '../../entities/price-suggestion.entity';
+import {
+  Document,
+  DocumentType,
+  DocumentStatus,
+  DocumentPriority,
+  DocumentCategory,
+  EntityType,
+} from '../../entities/document.entity';
+import {
+  TrackingEvent,
+  TrackingEventType,
+  GeofenceType,
+} from '../../entities/tracking-event.entity';
+import {
+  Alert,
+  AlertType,
+  AlertSeverity,
+  AlertStatus,
+} from '../../entities/alert.entity';
+import {
+  AuditEvent,
+  AuditAction,
+  AuditEntityType,
+} from '../../entities/audit-event.entity';
+import {
+  PriceSuggestion,
+  PricingModel,
+  PricingConfidence,
+  PricingStatus,
+} from '../../entities/price-suggestion.entity';
 import { Location } from '../../entities/location.entity';
 import { User } from '../../entities/user.entity';
 import { CreateLoadDto } from './dto/create-load.dto';
@@ -312,7 +337,7 @@ export class LoadsService {
     } catch (error) {
       this.logger.error(`Failed to create load: ${error.message}`, error.stack);
       this.logger.error(`Error code: ${error.code}`, error.detail);
-      
+
       // Re-throw known exceptions
       if (
         error instanceof BadRequestException ||
@@ -321,29 +346,32 @@ export class LoadsService {
       ) {
         throw error;
       }
-      
+
       // Handle database errors
       if (error.code === '23505') {
         // Unique constraint violation
         const detail = error.detail || '';
         throw new ConflictException('A load with these details already exists');
       }
-      
+
       if (error.code === '22001') {
         // Data too long
-        throw new BadRequestException('One or more fields exceed maximum length');
+        throw new BadRequestException(
+          'One or more fields exceed maximum length',
+        );
       }
-      
+
       if (error.code === '23502') {
         // Not null violation
         throw new BadRequestException('Required field is missing');
       }
-      
+
       // Generic error
       throw new InternalServerErrorException({
         message: 'Failed to create load',
         error: error.message || 'An unexpected error occurred',
-        details: process.env.NODE_ENV === 'development' ? error.stack : undefined,
+        details:
+          process.env.NODE_ENV === 'development' ? error.stack : undefined,
       });
     }
   }
@@ -631,7 +659,7 @@ export class LoadsService {
       this.logger.log(`Found ${loads.length} loads out of ${total} total`);
 
       // Transform Load entities to LoadResponseDto
-      const items = loads.map(load => this.transformLoadToResponse(load));
+      const items = loads.map((load) => this.transformLoadToResponse(load));
 
       return {
         items,
@@ -711,12 +739,16 @@ export class LoadsService {
 
       // Validate dates if provided
       // Handle cases where only one date is updated
-      const pickupDate = updateLoadDto.pickupDate 
-        ? new Date(updateLoadDto.pickupDate) 
-        : (load.pickupDate ? new Date(load.pickupDate) : null);
-      const deliveryDate = updateLoadDto.deliveryDate 
-        ? new Date(updateLoadDto.deliveryDate) 
-        : (load.deliveryDate ? new Date(load.deliveryDate) : null);
+      const pickupDate = updateLoadDto.pickupDate
+        ? new Date(updateLoadDto.pickupDate)
+        : load.pickupDate
+          ? new Date(load.pickupDate)
+          : null;
+      const deliveryDate = updateLoadDto.deliveryDate
+        ? new Date(updateLoadDto.deliveryDate)
+        : load.deliveryDate
+          ? new Date(load.deliveryDate)
+          : null;
 
       if (pickupDate && deliveryDate) {
         // Validate: delivery date cannot be before pickup date
@@ -788,11 +820,17 @@ export class LoadsService {
   /**
    * Publish a load (change status from DRAFT to PUBLISHED)
    */
-  async publishLoad(loadId: string, userId: string, tenantId: string): Promise<Load> {
+  async publishLoad(
+    loadId: string,
+    userId: string,
+    tenantId: string,
+  ): Promise<Load> {
     const load = await this.findOne(loadId, tenantId, userId);
-    
+
     if (!load.canPublish()) {
-      throw new BadRequestException('Load cannot be published. Please ensure all required fields are filled.');
+      throw new BadRequestException(
+        'Load cannot be published. Please ensure all required fields are filled.',
+      );
     }
 
     const previousStatus = load.status;
@@ -812,12 +850,14 @@ export class LoadsService {
       description: 'Load moved to created status',
       before: { status: previousStatus },
       after: { status: load.status, publishedAt: load.publishedAt },
-      changes: [{
-        field: 'status',
-        oldValue: previousStatus,
-        newValue: load.status,
-        type: 'modified'
-      }]
+      changes: [
+        {
+          field: 'status',
+          oldValue: previousStatus,
+          newValue: load.status,
+          type: 'modified',
+        },
+      ],
     });
 
     return savedLoad;
@@ -827,17 +867,19 @@ export class LoadsService {
    * Assign a carrier to a load
    */
   async assignCarrier(
-    loadId: string, 
-    carrierId: string, 
-    rate: number, 
-    userId: string, 
+    loadId: string,
+    carrierId: string,
+    rate: number,
+    userId: string,
     tenantId: string,
-    notes?: string
+    notes?: string,
   ): Promise<Load> {
     const load = await this.findOne(loadId, tenantId, userId);
-    
+
     if (!load.canAssign()) {
-      throw new BadRequestException('Load cannot be assigned. Load must be published or pending confirmation.');
+      throw new BadRequestException(
+        'Load cannot be assigned. Load must be published or pending confirmation.',
+      );
     }
 
     const previousStatus = load.status;
@@ -856,28 +898,35 @@ export class LoadsService {
       action: AuditAction.ASSIGN,
       actorId: userId,
       description: `Carrier assigned with rate ${rate}`,
-      before: { status: previousStatus, assignedCarrierId: load.assignedCarrierId },
-      after: { status: load.status, assignedCarrierId: carrierId, offeredPrice: rate },
+      before: {
+        status: previousStatus,
+        assignedCarrierId: load.assignedCarrierId,
+      },
+      after: {
+        status: load.status,
+        assignedCarrierId: carrierId,
+        offeredPrice: rate,
+      },
       changes: [
         {
           field: 'status',
           oldValue: previousStatus,
           newValue: load.status,
-          type: 'modified'
+          type: 'modified',
         },
         {
           field: 'assignedCarrierId',
           oldValue: load.assignedCarrierId,
           newValue: carrierId,
-          type: 'modified'
+          type: 'modified',
         },
         {
           field: 'offeredPrice',
           oldValue: load.offeredPrice,
           newValue: rate,
-          type: 'modified'
-        }
-      ]
+          type: 'modified',
+        },
+      ],
     });
 
     return savedLoad;
@@ -886,11 +935,17 @@ export class LoadsService {
   /**
    * Start a load (change status from ASSIGNED to IN_TRANSIT)
    */
-  async startLoad(loadId: string, userId: string, tenantId: string): Promise<Load> {
+  async startLoad(
+    loadId: string,
+    userId: string,
+    tenantId: string,
+  ): Promise<Load> {
     const load = await this.findOne(loadId, tenantId, userId);
-    
+
     if (!load.canStart()) {
-      throw new BadRequestException('Load cannot be started. Please ensure carrier and truck are assigned.');
+      throw new BadRequestException(
+        'Load cannot be started. Please ensure carrier and truck are assigned.',
+      );
     }
 
     const previousStatus = load.status;
@@ -909,12 +964,14 @@ export class LoadsService {
       description: 'Load started - now in transit',
       before: { status: previousStatus },
       after: { status: load.status },
-      changes: [{
-        field: 'status',
-        oldValue: previousStatus,
-        newValue: load.status,
-        type: 'modified'
-      }]
+      changes: [
+        {
+          field: 'status',
+          oldValue: previousStatus,
+          newValue: load.status,
+          type: 'modified',
+        },
+      ],
     });
 
     return savedLoad;
@@ -924,16 +981,18 @@ export class LoadsService {
    * Deliver a load (change status from IN_TRANSIT to DELIVERED)
    */
   async deliverLoad(
-    loadId: string, 
-    userId: string, 
+    loadId: string,
+    userId: string,
     tenantId: string,
     podFile?: Express.Multer.File,
-    notes?: string
+    notes?: string,
   ): Promise<Load> {
     const load = await this.findOne(loadId, tenantId, userId);
-    
+
     if (!load.canDeliver()) {
-      throw new BadRequestException('Load cannot be delivered. Load must be in transit.');
+      throw new BadRequestException(
+        'Load cannot be delivered. Load must be in transit.',
+      );
     }
 
     const previousStatus = load.status;
@@ -944,12 +1003,17 @@ export class LoadsService {
 
     // If POD file is provided, create document
     if (podFile) {
-      await this.uploadDocument(loadId, {
-        type: DocumentType.POD,
-        file: podFile,
-        description: 'Proof of Delivery',
-        metadata: { notes }
-      }, userId, tenantId);
+      await this.uploadDocument(
+        loadId,
+        {
+          type: DocumentType.POD,
+          file: podFile,
+          description: 'Proof of Delivery',
+          metadata: { notes },
+        },
+        userId,
+        tenantId,
+      );
     }
 
     // Create audit event
@@ -962,12 +1026,14 @@ export class LoadsService {
       description: 'Load delivered',
       before: { status: previousStatus },
       after: { status: load.status },
-      changes: [{
-        field: 'status',
-        oldValue: previousStatus,
-        newValue: load.status,
-        type: 'modified'
-      }]
+      changes: [
+        {
+          field: 'status',
+          oldValue: previousStatus,
+          newValue: load.status,
+          type: 'modified',
+        },
+      ],
     });
 
     return savedLoad;
@@ -977,15 +1043,17 @@ export class LoadsService {
    * Cancel a load
    */
   async cancelLoad(
-    loadId: string, 
-    userId: string, 
+    loadId: string,
+    userId: string,
     tenantId: string,
-    reason: string
+    reason: string,
   ): Promise<Load> {
     const load = await this.findOne(loadId, tenantId, userId);
-    
+
     if (!load.canCancel()) {
-      throw new BadRequestException('Load cannot be cancelled. Only draft, published, or pending confirmation loads can be cancelled.');
+      throw new BadRequestException(
+        'Load cannot be cancelled. Only draft, published, or pending confirmation loads can be cancelled.',
+      );
     }
 
     const previousStatus = load.status;
@@ -1004,13 +1072,15 @@ export class LoadsService {
       description: `Load cancelled: ${reason}`,
       before: { status: previousStatus },
       after: { status: load.status },
-      changes: [{
-        field: 'status',
-        oldValue: previousStatus,
-        newValue: load.status,
-        type: 'modified'
-      }],
-      reason
+      changes: [
+        {
+          field: 'status',
+          oldValue: previousStatus,
+          newValue: load.status,
+          type: 'modified',
+        },
+      ],
+      reason,
     });
 
     return savedLoad;
@@ -1019,11 +1089,17 @@ export class LoadsService {
   /**
    * Repost a cancelled load
    */
-  async repostLoad(loadId: string, userId: string, tenantId: string): Promise<Load> {
+  async repostLoad(
+    loadId: string,
+    userId: string,
+    tenantId: string,
+  ): Promise<Load> {
     const load = await this.findOne(loadId, tenantId, userId);
-    
+
     if (!load.canRepost()) {
-      throw new BadRequestException('Load cannot be reposted. Only cancelled loads can be reposted.');
+      throw new BadRequestException(
+        'Load cannot be reposted. Only cancelled loads can be reposted.',
+      );
     }
 
     const previousStatus = load.status;
@@ -1046,12 +1122,14 @@ export class LoadsService {
       description: 'Load reposted',
       before: { status: previousStatus },
       after: { status: load.status },
-      changes: [{
-        field: 'status',
-        oldValue: previousStatus,
-        newValue: load.status,
-        type: 'modified'
-      }]
+      changes: [
+        {
+          field: 'status',
+          oldValue: previousStatus,
+          newValue: load.status,
+          type: 'modified',
+        },
+      ],
     });
 
     return savedLoad;
@@ -1069,7 +1147,7 @@ export class LoadsService {
       metadata?: Record<string, any>;
     },
     userId: string,
-    tenantId: string
+    tenantId: string,
   ): Promise<Document> {
     // Verify load exists and user has access
     await this.findOne(loadId, tenantId, userId);
@@ -1094,21 +1172,25 @@ export class LoadsService {
       tags: ['load', 'document'],
       metadata: documentData.metadata,
       currentVersion: 1,
-      versions: [{
-        version: 1,
-        fileUrl: `/uploads/${documentData.file.filename}`,
-        fileName: documentData.file.filename,
-        fileSize: documentData.file.size,
-        uploadedBy: userId,
-        uploadedAt: new Date(),
-        changeNotes: 'Initial upload'
-      }],
-      auditTrail: [{
-        action: 'CREATED',
-        performedBy: userId,
-        performedAt: new Date(),
-        details: { method: 'upload', loadId }
-      }]
+      versions: [
+        {
+          version: 1,
+          fileUrl: `/uploads/${documentData.file.filename}`,
+          fileName: documentData.file.filename,
+          fileSize: documentData.file.size,
+          uploadedBy: userId,
+          uploadedAt: new Date(),
+          changeNotes: 'Initial upload',
+        },
+      ],
+      auditTrail: [
+        {
+          action: 'CREATED',
+          performedBy: userId,
+          performedAt: new Date(),
+          details: { method: 'upload', loadId },
+        },
+      ],
     });
 
     const savedDocument = await this.documentRepository.save(document);
@@ -1130,12 +1212,15 @@ export class LoadsService {
   /**
    * Get documents for a load
    */
-  async getLoadDocuments(loadId: string, tenantId: string): Promise<Document[]> {
+  async getLoadDocuments(
+    loadId: string,
+    tenantId: string,
+  ): Promise<Document[]> {
     await this.findOne(loadId, tenantId, null); // No user check for document access
-    
+
     return this.documentRepository.find({
       where: { entityType: EntityType.CARGO, entityId: loadId },
-      order: { createdAt: 'DESC' }
+      order: { createdAt: 'DESC' },
     });
   }
 
@@ -1145,10 +1230,10 @@ export class LoadsService {
   async deleteDocument(
     documentId: string,
     userId: string,
-    tenantId: string
+    tenantId: string,
   ): Promise<void> {
     const document = await this.documentRepository.findOne({
-      where: { id: documentId }
+      where: { id: documentId },
     });
 
     if (!document) {
@@ -1160,7 +1245,9 @@ export class LoadsService {
 
     // Check if document can be deleted (not verified)
     if (document.status === DocumentStatus.VERIFIED) {
-      throw new BadRequestException('Document cannot be deleted. It has been verified.');
+      throw new BadRequestException(
+        'Document cannot be deleted. It has been verified.',
+      );
     }
 
     await this.documentRepository.remove(document);
@@ -1196,7 +1283,7 @@ export class LoadsService {
       postalCode?: string;
     },
     userId: string,
-    tenantId: string
+    tenantId: string,
   ): Promise<TrackingEvent> {
     // Verify load exists and user has access
     await this.findOne(loadId, tenantId, userId);
@@ -1229,12 +1316,15 @@ export class LoadsService {
   /**
    * Get tracking history for a load
    */
-  async getTrackingHistory(loadId: string, tenantId: string): Promise<TrackingEvent[]> {
+  async getTrackingHistory(
+    loadId: string,
+    tenantId: string,
+  ): Promise<TrackingEvent[]> {
     await this.findOne(loadId, tenantId, null); // No user check for tracking history
-    
+
     return this.trackingEventRepository.find({
       where: { loadId },
-      order: { timestamp: 'DESC' }
+      order: { timestamp: 'DESC' },
     });
   }
 
@@ -1263,7 +1353,7 @@ export class LoadsService {
       metadata?: Record<string, any>;
     },
     userId: string,
-    tenantId: string
+    tenantId: string,
   ): Promise<Alert> {
     // Verify load exists and user has access
     await this.findOne(loadId, tenantId, userId);
@@ -1296,10 +1386,10 @@ export class LoadsService {
    */
   async getLoadAlerts(loadId: string, tenantId: string): Promise<Alert[]> {
     await this.findOne(loadId, tenantId, null); // No user check for alerts
-    
+
     return this.alertRepository.find({
       where: { loadId },
-      order: { createdAt: 'DESC' }
+      order: { createdAt: 'DESC' },
     });
   }
 
@@ -1311,11 +1401,11 @@ export class LoadsService {
     status: AlertStatus,
     userId: string,
     tenantId: string,
-    notes?: string
+    notes?: string,
   ): Promise<Alert> {
     const alert = await this.alertRepository.findOne({
       where: { id: alertId },
-      relations: ['load']
+      relations: ['load'],
     });
 
     if (!alert) {
@@ -1364,12 +1454,14 @@ export class LoadsService {
       description: `Alert status updated to ${status}`,
       before: { status: previousStatus },
       after: { status: alert.status },
-      changes: [{
-        field: 'status',
-        oldValue: previousStatus,
-        newValue: alert.status,
-        type: 'modified'
-      }]
+      changes: [
+        {
+          field: 'status',
+          oldValue: previousStatus,
+          newValue: alert.status,
+          type: 'modified',
+        },
+      ],
     });
 
     return savedAlert;
@@ -1378,20 +1470,25 @@ export class LoadsService {
   /**
    * Get price suggestion for a load
    */
-  async getPriceSuggestion(loadId: string, tenantId: string): Promise<PriceSuggestion> {
+  async getPriceSuggestion(
+    loadId: string,
+    tenantId: string,
+  ): Promise<PriceSuggestion> {
     await this.findOne(loadId, tenantId, null); // No user check for price suggestion
-    
+
     // Get the most recent active price suggestion
     const priceSuggestion = await this.priceSuggestionRepository.findOne({
-      where: { 
-        loadId, 
-        status: PricingStatus.ACTIVE 
+      where: {
+        loadId,
+        status: PricingStatus.ACTIVE,
       },
-      order: { createdAt: 'DESC' }
+      order: { createdAt: 'DESC' },
     });
 
     if (!priceSuggestion) {
-      throw new NotFoundException('No active price suggestion found for this load');
+      throw new NotFoundException(
+        'No active price suggestion found for this load',
+      );
     }
 
     return priceSuggestion;
@@ -1401,13 +1498,18 @@ export class LoadsService {
    * Get audit history for a load
    */
   async getLoadHistory(
-    loadId: string, 
+    loadId: string,
     tenantId: string,
     page: number = 1,
-    limit: number = 50
-  ): Promise<{ items: AuditEvent[]; total: number; page: number; limit: number }> {
+    limit: number = 50,
+  ): Promise<{
+    items: AuditEvent[];
+    total: number;
+    page: number;
+    limit: number;
+  }> {
     await this.findOne(loadId, tenantId, null); // No user check for history
-    
+
     const [items, total] = await this.auditEventRepository.findAndCount({
       where: { loadId },
       order: { createdAt: 'DESC' },
@@ -1451,16 +1553,6 @@ export class LoadsService {
 
     return this.auditEventRepository.save(auditEvent);
   }
-
-
-
-
-
-
-
-
-
-
 
   /**
    * Export loads to CSV format
@@ -1568,7 +1660,9 @@ export class LoadsService {
           .getCount(),
         queryBuilder
           .clone()
-          .andWhere('load.status IN (:...statuses)', { statuses: [LoadStatus.CREATED, LoadStatus.PUBLISHED] })
+          .andWhere('load.status IN (:...statuses)', {
+            statuses: [LoadStatus.CREATED, LoadStatus.PUBLISHED],
+          })
           .getCount(),
         queryBuilder
           .clone()
@@ -1621,7 +1715,11 @@ export class LoadsService {
   ): void {
     const allowedTransitions = {
       [LoadStatus.DRAFT]: [LoadStatus.CREATED, LoadStatus.CANCELLED],
-      [LoadStatus.CREATED]: [LoadStatus.PUBLISHED, LoadStatus.ASSIGNED, LoadStatus.CANCELLED],
+      [LoadStatus.CREATED]: [
+        LoadStatus.PUBLISHED,
+        LoadStatus.ASSIGNED,
+        LoadStatus.CANCELLED,
+      ],
       [LoadStatus.PUBLISHED]: [LoadStatus.ASSIGNED, LoadStatus.CANCELLED],
       [LoadStatus.ASSIGNED]: [LoadStatus.IN_TRANSIT, LoadStatus.CANCELLED],
       [LoadStatus.IN_TRANSIT]: [LoadStatus.DELIVERED, LoadStatus.CANCELLED],
@@ -1800,26 +1898,32 @@ export class LoadsService {
 
     if (filters.search) {
       try {
-        const searchValue = typeof filters.search === 'string' ? filters.search : String(filters.search);
+        const searchValue =
+          typeof filters.search === 'string'
+            ? filters.search
+            : String(filters.search);
         const searchTerm = searchValue.trim();
-        
+
         if (searchTerm && searchTerm.length > 0) {
           // Escape special characters for ILIKE (% and _ are special in ILIKE)
           // Simple escaping: replace % with \% and _ with \_
           const escapedSearch = searchTerm
-            .replace(/\\/g, '\\\\')  // Escape backslashes first
-            .replace(/%/g, '\\%')    // Escape %
-            .replace(/_/g, '\\_');   // Escape _
-          
+            .replace(/\\/g, '\\\\') // Escape backslashes first
+            .replace(/%/g, '\\%') // Escape %
+            .replace(/_/g, '\\_'); // Escape _
+
           // Search primarily in title (cargo name) and description
           // Using COALESCE to handle null values safely
           queryBuilder.andWhere(
-            '(COALESCE(load.title, \'\') ILIKE :search OR COALESCE(load.description, \'\') ILIKE :search)',
+            "(COALESCE(load.title, '') ILIKE :search OR COALESCE(load.description, '') ILIKE :search)",
             { search: `%${escapedSearch}%` },
           );
         }
       } catch (error) {
-        this.logger.warn(`Error processing search filter: ${error.message}`, error.stack);
+        this.logger.warn(
+          `Error processing search filter: ${error.message}`,
+          error.stack,
+        );
         // Continue without search filter if there's an error
       }
     }
@@ -1881,8 +1985,6 @@ export class LoadsService {
       costPreferences: createLoadDto.costPreferences || {},
     };
   }
-
-
 
   // Private helper method to map CargoTypeV2 to CargoType
   private mapCargoTypeV2ToEntity(cargoTypeV2: any): CargoType {
@@ -2241,12 +2343,16 @@ export class LoadsService {
         title: overrideData.title || `Load from ${template.name}`,
         description: overrideData.description || template.description,
         locations: overrideData.locations || template.data?.locations || [],
-        pickupDate: overrideData.pickupDate 
-          ? new Date(overrideData.pickupDate) 
-          : (template.data?.pickupDate ? new Date(template.data.pickupDate) : new Date()),
-        deliveryDate: overrideData.deliveryDate 
-          ? new Date(overrideData.deliveryDate) 
-          : (template.data?.deliveryDate ? new Date(template.data.deliveryDate) : new Date()),
+        pickupDate: overrideData.pickupDate
+          ? new Date(overrideData.pickupDate)
+          : template.data?.pickupDate
+            ? new Date(template.data.pickupDate)
+            : new Date(),
+        deliveryDate: overrideData.deliveryDate
+          ? new Date(overrideData.deliveryDate)
+          : template.data?.deliveryDate
+            ? new Date(template.data.deliveryDate)
+            : new Date(),
         status: LoadStatus.DRAFT,
       };
 
@@ -2282,18 +2388,18 @@ export class LoadsService {
       this.logger.log(
         `Created load ${load.id} from template ${templateId} successfully`,
       );
-      
+
       // Note: enrichedLocations are not required for basic functionality
       // They are optional and can be added later if needed
       // The frontend should handle missing enrichedLocations gracefully
-      
+
       return load;
     } catch (error) {
       this.logger.error(
         `Failed to use template ${templateId}: ${error.message}`,
         error.stack,
       );
-      
+
       // Re-throw known exceptions
       if (
         error instanceof BadRequestException ||
@@ -2302,12 +2408,13 @@ export class LoadsService {
       ) {
         throw error;
       }
-      
+
       // Wrap unknown errors
       throw new InternalServerErrorException({
         message: 'Failed to create load from template',
         error: error.message || 'An unexpected error occurred',
-        details: process.env.NODE_ENV === 'development' ? error.stack : undefined,
+        details:
+          process.env.NODE_ENV === 'development' ? error.stack : undefined,
       });
     }
   }
@@ -2644,7 +2751,7 @@ export class LoadsService {
     userId: string,
   ): Promise<LoadResponseDto> {
     this.logger.log('Service: Starting save as draft...');
-    
+
     try {
       // Get tenant ID from user
       const user = await this.userRepository.findOne({ where: { id: userId } });
@@ -2683,12 +2790,17 @@ export class LoadsService {
         requiresLoadingDock: createLoadDto.requiresLoadingDock || false,
         isTimeCritical: createLoadDto.isTimeCritical || false,
         requiresGpsMonitoring: createLoadDto.requiresGpsMonitoring || false,
-        requiresTemperatureMonitoring: createLoadDto.requiresTemperatureMonitoring || false,
-        requiresLowClearanceRoute: createLoadDto.requiresLowClearanceRoute || false,
+        requiresTemperatureMonitoring:
+          createLoadDto.requiresTemperatureMonitoring || false,
+        requiresLowClearanceRoute:
+          createLoadDto.requiresLowClearanceRoute || false,
         requiresEscortVehicle: createLoadDto.requiresEscortVehicle || false,
-        requiresPreShipmentInspection: createLoadDto.requiresPreShipmentInspection || false,
-        requiresDeliveryInspection: createLoadDto.requiresDeliveryInspection || false,
-        requiresPhotographicDocumentation: createLoadDto.requiresPhotographicDocumentation || false,
+        requiresPreShipmentInspection:
+          createLoadDto.requiresPreShipmentInspection || false,
+        requiresDeliveryInspection:
+          createLoadDto.requiresDeliveryInspection || false,
+        requiresPhotographicDocumentation:
+          createLoadDto.requiresPhotographicDocumentation || false,
         numberOfPieces: createLoadDto.numberOfPieces || 0,
         numberOfPallets: createLoadDto.numberOfPallets || 0,
         rating: 0,
@@ -2697,11 +2809,16 @@ export class LoadsService {
         updatedAt: new Date(),
       };
 
-      this.logger.log('Draft load data prepared:', JSON.stringify(loadData, null, 2));
+      this.logger.log(
+        'Draft load data prepared:',
+        JSON.stringify(loadData, null, 2),
+      );
 
       const load = this.loadRepository.create(loadData as any);
-      const savedLoad = await this.loadRepository.save(load) as unknown as Load;
-      
+      const savedLoad = (await this.loadRepository.save(
+        load,
+      )) as unknown as Load;
+
       this.logger.log(`Draft load ${savedLoad.id} saved successfully`);
 
       // Create audit event
@@ -2729,7 +2846,7 @@ export class LoadsService {
     userId: string,
   ): Promise<LoadResponseDto> {
     this.logger.log('Service: Starting update draft...');
-    
+
     try {
       // Find the draft load
       const load = await this.loadRepository.findOne({
@@ -2757,7 +2874,7 @@ export class LoadsService {
       };
 
       const savedLoad = await this.loadRepository.save(updatedLoad);
-      
+
       this.logger.log(`Draft load ${id} updated successfully`);
 
       // Create audit event
@@ -2785,10 +2902,10 @@ export class LoadsService {
     limit: number = 20,
   ): Promise<LoadsPaginatedResponse> {
     this.logger.log('Service: Getting user drafts...');
-    
+
     try {
       const skip = (page - 1) * limit;
-      
+
       const [drafts, total] = await this.loadRepository.findAndCount({
         where: {
           cargoOwnerId: userId,
@@ -2805,7 +2922,7 @@ export class LoadsService {
       this.logger.log(`Found ${drafts.length} draft loads for user ${userId}`);
 
       return {
-        items: drafts.map(draft => this.transformLoadToResponse(draft)),
+        items: drafts.map((draft) => this.transformLoadToResponse(draft)),
         total,
         page,
         limit,
@@ -2822,12 +2939,9 @@ export class LoadsService {
   /**
    * Move draft cargo to created status (ready for matching/publishing)
    */
-  async publishDraft(
-    id: string,
-    userId: string,
-  ): Promise<LoadResponseDto> {
+  async publishDraft(id: string, userId: string): Promise<LoadResponseDto> {
     this.logger.log('Service: Starting publish draft...');
-    
+
     try {
       // Find the draft load
       const load = await this.loadRepository.findOne({
@@ -2867,7 +2981,7 @@ export class LoadsService {
       };
 
       const savedLoad = await this.loadRepository.save(updatedLoad);
-      
+
       this.logger.log(`Draft load ${id} moved to created status successfully`);
 
       // Create audit event
@@ -2892,12 +3006,9 @@ export class LoadsService {
   /**
    * Delete cargo draft
    */
-  async deleteDraft(
-    id: string,
-    userId: string,
-  ): Promise<void> {
+  async deleteDraft(id: string, userId: string): Promise<void> {
     this.logger.log('Service: Starting delete draft...');
-    
+
     try {
       // Find the draft load
       const load = await this.loadRepository.findOne({
@@ -2918,7 +3029,7 @@ export class LoadsService {
 
       // Delete the load
       await this.loadRepository.remove(load);
-      
+
       this.logger.log(`Draft load ${id} deleted successfully`);
 
       // Create audit event
@@ -2962,13 +3073,17 @@ export class LoadsService {
     if (!load.locations || load.locations.length === 0) {
       errors.push('At least one pickup and delivery location is required');
     } else {
-      const pickupLocations = load.locations.filter(loc => loc.type === 'PICKUP');
-      const deliveryLocations = load.locations.filter(loc => loc.type === 'DELIVERY');
-      
+      const pickupLocations = load.locations.filter(
+        (loc) => loc.type === 'PICKUP',
+      );
+      const deliveryLocations = load.locations.filter(
+        (loc) => loc.type === 'DELIVERY',
+      );
+
       if (pickupLocations.length === 0) {
         errors.push('At least one pickup location is required');
       }
-      
+
       if (deliveryLocations.length === 0) {
         errors.push('At least one delivery location is required');
       }
@@ -2985,7 +3100,11 @@ export class LoadsService {
 
     // Validate: delivery date cannot be before pickup date
     // Pickup date can be the same as delivery date (same-day delivery)
-    if (load.pickupDate && load.deliveryDate && load.pickupDate > load.deliveryDate) {
+    if (
+      load.pickupDate &&
+      load.deliveryDate &&
+      load.pickupDate > load.deliveryDate
+    ) {
       errors.push('Delivery date cannot be before pickup date');
     }
 
@@ -3033,29 +3152,41 @@ export class LoadsService {
       publishedAt: load.publishedAt,
       createdAt: load.createdAt,
       updatedAt: load.updatedAt,
-      cargoOwner: load.cargoOwner ? {
-        id: load.cargoOwner.id,
-        email: load.cargoOwner.email,
-        profile: load.cargoOwner.profile,
-      } : undefined,
-      pickupLocation: load.pickupLocation ? {
-        id: load.pickupLocation.id,
-        name: load.pickupLocation.locationData.name,
-        address: load.pickupLocation.locationData.address,
-        coordinates: {
-          type: 'Point',
-          coordinates: [load.pickupLocation.locationData.coordinates.longitude, load.pickupLocation.locationData.coordinates.latitude],
-        },
-      } : undefined,
-      deliveryLocation: load.deliveryLocation ? {
-        id: load.deliveryLocation.id,
-        name: load.deliveryLocation.locationData.name,
-        address: load.deliveryLocation.locationData.address,
-        coordinates: {
-          type: 'Point',
-          coordinates: [load.deliveryLocation.locationData.coordinates.longitude, load.deliveryLocation.locationData.coordinates.latitude],
-        },
-      } : undefined,
+      cargoOwner: load.cargoOwner
+        ? {
+            id: load.cargoOwner.id,
+            email: load.cargoOwner.email,
+            profile: load.cargoOwner.profile,
+          }
+        : undefined,
+      pickupLocation: load.pickupLocation
+        ? {
+            id: load.pickupLocation.id,
+            name: load.pickupLocation.locationData.name,
+            address: load.pickupLocation.locationData.address,
+            coordinates: {
+              type: 'Point',
+              coordinates: [
+                load.pickupLocation.locationData.coordinates.longitude,
+                load.pickupLocation.locationData.coordinates.latitude,
+              ],
+            },
+          }
+        : undefined,
+      deliveryLocation: load.deliveryLocation
+        ? {
+            id: load.deliveryLocation.id,
+            name: load.deliveryLocation.locationData.name,
+            address: load.deliveryLocation.locationData.address,
+            coordinates: {
+              type: 'Point',
+              coordinates: [
+                load.deliveryLocation.locationData.coordinates.longitude,
+                load.deliveryLocation.locationData.coordinates.latitude,
+              ],
+            },
+          }
+        : undefined,
     };
   }
 
@@ -3066,8 +3197,10 @@ export class LoadsService {
     try {
       // This would integrate with your notification system
       // For now, we'll just log the notification
-      this.logger.log(`Notifying truck owners about new published load: ${load.id}`);
-      
+      this.logger.log(
+        `Notifying truck owners about new published load: ${load.id}`,
+      );
+
       // TODO: Implement actual notification logic
       // - Find relevant truck owners based on location and equipment
       // - Send notifications via email, SMS, or in-app

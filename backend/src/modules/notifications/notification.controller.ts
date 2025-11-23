@@ -42,31 +42,36 @@ export class NotificationController {
   constructor(private readonly notificationService: NotificationService) {}
 
   @Post()
-  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN, UserRole.TRUCK_OWNER, UserRole.DRIVER)
+  @Roles(
+    UserRole.ADMIN,
+    UserRole.SUPER_ADMIN,
+    UserRole.TRUCK_OWNER,
+    UserRole.DRIVER,
+  )
   @ApiOperation({
     summary: 'Create a new notification',
-    description: 'Create and send a notification through specified channels'
+    description: 'Create and send a notification through specified channels',
   })
   @ApiResponse({
     status: 201,
     description: 'Notification created successfully',
-    type: Notification
+    type: Notification,
   })
   @ApiResponse({
     status: 400,
-    description: 'Bad request - validation error'
+    description: 'Bad request - validation error',
   })
   @ApiResponse({
     status: 401,
-    description: 'Unauthorized'
+    description: 'Unauthorized',
   })
   @ApiResponse({
     status: 403,
-    description: 'Forbidden - insufficient permissions'
+    description: 'Forbidden - insufficient permissions',
   })
   @ApiBody({
     description: 'Notification creation data',
-    type: CreateNotificationDto
+    type: CreateNotificationDto,
   })
   async createNotification(
     @Body() createNotificationDto: CreateNotificationDto,
@@ -96,32 +101,42 @@ export class NotificationController {
   )
   @ApiOperation({
     summary: 'Send smart notification',
-    description: 'Send an intelligent notification based on user behavior and context'
+    description:
+      'Send an intelligent notification based on user behavior and context',
   })
   @ApiResponse({
     status: 201,
     description: 'Smart notification sent successfully',
-    type: Notification
+    type: Notification,
   })
   @ApiResponse({
     status: 400,
-    description: 'Bad request - validation error'
+    description: 'Bad request - validation error',
   })
   @ApiResponse({
     status: 401,
-    description: 'Unauthorized'
+    description: 'Unauthorized',
   })
   @ApiBody({
     description: 'Smart notification data',
     schema: {
       type: 'object',
       properties: {
-        type: { type: 'string', enum: ['price_drop', 'route_optimization', 'demand_spike', 'delivery_delay', 'market_opportunity'] },
+        type: {
+          type: 'string',
+          enum: [
+            'price_drop',
+            'route_optimization',
+            'demand_spike',
+            'delivery_delay',
+            'market_opportunity',
+          ],
+        },
         data: { type: 'object' },
-        recipientId: { type: 'string' }
+        recipientId: { type: 'string' },
       },
-      required: ['type', 'data', 'recipientId']
-    }
+      required: ['type', 'data', 'recipientId'],
+    },
   })
   async sendSmartNotification(
     @Body() body: { type: string; data: any; recipientId: string },
@@ -131,7 +146,7 @@ export class NotificationController {
       body.recipientId,
       body.type,
       body.data,
-      user.tenantId
+      user.tenantId,
     );
   }
 
@@ -150,20 +165,47 @@ export class NotificationController {
   )
   @ApiOperation({
     summary: 'Get notifications with filtering and pagination',
-    description: 'Retrieve notifications with advanced filtering, sorting, and pagination'
+    description:
+      'Retrieve notifications with advanced filtering, sorting, and pagination',
   })
   @ApiQuery({ name: 'recipientId', required: false, type: String })
-  @ApiQuery({ name: 'entityType', required: false, enum: ['USER', 'DRIVER', 'TRUCK', 'CARGO', 'TRIP'] })
+  @ApiQuery({
+    name: 'entityType',
+    required: false,
+    enum: ['USER', 'DRIVER', 'TRUCK', 'CARGO', 'TRIP'],
+  })
   @ApiQuery({ name: 'entityId', required: false, type: String })
-  @ApiQuery({ name: 'notificationType', required: false, enum: ['DRIVER_ASSIGNMENT', 'VEHICLE_MAINTENANCE_DUE', 'SYSTEM_UPDATE'] })
-  @ApiQuery({ name: 'category', required: false, enum: ['SYSTEM', 'DRIVER', 'VEHICLE', 'CARGO', 'TRIP'] })
-  @ApiQuery({ name: 'status', required: false, enum: ['PENDING', 'SENT', 'DELIVERED', 'READ', 'FAILED'] })
-  @ApiQuery({ name: 'priority', required: false, enum: ['LOW', 'NORMAL', 'HIGH', 'URGENT', 'CRITICAL'] })
+  @ApiQuery({
+    name: 'notificationType',
+    required: false,
+    enum: ['DRIVER_ASSIGNMENT', 'VEHICLE_MAINTENANCE_DUE', 'SYSTEM_UPDATE'],
+  })
+  @ApiQuery({
+    name: 'category',
+    required: false,
+    enum: ['SYSTEM', 'DRIVER', 'VEHICLE', 'CARGO', 'TRIP'],
+  })
+  @ApiQuery({
+    name: 'status',
+    required: false,
+    enum: ['PENDING', 'SENT', 'DELIVERED', 'READ', 'FAILED'],
+  })
+  @ApiQuery({
+    name: 'priority',
+    required: false,
+    enum: ['LOW', 'NORMAL', 'HIGH', 'URGENT', 'CRITICAL'],
+  })
   @ApiQuery({ name: 'isRead', required: false, type: Boolean })
   @ApiQuery({ name: 'requiresAction', required: false, type: Boolean })
   @ApiQuery({ name: 'search', required: false, type: String })
   @ApiQuery({ name: 'page', required: false, type: Number, minimum: 1 })
-  @ApiQuery({ name: 'limit', required: false, type: Number, minimum: 1, maximum: 100 })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    minimum: 1,
+    maximum: 100,
+  })
   @ApiResponse({
     status: 200,
     description: 'Notifications retrieved successfully',
@@ -172,11 +214,11 @@ export class NotificationController {
       properties: {
         notifications: {
           type: 'array',
-          items: { $ref: '#/components/schemas/Notification' }
+          items: { $ref: '#/components/schemas/Notification' },
         },
-        total: { type: 'number' }
-      }
-    }
+        total: { type: 'number' },
+      },
+    },
   })
   async getNotifications(
     @Query() filterDto: NotificationFilterDto,
@@ -186,25 +228,40 @@ export class NotificationController {
   }
 
   @Get('search')
-  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN, UserRole.TRUCK_OWNER, UserRole.DRIVER)
+  @Roles(
+    UserRole.ADMIN,
+    UserRole.SUPER_ADMIN,
+    UserRole.TRUCK_OWNER,
+    UserRole.DRIVER,
+  )
   @ApiOperation({
     summary: 'Search notifications across all fields',
-    description: 'Full-text search across notification titles, messages, and metadata with relevance scoring'
+    description:
+      'Full-text search across notification titles, messages, and metadata with relevance scoring',
   })
   @ApiQuery({ name: 'query', required: false, type: String })
   @ApiQuery({ name: 'entityTypes', required: false, type: [String] })
   @ApiQuery({ name: 'categories', required: false, type: [String] })
-  @ApiQuery({ name: 'limit', required: false, type: Number, minimum: 1, maximum: 100 })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    minimum: 1,
+    maximum: 100,
+  })
   @ApiResponse({
     status: 200,
     description: 'Search results',
-    type: [Notification]
+    type: [Notification],
   })
   async searchNotifications(
     @Query() searchDto: NotificationSearchDto,
     @CurrentUser() user: any,
   ): Promise<Notification[]> {
-    return this.notificationService.searchNotifications(searchDto, user.tenantId);
+    return this.notificationService.searchNotifications(
+      searchDto,
+      user.tenantId,
+    );
   }
 
   @Get('my')
@@ -222,13 +279,13 @@ export class NotificationController {
   )
   @ApiOperation({
     summary: 'Get current user notifications',
-    description: 'Retrieve notifications for the currently authenticated user'
+    description: 'Retrieve notifications for the currently authenticated user',
   })
   @ApiQuery({ name: 'limit', required: false, type: Number, default: 50 })
   @ApiResponse({
     status: 200,
     description: 'User notifications retrieved successfully',
-    type: [Notification]
+    type: [Notification],
   })
   async getMyNotifications(
     @Query('limit') limit: number = 50,
@@ -237,7 +294,7 @@ export class NotificationController {
     return this.notificationService.getNotificationsByRecipient(
       user.userId,
       user.tenantId,
-      limit
+      limit,
     );
   }
 
@@ -256,7 +313,7 @@ export class NotificationController {
   )
   @ApiOperation({
     summary: 'Get unread notifications count',
-    description: 'Get the count of unread notifications for the current user'
+    description: 'Get the count of unread notifications for the current user',
   })
   @ApiResponse({
     status: 200,
@@ -264,29 +321,38 @@ export class NotificationController {
     schema: {
       type: 'object',
       properties: {
-        count: { type: 'number' }
-      }
-    }
+        count: { type: 'number' },
+      },
+    },
   })
-  async getUnreadCount(
-    @CurrentUser() user: any,
-  ): Promise<{ count: number }> {
-    const count = await this.notificationService.getUnreadCount(user.userId, user.tenantId);
+  async getUnreadCount(@CurrentUser() user: any): Promise<{ count: number }> {
+    const count = await this.notificationService.getUnreadCount(
+      user.userId,
+      user.tenantId,
+    );
     return { count };
   }
 
   @Get('entity/:entityType/:entityId')
-  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN, UserRole.TRUCK_OWNER, UserRole.DRIVER)
+  @Roles(
+    UserRole.ADMIN,
+    UserRole.SUPER_ADMIN,
+    UserRole.TRUCK_OWNER,
+    UserRole.DRIVER,
+  )
   @ApiOperation({
     summary: 'Get notifications by entity',
-    description: 'Retrieve all notifications for a specific entity'
+    description: 'Retrieve all notifications for a specific entity',
   })
-  @ApiParam({ name: 'entityType', enum: ['USER', 'DRIVER', 'TRUCK', 'CARGO', 'TRIP'] })
+  @ApiParam({
+    name: 'entityType',
+    enum: ['USER', 'DRIVER', 'TRUCK', 'CARGO', 'TRIP'],
+  })
   @ApiParam({ name: 'entityId', type: String })
   @ApiResponse({
     status: 200,
     description: 'Notifications for the entity',
-    type: [Notification]
+    type: [Notification],
   })
   async getNotificationsByEntity(
     @Param('entityType') entityType: string,
@@ -296,7 +362,7 @@ export class NotificationController {
     return this.notificationService.getNotificationsByEntity(
       entityType as any,
       entityId,
-      user.tenantId
+      user.tenantId,
     );
   }
 
@@ -304,12 +370,12 @@ export class NotificationController {
   @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN, UserRole.TRUCK_OWNER)
   @ApiOperation({
     summary: 'Get scheduled notifications',
-    description: 'Retrieve all scheduled notifications for the tenant'
+    description: 'Retrieve all scheduled notifications for the tenant',
   })
   @ApiResponse({
     status: 200,
     description: 'Scheduled notifications retrieved successfully',
-    type: [Notification]
+    type: [Notification],
   })
   async getScheduledNotifications(
     @CurrentUser() user: any,
@@ -321,12 +387,12 @@ export class NotificationController {
   @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN, UserRole.TRUCK_OWNER)
   @ApiOperation({
     summary: 'Get expired notifications',
-    description: 'Retrieve all expired notifications for the tenant'
+    description: 'Retrieve all expired notifications for the tenant',
   })
   @ApiResponse({
     status: 200,
     description: 'Expired notifications retrieved successfully',
-    type: [Notification]
+    type: [Notification],
   })
   async getExpiredNotifications(
     @CurrentUser() user: any,
@@ -335,20 +401,25 @@ export class NotificationController {
   }
 
   @Get(':id')
-  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN, UserRole.TRUCK_OWNER, UserRole.DRIVER)
+  @Roles(
+    UserRole.ADMIN,
+    UserRole.SUPER_ADMIN,
+    UserRole.TRUCK_OWNER,
+    UserRole.DRIVER,
+  )
   @ApiOperation({
     summary: 'Get notification by ID',
-    description: 'Retrieve a specific notification by its ID'
+    description: 'Retrieve a specific notification by its ID',
   })
   @ApiParam({ name: 'id', type: String })
   @ApiResponse({
     status: 200,
     description: 'Notification retrieved successfully',
-    type: Notification
+    type: Notification,
   })
   @ApiResponse({
     status: 404,
-    description: 'Notification not found'
+    description: 'Notification not found',
   })
   async getNotificationById(
     @Param('id') id: string,
@@ -358,20 +429,25 @@ export class NotificationController {
   }
 
   @Put(':id')
-  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN, UserRole.TRUCK_OWNER, UserRole.DRIVER)
+  @Roles(
+    UserRole.ADMIN,
+    UserRole.SUPER_ADMIN,
+    UserRole.TRUCK_OWNER,
+    UserRole.DRIVER,
+  )
   @ApiOperation({
     summary: 'Update notification',
-    description: 'Update an existing notification'
+    description: 'Update an existing notification',
   })
   @ApiParam({ name: 'id', type: String })
   @ApiBody({
     description: 'Notification update data',
-    type: UpdateNotificationDto
+    type: UpdateNotificationDto,
   })
   @ApiResponse({
     status: 200,
     description: 'Notification updated successfully',
-    type: Notification
+    type: Notification,
   })
   async updateNotification(
     @Param('id') id: string,
@@ -382,38 +458,44 @@ export class NotificationController {
       id,
       updateNotificationDto,
       user.userId,
-      user.tenantId
+      user.tenantId,
     );
   }
 
   @Post(':id/read')
-  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN, UserRole.TRUCK_OWNER, UserRole.DRIVER)
+  @Roles(
+    UserRole.ADMIN,
+    UserRole.SUPER_ADMIN,
+    UserRole.TRUCK_OWNER,
+    UserRole.DRIVER,
+  )
   @ApiOperation({
     summary: 'Mark notification as read',
-    description: 'Mark a notification as read by the current user'
+    description: 'Mark a notification as read by the current user',
   })
   @ApiParam({ name: 'id', type: String })
   @ApiResponse({
     status: 200,
     description: 'Notification marked as read successfully',
-    type: Notification
+    type: Notification,
   })
   async markAsRead(
     @Param('id') id: string,
     @CurrentUser() user: any,
   ): Promise<Notification> {
-    return this.notificationService.markAsRead(
-      id,
-      user.userId,
-      user.tenantId
-    );
+    return this.notificationService.markAsRead(id, user.userId, user.tenantId);
   }
 
   @Post('bulk/read')
-  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN, UserRole.TRUCK_OWNER, UserRole.DRIVER)
+  @Roles(
+    UserRole.ADMIN,
+    UserRole.SUPER_ADMIN,
+    UserRole.TRUCK_OWNER,
+    UserRole.DRIVER,
+  )
   @ApiOperation({
     summary: 'Bulk mark notifications as read',
-    description: 'Mark multiple notifications as read at once'
+    description: 'Mark multiple notifications as read at once',
   })
   @ApiBody({
     description: 'Notification IDs to mark as read',
@@ -422,15 +504,15 @@ export class NotificationController {
       properties: {
         notificationIds: {
           type: 'array',
-          items: { type: 'string' }
-        }
-      }
-    }
+          items: { type: 'string' },
+        },
+      },
+    },
   })
   @ApiResponse({
     status: 200,
     description: 'Notifications marked as read successfully',
-    type: [Notification]
+    type: [Notification],
   })
   async bulkMarkAsRead(
     @Body() body: { notificationIds: string[] },
@@ -443,7 +525,7 @@ export class NotificationController {
     return this.notificationService.bulkMarkAsRead(
       body.notificationIds,
       user.userId,
-      user.tenantId
+      user.tenantId,
     );
   }
 
@@ -451,13 +533,13 @@ export class NotificationController {
   @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN, UserRole.TRUCK_OWNER)
   @ApiOperation({
     summary: 'Bulk update notification status',
-    description: 'Update the status of multiple notifications at once'
+    description: 'Update the status of multiple notifications at once',
   })
   @ApiBody({ type: BulkNotificationUpdateDto })
   @ApiResponse({
     status: 200,
     description: 'Notifications updated successfully',
-    type: [Notification]
+    type: [Notification],
   })
   async bulkUpdateStatus(
     @Body() bulkUpdateDto: BulkNotificationUpdateDto,
@@ -472,12 +554,12 @@ export class NotificationController {
   @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN, UserRole.TRUCK_OWNER)
   @ApiOperation({
     summary: 'Delete notification',
-    description: 'Permanently delete a notification (soft delete)'
+    description: 'Permanently delete a notification (soft delete)',
   })
   @ApiParam({ name: 'id', type: String })
   @ApiResponse({
     status: 200,
-    description: 'Notification deleted successfully'
+    description: 'Notification deleted successfully',
   })
   async deleteNotification(
     @Param('id') id: string,
@@ -486,7 +568,7 @@ export class NotificationController {
     return this.notificationService.deleteNotification(
       id,
       user.userId,
-      user.tenantId
+      user.tenantId,
     );
   }
 
@@ -494,11 +576,11 @@ export class NotificationController {
   @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
   @ApiOperation({
     summary: 'Process scheduled notifications',
-    description: 'Process all scheduled notifications that are due to be sent'
+    description: 'Process all scheduled notifications that are due to be sent',
   })
   @ApiResponse({
     status: 200,
-    description: 'Scheduled notifications processed successfully'
+    description: 'Scheduled notifications processed successfully',
   })
   async processScheduledNotifications(): Promise<{ message: string }> {
     await this.notificationService.processScheduledNotifications();
@@ -509,11 +591,11 @@ export class NotificationController {
   @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
   @ApiOperation({
     summary: 'Clean up expired notifications',
-    description: 'Clean up all expired notifications'
+    description: 'Clean up all expired notifications',
   })
   @ApiResponse({
     status: 200,
-    description: 'Expired notifications cleaned up successfully'
+    description: 'Expired notifications cleaned up successfully',
   })
   async cleanupExpiredNotifications(): Promise<{ message: string }> {
     await this.notificationService.cleanupExpiredNotifications();
@@ -524,12 +606,12 @@ export class NotificationController {
   @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
   @ApiOperation({
     summary: 'Test notification channel',
-    description: 'Send a test notification through a specific channel'
+    description: 'Send a test notification through a specific channel',
   })
   @ApiParam({ name: 'channel', enum: ['EMAIL', 'SMS', 'PUSH', 'WEBHOOK'] })
   @ApiResponse({
     status: 200,
-    description: 'Test notification sent successfully'
+    description: 'Test notification sent successfully',
   })
   async testNotificationChannel(
     @Param('channel') channel: string,

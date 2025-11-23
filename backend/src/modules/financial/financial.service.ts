@@ -198,7 +198,10 @@ export class FinancialService {
     return Array.isArray(savedPayment) ? savedPayment[0] : savedPayment;
   }
 
-  async getAllPayments(query: any, tenantId: string): Promise<FinancialPayment[]> {
+  async getAllPayments(
+    query: any,
+    tenantId: string,
+  ): Promise<FinancialPayment[]> {
     const where: any = { tenant: { id: tenantId } };
 
     if (query.status) {
@@ -222,7 +225,10 @@ export class FinancialService {
     });
   }
 
-  async getPaymentById(id: string, tenantId: string): Promise<FinancialPayment> {
+  async getPaymentById(
+    id: string,
+    tenantId: string,
+  ): Promise<FinancialPayment> {
     const payment = await this.financialPaymentRepository.findOne({
       where: { id, tenant: { id: tenantId } },
     });

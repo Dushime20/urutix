@@ -28,17 +28,20 @@ export class FleetNotificationService {
   @Cron('0 9 * * *') // Every day at 9:00 AM
   async checkFleetReminders() {
     this.logger.log('Starting daily fleet reminder check...');
-    
+
     try {
       await Promise.all([
         this.checkMaintenanceReminders(),
         this.checkInspectionReminders(),
         this.checkInsuranceReminders(),
       ]);
-      
+
       this.logger.log('Fleet reminder check completed successfully');
     } catch (error) {
-      this.logger.error(`Error during fleet reminder check: ${error.message}`, error.stack);
+      this.logger.error(
+        `Error during fleet reminder check: ${error.message}`,
+        error.stack,
+      );
     }
   }
 
@@ -47,49 +50,54 @@ export class FleetNotificationService {
    */
   async checkMaintenanceReminders() {
     this.logger.log('Checking maintenance reminders...');
-    
+
     try {
       const tomorrow = new Date();
       tomorrow.setDate(tomorrow.getDate() + 1);
       tomorrow.setHours(0, 0, 0, 0);
-      
+
       const dayAfter = new Date(tomorrow);
       dayAfter.setDate(dayAfter.getDate() + 1);
-      
+
       // Get all trucks
       const trucks = await this.truckRepository.find({
         where: { isActive: true },
       });
-      
+
       let notificationCount = 0;
-      
+
       for (const truck of trucks) {
         if (!truck.maintenanceAlerts || truck.maintenanceAlerts.length === 0) {
           continue;
         }
-        
+
         for (const maintenance of truck.maintenanceAlerts) {
           if (!maintenance.nextDueDate) {
             continue;
           }
-          
+
           const nextDueDate = new Date(maintenance.nextDueDate);
           nextDueDate.setHours(0, 0, 0, 0);
-          
+
           // Check if nextDueDate is tomorrow (1 day before)
           if (nextDueDate.getTime() === tomorrow.getTime()) {
             // Skip if already notified today (simple check)
             // The cron job runs once per day, so we don't need complex duplicate checking
-            
+
             await this.createMaintenanceNotification(truck, maintenance);
             notificationCount++;
           }
         }
       }
-      
-      this.logger.log(`Maintenance reminders: ${notificationCount} notifications created`);
+
+      this.logger.log(
+        `Maintenance reminders: ${notificationCount} notifications created`,
+      );
     } catch (error) {
-      this.logger.error(`Error checking maintenance reminders: ${error.message}`, error.stack);
+      this.logger.error(
+        `Error checking maintenance reminders: ${error.message}`,
+        error.stack,
+      );
     }
   }
 
@@ -98,46 +106,51 @@ export class FleetNotificationService {
    */
   async checkInspectionReminders() {
     this.logger.log('Checking inspection reminders...');
-    
+
     try {
       const tomorrow = new Date();
       tomorrow.setDate(tomorrow.getDate() + 1);
       tomorrow.setHours(0, 0, 0, 0);
-      
+
       // Get all trucks
       const trucks = await this.truckRepository.find({
         where: { isActive: true },
       });
-      
+
       let notificationCount = 0;
-      
+
       for (const truck of trucks) {
         if (!truck.inspectionAlerts || truck.inspectionAlerts.length === 0) {
           continue;
         }
-        
+
         for (const inspection of truck.inspectionAlerts) {
           if (!inspection.nextInspectionDate) {
             continue;
           }
-          
+
           const nextInspectionDate = new Date(inspection.nextInspectionDate);
           nextInspectionDate.setHours(0, 0, 0, 0);
-          
+
           // Check if nextInspectionDate is tomorrow (1 day before)
           if (nextInspectionDate.getTime() === tomorrow.getTime()) {
             // Skip if already notified today (simple check)
             // The cron job runs once per day, so we don't need complex duplicate checking
-            
+
             await this.createInspectionNotification(truck, inspection);
             notificationCount++;
           }
         }
       }
-      
-      this.logger.log(`Inspection reminders: ${notificationCount} notifications created`);
+
+      this.logger.log(
+        `Inspection reminders: ${notificationCount} notifications created`,
+      );
     } catch (error) {
-      this.logger.error(`Error checking inspection reminders: ${error.message}`, error.stack);
+      this.logger.error(
+        `Error checking inspection reminders: ${error.message}`,
+        error.stack,
+      );
     }
   }
 
@@ -146,46 +159,51 @@ export class FleetNotificationService {
    */
   async checkInsuranceReminders() {
     this.logger.log('Checking insurance reminders...');
-    
+
     try {
       const tomorrow = new Date();
       tomorrow.setDate(tomorrow.getDate() + 1);
       tomorrow.setHours(0, 0, 0, 0);
-      
+
       // Get all trucks
       const trucks = await this.truckRepository.find({
         where: { isActive: true },
       });
-      
+
       let notificationCount = 0;
-      
+
       for (const truck of trucks) {
         if (!truck.insuranceAlerts || truck.insuranceAlerts.length === 0) {
           continue;
         }
-        
+
         for (const insurance of truck.insuranceAlerts) {
           if (!insurance.endDate) {
             continue;
           }
-          
+
           const endDate = new Date(insurance.endDate);
           endDate.setHours(0, 0, 0, 0);
-          
+
           // Check if endDate is tomorrow (1 day before)
           if (endDate.getTime() === tomorrow.getTime()) {
             // Skip if already notified today (simple check)
             // The cron job runs once per day, so we don't need complex duplicate checking
-            
+
             await this.createInsuranceNotification(truck, insurance);
             notificationCount++;
           }
         }
       }
-      
-      this.logger.log(`Insurance reminders: ${notificationCount} notifications created`);
+
+      this.logger.log(
+        `Insurance reminders: ${notificationCount} notifications created`,
+      );
     } catch (error) {
-      this.logger.error(`Error checking insurance reminders: ${error.message}`, error.stack);
+      this.logger.error(
+        `Error checking insurance reminders: ${error.message}`,
+        error.stack,
+      );
     }
   }
 
@@ -200,7 +218,7 @@ export class FleetNotificationService {
         month: 'long',
         day: 'numeric',
       });
-      
+
       const notificationData: any = {
         recipientId: truck.ownerId,
         notificationType: NotificationType.VEHICLE_MAINTENANCE_DUE,
@@ -223,12 +241,12 @@ export class FleetNotificationService {
           actionUrl: `/fleet/trucks/${truck.id}/maintenance`,
         },
       };
-      
+
       // Add tenantId directly to the notification object
-      (notificationData as any).tenantId = truck.tenantId;
-      
+      notificationData.tenantId = truck.tenantId;
+
       await this.notificationService.createNotification(notificationData);
-      
+
       this.logger.log(
         `Created maintenance notification for truck ${truck.plateNumber}, maintenance ${maintenance.id}`,
       );
@@ -251,7 +269,7 @@ export class FleetNotificationService {
         month: 'long',
         day: 'numeric',
       });
-      
+
       const notificationData: any = {
         recipientId: truck.ownerId,
         notificationType: NotificationType.VEHICLE_INSPECTION_DUE,
@@ -274,12 +292,12 @@ export class FleetNotificationService {
           actionUrl: `/fleet/trucks/${truck.id}/inspections`,
         },
       };
-      
+
       // Add tenantId directly to the notification object
-      (notificationData as any).tenantId = truck.tenantId;
-      
+      notificationData.tenantId = truck.tenantId;
+
       await this.notificationService.createNotification(notificationData);
-      
+
       this.logger.log(
         `Created inspection notification for truck ${truck.plateNumber}, inspection ${inspection.id}`,
       );
@@ -302,7 +320,7 @@ export class FleetNotificationService {
         month: 'long',
         day: 'numeric',
       });
-      
+
       const notificationData: any = {
         recipientId: truck.ownerId,
         notificationType: NotificationType.VEHICLE_INSURANCE_EXPIRY,
@@ -325,12 +343,12 @@ export class FleetNotificationService {
           actionUrl: `/fleet/trucks/${truck.id}/insurance`,
         },
       };
-      
+
       // Add tenantId directly to the notification object
-      (notificationData as any).tenantId = truck.tenantId;
-      
+      notificationData.tenantId = truck.tenantId;
+
       await this.notificationService.createNotification(notificationData);
-      
+
       this.logger.log(
         `Created insurance notification for truck ${truck.plateNumber}, insurance ${insurance.id}`,
       );
@@ -341,6 +359,4 @@ export class FleetNotificationService {
       );
     }
   }
-
 }
-

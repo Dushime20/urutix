@@ -1,4 +1,14 @@
-import { IsEnum, IsString, IsDateString, IsNumber, IsBoolean, IsOptional, IsInt, Min, Max } from 'class-validator';
+import {
+  IsEnum,
+  IsString,
+  IsDateString,
+  IsNumber,
+  IsBoolean,
+  IsOptional,
+  IsInt,
+  Min,
+  Max,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export enum TrainingType {
@@ -96,4 +106,3 @@ export class CreateSafetyTrainingDto {
   @IsDateString()
   scheduledDate: string; // When the training is scheduled to occur
 }
-

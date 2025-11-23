@@ -1,4 +1,15 @@
-import { IsEnum, IsString, IsDateString, IsNumber, IsOptional, IsArray, IsUUID, IsInt, Min, Max } from 'class-validator';
+import {
+  IsEnum,
+  IsString,
+  IsDateString,
+  IsNumber,
+  IsOptional,
+  IsArray,
+  IsUUID,
+  IsInt,
+  Min,
+  Max,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export enum InspectionType {
@@ -119,4 +130,3 @@ export class CreateSafetyInspectionDto {
   @IsEnum(ComplianceStatus)
   complianceStatus?: ComplianceStatus;
 }
-

@@ -17,7 +17,8 @@ export interface LendingResponse<T> {
 
 @Injectable()
 export class LendingResponseInterceptor<T>
-  implements NestInterceptor<T, LendingResponse<T>> {
+  implements NestInterceptor<T, LendingResponse<T>>
+{
   intercept(
     context: ExecutionContext,
     next: CallHandler,

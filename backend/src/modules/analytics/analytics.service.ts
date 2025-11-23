@@ -288,8 +288,8 @@ export class AnalyticsService {
     const loads = await query.getMany();
 
     const totalLoads = loads.length;
-    const publishedLoads = loads.filter(
-      (l) => [LoadStatus.CREATED, LoadStatus.PUBLISHED].includes(l.status),
+    const publishedLoads = loads.filter((l) =>
+      [LoadStatus.CREATED, LoadStatus.PUBLISHED].includes(l.status),
     ).length;
     const assignedLoads = loads.filter(
       (l) => l.status === LoadStatus.ASSIGNED,
@@ -511,7 +511,8 @@ export class AnalyticsService {
 
     const notificationsByType = notifications.reduce(
       (acc, notification) => {
-        acc[notification.notificationType] = (acc[notification.notificationType] || 0) + 1;
+        acc[notification.notificationType] =
+          (acc[notification.notificationType] || 0) + 1;
         return acc;
       },
       {} as Record<string, number>,

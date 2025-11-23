@@ -25,7 +25,9 @@ export class UserService {
     try {
       return await this.userRepository.findOne({ where: { email } });
     } catch (error) {
-      this.logger.error(`Failed to find user by email ${email}: ${error.message}`);
+      this.logger.error(
+        `Failed to find user by email ${email}: ${error.message}`,
+      );
       return null;
     }
   }
@@ -35,16 +37,18 @@ export class UserService {
       const user = await this.userRepository.findOne({
         where: { id: userId },
         select: ['id', 'email', 'role', 'tenantId'],
-        relations: ['profile']
+        relations: ['profile'],
       });
-      
+
       if (!user) {
         throw new NotFoundException(`User with ID ${userId} not found`);
       }
 
       return user;
     } catch (error) {
-      this.logger.error(`Failed to get user profile for ${userId}: ${error.message}`);
+      this.logger.error(
+        `Failed to get user profile for ${userId}: ${error.message}`,
+      );
       return null;
     }
   }
@@ -52,10 +56,12 @@ export class UserService {
   async updateUserLastActivity(userId: string): Promise<void> {
     try {
       await this.userRepository.update(userId, {
-        lastLoginAt: new Date()
+        lastLoginAt: new Date(),
       });
     } catch (error) {
-      this.logger.error(`Failed to update user last activity for ${userId}: ${error.message}`);
+      this.logger.error(
+        `Failed to update user last activity for ${userId}: ${error.message}`,
+      );
     }
   }
 
@@ -63,7 +69,7 @@ export class UserService {
     try {
       const user = await this.userRepository.findOne({
         where: { id: userId },
-        select: ['role']
+        select: ['role'],
       });
 
       if (!user) {
@@ -72,27 +78,39 @@ export class UserService {
 
       // Basic role-based permissions
       const rolePermissions = {
-        'SUPER_ADMIN': ['*'],
-        'ADMIN': ['read', 'write', 'delete', 'manage_users', 'manage_documents'],
-        'TENANT_ADMIN': ['read', 'write', 'delete', 'manage_users', 'manage_documents'],
-        'CARGO_OWNER': ['read', 'write', 'manage_own_documents'],
-        'TRUCK_OWNER': ['read', 'write', 'manage_own_documents'],
-        'DRIVER': ['read', 'write_own_documents'],
-        'AGENT': ['read', 'write'],
-        'LENDER': ['read', 'write', 'manage_own_documents']
+        SUPER_ADMIN: ['*'],
+        ADMIN: ['read', 'write', 'delete', 'manage_users', 'manage_documents'],
+        TENANT_ADMIN: [
+          'read',
+          'write',
+          'delete',
+          'manage_users',
+          'manage_documents',
+        ],
+        CARGO_OWNER: ['read', 'write', 'manage_own_documents'],
+        TRUCK_OWNER: ['read', 'write', 'manage_own_documents'],
+        DRIVER: ['read', 'write_own_documents'],
+        AGENT: ['read', 'write'],
+        LENDER: ['read', 'write', 'manage_own_documents'],
       };
 
       return rolePermissions[user.role] || ['read_own_documents'];
     } catch (error) {
-      this.logger.error(`Failed to get user permissions for ${userId}: ${error.message}`);
+      this.logger.error(
+        `Failed to get user permissions for ${userId}: ${error.message}`,
+      );
       return ['read_own_documents'];
     }
   }
 
-  async validateUserAccess(userId: string, resourceId: string, action: string): Promise<boolean> {
+  async validateUserAccess(
+    userId: string,
+    resourceId: string,
+    action: string,
+  ): Promise<boolean> {
     try {
       const permissions = await this.getUserPermissions(userId);
-      
+
       // Super admin has access to everything
       if (permissions.includes('*')) {
         return true;

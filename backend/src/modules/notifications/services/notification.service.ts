@@ -51,12 +51,14 @@ export class NotificationService {
       recipientId: createDto.userId,
       category: createDto.category,
       priority: createDto.priority || NotificationPriority.NORMAL,
-      channels: createDto.channel ? [createDto.channel] : [NotificationChannel.IN_APP],
+      channels: createDto.channel
+        ? [createDto.channel]
+        : [NotificationChannel.IN_APP],
       title: createDto.subject ?? '',
       message: createDto.content ?? '',
       actionUrl: createDto.actionUrl,
       actionText: createDto.actionText,
-      notificationType: createDto.type as NotificationType,
+      notificationType: createDto.type,
       status: NotificationStatus.PENDING,
       metadata: {
         ...(createDto.metadata || {}),
@@ -236,7 +238,10 @@ export class NotificationService {
   }
 
   async markAsRead(notificationId: string, userId: string): Promise<void> {
-    await this.notificationRepository.update({ id: notificationId }, { isRead: true });
+    await this.notificationRepository.update(
+      { id: notificationId },
+      { isRead: true },
+    );
 
     this.eventEmitter.emit('notification.read', { notificationId, userId });
   }
@@ -266,12 +271,9 @@ export class NotificationService {
   }
 
   async markAsClicked(notificationId: string): Promise<void> {
-    await this.notificationRepository.update(
-      { id: notificationId },
-      {
-        // no clickedAt field
-      } as any,
-    );
+    await this.notificationRepository.update({ id: notificationId }, {
+      // no clickedAt field
+    } as any);
 
     this.eventEmitter.emit('notification.clicked', { notificationId });
   }
@@ -393,7 +395,9 @@ export class NotificationService {
     const enabledChannels: NotificationChannel[] = [];
 
     for (const channel of requestedChannels) {
-      const preference = preferences.find((p) => (p.category as any) === (category as any));
+      const preference = preferences.find(
+        (p) => (p.category as any) === (category as any),
+      );
 
       if (!preference) {
         // No specific preference, use default
@@ -460,7 +464,9 @@ export class NotificationService {
     notification: Notification,
     error: Error,
   ): Promise<void> {
-    const retryCount = (notification as any).retryCount ? (notification as any).retryCount + 1 : 1;
+    const retryCount = (notification as any).retryCount
+      ? (notification as any).retryCount + 1
+      : 1;
     const maxRetries = 3;
 
     if (retryCount >= maxRetries) {

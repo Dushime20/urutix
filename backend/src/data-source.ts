@@ -1,5 +1,5 @@
 import { DataSource } from 'typeorm';
-import { CreateAllTables1762849950556 } from "./migrations/1762849950556-CreateAllTables";
+import { CreateAllTables1762849950556 } from './migrations/1762849950556-CreateAllTables';
 import { config } from 'dotenv';
 
 config();

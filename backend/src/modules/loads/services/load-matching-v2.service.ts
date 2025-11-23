@@ -151,7 +151,10 @@ export class LoadMatchingV2Service {
     for (const loadId of loadIds) {
       try {
         const load = await this.loadRepository.findOne({
-          where: { id: loadId, status: In([LoadStatus.CREATED, LoadStatus.PUBLISHED]) },
+          where: {
+            id: loadId,
+            status: In([LoadStatus.CREATED, LoadStatus.PUBLISHED]),
+          },
           relations: ['pickupLocation', 'deliveryLocation'],
         });
 

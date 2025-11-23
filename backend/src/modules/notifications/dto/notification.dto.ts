@@ -1,6 +1,24 @@
-import { IsEnum, IsOptional, IsString, IsUUID, IsNumber, IsBoolean, IsDate, IsArray, ValidateNested, IsUrl } from 'class-validator';
+import {
+  IsEnum,
+  IsOptional,
+  IsString,
+  IsUUID,
+  IsNumber,
+  IsBoolean,
+  IsDate,
+  IsArray,
+  ValidateNested,
+  IsUrl,
+} from 'class-validator';
 import { Type } from 'class-transformer';
-import { NotificationType, NotificationStatus, NotificationPriority, NotificationCategory, EntityType, NotificationChannel } from '../../../entities/notification.entity';
+import {
+  NotificationType,
+  NotificationStatus,
+  NotificationPriority,
+  NotificationCategory,
+  EntityType,
+  NotificationChannel,
+} from '../../../entities/notification.entity';
 
 // Declare helper DTOs before they are referenced by @Type(() => ...)
 export class NotificationAttachmentDto {

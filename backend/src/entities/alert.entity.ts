@@ -218,7 +218,11 @@ export class Alert {
   }
 
   canBeResolved(): boolean {
-    return [AlertStatus.OPEN, AlertStatus.ACKNOWLEDGED, AlertStatus.IN_PROGRESS].includes(this.status);
+    return [
+      AlertStatus.OPEN,
+      AlertStatus.ACKNOWLEDGED,
+      AlertStatus.IN_PROGRESS,
+    ].includes(this.status);
   }
 
   canBeClosed(): boolean {
@@ -238,9 +242,11 @@ export class Alert {
   }
 
   isUrgent(): boolean {
-    return this.severity === AlertSeverity.CRITICAL || 
-           this.requiresImmediateAction || 
-           this.isEscalated;
+    return (
+      this.severity === AlertSeverity.CRITICAL ||
+      this.requiresImmediateAction ||
+      this.isEscalated
+    );
   }
 
   getStatusColor(): string {
@@ -277,12 +283,12 @@ export class Alert {
 
   getFormattedLocation(): string {
     if (!this.location) return 'Unknown location';
-    
+
     const parts = [
       this.location.address,
       this.location.city,
       this.location.state,
-      this.location.country
+      this.location.country,
     ];
     return parts.filter(Boolean).join(', ');
   }

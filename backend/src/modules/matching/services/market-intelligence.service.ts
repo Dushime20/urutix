@@ -34,7 +34,10 @@ export interface RegionalMarketData {
 @Injectable()
 export class MarketIntelligenceService {
   private readonly logger = new Logger(MarketIntelligenceService.name);
-  private readonly marketCache = new Map<string, { data: MarketConditions; expiry: number }>();
+  private readonly marketCache = new Map<
+    string,
+    { data: MarketConditions; expiry: number }
+  >();
   private readonly cacheTTL = 15 * 60 * 1000; // 15 minutes
 
   constructor(
@@ -54,14 +57,14 @@ export class MarketIntelligenceService {
       // Check cache first
       const cacheKey = `market_conditions:${tenantId}`;
       const cached = this.marketCache.get(cacheKey);
-      
+
       if (cached && Date.now() < cached.expiry) {
         return cached.data;
       }
 
       // Calculate real-time market conditions
       const marketConditions = await this.calculateMarketConditions(tenantId);
-      
+
       // Cache the results
       this.marketCache.set(cacheKey, {
         data: marketConditions,
@@ -69,9 +72,10 @@ export class MarketIntelligenceService {
       });
 
       return marketConditions;
-
     } catch (error) {
-      this.logger.warn(`Failed to get market conditions for tenant ${tenantId}: ${error.message}`);
+      this.logger.warn(
+        `Failed to get market conditions for tenant ${tenantId}: ${error.message}`,
+      );
       return this.getDefaultMarketConditions();
     }
   }
@@ -85,7 +89,9 @@ export class MarketIntelligenceService {
       // For now, return simulated data
       return this.simulateRegionalMarketData(region);
     } catch (error) {
-      this.logger.warn(`Failed to get regional market data for ${region}: ${error.message}`);
+      this.logger.warn(
+        `Failed to get regional market data for ${region}: ${error.message}`,
+      );
       return this.getDefaultRegionalData(region);
     }
   }
@@ -93,7 +99,10 @@ export class MarketIntelligenceService {
   /**
    * Get market insights for specific cargo type
    */
-  async getCargoTypeInsights(cargoType: string, region: string): Promise<{
+  async getCargoTypeInsights(
+    cargoType: string,
+    region: string,
+  ): Promise<{
     demandLevel: string;
     priceTrend: string;
     capacityAvailability: number;
@@ -117,7 +126,10 @@ export class MarketIntelligenceService {
   /**
    * Predict market demand for next 24-48 hours
    */
-  async predictDemand(region: string, timeWindow: '24h' | '48h'): Promise<{
+  async predictDemand(
+    region: string,
+    timeWindow: '24h' | '48h',
+  ): Promise<{
     predictedDemand: number;
     confidence: number;
     factors: string[];
@@ -125,7 +137,10 @@ export class MarketIntelligenceService {
     try {
       // This would use ML models for demand prediction
       // For now, use historical patterns
-      const prediction = await this.calculateDemandPrediction(region, timeWindow);
+      const prediction = await this.calculateDemandPrediction(
+        region,
+        timeWindow,
+      );
       return prediction;
     } catch (error) {
       this.logger.warn(`Failed to predict demand: ${error.message}`);
@@ -140,7 +155,9 @@ export class MarketIntelligenceService {
   /**
    * Calculate real-time market conditions
    */
-  private async calculateMarketConditions(tenantId: string): Promise<MarketConditions> {
+  private async calculateMarketConditions(
+    tenantId: string,
+  ): Promise<MarketConditions> {
     const now = new Date();
     const last24Hours = new Date(now.getTime() - 24 * 60 * 60 * 1000);
     const lastWeek = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
@@ -170,30 +187,36 @@ export class MarketIntelligenceService {
 
       // Calculate demand level based on load-to-trip ratio
       const currentDemand = this.calculateDemandLevel(recentLoads, recentTrips);
-      
+
       // Calculate price trend
       const priceTrend = await this.calculatePriceTrend(tenantId);
-      
+
       // Get regional factors
       const regionalFactors = await this.getRegionalFactors(tenantId);
-      
+
       // Get seasonal factors
       const seasonalFactors = this.getSeasonalFactors();
-      
+
       // Calculate fuel price impact
       const fuelPriceImpact = await this.calculateFuelPriceImpact();
-      
+
       // Calculate capacity utilization
-      const capacityUtilization = await this.calculateCapacityUtilization(tenantId);
-      
+      const capacityUtilization =
+        await this.calculateCapacityUtilization(tenantId);
+
       // Calculate average rates
       const averageRates = await this.calculateAverageRates(tenantId);
-      
+
       // Calculate market volatility
-      const marketVolatility = this.calculateMarketVolatility(recentLoads, historicalLoads);
-      
+      const marketVolatility = this.calculateMarketVolatility(
+        recentLoads,
+        historicalLoads,
+      );
+
       // Predict future demand
-      const predictedDemand = await this.predictDemand('default', '24h').then(p => p.predictedDemand);
+      const predictedDemand = await this.predictDemand('default', '24h').then(
+        (p) => p.predictedDemand,
+      );
 
       return {
         currentDemand,
@@ -206,9 +229,10 @@ export class MarketIntelligenceService {
         marketVolatility,
         predictedDemand,
       };
-
     } catch (error) {
-      this.logger.error(`Error calculating market conditions: ${error.message}`);
+      this.logger.error(
+        `Error calculating market conditions: ${error.message}`,
+      );
       throw error;
     }
   }
@@ -218,9 +242,9 @@ export class MarketIntelligenceService {
    */
   private calculateDemandLevel(loadCount: number, tripCount: number): number {
     if (tripCount === 0) return 0.5; // Neutral if no trips
-    
+
     const ratio = loadCount / tripCount;
-    
+
     // Normalize to 0-1 scale
     if (ratio <= 0.5) return 0.2; // Low demand
     if (ratio <= 1.0) return 0.5; // Medium demand
@@ -231,7 +255,9 @@ export class MarketIntelligenceService {
   /**
    * Calculate price trend based on historical data
    */
-  private async calculatePriceTrend(tenantId: string): Promise<'rising' | 'falling' | 'stable'> {
+  private async calculatePriceTrend(
+    tenantId: string,
+  ): Promise<'rising' | 'falling' | 'stable'> {
     try {
       // This would analyze historical pricing data
       // For now, use a simple algorithm
@@ -247,13 +273,14 @@ export class MarketIntelligenceService {
       if (recentLoads.length < 10) return 'stable';
 
       // Calculate price trend over time
-      const prices = recentLoads.map(load => load.offeredPrice || load.loadValue || 0);
+      const prices = recentLoads.map(
+        (load) => load.offeredPrice || load.loadValue || 0,
+      );
       const trend = this.calculateLinearTrend(prices);
 
       if (trend > 0.05) return 'rising';
       if (trend < -0.05) return 'falling';
       return 'stable';
-
     } catch (error) {
       this.logger.warn(`Failed to calculate price trend: ${error.message}`);
       return 'stable';
@@ -330,12 +357,14 @@ export class MarketIntelligenceService {
     try {
       // This would integrate with fuel price APIs
       // For now, return a simulated value
-      const baseFuelPrice = 3.50; // $3.50 per gallon
+      const baseFuelPrice = 3.5; // $3.50 per gallon
       const currentFuelPrice = 3.75; // Simulated current price
-      
+
       return (currentFuelPrice - baseFuelPrice) / baseFuelPrice; // 7% increase
     } catch (error) {
-      this.logger.warn(`Failed to calculate fuel price impact: ${error.message}`);
+      this.logger.warn(
+        `Failed to calculate fuel price impact: ${error.message}`,
+      );
       return 0;
     }
   }
@@ -343,13 +372,17 @@ export class MarketIntelligenceService {
   /**
    * Calculate capacity utilization in the market
    */
-  private async calculateCapacityUtilization(tenantId: string): Promise<number> {
+  private async calculateCapacityUtilization(
+    tenantId: string,
+  ): Promise<number> {
     try {
       // This would analyze available vs. utilized capacity
       // For now, return a simulated value
       return 0.75; // 75% capacity utilization
     } catch (error) {
-      this.logger.warn(`Failed to calculate capacity utilization: ${error.message}`);
+      this.logger.warn(
+        `Failed to calculate capacity utilization: ${error.message}`,
+      );
       return 0.7;
     }
   }
@@ -366,16 +399,16 @@ export class MarketIntelligenceService {
       // This would analyze historical pricing data
       // For now, return industry averages
       return {
-        perMile: 2.50,
-        perHour: 45.00,
-        perLoad: 1250.00,
+        perMile: 2.5,
+        perHour: 45.0,
+        perLoad: 1250.0,
       };
     } catch (error) {
       this.logger.warn(`Failed to calculate average rates: ${error.message}`);
       return {
         perMile: 2.25,
-        perHour: 40.00,
-        perLoad: 1000.00,
+        perHour: 40.0,
+        perLoad: 1000.0,
       };
     }
   }
@@ -383,17 +416,24 @@ export class MarketIntelligenceService {
   /**
    * Calculate market volatility
    */
-  private calculateMarketVolatility(recentLoads: number, historicalLoads: number): number {
+  private calculateMarketVolatility(
+    recentLoads: number,
+    historicalLoads: number,
+  ): number {
     if (historicalLoads === 0) return 0.5;
-    
-    const change = Math.abs(recentLoads - historicalLoads / 7) / (historicalLoads / 7);
+
+    const change =
+      Math.abs(recentLoads - historicalLoads / 7) / (historicalLoads / 7);
     return Math.min(1, change);
   }
 
   /**
    * Calculate demand prediction
    */
-  private async calculateDemandPrediction(region: string, timeWindow: '24h' | '48h'): Promise<{
+  private async calculateDemandPrediction(
+    region: string,
+    timeWindow: '24h' | '48h',
+  ): Promise<{
     predictedDemand: number;
     confidence: number;
     factors: string[];
@@ -404,10 +444,11 @@ export class MarketIntelligenceService {
       const baseDemand = 0.6;
       const seasonalAdjustment = this.getSeasonalAdjustment();
       const weatherAdjustment = await this.getWeatherAdjustment(region);
-      
-      const predictedDemand = Math.max(0, Math.min(1, 
-        baseDemand + seasonalAdjustment + weatherAdjustment
-      ));
+
+      const predictedDemand = Math.max(
+        0,
+        Math.min(1, baseDemand + seasonalAdjustment + weatherAdjustment),
+      );
 
       return {
         predictedDemand,
@@ -415,7 +456,9 @@ export class MarketIntelligenceService {
         factors: ['Historical patterns', 'Seasonal trends', 'Weather forecast'],
       };
     } catch (error) {
-      this.logger.warn(`Failed to calculate demand prediction: ${error.message}`);
+      this.logger.warn(
+        `Failed to calculate demand prediction: ${error.message}`,
+      );
       return {
         predictedDemand: 0.6,
         confidence: 0.5,
@@ -429,13 +472,13 @@ export class MarketIntelligenceService {
    */
   private getSeasonalAdjustment(): number {
     const month = new Date().getMonth();
-    
+
     // Seasonal adjustments based on month
     if (month >= 11 || month <= 2) return 0.1; // Winter - higher demand
     if (month >= 3 && month <= 5) return 0.05; // Spring - moderate demand
     if (month >= 6 && month <= 8) return -0.05; // Summer - lower demand
     if (month >= 9 && month <= 10) return 0.1; // Fall - higher demand
-    
+
     return 0;
   }
 
@@ -456,7 +499,10 @@ export class MarketIntelligenceService {
   /**
    * Analyze cargo type specific data
    */
-  private async analyzeCargoTypeData(cargoType: string, region: string): Promise<{
+  private async analyzeCargoTypeData(
+    cargoType: string,
+    region: string,
+  ): Promise<{
     demandLevel: string;
     priceTrend: string;
     capacityAvailability: number;
@@ -514,7 +560,7 @@ export class MarketIntelligenceService {
   private simulateRegionalMarketData(region: string): RegionalMarketData {
     // Simulate different market conditions for different regions
     const regionData: Record<string, RegionalMarketData> = {
-      'NORTHEAST': {
+      NORTHEAST: {
         region: 'NORTHEAST',
         demandLevel: 'high',
         capacityShortage: 0.8,
@@ -523,31 +569,43 @@ export class MarketIntelligenceService {
         popularRoutes: ['NYC-Boston', 'NYC-Philadelphia', 'Boston-Maine'],
         bottlenecks: ['NYC Metro Area', 'Boston Metro Area'],
       },
-      'SOUTHEAST': {
+      SOUTHEAST: {
         region: 'SOUTHEAST',
         demandLevel: 'medium',
         capacityShortage: 0.5,
         averageWaitTime: 2,
         priceMultiplier: 1.1,
-        popularRoutes: ['Atlanta-Miami', 'Charlotte-Orlando', 'Nashville-Atlanta'],
+        popularRoutes: [
+          'Atlanta-Miami',
+          'Charlotte-Orlando',
+          'Nashville-Atlanta',
+        ],
         bottlenecks: ['Atlanta Metro Area'],
       },
-      'MIDWEST': {
+      MIDWEST: {
         region: 'MIDWEST',
         demandLevel: 'medium',
         capacityShortage: 0.6,
         averageWaitTime: 3,
         priceMultiplier: 1.0,
-        popularRoutes: ['Chicago-Detroit', 'Chicago-Milwaukee', 'Detroit-Cleveland'],
+        popularRoutes: [
+          'Chicago-Detroit',
+          'Chicago-Milwaukee',
+          'Detroit-Cleveland',
+        ],
         bottlenecks: ['Chicago Metro Area'],
       },
-      'WEST': {
+      WEST: {
         region: 'WEST',
         demandLevel: 'high',
         capacityShortage: 0.7,
         averageWaitTime: 5,
         priceMultiplier: 1.4,
-        popularRoutes: ['LA-San Francisco', 'Seattle-Portland', 'Denver-Phoenix'],
+        popularRoutes: [
+          'LA-San Francisco',
+          'Seattle-Portland',
+          'Denver-Phoenix',
+        ],
         bottlenecks: ['LA Metro Area', 'San Francisco Metro Area'],
       },
     };
@@ -608,16 +666,16 @@ export class MarketIntelligenceService {
         weatherConditions,
         economicIndicators,
         regulatoryUpdates,
-        lastUpdated: new Date()
+        lastUpdated: new Date(),
       };
     } catch (error) {
       this.logger.warn('Failed to get external market data:', error);
       return {
-        fuelPrices: { diesel: 3.50, gasoline: 3.20 },
+        fuelPrices: { diesel: 3.5, gasoline: 3.2 },
         weatherConditions: { general: 'clear', alerts: [] },
         economicIndicators: { inflation: 2.1, gdpGrowth: 1.8 },
         regulatoryUpdates: { recent: [], impact: 'low' },
-        lastUpdated: new Date()
+        lastUpdated: new Date(),
       };
     }
   }
@@ -633,29 +691,29 @@ export class MarketIntelligenceService {
     // - Local fuel price aggregators
     return {
       diesel: {
-        national: 3.50,
+        national: 3.5,
         regional: {
           northeast: 3.65,
           southeast: 3.45,
-          midwest: 3.40,
+          midwest: 3.4,
           southwest: 3.35,
-          west: 3.80
+          west: 3.8,
         },
         trend: 'increasing',
-        change24h: 0.05
+        change24h: 0.05,
       },
       gasoline: {
-        national: 3.20,
+        national: 3.2,
         regional: {
           northeast: 3.35,
           southeast: 3.15,
-          midwest: 3.10,
+          midwest: 3.1,
           southwest: 3.05,
-          west: 3.45
+          west: 3.45,
         },
         trend: 'stable',
-        change24h: 0.02
-      }
+        change24h: 0.02,
+      },
     };
   }
 
@@ -670,15 +728,35 @@ export class MarketIntelligenceService {
     // - AccuWeather API
     return {
       majorRoutes: {
-        'I-95': { condition: 'clear', temperature: 72, windSpeed: 8, alerts: [] },
-        'I-80': { condition: 'partly_cloudy', temperature: 68, windSpeed: 12, alerts: [] },
-        'I-10': { condition: 'clear', temperature: 85, windSpeed: 5, alerts: [] },
-        'I-40': { condition: 'clear', temperature: 75, windSpeed: 10, alerts: [] }
+        'I-95': {
+          condition: 'clear',
+          temperature: 72,
+          windSpeed: 8,
+          alerts: [],
+        },
+        'I-80': {
+          condition: 'partly_cloudy',
+          temperature: 68,
+          windSpeed: 12,
+          alerts: [],
+        },
+        'I-10': {
+          condition: 'clear',
+          temperature: 85,
+          windSpeed: 5,
+          alerts: [],
+        },
+        'I-40': {
+          condition: 'clear',
+          temperature: 75,
+          windSpeed: 10,
+          alerts: [],
+        },
       },
       regionalAlerts: [
         { region: 'Northeast', type: 'winter_storm', severity: 'moderate' },
-        { region: 'Midwest', type: 'flood', severity: 'low' }
-      ]
+        { region: 'Midwest', type: 'flood', severity: 'low' },
+      ],
     };
   }
 
@@ -695,23 +773,23 @@ export class MarketIntelligenceService {
       inflation: {
         current: 2.1,
         trend: 'decreasing',
-        impact: 'moderate'
+        impact: 'moderate',
       },
       gdpGrowth: {
         current: 1.8,
         trend: 'stable',
-        impact: 'low'
+        impact: 'low',
       },
       unemployment: {
         current: 3.7,
         trend: 'stable',
-        impact: 'low'
+        impact: 'low',
       },
       consumerConfidence: {
         current: 108.0,
         trend: 'increasing',
-        impact: 'positive'
-      }
+        impact: 'positive',
+      },
     };
   }
 
@@ -730,16 +808,16 @@ export class MarketIntelligenceService {
           title: 'Updated Hours of Service Regulations',
           impact: 'moderate',
           effectiveDate: '2024-01-15',
-          description: 'New rules for driver rest periods'
+          description: 'New rules for driver rest periods',
         },
         {
           title: 'Emission Standards Update',
           impact: 'high',
           effectiveDate: '2024-07-01',
-          description: 'Stricter emission requirements for trucks'
-        }
+          description: 'Stricter emission requirements for trucks',
+        },
       ],
-      impact: 'moderate'
+      impact: 'moderate',
     };
   }
 
@@ -751,15 +829,15 @@ export class MarketIntelligenceService {
       const loads = await this.loadRepository.find({
         where: { tenantId },
         order: { createdAt: 'DESC' },
-        take: 100
+        take: 100,
       });
 
       const routeDemand = {};
 
       // Analyze loads by route
-      loads.forEach(load => {
-        const pickup = load.locations?.find(l => l.type === 'PICKUP');
-        const delivery = load.locations?.find(l => l.type === 'DELIVERY');
+      loads.forEach((load) => {
+        const pickup = load.locations?.find((l) => l.type === 'PICKUP');
+        const delivery = load.locations?.find((l) => l.type === 'DELIVERY');
         if (pickup?.locationData?.name && delivery?.locationData?.name) {
           const route = `${pickup.locationData.name} → ${delivery.locationData.name}`;
           (routeDemand as any)[route] = ((routeDemand as any)[route] || 0) + 1;
@@ -768,14 +846,14 @@ export class MarketIntelligenceService {
 
       // Return top 5 demand hotspots
       return Object.entries(routeDemand as Record<string, number>)
-        .sort((a, b) => (b[1] as number) - (a[1] as number))
+        .sort((a, b) => b[1] - a[1])
         .slice(0, 5)
         .map(([route, count]) => ({
           route,
           demandCount: count,
-          demandLevel: (count as number) > 10 ? 'high' : (count as number) > 5 ? 'medium' : 'low',
-          estimatedWaitTime: this.estimateWaitTime(count as number),
-          recommendedAction: this.getRecommendedAction(count as number)
+          demandLevel: count > 10 ? 'high' : count > 5 ? 'medium' : 'low',
+          estimatedWaitTime: this.estimateWaitTime(count),
+          recommendedAction: this.getRecommendedAction(count),
         }));
     } catch (error) {
       this.logger.error('Error getting demand hotspots:', error);
@@ -811,17 +889,27 @@ export class MarketIntelligenceService {
       const trips = await this.tripRepository.find({
         where: { tenantId },
         order: { createdAt: 'DESC' },
-        take: 100
+        take: 100,
       });
 
       if (trips.length === 0) return { overall: 0, byRegion: {} };
 
-      const totalCapacity = trips.reduce((sum, trip: any) => sum + (trip.capacity || 0), 0);
-      const utilizedCapacity = trips.reduce((sum, trip: any) => sum + (trip.actualLoad || 0), 0);
-      const overallUtilization = totalCapacity > 0 ? (utilizedCapacity / totalCapacity) * 100 : 0;
+      const totalCapacity = trips.reduce(
+        (sum, trip: any) => sum + (trip.capacity || 0),
+        0,
+      );
+      const utilizedCapacity = trips.reduce(
+        (sum, trip: any) => sum + (trip.actualLoad || 0),
+        0,
+      );
+      const overallUtilization =
+        totalCapacity > 0 ? (utilizedCapacity / totalCapacity) * 100 : 0;
 
       // Calculate by region
-      const regionalUtilization: Record<string, { total: number; utilized: number } | number> = {};
+      const regionalUtilization: Record<
+        string,
+        { total: number; utilized: number } | number
+      > = {};
       trips.forEach((trip: any) => {
         if (trip.pickupLocation?.region) {
           const region = trip.pickupLocation.region as string;
@@ -834,7 +922,7 @@ export class MarketIntelligenceService {
       });
 
       // Convert to percentages
-      Object.keys(regionalUtilization).forEach(region => {
+      Object.keys(regionalUtilization).forEach((region) => {
         const bucket = regionalUtilization[region] as any;
         const total = bucket.total || 0;
         const utilized = bucket.utilized || 0;
@@ -845,7 +933,7 @@ export class MarketIntelligenceService {
         overall: Math.round(overallUtilization),
         byRegion: regionalUtilization,
         trend: this.getCapacityTrend(trips),
-        recommendations: this.getCapacityRecommendations(overallUtilization)
+        recommendations: this.getCapacityRecommendations(overallUtilization),
       };
     } catch (error) {
       this.logger.error('Error getting capacity utilization:', error);
@@ -862,15 +950,18 @@ export class MarketIntelligenceService {
     const recentTrips = trips.slice(0, 5);
     const olderTrips = trips.slice(5, 10);
 
-    const recentUtilization = recentTrips.reduce((sum, trip) => {
-      return sum + ((trip.actualLoad || 0) / (trip.capacity || 1));
-    }, 0) / recentTrips.length;
+    const recentUtilization =
+      recentTrips.reduce((sum, trip) => {
+        return sum + (trip.actualLoad || 0) / (trip.capacity || 1);
+      }, 0) / recentTrips.length;
 
-    const olderUtilization = olderTrips.reduce((sum, trip) => {
-      return sum + ((trip.actualLoad || 0) / (trip.capacity || 1));
-    }, 0) / olderTrips.length;
+    const olderUtilization =
+      olderTrips.reduce((sum, trip) => {
+        return sum + (trip.actualLoad || 0) / (trip.capacity || 1);
+      }, 0) / olderTrips.length;
 
-    const change = ((recentUtilization - olderUtilization) / olderUtilization) * 100;
+    const change =
+      ((recentUtilization - olderUtilization) / olderUtilization) * 100;
 
     if (change > 5) return 'increasing';
     if (change < -5) return 'decreasing';
@@ -884,17 +975,27 @@ export class MarketIntelligenceService {
     const recommendations = [];
 
     if (utilization > 90) {
-      recommendations.push('High capacity utilization - consider adding more vehicles');
+      recommendations.push(
+        'High capacity utilization - consider adding more vehicles',
+      );
       recommendations.push('Monitor driver fatigue and maintenance schedules');
     } else if (utilization > 75) {
-      recommendations.push('Good capacity utilization - maintain current fleet size');
+      recommendations.push(
+        'Good capacity utilization - maintain current fleet size',
+      );
       recommendations.push('Consider route optimization for better efficiency');
     } else if (utilization > 50) {
-      recommendations.push('Moderate capacity utilization - focus on route optimization');
+      recommendations.push(
+        'Moderate capacity utilization - focus on route optimization',
+      );
       recommendations.push('Consider diversifying service offerings');
     } else {
-      recommendations.push('Low capacity utilization - review pricing strategy');
-      recommendations.push('Consider reducing fleet size or expanding market reach');
+      recommendations.push(
+        'Low capacity utilization - review pricing strategy',
+      );
+      recommendations.push(
+        'Consider reducing fleet size or expanding market reach',
+      );
     }
 
     return recommendations;

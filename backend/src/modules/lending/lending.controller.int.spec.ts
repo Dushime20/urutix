@@ -43,7 +43,10 @@ describe('LendingController (integration)', () => {
         { provide: RiskAssessmentService, useValue: riskAssessmentMock },
         { provide: AutoLoanGeneratorService, useValue: autoLoanGeneratorMock },
         { provide: LenderAnalyticsService, useValue: lenderAnalyticsMock },
-        { provide: RepaymentProcessorService, useValue: repaymentProcessorMock },
+        {
+          provide: RepaymentProcessorService,
+          useValue: repaymentProcessorMock,
+        },
       ],
     })
       .overrideGuard(JwtAuthGuard)
@@ -55,18 +58,20 @@ describe('LendingController (integration)', () => {
     app = moduleRef.createNestApplication();
     // Inject a mock authenticated user for controller methods that read req.user.id
     app.use((req, _res, next) => {
-      (req as any).user = { id: '11111111-1111-1111-1111-111111111111' };
+      req.user = { id: '11111111-1111-1111-1111-111111111111' };
       next();
     });
-    
+
     // Configure validation pipe exactly like the main app
-    app.useGlobalPipes(new ValidationPipe({ 
-      transform: true, 
-      whitelist: true,
-      forbidNonWhitelisted: true,
-      validateCustomDecorators: true
-    }));
-    
+    app.useGlobalPipes(
+      new ValidationPipe({
+        transform: true,
+        whitelist: true,
+        forbidNonWhitelisted: true,
+        validateCustomDecorators: true,
+      }),
+    );
+
     await app.init();
   });
 
@@ -80,12 +85,12 @@ describe('LendingController (integration)', () => {
 
   it('POST /api/lending/loan-requests should validate body and return 400 on missing fields', async () => {
     serviceMock.createLoanRequest = jest.fn();
-    
+
     const res = await request(app.getHttpServer())
       .post('/api/lending/loan-requests')
       .send({})
       .expect(400);
-    
+
     expect(res.body.message).toBeDefined();
     expect(serviceMock.createLoanRequest).not.toHaveBeenCalled();
   });
@@ -114,17 +119,25 @@ describe('LendingController (integration)', () => {
       trip_id: '550e8400-e29b-41d4-a716-446655440002',
       requested_amount: 10000,
       requested_split: [
-        { type: 'fuel', id: '550e8400-e29b-41d4-a716-446655440010', amount: 5000 },
-        { type: 'maintenance', id: '550e8400-e29b-41d4-a716-446655440011', amount: 5000 }
+        {
+          type: 'fuel',
+          id: '550e8400-e29b-41d4-a716-446655440010',
+          amount: 5000,
+        },
+        {
+          type: 'maintenance',
+          id: '550e8400-e29b-41d4-a716-446655440011',
+          amount: 5000,
+        },
       ],
-      created_by: '550e8400-e29b-41d4-a716-446655440099'
+      created_by: '550e8400-e29b-41d4-a716-446655440099',
     };
 
     serviceMock.createLoanRequest = jest.fn().mockResolvedValue({
       id: '11111111-1111-1111-1111-111111111111',
       ...validLoanRequest,
       status: 'pending',
-      created_at: new Date()
+      created_at: new Date(),
     });
 
     const res = await request(app.getHttpServer())
@@ -151,5 +164,3 @@ describe('LendingController (integration)', () => {
     expect(serviceMock.createLoanRequest).not.toHaveBeenCalled();
   });
 });
-
-

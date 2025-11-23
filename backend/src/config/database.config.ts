@@ -37,7 +37,10 @@ import { SafetyInspection } from '../entities/safety-inspection.entity';
 import { SafetyTraining } from '../entities/safety-training.entity';
 
 // Financial entities
-import { Invoice, InvoiceItem } from '../modules/financial/entities/invoice.entity';
+import {
+  Invoice,
+  InvoiceItem,
+} from '../modules/financial/entities/invoice.entity';
 import { Expense } from '../modules/financial/entities/expense.entity';
 import { FinancialReport } from '../modules/financial/entities/financial-report.entity';
 import { Budget } from '../modules/financial/entities/budget.entity';

@@ -20,7 +20,7 @@ export enum BeneficiaryType {
   DRIVER = 'driver',
   MAINTENANCE = 'maintenance',
   TOLLS = 'tolls',
-  OTHER = 'other'
+  OTHER = 'other',
 }
 
 export class BeneficiaryDto {

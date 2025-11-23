@@ -19,7 +19,7 @@ import { UserModule } from '../users/user.module';
       fileFilter: (req, file, cb) => {
         // Allow any file type
         cb(null, true);
-      }
+      },
     }),
     FileUploadModule,
     NotificationModule,

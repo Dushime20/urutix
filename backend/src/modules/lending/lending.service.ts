@@ -5,12 +5,12 @@ import {
   Logger,
   ConflictException,
 } from '@nestjs/common';
-import { 
+import {
   InsufficientCreditException,
   LoanLimitExceededException,
   DuplicateLoanRequestException,
   LenderNotAvailableException,
-  InvalidLoanStateException 
+  InvalidLoanStateException,
 } from './exceptions/lending.exceptions';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource, In } from 'typeorm';
@@ -91,20 +91,20 @@ export class LendingService {
   private async validateCreditLimit(
     tenantId: string,
     requestedAmount: number,
-    lenderId?: string
+    lenderId?: string,
   ): Promise<void> {
     // Get tenant's current credit limit and outstanding loans
     const outstandingLoans = await this.loanRequestRepository
       .createQueryBuilder('loan')
       .where('loan.tenant_id = :tenantId', { tenantId })
       .andWhere('loan.status IN (:...statuses)', {
-        statuses: ['approved', 'disbursed']
+        statuses: ['approved', 'disbursed'],
       })
       .getMany();
 
     const totalOutstanding = outstandingLoans.reduce(
       (sum, loan) => sum + (loan.approved_amount || 0),
-      0
+      0,
     );
 
     // Default credit limit (can be made configurable)
@@ -115,7 +115,7 @@ export class LendingService {
       throw new InsufficientCreditException(
         tenantId,
         requestedAmount,
-        availableCredit
+        availableCredit,
       );
     }
 
@@ -125,17 +125,17 @@ export class LendingService {
       throw new LoanLimitExceededException(
         tenantId,
         requestedAmount,
-        maxLoanAmount
+        maxLoanAmount,
       );
     }
   }
 
   private async checkIdempotency(
     idempotencyKey: string,
-    tenantId: string
+    tenantId: string,
   ): Promise<void> {
     const existingLoan = await this.loanRequestRepository.findOne({
-      where: { idempotency_key: idempotencyKey }
+      where: { idempotency_key: idempotencyKey },
     });
 
     if (existingLoan) {
@@ -143,17 +143,15 @@ export class LendingService {
     }
   }
 
-  private async validateLenderAvailability(
-    lenderId: string
-  ): Promise<void> {
+  private async validateLenderAvailability(lenderId: string): Promise<void> {
     const lender = await this.lenderRepository.findOne({
-      where: { id: lenderId }
+      where: { id: lenderId },
     });
 
     if (!lender || lender.status !== 'active') {
       throw new LenderNotAvailableException(
         lenderId,
-        lender ? `Status: ${lender.status}` : 'Lender not found'
+        lender ? `Status: ${lender.status}` : 'Lender not found',
       );
     }
   }
@@ -224,7 +222,9 @@ export class LendingService {
     createLoanDto: CreateLoanRequestDto,
     createdBy: string,
   ): Promise<LoanRequest> {
-    this.logger.log(`Creating loan request for tenant: ${createLoanDto.tenant_id}`);
+    this.logger.log(
+      `Creating loan request for tenant: ${createLoanDto.tenant_id}`,
+    );
 
     // Validate requested_split sums to requested_amount
     if (Array.isArray(createLoanDto.requested_split)) {
@@ -246,7 +246,7 @@ export class LendingService {
     await this.validateCreditLimit(
       createLoanDto.tenant_id,
       createLoanDto.requested_amount,
-      createLoanDto.lender_id
+      createLoanDto.lender_id,
     );
 
     if (createLoanDto.lender_id) {
@@ -544,7 +544,10 @@ export class LendingService {
         attempts: 1,
       });
 
-      const savedDisbursement = await manager.save(LoanDisbursement, disbursement);
+      const savedDisbursement = await manager.save(
+        LoanDisbursement,
+        disbursement,
+      );
 
       try {
         await this.processDisbursementToBeneficiaries(savedDisbursement);
@@ -555,7 +558,7 @@ export class LendingService {
           `Disbursement failed for loan ${loanId}: ${error.message}`,
         );
         savedDisbursement.status = DisbursementStatus.FAILED;
-        savedDisbursement.failure_reason = (error as any).message;
+        savedDisbursement.failure_reason = error.message;
         await manager.save(LoanDisbursement, savedDisbursement);
       }
 
@@ -615,7 +618,10 @@ export class LendingService {
         const secret = decryptString(lender.webhook_secret_encrypted);
         const payload = JSON.stringify(confirmDto);
         const base = `${hmac?.timestamp || ''}.${payload}`;
-        const expected = crypto.createHmac('sha256', secret).update(base).digest('hex');
+        const expected = crypto
+          .createHmac('sha256', secret)
+          .update(base)
+          .digest('hex');
         if (!hmac?.signature || hmac.signature !== expected) {
           throw new BadRequestException('Invalid webhook signature');
         }
@@ -671,46 +677,63 @@ export class LendingService {
       }
 
       if (loan.status !== LoanRequestStatus.DISBURSED) {
-        throw new BadRequestException('Loan must be disbursed before repayment');
+        throw new BadRequestException(
+          'Loan must be disbursed before repayment',
+        );
       }
 
-    // Compute outstanding
-    const totalDue = (loan.approved_amount || 0) + (loan.interest_amount || 0);
-    const paidSoFar = (loan.repayments || []).reduce(
-      (sum, r) => sum + Number(r.amount || 0),
-      0,
-    );
-    const outstanding = Math.max(0, totalDue - paidSoFar);
-    if (finalPaymentAmount <= 0) {
-      throw new BadRequestException('Payment amount must be positive');
-    }
-    const appliedAmount = Math.min(finalPaymentAmount, outstanding);
-    const principalOutstanding = Math.max(0, (loan.approved_amount || 0) - (loan.repayments || []).reduce((s, r) => s + Number(r.principal_paid || 0), 0));
-    const interestOutstanding = Math.max(0, (loan.interest_amount || 0) - (loan.repayments || []).reduce((s, r) => s + Number(r.interest_paid || 0), 0));
-    const interestPaid = Math.min(appliedAmount, interestOutstanding);
-    const principalPaid = appliedAmount - interestPaid;
+      // Compute outstanding
+      const totalDue =
+        (loan.approved_amount || 0) + (loan.interest_amount || 0);
+      const paidSoFar = (loan.repayments || []).reduce(
+        (sum, r) => sum + Number(r.amount || 0),
+        0,
+      );
+      const outstanding = Math.max(0, totalDue - paidSoFar);
+      if (finalPaymentAmount <= 0) {
+        throw new BadRequestException('Payment amount must be positive');
+      }
+      const appliedAmount = Math.min(finalPaymentAmount, outstanding);
+      const principalOutstanding = Math.max(
+        0,
+        (loan.approved_amount || 0) -
+          (loan.repayments || []).reduce(
+            (s, r) => s + Number(r.principal_paid || 0),
+            0,
+          ),
+      );
+      const interestOutstanding = Math.max(
+        0,
+        (loan.interest_amount || 0) -
+          (loan.repayments || []).reduce(
+            (s, r) => s + Number(r.interest_paid || 0),
+            0,
+          ),
+      );
+      const interestPaid = Math.min(appliedAmount, interestOutstanding);
+      const principalPaid = appliedAmount - interestPaid;
 
-    const repayment = this.loanRepaymentRepository.create({
-      loan_request_id: loanId,
-      amount: appliedAmount,
-      principal_paid: principalPaid,
-      interest_paid: interestPaid,
-      repayment_date: new Date(),
-      external_txn_ref: `REPAY-${Date.now()}`,
-      metadata: { final_payment_amount: finalPaymentAmount },
-    });
-    const savedRepayment = await manager.save(LoanRepayment, repayment);
+      const repayment = this.loanRepaymentRepository.create({
+        loan_request_id: loanId,
+        amount: appliedAmount,
+        principal_paid: principalPaid,
+        interest_paid: interestPaid,
+        repayment_date: new Date(),
+        external_txn_ref: `REPAY-${Date.now()}`,
+        metadata: { final_payment_amount: finalPaymentAmount },
+      });
+      const savedRepayment = await manager.save(LoanRepayment, repayment);
 
-    if (appliedAmount >= outstanding - 0.001) {
-      loan.status = LoanRequestStatus.REPAID;
-      await manager.save(LoanRequest, loan);
-    }
+      if (appliedAmount >= outstanding - 0.001) {
+        loan.status = LoanRequestStatus.REPAID;
+        await manager.save(LoanRequest, loan);
+      }
 
-    if (loan.lender?.callback_url) {
-      await this.notifyLenderRepayment(loan, savedRepayment);
-    }
+      if (loan.lender?.callback_url) {
+        await this.notifyLenderRepayment(loan, savedRepayment);
+      }
 
-    return savedRepayment;
+      return savedRepayment;
     });
   }
 
@@ -1329,7 +1352,7 @@ export class LendingService {
       data: loans.map((loan) => ({
         ...loan,
         days_overdue: Math.floor(
-          (new Date().getTime() - new Date(loan.due_date!).getTime()) /
+          (new Date().getTime() - new Date(loan.due_date).getTime()) /
             (1000 * 3600 * 24),
         ),
       })),
@@ -1465,7 +1488,7 @@ export class LendingService {
       relations: ['role', 'role.default_permissions', 'additional_permissions'],
     });
 
-    return this.mapLenderUserToDto(userWithRelations!);
+    return this.mapLenderUserToDto(userWithRelations);
   }
 
   async updateTeamMember(
@@ -1511,7 +1534,7 @@ export class LendingService {
       relations: ['role', 'role.default_permissions', 'additional_permissions'],
     });
 
-    return this.mapLenderUserToDto(userWithRelations!);
+    return this.mapLenderUserToDto(userWithRelations);
   }
 
   async removeTeamMember(

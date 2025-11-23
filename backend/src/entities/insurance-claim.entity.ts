@@ -219,7 +219,11 @@ export class InsuranceClaim {
     });
   }
 
-  addTimelineEntry(action: string, description: string, performedBy: string): void {
+  addTimelineEntry(
+    action: string,
+    description: string,
+    performedBy: string,
+  ): void {
     if (!this.timeline) this.timeline = [];
     this.timeline.push({
       action,
@@ -234,16 +238,27 @@ export class InsuranceClaim {
     if (notes) {
       this.addNote(`Status changed to ${newStatus}: ${notes}`, 'System', true);
     }
-    this.addTimelineEntry('Status Update', `Status changed to ${newStatus}`, 'System');
+    this.addTimelineEntry(
+      'Status Update',
+      `Status changed to ${newStatus}`,
+      'System',
+    );
   }
 
   assignAdjuster(adjusterData: any): void {
     this.adjuster = adjusterData;
-    this.addTimelineEntry('Adjuster Assignment', `Assigned to ${adjusterData.name}`, 'System');
+    this.addTimelineEntry(
+      'Adjuster Assignment',
+      `Assigned to ${adjusterData.name}`,
+      'System',
+    );
   }
 
   getProcessingTime(): number | null {
-    if (this.status === ClaimStatus.CLOSED || this.status === ClaimStatus.DENIED) {
+    if (
+      this.status === ClaimStatus.CLOSED ||
+      this.status === ClaimStatus.DENIED
+    ) {
       const closedDate = this.updatedAt;
       const reportedDate = this.reportedDate;
       const diffTime = closedDate.getTime() - reportedDate.getTime();

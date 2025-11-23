@@ -72,7 +72,10 @@ export class OcrService {
             return { text: data.text, confidence: 0.9 };
           }
         } catch (pdfError) {
-          console.warn('PDF text extraction failed, falling back to OCR:', pdfError);
+          console.warn(
+            'PDF text extraction failed, falling back to OCR:',
+            pdfError,
+          );
         }
 
         // Fallback: render PDF as images and OCR
@@ -99,7 +102,10 @@ export class OcrService {
             pageCount++;
           }
           await worker.terminate();
-          return { text: fullText, confidence: totalConfidence / pageCount || 0.5 };
+          return {
+            text: fullText,
+            confidence: totalConfidence / pageCount || 0.5,
+          };
         } catch (ocrError) {
           console.error('PDF OCR failed:', ocrError);
           throw new Error('Failed to extract text from PDF');

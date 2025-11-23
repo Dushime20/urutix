@@ -189,7 +189,7 @@ export class AuditEvent {
       return 'No specific changes recorded';
     }
 
-    const changeDescriptions = this.changes.map(change => {
+    const changeDescriptions = this.changes.map((change) => {
       switch (change.type) {
         case 'added':
           return `Added ${change.field}: ${change.newValue}`;
@@ -210,11 +210,14 @@ export class AuditEvent {
   }
 
   getFieldChanges(fieldName: string): any[] {
-    return this.changes?.filter(change => change.field === fieldName) || [];
+    return this.changes?.filter((change) => change.field === fieldName) || [];
   }
 
   isRecent(minutes: number = 30): boolean {
-    return Math.floor((Date.now() - this.createdAt.getTime()) / (1000 * 60)) <= minutes;
+    return (
+      Math.floor((Date.now() - this.createdAt.getTime()) / (1000 * 60)) <=
+      minutes
+    );
   }
 
   isToday(): boolean {
@@ -233,8 +236,10 @@ export class AuditEvent {
   isThisMonth(): boolean {
     const now = new Date();
     const eventDate = new Date(this.createdAt);
-    return now.getMonth() === eventDate.getMonth() && 
-           now.getFullYear() === eventDate.getFullYear();
+    return (
+      now.getMonth() === eventDate.getMonth() &&
+      now.getFullYear() === eventDate.getFullYear()
+    );
   }
 
   getAgeInMinutes(): number {
@@ -268,12 +273,20 @@ export class AuditEvent {
   }
 
   isDocumentOperation(): boolean {
-    return [AuditAction.DOCUMENT_UPLOAD, AuditAction.DOCUMENT_DELETE].includes(this.action);
+    return [AuditAction.DOCUMENT_UPLOAD, AuditAction.DOCUMENT_DELETE].includes(
+      this.action,
+    );
   }
 
   isWorkflowAction(): boolean {
-    return [AuditAction.PUBLISH, AuditAction.ASSIGN, AuditAction.START, 
-            AuditAction.DELIVER, AuditAction.CANCEL, AuditAction.REPOST].includes(this.action);
+    return [
+      AuditAction.PUBLISH,
+      AuditAction.ASSIGN,
+      AuditAction.START,
+      AuditAction.DELIVER,
+      AuditAction.CANCEL,
+      AuditAction.REPOST,
+    ].includes(this.action);
   }
 
   getActionIcon(): string {

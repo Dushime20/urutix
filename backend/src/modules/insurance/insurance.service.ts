@@ -1,9 +1,25 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In, Between } from 'typeorm';
-import { InsurancePolicy, PolicyStatus, PolicyType } from '../../entities/insurance-policy.entity';
-import { InsuranceClaim, ClaimStatus, ClaimType, ClaimPriority } from '../../entities/insurance-claim.entity';
-import { InsuranceRenewal, RenewalStatus } from '../../entities/insurance-renewal.entity';
+import {
+  InsurancePolicy,
+  PolicyStatus,
+  PolicyType,
+} from '../../entities/insurance-policy.entity';
+import {
+  InsuranceClaim,
+  ClaimStatus,
+  ClaimType,
+  ClaimPriority,
+} from '../../entities/insurance-claim.entity';
+import {
+  InsuranceRenewal,
+  RenewalStatus,
+} from '../../entities/insurance-renewal.entity';
 import { Truck } from '../../entities/truck.entity';
 
 export interface PolicyFilters {
@@ -99,16 +115,20 @@ export class InsuranceService {
     if (filters.search) {
       queryBuilder.andWhere(
         '(policy.policyNumber ILIKE :search OR policy.insuranceCompany ILIKE :search)',
-        { search: `%${filters.search}%` }
+        { search: `%${filters.search}%` },
       );
     }
 
     if (filters.status) {
-      queryBuilder.andWhere('policy.status = :status', { status: filters.status });
+      queryBuilder.andWhere('policy.status = :status', {
+        status: filters.status,
+      });
     }
 
     if (filters.truckId) {
-      queryBuilder.andWhere('policy.truckId = :truckId', { truckId: filters.truckId });
+      queryBuilder.andWhere('policy.truckId = :truckId', {
+        truckId: filters.truckId,
+      });
     }
 
     if (filters.insuranceCompany) {
@@ -118,19 +138,28 @@ export class InsuranceService {
     }
 
     if (filters.policyType) {
-      queryBuilder.andWhere('policy.policyType = :policyType', { policyType: filters.policyType });
+      queryBuilder.andWhere('policy.policyType = :policyType', {
+        policyType: filters.policyType,
+      });
     }
 
     if (filters.startDate || filters.endDate) {
       if (filters.startDate && filters.endDate) {
-        queryBuilder.andWhere('policy.startDate BETWEEN :startDate AND :endDate', {
+        queryBuilder.andWhere(
+          'policy.startDate BETWEEN :startDate AND :endDate',
+          {
+            startDate: filters.startDate,
+            endDate: filters.endDate,
+          },
+        );
+      } else if (filters.startDate) {
+        queryBuilder.andWhere('policy.startDate >= :startDate', {
           startDate: filters.startDate,
+        });
+      } else if (filters.endDate) {
+        queryBuilder.andWhere('policy.startDate <= :endDate', {
           endDate: filters.endDate,
         });
-      } else if (filters.startDate) {
-        queryBuilder.andWhere('policy.startDate >= :startDate', { startDate: filters.startDate });
-      } else if (filters.endDate) {
-        queryBuilder.andWhere('policy.startDate <= :endDate', { endDate: filters.endDate });
       }
     }
 
@@ -169,7 +198,9 @@ export class InsuranceService {
 
   async createPolicy(policyData: Partial<InsurancePolicy>) {
     // Validate truck exists
-    const truck = await this.truckRepository.findOne({ where: { id: policyData.truckId } });
+    const truck = await this.truckRepository.findOne({
+      where: { id: policyData.truckId },
+    });
     if (!truck) {
       throw new BadRequestException('Truck not found');
     }
@@ -192,7 +223,9 @@ export class InsuranceService {
       );
 
       if (hasOverlap) {
-        throw new BadRequestException('Policy dates overlap with existing active policy');
+        throw new BadRequestException(
+          'Policy dates overlap with existing active policy',
+        );
       }
     }
 
@@ -232,7 +265,9 @@ export class InsuranceService {
         );
 
         if (hasOverlap) {
-          throw new BadRequestException('Policy dates overlap with existing active policy');
+          throw new BadRequestException(
+            'Policy dates overlap with existing active policy',
+          );
         }
       }
     }
@@ -250,7 +285,11 @@ export class InsuranceService {
     const activeClaims = await this.claimRepository.count({
       where: {
         policyId: id,
-        status: In([ClaimStatus.PENDING, ClaimStatus.INVESTIGATING, ClaimStatus.APPROVED]),
+        status: In([
+          ClaimStatus.PENDING,
+          ClaimStatus.INVESTIGATING,
+          ClaimStatus.APPROVED,
+        ]),
       },
     });
 
@@ -280,40 +319,57 @@ export class InsuranceService {
     if (filters.search) {
       queryBuilder.andWhere(
         '(claim.claimNumber ILIKE :search OR claim.description ILIKE :search)',
-        { search: `%${filters.search}%` }
+        { search: `%${filters.search}%` },
       );
     }
 
     if (filters.status) {
-      queryBuilder.andWhere('claim.status = :status', { status: filters.status });
+      queryBuilder.andWhere('claim.status = :status', {
+        status: filters.status,
+      });
     }
 
     if (filters.claimType) {
-      queryBuilder.andWhere('claim.claimType = :claimType', { claimType: filters.claimType });
+      queryBuilder.andWhere('claim.claimType = :claimType', {
+        claimType: filters.claimType,
+      });
     }
 
     if (filters.policyId) {
-      queryBuilder.andWhere('claim.policyId = :policyId', { policyId: filters.policyId });
+      queryBuilder.andWhere('claim.policyId = :policyId', {
+        policyId: filters.policyId,
+      });
     }
 
     if (filters.truckId) {
-      queryBuilder.andWhere('claim.truckId = :truckId', { truckId: filters.truckId });
+      queryBuilder.andWhere('claim.truckId = :truckId', {
+        truckId: filters.truckId,
+      });
     }
 
     if (filters.priority) {
-      queryBuilder.andWhere('claim.priority = :priority', { priority: filters.priority });
+      queryBuilder.andWhere('claim.priority = :priority', {
+        priority: filters.priority,
+      });
     }
 
     if (filters.startDate || filters.endDate) {
       if (filters.startDate && filters.endDate) {
-        queryBuilder.andWhere('claim.incidentDate BETWEEN :startDate AND :endDate', {
+        queryBuilder.andWhere(
+          'claim.incidentDate BETWEEN :startDate AND :endDate',
+          {
+            startDate: filters.startDate,
+            endDate: filters.endDate,
+          },
+        );
+      } else if (filters.startDate) {
+        queryBuilder.andWhere('claim.incidentDate >= :startDate', {
           startDate: filters.startDate,
+        });
+      } else if (filters.endDate) {
+        queryBuilder.andWhere('claim.incidentDate <= :endDate', {
           endDate: filters.endDate,
         });
-      } else if (filters.startDate) {
-        queryBuilder.andWhere('claim.incidentDate >= :startDate', { startDate: filters.startDate });
-      } else if (filters.endDate) {
-        queryBuilder.andWhere('claim.incidentDate <= :endDate', { endDate: filters.endDate });
       }
     }
 
@@ -352,7 +408,9 @@ export class InsuranceService {
 
   async createClaim(claimData: Partial<InsuranceClaim>) {
     // Validate policy exists and is active
-    const policy = await this.policyRepository.findOne({ where: { id: claimData.policyId } });
+    const policy = await this.policyRepository.findOne({
+      where: { id: claimData.policyId },
+    });
     if (!policy) {
       throw new BadRequestException('Insurance policy not found');
     }
@@ -362,7 +420,9 @@ export class InsuranceService {
     }
 
     // Validate truck exists
-    const truck = await this.truckRepository.findOne({ where: { id: claimData.truckId } });
+    const truck = await this.truckRepository.findOne({
+      where: { id: claimData.truckId },
+    });
     if (!truck) {
       throw new BadRequestException('Truck not found');
     }
@@ -378,7 +438,8 @@ export class InsuranceService {
     // Update policy claims count and total amount
     await this.policyRepository.update(claimData.policyId, {
       claimsCount: policy.claimsCount + 1,
-      totalClaimsAmount: policy.totalClaimsAmount + (claimData.estimatedAmount || 0),
+      totalClaimsAmount:
+        policy.totalClaimsAmount + (claimData.estimatedAmount || 0),
     });
 
     return this.getClaimById(savedClaim.id);
@@ -388,8 +449,12 @@ export class InsuranceService {
     const claim = await this.getClaimById(id);
 
     // If approved amount is being updated, update policy total
-    if (updateData.approvedAmount !== undefined && updateData.approvedAmount !== claim.approvedAmount) {
-      const difference = updateData.approvedAmount - (claim.approvedAmount || 0);
+    if (
+      updateData.approvedAmount !== undefined &&
+      updateData.approvedAmount !== claim.approvedAmount
+    ) {
+      const difference =
+        updateData.approvedAmount - (claim.approvedAmount || 0);
       await this.policyRepository.update(claim.policyId, {
         totalClaimsAmount: claim.policy.totalClaimsAmount + difference,
       });
@@ -405,14 +470,18 @@ export class InsuranceService {
     const claim = await this.getClaimById(id);
 
     // Check if claim can be deleted
-    if (claim.status === ClaimStatus.APPROVED || claim.status === ClaimStatus.CLOSED) {
+    if (
+      claim.status === ClaimStatus.APPROVED ||
+      claim.status === ClaimStatus.CLOSED
+    ) {
       throw new BadRequestException('Cannot delete approved or closed claims');
     }
 
     // Update policy claims count and total amount
     await this.policyRepository.update(claim.policyId, {
       claimsCount: claim.policy.claimsCount - 1,
-      totalClaimsAmount: claim.policy.totalClaimsAmount - (claim.estimatedAmount || 0),
+      totalClaimsAmount:
+        claim.policy.totalClaimsAmount - (claim.estimatedAmount || 0),
     });
 
     await this.claimRepository.remove(claim);
@@ -441,27 +510,40 @@ export class InsuranceService {
     }
 
     if (filters.status) {
-      queryBuilder.andWhere('renewal.status = :status', { status: filters.status });
+      queryBuilder.andWhere('renewal.status = :status', {
+        status: filters.status,
+      });
     }
 
     if (filters.policyId) {
-      queryBuilder.andWhere('renewal.policyId = :policyId', { policyId: filters.policyId });
+      queryBuilder.andWhere('renewal.policyId = :policyId', {
+        policyId: filters.policyId,
+      });
     }
 
     if (filters.truckId) {
-      queryBuilder.andWhere('renewal.truckId = :truckId', { truckId: filters.truckId });
+      queryBuilder.andWhere('renewal.truckId = :truckId', {
+        truckId: filters.truckId,
+      });
     }
 
     if (filters.startDate || filters.endDate) {
       if (filters.startDate && filters.endDate) {
-        queryBuilder.andWhere('renewal.renewalDate BETWEEN :startDate AND :endDate', {
+        queryBuilder.andWhere(
+          'renewal.renewalDate BETWEEN :startDate AND :endDate',
+          {
+            startDate: filters.startDate,
+            endDate: filters.endDate,
+          },
+        );
+      } else if (filters.startDate) {
+        queryBuilder.andWhere('renewal.renewalDate >= :startDate', {
           startDate: filters.startDate,
+        });
+      } else if (filters.endDate) {
+        queryBuilder.andWhere('renewal.renewalDate <= :endDate', {
           endDate: filters.endDate,
         });
-      } else if (filters.startDate) {
-        queryBuilder.andWhere('renewal.renewalDate >= :startDate', { startDate: filters.startDate });
-      } else if (filters.endDate) {
-        queryBuilder.andWhere('renewal.renewalDate <= :endDate', { endDate: filters.endDate });
       }
     }
 
@@ -500,13 +582,17 @@ export class InsuranceService {
 
   async createRenewal(renewalData: Partial<InsuranceRenewal>) {
     // Validate policy exists
-    const policy = await this.policyRepository.findOne({ where: { id: renewalData.policyId } });
+    const policy = await this.policyRepository.findOne({
+      where: { id: renewalData.policyId },
+    });
     if (!policy) {
       throw new BadRequestException('Insurance policy not found');
     }
 
     // Validate truck exists
-    const truck = await this.truckRepository.findOne({ where: { id: renewalData.truckId } });
+    const truck = await this.truckRepository.findOne({
+      where: { id: renewalData.truckId },
+    });
     if (!truck) {
       throw new BadRequestException('Truck not found');
     }
@@ -557,7 +643,10 @@ export class InsuranceService {
 
   // ===== ANALYTICS & DASHBOARD =====
 
-  async getDashboardStats(dateRange?: { start: Date; end: Date }): Promise<DashboardStats> {
+  async getDashboardStats(dateRange?: {
+    start: Date;
+    end: Date;
+  }): Promise<DashboardStats> {
     let dateFilter = {};
     if (dateRange) {
       dateFilter = {
@@ -630,7 +719,8 @@ export class InsuranceService {
         totalRenewals: parseInt(renewalStats.totalRenewals) || 0,
         urgentRenewals: parseInt(renewalStats.urgentRenewals) || 0,
         totalCurrentPremium: parseFloat(renewalStats.totalCurrentPremium) || 0,
-        totalEstimatedPremium: parseFloat(renewalStats.totalEstimatedPremium) || 0,
+        totalEstimatedPremium:
+          parseFloat(renewalStats.totalEstimatedPremium) || 0,
       },
     };
   }
@@ -646,10 +736,12 @@ export class InsuranceService {
         now: new Date(),
         thirtyDaysLater: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
       })
-      .andWhere('policy.status = :activeStatus', { activeStatus: PolicyStatus.ACTIVE })
+      .andWhere('policy.status = :activeStatus', {
+        activeStatus: PolicyStatus.ACTIVE,
+      })
       .getMany();
 
-    expiringPolicies.forEach(policy => {
+    expiringPolicies.forEach((policy) => {
       alerts.push({
         type: 'policy_expiring',
         priority: 'high',
@@ -665,10 +757,12 @@ export class InsuranceService {
       .createQueryBuilder('renewal')
       .leftJoinAndSelect('renewal.policy', 'policy')
       .leftJoinAndSelect('renewal.truck', 'truck')
-      .where('renewal.status = :urgentStatus', { urgentStatus: RenewalStatus.URGENT })
+      .where('renewal.status = :urgentStatus', {
+        urgentStatus: RenewalStatus.URGENT,
+      })
       .getMany();
 
-    urgentRenewals.forEach(renewal => {
+    urgentRenewals.forEach((renewal) => {
       alerts.push({
         type: 'renewal_urgent',
         priority: 'high',
@@ -684,13 +778,15 @@ export class InsuranceService {
       .createQueryBuilder('claim')
       .leftJoinAndSelect('claim.policy', 'policy')
       .leftJoinAndSelect('claim.truck', 'truck')
-      .where('claim.priority = :urgentPriority', { urgentPriority: ClaimPriority.URGENT })
+      .where('claim.priority = :urgentPriority', {
+        urgentPriority: ClaimPriority.URGENT,
+      })
       .andWhere('claim.status IN (:...pendingStatuses)', {
         pendingStatuses: [ClaimStatus.PENDING, ClaimStatus.INVESTIGATING],
       })
       .getMany();
 
-    highPriorityClaims.forEach(claim => {
+    highPriorityClaims.forEach((claim) => {
       alerts.push({
         type: 'claim_urgent',
         priority: 'high',

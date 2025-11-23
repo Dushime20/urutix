@@ -1,4 +1,16 @@
-import { IsString, IsEnum, IsNumber, IsDate, IsOptional, IsBoolean, IsArray, IsUUID, Min, MaxLength, IsObject } from 'class-validator';
+import {
+  IsString,
+  IsEnum,
+  IsNumber,
+  IsDate,
+  IsOptional,
+  IsBoolean,
+  IsArray,
+  IsUUID,
+  Min,
+  MaxLength,
+  IsObject,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { RenewalStatus, RenewalType } from '../entities/policy-renewal.entity';
@@ -9,7 +21,11 @@ export class CreateRenewalDto {
   @MaxLength(50)
   renewalNumber: string;
 
-  @ApiProperty({ enum: RenewalStatus, description: 'Status of the renewal', default: RenewalStatus.PENDING })
+  @ApiProperty({
+    enum: RenewalStatus,
+    description: 'Status of the renewal',
+    default: RenewalStatus.PENDING,
+  })
   @IsOptional()
   @IsEnum(RenewalStatus)
   status?: RenewalStatus;
@@ -79,7 +95,10 @@ export class CreateRenewalDto {
   @IsObject()
   newCoverageDetails?: Record<string, any>;
 
-  @ApiPropertyOptional({ description: 'Whether renewal is automatic', default: false })
+  @ApiPropertyOptional({
+    description: 'Whether renewal is automatic',
+    default: false,
+  })
   @IsOptional()
   @IsBoolean()
   autoRenew?: boolean;

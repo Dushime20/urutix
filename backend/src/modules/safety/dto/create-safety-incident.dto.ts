@@ -1,4 +1,13 @@
-import { IsEnum, IsString, IsDateString, IsNumber, IsBoolean, IsOptional, IsArray, IsUUID } from 'class-validator';
+import {
+  IsEnum,
+  IsString,
+  IsDateString,
+  IsNumber,
+  IsBoolean,
+  IsOptional,
+  IsArray,
+  IsUUID,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export enum IncidentType {
@@ -125,4 +134,3 @@ export class CreateSafetyIncidentDto {
   @IsString()
   claimNumber?: string;
 }
-

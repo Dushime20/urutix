@@ -108,4 +108,3 @@ export class SafetyTraining {
   @Column({ type: 'timestamp', nullable: true })
   deletedAt: Date;
 }
-

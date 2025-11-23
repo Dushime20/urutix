@@ -8,7 +8,7 @@ import {
   ManyToMany,
   JoinTable,
   JoinColumn,
-  Index
+  Index,
 } from 'typeorm';
 import { Lender } from './Lender';
 

@@ -10,16 +10,18 @@ export class SmsService {
   async sendSms(
     to: string | string[],
     message: string,
-    from?: string
+    from?: string,
   ): Promise<boolean> {
     try {
-      this.logger.log(`Sending SMS to ${Array.isArray(to) ? to.join(', ') : to}`);
+      this.logger.log(
+        `Sending SMS to ${Array.isArray(to) ? to.join(', ') : to}`,
+      );
       this.logger.log(`Message: ${message}`);
       this.logger.log(`From: ${from || 'Default'}`);
 
       // TODO: Implement actual SMS sending logic
       // This could use Twilio, AWS SNS, MessageBird, etc.
-      
+
       // For now, just log the SMS details
       return true;
     } catch (error) {
@@ -30,7 +32,7 @@ export class SmsService {
 
   async sendBulkSms(
     recipients: Array<{ phone: string; message: string }>,
-    from?: string
+    from?: string,
   ): Promise<Array<{ phone: string; success: boolean; error?: string }>> {
     try {
       this.logger.log(`Sending bulk SMS to ${recipients.length} recipients`);
@@ -38,7 +40,11 @@ export class SmsService {
       const results = [];
       for (const recipient of recipients) {
         try {
-          const success = await this.sendSms(recipient.phone, recipient.message, from);
+          const success = await this.sendSms(
+            recipient.phone,
+            recipient.message,
+            from,
+          );
           results.push({
             phone: recipient.phone,
             success,
@@ -55,7 +61,7 @@ export class SmsService {
       return results;
     } catch (error) {
       this.logger.error(`Failed to send bulk SMS: ${error.message}`);
-      return recipients.map(recipient => ({
+      return recipients.map((recipient) => ({
         phone: recipient.phone,
         success: false,
         error: error.message,

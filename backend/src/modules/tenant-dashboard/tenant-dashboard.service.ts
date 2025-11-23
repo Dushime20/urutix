@@ -110,8 +110,8 @@ export class TenantDashboardService {
       (truck) => truck.status === VehicleStatus.AVAILABLE,
     ).length;
     const totalDrivers = drivers.length;
-    const pendingLoads = loads.filter(
-              (load) => [LoadStatus.CREATED, LoadStatus.PUBLISHED].includes(load.status),
+    const pendingLoads = loads.filter((load) =>
+      [LoadStatus.CREATED, LoadStatus.PUBLISHED].includes(load.status),
     ).length;
     const completedTrips = trips.filter(
       (trip) => trip.status === TripStatus.COMPLETED,

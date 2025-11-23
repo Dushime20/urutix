@@ -1,6 +1,22 @@
-import { IsEnum, IsOptional, IsString, IsUUID, IsNumber, IsBoolean, IsDate, IsArray, ValidateNested } from 'class-validator';
+import {
+  IsEnum,
+  IsOptional,
+  IsString,
+  IsUUID,
+  IsNumber,
+  IsBoolean,
+  IsDate,
+  IsArray,
+  ValidateNested,
+} from 'class-validator';
 import { Type } from 'class-transformer';
-import { DocumentType, DocumentStatus, DocumentPriority, DocumentCategory, EntityType } from '../../../entities/document.entity';
+import {
+  DocumentType,
+  DocumentStatus,
+  DocumentPriority,
+  DocumentCategory,
+  EntityType,
+} from '../../../entities/document.entity';
 
 export class CreateDocumentDto {
   @IsEnum(EntityType)

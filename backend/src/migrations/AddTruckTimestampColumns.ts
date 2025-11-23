@@ -1,12 +1,14 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class AddTruckTimestampColumns1734522359000 implements MigrationInterface {
+export class AddTruckTimestampColumns1734522359000
+  implements MigrationInterface
+{
   name = 'AddTruckTimestampColumns1734522359000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     // Check if columns already exist before adding them
     const trucksTable = await queryRunner.getTable('trucks');
-    
+
     if (trucksTable) {
       const hasCreatedAt = trucksTable.findColumnByName('createdAt');
       const hasUpdatedAt = trucksTable.findColumnByName('updatedAt');
@@ -31,7 +33,7 @@ export class AddTruckTimestampColumns1734522359000 implements MigrationInterface
 
   public async down(queryRunner: QueryRunner): Promise<void> {
     const trucksTable = await queryRunner.getTable('trucks');
-    
+
     if (trucksTable) {
       const hasCreatedAt = trucksTable.findColumnByName('createdAt');
       const hasUpdatedAt = trucksTable.findColumnByName('updatedAt');
@@ -52,4 +54,3 @@ export class AddTruckTimestampColumns1734522359000 implements MigrationInterface
     }
   }
 }
-
