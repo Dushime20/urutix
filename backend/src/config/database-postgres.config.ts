@@ -18,8 +18,5 @@ export const PostgresDataSource = new DataSource({
   ],
   migrations: ['src/database/migrations/*.ts'],
   subscribers: [],
-  ssl:
-    process.env.NODE_ENV === 'production'
-      ? { rejectUnauthorized: false }
-      : false,
+  ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false,
 });

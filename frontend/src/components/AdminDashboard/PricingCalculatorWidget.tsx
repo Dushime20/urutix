@@ -4,6 +4,7 @@ import { FaBalanceScale, FaChartLine, FaHandshake, FaInfoCircle, FaBell, FaExcla
 import { getMarketRates, getCompetitorRates, getHistoricalRates, estimatePrice } from '../../services/pricingApi';
 import { io, Socket } from 'socket.io-client';
 import { useQueryClient } from '@tanstack/react-query';
+import { getWebSocketUrl } from '../../config/environment';
 
 const PricingCalculatorWidget: React.FC = () => {
   const queryClient = useQueryClient();
@@ -36,7 +37,7 @@ const PricingCalculatorWidget: React.FC = () => {
     fetchRates();
 
     // Real-time updates via WebSocket
-    const socket: Socket = io('http://localhost:3000/pricing', { transports: ['websocket'] });
+    const socket: Socket = io(`${getWebSocketUrl()}/pricing`, { transports: ['websocket'] });
     socket.on('marketRates:update', (rates: number[]) => setMarketRates(rates));
     socket.on('competitorRates:update', (rates: number[]) => setCompetitorRates(rates));
     socket.on('historicalRates:update', (rates: number[]) => setHistoricalRates(rates));

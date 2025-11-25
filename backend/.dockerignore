@@ -1,0 +1,78 @@
+# Dependencies
+node_modules
+npm-debug.log
+package-lock.json
+pnpm-lock.yaml
+
+# Build output
+dist
+coverage
+.nyc_output
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Environment files
+.env
+.env.local
+.env.*.local
+.env.production
+.env.development
+
+# Logs
+*.log
+logs
+nginx/logs
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Docker
+docker-compose.yml
+docker-compose.prod.yml
+Dockerfile
+.dockerignore
+
+# Documentation
+README.md
+*.md
+DEPLOYMENT.md
+NGINX_SETUP.md
+
+# Tests
+test
+*.spec.ts
+*.test.ts
+jest.config.js
+jest-e2e.json
+
+# Config files (keep only what's needed for build)
+tsconfig*.json
+nest-cli.json
+
+# Deployment scripts
+deploy.sh
+deploy.ps1
+Makefile
+
+# Data and uploads (exclude from image, use volumes)
+uploads
+data
+backups
+
+# Nginx config (handled separately)
+nginx/ssl
+nginx/logs
+
+# Misc
+.eslintrc*
+.prettierrc*
+.editorconfig
+

@@ -5,6 +5,7 @@ import L, { Icon } from 'leaflet';
 import { FaPhone, FaExclamationTriangle } from 'react-icons/fa';
 import { TripTimeline, CommunicationPanel, DocumentManager, PerformanceMetrics } from './index';
 import { getTripData, subscribeTripUpdates } from '../../services/tripApi';
+import { getWebSocketUrl } from '../../config/environment';
 import 'leaflet/dist/leaflet.css';
 
 // Fix default marker icon for Leaflet in React
@@ -46,7 +47,7 @@ export const TripTracker: React.FC<{ tripId: string }> = ({ tripId }) => {
   useEffect(() => {
     const token = localStorage.getItem('jwtToken');
     if (!token) return;
-    const socket: Socket = io('http://localhost:3000/tracking', {
+    const socket: Socket = io(`${getWebSocketUrl()}/tracking`, {
       auth: { token },
       transports: ['websocket'],
     });
