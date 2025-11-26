@@ -744,17 +744,17 @@ export const SafetyManagement: React.FC<SafetyManagementProps> = ({ fleetId }) =
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header */}
-      <div className="mb-6">
+      <div className="mb-4">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="mb-2">Safety Management</h1>
-            <p className="text-sm text-gray-600">Monitor and manage fleet safety performance</p>
+            <h1 className="text-lg font-semibold text-gray-900 mb-1">Safety Management</h1>
+            <p className="text-xs text-gray-600">Monitor and manage fleet safety performance</p>
           </div>
           <div className="flex items-center gap-2">
-            <button className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 flex items-center gap-2">
-              <FaDownload className="w-4 h-4" />
+            <button className="px-3 py-1.5 bg-gray-600 text-white rounded-md hover:bg-gray-700 flex items-center gap-1.5 text-sm font-medium transition-colors">
+              <FaDownload className="w-3.5 h-3.5" />
               Export Report
             </button>
           </div>
@@ -762,39 +762,45 @@ export const SafetyManagement: React.FC<SafetyManagementProps> = ({ fleetId }) =
       </div>
 
       {/* Quick Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 hover:shadow-md transition-shadow">
           <div className="flex items-center">
-            <FaShieldAlt className="w-8 h-8 text-green-600" />
-            <div className="ml-3">
-              <p className="text-sm font-medium text-gray-500">Safety Score</p>
-              <p className="text-2xl font-bold text-gray-900">92%</p>
+            <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center">
+              <FaShieldAlt className="w-4 h-4 text-gray-600" />
+            </div>
+            <div className="ml-2.5">
+              <p className="text-xs font-medium text-gray-500">Safety Score</p>
+              <p className="text-lg font-bold text-gray-900">92%</p>
             </div>
           </div>
         </div>
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 hover:shadow-md transition-shadow">
           <div className="flex items-center">
-            <FaCarCrash className="w-8 h-8 text-red-600" />
-            <div className="ml-3">
-              <p className="text-sm font-medium text-gray-500">Incidents</p>
-              <p className="text-2xl font-bold text-gray-900">{loadingIncidents ? '...' : incidentsCount}</p>
+            <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center">
+              <FaCarCrash className="w-4 h-4 text-gray-600" />
+            </div>
+            <div className="ml-2.5">
+              <p className="text-xs font-medium text-gray-500">Incidents</p>
+              <p className="text-lg font-bold text-gray-900">{loadingIncidents ? '...' : incidentsCount}</p>
             </div>
           </div>
         </div>
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 hover:shadow-md transition-shadow">
           <div className="flex items-center">
-            <FaClipboardCheck className="w-8 h-8 text-blue-600" />
-            <div className="ml-3">
-              <p className="text-sm font-medium text-gray-500">Inspections</p>
-              <p className="text-2xl font-bold text-gray-900">{loadingInspections ? '...' : inspectionsCount}</p>
+            <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center">
+              <FaClipboardCheck className="w-4 h-4 text-gray-600" />
+            </div>
+            <div className="ml-2.5">
+              <p className="text-xs font-medium text-gray-500">Inspections</p>
+              <p className="text-lg font-bold text-gray-900">{loadingInspections ? '...' : inspectionsCount}</p>
             </div>
           </div>
         </div>
       </div>
 
       {/* Navigation Tabs */}
-      <div className="border-b border-gray-200 mb-6">
-        <nav className="-mb-px flex space-x-8">
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-2 mb-4">
+        <nav className="flex space-x-1">
           {[
             { id: 'overview', label: 'Overview', icon: FaChartLine },
             { id: 'incidents', label: 'Incidents', icon: FaCarCrash },
@@ -804,10 +810,10 @@ export const SafetyManagement: React.FC<SafetyManagementProps> = ({ fleetId }) =
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`py-2 px-1 border-b-2 font-medium text-sm flex items-center gap-2 ${
+              className={`flex-1 py-2.5 px-4 rounded-md text-sm font-medium flex items-center justify-center gap-2 transition-all duration-200 ${
                 activeTab === tab.id
-                  ? 'border-primary-500 text-primary-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  ? 'bg-gray-100 text-gray-800 border border-gray-200 shadow-sm'
+                  : 'text-gray-600 hover:bg-gray-50 hover:text-gray-800'
               }`}
             >
               <tab.icon className="w-4 h-4" />
@@ -820,42 +826,42 @@ export const SafetyManagement: React.FC<SafetyManagementProps> = ({ fleetId }) =
       {/* Tab Content */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200">
         {activeTab === 'overview' && (
-          <div className="p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Safety Overview</h2>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="p-4">
+            <h2 className="text-base font-semibold text-gray-900 mb-3">Safety Overview</h2>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               {/* Safety Metrics */}
               <div>
-                <h3 className="text-lg font-medium text-gray-900 mb-3">Safety Metrics</h3>
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center p-3 bg-gray-50 rounded">
-                    <span className="text-gray-600">Total Incidents</span>
-                    <span className="font-semibold text-red-600">2</span>
+                <h3 className="text-sm font-semibold text-gray-900 mb-2">Safety Metrics</h3>
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center p-2.5 bg-gray-50 rounded-md">
+                    <span className="text-xs text-gray-600">Total Incidents</span>
+                    <span className="text-sm font-semibold text-gray-700">2</span>
                   </div>
-                  <div className="flex justify-between items-center p-3 bg-gray-50 rounded">
-                    <span className="text-gray-600">Days Since Last Incident</span>
-                    <span className="font-semibold text-green-600">12</span>
+                  <div className="flex justify-between items-center p-2.5 bg-gray-50 rounded-md">
+                    <span className="text-xs text-gray-600">Days Since Last Incident</span>
+                    <span className="text-sm font-semibold text-gray-700">12</span>
                   </div>
-                  <div className="flex justify-between items-center p-3 bg-gray-50 rounded">
-                    <span className="text-gray-600">Average Driver Score</span>
-                    <span className="font-semibold text-blue-600">88.5%</span>
+                  <div className="flex justify-between items-center p-2.5 bg-gray-50 rounded-md">
+                    <span className="text-xs text-gray-600">Average Driver Score</span>
+                    <span className="text-sm font-semibold text-gray-700">88.5%</span>
                   </div>
-                  <div className="flex justify-between items-center p-3 bg-gray-50 rounded">
-                    <span className="text-gray-600">Training Completion</span>
-                    <span className="font-semibold text-green-600">95%</span>
+                  <div className="flex justify-between items-center p-2.5 bg-gray-50 rounded-md">
+                    <span className="text-xs text-gray-600">Training Completion</span>
+                    <span className="text-sm font-semibold text-gray-700">95%</span>
                   </div>
                 </div>
               </div>
 
               {/* Recent Activity */}
               <div>
-                <h3 className="text-lg font-medium text-gray-900 mb-3">Recent Activity</h3>
-                <div className="space-y-3">
+                <h3 className="text-sm font-semibold text-gray-900 mb-2">Recent Activity</h3>
+                <div className="space-y-2">
                   {mockSafetyData.alerts.slice(0, 3).map(alert => (
-                    <div key={alert.id} className={`p-3 rounded border ${getAlertTypeColor(alert.type)}`}>
+                    <div key={alert.id} className={`p-2.5 rounded-md border ${getAlertTypeColor(alert.type)}`}>
                       <div className="flex items-center justify-between">
                         <div>
-                          <p className="font-medium text-sm">{alert.title}</p>
-                          <p className="text-xs opacity-75">{alert.message}</p>
+                          <p className="font-medium text-xs">{alert.title}</p>
+                          <p className="text-xs opacity-75 mt-0.5">{alert.message}</p>
                         </div>
                         <span className="text-xs">{alert.date.toLocaleDateString()}</span>
                       </div>
@@ -868,17 +874,17 @@ export const SafetyManagement: React.FC<SafetyManagementProps> = ({ fleetId }) =
         )}
 
         {activeTab === 'incidents' && (
-          <div className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold text-gray-900">Safety Incidents</h2>
+          <div className="p-4">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-base font-semibold text-gray-900">Safety Incidents</h2>
               <button 
                 onClick={() => {
                   resetForm();
                   setShowIncidentModal(true);
                 }}
-                className="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700 flex items-center gap-1"
+                className="px-3 py-1.5 bg-gray-600 text-white rounded-md text-sm hover:bg-gray-700 flex items-center gap-1.5 font-medium transition-colors"
               >
-                <FaPlus className="w-3 h-3" />
+                <FaPlus className="w-3.5 h-3.5" />
                 Report Incident
               </button>
             </div>
@@ -959,9 +965,9 @@ export const SafetyManagement: React.FC<SafetyManagementProps> = ({ fleetId }) =
         )}
 
         {activeTab === 'inspections' && (
-          <div className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold text-gray-900">Safety Inspections</h2>
+          <div className="p-4">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-base font-semibold text-gray-900">Safety Inspections</h2>
               <button 
                 onClick={() => {
                   resetInspectionForm();
@@ -1080,9 +1086,9 @@ export const SafetyManagement: React.FC<SafetyManagementProps> = ({ fleetId }) =
 
         {/* Driver Scores tab hidden */}
         {false && activeTab === 'drivers' && (
-          <div className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold text-gray-900">Driver Safety Scores</h2>
+          <div className="p-4">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-base font-semibold text-gray-900">Driver Safety Scores</h2>
               <button className="px-3 py-1 bg-primary-600 text-white rounded text-sm hover:bg-primary-700">
                 <FaDownload className="w-3 h-3 inline mr-1" />
                 Export Scores
@@ -1318,27 +1324,27 @@ export const SafetyManagement: React.FC<SafetyManagementProps> = ({ fleetId }) =
       {showIncidentModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-              <h2 className="text-xl font-semibold text-gray-900">Report Safety Incident</h2>
+            <div className="sticky top-0 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-gray-900">Report Safety Incident</h2>
               <button
                 onClick={handleModalClose}
                 className="text-gray-400 hover:text-gray-600 transition-colors"
               >
-                <FaTimes className="w-5 h-5" />
+                <FaTimes className="w-4 h-4" />
               </button>
             </div>
 
-            <form onSubmit={handleSubmitIncident} className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+            <form onSubmit={handleSubmitIncident} className="p-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
                 {/* Incident Type */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-xs font-medium text-gray-700 mb-1">
                     Incident Type <span className="text-red-500">*</span>
                   </label>
                   <select
                     value={incidentForm.type}
                     onChange={(e) => setIncidentForm({ ...incidentForm, type: e.target.value as any })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                     required
                   >
                     <option value="accident">Accident</option>
@@ -1351,13 +1357,13 @@ export const SafetyManagement: React.FC<SafetyManagementProps> = ({ fleetId }) =
 
                 {/* Severity */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-xs font-medium text-gray-700 mb-1">
                     Severity <span className="text-red-500">*</span>
                   </label>
                   <select
                     value={incidentForm.severity}
                     onChange={(e) => setIncidentForm({ ...incidentForm, severity: e.target.value as any })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                     required
                   >
                     <option value="minor">Minor</option>
@@ -1369,21 +1375,21 @@ export const SafetyManagement: React.FC<SafetyManagementProps> = ({ fleetId }) =
 
                 {/* Date */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-xs font-medium text-gray-700 mb-1">
                     Date <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="date"
                     value={incidentForm.date}
                     onChange={(e) => setIncidentForm({ ...incidentForm, date: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                     required
                   />
                 </div>
 
                 {/* Location */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-xs font-medium text-gray-700 mb-1">
                     Location <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -1391,20 +1397,20 @@ export const SafetyManagement: React.FC<SafetyManagementProps> = ({ fleetId }) =
                     value={incidentForm.location}
                     onChange={(e) => setIncidentForm({ ...incidentForm, location: e.target.value })}
                     placeholder="Enter incident location"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                     required
                   />
                 </div>
 
                 {/* Driver */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-xs font-medium text-gray-700 mb-1">
                     Driver <span className="text-red-500">*</span>
                   </label>
                   <select
                     value={incidentForm.driverId}
                     onChange={(e) => setIncidentForm({ ...incidentForm, driverId: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                     required
                   >
                     <option value="">Select Driver</option>
@@ -1418,13 +1424,13 @@ export const SafetyManagement: React.FC<SafetyManagementProps> = ({ fleetId }) =
 
                 {/* Truck */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-xs font-medium text-gray-700 mb-1">
                     Truck <span className="text-red-500">*</span>
                   </label>
                   <select
                     value={incidentForm.truckId}
                     onChange={(e) => setIncidentForm({ ...incidentForm, truckId: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                     required
                   >
                     <option value="">Select Truck</option>
@@ -1438,63 +1444,63 @@ export const SafetyManagement: React.FC<SafetyManagementProps> = ({ fleetId }) =
 
                 {/* Weather Conditions */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Weather Conditions</label>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Weather Conditions</label>
                   <input
                     type="text"
                     value={incidentForm.weatherConditions}
                     onChange={(e) => setIncidentForm({ ...incidentForm, weatherConditions: e.target.value })}
                     placeholder="e.g., Clear, Rainy, Foggy"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                   />
                 </div>
 
                 {/* Road Conditions */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Road Conditions</label>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Road Conditions</label>
                   <input
                     type="text"
                     value={incidentForm.roadConditions}
                     onChange={(e) => setIncidentForm({ ...incidentForm, roadConditions: e.target.value })}
                     placeholder="e.g., Dry, Wet, Icy"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                   />
                 </div>
 
                 {/* Injuries */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Injuries</label>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Injuries</label>
                   <input
                     type="text"
                     value={incidentForm.injuries}
                     onChange={(e) => setIncidentForm({ ...incidentForm, injuries: e.target.value })}
                     placeholder="Describe any injuries"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                   />
                 </div>
 
                 {/* Property Damage */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Property Damage ($)</label>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Property Damage ($)</label>
                   <input
                     type="number"
                     value={incidentForm.propertyDamage}
                     onChange={(e) => setIncidentForm({ ...incidentForm, propertyDamage: parseFloat(e.target.value) || 0 })}
                     min="0"
                     step="0.01"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                   />
                 </div>
 
                 {/* Cost */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Total Cost ($)</label>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Total Cost ($)</label>
                   <input
                     type="number"
                     value={incidentForm.cost}
                     onChange={(e) => setIncidentForm({ ...incidentForm, cost: parseFloat(e.target.value) || 0 })}
                     min="0"
                     step="0.01"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                   />
                 </div>
 
@@ -1506,19 +1512,19 @@ export const SafetyManagement: React.FC<SafetyManagementProps> = ({ fleetId }) =
                     onChange={(e) => setIncidentForm({ ...incidentForm, policeReport: e.target.checked })}
                     className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
                   />
-                  <label className="ml-2 text-sm font-medium text-gray-700">Police Report Filed</label>
+                  <label className="ml-2 text-xs font-medium text-gray-700">Police Report Filed</label>
                 </div>
 
                 {/* Report Number */}
                 {incidentForm.policeReport && (
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Police Report Number</label>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">Police Report Number</label>
                     <input
                       type="text"
                       value={incidentForm.reportNumber}
                       onChange={(e) => setIncidentForm({ ...incidentForm, reportNumber: e.target.value })}
                       placeholder="Enter report number"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                      className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                     />
                   </div>
                 )}
@@ -1531,73 +1537,73 @@ export const SafetyManagement: React.FC<SafetyManagementProps> = ({ fleetId }) =
                     onChange={(e) => setIncidentForm({ ...incidentForm, insuranceClaim: e.target.checked })}
                     className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
                   />
-                  <label className="ml-2 text-sm font-medium text-gray-700">Insurance Claim Filed</label>
+                  <label className="ml-2 text-xs font-medium text-gray-700">Insurance Claim Filed</label>
                 </div>
 
                 {/* Claim Number */}
                 {incidentForm.insuranceClaim && (
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Insurance Claim Number</label>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">Insurance Claim Number</label>
                     <input
                       type="text"
                       value={incidentForm.claimNumber}
                       onChange={(e) => setIncidentForm({ ...incidentForm, claimNumber: e.target.value })}
                       placeholder="Enter claim number"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                      className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                     />
                   </div>
                 )}
 
                 {/* Assigned To */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Assigned To</label>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Assigned To</label>
                   <input
                     type="text"
                     value={incidentForm.assignedTo}
                     onChange={(e) => setIncidentForm({ ...incidentForm, assignedTo: e.target.value })}
                     placeholder="Enter assignee name"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                   />
                 </div>
               </div>
 
               {/* Description */}
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+              <div className="mb-4">
+                <label className="block text-xs font-medium text-gray-700 mb-1">
                   Description <span className="text-red-500">*</span>
                 </label>
                 <textarea
                   value={incidentForm.description}
                   onChange={(e) => setIncidentForm({ ...incidentForm, description: e.target.value })}
                   placeholder="Provide a detailed description of the incident"
-                  rows={4}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  rows={3}
+                  className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                   required
                 />
               </div>
 
               {/* Form Actions */}
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-200">
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-gray-200">
                 <button
                   type="button"
                   onClick={handleModalClose}
-                  className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                  className="px-3 py-1.5 text-sm text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-3 py-1.5 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {submitting ? (
                     <>
-                      <FaSpinner className="w-4 h-4 animate-spin" />
+                      <FaSpinner className="w-3.5 h-3.5 animate-spin" />
                       Submitting...
                     </>
                   ) : (
                     <>
-                      <FaCheckCircle className="w-4 h-4" />
+                      <FaCheckCircle className="w-3.5 h-3.5" />
                       Report Incident
                     </>
                   )}
@@ -1612,29 +1618,29 @@ export const SafetyManagement: React.FC<SafetyManagementProps> = ({ fleetId }) =
       {showInspectionModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-              <h2 className="text-xl font-semibold text-gray-900">
+            <div className="sticky top-0 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-gray-900">
                 {isEditingInspection ? 'Edit Safety Inspection' : 'Schedule Safety Inspection'}
               </h2>
               <button
                 onClick={handleInspectionModalClose}
                 className="text-gray-400 hover:text-gray-600 transition-colors"
               >
-                <FaTimes className="w-5 h-5" />
+                <FaTimes className="w-4 h-4" />
               </button>
             </div>
 
-            <form onSubmit={handleSubmitInspection} className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+            <form onSubmit={handleSubmitInspection} className="p-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
                 {/* Inspection Type */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-xs font-medium text-gray-700 mb-1">
                     Inspection Type <span className="text-red-500">*</span>
                   </label>
                   <select
                     value={inspectionForm.type}
                     onChange={(e) => setInspectionForm({ ...inspectionForm, type: e.target.value as any })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                     required
                   >
                     <option value="pre_trip">Pre-Trip</option>
@@ -1648,7 +1654,7 @@ export const SafetyManagement: React.FC<SafetyManagementProps> = ({ fleetId }) =
 
                 {/* Inspector */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-xs font-medium text-gray-700 mb-1">
                     Inspector <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -1656,43 +1662,43 @@ export const SafetyManagement: React.FC<SafetyManagementProps> = ({ fleetId }) =
                     value={inspectionForm.inspector}
                     onChange={(e) => setInspectionForm({ ...inspectionForm, inspector: e.target.value })}
                     placeholder="Enter inspector name"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                     required
                   />
                 </div>
 
                 {/* Inspection Date */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-xs font-medium text-gray-700 mb-1">
                     Inspection Date <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="date"
                     value={inspectionForm.inspectionDate}
                     onChange={(e) => setInspectionForm({ ...inspectionForm, inspectionDate: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                     required
                   />
                 </div>
 
                 {/* Next Inspection Date */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Next Inspection Date</label>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Next Inspection Date</label>
                   <input
                     type="date"
                     value={inspectionForm.nextInspectionDate}
                     onChange={(e) => setInspectionForm({ ...inspectionForm, nextInspectionDate: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                   />
                 </div>
 
                 {/* Truck */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Truck</label>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Truck</label>
                   <select
                     value={inspectionForm.truckId}
                     onChange={(e) => setInspectionForm({ ...inspectionForm, truckId: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                   >
                     <option value="">Select Truck</option>
                     {trucks.map((truck) => (
@@ -1705,11 +1711,11 @@ export const SafetyManagement: React.FC<SafetyManagementProps> = ({ fleetId }) =
 
                 {/* Driver */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Driver</label>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Driver</label>
                   <select
                     value={inspectionForm.driverId}
                     onChange={(e) => setInspectionForm({ ...inspectionForm, driverId: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                   >
                     <option value="">Select Driver</option>
                     {drivers.map((driver) => (
@@ -1722,13 +1728,13 @@ export const SafetyManagement: React.FC<SafetyManagementProps> = ({ fleetId }) =
 
                 {/* Status */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-xs font-medium text-gray-700 mb-1">
                     Status <span className="text-red-500">*</span>
                   </label>
                   <select
                     value={inspectionForm.status}
                     onChange={(e) => setInspectionForm({ ...inspectionForm, status: e.target.value as any })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                     required
                   >
                     <option value="passed">Passed</option>
@@ -1739,11 +1745,11 @@ export const SafetyManagement: React.FC<SafetyManagementProps> = ({ fleetId }) =
 
                 {/* Compliance Status */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Compliance Status</label>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Compliance Status</label>
                   <select
                     value={inspectionForm.complianceStatus}
                     onChange={(e) => setInspectionForm({ ...inspectionForm, complianceStatus: e.target.value as any })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                   >
                     <option value="compliant">Compliant</option>
                     <option value="non_compliant">Non-Compliant</option>
@@ -1752,64 +1758,64 @@ export const SafetyManagement: React.FC<SafetyManagementProps> = ({ fleetId }) =
 
                 {/* Score */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Score</label>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Score</label>
                   <input
                     type="number"
                     value={inspectionForm.score}
                     onChange={(e) => setInspectionForm({ ...inspectionForm, score: parseInt(e.target.value) || 0 })}
                     min="0"
                     max={inspectionForm.maxScore}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                   />
                 </div>
 
                 {/* Max Score */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Max Score</label>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Max Score</label>
                   <input
                     type="number"
                     value={inspectionForm.maxScore}
                     onChange={(e) => setInspectionForm({ ...inspectionForm, maxScore: parseInt(e.target.value) || 100 })}
                     min="0"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                   />
                 </div>
               </div>
 
               {/* Notes */}
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Notes</label>
+              <div className="mb-4">
+                <label className="block text-xs font-medium text-gray-700 mb-1">Notes</label>
                 <textarea
                   value={inspectionForm.notes}
                   onChange={(e) => setInspectionForm({ ...inspectionForm, notes: e.target.value })}
                   placeholder="Add inspection notes or observations"
-                  rows={4}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  rows={3}
+                  className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 />
               </div>
 
               {/* Form Actions */}
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-200">
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-gray-200">
                 <button
                   type="button"
                   onClick={handleInspectionModalClose}
-                  className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                  className="px-3 py-1.5 text-sm text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-3 py-1.5 text-sm bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {submitting ? (
                     <>
-                      <FaSpinner className="w-4 h-4 animate-spin" />
+                      <FaSpinner className="w-3.5 h-3.5 animate-spin" />
                       Submitting...
                     </>
                   ) : (
                     <>
-                      <FaCheckCircle className="w-4 h-4" />
+                      <FaCheckCircle className="w-3.5 h-3.5" />
                       {isEditingInspection ? 'Update Inspection' : 'Schedule Inspection'}
                     </>
                   )}
@@ -1824,8 +1830,8 @@ export const SafetyManagement: React.FC<SafetyManagementProps> = ({ fleetId }) =
       {showTrainingModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-              <h2 className="text-xl font-semibold text-gray-900">
+            <div className="sticky top-0 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-gray-900">
                 {isEditingTraining ? 'Edit Safety Training' : 'Schedule Safety Training'}
               </h2>
               <button
@@ -1835,21 +1841,21 @@ export const SafetyManagement: React.FC<SafetyManagementProps> = ({ fleetId }) =
                 }}
                 className="text-gray-400 hover:text-gray-600 transition-colors"
               >
-                <FaTimes className="w-5 h-5" />
+                <FaTimes className="w-4 h-4" />
               </button>
             </div>
 
-            <form onSubmit={handleSubmitTraining} className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+            <form onSubmit={handleSubmitTraining} className="p-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
                 {/* Training Type */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-xs font-medium text-gray-700 mb-1">
                     Training Type <span className="text-red-500">*</span>
                   </label>
                   <select
                     value={trainingForm.type}
                     onChange={(e) => setTrainingForm({ ...trainingForm, type: e.target.value as any })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                     required
                   >
                     <option value="defensive_driving">Defensive Driving</option>
@@ -1863,7 +1869,7 @@ export const SafetyManagement: React.FC<SafetyManagementProps> = ({ fleetId }) =
 
                 {/* Title */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-xs font-medium text-gray-700 mb-1">
                     Title <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -1871,46 +1877,46 @@ export const SafetyManagement: React.FC<SafetyManagementProps> = ({ fleetId }) =
                     value={trainingForm.title}
                     onChange={(e) => setTrainingForm({ ...trainingForm, title: e.target.value })}
                     placeholder="e.g., Defensive Driving Course 2024"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                     required
                   />
                 </div>
 
                 {/* Scheduled Date & Time */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-xs font-medium text-gray-700 mb-1">
                     Scheduled Date & Time <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="datetime-local"
                     value={trainingForm.scheduledDate}
                     onChange={(e) => setTrainingForm({ ...trainingForm, scheduledDate: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                     required
                   />
                 </div>
 
                 {/* Next Due Date */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-xs font-medium text-gray-700 mb-1">
                     Next Due Date <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="date"
                     value={trainingForm.nextDue}
                     onChange={(e) => setTrainingForm({ ...trainingForm, nextDue: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                     required
                   />
                 </div>
 
                 {/* Driver */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Driver</label>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Driver</label>
                   <select
                     value={trainingForm.driverId}
                     onChange={(e) => setTrainingForm({ ...trainingForm, driverId: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                   >
                     <option value="">Select Driver</option>
                     {drivers.map((driver) => (
@@ -1923,7 +1929,7 @@ export const SafetyManagement: React.FC<SafetyManagementProps> = ({ fleetId }) =
 
                 {/* Instructor */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-xs font-medium text-gray-700 mb-1">
                     Instructor <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -1931,14 +1937,14 @@ export const SafetyManagement: React.FC<SafetyManagementProps> = ({ fleetId }) =
                     value={trainingForm.instructor}
                     onChange={(e) => setTrainingForm({ ...trainingForm, instructor: e.target.value })}
                     placeholder="Enter instructor name"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                     required
                   />
                 </div>
 
                 {/* Duration */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-xs font-medium text-gray-700 mb-1">
                     Duration (hours) <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -1946,18 +1952,18 @@ export const SafetyManagement: React.FC<SafetyManagementProps> = ({ fleetId }) =
                     value={trainingForm.duration}
                     onChange={(e) => setTrainingForm({ ...trainingForm, duration: parseInt(e.target.value) || 1 })}
                     min="1"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                     required
                   />
                 </div>
 
                 {/* Frequency */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Frequency</label>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Frequency</label>
                   <select
                     value={trainingForm.frequency}
                     onChange={(e) => setTrainingForm({ ...trainingForm, frequency: e.target.value as any })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                   >
                     <option value="once">Once</option>
                     <option value="annually">Annually</option>
@@ -1975,16 +1981,16 @@ export const SafetyManagement: React.FC<SafetyManagementProps> = ({ fleetId }) =
                     onChange={(e) => setTrainingForm({ ...trainingForm, required: e.target.checked })}
                     className="h-4 w-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
                   />
-                  <label htmlFor="required" className="text-sm font-medium text-gray-700">Required Training</label>
+                  <label htmlFor="required" className="text-xs font-medium text-gray-700">Required Training</label>
                 </div>
 
                 {/* Status */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Status</label>
                   <select
                     value={trainingForm.status}
                     onChange={(e) => setTrainingForm({ ...trainingForm, status: e.target.value as any })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                   >
                     <option value="pending">Pending</option>
                     <option value="completed">Completed</option>
@@ -1994,7 +2000,7 @@ export const SafetyManagement: React.FC<SafetyManagementProps> = ({ fleetId }) =
 
                 {/* Score */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Score (%)</label>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Score (%)</label>
                   <input
                     type="number"
                     value={trainingForm.score || ''}
@@ -2002,48 +2008,48 @@ export const SafetyManagement: React.FC<SafetyManagementProps> = ({ fleetId }) =
                     min="0"
                     max="100"
                     placeholder="Optional"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                   />
                 </div>
               </div>
 
               {/* Description */}
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
+              <div className="mb-4">
+                <label className="block text-xs font-medium text-gray-700 mb-1">Description</label>
                 <textarea
                   value={trainingForm.description}
                   onChange={(e) => setTrainingForm({ ...trainingForm, description: e.target.value })}
                   placeholder="Add training description or notes"
-                  rows={4}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  rows={3}
+                  className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 />
               </div>
 
               {/* Form Actions */}
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-200">
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-gray-200">
                 <button
                   type="button"
                   onClick={() => {
                     setShowTrainingModal(false);
                     resetTrainingForm();
                   }}
-                  className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                  className="px-3 py-1.5 text-sm text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-3 py-1.5 text-sm bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {submitting ? (
                     <>
-                      <FaSpinner className="w-4 h-4 animate-spin" />
+                      <FaSpinner className="w-3.5 h-3.5 animate-spin" />
                       Submitting...
                     </>
                   ) : (
                     <>
-                      <FaCheckCircle className="w-4 h-4" />
+                      <FaCheckCircle className="w-3.5 h-3.5" />
                       {isEditingTraining ? 'Update Training' : 'Schedule Training'}
                     </>
                   )}
