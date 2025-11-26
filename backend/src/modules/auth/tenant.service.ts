@@ -9,8 +9,8 @@ import { FindOptionsWhere, FindOptionsOrder, ILike, In, Repository } from 'typeo
 import { Tenant, TenantStatus, TenantType } from '../../entities/tenant.entity';
 import { User, UserRole } from '../../entities/user.entity';
 import { FindTenantsDto } from './dto/tenant.dto';
-import { PaginatorResponse, Paginators } from 'src/utils/paginator';
-import { mergeWhere } from 'src/utils/query';
+import { PaginatorResponse, Paginators } from '../../utils/paginator';
+import { mergeWhere } from '../../utils/query';
 
 @Injectable()
 export class TenantService {

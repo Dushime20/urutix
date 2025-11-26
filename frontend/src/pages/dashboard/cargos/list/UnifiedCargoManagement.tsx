@@ -98,6 +98,8 @@ const UnifiedCargoManagement = () => {
   const [isLoadConfirmationOpen, setIsLoadConfirmationOpen] = useState(false);
   const [selectedCargoForConfirmation, setSelectedCargoForConfirmation] =
     useState<any>(null);
+  const [editingCargo, setEditingCargo] = useState<any>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   const {
     data: loadsResponse,
@@ -255,6 +257,121 @@ const UnifiedCargoManagement = () => {
       toast.error(message);
       throw new Error(message);
     }
+  };
+
+  const handleEditCargo = (load: any) => {
+    // Transform the load data to match the form schema
+    const editData: Partial<CargoFormSchemaType> = {
+      id: load.id,
+      title: load.title,
+      description: load.description,
+      weight: load.weight,
+      volume: load.volume,
+      cargoType: load.cargoType,
+      loadType: load.loadType || "FTL",
+      equipmentType: load.equipmentType || "DRY_VAN",
+      visibility: load.visibility || "public",
+      unitsRequired: load.unitsRequired || 1,
+      pickupDate: load.pickupDate,
+      deliveryDate: load.deliveryDate,
+      loadValue: load.loadValue,
+      offeredPrice: load.offeredPrice,
+      currencyCode: load.currencyCode || "USD",
+      paymentTerms: load.paymentTerms || "Net30",
+      isFragile: load.isFragile ?? false,
+      isHazardous: load.isHazardous ?? false,
+      requiresRefrigeration: load.requiresRefrigeration ?? false,
+      specialRequirements: load.specialHandlingInstructions,
+      autoMatchEnabled: load.autoMatchEnabled ?? true,
+      loadingInstructions: load.loadingInstructions,
+      unloadingInstructions: load.unloadingInstructions,
+      contactPerson: load.contactInfo?.contactPerson,
+      contactPhone: load.contactInfo?.contactPhone,
+      contactEmail: load.contactInfo?.contactEmail,
+      length: Number(load.length) || undefined,
+      width: Number(load.width) || undefined,
+      height: Number(load.height) || undefined,
+      stackableHeight: Number(load.stackableHeight) || undefined,
+      isStackable: load.isStackable ?? false,
+      temperatureMin: Number(load.temperatureMin) || undefined,
+      temperatureMax: Number(load.temperatureMax) || undefined,
+      requiresHumidityControl: load.requiresHumidityControl ?? false,
+      requiresForklift: load.requiresForklift ?? false,
+      requiresCrane: load.requiresCrane ?? false,
+      requiresLoadingDock: load.requiresLoadingDock ?? false,
+      loadingTimeEstimate: Number(load.loadingTimeEstimate) || undefined,
+      unloadingTimeEstimate: Number(load.unloadingTimeEstimate) || undefined,
+      hazmatClass: load.hazmatClass,
+      hazmatNumber: load.hazmatNumber,
+      urgencyLevel: load.urgencyLevel || "NORMAL",
+      isTimeCritical: load.isTimeCritical ?? false,
+      maxTransitTime: Number(load.maxTransitTime) || undefined,
+      packagingType: load.packagingType,
+      numberOfPieces: load.numberOfPieces,
+      numberOfPallets: load.numberOfPallets,
+      requiresGpsMonitoring: load.requiresGpsMonitoring ?? false,
+      requiresTemperatureMonitoring: load.requiresTemperatureMonitoring ?? false,
+      insuranceValue: load.insuranceValue,
+      requiresLowClearanceRoute: load.requiresLowClearanceRoute ?? false,
+      maxClearanceHeight: Number(load.maxClearanceHeight) || undefined,
+      requiresEscortVehicle: load.requiresEscortVehicle ?? false,
+      specialHandlingInstructions: load.specialHandlingInstructions,
+      emergencyContactInfo: load.emergencyContactInfo,
+      truckRequirements: load.truckRequirements || {},
+      carrierPreferences: load.carrierPreferences || {},
+      costPreferences: load.costPreferences || {},
+      requiresPreShipmentInspection: load.requiresPreShipmentInspection ?? false,
+      requiresDeliveryInspection: load.requiresDeliveryInspection ?? false,
+      requiresPhotographicDocumentation: load.requiresPhotographicDocumentation ?? false,
+      // Transform locations if available
+      locations: load.locations || [],
+      pickupLocation: load.pickupLocation ? {
+        name: load.pickupLocation.name || "",
+        address: load.pickupLocation.address || "",
+        latitude: load.pickupLocation.coordinates?.coordinates?.[1] || load.pickupLocation.latitude || 0,
+        longitude: load.pickupLocation.coordinates?.coordinates?.[0] || load.pickupLocation.longitude || 0,
+      } : undefined,
+      deliveryLocation: load.deliveryLocation ? {
+        name: load.deliveryLocation.name || "",
+        address: load.deliveryLocation.address || "",
+        latitude: load.deliveryLocation.coordinates?.coordinates?.[1] || load.deliveryLocation.latitude || 0,
+        longitude: load.deliveryLocation.coordinates?.coordinates?.[0] || load.deliveryLocation.longitude || 0,
+      } : undefined,
+    };
+    
+    setEditingCargo(editData);
+    setIsEditModalOpen(true);
+  };
+
+  const handleUpdateCargo = async (data: ICargoBody): Promise<ICargoResponse> => {
+    if (!editingCargo?.id) {
+      throw new Error("No cargo ID found for update");
+    }
+
+    try {
+      const response = await loadsAPI.update(editingCargo.id, data);
+      setIsEditModalOpen(false);
+      setEditingCargo(null);
+      refetch();
+      toast.success("Cargo updated successfully!");
+      // Backend returns { message, load }, extract the load
+      return (response as any).load || response;
+    } catch (error: any) {
+      const backendMessage =
+        error?.response?.data?.message ||
+        error?.response?.data?.error ||
+        (Array.isArray(error?.response?.data?.errors)
+          ? error.response.data.errors.join(", ")
+          : undefined);
+      const message = backendMessage || error?.message || "Failed to update cargo";
+      toast.error(message);
+      throw new Error(message);
+    }
+  };
+
+  const handleCloseEditModal = () => {
+    setIsEditModalOpen(false);
+    setEditingCargo(null);
   };
 
   const handleSaveDraft = async (formData: any) => {
@@ -468,6 +585,7 @@ const UnifiedCargoManagement = () => {
                         handleViewClick={handleViewClick}
                         handleConfirmLoading={handleConfirmLoading}
                         handleDeleteCargo={handleDeleteCargo}
+                        handleEditCargo={handleEditCargo}
                       />
                     ))}
                   </div>
@@ -563,6 +681,18 @@ const UnifiedCargoManagement = () => {
             handleCloseLoadConfirmation();
             refetch();
           }}
+        />
+      )}
+
+      {/* Edit Cargo Modal */}
+      {isEditModalOpen && editingCargo && (
+        <EnhancedCargoForm
+          isOpen={isEditModalOpen}
+          onClose={handleCloseEditModal}
+          onSubmit={handleUpdateCargo}
+          mode="edit"
+          initialData={editingCargo}
+          showTruckSelection={false}
         />
       )}
     </div>

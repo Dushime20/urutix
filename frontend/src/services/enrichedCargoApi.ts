@@ -294,7 +294,7 @@ export const getLocationCompatibilityScore = (location: EnrichedLocation, truckD
   // Check weight constraints
   if (truckData.capacityWeight > location.locationData.maxTruckWeight) {
     score -= 25;
-    issues.push(`Truck weight (${truckData.capacityWeight} tons) exceeds limit (${location.locationData.maxTruckWeight} tons)`);
+    issues.push(`Truck weight capacity (${truckData.capacityWeight} kg) exceeds limit (${location.locationData.maxTruckWeight} kg)`);
   }
 
   // Check access requirements

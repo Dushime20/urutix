@@ -102,6 +102,8 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
 
   useEffect(() => {
     if (initialData) {
+      // Initialize loadingCapabilities from initialData
+      const loadingCapabilities = initialData.loadingCapabilities || {};
       setFormData({
         // Truck fields
         plateNumber: initialData.plateNumber || '',
@@ -230,6 +232,10 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
         hasComposite: initialData.hasComposite || false,
         hasInsulated: initialData.hasInsulated || false,
         equipmentList: initialData.equipmentList || [],
+        // Nested objects
+        loadingCapabilities: loadingCapabilities,
+        cargoCapabilities: initialData.cargoCapabilities || {},
+        securityFeatures: initialData.securityFeatures || {},
         // Driver fields
         firstName: initialData.firstName || '',
         lastName: initialData.lastName || '',
@@ -242,6 +248,7 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
         }
       });
     } else {
+      // Initialize with empty nested objects
       setFormData({
         // Truck fields
         plateNumber: '',
@@ -369,6 +376,10 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
         hasComposite: false,
         hasInsulated: false,
         equipmentList: [],
+        // Nested objects - initialize empty
+        loadingCapabilities: {},
+        cargoCapabilities: {},
+        securityFeatures: {},
         // Driver fields
         firstName: '',
         lastName: '',

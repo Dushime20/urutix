@@ -435,7 +435,7 @@ const MatchingInterface: React.FC<MatchingInterfaceProps> = ({
                   <div>
                     <h4 className="font-semibold">Truck Information</h4>
                     <p>Type: {selectedMatch.truck.truckType}</p>
-                    <p>Capacity: {selectedMatch.truck.capacityWeight} lbs</p>
+                    <p>Capacity: {selectedMatch.truck.capacityWeight} kg</p>
                     <p>Year: {selectedMatch.truck.year}</p>
                     <p>Fuel Efficiency: {selectedMatch.truck.fuelEfficiency} mpg</p>
                   </div>
