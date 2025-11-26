@@ -1,19 +1,28 @@
-import { Injectable } from '@nestjs/common';
+import {
+  Injectable,
+  ConflictException,
+  BadRequestException,
+  Logger,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from '../../entities/user.entity';
 import { Payment } from '../../entities/payment.entity';
 import { Notification } from '../../entities/notification.entity';
-import { Tenant } from '../../entities/tenant.entity';
+import { Tenant, TenantStatus, TenantType } from '../../entities/tenant.entity';
 import { Dispute } from '../../entities/dispute.entity';
 import { AuditLog } from '../../entities/audit-log.entity';
 import { Trip } from '../../entities/trip.entity';
 import { Load } from '../../entities/load.entity';
 import { Truck } from '../../entities/truck.entity';
 import { Route as FleetRoute } from '../../entities/route.entity';
+import { UsersService } from '../users/users.service';
+import { CreateTenantDto, SubscriptionPlan } from './dto/create-tenant.dto';
 
 @Injectable()
 export class AdminService {
+  private readonly logger = new Logger(AdminService.name);
+
   constructor(
     @InjectRepository(User) private readonly userRepo: Repository<User>,
     @InjectRepository(Payment)
@@ -30,6 +39,7 @@ export class AdminService {
     @InjectRepository(Truck) private readonly truckRepo: Repository<Truck>,
     @InjectRepository(FleetRoute)
     private readonly routeRepo: Repository<FleetRoute>,
+    private readonly usersService: UsersService,
   ) {}
 
   // Get all routes with optional filters
@@ -221,17 +231,188 @@ export class AdminService {
     const where = tenantId ? ({ tenantId } as any) : ({} as any);
     const users = await this.userRepo.find({
       where,
+      relations: ['profile'],
       take: 500,
       order: { createdAt: 'DESC' } as any,
     });
     return { users };
   }
 
-  // Create tenant
-  async createTenant(data: Partial<Tenant>) {
-    const t = this.tenantRepo.create({ ...data, isActive: true });
-    const saved = await this.tenantRepo.save(t);
-    return { tenant: saved };
+  /**
+   * Get subscription plan limits
+   */
+  private getSubscriptionLimits(plan: SubscriptionPlan = SubscriptionPlan.STARTER) {
+    const limits = {
+      [SubscriptionPlan.STARTER]: {
+        maxUsers: 10,
+        maxTrucks: 5,
+        maxDrivers: 10,
+        maxLoadsPerMonth: 100,
+      },
+      [SubscriptionPlan.PROFESSIONAL]: {
+        maxUsers: 50,
+        maxTrucks: 25,
+        maxDrivers: 50,
+        maxLoadsPerMonth: 1000,
+      },
+      [SubscriptionPlan.ENTERPRISE]: {
+        maxUsers: null, // unlimited
+        maxTrucks: null, // unlimited
+        maxDrivers: null, // unlimited
+        maxLoadsPerMonth: null, // unlimited
+      },
+    };
+
+    return limits[plan] || limits[SubscriptionPlan.STARTER];
+  }
+
+  /**
+   * Generate domain from subdomain
+   * If subdomain already contains dots (full domain), use it as-is
+   * Otherwise, append the base domain
+   */
+  private generateDomain(subdomain: string): string {
+    // If subdomain already contains dots, it's a full domain - use as-is
+    if (subdomain.includes('.')) {
+      return subdomain.toLowerCase();
+    }
+    // Otherwise, append the base domain
+    const baseDomain = process.env.TENANT_BASE_DOMAIN || 'urutix.com';
+    return `${subdomain.toLowerCase()}.${baseDomain}`;
+  }
+
+  /**
+   * Create a new tenant with admin user
+   */
+  async createTenant(createTenantDto: CreateTenantDto) {
+    this.logger.log(`Creating tenant: ${createTenantDto.name} (${createTenantDto.subdomain})`);
+
+    // Normalize subdomain (lowercase, trim)
+    const normalizedSubdomain = createTenantDto.subdomain.toLowerCase().trim();
+
+    // Check if subdomain already exists
+    const existingTenant = await this.tenantRepo.findOne({
+      where: { subdomain: normalizedSubdomain },
+    });
+
+    if (existingTenant) {
+      throw new ConflictException(
+        `Subdomain '${normalizedSubdomain}' is already taken. Please choose a different subdomain.`,
+      );
+    }
+
+    // Check if email is already used by another tenant admin
+    const existingUser = await this.userRepo.findOne({
+      where: { email: createTenantDto.contactEmail },
+    });
+
+    if (existingUser) {
+      throw new ConflictException(
+        `Email '${createTenantDto.contactEmail}' is already registered. Please use a different email.`,
+      );
+    }
+
+    // Use provided domain or generate from subdomain
+    const domain = createTenantDto.domain?.trim() || this.generateDomain(normalizedSubdomain);
+
+    // Get subscription plan limits
+    const plan = createTenantDto.plan || SubscriptionPlan.STARTER;
+    const limits = this.getSubscriptionLimits(plan);
+
+    // Calculate trial end date (30 days from now)
+    const trialEndsAt = new Date();
+    trialEndsAt.setDate(trialEndsAt.getDate() + 30);
+
+    // Create tenant entity
+    const tenant = this.tenantRepo.create({
+      name: createTenantDto.name.trim(),
+      subdomain: normalizedSubdomain,
+      domain,
+      type: TenantType.SMALL_BUSINESS, // Default type, can be updated later
+      status: TenantStatus.PENDING_ACTIVATION,
+      description: createTenantDto.description?.trim(),
+      contactEmail: createTenantDto.contactEmail.toLowerCase().trim(),
+      contactPhone: createTenantDto.contactPhone?.trim(),
+      address: createTenantDto.address?.trim(),
+      city: createTenantDto.city?.trim(),
+      state: createTenantDto.state?.trim(),
+      country: createTenantDto.country?.trim(),
+      postalCode: createTenantDto.postalCode?.trim(),
+      websiteUrl: createTenantDto.websiteUrl?.trim(),
+      subscriptionPlan: plan,
+      maxUsers: limits.maxUsers,
+      maxTrucks: limits.maxTrucks,
+      maxDrivers: limits.maxDrivers,
+      maxLoadsPerMonth: limits.maxLoadsPerMonth,
+      trialEndsAt,
+      isActive: false, // Will be activated after approval
+      settings: {
+        timezone: 'UTC',
+        language: 'en',
+        currency: 'USD',
+        dateFormat: 'MM/DD/YYYY',
+      },
+      features: {
+        loads: true,
+        tracking: true,
+        payments: plan !== SubscriptionPlan.STARTER,
+        analytics: plan !== SubscriptionPlan.STARTER,
+        api_access: plan === SubscriptionPlan.ENTERPRISE,
+        multi_user: true,
+        fleet_management: true,
+      },
+      billingInfo: {
+        plan,
+        billing_cycle: 'monthly',
+        payment_method: null,
+      },
+    });
+
+    // Save tenant
+    const savedTenant = await this.tenantRepo.save(tenant);
+    this.logger.log(`Tenant created with ID: ${savedTenant.id}`);
+
+    try {
+      // Create tenant admin user
+      const adminUser = await this.usersService.createTenantAdminUser(
+        savedTenant.id,
+        {
+          email: createTenantDto.contactEmail.toLowerCase().trim(),
+          password: createTenantDto.adminPassword,
+          firstName: createTenantDto.adminFirstName.trim(),
+          lastName: createTenantDto.adminLastName.trim(),
+          companyName: createTenantDto.companyName?.trim() || createTenantDto.name.trim(),
+          phoneNumber: createTenantDto.contactPhone?.trim(),
+        },
+      );
+
+      this.logger.log(`Tenant admin user created with ID: ${adminUser.id}`);
+
+      // Return tenant with admin user info (without password)
+      return {
+        tenant: {
+          ...savedTenant,
+          // Remove sensitive fields if any
+        },
+        adminUser: {
+          id: adminUser.id,
+          email: adminUser.email,
+          firstName: createTenantDto.adminFirstName,
+          lastName: createTenantDto.adminLastName,
+          role: adminUser.role,
+        },
+      };
+    } catch (error) {
+      // If admin user creation fails, rollback tenant creation
+      this.logger.error(
+        `Failed to create admin user for tenant ${savedTenant.id}. Rolling back tenant creation.`,
+        error,
+      );
+      await this.tenantRepo.remove(savedTenant);
+      throw new BadRequestException(
+        `Failed to create tenant admin user: ${error.message}`,
+      );
+    }
   }
 
   // Create route for a tenant

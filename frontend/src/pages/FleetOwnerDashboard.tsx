@@ -27,6 +27,7 @@ import { tripsAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
+import logoUrutiX from '../assets/logo-urutix.svg';
 
 interface DashboardStats {
   totalTrucks: number;
@@ -270,28 +271,24 @@ const FleetOwnerDashboard: React.FC = () => {
       title: 'Add Truck',
       description: 'Register a new truck',
       icon: FaPlus,
-      color: 'bg-primary-600 hover:bg-primary-700',
       action: () => navigate('/dashboard/fleet/trucks'),
     },
     {
       title: 'Add Driver',
       description: 'Register a new driver',
       icon: FaUser,
-      color: 'bg-green-600 hover:bg-green-700',
       action: () => navigate('/dashboard/fleet/drivers'),
     },
     {
       title: 'View Payments',
       description: 'Manage payments',
       icon: FaCreditCard,
-      color: 'bg-orange-600 hover:bg-orange-700',
       action: () => navigate('/dashboard/fleet/payments'),
     },
     {
       title: 'View Analytics',
       description: 'Fleet performance',
       icon: FaChartLine,
-      color: 'bg-purple-600 hover:bg-purple-700',
       action: () => navigate('/dashboard/fleet/analytics'),
     },
   ];
@@ -306,68 +303,77 @@ const FleetOwnerDashboard: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="mb-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="mb-2">Dashboard</h1>
-            <p className="text-sm text-gray-600">Welcome back! Here's your fleet overview</p>
+    <div className="relative min-h-screen">
+      {/* Background Logo */}
+      <img 
+        src={logoUrutiX} 
+        alt="UrutiX Logo Background" 
+        className="pointer-events-none select-none fixed inset-0 w-full h-full object-cover opacity-5 z-0" 
+        style={{objectPosition: 'center'}} 
+      />
+      {/* Content */}
+      <div className="relative z-10 space-y-4">
+        {/* Header */}
+        <div className="mb-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-xl font-bold text-gray-900 mb-1">Dashboard</h1>
+              <p className="text-xs text-gray-600">Welcome back! Here's your fleet overview</p>
+            </div>
+            <button
+              onClick={loadDashboardData}
+              disabled={loading}
+              className="px-3 py-1.5 text-sm bg-primary-600 text-white rounded-lg hover:bg-primary-700 flex items-center gap-2 disabled:opacity-50"
+            >
+              <FaSync className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+              Refresh
+            </button>
           </div>
-          <button
-            onClick={loadDashboardData}
-            disabled={loading}
-            className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 flex items-center gap-2 disabled:opacity-50"
-          >
-            <FaSync className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-            Refresh
-          </button>
         </div>
-      </div>
 
       {/* Key Metrics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
         {statCards.map((card, index) => {
           const Icon = card.icon;
           return (
             <div
               key={index}
               onClick={() => navigate(card.link)}
-              className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow cursor-pointer group"
+              className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 hover:shadow-md transition-shadow cursor-pointer group"
             >
-              <div className="flex items-center justify-between mb-4">
-                <div className={`${card.bgColor} p-3 rounded-lg`}>
-                  <Icon className={`w-6 h-6 ${card.textColor}`} />
+              <div className="flex items-center justify-between mb-2">
+                <div className={`${card.bgColor} p-1.5 rounded-md`}>
+                  <Icon className={`w-4 h-4 ${card.textColor}`} />
                 </div>
-                <FaEye className="w-4 h-4 text-gray-400 group-hover:text-primary-600 transition-colors" />
+                <FaEye className="w-3 h-3 text-gray-400 group-hover:text-primary-600 transition-colors" />
               </div>
-              <h3 className="text-sm font-medium text-gray-500 mb-1">{card.title}</h3>
-              <p className="text-2xl font-bold text-gray-900 mb-1">{card.value}</p>
-              <p className="text-xs text-gray-500">{card.subtitle}</p>
+              <h3 className="text-xs font-medium text-gray-500 mb-0.5">{card.title}</h3>
+              <p className="text-lg font-bold text-gray-900 mb-0.5">{card.value}</p>
+              <p className="text-[10px] text-gray-500 leading-tight">{card.subtitle}</p>
             </div>
           );
         })}
       </div>
 
       {/* Quick Actions & Recent Activity */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Quick Actions */}
         <div className="lg:col-span-1">
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h2>
-            <div className="space-y-3">
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3">
+            <h2 className="text-xs font-semibold text-gray-900 mb-2">Quick Actions</h2>
+            <div className="space-y-1.5">
               {quickActions.map((action, index) => {
                 const Icon = action.icon;
                 return (
                   <button
                     key={index}
                     onClick={action.action}
-                    className={`w-full ${action.color} text-white rounded-lg p-4 flex items-center gap-3 transition-all hover:scale-105`}
+                    className="w-full bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-700 rounded-md px-2.5 py-1.5 flex items-center gap-2 transition-all hover:border-gray-300 hover:shadow-sm"
                   >
-                    <Icon className="w-5 h-5" />
-                    <div className="text-left">
-                      <div className="font-medium">{action.title}</div>
-                      <div className="text-xs opacity-90">{action.description}</div>
+                    <Icon className="w-3 h-3 text-gray-600 flex-shrink-0" />
+                    <div className="text-left flex-1 min-w-0">
+                      <div className="font-medium text-xs text-gray-900 truncate">{action.title}</div>
+                      <div className="text-[10px] text-gray-500 truncate">{action.description}</div>
                     </div>
                   </button>
                 );
@@ -378,34 +384,34 @@ const FleetOwnerDashboard: React.FC = () => {
 
         {/* Recent Activity */}
         <div className="lg:col-span-2">
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-gray-900">Recent Activity</h2>
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-sm font-semibold text-gray-900">Recent Activity</h2>
               <button
                 onClick={() => navigate('/dashboard/fleet/notifications')}
-                className="text-sm text-primary-600 hover:text-primary-700"
+                className="text-xs text-primary-600 hover:text-primary-700"
               >
                 View All
               </button>
             </div>
-            <div className="space-y-4">
+            <div className="space-y-2">
               {recentActivities.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
-                  <FaClock className="w-12 h-12 mx-auto mb-3 text-gray-400" />
-                  <p>No recent activity</p>
+                <div className="text-center py-6 text-gray-500">
+                  <FaClock className="w-8 h-8 mx-auto mb-2 text-gray-400" />
+                  <p className="text-xs">No recent activity</p>
                 </div>
               ) : (
                 recentActivities.map((activity) => {
                   const Icon = activity.icon;
                   return (
-                    <div key={activity.id} className="flex items-start gap-4 p-3 rounded-lg hover:bg-gray-50 transition-colors">
-                      <div className={`${activity.color} p-2 rounded-lg`}>
-                        <Icon className="w-4 h-4" />
+                    <div key={activity.id} className="flex items-start gap-2 p-2 rounded-lg hover:bg-gray-50 transition-colors">
+                      <div className={`${activity.color} p-1.5 rounded-md`}>
+                        <Icon className="w-3 h-3" />
                       </div>
                       <div className="flex-1">
-                        <h4 className="font-medium text-gray-900">{activity.title}</h4>
-                        <p className="text-sm text-gray-600">{activity.description}</p>
-                        <p className="text-xs text-gray-400 mt-1">{formatTimeAgo(activity.timestamp)}</p>
+                        <h4 className="font-medium text-sm text-gray-900">{activity.title}</h4>
+                        <p className="text-xs text-gray-600">{activity.description}</p>
+                        <p className="text-[10px] text-gray-400 mt-0.5">{formatTimeAgo(activity.timestamp)}</p>
                       </div>
                     </div>
                   );
@@ -417,91 +423,92 @@ const FleetOwnerDashboard: React.FC = () => {
       </div>
 
       {/* Fleet Status Overview */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Fleet Status Overview</h2>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="border-l-4 border-blue-500 pl-4">
-            <div className="text-sm text-gray-500">Available</div>
-            <div className="text-2xl font-bold text-gray-900">{stats.trucksAvailable}</div>
-            <div className="text-xs text-gray-400">Ready for assignment</div>
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+        <h2 className="text-sm font-semibold text-gray-900 mb-3">Fleet Status Overview</h2>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="border-l-2 border-blue-500 pl-3">
+            <div className="text-xs text-gray-500">Available</div>
+            <div className="text-xl font-bold text-gray-900">{stats.trucksAvailable}</div>
+            <div className="text-[10px] text-gray-400">Ready for assignment</div>
           </div>
-          <div className="border-l-4 border-purple-500 pl-4">
-            <div className="text-sm text-gray-500">In Transit</div>
-            <div className="text-2xl font-bold text-gray-900">{stats.trucksInTransit}</div>
-            <div className="text-xs text-gray-400">Currently on trips</div>
+          <div className="border-l-2 border-purple-500 pl-3">
+            <div className="text-xs text-gray-500">In Transit</div>
+            <div className="text-xl font-bold text-gray-900">{stats.trucksInTransit}</div>
+            <div className="text-[10px] text-gray-400">Currently on trips</div>
           </div>
-          <div className="border-l-4 border-orange-500 pl-4">
-            <div className="text-sm text-gray-500">Maintenance</div>
-            <div className="text-2xl font-bold text-gray-900">{stats.trucksInMaintenance}</div>
-            <div className="text-xs text-gray-400">Requires attention</div>
+          <div className="border-l-2 border-orange-500 pl-3">
+            <div className="text-xs text-gray-500">Maintenance</div>
+            <div className="text-xl font-bold text-gray-900">{stats.trucksInMaintenance}</div>
+            <div className="text-[10px] text-gray-400">Requires attention</div>
           </div>
-          <div className="border-l-4 border-gray-400 pl-4">
-            <div className="text-sm text-gray-500">Other</div>
-            <div className="text-2xl font-bold text-gray-900">
+          <div className="border-l-2 border-gray-400 pl-3">
+            <div className="text-xs text-gray-500">Other</div>
+            <div className="text-xl font-bold text-gray-900">
               {stats.totalTrucks - stats.trucksAvailable - stats.trucksInTransit - stats.trucksInMaintenance}
             </div>
-            <div className="text-xs text-gray-400">Other statuses</div>
+            <div className="text-[10px] text-gray-400">Other statuses</div>
           </div>
         </div>
       </div>
 
       {/* Performance Summary */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Revenue Summary */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Revenue Summary</h2>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between p-4 bg-green-50 rounded-lg">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3">
+          <h2 className="text-xs font-semibold text-gray-900 mb-2">Revenue Summary</h2>
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between p-2 bg-gray-50 rounded-md border border-gray-200">
               <div>
-                <div className="text-sm text-gray-500">Total Revenue</div>
-                <div className="text-2xl font-bold text-gray-900">{formatCurrency(stats.totalRevenue)}</div>
+                <div className="text-xs text-gray-500">Total Revenue</div>
+                <div className="text-base font-bold text-gray-900">{formatCurrency(stats.totalRevenue)}</div>
               </div>
-              <FaDollarSign className="w-8 h-8 text-green-600" />
+              <FaDollarSign className="w-4 h-4 text-gray-600 flex-shrink-0" />
             </div>
-            <div className="flex items-center justify-between p-4 bg-blue-50 rounded-lg">
+            <div className="flex items-center justify-between p-2 bg-gray-50 rounded-md border border-gray-200">
               <div>
-                <div className="text-sm text-gray-500">This Month</div>
-                <div className="text-2xl font-bold text-gray-900">{formatCurrency(stats.monthlyRevenue)}</div>
+                <div className="text-xs text-gray-500">This Month</div>
+                <div className="text-base font-bold text-gray-900">{formatCurrency(stats.monthlyRevenue)}</div>
               </div>
-              <FaChartLine className="w-8 h-8 text-blue-600" />
+              <FaChartLine className="w-4 h-4 text-gray-600 flex-shrink-0" />
             </div>
-            <div className="flex items-center justify-between p-4 bg-orange-50 rounded-lg">
+            <div className="flex items-center justify-between p-2 bg-gray-50 rounded-md border border-gray-200">
               <div>
-                <div className="text-sm text-gray-500">Pending Payments</div>
-                <div className="text-2xl font-bold text-gray-900">{formatCurrency(stats.pendingPayments)}</div>
+                <div className="text-xs text-gray-500">Pending Payments</div>
+                <div className="text-base font-bold text-gray-900">{formatCurrency(stats.pendingPayments)}</div>
               </div>
-              <FaCreditCard className="w-8 h-8 text-orange-600" />
+              <FaCreditCard className="w-4 h-4 text-gray-600 flex-shrink-0" />
             </div>
           </div>
         </div>
 
         {/* Trip Summary */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Trip Summary</h2>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between p-4 bg-purple-50 rounded-lg">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3">
+          <h2 className="text-xs font-semibold text-gray-900 mb-2">Trip Summary</h2>
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between p-2 bg-gray-50 rounded-md border border-gray-200">
               <div>
-                <div className="text-sm text-gray-500">Active Trips</div>
-                <div className="text-2xl font-bold text-gray-900">{stats.activeTrips}</div>
+                <div className="text-xs text-gray-500">Active Trips</div>
+                <div className="text-base font-bold text-gray-900">{stats.activeTrips}</div>
               </div>
-              <FaRoute className="w-8 h-8 text-purple-600" />
+              <FaRoute className="w-4 h-4 text-gray-600 flex-shrink-0" />
             </div>
-            <div className="flex items-center justify-between p-4 bg-green-50 rounded-lg">
+            <div className="flex items-center justify-between p-2 bg-gray-50 rounded-md border border-gray-200">
               <div>
-                <div className="text-sm text-gray-500">Completed</div>
-                <div className="text-2xl font-bold text-gray-900">{stats.completedTrips}</div>
+                <div className="text-xs text-gray-500">Completed</div>
+                <div className="text-base font-bold text-gray-900">{stats.completedTrips}</div>
               </div>
-              <FaCheckCircle className="w-8 h-8 text-green-600" />
+              <FaCheckCircle className="w-4 h-4 text-gray-600 flex-shrink-0" />
             </div>
-            <div className="flex items-center justify-between p-4 bg-indigo-50 rounded-lg">
+            <div className="flex items-center justify-between p-2 bg-gray-50 rounded-md border border-gray-200">
               <div>
-                <div className="text-sm text-gray-500">Utilization Rate</div>
-                <div className="text-2xl font-bold text-gray-900">{stats.utilizationRate}%</div>
+                <div className="text-xs text-gray-500">Utilization Rate</div>
+                <div className="text-base font-bold text-gray-900">{stats.utilizationRate}%</div>
               </div>
-              <FaTachometerAlt className="w-8 h-8 text-indigo-600" />
+              <FaTachometerAlt className="w-4 h-4 text-gray-600 flex-shrink-0" />
             </div>
           </div>
         </div>
+      </div>
       </div>
     </div>
   );

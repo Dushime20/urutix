@@ -27,6 +27,8 @@ import {
   FaGavel,
   FaWarehouse
 } from 'react-icons/fa';
+import sidebarBack from '../../assets/sidebar-back.svg';
+import urutixLogo from '../../assets/urutix.png';
 
 interface FleetOwnerSidebarProps {
   isCollapsed: boolean;
@@ -143,10 +145,21 @@ const FleetOwnerSidebar: React.FC<FleetOwnerSidebarProps> = ({ isCollapsed, onTo
     <div
       className={`relative border-r border-gray-200/60 bg-gradient-to-b from-white via-white to-gray-100 shadow-sm transition-all duration-300 ${
       isCollapsed ? 'w-16' : 'w-64'
-    } h-full flex flex-col`}
+    } h-full flex flex-col overflow-hidden`}
+      style={{
+        backgroundImage: `url(${sidebarBack})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+      }}
     >
+      {/* Background overlay for better readability */}
+      <div className="absolute inset-0 bg-white/80 backdrop-blur-sm z-0" />
+      
+      {/* Content wrapper with relative z-index */}
+      <div className="relative z-10 flex flex-col h-full">
       {/* Header */}
-      <div className="border-b border-gray-200/70 bg-white/80 p-4 backdrop-blur">
+      <div className="border-b border-gray-200/70 bg-white/90 p-4 backdrop-blur-sm">
         <div className="flex items-center justify-between gap-3">
           {!isCollapsed && (
             <div className="flex items-center space-x-2">
@@ -173,7 +186,7 @@ const FleetOwnerSidebar: React.FC<FleetOwnerSidebarProps> = ({ isCollapsed, onTo
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto py-6">
+      <nav className="flex-1 overflow-y-auto py-6 relative z-10">
         {navigationItems.map((section, sectionIndex) => (
           <div key={sectionIndex} className="px-3">
             {!isCollapsed && section.section && section.section !== 'Driver Management' && (
@@ -227,13 +240,17 @@ const FleetOwnerSidebar: React.FC<FleetOwnerSidebarProps> = ({ isCollapsed, onTo
 
       {/* Footer */}
       {!isCollapsed && (
-        <div className="p-4 border-t border-gray-200">
-          <div className="flex items-center space-x-2 text-sm text-gray-600">
-            <FaStar className="text-yellow-500" />
-            <span>Premium Plan</span>
+        <div className="p-4 border-t border-gray-200/70 relative z-10">
+          <div className="flex items-center justify-center w-full">
+            <img 
+              src={urutixLogo} 
+              alt="UrutiX Logo" 
+              className="w-full h-auto object-contain"
+            />
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 };

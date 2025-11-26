@@ -323,72 +323,56 @@ const FleetBidsPage: React.FC = () => {
   };
 
   const getUrgencyColor = (urgency?: string) => {
-    switch (urgency) {
-      case 'CRITICAL':
-        return 'bg-red-100 text-red-800 border-red-200';
-      case 'HIGH':
-        return 'bg-orange-100 text-orange-800 border-orange-200';
-      case 'NORMAL':
-        return 'bg-blue-100 text-blue-800 border-blue-200';
-      default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
-    }
+    // All urgency levels use gray colors for consistency
+    return 'bg-gray-100 text-gray-700 border-gray-200';
   };
 
   const getStatusColor = (status?: string) => {
-    switch (status) {
-      case 'accepted':
-        return 'bg-green-100 text-green-800';
-      case 'rejected':
-        return 'bg-red-100 text-red-800';
-      case 'pending':
-        return 'bg-yellow-100 text-yellow-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
+    // All statuses use gray colors for consistency
+    return 'bg-gray-100 text-gray-700';
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header */}
-      <div className="mb-6">
+      <div className="mb-4">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="mb-2">Cargo Bids</h1>
-            <p className="text-sm text-gray-600">View and accept cargo bids from cargo owners</p>
+            <h1 className="text-xl font-bold text-gray-900 mb-1">Cargo Bids</h1>
+            <p className="text-xs text-gray-600">View and accept cargo bids from cargo owners</p>
           </div>
           <button
             onClick={loadBids}
             disabled={loading}
-            className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 flex items-center gap-2 disabled:opacity-50"
+            className="px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 flex items-center gap-2 disabled:opacity-50 transition-colors"
           >
-            <FaSync className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            <FaSync className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
             Refresh
           </button>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-        <div className="flex flex-col md:flex-row gap-4">
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3">
+        <div className="flex flex-col md:flex-row gap-2">
           <div className="flex-1">
             <div className="relative">
-              <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <FaSearch className="absolute left-2.5 top-1/2 transform -translate-y-1/2 text-gray-400 w-3.5 h-3.5" />
               <input
                 type="text"
                 placeholder="Search by cargo title, origin, destination, or cargo owner..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                className="w-full pl-9 pr-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-400 focus:border-transparent"
               />
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <FaFilter className="text-gray-400 w-4 h-4" />
+            <FaFilter className="text-gray-400 w-3.5 h-3.5" />
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value as any)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-400 focus:border-transparent"
             >
               <option value="all">All Status</option>
               <option value="pending">Pending</option>
@@ -398,7 +382,7 @@ const FleetBidsPage: React.FC = () => {
             <select
               value={cargoTypeFilter}
               onChange={(e) => setCargoTypeFilter(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-400 focus:border-transparent"
             >
               <option value="all">All Types</option>
               <option value="ELECTRONICS">Electronics</option>
@@ -416,141 +400,141 @@ const FleetBidsPage: React.FC = () => {
 
       {/* Bids Grid */}
       {loading ? (
-        <div className="flex items-center justify-center py-12">
-          <FaSpinner className="w-8 h-8 text-primary-600 animate-spin" />
+        <div className="flex items-center justify-center py-8">
+          <FaSpinner className="w-6 h-6 text-gray-400 animate-spin" />
         </div>
       ) : filteredBids.length === 0 ? (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
-          <FaBox className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No Cargo Bids Found</h3>
-          <p className="text-sm text-gray-600">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
+          <FaBox className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+          <h3 className="text-sm font-medium text-gray-900 mb-1.5">No Cargo Bids Found</h3>
+          <p className="text-xs text-gray-600">
             {searchTerm || statusFilter !== 'all' || cargoTypeFilter !== 'all'
               ? 'No bids match your search criteria.'
               : 'There are currently no cargo bids available.'}
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
           {filteredBids.map((bid) => (
             <div
               key={bid.id}
-              className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow"
+              className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 hover:shadow-md transition-shadow"
             >
               {/* Header */}
-              <div className="flex items-start justify-between mb-4">
+              <div className="flex items-start justify-between mb-3">
                 <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-2">
-                    <FaBox className="w-5 h-5 text-primary-600" />
-                    <h3 className="font-semibold text-gray-900">{bid.title}</h3>
+                  <div className="flex items-center gap-1.5 mb-1.5">
+                    <FaBox className="w-4 h-4 text-gray-600" />
+                    <h3 className="text-sm font-semibold text-gray-900">{bid.title}</h3>
                   </div>
-                  <div className="flex items-center gap-2 flex-wrap">
+                  <div className="flex items-center gap-1.5 flex-wrap">
                     {bid.urgencyLevel && (
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getUrgencyColor(bid.urgencyLevel)}`}>
+                      <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-gray-100 text-gray-700 border border-gray-200">
                         {bid.urgencyLevel}
                       </span>
                     )}
                     {bid.isHazardous && (
-                      <span className="px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 border border-red-200">
-                        <FaExclamationTriangle className="w-3 h-3 inline mr-1" />
+                      <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-gray-100 text-gray-700 border border-gray-200">
+                        <FaExclamationTriangle className="w-2.5 h-2.5 inline mr-0.5" />
                         Hazmat
                       </span>
                     )}
                     {bid.requiresRefrigeration && (
-                      <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200">
-                        <FaSnowflake className="w-3 h-3 inline mr-1" />
+                      <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-gray-100 text-gray-700 border border-gray-200">
+                        <FaSnowflake className="w-2.5 h-2.5 inline mr-0.5" />
                         Refrigerated
                       </span>
                     )}
                     {bid.isFragile && (
-                      <span className="px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 border border-yellow-200">
+                      <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-gray-100 text-gray-700 border border-gray-200">
                         Fragile
                       </span>
                     )}
                   </div>
                 </div>
                 {bid.bidStatus && (
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(bid.bidStatus)}`}>
+                  <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-gray-100 text-gray-700">
                     {bid.bidStatus}
                   </span>
                 )}
               </div>
 
               {/* Route */}
-              <div className="mb-4 space-y-2">
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <FaMapMarkerAlt className="w-4 h-4 text-green-600" />
-                  <span className="font-medium">{bid.pickupLocation?.address || 'N/A'}</span>
+              <div className="mb-3 space-y-1.5">
+                <div className="flex items-center gap-1.5 text-xs text-gray-600">
+                  <FaMapMarkerAlt className="w-3 h-3 text-gray-500" />
+                  <span className="font-medium truncate">{bid.pickupLocation?.address || 'N/A'}</span>
                 </div>
-                <div className="flex items-center gap-2 text-sm text-gray-600 ml-6">
-                  <FaRoute className="w-3 h-3 text-gray-400" />
-                  <span>{bid.distance} km • {bid.estimatedDuration} hours</span>
+                <div className="flex items-center gap-1.5 text-xs text-gray-500 ml-4.5">
+                  <FaRoute className="w-2.5 h-2.5" />
+                  <span>{bid.distance} km • {bid.estimatedDuration} hrs</span>
                 </div>
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <FaMapMarkerAlt className="w-4 h-4 text-red-600" />
-                  <span className="font-medium">{bid.deliveryLocation?.address || 'N/A'}</span>
+                <div className="flex items-center gap-1.5 text-xs text-gray-600">
+                  <FaMapMarkerAlt className="w-3 h-3 text-gray-500" />
+                  <span className="font-medium truncate">{bid.deliveryLocation?.address || 'N/A'}</span>
                 </div>
               </div>
 
               {/* Cargo Details */}
-              <div className="grid grid-cols-2 gap-3 mb-4 text-sm">
-                <div className="flex items-center gap-2">
-                  <FaWeight className="w-4 h-4 text-gray-400" />
+              <div className="grid grid-cols-2 gap-2 mb-3 text-xs">
+                <div className="flex items-center gap-1.5">
+                  <FaWeight className="w-3 h-3 text-gray-400" />
                   <span className="text-gray-600">{bid.weight?.toLocaleString()} kg</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <FaRuler className="w-4 h-4 text-gray-400" />
+                <div className="flex items-center gap-1.5">
+                  <FaRuler className="w-3 h-3 text-gray-400" />
                   <span className="text-gray-600">{bid.volume} m³</span>
                 </div>
                 {bid.numberOfPallets && (
-                  <div className="flex items-center gap-2">
-                    <FaBox className="w-4 h-4 text-gray-400" />
+                  <div className="flex items-center gap-1.5">
+                    <FaBox className="w-3 h-3 text-gray-400" />
                     <span className="text-gray-600">{bid.numberOfPallets} pallets</span>
                   </div>
                 )}
-                <div className="flex items-center gap-2">
-                  <FaCalendarAlt className="w-4 h-4 text-gray-400" />
-                  <span className="text-gray-600">{formatDate(bid.pickupDate)}</span>
+                <div className="flex items-center gap-1.5">
+                  <FaCalendarAlt className="w-3 h-3 text-gray-400" />
+                  <span className="text-gray-600 truncate">{formatDate(bid.pickupDate)}</span>
                 </div>
               </div>
 
               {/* Price */}
-              <div className="mb-4 p-3 bg-green-50 rounded-lg border border-green-200">
+              <div className="mb-3 p-2 bg-gray-50 rounded-md border border-gray-200">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-gray-600">Offered Price</span>
-                  <span className="text-xl font-bold text-green-700 flex items-center gap-1">
-                    <FaDollarSign className="w-4 h-4" />
+                  <span className="text-xs font-medium text-gray-600">Offered Price</span>
+                  <span className="text-base font-bold text-gray-900 flex items-center gap-0.5">
+                    <FaDollarSign className="w-3 h-3" />
                     {formatCurrency(bid.offeredPrice || 0, bid.currencyCode)}
                   </span>
                 </div>
               </div>
 
               {/* Cargo Owner */}
-              <div className="mb-4 p-3 bg-gray-50 rounded-lg">
-                <div className="flex items-center gap-2 mb-2">
-                  <FaBuilding className="w-4 h-4 text-gray-400" />
-                  <span className="text-sm font-medium text-gray-900">{bid.cargoOwnerCompany}</span>
+              <div className="mb-3 p-2 bg-gray-50 rounded-md border border-gray-200">
+                <div className="flex items-center gap-1.5 mb-1">
+                  <FaBuilding className="w-3 h-3 text-gray-400" />
+                  <span className="text-xs font-medium text-gray-900 truncate">{bid.cargoOwnerCompany}</span>
                 </div>
-                <div className="flex items-center gap-2 text-xs text-gray-600">
-                  <FaUser className="w-3 h-3" />
-                  <span>{bid.cargoOwnerName}</span>
+                <div className="flex items-center gap-1.5 text-[10px] text-gray-600">
+                  <FaUser className="w-2.5 h-2.5" />
+                  <span className="truncate">{bid.cargoOwnerName}</span>
                 </div>
               </div>
 
               {/* Actions */}
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5">
                 <div className="relative group">
                   <button
                     onClick={() => {
                       setSelectedBid(bid);
                       setShowDetailsModal(true);
                     }}
-                    className="px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 flex items-center justify-center"
+                    className="px-2 py-1.5 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 flex items-center justify-center transition-colors"
                   >
-                    <FaEye className="w-4 h-4" />
+                    <FaEye className="w-3.5 h-3.5" />
                   </button>
-                  <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-white text-gray-900 text-xs font-medium rounded-md shadow-lg border border-gray-200 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                  <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-1 px-2 py-1 bg-white text-gray-900 text-[10px] font-medium rounded shadow-lg border border-gray-200 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
                     View Details
-                    <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-white"></div>
+                    <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-2 border-r-2 border-t-2 border-transparent border-t-white"></div>
                   </div>
                 </div>
                 {bid.bidStatus === 'pending' && (
@@ -558,10 +542,10 @@ const FleetBidsPage: React.FC = () => {
                     <button
                       onClick={() => handleAcceptBid(bid)}
                       disabled={processingAction === bid.id}
-                      className="flex-1 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center justify-center disabled:opacity-50 text-sm"
+                      className="flex-1 px-2 py-1.5 bg-gray-600 text-white rounded-md hover:bg-gray-700 flex items-center justify-center disabled:opacity-50 text-xs transition-colors"
                     >
                       {processingAction === bid.id ? (
-                        <FaSpinner className="w-4 h-4 animate-spin" />
+                        <FaSpinner className="w-3 h-3 animate-spin" />
                       ) : (
                         <span>Accept</span>
                       )}
@@ -569,10 +553,10 @@ const FleetBidsPage: React.FC = () => {
                     <button
                       onClick={() => handleRejectBid(bid)}
                       disabled={processingAction === bid.id}
-                      className="flex-1 px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center justify-center disabled:opacity-50 text-sm"
+                      className="flex-1 px-2 py-1.5 bg-gray-500 text-white rounded-md hover:bg-gray-600 flex items-center justify-center disabled:opacity-50 text-xs transition-colors"
                     >
                       {processingAction === bid.id ? (
-                        <FaSpinner className="w-4 h-4 animate-spin" />
+                        <FaSpinner className="w-3 h-3 animate-spin" />
                       ) : (
                         <span>Reject</span>
                       )}
@@ -580,12 +564,12 @@ const FleetBidsPage: React.FC = () => {
                   </>
                 )}
                 {bid.bidStatus === 'accepted' && (
-                  <div className="flex-1 px-3 py-2 bg-green-100 text-green-800 rounded-lg text-center text-sm font-medium">
+                  <div className="flex-1 px-2 py-1.5 bg-gray-100 text-gray-700 rounded-md text-center text-xs font-medium">
                     Accepted
                   </div>
                 )}
                 {bid.bidStatus === 'rejected' && (
-                  <div className="flex-1 px-3 py-2 bg-red-100 text-red-800 rounded-lg text-center text-sm font-medium">
+                  <div className="flex-1 px-2 py-1.5 bg-gray-100 text-gray-700 rounded-md text-center text-xs font-medium">
                     Rejected
                   </div>
                 )}

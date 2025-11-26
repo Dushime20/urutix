@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { FaUser, FaPlus, FaList, FaUserCheck, FaSpinner, FaThumbsUp, FaGift, FaChartLine } from 'react-icons/fa';
+import { FaUser, FaPlus, FaList, FaUserCheck, FaSpinner, FaThumbsUp, FaGift, FaChartLine, FaSync } from 'react-icons/fa';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { fleetApi } from '../services/fleetApi';
@@ -31,6 +31,7 @@ const UnifiedDriverManagement: React.FC = () => {
   const [editingDriver, setEditingDriver] = useState<Driver | null>(null);
   const [drivers, setDrivers] = useState<Driver[]>([]);
   const [loadingDrivers, setLoadingDrivers] = useState(false);
+  const [driversListRefreshKey, setDriversListRefreshKey] = useState(0);
 
   useEffect(() => {
     // Update tab based on URL changes
@@ -114,33 +115,60 @@ const UnifiedDriverManagement: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="mb-6">
-        <h1 className="mb-2">My Drivers</h1>
-        <p className="text-sm text-gray-600">Manage your drivers, add new drivers, and assign them to trucks.</p>
+    <div className="space-y-4">
+      {/* Header */}
+      <div className="mb-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-xl font-bold text-gray-900 mb-1">Driver Management</h1>
+            <p className="text-xs text-gray-600">Manage your drivers, add new drivers, and assign them to trucks</p>
+          </div>
+          <div className="flex items-center gap-2">
+            {activeTab === 'my-drivers' && (
+              <button
+                onClick={() => {
+                  loadDrivers();
+                  setDriversListRefreshKey(prev => prev + 1);
+                }}
+                disabled={loadingDrivers}
+                className="px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 flex items-center gap-2 disabled:opacity-50 transition-colors"
+              >
+                <FaSync className={`w-3.5 h-3.5 ${loadingDrivers ? 'animate-spin' : ''}`} />
+                Refresh
+              </button>
+            )}
+            <button
+              onClick={handleCreateDriver}
+              className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors flex items-center gap-2 shadow-lg"
+            >
+              <FaPlus className="w-4 h-4" />
+              Add New Driver
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* Navigation Cards */}
-      <div className="grid grid-cols-6 gap-3 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3 mb-4">
         <button
           onClick={() => {
             setActiveTab('add-driver');
             navigate('/dashboard/fleet/drivers/create');
           }}
           className={cn(
-            "relative bg-white rounded-lg border-2 p-3 transition-all duration-200 hover:shadow-lg group",
+            "relative bg-white rounded-lg border p-3.5 transition-all duration-200 hover:shadow-sm group text-left",
             activeTab === 'add-driver'
-              ? "border-primary-600 shadow-md bg-primary-50"
-              : "border-gray-200 hover:border-primary-300 hover:bg-gray-50"
+              ? "border-gray-300 shadow-sm bg-gray-50"
+              : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
           )}
         >
-          <div className="flex items-center justify-between mb-1.5">
+          <div className="flex items-start justify-between mb-2">
             <div
               className={cn(
-                "p-1.5 rounded-lg transition-colors",
+                "p-1.5 rounded-md transition-colors",
                 activeTab === 'add-driver'
-                  ? "bg-primary-100 text-primary-600"
-                  : "bg-gray-100 text-gray-600 group-hover:bg-primary-100 group-hover:text-primary-600"
+                  ? "bg-gray-100 text-gray-700"
+                  : "bg-gray-50 text-gray-500 group-hover:bg-gray-100 group-hover:text-gray-700"
               )}
             >
               <FaPlus className="w-4 h-4" />
@@ -148,14 +176,20 @@ const UnifiedDriverManagement: React.FC = () => {
           </div>
           <h3
             className={cn(
-              "text-base font-semibold text-left",
-              activeTab === 'add-driver' ? "text-primary-900" : "text-gray-900"
+              "text-sm font-semibold mb-1",
+              activeTab === 'add-driver' ? "text-gray-900" : "text-gray-900"
             )}
           >
             Add Driver
           </h3>
+          <p className={cn(
+            "text-xs leading-tight",
+            activeTab === 'add-driver' ? "text-gray-600" : "text-gray-500"
+          )}>
+            Register new drivers with complete profiles and credentials
+          </p>
           {activeTab === 'add-driver' && (
-            <div className="absolute bottom-0 left-0 right-0 h-1 bg-primary-600 rounded-b-lg" />
+            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-400 rounded-b-lg" />
           )}
         </button>
 
@@ -165,29 +199,29 @@ const UnifiedDriverManagement: React.FC = () => {
             navigate('/dashboard/fleet/drivers');
           }}
           className={cn(
-            "relative bg-white rounded-lg border-2 p-3 transition-all duration-200 hover:shadow-lg group",
+            "relative bg-white rounded-lg border p-3.5 transition-all duration-200 hover:shadow-sm group text-left",
             activeTab === 'my-drivers'
-              ? "border-primary-600 shadow-md bg-primary-50"
-              : "border-gray-200 hover:border-primary-300 hover:bg-gray-50"
+              ? "border-gray-300 shadow-sm bg-gray-50"
+              : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
           )}
         >
-          <div className="flex items-center justify-between mb-1.5">
+          <div className="flex items-center justify-between mb-2">
             <div
               className={cn(
-                "p-1.5 rounded-lg transition-colors",
+                "p-1.5 rounded-md transition-colors",
                 activeTab === 'my-drivers'
-                  ? "bg-primary-100 text-primary-600"
-                  : "bg-gray-100 text-gray-600 group-hover:bg-primary-100 group-hover:text-primary-600"
+                  ? "bg-gray-100 text-gray-700"
+                  : "bg-gray-50 text-gray-500 group-hover:bg-gray-100 group-hover:text-gray-700"
               )}
             >
               <FaList className="w-4 h-4" />
             </div>
             <span
               className={cn(
-                "px-2.5 py-1 text-xs font-semibold rounded-full",
+                "px-2 py-0.5 text-xs font-semibold rounded-full",
                 activeTab === 'my-drivers'
-                  ? "bg-primary-600 text-white"
-                  : "bg-gray-200 text-gray-700 group-hover:bg-primary-600 group-hover:text-white"
+                  ? "bg-gray-200 text-gray-700"
+                  : "bg-gray-100 text-gray-600 group-hover:bg-gray-200"
               )}
             >
               {drivers.length}
@@ -195,14 +229,20 @@ const UnifiedDriverManagement: React.FC = () => {
           </div>
           <h3
             className={cn(
-              "text-base font-semibold text-left",
-              activeTab === 'my-drivers' ? "text-primary-900" : "text-gray-900"
+              "text-sm font-semibold mb-1",
+              activeTab === 'my-drivers' ? "text-gray-900" : "text-gray-900"
             )}
           >
             My Drivers
           </h3>
+          <p className={cn(
+            "text-xs leading-tight",
+            activeTab === 'my-drivers' ? "text-gray-600" : "text-gray-500"
+          )}>
+            View, edit, and manage your driver roster and profiles
+          </p>
           {activeTab === 'my-drivers' && (
-            <div className="absolute bottom-0 left-0 right-0 h-1 bg-primary-600 rounded-b-lg" />
+            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-400 rounded-b-lg" />
           )}
         </button>
 
@@ -212,19 +252,19 @@ const UnifiedDriverManagement: React.FC = () => {
             navigate('/dashboard/fleet/assignments');
           }}
           className={cn(
-            "relative bg-white rounded-lg border-2 p-3 transition-all duration-200 hover:shadow-lg group",
+            "relative bg-white rounded-lg border p-3.5 transition-all duration-200 hover:shadow-sm group text-left",
             activeTab === 'assignments'
-              ? "border-primary-600 shadow-md bg-primary-50"
-              : "border-gray-200 hover:border-primary-300 hover:bg-gray-50"
+              ? "border-gray-300 shadow-sm bg-gray-50"
+              : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
           )}
         >
-          <div className="flex items-center justify-between mb-1.5">
+          <div className="flex items-center justify-between mb-2">
             <div
               className={cn(
-                "p-1.5 rounded-lg transition-colors",
+                "p-1.5 rounded-md transition-colors",
                 activeTab === 'assignments'
-                  ? "bg-primary-100 text-primary-600"
-                  : "bg-gray-100 text-gray-600 group-hover:bg-primary-100 group-hover:text-primary-600"
+                  ? "bg-gray-100 text-gray-700"
+                  : "bg-gray-50 text-gray-500 group-hover:bg-gray-100 group-hover:text-gray-700"
               )}
             >
               <FaUserCheck className="w-4 h-4" />
@@ -232,14 +272,20 @@ const UnifiedDriverManagement: React.FC = () => {
           </div>
           <h3
             className={cn(
-              "text-base font-semibold text-left",
-              activeTab === 'assignments' ? "text-primary-900" : "text-gray-900"
+              "text-sm font-semibold mb-1",
+              activeTab === 'assignments' ? "text-gray-900" : "text-gray-900"
             )}
           >
             Driver Assignments
           </h3>
+          <p className={cn(
+            "text-xs leading-tight",
+            activeTab === 'assignments' ? "text-gray-600" : "text-gray-500"
+          )}>
+            Assign drivers to trucks and manage vehicle assignments
+          </p>
           {activeTab === 'assignments' && (
-            <div className="absolute bottom-0 left-0 right-0 h-1 bg-primary-600 rounded-b-lg" />
+            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-400 rounded-b-lg" />
           )}
         </button>
 
@@ -249,19 +295,19 @@ const UnifiedDriverManagement: React.FC = () => {
             navigate('/dashboard/fleet/ratings');
           }}
           className={cn(
-            "relative bg-white rounded-lg border-2 p-3 transition-all duration-200 hover:shadow-lg group",
+            "relative bg-white rounded-lg border p-3.5 transition-all duration-200 hover:shadow-sm group text-left",
             activeTab === 'ratings'
-              ? "border-primary-600 shadow-md bg-primary-50"
-              : "border-gray-200 hover:border-primary-300 hover:bg-gray-50"
+              ? "border-gray-300 shadow-sm bg-gray-50"
+              : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
           )}
         >
-          <div className="flex items-center justify-between mb-1.5">
+          <div className="flex items-center justify-between mb-2">
             <div
               className={cn(
-                "p-1.5 rounded-lg transition-colors",
+                "p-1.5 rounded-md transition-colors",
                 activeTab === 'ratings'
-                  ? "bg-primary-100 text-primary-600"
-                  : "bg-gray-100 text-gray-600 group-hover:bg-primary-100 group-hover:text-primary-600"
+                  ? "bg-gray-100 text-gray-700"
+                  : "bg-gray-50 text-gray-500 group-hover:bg-gray-100 group-hover:text-gray-700"
               )}
             >
               <FaThumbsUp className="w-4 h-4" />
@@ -269,14 +315,20 @@ const UnifiedDriverManagement: React.FC = () => {
           </div>
           <h3
             className={cn(
-              "text-base font-semibold text-left",
-              activeTab === 'ratings' ? "text-primary-900" : "text-gray-900"
+              "text-sm font-semibold mb-1",
+              activeTab === 'ratings' ? "text-gray-900" : "text-gray-900"
             )}
           >
             Driver Ratings
           </h3>
+          <p className={cn(
+            "text-xs leading-tight",
+            activeTab === 'ratings' ? "text-gray-600" : "text-gray-500"
+          )}>
+            View and manage driver performance ratings and feedback
+          </p>
           {activeTab === 'ratings' && (
-            <div className="absolute bottom-0 left-0 right-0 h-1 bg-primary-600 rounded-b-lg" />
+            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-400 rounded-b-lg" />
           )}
         </button>
 
@@ -286,19 +338,19 @@ const UnifiedDriverManagement: React.FC = () => {
             navigate('/dashboard/fleet/rewards');
           }}
           className={cn(
-            "relative bg-white rounded-lg border-2 p-3 transition-all duration-200 hover:shadow-lg group",
+            "relative bg-white rounded-lg border p-3.5 transition-all duration-200 hover:shadow-sm group text-left",
             activeTab === 'rewards'
-              ? "border-primary-600 shadow-md bg-primary-50"
-              : "border-gray-200 hover:border-primary-300 hover:bg-gray-50"
+              ? "border-gray-300 shadow-sm bg-gray-50"
+              : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
           )}
         >
-          <div className="flex items-center justify-between mb-1.5">
+          <div className="flex items-center justify-between mb-2">
             <div
               className={cn(
-                "p-1.5 rounded-lg transition-colors",
+                "p-1.5 rounded-md transition-colors",
                 activeTab === 'rewards'
-                  ? "bg-primary-100 text-primary-600"
-                  : "bg-gray-100 text-gray-600 group-hover:bg-primary-100 group-hover:text-primary-600"
+                  ? "bg-gray-100 text-gray-700"
+                  : "bg-gray-50 text-gray-500 group-hover:bg-gray-100 group-hover:text-gray-700"
               )}
             >
               <FaGift className="w-4 h-4" />
@@ -306,14 +358,20 @@ const UnifiedDriverManagement: React.FC = () => {
           </div>
           <h3
             className={cn(
-              "text-base font-semibold text-left",
-              activeTab === 'rewards' ? "text-primary-900" : "text-gray-900"
+              "text-sm font-semibold mb-1",
+              activeTab === 'rewards' ? "text-gray-900" : "text-gray-900"
             )}
           >
             Rewards
           </h3>
+          <p className={cn(
+            "text-xs leading-tight",
+            activeTab === 'rewards' ? "text-gray-600" : "text-gray-500"
+          )}>
+            Manage driver rewards, incentives, and recognition programs
+          </p>
           {activeTab === 'rewards' && (
-            <div className="absolute bottom-0 left-0 right-0 h-1 bg-primary-600 rounded-b-lg" />
+            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-400 rounded-b-lg" />
           )}
         </button>
 
@@ -323,19 +381,19 @@ const UnifiedDriverManagement: React.FC = () => {
             navigate('/dashboard/fleet/scoring');
           }}
           className={cn(
-            "relative bg-white rounded-lg border-2 p-3 transition-all duration-200 hover:shadow-lg group",
+            "relative bg-white rounded-lg border p-3.5 transition-all duration-200 hover:shadow-sm group text-left",
             activeTab === 'scoring'
-              ? "border-primary-600 shadow-md bg-primary-50"
-              : "border-gray-200 hover:border-primary-300 hover:bg-gray-50"
+              ? "border-gray-300 shadow-sm bg-gray-50"
+              : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
           )}
         >
-          <div className="flex items-center justify-between mb-1.5">
+          <div className="flex items-center justify-between mb-2">
             <div
               className={cn(
-                "p-1.5 rounded-lg transition-colors",
+                "p-1.5 rounded-md transition-colors",
                 activeTab === 'scoring'
-                  ? "bg-primary-100 text-primary-600"
-                  : "bg-gray-100 text-gray-600 group-hover:bg-primary-100 group-hover:text-primary-600"
+                  ? "bg-gray-100 text-gray-700"
+                  : "bg-gray-50 text-gray-500 group-hover:bg-gray-100 group-hover:text-gray-700"
               )}
             >
               <FaChartLine className="w-4 h-4" />
@@ -343,14 +401,20 @@ const UnifiedDriverManagement: React.FC = () => {
           </div>
           <h3
             className={cn(
-              "text-base font-semibold text-left",
-              activeTab === 'scoring' ? "text-primary-900" : "text-gray-900"
+              "text-sm font-semibold mb-1",
+              activeTab === 'scoring' ? "text-gray-900" : "text-gray-900"
             )}
           >
             Credit Scoring
           </h3>
+          <p className={cn(
+            "text-xs leading-tight",
+            activeTab === 'scoring' ? "text-gray-600" : "text-gray-500"
+          )}>
+            Track and analyze driver credit scores and financial metrics
+          </p>
           {activeTab === 'scoring' && (
-            <div className="absolute bottom-0 left-0 right-0 h-1 bg-primary-600 rounded-b-lg" />
+            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-400 rounded-b-lg" />
           )}
         </button>
       </div>
@@ -387,7 +451,7 @@ const UnifiedDriverManagement: React.FC = () => {
         )}
 
         {activeTab === 'my-drivers' && (
-          <DriversList onAddDriver={handleCreateDriver} />
+          <DriversList onAddDriver={handleCreateDriver} refreshTrigger={driversListRefreshKey} />
         )}
 
         {activeTab === 'assignments' && (

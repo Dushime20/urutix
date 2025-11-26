@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AdminController } from './admin.controller';
 import { AdminService } from './admin.service';
+import { UsersModule } from '../users/users.module';
 import { User } from '../../entities/user.entity';
 import { Payment } from '../../entities/payment.entity';
 import { Notification } from '../../entities/notification.entity';
@@ -27,6 +28,7 @@ import { Route } from '../../entities/route.entity';
       Truck,
       Route,
     ]),
+    UsersModule, // Import UsersModule to use UsersService
   ],
   controllers: [AdminController],
   providers: [AdminService],

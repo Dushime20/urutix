@@ -7,6 +7,7 @@ import { notificationApi, type Notification } from '../../services/notifications
 import { HelpCenter } from '../FleetDashboard/HelpCenter';
 import FleetOwnerOnboarding from '../FleetDashboard/FleetOwnerOnboarding';
 import { FloatingHelpButton } from '../FleetDashboard/FloatingHelpButton';
+import logoUrutiX from '../../assets/logo-urutix.svg';
 
 const FleetOwnerLayout: React.FC = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -184,7 +185,15 @@ const FleetOwnerLayout: React.FC = () => {
   };
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen bg-gray-50 relative">
+      {/* Background Logo */}
+      <img 
+        src={logoUrutiX} 
+        alt="UrutiX Logo Background" 
+        className="pointer-events-none select-none fixed inset-0 w-full h-full object-cover opacity-5 z-0" 
+        style={{objectPosition: 'center'}} 
+      />
+      
       {/* Sidebar */}
       <FleetOwnerSidebar 
         isCollapsed={sidebarCollapsed} 
@@ -192,7 +201,7 @@ const FleetOwnerLayout: React.FC = () => {
       />
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden relative z-10">
         {/* Header */}
         <header className="bg-white border-b border-gray-200 px-6 py-3">
           <div className="flex items-center justify-end">

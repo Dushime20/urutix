@@ -1,11 +1,12 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, lazy, Suspense } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
   MapPin,
   Route,
   Navigation,
 } from "lucide-react";
-import Tracking from "@/pages/Tracking";
+// Dynamically import heavy page to reduce initial bundle size
+const Tracking = lazy(() => import("@/pages/Tracking"));
 import RoutesPage from "@/pages/Routes";
 import { cn } from "@/utils/cn";
 
@@ -127,7 +128,11 @@ const UnifiedTrackingManagement = () => {
         {/* Tab Content */}
         <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
           <div className="p-6 pt-6">
-            {activeTab === "tracking" && <Tracking />}
+            {activeTab === "tracking" && (
+              <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500"></div></div>}>
+                <Tracking />
+              </Suspense>
+            )}
             {activeTab === "routes" && <RoutesPage />}
           </div>
         </div>

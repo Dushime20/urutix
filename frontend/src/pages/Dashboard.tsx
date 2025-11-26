@@ -12,7 +12,21 @@ import {
   Navigation,
   Settings
 } from 'lucide-react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
+// Dynamically import recharts to reduce initial bundle size
+import { 
+  LineChart, 
+  Line, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  ResponsiveContainer, 
+  BarChart, 
+  Bar, 
+  PieChart, 
+  Pie, 
+  Cell 
+} from 'recharts';
 import { fleetAPI } from '../services/api';
 import { useCargoOwnerLayout } from '../contexts/CargoOwnerLayoutContext';
 

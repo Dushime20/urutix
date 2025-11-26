@@ -169,8 +169,8 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    // Check if user is active
-    if (user.status !== UserStatus.ACTIVE) {
+    // Check if user is active or pending verification (allow both to login)
+    if (user.status !== UserStatus.ACTIVE && user.status !== UserStatus.PENDING_VERIFICATION) {
       throw new UnauthorizedException(
         'Account is not active. Please verify your email first.',
       );

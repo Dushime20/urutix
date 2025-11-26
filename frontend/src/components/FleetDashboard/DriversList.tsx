@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { FaSearch, FaSync, FaUser, FaEnvelope, FaPhone, FaIdCard, FaTruck, FaTrash, FaEye, FaPlus } from 'react-icons/fa';
+import { FaSearch, FaUser, FaEnvelope, FaPhone, FaIdCard, FaTruck, FaTrash, FaEye, FaPlus } from 'react-icons/fa';
 import { fleetApi } from '../../services/fleetApi';
 import type { Driver } from '../../services/fleetApi';
 
@@ -9,9 +9,10 @@ type AvailabilityOption = 'AVAILABLE' | 'UNAVAILABLE' | 'IN_TRANSIT' | '';
 
 interface DriversListProps {
 	onAddDriver?: () => void;
+	refreshTrigger?: number;
 }
 
-export const DriversList: React.FC<DriversListProps> = ({ onAddDriver }) => {
+export const DriversList: React.FC<DriversListProps> = ({ onAddDriver, refreshTrigger }) => {
 	const [drivers, setDrivers] = useState<Driver[]>([]);
 	const [loading, setLoading] = useState(false);
 	const [search, setSearch] = useState('');
@@ -42,7 +43,7 @@ export const DriversList: React.FC<DriversListProps> = ({ onAddDriver }) => {
 		return () => {
 			cancelled = true;
 		};
-	}, [search, statusFilter, availabilityFilter, refreshKey]);
+	}, [search, statusFilter, availabilityFilter, refreshKey, refreshTrigger]);
 
 	const filteredDrivers = useMemo(() => {
 		return drivers;
@@ -63,36 +64,7 @@ export const DriversList: React.FC<DriversListProps> = ({ onAddDriver }) => {
 
 	return (
 		<div>
-			{/* Header with actions */}
-			<div className="flex items-center justify-between mb-4">
-				<h2>My Drivers</h2>
-				{onAddDriver && (
-					<button
-						onClick={onAddDriver}
-						className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors flex items-center gap-2"
-					>
-						<FaPlus className="w-4 h-4" />
-						Add New Driver
-					</button>
-				)}
-			</div>
-
 			<div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-4">
-				<div className="flex items-center justify-end mb-4">
-					<div className="relative group">
-						<button
-							onClick={() => setRefreshKey((k) => k + 1)}
-							className="inline-flex items-center gap-2 px-4 py-2.5 bg-primary-600 text-white rounded-lg hover:bg-primary-700 active:bg-primary-800 transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-md font-medium text-sm"
-						>
-							<FaSync className="w-4 h-4" />
-							<span>Refresh</span>
-						</button>
-						<div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-white text-gray-900 text-xs font-medium rounded-md shadow-lg border border-gray-200 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
-							Refresh
-							<div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-white"></div>
-						</div>
-					</div>
-				</div>
 				<div className="grid grid-cols-1 md:grid-cols-4 gap-3">
 					<div className="relative">
 						<FaSearch className="absolute left-3 top-3 text-gray-400" />

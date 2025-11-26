@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { Search, Building2, MapPin, Globe, X } from "lucide-react";
 import { tenantAPI } from "../services/api";
 import type { Tenant } from "../types/tenant";
@@ -20,23 +20,172 @@ const CompanySearch: React.FC<CompanySearchProps> = ({
 }) => {
   const [searchTerm, setSearchTerm] = useState(value);
   const [results, setResults] = useState<Tenant[]>([]);
+  const [allTenants, setAllTenants] = useState<Tenant[]>([]); // Store all tenants
   const [isLoading, setIsLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
+  const hasLoadedAllTenants = useRef(false); // Track if we've loaded all tenants
 
-  // Debounced search
+  // Debug: Log state changes
+  useEffect(() => {
+    console.log("🔍 CompanySearch State Update:");
+    console.log("  - allTenants.length:", allTenants.length);
+    console.log("  - results.length:", results.length);
+    console.log("  - isOpen:", isOpen);
+    console.log("  - isLoading:", isLoading);
+    console.log("  - searchTerm:", searchTerm);
+    console.log("  - hasLoadedAllTenants:", hasLoadedAllTenants.current);
+  }, [allTenants, results, isOpen, isLoading, searchTerm]);
+
+  // Load all tenants when component mounts or when input is focused
+  const loadAllTenants = async () => {
+    if (hasLoadedAllTenants.current) {
+      console.log("⏭️ Tenants already loaded, skipping...");
+      return; // Don't reload if already loaded
+    }
+    
+    try {
+      setIsLoading(true);
+      console.log("🔍 Loading all tenants...");
+      console.log("📡 Making API call to /tenants/search with empty query");
+      
+      const response = await tenantAPI.searchTenants({}); // Empty query to get all
+      
+      console.log("📦 Full API Response:", response);
+      console.log("📦 Response.data:", response.data);
+      console.log("📦 Response.data.success:", response.data?.success);
+      console.log("📦 Response.data.data:", response.data?.data);
+      console.log("📦 Response.data.data.results:", response.data?.data?.results);
+      console.log("📦 Response.data.data.results length:", response.data?.data?.results?.length);
+
+      // Try multiple response structures
+      let tenants: Tenant[] = [];
+      
+      if (response.data?.success && response.data?.data?.results) {
+        tenants = response.data.data.results;
+        console.log("✅ Found tenants in response.data.data.results:", tenants.length);
+      } else if (response.data?.data?.results) {
+        tenants = response.data.data.results;
+        console.log("✅ Found tenants in response.data.data.results (no success flag):", tenants.length);
+      } else if (response.data?.results) {
+        tenants = response.data.results;
+        console.log("✅ Found tenants in response.data.results:", tenants.length);
+      } else if (Array.isArray(response.data)) {
+        tenants = response.data;
+        console.log("✅ Found tenants as direct array:", tenants.length);
+      } else if (response.data?.data && Array.isArray(response.data.data)) {
+        tenants = response.data.data;
+        console.log("✅ Found tenants in response.data.data (array):", tenants.length);
+      } else {
+        console.warn("⚠️ No tenants found in any expected location");
+        console.warn("⚠️ Response structure:", JSON.stringify(response, null, 2));
+      }
+
+      if (tenants.length > 0) {
+        // Filter to only show ACTIVE tenants (safety check - backend should already filter)
+        // Backend filters by: status = 'ACTIVE' AND isActive = true
+        // Frontend double-checks to ensure all displayed tenants are ACTIVE
+        // Handle case-insensitive matching in case of data inconsistencies
+        // Include tenants with ACTIVE status even if isActive flag is false (for backward compatibility)
+        const activeTenants = tenants.filter((tenant) => {
+          // Check status is ACTIVE (case-insensitive to handle 'ACTIVE', 'active', 'Active')
+          const statusUpper = (tenant.status || '').toUpperCase();
+          const isActiveStatus = statusUpper === 'ACTIVE';
+          // If status is ACTIVE, include it even if isActive is false (some tenants may have been manually updated)
+          // This ensures all ACTIVE tenants appear in the signup dropdown
+          if (isActiveStatus) {
+            return true; // Include all ACTIVE tenants regardless of isActive flag
+          }
+          return false;
+        });
+        
+        console.log("✅ Total tenants fetched from API:", tenants.length);
+        console.log("✅ Active tenants after filtering:", activeTenants.length);
+        console.log("✅ Tenant statuses (all fetched):", tenants.map(t => ({ 
+          name: t.name, 
+          status: t.status, 
+          isActive: t.isActive 
+        })));
+        console.log("✅ Tenant statuses (active only):", activeTenants.map(t => ({ 
+          name: t.name, 
+          status: t.status, 
+          isActive: t.isActive 
+        })));
+        
+        if (activeTenants.length === 0 && tenants.length > 0) {
+          console.warn("⚠️ WARNING: Backend returned tenants but none are ACTIVE!");
+          console.warn("⚠️ This should not happen - backend should filter for ACTIVE tenants only");
+          console.warn("⚠️ All tenant statuses:", tenants.map(t => ({ 
+            name: t.name, 
+            status: t.status, 
+            isActive: t.isActive 
+          })));
+        }
+        
+        setAllTenants(activeTenants);
+        hasLoadedAllTenants.current = true;
+        setIsOpen(true); // Open dropdown when tenants are loaded
+      } else {
+        console.warn("⚠️ No tenants in array, length is 0");
+        console.warn("⚠️ Response structure was:", JSON.stringify(response, null, 2));
+        setAllTenants([]);
+      }
+    } catch (error: any) {
+      console.error("❌ Error loading all tenants:", error);
+      console.error("❌ Error message:", error?.message);
+      console.error("❌ Error response:", error?.response);
+      console.error("❌ Error response data:", error?.response?.data);
+      console.error("❌ Error response status:", error?.response?.status);
+      setAllTenants([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Filter tenants based on search term
+  const filteredTenants = useMemo(() => {
+    console.log("🔍 Filtering tenants. allTenants.length:", allTenants.length, "searchTerm:", searchTerm);
+    
+    if (!searchTerm.trim()) {
+      console.log("✅ No search term, returning all tenants:", allTenants.length);
+      return allTenants; // Show all if no search term
+    }
+    const searchLower = searchTerm.toLowerCase();
+    const filtered = allTenants.filter(
+      (tenant) =>
+        tenant.name?.toLowerCase().includes(searchLower) ||
+        tenant.city?.toLowerCase().includes(searchLower) ||
+        tenant.country?.toLowerCase().includes(searchLower)
+    );
+    console.log("✅ Filtered tenants:", filtered.length);
+    return filtered;
+  }, [allTenants, searchTerm]);
+
+  // Update results when filtered tenants change
+  useEffect(() => {
+    console.log("🔄 Updating results. filteredTenants.length:", filteredTenants.length, "isOpen:", isOpen);
+    setResults(filteredTenants);
+    if (filteredTenants.length > 0) {
+      setIsOpen(true);
+      console.log("✅ Opening dropdown with", filteredTenants.length, "tenants");
+    }
+  }, [filteredTenants, isOpen]);
+
+  // Debounced search - also search when input is focused with 1+ characters
   useEffect(() => {
     const timeoutId = setTimeout(() => {
-      if (searchTerm.trim().length >= 2) {
-        performSearch(searchTerm);
+      if (searchTerm.trim().length >= 1) {
+        // Results are already filtered by filteredTenants, no need to call API
+        setIsOpen(true);
       } else {
-        setResults([]);
-        setIsOpen(false);
+        // Show all tenants when search is cleared
+        setResults(allTenants);
+        setIsOpen(true);
       }
-    }, 300);
+    }, 100); // Reduced debounce for better UX
 
     return () => clearTimeout(timeoutId);
-  }, [searchTerm]);
+  }, [searchTerm, allTenants]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -53,25 +202,11 @@ const CompanySearch: React.FC<CompanySearchProps> = ({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // This function is no longer needed since we filter client-side
+  // Keeping for backward compatibility but it's not used
   const performSearch = async (query: string) => {
-    try {
-      setIsLoading(true);
-      const response = await tenantAPI.searchTenants({ q: query });
-
-      if (response.data.success) {
-        setResults(response.data.data.results);
-        setIsOpen(true);
-      } else {
-        setResults([]);
-        setIsOpen(false);
-      }
-    } catch (error) {
-      console.error("Error searching tenants:", error);
-      setResults([]);
-      setIsOpen(false);
-    } finally {
-      setIsLoading(false);
-    }
+    // Results are now filtered client-side from allTenants
+    // This function is kept for compatibility but filtering happens in filteredTenants
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -113,8 +248,21 @@ const CompanySearch: React.FC<CompanySearchProps> = ({
             error ? "border-red-500" : ""
           }`}
           placeholder={placeholder}
-          onFocus={() => {
-            if (results.length > 0) setIsOpen(true);
+          onFocus={async () => {
+            console.log("👆 Input focused, hasLoadedAllTenants:", hasLoadedAllTenants.current);
+            console.log("👆 allTenants.length:", allTenants.length);
+            // Load all tenants if not already loaded
+            if (!hasLoadedAllTenants.current) {
+              console.log("👆 Loading tenants on focus...");
+              await loadAllTenants();
+            } else {
+              console.log("👆 Tenants already loaded, showing dropdown");
+            }
+            // Show dropdown with all tenants or filtered results
+            if (allTenants.length > 0 || results.length > 0) {
+              setIsOpen(true);
+              console.log("👆 Opening dropdown with", allTenants.length, "tenants");
+            }
           }}
         />
         {searchTerm && (
@@ -189,11 +337,29 @@ const CompanySearch: React.FC<CompanySearchProps> = ({
       {isOpen &&
         !isLoading &&
         results.length === 0 &&
-        searchTerm.trim().length >= 2 && (
+        allTenants.length === 0 && (
           <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg p-4">
             <div className="text-center text-gray-500">
               <Building2 className="h-8 w-8 mx-auto mb-2 text-gray-300" />
-              <p className="text-sm">No companies found</p>
+              <p className="text-sm">No companies available</p>
+              <p className="text-xs mt-1">Please contact support if you need to add a company</p>
+              <p className="text-xs mt-1 text-red-500">
+                Debug: allTenants={allTenants.length}, results={results.length}, isLoading={isLoading.toString()}
+              </p>
+            </div>
+          </div>
+        )}
+      
+      {/* No search results message */}
+      {isOpen &&
+        !isLoading &&
+        results.length === 0 &&
+        allTenants.length > 0 &&
+        searchTerm.trim().length > 0 && (
+          <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg p-4">
+            <div className="text-center text-gray-500">
+              <Building2 className="h-8 w-8 mx-auto mb-2 text-gray-300" />
+              <p className="text-sm">No companies found matching "{searchTerm}"</p>
               <p className="text-xs mt-1">Try a different search term</p>
             </div>
           </div>

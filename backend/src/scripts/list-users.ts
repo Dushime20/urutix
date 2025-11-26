@@ -1,3 +1,5 @@
+import { config } from 'dotenv';
+config();
 import { Client } from 'pg';
 
 async function run(): Promise<void> {

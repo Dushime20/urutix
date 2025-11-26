@@ -22,7 +22,7 @@ import { TenantService } from './tenant.service';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { TenantGuard } from './tenant.guard';
 import { ApiResponseDto } from '../../common/dto/api-response.dto';
-import { FindTenantsDto } from './dto/tenant.dto';
+import { FindTenantsDto, UpdateTenantDto } from './dto/tenant.dto';
 
 @ApiTags('Tenant Management')
 @Controller('tenants')
@@ -96,15 +96,32 @@ export class TenantController {
 
   @Get('search')
   @ApiOperation({
-    summary: 'Get Searched tenants',
-    description: 'Get Searched tenants (Super Admin only)',
+    summary: 'Get Searched tenants (Public)',
+    description: 'Public endpoint to search tenants for signup. Returns only ACTIVE tenants that users can sign up for.',
   })
   @ApiOkResponse({
-    description: 'Tenants retrieved successfully',
+    description: 'Active tenants retrieved successfully',
   })
+  // No guards - this is a public endpoint for signup
   async getTenantSearch(@Query() query: FindTenantsDto) {
-    const tenants = await this.tenantService.getSearchedTenants(query);
-    return this.createApiResponse(tenants, 'Tenants retrieved successfully');
+    console.log('🔍 [PUBLIC] Tenant search endpoint called');
+    console.log('🔍 [PUBLIC] Query params:', query);
+    console.log('🔍 [PUBLIC] Request headers:', JSON.stringify(query));
+    
+    try {
+      const tenants = await this.tenantService.getSearchedTenants(query);
+      console.log('✅ [PUBLIC] Tenants found:', tenants);
+      console.log('✅ [PUBLIC] Tenants count:', tenants?.results?.length || tenants?.total || 0);
+      console.log('✅ [PUBLIC] All tenants:', JSON.stringify(tenants, null, 2));
+      
+      const response = this.createApiResponse(tenants, 'Tenants retrieved successfully');
+      console.log('✅ [PUBLIC] Response:', JSON.stringify(response, null, 2));
+      return response;
+    } catch (error: any) {
+      console.error('❌ [PUBLIC] Error in tenant search:', error);
+      console.error('❌ [PUBLIC] Error message:', error?.message);
+      throw error;
+    }
   }
 
   @Get('active')
@@ -170,7 +187,7 @@ export class TenantController {
   })
   async updateTenant(
     @Param('id') id: string,
-    @Body() updateTenantDto: any,
+    @Body() updateTenantDto: UpdateTenantDto,
   ): Promise<ApiResponseDto> {
     const tenant = await this.tenantService.updateTenant(id, updateTenantDto);
     return this.createApiResponse(tenant, 'Tenant updated successfully');
@@ -213,14 +230,14 @@ export class TenantController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, TenantGuard)
   @ApiOperation({
-    summary: 'Delete tenant',
-    description: 'Delete a tenant (Super Admin only)',
+    summary: 'Delete tenant (Soft Delete)',
+    description: 'Soft delete a tenant by setting status to DEACTIVATED (Super Admin only)',
   })
   @ApiOkResponse({
-    description: 'Tenant deleted successfully',
+    description: 'Tenant deactivated successfully',
   })
   async deleteTenant(@Param('id') id: string): Promise<ApiResponseDto> {
-    await this.tenantService.deleteTenant(id);
-    return this.createApiResponse(null, 'Tenant deleted successfully');
+    const tenant = await this.tenantService.deleteTenant(id);
+    return this.createApiResponse(tenant, 'Tenant deactivated successfully');
   }
 }

@@ -1,12 +1,13 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, lazy, Suspense } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
   BarChart3,
   FileText,
   History,
 } from "lucide-react";
-import Analytics from "@/pages/Analytics";
-import FinancialReportsPage from "@/pages/FinancialReportsPage";
+// Dynamically import heavy pages to reduce initial bundle size
+const Analytics = lazy(() => import("@/pages/Analytics"));
+const FinancialReportsPage = lazy(() => import("@/pages/FinancialReportsPage"));
 import CargoList from "@/pages/dashboard/cargos/list";
 import { cn } from "@/utils/cn";
 
@@ -75,78 +76,81 @@ const UnifiedAnalyticsManagement = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {/* Header */}
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold text-gray-900">
-            Analytics & Reports
-          </h1>
-          <p className="text-gray-600 mt-1">
-            Track performance, generate reports, and view history
-          </p>
+    <div className="space-y-4">
+      {/* Header */}
+      <div className="mb-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-xl font-bold text-gray-900 mb-1">Analytics & Reports</h1>
+            <p className="text-xs text-gray-600">Track performance, generate reports, and view history</p>
+          </div>
         </div>
+      </div>
 
-        {/* Navigation Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-          {tabs.map((tab) => {
-            const Icon = tab.icon;
-            const isActive = activeTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => handleTabChange(tab.id)}
+      {/* Navigation Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-4">
+        {tabs.map((tab) => {
+          const Icon = tab.icon;
+          const isActive = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => handleTabChange(tab.id)}
+              className={cn(
+                "relative bg-white rounded-lg border p-3.5 transition-all duration-200 hover:shadow-sm group text-left",
+                isActive
+                  ? "border-gray-300 shadow-sm bg-gray-50"
+                  : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+              )}
+            >
+              <div className="flex items-start justify-between mb-2">
+                <div
+                  className={cn(
+                    "p-1.5 rounded-md transition-colors",
+                    isActive
+                      ? "bg-gray-100 text-gray-700"
+                      : "bg-gray-50 text-gray-500 group-hover:bg-gray-100 group-hover:text-gray-700"
+                  )}
+                >
+                  <Icon className="w-4 h-4" />
+                </div>
+              </div>
+              <h3
                 className={cn(
-                  "relative bg-white rounded-lg border-2 p-6 text-left transition-all duration-200 hover:shadow-lg",
-                  isActive
-                    ? "border-blue-500 bg-blue-50 shadow-md"
-                    : "border-gray-200 hover:border-gray-300"
+                  "text-sm font-semibold mb-1",
+                  isActive ? "text-gray-900" : "text-gray-900"
                 )}
               >
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center space-x-3 mb-2">
-                      <div
-                        className={cn(
-                          "p-3 rounded-lg",
-                          isActive
-                            ? "bg-blue-100 text-blue-600"
-                            : "bg-gray-100 text-gray-600"
-                        )}
-                      >
-                        <Icon className="w-6 h-6" />
-                      </div>
-                      <div>
-                        <h3
-                          className={cn(
-                            "text-lg font-semibold",
-                            isActive ? "text-blue-900" : "text-gray-900"
-                          )}
-                        >
-                          {tab.label}
-                        </h3>
-                      </div>
-                    </div>
-                    <p className="text-sm text-gray-600 mt-1">
-                      {tab.description}
-                    </p>
-                  </div>
-                </div>
-                {isActive && (
-                  <div className="absolute bottom-0 left-0 right-0 h-1 bg-blue-500 rounded-b-lg" />
-                )}
-              </button>
-            );
-          })}
-        </div>
+                {tab.label}
+              </h3>
+              <p className={cn(
+                "text-xs leading-tight",
+                isActive ? "text-gray-600" : "text-gray-500"
+              )}>
+                {tab.description}
+              </p>
+              {isActive && (
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-400 rounded-b-lg" />
+              )}
+            </button>
+          );
+        })}
+      </div>
 
-        {/* Tab Content */}
-        <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
-          <div className="p-6 pt-6">
-            {activeTab === "analytics" && <Analytics />}
-            {activeTab === "reports" && <FinancialReportsPage />}
+      {/* Tab Content */}
+      <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
+        <div className="p-4">
+            {activeTab === "analytics" && (
+              <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500"></div></div>}>
+                <Analytics />
+              </Suspense>
+            )}
+            {activeTab === "reports" && (
+              <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500"></div></div>}>
+                <FinancialReportsPage />
+              </Suspense>
+            )}
             {activeTab === "history" && renderHistoryContent()}
-          </div>
         </div>
       </div>
     </div>

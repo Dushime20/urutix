@@ -1,4 +1,4 @@
-import { Controller, Get, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, UseGuards, Request, ValidationPipe } from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiOkResponse,
@@ -9,6 +9,7 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from './roles.guard';
 import { AdminService } from './admin.service';
 import { Body, Post, Query } from '@nestjs/common';
+import { CreateTenantDto } from './dto/create-tenant.dto';
 
 @ApiTags('Admin')
 @ApiBearerAuth()
@@ -119,9 +120,45 @@ export class AdminController {
 
   // Create tenant
   @Post('tenants')
-  @ApiOperation({ summary: 'Create a tenant' })
-  createTenant(@Body() body: any) {
-    return this.adminService.createTenant(body);
+  @ApiOperation({
+    summary: 'Create a new tenant',
+    description:
+      'Creates a new tenant with an admin user. The tenant will be in PENDING_ACTIVATION status until activated by a super admin.',
+  })
+  @ApiOkResponse({
+    description: 'Tenant created successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        tenant: {
+          type: 'object',
+          properties: {
+            id: { type: 'string' },
+            name: { type: 'string' },
+            subdomain: { type: 'string' },
+            domain: { type: 'string' },
+            status: { type: 'string' },
+            subscriptionPlan: { type: 'string' },
+          },
+        },
+        adminUser: {
+          type: 'object',
+          properties: {
+            id: { type: 'string' },
+            email: { type: 'string' },
+            firstName: { type: 'string' },
+            lastName: { type: 'string' },
+            role: { type: 'string' },
+          },
+        },
+      },
+    },
+  })
+  createTenant(
+    @Body(new ValidationPipe({ transform: true, whitelist: true }))
+    createTenantDto: CreateTenantDto,
+  ) {
+    return this.adminService.createTenant(createTenantDto);
   }
 
   // Create route for tenant

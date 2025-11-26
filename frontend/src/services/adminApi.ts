@@ -44,8 +44,32 @@ export const fetchAuditLogs = async () => {
 
 // Tenants
 export const fetchTenants = async () => {
-  const res = await api.get('/admin/tenants');
-  return res.data;
+  console.log("🔍 fetchTenants: Making API call to /admin/tenants");
+  try {
+    const res = await api.get('/admin/tenants');
+    console.log("📦 fetchTenants: Full response:", res);
+    console.log("📦 fetchTenants: Response.data:", res.data);
+    console.log("📦 fetchTenants: Response.data.tenants:", res.data?.tenants);
+    console.log("📦 fetchTenants: Response.data.tenants length:", res.data?.tenants?.length);
+    console.log("📦 fetchTenants: Response.data.tenants is array?", Array.isArray(res.data?.tenants));
+    
+    if (res.data?.tenants && Array.isArray(res.data.tenants)) {
+      console.log("✅ fetchTenants: Successfully fetched", res.data.tenants.length, "tenants");
+      console.log("✅ fetchTenants: All tenants from API:", JSON.stringify(res.data.tenants, null, 2));
+    } else {
+      console.warn("⚠️ fetchTenants: No tenants array in response");
+      console.warn("⚠️ fetchTenants: Response structure:", JSON.stringify(res.data, null, 2));
+    }
+    
+    return res.data;
+  } catch (error: any) {
+    console.error("❌ fetchTenants: Error:", error);
+    console.error("❌ fetchTenants: Error message:", error?.message);
+    console.error("❌ fetchTenants: Error response:", error?.response);
+    console.error("❌ fetchTenants: Error response data:", error?.response?.data);
+    console.error("❌ fetchTenants: Error response status:", error?.response?.status);
+    throw error;
+  }
 };
 
 // Admin-wide listings
@@ -72,6 +96,36 @@ export const fetchAllUsers = async (tenantId?: string) => {
 // Create tenant
 export const createTenant = async (payload: any) => {
   const res = await api.post('/admin/tenants', payload);
+  return res.data;
+};
+
+// Get tenant by ID
+export const getTenantById = async (tenantId: string) => {
+  const res = await api.get(`/tenants/${tenantId}`);
+  return res.data;
+};
+
+// Update tenant
+export const updateTenant = async (tenantId: string, payload: any) => {
+  const res = await api.put(`/tenants/${tenantId}`, payload);
+  return res.data;
+};
+
+// Activate tenant
+export const activateTenant = async (tenantId: string) => {
+  const res = await api.post(`/tenants/${tenantId}/activate`);
+  return res.data;
+};
+
+// Suspend tenant
+export const suspendTenant = async (tenantId: string, reason?: string) => {
+  const res = await api.post(`/tenants/${tenantId}/suspend`, { reason });
+  return res.data;
+};
+
+// Deactivate tenant (soft delete)
+export const deactivateTenant = async (tenantId: string) => {
+  const res = await api.delete(`/tenants/${tenantId}`);
   return res.data;
 };
 

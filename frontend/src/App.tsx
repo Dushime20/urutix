@@ -2,94 +2,112 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from './contexts/AuthContext';
 import { Toaster } from 'react-hot-toast';
-import Dashboard from './pages/Dashboard';
-import CargoDashboard from './pages/CargoDashboard';
-import FleetDashboard from './pages/FleetDashboard';
-import FleetOwnerDashboard from './pages/FleetOwnerDashboard';
-import FleetSafety from './pages/FleetSafety';
-import TruckBidsPage from './pages/TruckBidsPage';
-import FleetBidsPage from './pages/FleetBidsPage';
-import MyBidsPage from './pages/MyBidsPage';
-import DriversListPage from './pages/DriversListPage';
-import DriverDashboard from './pages/DriverDashboard';
-import AdminDashboard from './pages/AdminDashboard';
-import Analytics from './pages/Analytics';
-import FleetAnalytics from './pages/FleetAnalytics';
-import CargoList from './pages/dashboard/cargos/list';
-import EnhancedJourneyFlow from './components/CargoOwnerJourney/EnhancedJourneyFlow';
-import EnhancedCargoDemo from './pages/EnhancedCargoDemo';
+import { lazy, Suspense } from 'react';
+
+// Lazy load pages that use heavy libraries (charts/maps) to reduce initial bundle size
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const CargoDashboard = lazy(() => import('./pages/CargoDashboard'));
+const FleetDashboard = lazy(() => import('./pages/FleetDashboard'));
+const FleetOwnerDashboard = lazy(() => import('./pages/FleetOwnerDashboard'));
+const FleetSafety = lazy(() => import('./pages/FleetSafety'));
+const TruckBidsPage = lazy(() => import('./pages/TruckBidsPage'));
+const FleetBidsPage = lazy(() => import('./pages/FleetBidsPage'));
+const MyBidsPage = lazy(() => import('./pages/MyBidsPage'));
+const DriversListPage = lazy(() => import('./pages/DriversListPage'));
+const DriverDashboard = lazy(() => import('./pages/DriverDashboard'));
+const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
+const Analytics = lazy(() => import('./pages/Analytics'));
+const FleetAnalytics = lazy(() => import('./pages/FleetAnalytics'));
+
+// Keep essential components that are needed immediately (layouts, auth, home)
 import CargoOwnerLayout from './components/Layout/CargoOwnerLayout';
 import FleetOwnerLayout from './components/Layout/FleetOwnerLayout';
 import DriverLayout from './components/Layout/DriverLayout';
 import AdminLayout from './components/Layout/AdminLayout';
+import TenantAdminLayout from './components/Layout/TenantAdminLayout';
+import LenderLayout from './components/Layout/LenderLayout';
 import Auth from './pages/Auth';
 import Home from './pages/Home';
-import TrucksListPage from './pages/TrucksListPage';
-import TruckRecordsPage from './pages/TruckRecordsPage';
-import UnifiedFleetManagement from './pages/UnifiedFleetManagement';
-import UnifiedDriverManagement from './pages/UnifiedDriverManagement';
-import FleetPaymentManagement from './pages/FleetPaymentManagement';
-import FleetHelpSupport from './pages/FleetHelpSupport';
-import CargoHelpSupport from './pages/CargoHelpSupport';
-import RoutesPage from './pages/Routes';
-import AdminUsers from './pages/AdminUsers';
-import AdminTrucks from './pages/AdminTrucks';
-import AdminLoads from './pages/AdminLoads';
-import AdminTrips from './pages/AdminTrips';
-import AdminTenants from './pages/AdminTenants';
-import AdminRoutes from './pages/AdminRoutes';
-import MonitoringDashboard from './pages/admin/MonitoringDashboard';
-import BiddingManagement from './pages/admin/BiddingManagement';
-import DisputeManagement from './pages/admin/DisputeManagement';
-import FinancialAdminDashboard from './pages/admin/FinancialAdminDashboard';
-import TenantDashboardPage from './pages/TenantDashboard';
-import TenantAdminLayout from './components/Layout/TenantAdminLayout';
-import TenantFleetManagement from './components/TenantAdmin/TenantFleetManagement';
-import TenantCargoOperations from './components/TenantAdmin/TenantCargoOperations';
-import Profile from './pages/Profile';
-import Settings from './pages/Settings';
-import LenderPolicySettingsPage from './pages/LenderPolicySettingsPage';
-import AdminLenderRegistrationPage from './pages/AdminLenderRegistrationPage';
-import AdminBorrowersPage from './pages/AdminBorrowersPage';
 
-// Enhanced Transaction Flow Components
-import BookingConfirmation from './pages/BookingConfirmation';
-import TripManagement from './pages/TripManagement';
-import PaymentProcessing from './pages/PaymentProcessing';
-import TransactionFlow from './pages/TransactionFlow';
-import MatchResults from './pages/MatchResults';
-import ContractNegotiation from './pages/ContractNegotiation';
-import EscrowManagement from './pages/EscrowManagement';
-import DisputeResolution from './pages/DisputeResolution';
-import TripTracking from './pages/TripTracking';
-import DeliveryConfirmation from './pages/DeliveryConfirmation';
-import SettlementProcessing from './pages/SettlementProcessing';
-import LenderDashboardPage from './pages/LenderDashboardPage';
-import LenderLayout from './components/Layout/LenderLayout';
-import EnhancedLoanRequestsPage from './pages/EnhancedLoanRequestsPage';
-import UnifiedFinancialManagement from './pages/dashboard/financial';
-import UnifiedDocumentManagement from './pages/dashboard/documents';
-import DocumentsPage from './pages/DocumentsPage';
-import UnifiedNotificationManagement from './pages/dashboard/notifications';
-import UnifiedReputationManagement from './pages/dashboard/reputation';
-import UnifiedAccountManagement from './pages/dashboard/account';
-import UnifiedAnalyticsManagement from './pages/dashboard/analytics';
-import UnifiedTrackingManagement from './pages/dashboard/tracking';
-import ActiveLoansPage from './pages/ActiveLoansPage';
-import DisbursementsPage from './pages/DisbursementsPage';
-import RepaymentsPage from './pages/RepaymentsPage';
-import PortfolioAnalyticsPage from './pages/PortfolioAnalyticsPage';
-import RiskAnalysisPage from './pages/RiskAnalysisPage';
-import InterestTrackingPage from './pages/InterestTrackingPage';
-import FinancialReportsPage from './pages/FinancialReportsPage';
-import BorrowersManagementPage from './pages/BorrowersManagementPage';
-import LendingPoliciesPage from './pages/LendingPoliciesPage';
-import CreditAssessmentPage from './pages/CreditAssessmentPage';
-import TransactionsHistoryPage from './pages/TransactionsHistoryPage';
-import LenderProfilePage from './pages/LenderProfilePage';
-import LenderNotificationsPage from './pages/LenderNotificationsPage';
-import LenderSupportPage from './pages/LenderSupportPage';
-import LenderTeamManagementPage from './pages/LenderTeamManagementPage';
+// Lazy load all page components to reduce initial bundle size
+const CargoList = lazy(() => import('./pages/dashboard/cargos/list'));
+const EnhancedJourneyFlow = lazy(() => import('./components/CargoOwnerJourney/EnhancedJourneyFlow'));
+const EnhancedCargoDemo = lazy(() => import('./pages/EnhancedCargoDemo'));
+const TrucksListPage = lazy(() => import('./pages/TrucksListPage'));
+const TruckRecordsPage = lazy(() => import('./pages/TruckRecordsPage'));
+const UnifiedFleetManagement = lazy(() => import('./pages/UnifiedFleetManagement'));
+const UnifiedDriverManagement = lazy(() => import('./pages/UnifiedDriverManagement'));
+const FleetPaymentManagement = lazy(() => import('./pages/FleetPaymentManagement'));
+const FleetHelpSupport = lazy(() => import('./pages/FleetHelpSupport'));
+const CargoHelpSupport = lazy(() => import('./pages/CargoHelpSupport'));
+const RoutesPage = lazy(() => import('./pages/Routes'));
+const AdminUsers = lazy(() => import('./pages/AdminUsers'));
+const AdminTrucks = lazy(() => import('./pages/AdminTrucks'));
+const AdminLoads = lazy(() => import('./pages/AdminLoads'));
+const AdminTrips = lazy(() => import('./pages/AdminTrips'));
+const AdminTenants = lazy(() => import('./pages/AdminTenants'));
+const AdminRoutes = lazy(() => import('./pages/AdminRoutes'));
+const MonitoringDashboard = lazy(() => import('./pages/admin/MonitoringDashboard'));
+const BiddingManagement = lazy(() => import('./pages/admin/BiddingManagement'));
+const DisputeManagement = lazy(() => import('./pages/admin/DisputeManagement'));
+const FinancialAdminDashboard = lazy(() => import('./pages/admin/FinancialAdminDashboard'));
+const TenantDashboardPage = lazy(() => import('./pages/TenantDashboard'));
+const TenantFleetManagement = lazy(() => import('./components/TenantAdmin/TenantFleetManagement'));
+const TenantCargoOperations = lazy(() => import('./components/TenantAdmin/TenantCargoOperations'));
+const Profile = lazy(() => import('./pages/Profile'));
+const Settings = lazy(() => import('./pages/Settings'));
+const LenderPolicySettingsPage = lazy(() => import('./pages/LenderPolicySettingsPage'));
+const AdminLenderRegistrationPage = lazy(() => import('./pages/AdminLenderRegistrationPage'));
+const AdminBorrowersPage = lazy(() => import('./pages/AdminBorrowersPage'));
+
+// Enhanced Transaction Flow Components - lazy load
+const BookingConfirmation = lazy(() => import('./pages/BookingConfirmation'));
+const TripManagement = lazy(() => import('./pages/TripManagement'));
+const PaymentProcessing = lazy(() => import('./pages/PaymentProcessing'));
+const TransactionFlow = lazy(() => import('./pages/TransactionFlow'));
+const MatchResults = lazy(() => import('./pages/MatchResults'));
+const ContractNegotiation = lazy(() => import('./pages/ContractNegotiation'));
+const EscrowManagement = lazy(() => import('./pages/EscrowManagement'));
+const DisputeResolution = lazy(() => import('./pages/DisputeResolution'));
+const TripTracking = lazy(() => import('./pages/TripTracking'));
+const Tracking = lazy(() => import('./pages/Tracking'));
+const DeliveryConfirmation = lazy(() => import('./pages/DeliveryConfirmation'));
+const SettlementProcessing = lazy(() => import('./pages/SettlementProcessing'));
+const LenderDashboardPage = lazy(() => import('./pages/LenderDashboardPage'));
+const EnhancedLoanRequestsPage = lazy(() => import('./pages/EnhancedLoanRequestsPage'));
+const UnifiedFinancialManagement = lazy(() => import('./pages/dashboard/financial'));
+const UnifiedDocumentManagement = lazy(() => import('./pages/dashboard/documents'));
+const DocumentsPage = lazy(() => import('./pages/DocumentsPage'));
+const UnifiedNotificationManagement = lazy(() => import('./pages/dashboard/notifications'));
+const UnifiedReputationManagement = lazy(() => import('./pages/dashboard/reputation'));
+const UnifiedAccountManagement = lazy(() => import('./pages/dashboard/account'));
+const UnifiedAnalyticsManagement = lazy(() => import('./pages/dashboard/analytics'));
+const UnifiedTrackingManagement = lazy(() => import('./pages/dashboard/tracking'));
+const ActiveLoansPage = lazy(() => import('./pages/ActiveLoansPage'));
+const DisbursementsPage = lazy(() => import('./pages/DisbursementsPage'));
+const RepaymentsPage = lazy(() => import('./pages/RepaymentsPage'));
+const PortfolioAnalyticsPage = lazy(() => import('./pages/PortfolioAnalyticsPage'));
+const RiskAnalysisPage = lazy(() => import('./pages/RiskAnalysisPage'));
+const InterestTrackingPage = lazy(() => import('./pages/InterestTrackingPage'));
+const FinancialReportsPage = lazy(() => import('./pages/FinancialReportsPage'));
+const BorrowersManagementPage = lazy(() => import('./pages/BorrowersManagementPage'));
+const LendingPoliciesPage = lazy(() => import('./pages/LendingPoliciesPage'));
+const CreditAssessmentPage = lazy(() => import('./pages/CreditAssessmentPage'));
+const TransactionsHistoryPage = lazy(() => import('./pages/TransactionsHistoryPage'));
+const LenderProfilePage = lazy(() => import('./pages/LenderProfilePage'));
+const LenderNotificationsPage = lazy(() => import('./pages/LenderNotificationsPage'));
+const LenderSupportPage = lazy(() => import('./pages/LenderSupportPage'));
+const LenderTeamManagementPage = lazy(() => import('./pages/LenderTeamManagementPage'));
+
+// Loading fallback component for lazy-loaded pages
+const PageLoadingFallback = () => (
+  <div className="flex items-center justify-center min-h-screen">
+    <div className="text-center">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto mb-4"></div>
+      <p className="text-sm text-gray-500">Loading...</p>
+    </div>
+  </div>
+);
 
 // Create a client
 const queryClient = new QueryClient({
@@ -106,7 +124,8 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <Router>
-          <Routes>
+          <Suspense fallback={<PageLoadingFallback />}>
+            <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/auth" element={<Auth />} />
             
@@ -327,7 +346,8 @@ function App() {
 
             {/* Alias: support /dashboard/admin by redirecting to /admin */}
             <Route path="/dashboard/admin/*" element={<Navigate to="/admin" replace />} />
-          </Routes>
+            </Routes>
+          </Suspense>
         </Router>
       </AuthProvider>
       <Toaster

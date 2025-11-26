@@ -30,7 +30,9 @@
     "seed:complete": "node src/database/seeds/seed-complete-system.js",
     "create:admin": "ts-node src/scripts/create-admin-user.ts",
   "user:set-password": "ts-node src/scripts/set-user-password.ts",
-  "users:list": "ts-node src/scripts/list-users.ts"
+  "users:list": "ts-node src/scripts/list-users.ts",
+  "diagnose:login": "ts-node src/scripts/diagnose-login-issue.ts",
+  "seed:users": "ts-node src/scripts/seed-users.ts"
   },
   "dependencies": {
     "@nestjs/axios": "^4.0.1",

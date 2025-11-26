@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, lazy, Suspense } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
   CreditCard,
@@ -10,7 +10,8 @@ import {
 } from "lucide-react";
 import Payments from "@/pages/Payments";
 import EnhancedLoanRequestsPage from "@/pages/EnhancedLoanRequestsPage";
-import FinancialReportsPage from "@/pages/FinancialReportsPage";
+// Dynamically import heavy page to reduce initial bundle size
+const FinancialReportsPage = lazy(() => import("@/pages/FinancialReportsPage"));
 import { cn } from "@/utils/cn";
 
 type TabType = "payments" | "loans" | "reports";
@@ -142,7 +143,11 @@ const UnifiedFinancialManagement = () => {
           <div className="p-6 pt-6">
             {activeTab === "payments" && <Payments />}
             {activeTab === "loans" && <EnhancedLoanRequestsPage />}
-            {activeTab === "reports" && <FinancialReportsPage />}
+            {activeTab === "reports" && (
+              <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500"></div></div>}>
+                <FinancialReportsPage />
+              </Suspense>
+            )}
           </div>
         </div>
       </div>

@@ -7,8 +7,10 @@ import { z } from 'zod';
 import { FaEye, FaEyeSlash, FaSpinner } from 'react-icons/fa';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import CompanySearch from '../components/CompanySearch';
+import { useQuery } from '@tanstack/react-query';
+import { tenantAPI } from '../services/api';
 import type { Tenant } from '../types/tenant';
+import toast from 'react-hot-toast';
 
 
 // Zod schemas
@@ -20,7 +22,7 @@ const loginSchema = z.object({
 const registerSchema = z.object({
   firstName: z.string().min(1, { message: 'First name is required' }),
   lastName: z.string().min(1, { message: 'Last name is required' }),
-  companyName: z.string().min(1, { message: 'Company name is required' }),
+  companyName: z.string().min(1, { message: 'Please select a company' }),
   email: z.string().email({ message: 'Invalid email address' }),
   password: z.string().min(6, { message: 'Password must be at least 6 characters' }),
   confirmPassword: z.string().min(6, { message: 'Please confirm your password' }),
@@ -28,6 +30,12 @@ const registerSchema = z.object({
 }).refine((data) => data.password === data.confirmPassword, {
   message: 'Passwords do not match',
   path: ['confirmPassword'],
+}).refine((data) => {
+  // Both CARGO_OWNER and TRUCK_OWNER must select a company from the list
+  return data.companyName && data.companyName.trim().length > 0;
+}, {
+  message: 'Please select a company from the dropdown',
+  path: ['companyName'],
 });
 
 type RegisterFormData = z.infer<typeof registerSchema>;
@@ -42,6 +50,32 @@ const Auth = () => {
   const [selectedUserType, setSelectedUserType] = useState<'CARGO_OWNER' | 'TRUCK_OWNER'>('CARGO_OWNER');
   const [isLoading, setIsLoading] = useState(false);
   const [selectedTenant, setSelectedTenant] = useState<Tenant | null>(null);
+  const [selectedTenantId, setSelectedTenantId] = useState<string>('');
+
+  // Fetch active tenants for dropdown (for both CARGO_OWNER and TRUCK_OWNER)
+  const { data: tenantsData, isLoading: isLoadingTenants } = useQuery({
+    queryKey: ['active-tenants'],
+    queryFn: async () => {
+      const response = await tenantAPI.searchTenants({});
+      // Extract tenants from response
+      if (response.data?.success && response.data?.data?.results) {
+        return response.data.data.results;
+      } else if (response.data?.data?.results) {
+        return response.data.data.results;
+      } else if (response.data?.results) {
+        return response.data.results;
+      } else if (Array.isArray(response.data)) {
+        return response.data;
+      } else if (response.data?.data && Array.isArray(response.data.data)) {
+        return response.data.data;
+      }
+      return [];
+    },
+    enabled: true, // Always fetch tenants for both user types
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+  });
+
+  const tenants = tenantsData || [];
 
   // Login form
   const loginForm = useForm({
@@ -120,21 +154,42 @@ const Auth = () => {
     try {
       setError(null);
       setIsLoading(true);
+      
+      // Validate tenant selection for both CARGO_OWNER and TRUCK_OWNER
+      // selectedTenant should be set when user selects from dropdown
+      if (!selectedTenant || !values.companyName) {
+        setError('Please select a company from the dropdown');
+        registerForm.setError('companyName', { message: 'Please select a company from the dropdown' });
+        setIsLoading(false);
+        return;
+      }
+      
+      // Use the selected tenant (already set from dropdown selection)
+      const tenant = selectedTenant;
+      
       const user = await authRegister({
         email: values.email,
         password: values.password,
         firstName: values.firstName,
         lastName: values.lastName,
-        companyName: values.companyName,
+        companyName: tenant.name, // Use tenant name
         userType: values.userType,
-        tenantId: selectedTenant?.id, // Include selected tenant ID if available
+        tenantId: tenant.id, // Use tenant ID
       });
+      
       if (user) {
-        // Role-based redirects for registration
+        // Redirect CARGO_OWNER to login page
+        if (user.role === 'CARGO_OWNER') {
+          toast.success('Registration successful! Please log in.');
+          setIsLogin(true); // Switch to login form
+          registerForm.reset(); // Clear registration form
+          setSelectedTenant(null); // Clear selected tenant
+          setSelectedTenantId(''); // Clear selected tenant ID
+          return; // Exit early, don't navigate
+        }
+        
+        // Role-based redirects for other user types
         switch (user.role) {
-          case 'CARGO_OWNER':
-            navigate('/dashboard/cargos');
-            break;
           case 'TRUCK_OWNER':
             navigate('/dashboard/fleet');
             break;
@@ -202,33 +257,33 @@ const Auth = () => {
       {/* Full Page Background Logo */}
       <img src={logoUrutiX} alt="UrutiX Logo Background" className="pointer-events-none select-none fixed inset-0 w-full h-full object-cover opacity-10 z-0" style={{objectPosition: 'center'}} />
       {/* Centered Auth Form */}
-      <div className="w-full max-w-4xl px-4 sm:px-6 lg:px-8 relative z-10">
+      <div className="w-full max-w-2xl px-4 sm:px-6 lg:px-8 relative z-10">
         {/* Logo removed as per request */}
 
         {/* Form Container */}
-        <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
+        <div className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
           {/* Form Header */}
-          <div className="px-8 pt-8 pb-6">
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+          <div className="px-6 pt-6 pb-4">
+            <h2 className="text-xl font-bold text-gray-900 mb-1">
               {isLogin ? 'Welcome back' : 'Create your account'}
             </h2>
-            <p className="text-gray-600">
+            <p className="text-sm text-gray-600">
               {isLogin ? 'Sign in to access your dashboard' : 'Join thousands of users in the logistics industry'}
             </p>
           </div>
 
           {/* Form Content */}
-          <div className="px-8 pb-8">
+          <div className="px-6 pb-6">
             {isLogin ? (
-              <form onSubmit={loginForm.handleSubmit(onLoginSubmit)} className="space-y-6">
+              <form onSubmit={loginForm.handleSubmit(onLoginSubmit)} className="space-y-4">
                 <div>
-                  <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="email" className="block text-xs font-medium text-gray-700 mb-1.5">
                     Email address
                   </label>
                   <input
                     {...loginForm.register('email')}
                     type="email"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200"
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200"
                     placeholder="Enter your email"
                     required
                   />
@@ -238,23 +293,23 @@ const Auth = () => {
                 </div>
 
                 <div>
-                  <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="password" className="block text-xs font-medium text-gray-700 mb-1.5">
                     Password
                   </label>
                   <div className="relative">
                     <input
                       {...loginForm.register('password')}
                       type={showPassword ? 'text' : 'password'}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 pr-12"
+                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 pr-10"
                       placeholder="Enter your password"
                       required
                     />
                     <button
                       type="button"
-                      className="absolute inset-y-0 right-0 px-4 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
+                      className="absolute inset-y-0 right-0 px-3 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
                       onClick={() => setShowPassword(!showPassword)}
                     >
-                      {showPassword ? <FaEyeSlash className="h-5 w-5" /> : <FaEye className="h-5 w-5" />}
+                      {showPassword ? <FaEyeSlash className="h-4 w-4" /> : <FaEye className="h-4 w-4" />}
                     </button>
                   </div>
                   {loginForm.formState.errors.password && (
@@ -263,22 +318,22 @@ const Auth = () => {
                 </div>
 
                 {error && (
-                  <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm" role="alert">
+                  <div className="bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded-lg text-xs" role="alert">
                     {error}
                   </div>
                 )}
 
                 <button
                   type="submit"
-                  className="w-full bg-primary-600 text-white font-semibold py-3 px-4 rounded-xl hover:bg-primary-700 focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                  className="w-full bg-primary-600 text-white font-semibold py-2.5 px-4 rounded-lg hover:bg-primary-700 focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 text-sm"
                   disabled={isLoading}
                 >
                   {isLoading ? (
-                    <FaSpinner className="animate-spin h-5 w-5" />
+                    <FaSpinner className="animate-spin h-4 w-4" />
                   ) : (
                     <>
                       <span>Sign In</span>
-                      <ArrowRight className="h-4 w-4" />
+                      <ArrowRight className="h-3.5 w-3.5" />
                     </>
                   )}
                 </button>
@@ -297,13 +352,13 @@ const Auth = () => {
                 </div>
               </form>
             ) : (
-              <form onSubmit={registerForm.handleSubmit(onRegisterSubmit)} className="space-y-6">
+              <form onSubmit={registerForm.handleSubmit(onRegisterSubmit)} className="space-y-4">
                 {/* User Type Selection */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-3">
+                  <label className="block text-xs font-medium text-gray-700 mb-2">
                     I am a...
                   </label>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-2 gap-2">
                     {userTypes.map((type) => (
                       <button
                         key={type?.id}
@@ -311,18 +366,22 @@ const Auth = () => {
                         onClick={() => {
                           setSelectedUserType(type?.id as 'CARGO_OWNER' | 'TRUCK_OWNER');
                           registerForm.setValue('userType', type?.id as 'CARGO_OWNER' | 'TRUCK_OWNER');
+                          // Clear tenant selection when switching user types
+                          setSelectedTenant(null);
+                          setSelectedTenantId('');
+                          registerForm.setValue('companyName', '');
                         }}
-                        className={`p-4 rounded-xl border-2 transition-all duration-200 ${
+                        className={`p-3 rounded-lg border-2 transition-all duration-200 ${
                           selectedUserType === type.id
                             ? `${type.borderColor} ${type.bgColor} border-opacity-100`
                             : 'border-gray-200 hover:border-gray-300 bg-white'
                         }`}
                       >
-                        <div className="flex flex-col items-center space-y-2">
-                          <type.icon className={`h-6 w-6 ${selectedUserType === type.id ? type.textColor : type.textColor}`} />
+                        <div className="flex flex-col items-center space-y-1">
+                          <type.icon className={`h-5 w-5 ${selectedUserType === type.id ? type.textColor : type.textColor}`} />
                           <div className="text-center">
-                            <div className={`font-medium text-sm ${selectedUserType === type.id ? type.textColor : 'text-gray-900'}`}>{type.title}</div>
-                            <div className={`text-xs ${selectedUserType === type.id ? type.textColor : 'text-gray-500'}`}>
+                            <div className={`font-medium text-xs ${selectedUserType === type.id ? type.textColor : 'text-gray-900'}`}>{type.title}</div>
+                            <div className={`text-[10px] ${selectedUserType === type.id ? type.textColor : 'text-gray-500'}`}>
                               {type.description}
                             </div>
                           </div>
@@ -333,18 +392,18 @@ const Auth = () => {
                 </div>
 
                 {/* Two Column Layout */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* Left Column */}
-                  <div className="space-y-6">
+                  <div className="space-y-4">
                     {/* First Name */}
                     <div>
-                      <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-2">
+                      <label htmlFor="firstName" className="block text-xs font-medium text-gray-700 mb-1.5">
                         First name
                       </label>
                       <input
                         {...registerForm.register('firstName')}
                         type="text"
-                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200"
+                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200"
                         placeholder="First name"
                       />
                       {registerForm.formState.errors.firstName && (
@@ -352,122 +411,264 @@ const Auth = () => {
                       )}
                     </div>
 
-                    {/* Company Name */}
-                    <div>
-                      <label htmlFor="companyName" className="block text-sm font-medium text-gray-700 mb-2">
-                        Company name
-                      </label>
-                      <CompanySearch
-                        value={registerForm.watch('companyName')}
-                        onChange={(value) => {
-                          registerForm.setValue('companyName', value);
-                          if (!value) {
-                            setSelectedTenant(null);
-                          }
-                        }}
-                        onSelect={(tenant) => {
-                          setSelectedTenant(tenant);
-                          registerForm.setValue('companyName', tenant.name);
-                        }}
-                        error={registerForm.formState.errors.companyName?.message}
-                        placeholder="Search for your company..."
-                      />
-                      {selectedTenant && (
-                        <div className="mt-2 p-3 bg-green-50 border border-green-200 rounded-lg">
-                          <div className="flex items-center space-x-2">
-                            <CheckCircle className="h-4 w-4 text-green-600" />
-                            <span className="text-sm text-green-800">
-                              Company found: {selectedTenant.name}
-                              {selectedTenant.city && ` • ${selectedTenant.city}`}
-                              {selectedTenant.country && ` • ${selectedTenant.country}`}
-                            </span>
+                    {/* Company Name - Only show for CARGO_OWNER */}
+                    {selectedUserType === 'CARGO_OWNER' && (
+                      <div>
+                        <label htmlFor="companyName" className="block text-xs font-medium text-gray-700 mb-1.5">
+                          Select your company <span className="text-red-500">*</span>
+                        </label>
+                        {isLoadingTenants ? (
+                          <div className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg bg-gray-50 flex items-center space-x-2">
+                            <FaSpinner className="animate-spin h-3.5 w-3.5 text-gray-400" />
+                            <span className="text-xs text-gray-500">Loading companies...</span>
                           </div>
-                        </div>
-                      )}
-                    </div>
+                        ) : (
+                          <>
+                            {/* Hidden input for form validation */}
+                            <input
+                              type="hidden"
+                              {...registerForm.register('companyName', {
+                                required: 'Please select a company',
+                              })}
+                              value={selectedTenant?.name || ''}
+                            />
+                            <select
+                              id="companyName"
+                              value={selectedTenantId}
+                              onChange={(e) => {
+                                const tenantId = e.target.value;
+                                setSelectedTenantId(tenantId);
+                                if (tenantId) {
+                                  const tenant = tenants.find((t: Tenant) => t.id === tenantId);
+                                  if (tenant) {
+                                    setSelectedTenant(tenant);
+                                    registerForm.setValue('companyName', tenant.name, { shouldValidate: true });
+                                    registerForm.clearErrors('companyName');
+                                  }
+                                } else {
+                                  setSelectedTenant(null);
+                                  registerForm.setValue('companyName', '', { shouldValidate: true });
+                                }
+                              }}
+                              className={`w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white ${
+                                registerForm.formState.errors.companyName
+                                  ? 'border-red-500'
+                                  : 'border-gray-300'
+                              }`}
+                            >
+                            <option value="" disabled>
+                              {isLoadingTenants ? 'Loading companies...' : 'Select a company...'}
+                            </option>
+                            {tenants.map((tenant: Tenant) => (
+                              <option key={tenant.id} value={tenant.id}>
+                                {tenant.name}
+                                {tenant.city && tenant.country
+                                  ? ` - ${tenant.city}, ${tenant.country}`
+                                  : tenant.city
+                                    ? ` - ${tenant.city}`
+                                    : tenant.country
+                                      ? ` - ${tenant.country}`
+                                      : ''}
+                              </option>
+                            ))}
+                            </select>
+                          </>
+                        )}
+                        {registerForm.formState.errors.companyName && (
+                          <p className="mt-1 text-xs text-red-600">
+                            {registerForm.formState.errors.companyName.message}
+                          </p>
+                        )}
+                        {selectedTenant && (
+                          <div className="mt-1.5 p-2 bg-green-50 border border-green-200 rounded-lg">
+                            <div className="flex items-center space-x-1.5">
+                              <CheckCircle className="h-3.5 w-3.5 text-green-600" />
+                              <span className="text-xs text-green-800">
+                                Company selected: {selectedTenant.name}
+                                {selectedTenant.city && ` • ${selectedTenant.city}`}
+                                {selectedTenant.country && ` • ${selectedTenant.country}`}
+                              </span>
+                            </div>
+                          </div>
+                        )}
+                        {tenants.length === 0 && !isLoadingTenants && (
+                          <p className="mt-1 text-xs text-amber-600">
+                            No active companies available. Please contact support.
+                          </p>
+                        )}
+                      </div>
+                    )}
+                    
+                    {/* Company Name - For TRUCK_OWNER (selectable dropdown) */}
+                    {selectedUserType === 'TRUCK_OWNER' && (
+                      <div>
+                        <label htmlFor="companyName" className="block text-xs font-medium text-gray-700 mb-1.5">
+                          Select your company <span className="text-red-500">*</span>
+                        </label>
+                        {isLoadingTenants ? (
+                          <div className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg bg-gray-50 flex items-center space-x-2">
+                            <FaSpinner className="animate-spin h-3.5 w-3.5 text-gray-400" />
+                            <span className="text-xs text-gray-500">Loading companies...</span>
+                          </div>
+                        ) : (
+                          <>
+                            {/* Hidden input for form validation */}
+                            <input
+                              type="hidden"
+                              {...registerForm.register('companyName', {
+                                required: 'Please select a company',
+                              })}
+                              value={selectedTenant?.name || ''}
+                            />
+                            <select
+                              id="companyName"
+                              value={selectedTenantId}
+                              onChange={(e) => {
+                                const tenantId = e.target.value;
+                                setSelectedTenantId(tenantId);
+                                if (tenantId) {
+                                  const tenant = tenants.find((t: Tenant) => t.id === tenantId);
+                                  if (tenant) {
+                                    setSelectedTenant(tenant);
+                                    registerForm.setValue('companyName', tenant.name, { shouldValidate: true });
+                                    registerForm.clearErrors('companyName');
+                                  }
+                                } else {
+                                  setSelectedTenant(null);
+                                  registerForm.setValue('companyName', '', { shouldValidate: true });
+                                }
+                              }}
+                              className={`w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white ${
+                                registerForm.formState.errors.companyName
+                                  ? 'border-red-500'
+                                  : 'border-gray-300'
+                              }`}
+                            >
+                            <option value="" disabled>
+                              {isLoadingTenants ? 'Loading companies...' : 'Select a company...'}
+                            </option>
+                            {tenants.map((tenant: Tenant) => (
+                              <option key={tenant.id} value={tenant.id}>
+                                {tenant.name}
+                                {tenant.city && tenant.country
+                                  ? ` - ${tenant.city}, ${tenant.country}`
+                                  : tenant.city
+                                    ? ` - ${tenant.city}`
+                                    : tenant.country
+                                      ? ` - ${tenant.country}`
+                                      : ''}
+                              </option>
+                            ))}
+                            </select>
+                          </>
+                        )}
+                        {registerForm.formState.errors.companyName && (
+                          <p className="mt-1 text-xs text-red-600">
+                            {registerForm.formState.errors.companyName.message}
+                          </p>
+                        )}
+                        {selectedTenant && (
+                          <div className="mt-1.5 p-2 bg-green-50 border border-green-200 rounded-lg">
+                            <div className="flex items-center space-x-1.5">
+                              <CheckCircle className="h-3.5 w-3.5 text-green-600" />
+                              <span className="text-xs text-green-800">
+                                Company selected: {selectedTenant.name}
+                                {selectedTenant.city && ` • ${selectedTenant.city}`}
+                                {selectedTenant.country && ` • ${selectedTenant.country}`}
+                              </span>
+                            </div>
+                          </div>
+                        )}
+                        {tenants.length === 0 && !isLoadingTenants && (
+                          <p className="mt-1 text-xs text-amber-600">
+                            No active companies available. Please contact support.
+                          </p>
+                        )}
+                      </div>
+                    )}
 
                     {/* Password */}
                     <div>
-                      <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+                      <label htmlFor="password" className="block text-xs font-medium text-gray-700 mb-1.5">
                         Password
                       </label>
                       <div className="relative">
                         <input
                           {...registerForm.register('password')}
                           type={showPassword ? 'text' : 'password'}
-                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 pr-12"
+                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 pr-10"
                           placeholder="Create a password"
                         />
                         <button
                           type="button"
-                          className="absolute inset-y-0 right-0 px-4 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
+                          className="absolute inset-y-0 right-0 px-3 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
                           onClick={() => setShowPassword(!showPassword)}
                         >
-                          {showPassword ? <FaEyeSlash className="h-5 w-5" /> : <FaEye className="h-5 w-5" />}
+                          {showPassword ? <FaEyeSlash className="h-4 w-4" /> : <FaEye className="h-4 w-4" />}
                         </button>
                       </div>
                       {registerForm.formState.errors.password && (
-                        <p className="mt-2 text-sm text-red-600">{registerForm.formState.errors.password.message}</p>
+                        <p className="mt-1 text-xs text-red-600">{registerForm.formState.errors.password.message}</p>
                       )}
                     </div>
                   </div>
 
                   {/* Right Column */}
-                  <div className="space-y-6">
+                  <div className="space-y-4">
                     {/* Last Name */}
                     <div>
-                      <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-2">
+                      <label htmlFor="lastName" className="block text-xs font-medium text-gray-700 mb-1.5">
                         Last name
                       </label>
                       <input
                         {...registerForm.register('lastName')}
                         type="text"
-                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200"
+                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200"
                         placeholder="Last name"
                       />
                       {registerForm.formState.errors.lastName && (
-                        <p className="mt-2 text-sm text-red-600">{registerForm.formState.errors.lastName.message}</p>
+                        <p className="mt-1 text-xs text-red-600">{registerForm.formState.errors.lastName.message}</p>
                       )}
                     </div>
 
                     {/* Email */}
                     <div>
-                      <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                      <label htmlFor="email" className="block text-xs font-medium text-gray-700 mb-1.5">
                         Email address
                       </label>
                       <input
                         {...registerForm.register('email')}
                         type="email"
-                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200"
+                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200"
                         placeholder="Enter your email"
                       />
                       {registerForm.formState.errors.email && (
-                        <p className="mt-2 text-sm text-red-600">{registerForm.formState.errors.email.message}</p>
+                        <p className="mt-1 text-xs text-red-600">{registerForm.formState.errors.email.message}</p>
                       )}
                     </div>
 
                     {/* Confirm Password */}
                     <div>
-                      <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
+                      <label htmlFor="confirmPassword" className="block text-xs font-medium text-gray-700 mb-1.5">
                         Confirm password
                       </label>
                       <div className="relative">
                         <input
                           {...registerForm.register('confirmPassword')}
                           type={showConfirmPassword ? 'text' : 'password'}
-                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 pr-12"
+                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 pr-10"
                           placeholder="Confirm your password"
                         />
                         <button
                           type="button"
-                          className="absolute inset-y-0 right-0 px-4 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
+                          className="absolute inset-y-0 right-0 px-3 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
                           onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                         >
-                          {showConfirmPassword ? <FaEyeSlash className="h-5 w-5" /> : <FaEye className="h-5 w-5" />}
+                          {showConfirmPassword ? <FaEyeSlash className="h-4 w-4" /> : <FaEye className="h-4 w-4" />}
                         </button>
                       </div>
                       {registerForm.formState.errors.confirmPassword && (
-                        <p className="mt-2 text-sm text-red-600">{registerForm.formState.errors.confirmPassword.message}</p>
+                        <p className="mt-1 text-xs text-red-600">{registerForm.formState.errors.confirmPassword.message}</p>
                       )}
                     </div>
                   </div>
@@ -475,7 +676,7 @@ const Auth = () => {
 
                 {/* Error Message */}
                 {error && (
-                  <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm" role="alert">
+                  <div className="bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded-lg text-xs" role="alert">
                     {error}
                   </div>
                 )}
@@ -483,22 +684,22 @@ const Auth = () => {
                 {/* Submit Button */}
                 <button
                   type="submit"
-                  className="w-full bg-primary-600 text-white font-semibold py-3 px-4 rounded-xl hover:bg-primary-700 focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                  className="w-full bg-primary-600 text-white font-semibold py-2.5 px-4 rounded-lg hover:bg-primary-700 focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 text-sm"
                   disabled={isLoading}
                 >
                   {isLoading ? (
-                    <FaSpinner className="animate-spin h-5 w-5" />
+                    <FaSpinner className="animate-spin h-4 w-4" />
                   ) : (
                     <>
                       <span>Create Account</span>
-                      <ArrowRight className="h-4 w-4" />
+                      <ArrowRight className="h-3.5 w-3.5" />
                     </>
                   )}
                 </button>
 
                 {/* Sign In Link */}
                 <div className="text-center">
-                  <p className="text-sm text-gray-600">
+                  <p className="text-xs text-gray-600">
                     Already have an account?{' '}
                     <button
                       type="button"

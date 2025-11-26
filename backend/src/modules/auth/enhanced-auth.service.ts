@@ -191,6 +191,8 @@ export class EnhancedAuthService {
     clientIp?: string,
   ): Promise<User | null> {
     try {
+      this.logger.debug(`Validating user: ${email}`);
+      
       const user = await this.userRepository.findOne({
         where: { email },
         relations: ['profile'],
@@ -200,6 +202,14 @@ export class EnhancedAuthService {
         this.logger.warn(
           `Login attempt with non-existent email: ${email} from IP: ${clientIp}`,
         );
+        return null;
+      }
+
+      this.logger.debug(`User found: ${user.id}, status: ${user.status}, email verified: ${!!user.emailVerifiedAt}`);
+
+      // Check if password hash exists
+      if (!user.passwordHash) {
+        this.logger.error(`User ${email} has no password hash`);
         return null;
       }
 
@@ -241,11 +251,16 @@ export class EnhancedAuthService {
           reason: 'Invalid password',
         });
 
-        this.logger.warn(`Failed login attempt: ${email} from IP: ${clientIp}`);
+        this.logger.warn(`Failed login attempt: ${email} from IP: ${clientIp} (attempt ${user.loginAttempts})`);
         return null;
       }
     } catch (error) {
-      this.logger.error(`Error validating user ${email}: ${error.message}`);
+      this.logger.error(`Error validating user ${email}: ${error.message}`, error.stack);
+      // Check if it's a database connection error
+      if (error.message?.includes('ECONNREFUSED') || error.message?.includes('connection')) {
+        this.logger.error('Database connection error during user validation');
+        throw new InternalServerErrorException('Database connection error. Please try again later.');
+      }
       return null;
     }
   }
@@ -259,6 +274,26 @@ export class EnhancedAuthService {
         `Login attempt for email: ${loginDto.email} from IP: ${clientIp}`,
       );
 
+      // First check if user exists to provide better error messages
+      let userExists = false;
+      let existingUser: User | null = null;
+      
+      try {
+        existingUser = await this.userRepository.findOne({
+          where: { email: loginDto.email },
+          relations: ['profile'],
+        });
+        userExists = !!existingUser;
+      } catch (dbError) {
+        this.logger.error(`Database error checking user existence: ${dbError.message}`);
+        if (dbError.message?.includes('ECONNREFUSED') || dbError.message?.includes('connection')) {
+          throw new InternalServerErrorException(
+            'Database connection error. Please check your database connection and try again.',
+          );
+        }
+        throw dbError;
+      }
+
       const user = await this.validateUser(
         loginDto.email,
         loginDto.password,
@@ -270,11 +305,31 @@ export class EnhancedAuthService {
         if (clientIp) {
           this.rateLimitGuard.recordFailedAttempt(clientIp);
         }
-        throw new UnauthorizedException('Invalid credentials');
+        
+        // Provide more helpful error message if user exists but password is wrong
+        if (userExists && existingUser) {
+          if (existingUser.status !== UserStatus.ACTIVE && existingUser.status !== UserStatus.PENDING_VERIFICATION) {
+            throw new UnauthorizedException(
+              'Account is not active. Please verify your email first.',
+            );
+          }
+          if (existingUser.lockedUntil && existingUser.lockedUntil > new Date()) {
+            const remainingTime = Math.ceil(
+              (existingUser.lockedUntil.getTime() - Date.now()) / 1000 / 60,
+            );
+            throw new UnauthorizedException(
+              `Account is temporarily locked due to multiple failed login attempts. Please try again in ${remainingTime} minutes.`,
+            );
+          }
+        }
+        
+        throw new UnauthorizedException(
+          'Invalid email or password. Please check your credentials and try again.',
+        );
       }
 
-      // Check if user is active
-      if (user.status !== UserStatus.ACTIVE) {
+      // Check if user is active or pending verification (allow both to login)
+      if (user.status !== UserStatus.ACTIVE && user.status !== UserStatus.PENDING_VERIFICATION) {
         throw new UnauthorizedException(
           'Account is not active. Please verify your email first.',
         );

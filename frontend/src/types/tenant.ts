@@ -5,6 +5,8 @@ export interface Tenant {
   websiteUrl: string | null;
   city: string | null;
   country: string | null;
+  status?: string; // ACTIVE, PENDING_ACTIVATION, SUSPENDED, DEACTIVATED
+  isActive?: boolean;
 }
 
 export interface TenantSearchParams {

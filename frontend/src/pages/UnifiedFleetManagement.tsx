@@ -24,12 +24,51 @@ const UnifiedFleetManagement: React.FC = () => {
   const loadActiveTrips = useCallback(async () => {
     setLoadingTrips(true);
     try {
-      const response = await tripsAPI.getActive();
-      const tripsData = response.data?.data || response.data || [];
-      setActiveTrips(Array.isArray(tripsData) ? tripsData : []);
+      // Try the dedicated active endpoint first
+      try {
+        const response = await tripsAPI.getActive();
+        const tripsData = response.data?.data || response.data || [];
+        setActiveTrips(Array.isArray(tripsData) ? tripsData : []);
+      } catch (activeError: any) {
+        // If active endpoint fails (404), fallback to filtering getAll
+        if (activeError?.response?.status === 404) {
+          console.warn('Active trips endpoint not available (404), using fallback with status filter');
+          try {
+            // Try with IN_PROGRESS status first
+            const response = await tripsAPI.getAll({ 
+              status: 'IN_PROGRESS',
+              limit: 100 
+            });
+            let allTrips = response.data?.data || response.data?.trips || response.data || [];
+            
+            // If response is paginated, extract trips array
+            if (allTrips && !Array.isArray(allTrips) && allTrips.trips) {
+              allTrips = allTrips.trips;
+            }
+            
+            // Filter for active statuses (handle various status formats)
+            const activeTripsData = Array.isArray(allTrips) 
+              ? allTrips.filter((trip: any) => {
+                  const status = (trip.status || '').toUpperCase().replace(/\s+/g, '_');
+                  return ['IN_PROGRESS', 'IN_TRANSIT', 'ACTIVE', 'ONGOING', 'IN_TRANSIT'].includes(status);
+                })
+              : [];
+            setActiveTrips(activeTripsData);
+          } catch (fallbackError: any) {
+            console.error('Fallback also failed:', fallbackError);
+            setActiveTrips([]);
+          }
+        } else {
+          // For other errors, throw to be caught by outer catch
+          throw activeError;
+        }
+      }
     } catch (error: any) {
       console.error('Error loading active trips:', error);
-      toast.error('Failed to load active trips');
+      // Only show error toast if it's not a 404 (endpoint might not exist)
+      if (error?.response?.status !== 404) {
+        toast.error('Failed to load active trips');
+      }
       setActiveTrips([]);
     } finally {
       setLoadingTrips(false);
@@ -145,41 +184,47 @@ const UnifiedFleetManagement: React.FC = () => {
       </div>
 
       {/* Navigation Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
         <button
           onClick={() => {
             setActiveTab('add-truck');
             setShowTruckForm(true);
           }}
           className={cn(
-            "relative bg-white rounded-lg border-2 p-5 transition-all duration-200 hover:shadow-lg group",
+            "relative bg-white rounded-lg border p-3.5 transition-all duration-200 hover:shadow-sm group text-left",
             activeTab === 'add-truck'
-              ? "border-primary-600 shadow-md bg-primary-50"
-              : "border-gray-200 hover:border-primary-300 hover:bg-gray-50"
+              ? "border-gray-300 shadow-sm bg-gray-50"
+              : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
           )}
         >
-          <div className="flex items-center justify-between mb-2">
+          <div className="flex items-start justify-between mb-2">
             <div
               className={cn(
-                "p-2 rounded-lg transition-colors",
+                "p-1.5 rounded-md transition-colors",
                 activeTab === 'add-truck'
-                  ? "bg-primary-100 text-primary-600"
-                  : "bg-gray-100 text-gray-600 group-hover:bg-primary-100 group-hover:text-primary-600"
+                  ? "bg-gray-100 text-gray-700"
+                  : "bg-gray-50 text-gray-500 group-hover:bg-gray-100 group-hover:text-gray-700"
               )}
             >
-              <FaPlus className="w-5 h-5" />
+              <FaPlus className="w-4 h-4" />
             </div>
           </div>
           <h3
             className={cn(
-              "text-sm font-semibold text-left",
-              activeTab === 'add-truck' ? "text-primary-900" : "text-gray-900"
+              "text-sm font-semibold mb-1",
+              activeTab === 'add-truck' ? "text-gray-900" : "text-gray-900"
             )}
           >
             Add Truck
           </h3>
+          <p className={cn(
+            "text-xs leading-tight",
+            activeTab === 'add-truck' ? "text-gray-600" : "text-gray-500"
+          )}>
+            Register new vehicles with complete details, documents, and specifications
+          </p>
           {activeTab === 'add-truck' && (
-            <div className="absolute bottom-0 left-0 right-0 h-1 bg-primary-600 rounded-b-lg" />
+            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-400 rounded-b-lg" />
           )}
         </button>
 
@@ -189,34 +234,40 @@ const UnifiedFleetManagement: React.FC = () => {
             setShowTruckForm(false);
           }}
           className={cn(
-            "relative bg-white rounded-lg border-2 p-5 transition-all duration-200 hover:shadow-lg group",
+            "relative bg-white rounded-lg border p-3.5 transition-all duration-200 hover:shadow-sm group text-left",
             activeTab === 'my-trucks'
-              ? "border-primary-600 shadow-md bg-primary-50"
-              : "border-gray-200 hover:border-primary-300 hover:bg-gray-50"
+              ? "border-gray-300 shadow-sm bg-gray-50"
+              : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
           )}
         >
           <div className="flex items-center mb-2">
             <div
               className={cn(
-                "p-2 rounded-lg transition-colors",
+                "p-1.5 rounded-md transition-colors",
                 activeTab === 'my-trucks'
-                  ? "bg-primary-100 text-primary-600"
-                  : "bg-gray-100 text-gray-600 group-hover:bg-primary-100 group-hover:text-primary-600"
+                  ? "bg-gray-100 text-gray-700"
+                  : "bg-gray-50 text-gray-500 group-hover:bg-gray-100 group-hover:text-gray-700"
               )}
             >
-              <FaList className="w-5 h-5" />
+              <FaList className="w-4 h-4" />
             </div>
           </div>
           <h3
             className={cn(
-              "text-sm font-semibold text-left",
-              activeTab === 'my-trucks' ? "text-primary-900" : "text-gray-900"
+              "text-sm font-semibold mb-1",
+              activeTab === 'my-trucks' ? "text-gray-900" : "text-gray-900"
             )}
           >
             Manage Trucks
           </h3>
+          <p className={cn(
+            "text-xs leading-tight",
+            activeTab === 'my-trucks' ? "text-gray-600" : "text-gray-500"
+          )}>
+            View, edit, and manage your fleet vehicles, status, and assignments
+          </p>
           {activeTab === 'my-trucks' && (
-            <div className="absolute bottom-0 left-0 right-0 h-1 bg-primary-600 rounded-b-lg" />
+            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-400 rounded-b-lg" />
           )}
         </button>
 
@@ -226,29 +277,29 @@ const UnifiedFleetManagement: React.FC = () => {
             setShowTruckForm(false);
           }}
           className={cn(
-            "relative bg-white rounded-lg border-2 p-5 transition-all duration-200 hover:shadow-lg group",
+            "relative bg-white rounded-lg border p-3.5 transition-all duration-200 hover:shadow-sm group text-left",
             activeTab === 'active-trips'
-              ? "border-primary-600 shadow-md bg-primary-50"
-              : "border-gray-200 hover:border-primary-300 hover:bg-gray-50"
+              ? "border-gray-300 shadow-sm bg-gray-50"
+              : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
           )}
         >
           <div className="flex items-center justify-between mb-2">
             <div
               className={cn(
-                "p-2 rounded-lg transition-colors",
+                "p-1.5 rounded-md transition-colors",
                 activeTab === 'active-trips'
-                  ? "bg-primary-100 text-primary-600"
-                  : "bg-gray-100 text-gray-600 group-hover:bg-primary-100 group-hover:text-primary-600"
+                  ? "bg-gray-100 text-gray-700"
+                  : "bg-gray-50 text-gray-500 group-hover:bg-gray-100 group-hover:text-gray-700"
               )}
             >
-              <FaRoute className="w-5 h-5" />
+              <FaRoute className="w-4 h-4" />
             </div>
             <span
               className={cn(
-                "px-2.5 py-1 text-xs font-semibold rounded-full",
+                "px-2 py-0.5 text-xs font-semibold rounded-full",
                 activeTab === 'active-trips'
-                  ? "bg-primary-600 text-white"
-                  : "bg-gray-200 text-gray-700 group-hover:bg-primary-600 group-hover:text-white"
+                  ? "bg-gray-200 text-gray-700"
+                  : "bg-gray-100 text-gray-600 group-hover:bg-gray-200"
               )}
             >
               {activeTrips.length}
@@ -256,14 +307,20 @@ const UnifiedFleetManagement: React.FC = () => {
           </div>
           <h3
             className={cn(
-              "text-sm font-semibold text-left",
-              activeTab === 'active-trips' ? "text-primary-900" : "text-gray-900"
+              "text-sm font-semibold mb-1",
+              activeTab === 'active-trips' ? "text-gray-900" : "text-gray-900"
             )}
           >
             Active Trips
           </h3>
+          <p className={cn(
+            "text-xs leading-tight",
+            activeTab === 'active-trips' ? "text-gray-600" : "text-gray-500"
+          )}>
+            Monitor ongoing trips, track progress, and manage active shipments
+          </p>
           {activeTab === 'active-trips' && (
-            <div className="absolute bottom-0 left-0 right-0 h-1 bg-primary-600 rounded-b-lg" />
+            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-400 rounded-b-lg" />
           )}
         </button>
 
@@ -273,34 +330,40 @@ const UnifiedFleetManagement: React.FC = () => {
             setShowTruckForm(false);
           }}
           className={cn(
-            "relative bg-white rounded-lg border-2 p-5 transition-all duration-200 hover:shadow-lg group",
+            "relative bg-white rounded-lg border p-3.5 transition-all duration-200 hover:shadow-sm group text-left",
             activeTab === 'view-trucks'
-              ? "border-primary-600 shadow-md bg-primary-50"
-              : "border-gray-200 hover:border-primary-300 hover:bg-gray-50"
+              ? "border-gray-300 shadow-sm bg-gray-50"
+              : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
           )}
         >
           <div className="flex items-center justify-between mb-2">
             <div
               className={cn(
-                "p-2 rounded-lg transition-colors",
+                "p-1.5 rounded-md transition-colors",
                 activeTab === 'view-trucks'
-                  ? "bg-primary-100 text-primary-600"
-                  : "bg-gray-100 text-gray-600 group-hover:bg-primary-100 group-hover:text-primary-600"
+                  ? "bg-gray-100 text-gray-700"
+                  : "bg-gray-50 text-gray-500 group-hover:bg-gray-100 group-hover:text-gray-700"
               )}
             >
-              <FaEye className="w-5 h-5" />
+              <FaEye className="w-4 h-4" />
             </div>
           </div>
           <h3
             className={cn(
-              "text-sm font-semibold text-left",
-              activeTab === 'view-trucks' ? "text-primary-900" : "text-gray-900"
+              "text-sm font-semibold mb-1",
+              activeTab === 'view-trucks' ? "text-gray-900" : "text-gray-900"
             )}
           >
             View Trucks
           </h3>
+          <p className={cn(
+            "text-xs leading-tight",
+            activeTab === 'view-trucks' ? "text-gray-600" : "text-gray-500"
+          )}>
+            Browse and search all fleet vehicles with detailed information
+          </p>
           {activeTab === 'view-trucks' && (
-            <div className="absolute bottom-0 left-0 right-0 h-1 bg-primary-600 rounded-b-lg" />
+            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-400 rounded-b-lg" />
           )}
         </button>
       </div>

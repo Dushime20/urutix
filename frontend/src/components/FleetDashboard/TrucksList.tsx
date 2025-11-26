@@ -39,6 +39,7 @@ import { FiGrid, FiList, FiMoreVertical } from 'react-icons/fi';
 import type { FleetItem, Route } from '../../types/fleet';
 import { fleetApi } from '../../services/fleetApi';
 import { fetchAdminRoutes } from '../../services/adminApi';
+import logoUrutiX from '../../assets/logo-urutix.svg';
 
 // Debug the imported fleetApi
 console.log('🔍 TrucksList - Imported fleetApi:', fleetApi);
@@ -1426,7 +1427,16 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
   console.log('Rendering TrucksList with:', { trucks: trucks.length, drivers: drivers.length, loading, error, filteredTrucks: filterTrucks(trucks).length });
   
   return (
-    <div>
+    <div className="relative min-h-screen">
+      {/* Background Logo */}
+      <img 
+        src={logoUrutiX} 
+        alt="UrutiX Logo Background" 
+        className="pointer-events-none select-none fixed inset-0 w-full h-full object-cover opacity-5 z-0" 
+        style={{objectPosition: 'center'}} 
+      />
+      {/* Content */}
+      <div className="relative z-10">
       {/* Statistics Cards */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-4">
         {trucks.length === 0 && !loading && (
@@ -1489,48 +1499,89 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
       </div>
 
       {/* Filters and Search */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
-        <div className="flex flex-col lg:flex-row gap-4">
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 mb-4">
+        <div className="flex flex-col lg:flex-row gap-3">
           <div className="flex-1">
             <div className="relative">
-              <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <FaSearch className="absolute left-2.5 top-1/2 transform -translate-y-1/2 text-gray-400 w-3.5 h-3.5" />
               <input
                 type="text"
                 placeholder="Search by plate number, make, model..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                className="w-full pl-9 pr-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-400 focus:border-gray-400"
               />
             </div>
           </div>
-          <div className="lg:w-48">
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-            >
-              <option value="">All Status</option>
-              <option value="AVAILABLE">Available</option>
-              <option value="IN_TRANSIT">In Transit</option>
-              <option value="MAINTENANCE">Maintenance</option>
-              <option value="OUT_OF_SERVICE">Out of Service</option>
-            </select>
-          </div>
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => setView('grid')}
-              className={`p-2 rounded ${view === 'grid' ? 'bg-primary-100 text-primary-600' : 'hover:bg-gray-100'}`}
-              title="Grid View"
-            >
-              <FiGrid className="w-4 h-4" />
-            </button>
-            <button
-              onClick={() => setView('list')}
-              className={`p-2 rounded ${view === 'list' ? 'bg-primary-100 text-primary-600' : 'hover:bg-gray-100'}`}
-              title="List View"
-            >
-              <FiList className="w-4 h-4" />
-            </button>
+            {/* Status Filter Tabs */}
+            <div className="flex items-center gap-1 border border-gray-200 rounded-md p-0.5 bg-gray-50">
+              <button
+                onClick={() => setStatusFilter('')}
+                className={`px-2.5 py-1 text-xs font-medium rounded transition-all ${
+                  statusFilter === '' 
+                    ? 'bg-white text-gray-900 shadow-sm' 
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                All
+              </button>
+              <button
+                onClick={() => setStatusFilter('AVAILABLE')}
+                className={`px-2.5 py-1 text-xs font-medium rounded transition-all ${
+                  statusFilter === 'AVAILABLE' 
+                    ? 'bg-white text-gray-900 shadow-sm' 
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                Available
+              </button>
+              <button
+                onClick={() => setStatusFilter('IN_TRANSIT')}
+                className={`px-2.5 py-1 text-xs font-medium rounded transition-all ${
+                  statusFilter === 'IN_TRANSIT' 
+                    ? 'bg-white text-gray-900 shadow-sm' 
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                In Transit
+              </button>
+              <button
+                onClick={() => setStatusFilter('MAINTENANCE')}
+                className={`px-2.5 py-1 text-xs font-medium rounded transition-all ${
+                  statusFilter === 'MAINTENANCE' 
+                    ? 'bg-white text-gray-900 shadow-sm' 
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                Maintenance
+              </button>
+            </div>
+            {/* View Toggle */}
+            <div className="flex items-center gap-1 border border-gray-200 rounded-md p-0.5 bg-gray-50">
+              <button
+                onClick={() => setView('grid')}
+                className={`px-2 py-1 rounded text-xs font-medium transition-all ${
+                  view === 'grid' 
+                    ? 'bg-white text-gray-900 shadow-sm' 
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+                title="Grid View"
+              >
+                <FiGrid className="w-3.5 h-3.5" />
+              </button>
+              <button
+                onClick={() => setView('list')}
+                className={`px-2 py-1 rounded text-xs font-medium transition-all ${
+                  view === 'list' 
+                    ? 'bg-white text-gray-900 shadow-sm' 
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+                title="List View"
+              >
+                <FiList className="w-3.5 h-3.5" />
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -2588,6 +2639,7 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }; 

@@ -4,9 +4,20 @@ import * as pdfParse from 'pdf-parse';
 import axios from 'axios';
 import { createWorker } from 'tesseract.js';
 import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf';
-import { createCanvas, CanvasRenderingContext2D } from 'canvas';
 import * as fs from 'fs';
 import * as path from 'path';
+
+// Optional canvas import - only needed for PDF OCR fallback
+let createCanvas: any = null;
+let CanvasRenderingContext2D: any = null;
+try {
+  const canvasModule = require('canvas');
+  createCanvas = canvasModule.createCanvas;
+  CanvasRenderingContext2D = canvasModule.CanvasRenderingContext2D;
+} catch (error) {
+  console.warn('Canvas module not available. PDF OCR fallback will be disabled.');
+  console.warn('To enable PDF OCR, install canvas: npm install canvas');
+}
 
 @Injectable()
 export class OcrService {
@@ -19,6 +30,11 @@ export class OcrService {
         return { text: data.text };
       } else {
         // Fallback: render each page as image and OCR
+        if (!createCanvas) {
+          throw new Error(
+            'Canvas module not available. Cannot perform PDF OCR. Please install canvas: npm install canvas',
+          );
+        }
         const loadingTask = pdfjsLib.getDocument({ data: response.data });
         const pdf = await loadingTask.promise;
         let fullText = '';
@@ -80,6 +96,11 @@ export class OcrService {
 
         // Fallback: render PDF as images and OCR
         try {
+          if (!createCanvas) {
+            throw new Error(
+              'Canvas module not available. Cannot perform PDF OCR. Please install canvas: npm install canvas',
+            );
+          }
           const loadingTask = pdfjsLib.getDocument({ data: fileBuffer });
           const pdf = await loadingTask.promise;
           let fullText = '';

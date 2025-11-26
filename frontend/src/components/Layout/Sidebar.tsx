@@ -16,6 +16,7 @@ import {
   Shield
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import sidebarBack from '../../assets/sidebar-back.svg';
 
 const Sidebar = () => {
   const { user, logout } = useAuth();
@@ -98,8 +99,19 @@ const Sidebar = () => {
   const menuItems = getMenuItems();
 
   return (
-    <div className="w-64 bg-white shadow-lg">
-      <div className="flex flex-col h-full">
+    <div 
+      className="w-64 bg-white shadow-lg relative overflow-hidden"
+      style={{
+        backgroundImage: `url(${sidebarBack})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+      }}
+    >
+      {/* Background overlay for better readability */}
+      <div className="absolute inset-0 bg-white/80 backdrop-blur-sm z-0" />
+      
+      <div className="flex flex-col h-full relative z-10">
         {/* Logo */}
         <div className="p-4 border-b border-gray-200">
           <div className="flex items-center space-x-2">

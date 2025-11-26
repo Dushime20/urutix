@@ -18,6 +18,44 @@ export default defineConfig({
       '@/assets': path.resolve(__dirname, './src/assets')
     }
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // React core libraries
+          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+          // Form handling
+          'form-vendor': ['react-hook-form', '@hookform/resolvers', 'zod'],
+          // UI libraries
+          'ui-vendor': [
+            '@radix-ui/react-dialog',
+            '@radix-ui/react-label',
+            '@radix-ui/react-select',
+            '@radix-ui/react-slot',
+            'lucide-react',
+            'react-icons'
+          ],
+          // Chart libraries (split into separate chunks as they're very large)
+          'chartjs': ['chart.js'],
+          'react-chartjs': ['react-chartjs-2'],
+          'recharts': ['recharts'],
+          // Map libraries (split as leaflet is large)
+          'leaflet': ['leaflet'],
+          'react-leaflet': ['react-leaflet'],
+          // PDF/Export libraries
+          'export-vendor': ['jspdf', 'jspdf-autotable', 'html2canvas'],
+          // Query and state management
+          'query-vendor': ['@tanstack/react-query'],
+          // Utilities
+          'utils-vendor': ['axios', 'moment', 'clsx', 'tailwind-merge', 'class-variance-authority'],
+          // Analytics
+          'analytics-vendor': ['posthog-js']
+        }
+      }
+    },
+    // Increase chunk size warning limit to 1000kb (1MB) to suppress warnings for large vendor chunks
+    chunkSizeWarningLimit: 1000
+  },
   server: {
     port: 5713,
     strictPort: true,
