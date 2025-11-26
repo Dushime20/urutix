@@ -110,7 +110,7 @@ const Auth = () => {
         // Role-based redirects
         switch (user.role) {
           case 'CARGO_OWNER':
-            navigate('/dashboard/cargos');
+            navigate('/dashboard'); // Redirect to main dashboard with analytics
             break;
           case 'TRUCK_OWNER':
             navigate('/dashboard/fleet');

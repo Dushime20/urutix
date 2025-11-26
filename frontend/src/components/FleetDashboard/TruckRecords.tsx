@@ -598,7 +598,7 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-500">Capacity:</span>
-                    <span className="font-medium">{truck.capacity?.toLocaleString()} lbs</span>
+                    <span className="font-medium">{truck.capacity?.toLocaleString()} kg</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-500">Fuel Type:</span>

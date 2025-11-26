@@ -11,12 +11,16 @@ export const LoadingEquipmentStep: React.FC<LoadingEquipmentStepProps> = ({
   handleInputChange,
 }) => {
   const handleEquipmentToggle = (equipment: string) => {
-    handleInputChange(equipment, !formData.loadingCapabilities?.[equipment]);
+    // Use dot notation to update nested loadingCapabilities object
+    const currentValue = formData.loadingCapabilities?.[equipment] || false;
+    const newValue = !currentValue;
+    handleInputChange(`loadingCapabilities.${equipment}`, newValue);
   };
 
   const handleTimeChange = (field: string, value: string) => {
     const numValue = value === '' ? undefined : parseFloat(value);
-    handleInputChange(field, numValue);
+    // Use dot notation to update nested loadingCapabilities object
+    handleInputChange(`loadingCapabilities.${field}`, numValue);
   };
 
   const equipmentOptions = [

@@ -219,7 +219,7 @@ const EditTruckForm: React.FC<EditTruckFormProps> = ({ truck, onSave, onCancel }
           <h4 className="text-lg font-semibold text-gray-900 border-b border-gray-200 pb-2">Specifications</h4>
           <div className="space-y-3">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Capacity Weight (lbs) *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Capacity Weight (kg) *</label>
               <input
                 type="number"
                 name="capacityWeight"
@@ -1660,7 +1660,7 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
                 </div>
                 <div className="flex items-center gap-2 text-sm">
                   <span className="text-gray-500">Capacity:</span>
-                  <span className="text-gray-900">{truck.capacityWeight?.toLocaleString()} lbs</span>
+                  <span className="text-gray-900">{truck.capacityWeight?.toLocaleString()} kg</span>
                 </div>
                 {truck.currentLocation && (
                   <div className="flex items-center gap-2 text-sm">
@@ -2286,7 +2286,7 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
                   <div className="space-y-3">
                     <div className="flex justify-between">
                       <span className="text-gray-600">Capacity Weight:</span>
-                      <span className="font-medium">{selectedTruck.capacityWeight?.toLocaleString()} lbs</span>
+                      <span className="font-medium">{selectedTruck.capacityWeight?.toLocaleString()} kg</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">Capacity Volume:</span>

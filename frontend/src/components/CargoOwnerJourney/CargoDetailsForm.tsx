@@ -191,13 +191,13 @@ const CargoDetailsForm: React.FC<CargoDetailsFormProps> = ({ onSubmit, loading, 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
             <FaWeightHanging className="inline mr-1" />
-            Weight (lbs) *
+            Weight (kg) *
           </label>
           <input
             type="number"
             value={formData.weight}
             onChange={(e) => handleInputChange('weight', parseFloat(e.target.value))}
-            placeholder="Enter weight in pounds"
+            placeholder="Enter weight in kilograms"
             required
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           />
@@ -529,7 +529,7 @@ const CargoDetailsForm: React.FC<CargoDetailsFormProps> = ({ onSubmit, loading, 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
           <div><strong>Title:</strong> {formData.title}</div>
           <div><strong>Type:</strong> {formData.cargoType}</div>
-          <div><strong>Weight:</strong> {formData.weight} lbs</div>
+          <div><strong>Weight:</strong> {formData.weight} kg</div>
           <div><strong>Value:</strong> ${formData.estimatedValue.toLocaleString()}</div>
           <div><strong>Urgency:</strong> {formData.urgency}</div>
         </div>

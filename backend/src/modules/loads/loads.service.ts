@@ -8,6 +8,8 @@ import {
   Logger,
   HttpException,
   HttpStatus,
+  Inject,
+  Optional,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
@@ -70,6 +72,8 @@ import {
   OSMLocationEnrichmentService,
   EnrichedLocation,
 } from '../locations/osm-location-enrichment.service';
+import { MatchingService } from '../matching/matching.service';
+import { MatchRequestDto } from '../matching/dto/match-request.dto';
 
 export interface LoadsQueryOptions {
   page?: number;
@@ -170,6 +174,7 @@ export class LoadsService {
     private readonly userRepository: Repository<User>,
     private readonly dataSource: DataSource,
     private readonly locationEnrichmentService: OSMLocationEnrichmentService,
+    @Optional() private readonly matchingService?: MatchingService, // Optional - MatchingService from MatchingModule
   ) {}
 
   /**
@@ -222,107 +227,130 @@ export class LoadsService {
           'Delivery date cannot be before pickup date',
         );
 
+      // Validate loadValue if provided
+      if (createLoadDto.loadValue !== undefined && createLoadDto.loadValue !== null) {
+        if (typeof createLoadDto.loadValue !== 'number' || isNaN(createLoadDto.loadValue)) {
+          throw new BadRequestException(
+            'Load value must be a valid number.',
+          );
+        }
+
+        if (createLoadDto.loadValue < 0) {
+          throw new BadRequestException(
+            'Load value cannot be negative.',
+          );
+        }
+      } else {
+        // Log warning if loadValue is not provided (will default to 0)
+        this.logger.warn(
+          'Load value not provided, defaulting to 0. Consider providing the actual cargo value.',
+        );
+      }
+
       this.logger.log('Locations validated:', {
         pickupLocation: pickupLocation?.locationData?.name || 'N/A',
         deliveryLocation: deliveryLocation?.locationData?.name || 'N/A',
         totalLocations: createLoadDto.locations.length,
       });
 
+      // Clean createLoadDto to remove system fields that shouldn't be set by user
+      const systemFieldsToExclude = [
+        'id', 'tenantId', 'cargoOwnerId', 'status', 'createdAt', 'updatedAt',
+        'rating', 'viewCount', 'publishedAt', 'assignedCarrierId', 'assignedTruckId',
+        'assignedDriverId', 'currentStatus', 'trackingNumber', 'referenceNumber'
+      ];
+      
+      const cleanedCreateLoadDto = { ...createLoadDto };
+      systemFieldsToExclude.forEach(field => {
+        delete cleanedCreateLoadDto[field];
+      });
+
       // Prepare load data with all required fields
-      const loadData = {
-        ...createLoadDto,
+      // Start with base DTO, then override with required fields and defaults
+      const loadData: any = {
+        ...cleanedCreateLoadDto,
+        // Required fields - must be set (these override any values from DTO)
         tenantId,
         cargoOwnerId: userId,
         status: LoadStatus.CREATED,
-        urgencyLevel: createLoadDto.urgencyLevel || UrgencyLevel.NORMAL,
-        cargoType: createLoadDto.cargoType,
-        loadType: createLoadDto.loadType || LoadType.FTL,
-        equipmentType: createLoadDto.equipmentType || EquipmentType.DRY_VAN,
-        visibility: createLoadDto.visibility || Visibility.PUBLIC,
-        unitsRequired: createLoadDto.unitsRequired || 1,
-        paymentTerms: createLoadDto.paymentTerms || PaymentTerms.NET_30,
+        // Required fields with defaults
+        urgencyLevel: createLoadDto.urgencyLevel ?? UrgencyLevel.NORMAL,
+        cargoType: createLoadDto.cargoType ?? CargoType.GENERAL,
+        loadType: createLoadDto.loadType ?? LoadType.FTL,
+        equipmentType: createLoadDto.equipmentType ?? EquipmentType.DRY_VAN,
+        visibility: createLoadDto.visibility ?? Visibility.PUBLIC,
+        unitsRequired: createLoadDto.unitsRequired ?? 1,
+        paymentTerms: createLoadDto.paymentTerms ?? PaymentTerms.NET_30,
         packagingType: this.normalizePackagingType(
           createLoadDto.packagingType as any,
         ),
-        contactInfo: createLoadDto.contactInfo || {},
-        autoMatchEnabled:
-          createLoadDto.autoMatchEnabled !== undefined
-            ? createLoadDto.autoMatchEnabled
-            : true,
-        matchingCriteria: createLoadDto.matchingCriteria || {},
-        truckRequirements: createLoadDto.truckRequirements || {},
-        carrierPreferences: createLoadDto.carrierPreferences || {},
-        costPreferences: createLoadDto.costPreferences || {},
-        isStackable:
-          createLoadDto.isStackable !== undefined
-            ? createLoadDto.isStackable
-            : false,
-        requiresHumidityControl:
-          createLoadDto.requiresHumidityControl !== undefined
-            ? createLoadDto.requiresHumidityControl
-            : false,
-        requiresForklift:
-          createLoadDto.requiresForklift !== undefined
-            ? createLoadDto.requiresForklift
-            : false,
-        requiresCrane:
-          createLoadDto.requiresCrane !== undefined
-            ? createLoadDto.requiresCrane
-            : false,
-        requiresLoadingDock:
-          createLoadDto.requiresLoadingDock !== undefined
-            ? createLoadDto.requiresLoadingDock
-            : false,
-        isTimeCritical:
-          createLoadDto.isTimeCritical !== undefined
-            ? createLoadDto.isTimeCritical
-            : false,
-        requiresGpsMonitoring:
-          createLoadDto.requiresGpsMonitoring !== undefined
-            ? createLoadDto.requiresGpsMonitoring
-            : false,
-        requiresTemperatureMonitoring:
-          createLoadDto.requiresTemperatureMonitoring !== undefined
-            ? createLoadDto.requiresTemperatureMonitoring
-            : false,
-        requiresLowClearanceRoute:
-          createLoadDto.requiresLowClearanceRoute !== undefined
-            ? createLoadDto.requiresLowClearanceRoute
-            : false,
-        requiresEscortVehicle:
-          createLoadDto.requiresEscortVehicle !== undefined
-            ? createLoadDto.requiresEscortVehicle
-            : false,
-        requiresPreShipmentInspection:
-          createLoadDto.requiresPreShipmentInspection !== undefined
-            ? createLoadDto.requiresPreShipmentInspection
-            : false,
-        requiresDeliveryInspection:
-          createLoadDto.requiresDeliveryInspection !== undefined
-            ? createLoadDto.requiresDeliveryInspection
-            : false,
-        requiresPhotographicDocumentation:
-          createLoadDto.requiresPhotographicDocumentation !== undefined
-            ? createLoadDto.requiresPhotographicDocumentation
-            : false,
-        numberOfPieces: createLoadDto.numberOfPieces || 0,
-        numberOfPallets: createLoadDto.numberOfPallets || 0,
+        // Ensure locations is always an array (required field)
+        locations: Array.isArray(createLoadDto.locations) ? createLoadDto.locations : [],
+        contactInfo: createLoadDto.contactInfo ?? {},
+        autoMatchEnabled: createLoadDto.autoMatchEnabled ?? true,
+        matchingCriteria: createLoadDto.matchingCriteria ?? {},
+        truckRequirements: createLoadDto.truckRequirements ?? {},
+        carrierPreferences: createLoadDto.carrierPreferences ?? {},
+        costPreferences: createLoadDto.costPreferences ?? {},
+        // Required boolean fields with defaults - use nullish coalescing to handle false values
+        isFragile: createLoadDto.isFragile ?? false,
+        isHazardous: createLoadDto.isHazardous ?? false,
+        requiresRefrigeration: createLoadDto.requiresRefrigeration ?? false,
+        isStackable: createLoadDto.isStackable ?? false,
+        requiresHumidityControl: createLoadDto.requiresHumidityControl ?? false,
+        requiresForklift: createLoadDto.requiresForklift ?? false,
+        requiresCrane: createLoadDto.requiresCrane ?? false,
+        requiresLoadingDock: createLoadDto.requiresLoadingDock ?? false,
+        isTimeCritical: createLoadDto.isTimeCritical ?? false,
+        requiresGpsMonitoring: createLoadDto.requiresGpsMonitoring ?? false,
+        requiresTemperatureMonitoring: createLoadDto.requiresTemperatureMonitoring ?? false,
+        requiresLowClearanceRoute: createLoadDto.requiresLowClearanceRoute ?? false,
+        requiresEscortVehicle: createLoadDto.requiresEscortVehicle ?? false,
+        requiresPreShipmentInspection: createLoadDto.requiresPreShipmentInspection ?? false,
+        requiresDeliveryInspection: createLoadDto.requiresDeliveryInspection ?? false,
+        requiresPhotographicDocumentation: createLoadDto.requiresPhotographicDocumentation ?? false,
+        numberOfPieces: createLoadDto.numberOfPieces ?? 0,
+        numberOfPallets: createLoadDto.numberOfPallets ?? 0,
+        loadValue: createLoadDto.loadValue ?? 0, // Required field - default to 0 if not provided
+        currencyCode: createLoadDto.currencyCode ?? 'USD', // Required field - default to USD
         rating: 0,
         viewCount: 0,
         createdAt: new Date(),
         updatedAt: new Date(),
       };
 
+      // Remove undefined values to avoid TypeORM issues
+      Object.keys(loadData).forEach(key => {
+        if (loadData[key] === undefined) {
+          delete loadData[key];
+        }
+      });
+
       this.logger.log('Load data prepared:', JSON.stringify(loadData, null, 2));
+      
+      // Log critical required fields to help debug
+      this.logger.log('Critical fields check:', {
+        hasTenantId: !!loadData.tenantId,
+        hasCargoOwnerId: !!loadData.cargoOwnerId,
+        hasTitle: !!loadData.title,
+        hasWeight: loadData.weight !== undefined && loadData.weight !== null,
+        hasLoadValue: loadData.loadValue !== undefined && loadData.loadValue !== null,
+        hasCurrencyCode: !!loadData.currencyCode,
+        hasLocations: Array.isArray(loadData.locations) && loadData.locations.length > 0,
+        hasCargoType: !!loadData.cargoType,
+        locationsCount: loadData.locations?.length || 0,
+      });
 
       const load = this.loadRepository.create(loadData as any);
       this.logger.log('Load object created, saving...');
+      
       const savedLoad = (await this.loadRepository.save(
         load,
       )) as unknown as Load;
       this.logger.log(`Created load ${savedLoad.id} successfully`);
 
-      // Create audit event
+      // Create audit event - don't fail the operation if audit event creation fails
+      try {
       await this.createAuditEvent({
         loadId: savedLoad.id,
         entityType: AuditEntityType.LOAD,
@@ -332,11 +360,44 @@ export class LoadsService {
         description: 'Load created',
         after: savedLoad,
       });
+      } catch (auditError) {
+        // Log but don't fail - the load was created successfully
+        this.logger.warn(
+          `Failed to create audit event for load ${savedLoad.id}: ${auditError.message}`,
+        );
+      }
+
+      // Trigger automatic matching if enabled (non-blocking)
+      if (savedLoad.autoMatchEnabled && this.matchingService) {
+        try {
+          this.logger.log(`Triggering automatic matching for load ${savedLoad.id}`);
+          // Trigger matching asynchronously - don't block the response
+          this.triggerMatchingForLoad(savedLoad, tenantId).catch((matchError) => {
+            this.logger.warn(
+              `Failed to trigger matching for load ${savedLoad.id}: ${matchError.message}`,
+            );
+          });
+        } catch (matchError) {
+          this.logger.warn(
+            `Error initiating matching for load ${savedLoad.id}: ${matchError.message}`,
+          );
+        }
+      } else if (savedLoad.autoMatchEnabled && !this.matchingService) {
+        this.logger.warn(
+          `Auto-matching enabled for load ${savedLoad.id} but MatchingService not available`,
+        );
+      }
 
       return savedLoad;
     } catch (error) {
+      // Log comprehensive error details
       this.logger.error(`Failed to create load: ${error.message}`, error.stack);
       this.logger.error(`Error code: ${error.code}`, error.detail);
+      this.logger.error(`Error name: ${error.name}`);
+      this.logger.error(`Error table: ${error.table}`);
+      this.logger.error(`Error column: ${error.column}`);
+      this.logger.error(`Error constraint: ${error.constraint}`);
+      this.logger.error(`Full error object:`, JSON.stringify(error, Object.getOwnPropertyNames(error)));
 
       // Re-throw known exceptions
       if (
@@ -351,28 +412,57 @@ export class LoadsService {
       if (error.code === '23505') {
         // Unique constraint violation
         const detail = error.detail || '';
-        throw new ConflictException('A load with these details already exists');
+        throw new ConflictException(`A load with these details already exists: ${detail}`);
       }
 
       if (error.code === '22001') {
         // Data too long
         throw new BadRequestException(
-          'One or more fields exceed maximum length',
+          `One or more fields exceed maximum length. Field: ${error.column || 'unknown'}`,
         );
       }
 
       if (error.code === '23502') {
-        // Not null violation
-        throw new BadRequestException('Required field is missing');
+        // Not null violation - provide more details
+        const column = error.column || 'unknown field';
+        const table = error.table || 'loads';
+        throw new BadRequestException(
+          `Required field '${column}' in table '${table}' is missing or null. Please ensure all required fields are provided.`,
+        );
       }
 
-      // Generic error
-      throw new InternalServerErrorException({
+      if (error.code === '23503') {
+        // Foreign key violation
+        const detail = error.detail || '';
+        throw new BadRequestException(
+          `Invalid reference: ${detail}. Please check that all referenced entities exist.`,
+        );
+      }
+
+      if (error.code === '42P01') {
+        // Table does not exist
+        throw new InternalServerErrorException(
+          `Database table not found. Please check database migrations.`,
+        );
+      }
+
+      // Generic error with more details - include actual error message
+      const errorMessage = error.message || 'An unexpected error occurred';
+      const errorDetails = {
         message: 'Failed to create load',
-        error: error.message || 'An unexpected error occurred',
-        details:
-          process.env.NODE_ENV === 'development' ? error.stack : undefined,
-      });
+        originalError: errorMessage,
+        errorCode: error.code,
+        errorName: error.name,
+        table: error.table,
+        column: error.column,
+        constraint: error.constraint,
+        detail: error.detail,
+        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
+      };
+
+      this.logger.error('Full error details:', errorDetails);
+      
+      throw new InternalServerErrorException(errorDetails);
     }
   }
 
@@ -2000,6 +2090,35 @@ export class LoadsService {
     return mapping[cargoTypeV2] || CargoType.GENERAL;
   }
 
+  // Private helper method to map template cargo type to CargoType enum
+  private mapCargoTypeFromTemplate(cargoType: any): CargoType {
+    if (!cargoType) return CargoType.GENERAL;
+    
+    // If it's already a valid enum value, return it
+    if (Object.values(CargoType).includes(cargoType)) {
+      return cargoType as CargoType;
+    }
+    
+    // Map string values to enum
+    const mapping: Record<string, CargoType> = {
+      GENERAL: CargoType.GENERAL,
+      FRAGILE: CargoType.FRAGILE,
+      HAZARDOUS: CargoType.HAZARDOUS,
+      REFRIGERATED: CargoType.REFRIGERATED,
+      LIQUID: CargoType.LIQUID,
+      OVERSIZED: CargoType.OVERSIZED,
+      VALUABLE: CargoType.VALUABLE,
+      HEAVY_MACHINERY: CargoType.OVERSIZED,
+      FOOD: CargoType.GENERAL,
+      ELECTRONICS: CargoType.FRAGILE,
+      CHEMICALS: CargoType.HAZARDOUS,
+      AUTOMOTIVE: CargoType.GENERAL,
+      TEXTILES: CargoType.GENERAL,
+    };
+    
+    return mapping[cargoType.toUpperCase()] || CargoType.GENERAL;
+  }
+
   // New methods for location management
   async addLocationToLoad(
     loadId: string,
@@ -2334,26 +2453,74 @@ export class LoadsService {
         throw new NotFoundException('Template not found');
       }
 
-      // Merge template data with override data
-      const loadData = {
-        ...template.data,
-        ...overrideData,
-        tenantId,
-        cargoOwnerId: userId,
-        title: overrideData.title || `Load from ${template.name}`,
-        description: overrideData.description || template.description,
+      // Merge template data with override data and ensure all required fields
+      // IMPORTANT: Clean template.data and overrideData to remove UUID fields and system fields
+      // that should not come from template/override data
+      const systemFieldsToExclude = [
+        'id', 'tenantId', 'cargoOwnerId', 'status', 'createdAt', 'updatedAt',
+        'rating', 'viewCount', 'publishedAt', 'assignedCarrierId', 'assignedTruckId',
+        'assignedDriverId', 'currentStatus', 'trackingNumber', 'referenceNumber'
+      ];
+      
+      // Clean template data
+      const cleanedTemplateData = { ...template.data };
+      systemFieldsToExclude.forEach(field => {
+        delete cleanedTemplateData[field];
+      });
+      
+      // Clean override data
+      const cleanedOverrideData = { ...overrideData };
+      systemFieldsToExclude.forEach(field => {
+        delete cleanedOverrideData[field];
+      });
+      
+      // Merge template data with override data and ensure all required fields
+      const loadData: CreateLoadDto = {
+        // Start with cleaned template defaults
+        ...cleanedTemplateData,
+        // Override with cleaned user-provided data
+        ...cleanedOverrideData,
+        // Ensure required fields are always set (overrideData takes precedence, then template, then defaults)
+        title: overrideData.title || template.data?.title || `Load from ${template.name}`,
+        description: overrideData.description ?? template.description ?? template.data?.description ?? '',
+        weight: overrideData.weight ?? template.data?.weight ?? 1000,
+        volume: overrideData.volume ?? template.data?.volume,
+        cargoType: overrideData.cargoType || this.mapCargoTypeFromTemplate(template.data?.cargoType) || CargoType.GENERAL,
+        loadType: overrideData.loadType || template.data?.loadType || LoadType.FTL,
+        equipmentType: overrideData.equipmentType || template.data?.equipmentType || EquipmentType.DRY_VAN,
+        visibility: overrideData.visibility || template.data?.visibility || Visibility.PUBLIC,
+        unitsRequired: overrideData.unitsRequired ?? template.data?.unitsRequired ?? 1,
         locations: overrideData.locations || template.data?.locations || [],
+        // Handle dates - convert to Date objects if they're strings
         pickupDate: overrideData.pickupDate
-          ? new Date(overrideData.pickupDate)
+          ? (overrideData.pickupDate instanceof Date ? overrideData.pickupDate : new Date(overrideData.pickupDate))
           : template.data?.pickupDate
-            ? new Date(template.data.pickupDate)
+            ? (template.data.pickupDate instanceof Date ? template.data.pickupDate : new Date(template.data.pickupDate))
             : new Date(),
         deliveryDate: overrideData.deliveryDate
-          ? new Date(overrideData.deliveryDate)
+          ? (overrideData.deliveryDate instanceof Date ? overrideData.deliveryDate : new Date(overrideData.deliveryDate))
           : template.data?.deliveryDate
-            ? new Date(template.data.deliveryDate)
+            ? (template.data.deliveryDate instanceof Date ? template.data.deliveryDate : new Date(template.data.deliveryDate))
             : new Date(),
-        status: LoadStatus.DRAFT,
+        loadValue: overrideData.loadValue ?? template.data?.loadValue ?? 0,
+        currencyCode: overrideData.currencyCode || template.data?.currencyCode || 'USD',
+        paymentTerms: overrideData.paymentTerms || template.data?.paymentTerms || PaymentTerms.NET_30,
+        // Boolean fields - use nullish coalescing to handle false values correctly
+        isFragile: overrideData.isFragile ?? template.data?.isFragile ?? false,
+        isHazardous: overrideData.isHazardous ?? template.data?.isHazardous ?? false,
+        requiresRefrigeration: overrideData.requiresRefrigeration ?? template.data?.requiresRefrigeration ?? false,
+        isStackable: overrideData.isStackable ?? template.data?.isStackable ?? false,
+        requiresForklift: overrideData.requiresForklift ?? template.data?.requiresForklift ?? false,
+        requiresCrane: overrideData.requiresCrane ?? template.data?.requiresCrane ?? false,
+        requiresLoadingDock: overrideData.requiresLoadingDock ?? template.data?.requiresLoadingDock ?? false,
+        // Optional fields from template
+        urgencyLevel: overrideData.urgencyLevel || template.data?.urgencyLevel || UrgencyLevel.NORMAL,
+        packagingType: overrideData.packagingType || template.data?.packagingType,
+        numberOfPieces: overrideData.numberOfPieces ?? template.data?.numberOfPieces ?? 0,
+        numberOfPallets: overrideData.numberOfPallets ?? template.data?.numberOfPallets ?? 0,
+        loadingInstructions: overrideData.loadingInstructions || template.data?.loadingInstructions,
+        unloadingInstructions: overrideData.unloadingInstructions || template.data?.unloadingInstructions,
+        specialHandlingInstructions: overrideData.specialHandlingInstructions || template.data?.specialHandlingInstructions,
       };
 
       console.log('📋 Merged load data:', {
@@ -2362,43 +2529,195 @@ export class LoadsService {
         hasPickupDate: !!loadData.pickupDate,
         hasDeliveryDate: !!loadData.deliveryDate,
         title: loadData.title,
+        weight: loadData.weight,
+        loadValue: loadData.loadValue,
       });
 
-      // Validate the merged data
-      if (!loadData.locations || loadData.locations.length < 2) {
+      // Validate the merged data - ensure locations are provided
+      if (!loadData.locations || !Array.isArray(loadData.locations) || loadData.locations.length < 2) {
         console.error('❌ Template validation failed: insufficient locations');
+        console.error('❌ Locations provided:', loadData.locations);
         throw new BadRequestException(
           'At least pickup and delivery locations are required. Please provide locations in the override data.',
         );
       }
 
-      // Validate dates
-      if (loadData.pickupDate && loadData.deliveryDate) {
-        if (loadData.pickupDate > loadData.deliveryDate) {
+      // Validate that locations have required structure
+      const hasPickup = loadData.locations.some((loc: any) => loc.type === 'PICKUP');
+      const hasDelivery = loadData.locations.some((loc: any) => loc.type === 'DELIVERY');
+      
+      if (!hasPickup || !hasDelivery) {
+        console.error('❌ Template validation failed: missing pickup or delivery location');
+        throw new BadRequestException(
+          'Both pickup and delivery locations are required. Please ensure locations array includes both PICKUP and DELIVERY types.',
+        );
+      }
+
+      // Ensure each location has required fields
+      for (let i = 0; i < loadData.locations.length; i++) {
+        const loc = loadData.locations[i];
+        
+        // Generate ID if missing
+        if (!loc.id) {
+          loc.id = crypto.randomUUID();
+        }
+        
+        // Set sequence if missing
+        if (loc.sequence === undefined || loc.sequence === null) {
+          loc.sequence = i + 1;
+        }
+        
+        // Validate locationData
+        if (!loc.locationData || !loc.locationData.coordinates) {
+          throw new BadRequestException(
+            `Location ${loc.type || 'unknown'} is missing required locationData with coordinates.`,
+          );
+        }
+        
+        // Set scheduledDate if missing (use pickup/delivery date as fallback)
+        if (!loc.scheduledDate) {
+          if (loc.type === 'PICKUP') {
+            loc.scheduledDate = loadData.pickupDate;
+          } else if (loc.type === 'DELIVERY') {
+            loc.scheduledDate = loadData.deliveryDate;
+          } else {
+            loc.scheduledDate = loadData.pickupDate; // Default to pickup date
+          }
+        } else if (typeof loc.scheduledDate === 'string') {
+          loc.scheduledDate = new Date(loc.scheduledDate);
+        }
+        
+        // Set estimatedTime if missing (default to 60 minutes)
+        if (loc.estimatedTime === undefined || loc.estimatedTime === null) {
+          loc.estimatedTime = 60; // Default to 60 minutes
+        }
+        
+        // Ensure locationData has required fields
+        if (!loc.locationData.name) {
+          loc.locationData.name = loc.locationData.address || `Location ${loc.type}`;
+        }
+        if (!loc.locationData.address) {
+          loc.locationData.address = loc.locationData.name || '';
+        }
+      }
+
+      // Validate dates - ensure they are Date objects
+      let pickupDate: Date;
+      let deliveryDate: Date;
+      
+      try {
+        pickupDate = loadData.pickupDate instanceof Date 
+          ? loadData.pickupDate 
+          : new Date(loadData.pickupDate);
+        deliveryDate = loadData.deliveryDate instanceof Date 
+          ? loadData.deliveryDate 
+          : new Date(loadData.deliveryDate);
+        
+        // Validate date objects are valid
+        if (isNaN(pickupDate.getTime())) {
+          throw new BadRequestException('Invalid pickup date format');
+        }
+        if (isNaN(deliveryDate.getTime())) {
+          throw new BadRequestException('Invalid delivery date format');
+        }
+        
+        // Validate date order
+        if (pickupDate > deliveryDate) {
           throw new BadRequestException(
             'Delivery date cannot be before pickup date',
           );
         }
+        
+        // Update loadData with proper Date objects
+        loadData.pickupDate = pickupDate;
+        loadData.deliveryDate = deliveryDate;
+      } catch (dateError) {
+        if (dateError instanceof BadRequestException) {
+          throw dateError;
+        }
+        this.logger.error('Error processing dates:', dateError);
+        throw new BadRequestException(
+          `Invalid date format: ${dateError.message}`,
+        );
       }
 
       // Create the load using the existing create method
       console.log('💾 Creating load from template...');
-      const load = await this.create(loadData, userId, tenantId);
-
+      console.log('💾 Load data summary:', {
+        title: loadData.title,
+        locationsCount: loadData.locations?.length || 0,
+        pickupDate: loadData.pickupDate,
+        deliveryDate: loadData.deliveryDate,
+        weight: loadData.weight,
+        loadValue: loadData.loadValue,
+        cargoType: loadData.cargoType,
+        loadType: loadData.loadType,
+        equipmentType: loadData.equipmentType,
+        visibility: loadData.visibility,
+      });
+      
+      // Validate all required fields before calling create
+      const requiredFields = ['title', 'weight', 'cargoType', 'loadType', 'equipmentType', 'visibility', 'unitsRequired', 'pickupDate', 'deliveryDate', 'loadValue'];
+      const missingFields = requiredFields.filter(field => {
+        const value = loadData[field];
+        return value === undefined || value === null || (typeof value === 'string' && value.trim() === '');
+      });
+      
+      if (missingFields.length > 0) {
+        console.error('❌ Missing required fields:', missingFields);
+        throw new BadRequestException(
+          `Missing required fields: ${missingFields.join(', ')}. Please ensure all required fields are provided.`,
+        );
+      }
+      
+      let load: Load;
+      try {
+        load = await this.create(loadData, userId, tenantId);
       this.logger.log(
         `Created load ${load.id} from template ${templateId} successfully`,
       );
+      } catch (createError) {
+        this.logger.error(
+          `Error in create() method when using template: ${createError.message}`,
+          createError.stack,
+        );
+        this.logger.error(`Create error code: ${createError.code}`);
+        this.logger.error(`Create error detail: ${createError.detail}`);
+        // Re-throw to be caught by outer catch
+        throw createError;
+      }
 
-      // Note: enrichedLocations are not required for basic functionality
-      // They are optional and can be added later if needed
-      // The frontend should handle missing enrichedLocations gracefully
+      // Reload the load with relations to ensure we have all data including locations
+      const reloadedLoad = await this.loadRepository.findOne({
+        where: { id: load.id },
+        relations: ['cargoOwner'],
+      });
 
-      return load;
+      if (!reloadedLoad) {
+        throw new NotFoundException('Load was created but could not be retrieved');
+      }
+
+      // Verify locations were saved
+      this.logger.log(`Reloaded load ${reloadedLoad.id} with ${reloadedLoad.locations?.length || 0} locations`);
+      
+      if (!reloadedLoad.locations || reloadedLoad.locations.length === 0) {
+        this.logger.warn(`⚠️ Load ${reloadedLoad.id} was created but has no locations saved`);
+      }
+
+      return reloadedLoad;
     } catch (error) {
+      // Log comprehensive error details
       this.logger.error(
         `Failed to use template ${templateId}: ${error.message}`,
         error.stack,
       );
+      this.logger.error(`Error code: ${error.code}`);
+      this.logger.error(`Error name: ${error.name}`);
+      this.logger.error(`Error table: ${error.table}`);
+      this.logger.error(`Error column: ${error.column}`);
+      this.logger.error(`Error detail: ${error.detail}`);
+      this.logger.error(`Error constraint: ${error.constraint}`);
+      this.logger.error(`Full error:`, JSON.stringify(error, Object.getOwnPropertyNames(error)));
 
       // Re-throw known exceptions
       if (
@@ -2409,10 +2728,29 @@ export class LoadsService {
         throw error;
       }
 
-      // Wrap unknown errors
+      // Handle database errors
+      if (error.code === '23502') {
+        // Not null violation
+        const column = error.column || 'unknown field';
+        throw new BadRequestException(
+          `Required field '${column}' is missing. Please check your template data.`,
+        );
+      }
+
+      if (error.code === '23505') {
+        // Unique constraint violation
+        throw new ConflictException('A load with these details already exists');
+      }
+
+      // Wrap unknown errors with full details
       throw new InternalServerErrorException({
         message: 'Failed to create load from template',
         error: error.message || 'An unexpected error occurred',
+        errorCode: error.code,
+        errorName: error.name,
+        errorTable: error.table,
+        errorColumn: error.column,
+        errorDetail: error.detail,
         details:
           process.env.NODE_ENV === 'development' ? error.stack : undefined,
       });
@@ -2425,6 +2763,7 @@ export class LoadsService {
   async getCargoWithEnrichedLocations(
     cargoId: string,
   ): Promise<EnrichedCargoResponse> {
+    try {
     const cargo = await this.loadRepository.findOne({
       where: { id: cargoId },
       relations: ['cargoOwner'],
@@ -2434,8 +2773,30 @@ export class LoadsService {
       throw new NotFoundException(`Cargo with ID ${cargoId} not found`);
     }
 
-    const enrichedLocations =
+      // If no locations, return empty enriched locations
+      if (!cargo.locations || cargo.locations.length === 0) {
+        this.logger.warn(`Cargo ${cargoId} has no locations to enrich`);
+        return {
+          cargo: {
+            ...cargo,
+            enrichedLocations: [],
+          },
+          enrichedLocations: [],
+        };
+      }
+
+      // Enrich locations
+      let enrichedLocations = [];
+      try {
+        enrichedLocations =
       await this.locationEnrichmentService.enrichCargoLocations(cargo);
+      } catch (enrichError) {
+        this.logger.warn(
+          `Failed to enrich locations for cargo ${cargoId}: ${enrichError.message}`,
+        );
+        // Return empty enriched locations if enrichment fails
+        enrichedLocations = [];
+      }
 
     const cargoWithEnrichedLocations: EnrichedCargo = {
       ...cargo,
@@ -2446,6 +2807,13 @@ export class LoadsService {
       cargo: cargoWithEnrichedLocations,
       enrichedLocations,
     };
+    } catch (error) {
+      this.logger.error(
+        `Error getting cargo with enriched locations: ${error.message}`,
+        error.stack,
+      );
+      throw error;
+    }
   }
 
   /**
@@ -2683,7 +3051,7 @@ export class LoadsService {
       // Check weight constraints
       if (truckData.capacityWeight > location.locationData.maxTruckWeight) {
         issues.push(
-          `Truck weight (${truckData.capacityWeight} tons) exceeds location limit (${location.locationData.maxTruckWeight} tons)`,
+          `Truck weight capacity (${truckData.capacityWeight} kg) exceeds location limit (${location.locationData.maxTruckWeight} kg)`,
         );
         isCompatible = false;
       }
@@ -3188,6 +3556,51 @@ export class LoadsService {
           }
         : undefined,
     };
+  }
+
+  /**
+   * Trigger matching for a newly created load
+   */
+  private async triggerMatchingForLoad(load: Load, tenantId: string): Promise<void> {
+    if (!this.matchingService) {
+      this.logger.warn('MatchingService not available, skipping automatic matching');
+      return;
+    }
+
+    try {
+      this.logger.log(`Starting automatic matching for load ${load.id}`);
+      
+      // Create match request
+      const matchRequest: MatchRequestDto = {
+        loadId: load.id,
+        algorithm: 'WEIGHTED_SCORE' as any, // Default algorithm
+        limit: 10,
+        minCompatibilityScore: 0.5,
+        prioritizeCost: true,
+        prioritizeSpeed: true,
+        prioritizeQuality: true,
+        includeDetailedScoring: true,
+      };
+
+      // Find matches asynchronously
+      const matches = await this.matchingService.findMatches(matchRequest, tenantId);
+      
+      if (matches && matches.length > 0) {
+        this.logger.log(
+          `Found ${matches.length} matching trucks for load ${load.id}`,
+        );
+        // Matches are found - they can be accessed via the matching API endpoint
+        // The frontend can fetch these matches when needed
+      } else {
+        this.logger.log(`No matching trucks found for load ${load.id}`);
+      }
+    } catch (error) {
+      this.logger.error(
+        `Failed to trigger matching for load ${load.id}: ${error.message}`,
+        error.stack,
+      );
+      // Don't throw - matching failure shouldn't break cargo creation
+    }
   }
 
   /**

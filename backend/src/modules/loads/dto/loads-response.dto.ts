@@ -5,6 +5,7 @@ import {
   CargoType,
   UrgencyLevel,
 } from '../../../entities/load.entity';
+import { EnrichedLocation } from '../../locations/osm-location-enrichment.service';
 
 export class LoadResponseDto {
   @ApiProperty({
@@ -280,6 +281,13 @@ export class LoadResponseDto {
       coordinates: number[];
     };
   };
+
+  @ApiProperty({
+    description: 'Enriched location data with additional intelligence',
+    required: false,
+    type: 'array',
+  })
+  enrichedLocations?: EnrichedLocation[];
 }
 
 export class LoadsPaginatedResponseDto {

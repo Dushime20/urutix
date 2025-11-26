@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { FaTimes, FaTruck, FaUser, FaSave } from 'react-icons/fa';
 import type { FleetItem } from '../../types/fleet';
 
@@ -19,10 +19,31 @@ const FleetForm: React.FC<FleetFormProps> = ({
   mode,
   activeTab
 }) => {
-  const [formData, setFormData] = useState<any>({});
+  const [formData, setFormData] = useState<any>({
+    // Initialize with default values to ensure checkboxes work
+    hasForklift: false,
+    hasCrane: false,
+    hasLoadingDock: false,
+    maxLoadingTime: '',
+    maxUnloadingTime: '',
+  });
   const [loading, setLoading] = useState(false);
+  const initializedRef = useRef(false);
 
   useEffect(() => {
+    // Reset initialization flag when form closes
+    if (!isOpen) {
+      initializedRef.current = false;
+      return;
+    }
+
+    // Only initialize once when form opens
+    if (initializedRef.current) {
+      return; // Don't reset if already initialized
+    }
+    
+    console.log('🔄 useEffect triggered:', { hasInitialData: !!initialData, activeTab, isOpen });
+    
     if (initialData) {
       setFormData({
         // Truck fields
@@ -41,11 +62,127 @@ const FleetForm: React.FC<FleetFormProps> = ({
         insuranceExpiry: initialData.insuranceExpiry || '',
         roadworthyCertExpiry: initialData.roadworthyCertExpiry || '',
         mileage: initialData.mileage || '',
+        truckType: initialData.truckType || '',
+        trailerType: initialData.trailerType || '',
+        maxLength: initialData.maxLength || '',
+        maxWidth: initialData.maxWidth || '',
+        maxHeight: initialData.maxHeight || '',
         hasRefrigeration: initialData.hasRefrigeration || false,
         hasLiftGate: initialData.hasLiftGate || false,
-        hasGps: initialData.hasGps || false,
+        hasGps: initialData.hasGps || initialData.hasGPS || false,
         hasHazmatPermit: initialData.hasHazmatPermit || false,
+        isActive: initialData.isActive !== undefined ? initialData.isActive : true,
+        status: initialData.status || 'AVAILABLE',
         equipmentList: initialData.equipmentList || [],
+        // Essential cargo equipment
+        hasSideRails: initialData.hasSideRails || false,
+        hasTarps: initialData.hasTarps || false,
+        hasStraps: initialData.hasStraps || false,
+        hasChains: initialData.hasChains || false,
+        hasWinch: initialData.hasWinch || false,
+        hasRam: initialData.hasRam || false,
+        hasTailLift: initialData.hasTailLift || false,
+        hasSideLift: initialData.hasSideLift || false,
+        hasRollerBed: initialData.hasRollerBed || false,
+        hasDropDeck: initialData.hasDropDeck || false,
+        hasExtendable: initialData.hasExtendable || false,
+        hasLowbed: initialData.hasLowbed || false,
+        hasStepDeck: initialData.hasStepDeck || false,
+        hasPowerOnly: initialData.hasPowerOnly || false,
+        hasContainerChassis: initialData.hasContainerChassis || false,
+        // Loading equipment - check both nested and top-level
+        hasForklift: initialData.loadingCapabilities?.hasForklift || initialData.hasForklift || false,
+        hasCrane: initialData.loadingCapabilities?.hasCrane || initialData.hasCrane || false,
+        hasLoadingDock: initialData.loadingCapabilities?.hasLoadingDock || initialData.hasLoadingDock || false,
+        maxLoadingTime: initialData.loadingCapabilities?.maxLoadingTime || initialData.maxLoadingTime || '',
+        maxUnloadingTime: initialData.loadingCapabilities?.maxUnloadingTime || initialData.maxUnloadingTime || '',
+        // Cargo type capabilities
+        hasTanker: initialData.hasTanker || false,
+        hasBulk: initialData.hasBulk || false,
+        hasRefrigerated: initialData.hasRefrigerated || false,
+        hasHeated: initialData.hasHeated || false,
+        hasVentilated: initialData.hasVentilated || false,
+        hasCurtainSide: initialData.hasCurtainSide || false,
+        hasBox: initialData.hasBox || false,
+        hasVan: initialData.hasVan || false,
+        hasPlatform: initialData.hasPlatform || false,
+        hasCarCarrier: initialData.hasCarCarrier || false,
+        hasHeavyHaul: initialData.hasHeavyHaul || false,
+        hasOversized: initialData.hasOversized || false,
+        // Specialized cargo capabilities
+        hasHazmat: initialData.hasHazmat || false,
+        hasDangerousGoods: initialData.hasDangerousGoods || false,
+        hasFoodGrade: initialData.hasFoodGrade || false,
+        hasPharmaceutical: initialData.hasPharmaceutical || false,
+        hasLiquid: initialData.hasLiquid || false,
+        hasDryBulk: initialData.hasDryBulk || false,
+        hasGas: initialData.hasGas || false,
+        hasChemical: initialData.hasChemical || false,
+        hasWaste: initialData.hasWaste || false,
+        // Temperature control
+        hasReefer: initialData.hasReefer || false,
+        hasFrozen: initialData.hasFrozen || false,
+        hasChilled: initialData.hasChilled || false,
+        hasAmbient: initialData.hasAmbient || false,
+        hasControlledAtmosphere: initialData.hasControlledAtmosphere || false,
+        hasHumidityControl: initialData.hasHumidityControl || false,
+        hasTemperatureMonitoring: initialData.hasTemperatureMonitoring || false,
+        // Technology and tracking
+        hasGPS: initialData.hasGPS || initialData.hasGps || false,
+        hasTracking: initialData.hasTracking || initialData.securityFeatures?.hasTracking || false,
+        hasTelematics: initialData.hasTelematics || initialData.securityFeatures?.hasTelematics || false,
+        hasELD: initialData.hasELD || initialData.securityFeatures?.hasELD || false,
+        hasDashCam: initialData.hasDashCam || initialData.securityFeatures?.hasDashCam || false,
+        hasSafetyCameras: initialData.hasSafetyCameras || initialData.securityFeatures?.hasSafetyCameras || false,
+        // Safety features
+        hasCollisionAvoidance: initialData.hasCollisionAvoidance || initialData.securityFeatures?.hasCollisionAvoidance || false,
+        hasLaneDeparture: initialData.hasLaneDeparture || initialData.securityFeatures?.hasLaneDeparture || false,
+        hasAdaptiveCruise: initialData.hasAdaptiveCruise || initialData.securityFeatures?.hasAdaptiveCruise || false,
+        hasBlindSpot: initialData.hasBlindSpot || initialData.securityFeatures?.hasBlindSpot || false,
+        hasBackupCamera: initialData.hasBackupCamera || initialData.securityFeatures?.hasBackupCamera || false,
+        // Monitoring systems
+        hasTirePressureMonitoring: initialData.hasTirePressureMonitoring || initialData.securityFeatures?.hasTirePressureMonitoring || false,
+        hasEngineMonitoring: initialData.hasEngineMonitoring || initialData.securityFeatures?.hasEngineMonitoring || false,
+        hasFuelMonitoring: initialData.hasFuelMonitoring || initialData.securityFeatures?.hasFuelMonitoring || false,
+        hasMaintenanceAlerts: initialData.hasMaintenanceAlerts || initialData.securityFeatures?.hasMaintenanceAlerts || false,
+        hasDriverMonitoring: initialData.hasDriverMonitoring || initialData.securityFeatures?.hasDriverMonitoring || false,
+        hasFatigueMonitoring: initialData.hasFatigueMonitoring || initialData.securityFeatures?.hasFatigueMonitoring || false,
+        hasSpeedMonitoring: initialData.hasSpeedMonitoring || initialData.securityFeatures?.hasSpeedMonitoring || false,
+        hasIdleMonitoring: initialData.hasIdleMonitoring || initialData.securityFeatures?.hasIdleMonitoring || false,
+        // Route and tracking
+        hasRouteOptimization: initialData.hasRouteOptimization || initialData.securityFeatures?.hasRouteOptimization || false,
+        hasRealTimeTracking: initialData.hasRealTimeTracking || initialData.securityFeatures?.hasRealTimeTracking || false,
+        hasGeofencing: initialData.hasGeofencing || initialData.securityFeatures?.hasGeofencing || false,
+        // Cargo monitoring
+        hasTemperatureAlerts: initialData.hasTemperatureAlerts || initialData.securityFeatures?.hasTemperatureAlerts || false,
+        hasHumidityAlerts: initialData.hasHumidityAlerts || initialData.securityFeatures?.hasHumidityAlerts || false,
+        hasShockMonitoring: initialData.hasShockMonitoring || initialData.securityFeatures?.hasShockMonitoring || false,
+        hasTiltMonitoring: initialData.hasTiltMonitoring || initialData.securityFeatures?.hasTiltMonitoring || false,
+        hasDoorMonitoring: initialData.hasDoorMonitoring || initialData.securityFeatures?.hasDoorMonitoring || false,
+        hasCargoMonitoring: initialData.hasCargoMonitoring || initialData.securityFeatures?.hasCargoMonitoring || false,
+        hasWeightMonitoring: initialData.hasWeightMonitoring || initialData.securityFeatures?.hasWeightMonitoring || false,
+        hasVolumeMonitoring: initialData.hasVolumeMonitoring || initialData.securityFeatures?.hasVolumeMonitoring || false,
+        // Specialized monitoring
+        hasPressureMonitoring: initialData.hasPressureMonitoring || initialData.securityFeatures?.hasPressureMonitoring || false,
+        hasFlowMonitoring: initialData.hasFlowMonitoring || initialData.securityFeatures?.hasFlowMonitoring || false,
+        hasLevelMonitoring: initialData.hasLevelMonitoring || initialData.securityFeatures?.hasLevelMonitoring || false,
+        hasQualityMonitoring: initialData.hasQualityMonitoring || initialData.securityFeatures?.hasQualityMonitoring || false,
+        hasContaminationMonitoring: initialData.hasContaminationMonitoring || initialData.securityFeatures?.hasContaminationMonitoring || false,
+        // Safety systems
+        hasLeakDetection: initialData.hasLeakDetection || initialData.securityFeatures?.hasLeakDetection || false,
+        hasOverfillProtection: initialData.hasOverfillProtection || initialData.securityFeatures?.hasOverfillProtection || false,
+        hasEmergencyShutdown: initialData.hasEmergencyShutdown || initialData.securityFeatures?.hasEmergencyShutdown || false,
+        hasFireSuppression: initialData.hasFireSuppression || initialData.securityFeatures?.hasFireSuppression || false,
+        hasExplosionProof: initialData.hasExplosionProof || initialData.securityFeatures?.hasExplosionProof || false,
+        // Material specifications
+        hasCorrosionResistant: initialData.hasCorrosionResistant || initialData.securityFeatures?.hasCorrosionResistant || false,
+        hasStainlessSteel: initialData.hasStainlessSteel || initialData.securityFeatures?.hasStainlessSteel || false,
+        hasAluminum: initialData.hasAluminum || initialData.securityFeatures?.hasAluminum || false,
+        hasCarbonSteel: initialData.hasCarbonSteel || initialData.securityFeatures?.hasCarbonSteel || false,
+        hasFiberglass: initialData.hasFiberglass || initialData.securityFeatures?.hasFiberglass || false,
+        hasPlastic: initialData.hasPlastic || initialData.securityFeatures?.hasPlastic || false,
+        hasComposite: initialData.hasComposite || initialData.securityFeatures?.hasComposite || false,
+        hasInsulated: initialData.hasInsulated || initialData.securityFeatures?.hasInsulated || false,
         // Driver fields
         firstName: initialData.firstName || '',
         lastName: initialData.lastName || '',
@@ -57,6 +194,7 @@ const FleetForm: React.FC<FleetFormProps> = ({
           email: initialData.contactInfo?.email || ''
         }
       });
+      initializedRef.current = true;
     } else {
       setFormData({
         // Truck fields
@@ -93,6 +231,12 @@ const FleetForm: React.FC<FleetFormProps> = ({
         hasStepDeck: false,
         hasPowerOnly: false,
         hasContainerChassis: false,
+        // Loading equipment
+        hasForklift: false,
+        hasCrane: false,
+        hasLoadingDock: false,
+        maxLoadingTime: '',
+        maxUnloadingTime: '',
         // Cargo type capabilities
         hasTanker: false,
         hasBulk: false,
@@ -192,8 +336,152 @@ const FleetForm: React.FC<FleetFormProps> = ({
           email: ''
         }
       });
+      initializedRef.current = true;
+    } else {
+      // Set defaults for new truck creation
+      setFormData({
+        // Truck fields
+        plateNumber: '',
+        vin: '',
+        make: '',
+        model: '',
+        year: '',
+        color: '',
+        fuelType: '',
+        capacityWeight: '',
+        capacityVolume: '',
+        registrationNumber: '',
+        registrationExpiry: '',
+        insurancePolicy: '',
+        insuranceExpiry: '',
+        roadworthyCertExpiry: '',
+        mileage: '',
+        truckType: '',
+        trailerType: '',
+        // Essential cargo equipment
+        hasSideRails: false,
+        hasTarps: false,
+        hasStraps: false,
+        hasChains: false,
+        hasWinch: false,
+        hasRam: false,
+        hasTailLift: false,
+        hasSideLift: false,
+        hasRollerBed: false,
+        hasDropDeck: false,
+        hasExtendable: false,
+        hasLowbed: false,
+        hasStepDeck: false,
+        hasPowerOnly: false,
+        hasContainerChassis: false,
+        // Loading equipment
+        hasForklift: false,
+        hasCrane: false,
+        hasLoadingDock: false,
+        maxLoadingTime: '',
+        maxUnloadingTime: '',
+        // Cargo type capabilities
+        hasTanker: false,
+        hasBulk: false,
+        hasRefrigerated: false,
+        hasHeated: false,
+        hasVentilated: false,
+        hasCurtainSide: false,
+        hasBox: false,
+        hasVan: false,
+        hasPlatform: false,
+        hasCarCarrier: false,
+        hasHeavyHaul: false,
+        hasOversized: false,
+        // Specialized cargo capabilities
+        hasHazmat: false,
+        hasDangerousGoods: false,
+        hasFoodGrade: false,
+        hasPharmaceutical: false,
+        hasLiquid: false,
+        hasDryBulk: false,
+        hasGas: false,
+        hasChemical: false,
+        hasWaste: false,
+        // Temperature control
+        hasReefer: false,
+        hasFrozen: false,
+        hasChilled: false,
+        hasAmbient: false,
+        hasControlledAtmosphere: false,
+        hasHumidityControl: false,
+        hasTemperatureMonitoring: false,
+        // Technology and tracking
+        hasGPS: false,
+        hasTracking: false,
+        hasTelematics: false,
+        hasELD: false,
+        hasDashCam: false,
+        hasSafetyCameras: false,
+        // Safety features
+        hasCollisionAvoidance: false,
+        hasLaneDeparture: false,
+        hasAdaptiveCruise: false,
+        hasBlindSpot: false,
+        hasBackupCamera: false,
+        // Monitoring systems
+        hasTirePressureMonitoring: false,
+        hasEngineMonitoring: false,
+        hasFuelMonitoring: false,
+        hasMaintenanceAlerts: false,
+        hasDriverMonitoring: false,
+        hasFatigueMonitoring: false,
+        hasSpeedMonitoring: false,
+        hasIdleMonitoring: false,
+        // Route and tracking
+        hasRouteOptimization: false,
+        hasRealTimeTracking: false,
+        hasGeofencing: false,
+        // Cargo monitoring
+        hasTemperatureAlerts: false,
+        hasHumidityAlerts: false,
+        hasShockMonitoring: false,
+        hasTiltMonitoring: false,
+        hasDoorMonitoring: false,
+        hasCargoMonitoring: false,
+        hasWeightMonitoring: false,
+        hasVolumeMonitoring: false,
+        // Specialized monitoring
+        hasPressureMonitoring: false,
+        hasFlowMonitoring: false,
+        hasLevelMonitoring: false,
+        hasQualityMonitoring: false,
+        hasContaminationMonitoring: false,
+        // Safety systems
+        hasLeakDetection: false,
+        hasOverfillProtection: false,
+        hasEmergencyShutdown: false,
+        hasFireSuppression: false,
+        hasExplosionProof: false,
+        // Material specifications
+        hasCorrosionResistant: false,
+        hasStainlessSteel: false,
+        hasAluminum: false,
+        hasCarbonSteel: false,
+        hasFiberglass: false,
+        hasPlastic: false,
+        hasComposite: false,
+        hasInsulated: false,
+        equipmentList: [],
+        // Driver fields
+        firstName: '',
+        lastName: '',
+        licenseNumber: '',
+        licenseType: '',
+        experience: '',
+        contactInfo: {
+          phone: '',
+          email: ''
+        }
+      });
+      initializedRef.current = true;
     }
-  }, [initialData, activeTab]);
+  }, [initialData, activeTab, isOpen]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -205,7 +493,94 @@ const FleetForm: React.FC<FleetFormProps> = ({
     setLoading(true);
     
     try {
-      await onSubmit(formData);
+      // Structure the form data to match backend DTO
+      const structuredData: any = { ...formData };
+      
+      // Build loadingCapabilities object
+      if (activeTab === 'trucks') {
+        console.log('🚛 Building loadingCapabilities from formData:', {
+          hasForklift: formData.hasForklift,
+          hasCrane: formData.hasCrane,
+          hasLoadingDock: formData.hasLoadingDock,
+          maxLoadingTime: formData.maxLoadingTime,
+          maxUnloadingTime: formData.maxUnloadingTime,
+        });
+        structuredData.loadingCapabilities = {
+          hasForklift: Boolean(formData.hasForklift),
+          hasCrane: Boolean(formData.hasCrane),
+          hasLoadingDock: Boolean(formData.hasLoadingDock),
+          hasSideLift: formData.hasSideLift || false,
+          hasTailLift: formData.hasTailLift || false,
+          hasRollerBed: formData.hasRollerBed || false,
+          hasDropDeck: formData.hasDropDeck || false,
+          hasExtendable: formData.hasExtendable || false,
+          hasLowbed: formData.hasLowbed || false,
+          hasStepDeck: formData.hasStepDeck || false,
+          hasPowerOnly: formData.hasPowerOnly || false,
+          hasContainerChassis: formData.hasContainerChassis || false,
+          maxLoadingTime: formData.maxLoadingTime || undefined,
+          maxUnloadingTime: formData.maxUnloadingTime || undefined,
+        };
+        
+        // Build cargoCapabilities object
+        structuredData.cargoCapabilities = {
+          supportedCargoTypes: formData.supportedCargoTypes || [],
+          maxFragileHandling: formData.maxFragileHandling || false,
+          maxHazardousHandling: formData.maxHazardousHandling || false,
+          maxRefrigeratedHandling: formData.maxRefrigeratedHandling || false,
+          maxLiquidHandling: formData.maxLiquidHandling || false,
+          maxOversizedHandling: formData.maxOversizedHandling || false,
+          maxValuableHandling: formData.maxValuableHandling || false,
+          temperatureRange: formData.temperatureRange || undefined,
+          humidityControl: formData.humidityControl || false,
+          maxStackableHeight: formData.maxStackableHeight || undefined,
+          maxClearanceHeight: formData.maxClearanceHeight || undefined,
+          maxWeightPerAxle: formData.maxWeightPerAxle || undefined,
+          maxVolumeCapacity: formData.capacityVolume || undefined,
+          maxLengthCapacity: formData.maxLength || undefined,
+          maxWidthCapacity: formData.maxWidth || undefined,
+          maxHeightCapacity: formData.maxHeight || undefined,
+        };
+        
+        // Build securityFeatures object
+        structuredData.securityFeatures = {
+          hasGps: formData.hasGPS || formData.hasGps || false,
+          hasTracking: formData.hasTracking || false,
+          hasTelematics: formData.hasTelematics || false,
+          hasELD: formData.hasELD || false,
+          hasDashCam: formData.hasDashCam || false,
+          hasSafetyCameras: formData.hasSafetyCameras || false,
+          hasCollisionAvoidance: formData.hasCollisionAvoidance || false,
+          hasLaneDeparture: formData.hasLaneDeparture || false,
+          hasAdaptiveCruise: formData.hasAdaptiveCruise || false,
+          hasBlindSpot: formData.hasBlindSpot || false,
+          hasBackupCamera: formData.hasBackupCamera || false,
+          hasTirePressureMonitoring: formData.hasTirePressureMonitoring || false,
+          hasEngineMonitoring: formData.hasEngineMonitoring || false,
+          hasFuelMonitoring: formData.hasFuelMonitoring || false,
+          hasMaintenanceAlerts: formData.hasMaintenanceAlerts || false,
+          hasDriverMonitoring: formData.hasDriverMonitoring || false,
+          hasFatigueMonitoring: formData.hasFatigueMonitoring || false,
+          hasSpeedMonitoring: formData.hasSpeedMonitoring || false,
+          hasIdleMonitoring: formData.hasIdleMonitoring || false,
+          hasRouteOptimization: formData.hasRouteOptimization || false,
+          hasRealTimeTracking: formData.hasRealTimeTracking || false,
+          hasGeofencing: formData.hasGeofencing || false,
+          hasTemperatureAlerts: formData.hasTemperatureAlerts || false,
+          hasHumidityAlerts: formData.hasHumidityAlerts || false,
+          hasShockMonitoring: formData.hasShockMonitoring || false,
+          hasTiltMonitoring: formData.hasTiltMonitoring || false,
+          hasDoorMonitoring: formData.hasDoorMonitoring || false,
+          hasCargoMonitoring: formData.hasCargoMonitoring || false,
+          hasWeightMonitoring: formData.hasWeightMonitoring || false,
+          hasVolumeMonitoring: formData.hasVolumeMonitoring || false,
+        };
+      }
+      
+      console.log('📤 Submitting structured data:', structuredData);
+      console.log('📤 Loading capabilities:', structuredData.loadingCapabilities);
+      await onSubmit(structuredData);
+      initializedRef.current = false; // Reset for next time
       onClose();
     } catch (error) {
       console.error('Error submitting form:', error);
@@ -215,20 +590,29 @@ const FleetForm: React.FC<FleetFormProps> = ({
   };
 
   const handleInputChange = (field: string, value: any) => {
+    console.log('🔄 handleInputChange:', field, value);
     if (field.includes('.')) {
       const [parent, child] = field.split('.');
-      setFormData(prev => ({
-        ...prev,
-        [parent]: {
-          ...prev[parent],
-          [child]: value
-        }
-      }));
+      setFormData(prev => {
+        const updated = {
+          ...prev,
+          [parent]: {
+            ...(prev[parent] || {}),
+            [child]: value
+          }
+        };
+        console.log('📝 Updated formData (nested):', updated);
+        return updated;
+      });
     } else {
-      setFormData(prev => ({
-        ...prev,
-        [field]: value
-      }));
+      setFormData(prev => {
+        const updated = {
+          ...prev,
+          [field]: value
+        };
+        console.log('📝 Updated formData (flat):', updated);
+        return updated;
+      });
     }
   };
 
@@ -363,7 +747,7 @@ const FleetForm: React.FC<FleetFormProps> = ({
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Capacity Weight (lbs) *
+                      Capacity Weight (kg) *
                     </label>
                     <input
                       type="number"
@@ -642,6 +1026,89 @@ const FleetForm: React.FC<FleetFormProps> = ({
                         <label htmlFor="hasRollerBed" className="ml-2 text-sm font-medium text-gray-700">
                           Roller Bed
                         </label>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Loading Equipment */}
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold text-gray-900">Loading Equipment</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="flex items-center">
+                        <input
+                          type="checkbox"
+                          id="hasForklift"
+                          name="hasForklift"
+                          checked={Boolean(formData.hasForklift)}
+                          onChange={(e) => {
+                            console.log('✅ Forklift checkbox clicked:', e.target.checked);
+                            handleInputChange('hasForklift', e.target.checked);
+                          }}
+                          className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
+                        />
+                        <label htmlFor="hasForklift" className="ml-2 text-sm font-medium text-gray-700 cursor-pointer">
+                          Forklift
+                        </label>
+                      </div>
+                      <div className="flex items-center">
+                        <input
+                          type="checkbox"
+                          id="hasCrane"
+                          name="hasCrane"
+                          checked={Boolean(formData.hasCrane)}
+                          onChange={(e) => {
+                            console.log('✅ Crane checkbox clicked:', e.target.checked);
+                            handleInputChange('hasCrane', e.target.checked);
+                          }}
+                          className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
+                        />
+                        <label htmlFor="hasCrane" className="ml-2 text-sm font-medium text-gray-700 cursor-pointer">
+                          Crane
+                        </label>
+                      </div>
+                      <div className="flex items-center">
+                        <input
+                          type="checkbox"
+                          id="hasLoadingDock"
+                          name="hasLoadingDock"
+                          checked={Boolean(formData.hasLoadingDock)}
+                          onChange={(e) => {
+                            console.log('✅ Loading Dock checkbox clicked:', e.target.checked);
+                            handleInputChange('hasLoadingDock', e.target.checked);
+                          }}
+                          className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
+                        />
+                        <label htmlFor="hasLoadingDock" className="ml-2 text-sm font-medium text-gray-700 cursor-pointer">
+                          Loading Dock
+                        </label>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Max Loading Time (minutes)
+                        </label>
+                        <input
+                          type="number"
+                          value={formData.maxLoadingTime || ''}
+                          onChange={(e) => handleInputChange('maxLoadingTime', parseInt(e.target.value) || '')}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                          min={0}
+                          placeholder="e.g., 60"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Max Unloading Time (minutes)
+                        </label>
+                        <input
+                          type="number"
+                          value={formData.maxUnloadingTime || ''}
+                          onChange={(e) => handleInputChange('maxUnloadingTime', parseInt(e.target.value) || '')}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                          min={0}
+                          placeholder="e.g., 60"
+                        />
                       </div>
                     </div>
                   </div>

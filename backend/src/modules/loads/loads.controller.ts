@@ -18,6 +18,7 @@ import {
   BadRequestException,
   UnauthorizedException,
   ConflictException,
+  InternalServerErrorException,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
 import {
@@ -190,19 +191,59 @@ export class LoadsController {
         req.user.tenantId,
       );
 
-      console.log('✅ Load created successfully:', load.id);
+      console.log('✅ Load created successfully:', load?.id);
+      console.log('✅ Load locations count:', load?.locations?.length || 0);
 
+      if (!load) {
+        throw new InternalServerErrorException('Load was created but returned null');
+      }
+
+      // Get enriched locations for the response (optional, don't fail if it errors)
+      let enrichedLocations = [];
+      try {
+        const enrichedData = await this.loadsService.getCargoWithEnrichedLocations(load.id);
+        enrichedLocations = enrichedData.enrichedLocations || [];
+        console.log('✅ Enriched locations:', enrichedLocations.length);
+      } catch (enrichError) {
+        console.warn('⚠️ Failed to enrich locations (non-critical):', enrichError.message);
+        // Continue without enriched locations - not critical
+      }
+
+      try {
+        const transformedLoad = this.transformLoadToResponse(load);
       return {
         message: 'Enhanced cargo load created successfully',
-        load: this.transformLoadToResponse(load),
-      };
+          load: {
+            ...transformedLoad,
+            enrichedLocations: enrichedLocations,
+          },
+        };
+      } catch (transformError) {
+        console.error('❌ Error transforming load to response:', transformError);
+        throw new InternalServerErrorException({
+          message: 'Load created but failed to transform response',
+          error: transformError.message,
+          loadId: load.id,
+        });
+      }
     } catch (error) {
       console.error('❌ Error in create controller:', error);
       console.error('❌ Error message:', error.message);
       console.error('❌ Error stack:', error.stack);
+      console.error('❌ Error response:', error.response);
+      console.error('❌ Error code:', error.code);
+      console.error('❌ Error detail:', error.detail);
+      console.error('❌ Error table:', error.table);
+      console.error('❌ Error column:', error.column);
 
-      // Re-throw known exceptions
+      // Re-throw known exceptions (including InternalServerErrorException with details)
       if (error instanceof HttpException) {
+        // If it's an InternalServerErrorException with detailed error info, pass it through
+        if (error instanceof InternalServerErrorException && error.getResponse()) {
+          const response = error.getResponse();
+          // Log the detailed error for debugging
+          console.error('❌ Detailed error response:', JSON.stringify(response, null, 2));
+        }
         throw error;
       }
 
@@ -220,21 +261,62 @@ export class LoadsController {
       // Handle database constraint violations
       if (error.code === '23505') {
         // Unique constraint violation
-        throw new ConflictException('A load with these details already exists');
+        throw new ConflictException(
+          'A cargo with these details already exists. Please check your data and try again.',
+        );
       }
 
       if (error.code === '22001') {
         // Data too long
+        const column = error.column || 'unknown field';
+        const fieldName = this.getUserFriendlyFieldName(column);
         throw new BadRequestException(
-          'One or more fields exceed maximum length',
+          `The ${fieldName} field is too long. Please shorten the value and try again.`,
         );
       }
 
-      // Generic error
+      if (error.code === '23502') {
+        // Not null violation
+        const column = error.column || 'unknown field';
+        const fieldName = this.getUserFriendlyFieldName(column);
+        throw new BadRequestException(
+          `Missing required field: ${fieldName}. Please provide a value for this field.`,
+        );
+      }
+
+      if (error.code === '23503') {
+        // Foreign key constraint violation
+        throw new BadRequestException(
+          `Invalid reference: ${error.detail || 'One or more referenced records do not exist'}. Please check that all referenced entities exist.`,
+        );
+      }
+
+      if (error.code === '22P02') {
+        // Invalid input syntax for type (e.g., trying to use string as UUID)
+        const errorMessage = error.message || error.originalError || 'Invalid data type';
+        // Extract the problematic value from the error message
+        const match = errorMessage.match(/invalid input syntax for type uuid: "([^"]+)"/);
+        if (match) {
+          const invalidValue = match[1];
+          throw new BadRequestException(
+            `Invalid value "${invalidValue}" provided. This field requires a valid UUID format. Please check your data and try again.`,
+          );
+        }
+        throw new BadRequestException(
+          'Invalid data format detected. Please check that all fields have the correct data types (e.g., UUIDs must be valid UUID format).',
+        );
+      }
+
+      // Generic error with user-friendly message
+      const errorMessage = error.message || 'Failed to create cargo. Please check your data and try again.';
       throw new HttpException(
         {
-          message: 'Failed to create load',
+          message: errorMessage,
           error: error.message || 'An unexpected error occurred',
+          errorCode: error.code,
+          errorDetail: error.detail,
+          errorTable: error.table,
+          errorColumn: error.column,
           details:
             process.env.NODE_ENV === 'development' ? error.stack : undefined,
         },
@@ -561,15 +643,54 @@ export class LoadsController {
       );
 
       console.log('✅ Load created from template:', load.id);
+      console.log('✅ Load locations:', load.locations?.length || 0);
+      console.log('✅ Load status:', load.status);
 
+      // Transform load first to ensure it works
+      let transformedLoad: LoadResponseDto;
+      try {
+        transformedLoad = this.transformLoadToResponse(load);
+        console.log('✅ Load transformed successfully');
+      } catch (transformError) {
+        console.error('❌ Error transforming load:', transformError);
+        // Still return the load even if transformation has issues
+        throw new InternalServerErrorException({
+          message: 'Load created but failed to transform response',
+          error: transformError.message,
+          loadId: load.id,
+        });
+      }
+
+      // Get enriched locations for the response (optional, don't fail if it errors)
+      let enrichedLocations = [];
+      try {
+        if (load.id) {
+          const enrichedData = await this.loadsService.getCargoWithEnrichedLocations(load.id);
+          enrichedLocations = enrichedData.enrichedLocations || [];
+          console.log('✅ Enriched locations:', enrichedLocations.length);
+        }
+      } catch (enrichError) {
+        console.warn('⚠️ Failed to enrich locations (non-critical):', enrichError.message);
+        console.warn('⚠️ Enrich error details:', enrichError);
+        // Continue without enriched locations - not critical
+        enrichedLocations = [];
+      }
+      
+      // Add enriched locations to the response for frontend compatibility
       return {
         message: 'Load created from template successfully',
-        load: this.transformLoadToResponse(load),
+        load: {
+          ...transformedLoad,
+          enrichedLocations: enrichedLocations,
+        },
       };
     } catch (error) {
       console.error('❌ Error in useTemplate controller:', error);
       console.error('❌ Error message:', error.message);
       console.error('❌ Error stack:', error.stack);
+      console.error('❌ Error name:', error.name);
+      console.error('❌ Error code:', error.code);
+      console.error('❌ Error response:', error.response);
 
       // Re-throw known exceptions
       if (error instanceof HttpException) {
@@ -587,11 +708,72 @@ export class LoadsController {
         });
       }
 
-      // Generic error
+      // Handle database errors with user-friendly messages
+      if (error.code === '23502') {
+        // Not null violation
+        const column = error.column || 'unknown field';
+        const fieldName = this.getUserFriendlyFieldName(column);
+        throw new BadRequestException(
+          `Missing required field: ${fieldName}. Please provide a value for this field.`,
+        );
+      }
+
+      if (error.code === '23505') {
+        // Unique constraint violation
+        throw new ConflictException(
+          'A cargo with these details already exists. Please check your data and try again.',
+        );
+      }
+
+      if (error.code === '23503') {
+        // Foreign key constraint violation
+        throw new BadRequestException(
+          `Invalid reference: ${error.detail || 'One or more referenced records do not exist'}. Please check that all referenced entities exist.`,
+        );
+      }
+
+      if (error.code === '22001') {
+        // String data too long
+        const column = error.column || 'unknown field';
+        const fieldName = this.getUserFriendlyFieldName(column);
+        throw new BadRequestException(
+          `The ${fieldName} field is too long. Please shorten the value and try again.`,
+        );
+      }
+
+      if (error.code === '22P02') {
+        // Invalid input syntax for type (e.g., trying to use string as UUID)
+        const errorMessage = error.message || error.originalError || 'Invalid data type';
+        // Extract the problematic value from the error message
+        const match = errorMessage.match(/invalid input syntax for type uuid: "([^"]+)"/);
+        if (match) {
+          const invalidValue = match[1];
+          throw new BadRequestException(
+            `Invalid value "${invalidValue}" provided. This field requires a valid UUID format. Please check your template data and try again.`,
+          );
+        }
+        throw new BadRequestException(
+          'Invalid data format detected. Please check that all fields have the correct data types (e.g., UUIDs must be valid UUID format).',
+        );
+      }
+
+      // If it's already a BadRequestException or other HttpException, extract the message
+      if (error instanceof BadRequestException || error instanceof HttpException) {
+        const errorResponse = error.getResponse();
+        const message = typeof errorResponse === 'object' && errorResponse !== null
+          ? (errorResponse as any).message || error.message
+          : error.message;
+        throw new BadRequestException(message);
+      }
+
+      // Generic error with user-friendly message
+      const errorMessage = error.message || 'An unexpected error occurred while creating cargo from template';
       throw new HttpException(
         {
-          message: 'Failed to use template',
+          message: errorMessage,
           error: error.message || 'An unexpected error occurred',
+          errorCode: error.code,
+          errorName: error.name,
           details:
             process.env.NODE_ENV === 'development' ? error.stack : undefined,
         },
@@ -1660,6 +1842,74 @@ export class LoadsController {
     };
   }
 
+  /**
+   * Convert database column names to user-friendly field names
+   */
+  private getUserFriendlyFieldName(column: string): string {
+    const fieldNameMap: Record<string, string> = {
+      // Basic fields
+      title: 'Title',
+      description: 'Description',
+      weight: 'Weight',
+      volume: 'Volume',
+      cargoType: 'Cargo Type',
+      loadType: 'Load Type',
+      equipmentType: 'Equipment Type',
+      visibility: 'Visibility',
+      unitsRequired: 'Units Required',
+      
+      // Location fields
+      locations: 'Locations',
+      pickupDate: 'Pickup Date',
+      deliveryDate: 'Delivery Date',
+      
+      // Financial fields
+      loadValue: 'Load Value',
+      currencyCode: 'Currency Code',
+      offeredPrice: 'Offered Price',
+      paymentTerms: 'Payment Terms',
+      
+      // Boolean fields
+      isFragile: 'Is Fragile',
+      isHazardous: 'Is Hazardous',
+      requiresRefrigeration: 'Requires Refrigeration',
+      isStackable: 'Is Stackable',
+      requiresForklift: 'Requires Forklift',
+      requiresCrane: 'Requires Crane',
+      requiresLoadingDock: 'Requires Loading Dock',
+      isTimeCritical: 'Is Time Critical',
+      
+      // Contact fields
+      contactInfo: 'Contact Information',
+      contactPerson: 'Contact Person',
+      contactPhone: 'Contact Phone',
+      contactEmail: 'Contact Email',
+      
+      // Other fields
+      urgencyLevel: 'Urgency Level',
+      packagingType: 'Packaging Type',
+      numberOfPieces: 'Number of Pieces',
+      numberOfPallets: 'Number of Pallets',
+      loadingInstructions: 'Loading Instructions',
+      unloadingInstructions: 'Unloading Instructions',
+      
+      // IDs
+      tenantId: 'Tenant',
+      cargoOwnerId: 'Cargo Owner',
+    };
+
+    // Return mapped name or convert snake_case to Title Case
+    if (fieldNameMap[column]) {
+      return fieldNameMap[column];
+    }
+
+    // Convert snake_case to Title Case
+    return column
+      .split('_')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
+  }
+
   // Private helper method to transform Load entity to LoadResponseDto
   private transformLoadToResponse(load: any): LoadResponseDto {
     return {
@@ -1696,28 +1946,36 @@ export class LoadsController {
           }
         : undefined,
       pickupLocation: (() => {
+        try {
         const pickupLoc = load.locations?.find((loc) => loc.type === 'PICKUP');
-        return pickupLoc
-          ? {
-              id: pickupLoc.id,
-              name: pickupLoc.locationData.name,
-              address: pickupLoc.locationData.address,
-              coordinates: pickupLoc.locationData.coordinates,
-            }
-          : undefined;
+          if (!pickupLoc || !pickupLoc.locationData) return undefined;
+          return {
+            id: pickupLoc.id || '',
+            name: pickupLoc.locationData.name || '',
+            address: pickupLoc.locationData.address || '',
+            coordinates: pickupLoc.locationData.coordinates || { latitude: 0, longitude: 0 },
+          };
+        } catch (error) {
+          console.warn('Error transforming pickup location:', error);
+          return undefined;
+        }
       })(),
       deliveryLocation: (() => {
+        try {
         const deliveryLoc = load.locations?.find(
           (loc) => loc.type === 'DELIVERY',
         );
-        return deliveryLoc
-          ? {
-              id: deliveryLoc.id,
-              name: deliveryLoc.locationData.name,
-              address: deliveryLoc.locationData.address,
-              coordinates: deliveryLoc.locationData.coordinates,
-            }
-          : undefined;
+          if (!deliveryLoc || !deliveryLoc.locationData) return undefined;
+          return {
+            id: deliveryLoc.id || '',
+            name: deliveryLoc.locationData.name || '',
+            address: deliveryLoc.locationData.address || '',
+            coordinates: deliveryLoc.locationData.coordinates || { latitude: 0, longitude: 0 },
+          };
+        } catch (error) {
+          console.warn('Error transforming delivery location:', error);
+          return undefined;
+        }
       })(),
     };
   }
