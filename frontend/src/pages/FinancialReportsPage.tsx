@@ -453,469 +453,474 @@ const FinancialReportsPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+    <div className="space-y-4">
+      {/* Header */}
+      <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl border border-indigo-100 px-4 py-3 mb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 rounded-lg bg-gradient-to-br from-indigo-500 to-indigo-600">
+              <FaFileAlt className="w-4 h-4 text-white" />
+            </div>
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">Financial Reports</h1>
-              <p className="text-gray-600">Generate comprehensive financial and performance reports for your lending portfolio</p>
+              <h1 className="text-lg font-bold text-gray-900">Financial Reports</h1>
+              <p className="text-xs text-gray-600 mt-0.5">Generate comprehensive financial and performance reports for your lending portfolio</p>
             </div>
-            <div className="flex gap-3 mt-4 sm:mt-0">
-              <button
-                onClick={() => setShowReportBuilder(true)}
-                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2"
-              >
-                <FaCog className="h-4 w-4" />
-                Custom Report
-              </button>
-              <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2">
-                <FaCalendar className="h-4 w-4" />
-                Schedule Manager
-              </button>
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setShowReportBuilder(true)}
+              className="px-3 py-1.5 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-1.5"
+            >
+              <FaCog className="w-3.5 h-3.5" />
+              Custom Report
+            </button>
+            <button className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-1.5">
+              <FaCalendar className="w-3.5 h-3.5" />
+              Schedule Manager
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Quick Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4">
+        <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs font-medium text-gray-600">Total Reports</p>
+              <p className="text-lg font-bold text-gray-900 mt-0.5">{reportTemplates.length}</p>
+              <div className="flex items-center mt-1">
+                <span className="text-green-600 text-xs">{reportTemplates.filter(t => t.isScheduled).length} scheduled</span>
+              </div>
+            </div>
+            <div className="h-10 w-10 bg-blue-100 rounded-lg flex items-center justify-center">
+              <FaFileAlt className="h-5 w-5 text-blue-600" />
             </div>
           </div>
         </div>
 
-        {/* Quick Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Total Reports</p>
-                <p className="text-2xl font-bold text-gray-900">{reportTemplates.length}</p>
-                <div className="flex items-center mt-2">
-                  <span className="text-green-600 text-sm">{reportTemplates.filter(t => t.isScheduled).length} scheduled</span>
-                </div>
-              </div>
-              <div className="h-12 w-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                <FaFileAlt className="h-6 w-6 text-blue-600" />
+        <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs font-medium text-gray-600">Generated This Month</p>
+              <p className="text-lg font-bold text-gray-900 mt-0.5">{generatedReports.length}</p>
+              <div className="flex items-center mt-1">
+                <FaArrowUp className="h-2.5 w-2.5 text-green-500 mr-1" />
+                <span className="text-green-600 text-xs">+23% vs last month</span>
               </div>
             </div>
-          </div>
-
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Generated This Month</p>
-                <p className="text-2xl font-bold text-gray-900">{generatedReports.length}</p>
-                <div className="flex items-center mt-2">
-                  <FaArrowUp className="h-4 w-4 text-green-500 mr-1" />
-                  <span className="text-green-600 text-sm">+23% vs last month</span>
-                </div>
-              </div>
-              <div className="h-12 w-12 bg-green-100 rounded-lg flex items-center justify-center">
-                <FaChartBar className="h-6 w-6 text-green-600" />
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Automated Reports</p>
-                <p className="text-2xl font-bold text-gray-900">{reportTemplates.filter(t => t.isScheduled).length}</p>
-                <div className="flex items-center mt-2">
-                  <span className="text-blue-600 text-sm">Next run in 2 days</span>
-                </div>
-              </div>
-              <div className="h-12 w-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                <FaClock className="h-6 w-6 text-purple-600" />
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Storage Used</p>
-                <p className="text-2xl font-bold text-gray-900">24.7 GB</p>
-                <div className="flex items-center mt-2">
-                  <span className="text-gray-600 text-sm">67% of 37 GB limit</span>
-                </div>
-              </div>
-              <div className="h-12 w-12 bg-orange-100 rounded-lg flex items-center justify-center">
-                <FaDatabase className="h-6 w-6 text-orange-600" />
-              </div>
+            <div className="h-10 w-10 bg-green-100 rounded-lg flex items-center justify-center">
+              <FaChartBar className="h-5 w-5 text-green-600" />
             </div>
           </div>
         </div>
 
-        {/* Search and Filters */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-            <div className="flex flex-col sm:flex-row gap-4 flex-1">
-              <div className="relative flex-1">
-                <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                <input
-                  type="text"
-                  placeholder="Search reports by name or description..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
+        <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs font-medium text-gray-600">Automated Reports</p>
+              <p className="text-lg font-bold text-gray-900 mt-0.5">{reportTemplates.filter(t => t.isScheduled).length}</p>
+              <div className="flex items-center mt-1">
+                <span className="text-blue-600 text-xs">Next run in 2 days</span>
               </div>
-
-              <select
-                value={categoryFilter}
-                onChange={(e) => setCategoryFilter(e.target.value)}
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                <option value="all">All Categories</option>
-                <option value="portfolio">Portfolio</option>
-                <option value="performance">Performance</option>
-                <option value="risk">Risk</option>
-                <option value="compliance">Compliance</option>
-                <option value="financial">Financial</option>
-                <option value="custom">Custom</option>
-              </select>
-
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                <option value="all">All Status</option>
-                <option value="completed">Completed</option>
-                <option value="generating">Generating</option>
-                <option value="failed">Failed</option>
-                <option value="scheduled">Scheduled</option>
-              </select>
+            </div>
+            <div className="h-10 w-10 bg-purple-100 rounded-lg flex items-center justify-center">
+              <FaClock className="h-5 w-5 text-purple-600" />
             </div>
           </div>
         </div>
 
-        {/* Report Templates and Generated Reports Tabs */}
-        <div className="mb-6">
-          <div className="border-b border-gray-200">
-            <nav className="-mb-px flex space-x-8">
-              <button className="border-b-2 border-blue-500 py-2 px-1 text-sm font-medium text-blue-600">
-                Report Templates
-              </button>
-              <button className="border-b-2 border-transparent py-2 px-1 text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300">
-                Generated Reports
-              </button>
-            </nav>
+        <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs font-medium text-gray-600">Storage Used</p>
+              <p className="text-lg font-bold text-gray-900 mt-0.5">24.7 GB</p>
+              <div className="flex items-center mt-1">
+                <span className="text-gray-600 text-xs">67% of 37 GB limit</span>
+              </div>
+            </div>
+            <div className="h-10 w-10 bg-orange-100 rounded-lg flex items-center justify-center">
+              <FaDatabase className="h-5 w-5 text-orange-600" />
+            </div>
           </div>
         </div>
+      </div>
 
-        {/* Report Templates Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-          {filteredTemplates.map((template) => (
-            <div key={template.id} className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow">
-              <div className="p-6">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center">
-                    <div className="h-10 w-10 bg-gray-100 rounded-lg flex items-center justify-center mr-3">
-                      {template.icon}
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-900">{template.name}</h3>
-                      <div className="flex items-center gap-2 mt-1">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getCategoryColor(template.category)}`}>
-                          {getCategoryIcon(template.category)}
-                          <span className="ml-1 capitalize">{template.category}</span>
-                        </span>
-                        <span className="text-xs text-gray-500">{template.type}</span>
-                      </div>
+      {/* Search and Filters */}
+      <div className="bg-white rounded-lg border border-gray-200 p-3 mb-4">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+          <div className="flex flex-col sm:flex-row gap-2 flex-1">
+            <div className="relative flex-1">
+              <FaSearch className="absolute left-2.5 top-1/2 transform -translate-y-1/2 text-gray-400 h-3.5 w-3.5" />
+              <input
+                type="text"
+                placeholder="Search reports by name or description..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-9 pr-3 py-1.5 text-sm w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
+
+            <select
+              value={categoryFilter}
+              onChange={(e) => setCategoryFilter(e.target.value)}
+              className="px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="all">All Categories</option>
+              <option value="portfolio">Portfolio</option>
+              <option value="performance">Performance</option>
+              <option value="risk">Risk</option>
+              <option value="compliance">Compliance</option>
+              <option value="financial">Financial</option>
+              <option value="custom">Custom</option>
+            </select>
+
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="all">All Status</option>
+              <option value="completed">Completed</option>
+              <option value="generating">Generating</option>
+              <option value="failed">Failed</option>
+              <option value="scheduled">Scheduled</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      {/* Report Templates and Generated Reports Tabs */}
+      <div className="mb-4">
+        <div className="border-b border-gray-200">
+          <nav className="-mb-px flex space-x-6">
+            <button className="border-b-2 border-blue-500 py-1.5 px-1 text-xs font-medium text-blue-600">
+              Report Templates
+            </button>
+            <button className="border-b-2 border-transparent py-1.5 px-1 text-xs font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300">
+              Generated Reports
+            </button>
+          </nav>
+        </div>
+      </div>
+
+      {/* Report Templates Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mb-4">
+        {filteredTemplates.map((template) => (
+          <div key={template.id} className="bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+            <div className="p-3">
+              <div className="flex items-start justify-between mb-2">
+                <div className="flex items-center">
+                  <div className="h-8 w-8 bg-gray-100 rounded-lg flex items-center justify-center mr-2">
+                    {template.icon}
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-semibold text-gray-900">{template.name}</h3>
+                    <div className="flex items-center gap-1.5 mt-0.5">
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${getCategoryColor(template.category)}`}>
+                        {getCategoryIcon(template.category)}
+                        <span className="ml-1 capitalize">{template.category}</span>
+                      </span>
+                      <span className="text-xs text-gray-500">{template.type}</span>
                     </div>
                   </div>
-                  {template.isScheduled && (
-                    <div className="text-green-500">
-                      <FaClock className="h-4 w-4" />
-                    </div>
-                  )}
                 </div>
-
-                <p className="text-gray-600 text-sm mb-4 line-clamp-3">{template.description}</p>
-
-                <div className="space-y-2 mb-4">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">Estimated Time:</span>
-                    <span className="text-gray-900">{template.estimatedTime}</span>
+                {template.isScheduled && (
+                  <div className="text-green-500">
+                    <FaClock className="h-3 w-3" />
                   </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">Format:</span>
-                    <span className="text-gray-900 uppercase">{template.format}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">Last Generated:</span>
-                    <span className="text-gray-900">
-                      {template.lastGenerated ? new Date(template.lastGenerated).toLocaleDateString() : 'Never'}
+                )}
+              </div>
+
+              <p className="text-gray-600 text-xs mb-2 line-clamp-2">{template.description}</p>
+
+              <div className="space-y-1 mb-2">
+                <div className="flex justify-between text-xs">
+                  <span className="text-gray-500">Estimated Time:</span>
+                  <span className="text-gray-900">{template.estimatedTime}</span>
+                </div>
+                <div className="flex justify-between text-xs">
+                  <span className="text-gray-500">Format:</span>
+                  <span className="text-gray-900 uppercase">{template.format}</span>
+                </div>
+                <div className="flex justify-between text-xs">
+                  <span className="text-gray-500">Last Generated:</span>
+                  <span className="text-gray-900">
+                    {template.lastGenerated ? new Date(template.lastGenerated).toLocaleDateString() : 'Never'}
+                  </span>
+                </div>
+              </div>
+
+              <div className="mb-2">
+                <p className="text-xs text-gray-500 mb-1">Key Data Points:</p>
+                <div className="flex flex-wrap gap-1">
+                  {template.dataPoints.slice(0, 3).map((point, index) => (
+                    <span key={index} className="inline-flex items-center px-1.5 py-0.5 rounded-md text-xs bg-gray-100 text-gray-700">
+                      {point}
                     </span>
-                  </div>
-                </div>
-
-                <div className="mb-4">
-                  <p className="text-xs text-gray-500 mb-2">Key Data Points:</p>
-                  <div className="flex flex-wrap gap-1">
-                    {template.dataPoints.slice(0, 3).map((point, index) => (
-                      <span key={index} className="inline-flex items-center px-2 py-1 rounded-md text-xs bg-gray-100 text-gray-700">
-                        {point}
-                      </span>
-                    ))}
-                    {template.dataPoints.length > 3 && (
-                      <span className="inline-flex items-center px-2 py-1 rounded-md text-xs bg-gray-100 text-gray-700">
-                        +{template.dataPoints.length - 3} more
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => handleGenerateReport(template)}
-                    disabled={isGenerating === template.id}
-                    className="flex-1 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {isGenerating === template.id ? (
-                      <>
-                        <FaSpinner className="h-4 w-4 animate-spin" />
-                        Generating...
-                      </>
-                    ) : (
-                      <>
-                        <FaPlay className="h-4 w-4" />
-                        Generate
-                      </>
-                    )}
-                  </button>
-                  <button
-                    onClick={() => setSelectedTemplate(template)}
-                    className="px-3 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-                  >
-                    <FaEye className="h-4 w-4" />
-                  </button>
-                  <button
-                    onClick={() => handleScheduleReport(template)}
-                    className="px-3 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-                  >
-                    <FaCalendarAlt className="h-4 w-4" />
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Generated Reports Table */}
-        <div className="bg-white rounded-lg shadow-md overflow-hidden mb-8">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h3 className="text-lg font-semibold text-gray-900">Recently Generated Reports</h3>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Report
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Generated
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Size
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {filteredReports.map((report) => (
-                  <tr key={report.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <div className="h-8 w-8 bg-gray-200 rounded-lg flex items-center justify-center mr-3">
-                          {getCategoryIcon(report.category)}
-                        </div>
-                        <div>
-                          <div className="text-sm font-medium text-gray-900">{report.name}</div>
-                          <div className="text-sm text-gray-500">ID: {report.id}</div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{formatDate(report.generatedAt)}</div>
-                      <div className="text-sm text-gray-500">by {report.generatedBy}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center gap-2">
-                        {getStatusIcon(report.status)}
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(report.status)}`}>
-                          {report.status.toUpperCase()}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{formatFileSize(report.size)}</div>
-                      <div className="text-sm text-gray-500 uppercase">{report.format}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <div className="flex gap-2">
-                        {report.status === 'completed' && (
-                          <>
-                            <button
-                              onClick={() => handleDownloadReport(report)}
-                              className="text-blue-600 hover:text-blue-900 flex items-center gap-1"
-                            >
-                              <FaDownload className="h-4 w-4" />
-                            </button>
-                            <button
-                              onClick={() => handleEmailReport(report)}
-                              className="text-green-600 hover:text-green-900 flex items-center gap-1"
-                            >
-                              <FaEnvelope className="h-4 w-4" />
-                            </button>
-                            <button className="text-gray-600 hover:text-gray-900 flex items-center gap-1">
-                              <FaPrint className="h-4 w-4" />
-                            </button>
-                          </>
-                        )}
-                        {report.status === 'generating' && (
-                          <span className="text-blue-600 flex items-center gap-1">
-                            <FaSpinner className="h-4 w-4 animate-spin" />
-                            Generating...
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {filteredReports.length === 0 && (
-            <div className="text-center py-12">
-              <FaFileAlt className="mx-auto h-12 w-12 text-gray-400" />
-              <h3 className="mt-2 text-sm font-medium text-gray-900">No reports found</h3>
-              <p className="mt-1 text-sm text-gray-500">
-                Try adjusting your search criteria or generate a new report.
-              </p>
-            </div>
-          )}
-        </div>
-
-        {/* Report Template Details Modal */}
-        {selectedTemplate && (
-          <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-            <div className="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-2/3 shadow-lg rounded-md bg-white">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-xl font-bold text-gray-900">
-                  {selectedTemplate.name}
-                </h3>
-                <button
-                  onClick={() => setSelectedTemplate(null)}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  <FaTimesCircle className="h-6 w-6" />
-                </button>
-              </div>
-
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="space-y-6">
-                  <div>
-                    <h4 className="text-lg font-medium text-gray-900 mb-3">Report Details</h4>
-                    <div className="bg-gray-50 rounded-lg p-4 space-y-3">
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Category:</span>
-                        <span className="font-medium capitalize">{selectedTemplate.category}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Type:</span>
-                        <span className="font-medium capitalize">{selectedTemplate.type}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Format:</span>
-                        <span className="font-medium uppercase">{selectedTemplate.format}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Estimated Time:</span>
-                        <span className="font-medium">{selectedTemplate.estimatedTime}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div>
-                    <h4 className="text-lg font-medium text-gray-900 mb-3">Description</h4>
-                    <div className="bg-gray-50 rounded-lg p-4">
-                      <p className="text-gray-700">{selectedTemplate.description}</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-6">
-                  <div>
-                    <h4 className="text-lg font-medium text-gray-900 mb-3">Data Points Included</h4>
-                    <div className="bg-gray-50 rounded-lg p-4">
-                      <div className="space-y-2">
-                        {selectedTemplate.dataPoints.map((point, index) => (
-                          <div key={index} className="flex items-center">
-                            <FaCheckCircle className="h-4 w-4 text-green-500 mr-2" />
-                            <span className="text-gray-700">{point}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-
-                  {selectedTemplate.isScheduled && selectedTemplate.scheduleSettings && (
-                    <div>
-                      <h4 className="text-lg font-medium text-gray-900 mb-3">Schedule Settings</h4>
-                      <div className="bg-gray-50 rounded-lg p-4 space-y-3">
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Frequency:</span>
-                          <span className="font-medium capitalize">{selectedTemplate.scheduleSettings.frequency}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Next Run:</span>
-                          <span className="font-medium">{new Date(selectedTemplate.scheduleSettings.nextRun).toLocaleDateString()}</span>
-                        </div>
-                        <div>
-                          <span className="text-gray-600">Recipients:</span>
-                          <div className="mt-1">
-                            {selectedTemplate.scheduleSettings.recipients.map((email, index) => (
-                              <span key={index} className="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded mr-1 mb-1">
-                                {email}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
+                  ))}
+                  {template.dataPoints.length > 3 && (
+                    <span className="inline-flex items-center px-1.5 py-0.5 rounded-md text-xs bg-gray-100 text-gray-700">
+                      +{template.dataPoints.length - 3} more
+                    </span>
                   )}
                 </div>
               </div>
 
-              <div className="flex justify-end space-x-3 mt-8">
+              <div className="flex gap-1.5">
                 <button
-                  onClick={() => setSelectedTemplate(null)}
-                  className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors"
+                  onClick={() => handleGenerateReport(template)}
+                  disabled={isGenerating === template.id}
+                  className="flex-1 px-2 py-1.5 text-xs bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Close
+                  {isGenerating === template.id ? (
+                    <>
+                      <FaSpinner className="h-3 w-3 animate-spin" />
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      <FaPlay className="h-3 w-3" />
+                      Generate
+                    </>
+                  )}
                 </button>
                 <button
-                  onClick={() => handleScheduleReport(selectedTemplate)}
-                  className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors"
+                  onClick={() => setSelectedTemplate(template)}
+                  className="px-2 py-1.5 text-xs border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
                 >
-                  Schedule Report
+                  <FaEye className="h-3 w-3" />
                 </button>
                 <button
-                  onClick={() => handleGenerateReport(selectedTemplate)}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  onClick={() => handleScheduleReport(template)}
+                  className="px-2 py-1.5 text-xs border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
                 >
-                  Generate Now
+                  <FaCalendarAlt className="h-3 w-3" />
                 </button>
               </div>
             </div>
+          </div>
+        ))}
+        </div>
+
+      {/* Generated Reports Table */}
+      <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden mb-4">
+        <div className="px-4 py-2.5 border-b border-gray-200">
+          <h3 className="text-sm font-semibold text-gray-900">Recently Generated Reports</h3>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Report
+                </th>
+                <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Generated
+                </th>
+                <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Status
+                </th>
+                <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Size
+                </th>
+                <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {filteredReports.map((report) => (
+                <tr key={report.id} className="hover:bg-gray-50 transition-colors">
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    <div className="flex items-center">
+                      <div className="h-7 w-7 bg-gray-200 rounded-lg flex items-center justify-center mr-2">
+                        {getCategoryIcon(report.category)}
+                      </div>
+                      <div>
+                        <div className="text-xs font-medium text-gray-900">{report.name}</div>
+                        <div className="text-xs text-gray-500">ID: {report.id}</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    <div className="text-xs text-gray-900">{formatDate(report.generatedAt)}</div>
+                    <div className="text-xs text-gray-500">by {report.generatedBy}</div>
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    <div className="flex items-center gap-1.5">
+                      {getStatusIcon(report.status)}
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${getStatusColor(report.status)}`}>
+                        {report.status.toUpperCase()}
+                      </span>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    <div className="text-xs text-gray-900">{formatFileSize(report.size)}</div>
+                    <div className="text-xs text-gray-500 uppercase">{report.format}</div>
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap text-xs font-medium">
+                    <div className="flex gap-1.5">
+                      {report.status === 'completed' && (
+                        <>
+                          <button
+                            onClick={() => handleDownloadReport(report)}
+                            className="text-blue-600 hover:text-blue-900 flex items-center gap-1 transition-colors"
+                          >
+                            <FaDownload className="h-3.5 w-3.5" />
+                          </button>
+                          <button
+                            onClick={() => handleEmailReport(report)}
+                            className="text-green-600 hover:text-green-900 flex items-center gap-1 transition-colors"
+                          >
+                            <FaEnvelope className="h-3.5 w-3.5" />
+                          </button>
+                          <button className="text-gray-600 hover:text-gray-900 flex items-center gap-1 transition-colors">
+                            <FaPrint className="h-3.5 w-3.5" />
+                          </button>
+                        </>
+                      )}
+                      {report.status === 'generating' && (
+                        <span className="text-blue-600 flex items-center gap-1">
+                          <FaSpinner className="h-3.5 w-3.5 animate-spin" />
+                          Generating...
+                        </span>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {filteredReports.length === 0 && (
+          <div className="text-center py-8">
+            <FaFileAlt className="mx-auto h-10 w-10 text-gray-400" />
+            <h3 className="mt-2 text-xs font-medium text-gray-900">No reports found</h3>
+            <p className="mt-1 text-xs text-gray-500">
+              Try adjusting your search criteria or generate a new report.
+            </p>
           </div>
         )}
       </div>
+
+      {/* Report Template Details Modal */}
+      {selectedTemplate && (
+        <>
+          <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+            <div className="relative top-20 mx-auto p-4 border w-11/12 md:w-3/4 lg:w-2/3 shadow-lg rounded-lg bg-white">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-bold text-gray-900">
+                {selectedTemplate.name}
+              </h3>
+              <button
+                onClick={() => setSelectedTemplate(null)}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <FaTimesCircle className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <div className="space-y-4">
+                <div>
+                  <h4 className="text-sm font-medium text-gray-900 mb-2">Report Details</h4>
+                  <div className="bg-gray-50 rounded-lg p-3 space-y-2">
+                    <div className="flex justify-between text-xs">
+                      <span className="text-gray-600">Category:</span>
+                      <span className="font-medium capitalize">{selectedTemplate.category}</span>
+                    </div>
+                    <div className="flex justify-between text-xs">
+                      <span className="text-gray-600">Type:</span>
+                      <span className="font-medium capitalize">{selectedTemplate.type}</span>
+                    </div>
+                    <div className="flex justify-between text-xs">
+                      <span className="text-gray-600">Format:</span>
+                      <span className="font-medium uppercase">{selectedTemplate.format}</span>
+                    </div>
+                    <div className="flex justify-between text-xs">
+                      <span className="text-gray-600">Estimated Time:</span>
+                      <span className="font-medium">{selectedTemplate.estimatedTime}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <h4 className="text-sm font-medium text-gray-900 mb-2">Description</h4>
+                  <div className="bg-gray-50 rounded-lg p-3">
+                    <p className="text-xs text-gray-700">{selectedTemplate.description}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <h4 className="text-sm font-medium text-gray-900 mb-2">Data Points Included</h4>
+                  <div className="bg-gray-50 rounded-lg p-3">
+                    <div className="space-y-1.5">
+                      {selectedTemplate.dataPoints.map((point, index) => (
+                        <div key={index} className="flex items-center">
+                          <FaCheckCircle className="h-3 w-3 text-green-500 mr-1.5" />
+                          <span className="text-xs text-gray-700">{point}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {selectedTemplate.isScheduled && selectedTemplate.scheduleSettings && (
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-900 mb-2">Schedule Settings</h4>
+                    <div className="bg-gray-50 rounded-lg p-3 space-y-2">
+                      <div className="flex justify-between text-xs">
+                        <span className="text-gray-600">Frequency:</span>
+                        <span className="font-medium capitalize">{selectedTemplate.scheduleSettings.frequency}</span>
+                      </div>
+                      <div className="flex justify-between text-xs">
+                        <span className="text-gray-600">Next Run:</span>
+                        <span className="font-medium">{new Date(selectedTemplate.scheduleSettings.nextRun).toLocaleDateString()}</span>
+                      </div>
+                      <div>
+                        <span className="text-xs text-gray-600">Recipients:</span>
+                        <div className="mt-1">
+                          {selectedTemplate.scheduleSettings.recipients.map((email, index) => (
+                            <span key={index} className="inline-block bg-blue-100 text-blue-800 text-xs px-1.5 py-0.5 rounded mr-1 mb-1">
+                              {email}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="flex justify-end space-x-2 mt-4">
+              <button
+                onClick={() => setSelectedTemplate(null)}
+                className="px-3 py-1.5 text-sm bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors"
+              >
+                Close
+              </button>
+              <button
+                onClick={() => handleScheduleReport(selectedTemplate)}
+                className="px-3 py-1.5 text-sm bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors"
+              >
+                Schedule Report
+              </button>
+              <button
+                onClick={() => handleGenerateReport(selectedTemplate)}
+                className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Generate Now
+              </button>
+            </div>
+          </div>
+        </div>
+        </>
+      )}
     </div>
   );
 };

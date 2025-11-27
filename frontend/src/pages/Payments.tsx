@@ -15,40 +15,49 @@ const Payments = () => {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'completed':
-        return 'bg-success-100 text-success-800';
+        return 'bg-green-100 text-green-800';
       case 'pending':
-        return 'bg-warning-100 text-warning-800';
+        return 'bg-yellow-100 text-yellow-800';
       case 'failed':
-        return 'bg-error-100 text-error-800';
+        return 'bg-red-100 text-red-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Payments</h1>
-          <p className="text-gray-600 mt-2">Manage your financial transactions</p>
+    <div className="space-y-4">
+      {/* Header */}
+      <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-100 px-4 py-3 mb-4">
+        <div className="flex justify-between items-center">
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 rounded-lg bg-gradient-to-br from-green-500 to-green-600">
+              <CreditCard className="w-4 h-4 text-white" />
+            </div>
+            <div>
+              <h1 className="text-lg font-bold text-gray-900">Payments</h1>
+              <p className="text-xs text-gray-600 mt-0.5">Manage your financial transactions</p>
+            </div>
+          </div>
+          <button className="bg-blue-600 text-white px-3 py-1.5 text-sm rounded-lg hover:bg-blue-700 flex items-center gap-1.5 transition-colors">
+            <Plus className="w-3.5 h-3.5" />
+            New Payment
+          </button>
         </div>
-        <button className="btn btn-primary">
-          <Plus className="w-4 h-4 mr-2" />
-          New Payment
-        </button>
       </div>
 
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <div className="flex flex-col sm:flex-row gap-4">
+      {/* Filters and Search */}
+      <div className="bg-white rounded-lg border border-gray-200 p-3">
+        <div className="flex flex-col sm:flex-row gap-3">
           <div className="flex-1">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 text-gray-400 w-3.5 h-3.5" />
               <input
                 type="text"
                 placeholder="Search payments..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                className="w-full pl-9 pr-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
           </div>
@@ -56,63 +65,74 @@ const Payments = () => {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              className="px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
             >
               <option value="all">All Status</option>
               <option value="completed">Completed</option>
               <option value="pending">Pending</option>
               <option value="failed">Failed</option>
             </select>
-            <button className="btn btn-outline">
-              <Filter className="w-4 h-4 mr-2" />
+            <button className="px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center gap-1.5 transition-colors">
+              <Filter className="w-3.5 h-3.5" />
               Filters
             </button>
           </div>
         </div>
       </div>
 
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-        <div className="p-6 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900">All Payments</h2>
+      {/* Payments List */}
+      <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
+        <div className="p-3 border-b border-gray-200">
+          <h2 className="text-sm font-semibold text-gray-900">All Payments</h2>
         </div>
         <div className="divide-y divide-gray-200">
-          {payments?.data?.payments?.map((payment: any) => (
-            <div key={payment.id} className="p-6 hover:bg-gray-50 transition-colors">
-              <div className="flex items-center justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center space-x-3">
-                    <h3 className="text-lg font-medium text-gray-900">
-                      {payment.referenceNumber}
-                    </h3>
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(payment.status)}`}>
-                      {payment.status}
-                    </span>
-                  </div>
-                  <div className="mt-2 grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600">
-                    <div className="flex items-center space-x-2">
-                      <DollarSign className="w-4 h-4" />
-                      <span>${payment.amount?.toLocaleString()} {payment.currency}</span>
+          {isLoading ? (
+            <div className="p-4 text-center text-xs text-gray-500">
+              Loading payments...
+            </div>
+          ) : !payments?.data?.payments?.length ? (
+            <div className="p-4 text-center text-xs text-gray-500">
+              No payments found
+            </div>
+          ) : (
+            payments?.data?.payments?.map((payment: any) => (
+              <div key={payment.id} className="p-3 hover:bg-gray-50 transition-colors">
+                <div className="flex items-center justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center space-x-2 mb-1.5">
+                      <h3 className="text-sm font-medium text-gray-900">
+                        {payment.referenceNumber}
+                      </h3>
+                      <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${getStatusColor(payment.status)}`}>
+                        {payment.status}
+                      </span>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <CreditCard className="w-4 h-4" />
-                      <span>{payment.paymentMethod}</span>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-xs text-gray-600">
+                      <div className="flex items-center space-x-1.5">
+                        <DollarSign className="w-3.5 h-3.5" />
+                        <span>${payment.amount?.toLocaleString()} {payment.currency}</span>
+                      </div>
+                      <div className="flex items-center space-x-1.5">
+                        <CreditCard className="w-3.5 h-3.5" />
+                        <span>{payment.paymentMethod}</span>
+                      </div>
+                      <div className="flex items-center space-x-1.5">
+                        <span>Trip: {payment.trip?.tripNumber || 'N/A'}</span>
+                      </div>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <span>Trip: {payment.trip?.tripNumber}</span>
+                    <div className="mt-1.5 text-xs text-gray-500">
+                      <span>Created: {new Date(payment.createdAt).toLocaleDateString()}</span>
                     </div>
                   </div>
-                  <div className="mt-2 text-sm text-gray-500">
-                    <span>Created: {new Date(payment.createdAt).toLocaleDateString()}</span>
+                  <div className="flex items-center space-x-1.5">
+                    <button className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors" title="View Details">
+                      <Eye className="w-3.5 h-3.5" />
+                    </button>
                   </div>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
-                    <Eye className="w-4 h-4" />
-                  </button>
                 </div>
               </div>
-            </div>
-          ))}
+            ))
+          )}
         </div>
       </div>
     </div>
