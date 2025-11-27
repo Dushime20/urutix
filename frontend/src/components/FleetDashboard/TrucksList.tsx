@@ -135,11 +135,39 @@ const EditTruckForm: React.FC<EditTruckFormProps> = ({ truck, onSave, onCancel }
                 type="text"
                 name="vin"
                 value={formData.vin}
-                onChange={handleChange}
+                onChange={(e) => {
+                  // Only allow alphanumeric characters (excluding I, O, Q as per VIN standards)
+                  const value = e.target.value.toUpperCase().replace(/[^A-HJ-NPR-Z0-9]/g, '');
+                  // Limit to 17 characters
+                  if (value.length <= 17) {
+                    setFormData(prev => ({ ...prev, vin: value }));
+                  }
+                }}
+                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
+                  formData.vin?.length === 17 
+                    ? 'border-green-500 bg-green-50' 
+                    : formData.vin?.length > 0 
+                    ? 'border-yellow-400' 
+                    : 'border-gray-300'
+                }`}
                 required
                 maxLength={17}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                placeholder="Enter 17-character VIN"
               />
+              <div className="mt-1 flex items-center justify-between">
+                <span className={`text-xs ${
+                  formData.vin?.length === 17 
+                    ? 'text-green-600' 
+                    : formData.vin?.length > 0 
+                    ? 'text-yellow-600' 
+                    : 'text-gray-500'
+                }`}>
+                  {formData.vin?.length || 0} / 17 characters
+                </span>
+                {formData.vin?.length === 17 && (
+                  <span className="text-xs text-green-600 font-medium">✓ Valid VIN length</span>
+                )}
+              </div>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Make *</label>
@@ -168,13 +196,29 @@ const EditTruckForm: React.FC<EditTruckFormProps> = ({ truck, onSave, onCancel }
               <input
                 type="number"
                 name="year"
-                value={formData.year}
-                onChange={handleChange}
+                value={formData.year || ''}
+                onChange={(e) => {
+                  const { name, value } = e.target;
+                  setFormData(prev => ({
+                    ...prev,
+                    [name]: value === '' ? '' : (isNaN(parseInt(value)) ? '' : parseInt(value))
+                  }));
+                }}
                 required
                 min="1900"
                 max={new Date().getFullYear() + 1}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
+                  formData.year && typeof formData.year === 'number' && formData.year > new Date().getFullYear()
+                    ? 'border-red-500 bg-red-50'
+                    : 'border-gray-300'
+                }`}
               />
+              {formData.year && typeof formData.year === 'number' && formData.year > new Date().getFullYear() && (
+                <p className="mt-1 text-xs text-red-600 flex items-center gap-1">
+                  <span>⚠</span>
+                  <span>Year cannot be in the future. Current year is {new Date().getFullYear()}</span>
+                </p>
+              )}
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Color</label>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { FaUser, FaEnvelope, FaPhone, FaBuilding, FaEdit, FaSave, FaTimes } from 'react-icons/fa';
 import { useAuth } from '../contexts/AuthContext';
+import { authAPI } from '../services/api';
 
 interface UserProfile {
   id: string;
@@ -46,50 +47,99 @@ const Profile: React.FC = () => {
   });
 
   useEffect(() => {
-    loadProfile();
-  }, []);
+    if (user) {
+      loadProfile();
+    }
+  }, [user]);
 
   const loadProfile = async () => {
     try {
       setLoading(true);
-      // In a real app, this would fetch from API
-      // For now, we'll simulate the profile data
-      const mockProfile: UserProfile = {
-        id: '1',
-        userId: user?.id || '',
-        firstName: 'John',
-        lastName: 'Doe',
-        companyName: 'Doe Logistics Ltd',
-        phone: '+254700123456',
-        address: '123 Industrial Area',
-        city: 'Nairobi',
-        state: 'Nairobi',
-        country: 'Kenya',
-        postalCode: '00100',
-        bio: 'Experienced cargo owner with over 10 years in logistics.',
-        websiteUrl: 'https://doelogistics.com',
-        rating: 4.8,
-        totalTrips: 156,
-        createdAt: '2024-01-01T00:00:00Z',
-        updatedAt: '2024-01-15T00:00:00Z',
+      setError(null);
+      
+      // Fetch profile from API
+      const response = await authAPI.getProfile();
+      const userData = response.data?.data?.user || response.data?.user || response.data;
+      
+      if (!userData) {
+        throw new Error('No user data received');
+      }
+      
+      // Use logged-in user data from context as fallback
+      const profileData: UserProfile = {
+        id: userData.id || user?.id || '',
+        userId: userData.id || user?.id || '',
+        firstName: userData.firstName || user?.firstName || '',
+        lastName: userData.lastName || user?.lastName || '',
+        companyName: userData.companyName || userData.tenantName || '',
+        phone: userData.phone || '',
+        address: userData.address || '',
+        city: userData.city || '',
+        state: userData.state || '',
+        country: userData.country || userData.countryCode || '',
+        postalCode: userData.postalCode || '',
+        bio: userData.bio || '',
+        websiteUrl: userData.websiteUrl || '',
+        rating: userData.rating || 0,
+        totalTrips: userData.totalTrips || 0,
+        createdAt: userData.createdAt || new Date().toISOString(),
+        updatedAt: userData.updatedAt || new Date().toISOString(),
       };
       
-      setProfile(mockProfile);
+      setProfile(profileData);
       setFormData({
-        firstName: mockProfile.firstName,
-        lastName: mockProfile.lastName,
-        companyName: mockProfile.companyName,
-        phone: mockProfile.phone || '',
-        address: mockProfile.address || '',
-        city: mockProfile.city || '',
-        state: mockProfile.state || '',
-        country: mockProfile.country || '',
-        postalCode: mockProfile.postalCode || '',
-        bio: mockProfile.bio || '',
-        websiteUrl: mockProfile.websiteUrl || '',
+        firstName: profileData.firstName || '',
+        lastName: profileData.lastName || '',
+        companyName: profileData.companyName || '',
+        phone: profileData.phone || '',
+        address: profileData.address || '',
+        city: profileData.city || '',
+        state: profileData.state || '',
+        country: profileData.country || '',
+        postalCode: profileData.postalCode || '',
+        bio: profileData.bio || '',
+        websiteUrl: profileData.websiteUrl || '',
       });
     } catch (err: any) {
-      setError('Failed to load profile');
+      console.error('Error loading profile:', err);
+      // If API fails, use logged-in user data from context
+      if (user) {
+        const fallbackProfile: UserProfile = {
+          id: user.id,
+          userId: user.id,
+          firstName: user.firstName || '',
+          lastName: user.lastName || '',
+          companyName: user.tenantName || '',
+          phone: '',
+          address: '',
+          city: '',
+          state: '',
+          country: '',
+          postalCode: '',
+          bio: '',
+          websiteUrl: '',
+          rating: 0,
+          totalTrips: 0,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+        setProfile(fallbackProfile);
+        setFormData({
+          firstName: fallbackProfile.firstName || '',
+          lastName: fallbackProfile.lastName || '',
+          companyName: fallbackProfile.companyName || '',
+          phone: '',
+          address: '',
+          city: '',
+          state: '',
+          country: '',
+          postalCode: '',
+          bio: '',
+          websiteUrl: '',
+        });
+      } else {
+        setError('Failed to load profile. Please try again.');
+      }
     } finally {
       setLoading(false);
     }

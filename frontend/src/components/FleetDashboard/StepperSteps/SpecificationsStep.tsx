@@ -188,11 +188,31 @@ export const SpecificationsStep: React.FC<SpecificationsStepProps> = ({
 
       {/* Additional Specifications */}
       <div className="space-y-3">
-        <h4 className="text-xs font-medium text-gray-700 mb-2">
+        <h4 className="text-xs font-medium text-gray-700 mb-2 flex items-center">
+          <FaGasPump className="w-3.5 h-3.5 mr-1.5 text-gray-600" />
           Additional Specifications
         </h4>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">
+              Fuel Type *
+            </label>
+            <select
+              value={formData.fuelType || ''}
+              onChange={(e) => handleInputChange('fuelType', e.target.value)}
+              className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-500 focus:border-gray-500"
+              required
+            >
+              <option value="">Select fuel type</option>
+              {fuelTypes.map((type) => (
+                <option key={type} value={type}>
+                  {type === 'NATURAL_GAS' ? 'Natural Gas' : type.charAt(0) + type.slice(1).toLowerCase().replace('_', ' ')}
+                </option>
+              ))}
+            </select>
+          </div>
+
           <div>
             <label className="block text-xs font-medium text-gray-600 mb-1">
               Mileage (km)

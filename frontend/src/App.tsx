@@ -232,7 +232,7 @@ function App() {
               <Route path="trucks/create" element={<UnifiedFleetManagement />} />
               <Route path="trucks/:truckId/records" element={<TruckRecordsPage />} />
               <Route path="trips" element={<UnifiedFleetManagement />} />
-              <Route path="bids" element={<FleetBidsPage />} />
+              <Route path="bids" element={<TruckBidsPage />} />
               <Route path="drivers" element={<UnifiedDriverManagement />} />
               <Route path="drivers/create" element={<UnifiedDriverManagement />} />
               <Route path="assignments" element={<UnifiedDriverManagement />} />

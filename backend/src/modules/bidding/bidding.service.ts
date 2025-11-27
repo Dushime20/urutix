@@ -14,6 +14,7 @@ import {
 } from '../../entities/auction.entity';
 import { Load, LoadStatus } from '../../entities/load.entity';
 import { User, UserRole } from '../../entities/user.entity';
+import { UserProfile } from '../../entities/user-profile.entity';
 import { Truck } from '../../entities/truck.entity';
 import { AuctionWatch } from '../../entities/auction-watch.entity';
 import { AuctionView } from '../../entities/auction-view.entity';
@@ -97,6 +98,8 @@ export class BiddingService {
     private readonly loadRepository: Repository<Load>,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    @InjectRepository(UserProfile)
+    private readonly userProfileRepository: Repository<UserProfile>,
     @InjectRepository(Truck)
     private readonly truckRepository: Repository<Truck>,
     @InjectRepository(AuctionWatch)
@@ -134,13 +137,35 @@ export class BiddingService {
       throw new ForbiddenException('Only truck owners can submit bids');
     }
 
-    // Check if auction exists and is active
+    // Check if auction exists and is active or scheduled (but start time has passed)
     const auction = await this.auctionRepository.findOne({
       where: { loadId: createBidDto.loadId },
     });
 
-    if (!auction || auction.status !== AuctionStatus.ACTIVE) {
+    if (!auction) {
+      throw new BadRequestException('No auction found for this load');
+    }
+
+    // Check if auction is active or if scheduled auction start time has passed
+    const now = new Date();
+    const auctionStart = auction.auctionStart ? new Date(auction.auctionStart) : null;
+    const isAuctionActive = auction.status === AuctionStatus.ACTIVE || 
+      (auction.status === AuctionStatus.SCHEDULED && auctionStart && auctionStart <= now);
+
+    if (!isAuctionActive) {
+      // If scheduled but not started yet, provide helpful error message
+      if (auction.status === AuctionStatus.SCHEDULED && auctionStart && auctionStart > now) {
+        throw new BadRequestException(
+          `Auction has not started yet. It will start on ${auctionStart.toLocaleString()}`
+        );
+      }
       throw new BadRequestException('No active auction for this load');
+    }
+
+    // If auction is SCHEDULED but start time has passed, update it to ACTIVE
+    if (auction.status === AuctionStatus.SCHEDULED && auctionStart && auctionStart <= now) {
+      auction.status = AuctionStatus.ACTIVE;
+      await this.auctionRepository.save(auction);
     }
 
     // Validate bid amount
@@ -344,10 +369,19 @@ export class BiddingService {
       throw new BadRequestException('Auction already exists for this load');
     }
 
+    // Determine auction status based on start time
+    const now = new Date();
+    const auctionStart = createAuctionDto.auctionStart 
+      ? new Date(createAuctionDto.auctionStart) 
+      : now;
+    const auctionStatus = auctionStart <= now 
+      ? AuctionStatus.ACTIVE 
+      : AuctionStatus.SCHEDULED;
+
     const auction = this.auctionRepository.create({
       ...createAuctionDto,
       auctionType: createAuctionDto.auctionType || AuctionType.REVERSE,
-      status: AuctionStatus.SCHEDULED,
+      status: auctionStatus,
     });
 
     return this.auctionRepository.save(auction);
@@ -363,13 +397,83 @@ export class BiddingService {
     });
   }
 
-  async getAuctions(tenantId: string): Promise<Auction[]> {
-    const auctions = await this.auctionRepository.find({
-      relations: ['load'],
-      order: { createdAt: 'DESC' },
-    });
-    // Enrich with viewer stats using watch count as unique viewers proxy
+  async getAuctions(tenantId: string, status?: string): Promise<Auction[]> {
+    // Build query to filter by tenantId through load relationship and include cargo owner with profile
+    // Note: Using relation name directly without alias to ensure proper mapping
+    const queryBuilder = this.auctionRepository
+      .createQueryBuilder('auction')
+      .leftJoinAndSelect('auction.load', 'load')
+      .leftJoinAndSelect('load.cargoOwner', 'cargoOwner')
+      .leftJoinAndSelect('cargoOwner.profile', 'profile')
+      .where('load.tenantId = :tenantId', { tenantId });
+    
+    if (status && status !== 'all') {
+      queryBuilder.andWhere('auction.status = :status', { status });
+    }
+    
+    queryBuilder.orderBy('auction.createdAt', 'DESC');
+    
+    const auctions = await queryBuilder.getMany();
+    
+    // Log for debugging - check if profile data is loaded
+    if (auctions.length > 0 && auctions[0].load) {
+      const firstLoad = auctions[0].load;
+      console.log('🔍 First auction load ID:', firstLoad.id);
+      console.log('🔍 First auction load title:', firstLoad.title);
+      console.log('🔍 First auction cargo owner ID:', firstLoad.cargoOwnerId);
+      if (firstLoad.cargoOwner) {
+        console.log('🔍 Cargo owner exists:', !!firstLoad.cargoOwner);
+        console.log('🔍 Cargo owner ID:', firstLoad.cargoOwner.id);
+        console.log('🔍 Cargo owner email:', firstLoad.cargoOwner.email);
+        console.log('🔍 Cargo owner keys:', Object.keys(firstLoad.cargoOwner));
+        console.log('🔍 Cargo owner profile exists:', !!firstLoad.cargoOwner.profile);
+        console.log('🔍 Cargo owner full object:', JSON.stringify(firstLoad.cargoOwner, null, 2));
+        if (firstLoad.cargoOwner.profile) {
+          console.log('🔍 Profile firstName:', firstLoad.cargoOwner.profile.firstName);
+          console.log('🔍 Profile lastName:', firstLoad.cargoOwner.profile.lastName);
+          console.log('🔍 Profile full object:', JSON.stringify(firstLoad.cargoOwner.profile, null, 2));
+        } else {
+          console.warn('⚠️ Profile is null/undefined for cargo owner:', firstLoad.cargoOwner.id);
+          // Try to find profile directly
+          const directProfile = await this.userProfileRepository.findOne({
+            where: { userId: firstLoad.cargoOwner.id },
+          });
+          console.log('🔍 Direct profile lookup result:', directProfile ? JSON.stringify(directProfile, null, 2) : 'NOT FOUND');
+        }
+      } else {
+        console.warn('⚠️ Cargo owner is null/undefined for load:', firstLoad.id);
+      }
+    }
+    // Ensure profiles are loaded for all cargo owners (fallback if join didn't work)
     for (const a of auctions) {
+      if (a.load?.cargoOwner) {
+        // Always try to load profile if it's missing or incomplete
+        if (!a.load.cargoOwner.profile || !a.load.cargoOwner.profile.firstName) {
+          try {
+            const profile = await this.userProfileRepository.findOne({
+              where: { userId: a.load.cargoOwner.id },
+            });
+            if (profile) {
+              a.load.cargoOwner.profile = profile;
+              console.log(`✅ Loaded profile for cargo owner ${a.load.cargoOwner.id}:`, {
+                firstName: profile.firstName,
+                lastName: profile.lastName,
+              });
+            } else {
+              console.warn(`⚠️ No profile found in database for cargo owner:`, a.load.cargoOwner.id);
+            }
+          } catch (err) {
+            console.warn('Failed to load profile for cargo owner:', a.load.cargoOwner.id, err);
+          }
+        } else {
+          console.log(`✅ Profile already loaded for cargo owner ${a.load.cargoOwner.id}:`, {
+            firstName: a.load.cargoOwner.profile.firstName,
+            lastName: a.load.cargoOwner.profile.lastName,
+          });
+        }
+      }
+      
+      // Enrich with viewer stats using watch count as unique viewers proxy
       try {
         const watchCount = await this.watchRepository.count({
           where: { auctionId: a.id, tenantId },
@@ -460,11 +564,49 @@ export class BiddingService {
     });
   }
 
-  async getMyBids(userId: string, _tenantId: string): Promise<Bid[]> {
-    return this.bidRepository.find({
-      where: { truckOwnerId: userId },
-      order: { createdAt: 'DESC' },
-    });
+  async getMyBids(userId: string, _tenantId: string, role?: string): Promise<Bid[]> {
+    // For truck owners, return their submitted bids
+    if (role === UserRole.TRUCK_OWNER || role === 'TRUCK_OWNER') {
+      return this.bidRepository.find({
+        where: { truckOwnerId: userId },
+        relations: ['load', 'truckOwner', 'truckOwner.profile'],
+        order: { createdAt: 'DESC' },
+      });
+    }
+    // For cargo owners, return bids on their loads
+    return this.bidRepository
+      .createQueryBuilder('bid')
+      .leftJoinAndSelect('bid.load', 'load')
+      .leftJoinAndSelect('load.cargoOwner', 'cargoOwner')
+      .leftJoinAndSelect('cargoOwner.profile', 'cargoOwnerProfile')
+      .leftJoinAndSelect('bid.truckOwner', 'truckOwner')
+      .leftJoinAndSelect('truckOwner.profile', 'truckOwnerProfile')
+      .where('load.cargoOwnerId = :userId', { userId })
+      .orderBy('bid.createdAt', 'DESC')
+      .getMany();
+  }
+
+  async getBidHistory(userId: string, tenantId: string, role?: string): Promise<Bid[]> {
+    // For truck owners, return their submitted bids
+    if (role === UserRole.TRUCK_OWNER || role === 'TRUCK_OWNER') {
+      return this.bidRepository.find({
+        where: { truckOwnerId: userId },
+        relations: ['load', 'load.cargoOwner', 'load.cargoOwner.profile', 'truckOwner', 'truckOwner.profile'],
+        order: { createdAt: 'DESC' },
+      });
+    }
+    // For cargo owners, return bids on their loads/auctions
+    return this.bidRepository
+      .createQueryBuilder('bid')
+      .leftJoinAndSelect('bid.load', 'load')
+      .leftJoinAndSelect('load.cargoOwner', 'cargoOwner')
+      .leftJoinAndSelect('cargoOwner.profile', 'cargoOwnerProfile')
+      .leftJoinAndSelect('bid.truckOwner', 'truckOwner')
+      .leftJoinAndSelect('truckOwner.profile', 'truckOwnerProfile')
+      .where('load.cargoOwnerId = :userId', { userId })
+      .andWhere('load.tenantId = :tenantId', { tenantId })
+      .orderBy('bid.createdAt', 'DESC')
+      .getMany();
   }
 
   private async getCurrentHighestBid(loadId: string): Promise<number | null> {
