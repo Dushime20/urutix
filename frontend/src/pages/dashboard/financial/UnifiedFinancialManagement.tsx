@@ -17,6 +17,7 @@ const FinancialReportsPage = lazy(() => import("@/pages/FinancialReportsPage"));
 const TruckOwnerFinancialDashboard = lazy(() => import("@/components/FleetDashboard/TruckOwnerFinancialDashboard"));
 const TripCostAnalysis = lazy(() => import("@/components/FleetDashboard/TripCostAnalysis"));
 import { cn } from "@/utils/cn";
+import logoUrutiX from "@/assets/logo-urutix.svg";
 
 type TabType = "payments" | "loans" | "reports" | "cost-analysis";
 
@@ -61,7 +62,12 @@ const UnifiedFinancialManagement = () => {
     } else if (tab === "cost-analysis") {
       navigate(`${basePath}/cost-analysis`, { replace: true });
     } else {
-      navigate(`${basePath}/financial`, { replace: true });
+      // For cargo-owner, use /payments; for others, use /financial
+      if (basePath === "/cargo-owner") {
+        navigate(`${basePath}/payments`, { replace: true });
+      } else {
+        navigate(`${basePath}/financial`, { replace: true });
+      }
     }
   };
 
@@ -93,73 +99,52 @@ const UnifiedFinancialManagement = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+    <div className="min-h-screen bg-gray-50 relative">
+      {/* Background Logo */}
+      <img 
+        src={logoUrutiX} 
+        alt="UrutiX Logo Background" 
+        className="pointer-events-none select-none fixed inset-0 w-full h-full object-cover opacity-10 z-0" 
+        style={{objectPosition: 'center'}} 
+      />
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 relative z-10">
         {/* Header */}
         <div className="mb-4">
-          <h1 className="text-xl font-bold text-gray-900">
+          <h1 className="text-2xl font-bold text-gray-900">
             Financial Management
           </h1>
-          <p className="text-xs text-gray-500 mt-0.5">
+          <p className="text-sm text-gray-600 mt-1">
             Manage payments, loans, and financial reports
           </p>
         </div>
 
-        {/* Navigation Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-4">
-          {tabs.map((tab) => {
-            const Icon = tab.icon;
-            const isActive = activeTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => handleTabChange(tab.id)}
-                className={cn(
-                  "relative bg-white rounded-md border p-3.5 text-left transition-all duration-200 hover:shadow-sm",
-                  isActive
-                    ? "border-gray-400 bg-gray-50 shadow-sm"
-                    : "border-gray-200 hover:border-gray-300"
-                )}
-              >
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center space-x-2 mb-1.5">
-                      <div
-                        className={cn(
-                          "p-2 rounded-md",
-                          isActive
-                            ? "bg-gray-100 text-gray-700"
-                            : "bg-gray-50 text-gray-600"
-                        )}
-                      >
-                        <Icon className="w-4 h-4" />
-                      </div>
-                      <div>
-                        <h3
-                          className={cn(
-                            "text-sm font-semibold",
-                            isActive ? "text-gray-900" : "text-gray-700"
-                          )}
-                        >
-                          {tab.label}
-                        </h3>
-                      </div>
-                    </div>
-                    <p className="text-xs text-gray-500 mt-0.5">
-                      {tab.description}
-                    </p>
-                  </div>
-                </div>
-                {isActive && (
-                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-600 rounded-b-md" />
-                )}
-              </button>
-            );
-          })}
+        {/* Navigation Tabs */}
+        <div className="bg-white rounded-lg border border-gray-200 mb-4">
+          <nav className="flex space-x-1 p-1">
+            {tabs.map((tab) => {
+              const Icon = tab.icon;
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => handleTabChange(tab.id)}
+                  className={cn(
+                    "px-4 py-2.5 rounded-md text-sm font-medium flex items-center gap-2 transition-all",
+                    isActive
+                      ? "bg-gray-100 text-gray-900 border border-gray-300"
+                      : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                  )}
+                >
+                  <Icon className="w-4 h-4" />
+                  <span>{tab.label}</span>
+                </button>
+              );
+            })}
+          </nav>
         </div>
 
         {/* Tab Content */}
-        <div className="bg-white rounded-md border border-gray-200 shadow-sm">
+        <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
           <div className="p-4">
             {activeTab === "payments" && (
               location.pathname.includes("/fleet") ? (

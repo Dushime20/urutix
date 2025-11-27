@@ -25,6 +25,7 @@ import toast from "react-hot-toast";
 import type { ICargoBody, ICargoResponse } from "../create/types/cargo";
 import FilterSelect from "@/components/common/FilterSelect";
 import { FaLayerGroup, FaBox } from "react-icons/fa";
+import logoUrutiX from "@/assets/logo-urutix.svg";
 
 type TabType = "all" | "active" | "create" | "template" | "bidding";
 
@@ -417,70 +418,61 @@ const UnifiedCargoManagement = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <div className="min-h-screen bg-gray-50 relative">
+      {/* Background Logo */}
+      <img 
+        src={logoUrutiX} 
+        alt="UrutiX Logo Background" 
+        className="pointer-events-none select-none fixed inset-0 w-full h-full object-cover opacity-10 z-0" 
+        style={{objectPosition: 'center'}} 
+      />
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 relative z-10">
         {/* Header */}
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold text-gray-900">Cargo Management</h1>
-          <p className="text-gray-600 mt-1">
+        <div className="mb-4">
+          <h1 className="text-2xl font-bold text-gray-900">Cargo Management</h1>
+          <p className="text-sm text-gray-600 mt-1">
             Manage shipments, create new cargo, and track bidding
           </p>
         </div>
 
-        {/* Navigation Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
-          {tabs.map((tab) => {
-            const Icon = tab.icon;
-            const isActive = activeTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => handleTabChange(tab.id)}
-                className={cn(
-                  "relative bg-white rounded-lg border-2 p-5 transition-all duration-200 hover:shadow-lg group",
-                  isActive
-                    ? "border-blue-600 shadow-md bg-blue-50"
-                    : "border-gray-200 hover:border-blue-300 hover:bg-gray-50"
-                )}
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <div
-                    className={cn(
-                      "p-2 rounded-lg transition-colors",
-                      isActive
-                        ? "bg-blue-100 text-blue-600"
-                        : "bg-gray-100 text-gray-600 group-hover:bg-blue-100 group-hover:text-blue-600"
-                    )}
-                  >
-                    <Icon className="w-5 h-5" />
-                  </div>
+        {/* Navigation Tabs */}
+        <div className="bg-white rounded-lg border border-gray-200 mb-4">
+          <nav className="flex space-x-1 p-1">
+            {tabs.map((tab) => {
+              const Icon = tab.icon;
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => handleTabChange(tab.id)}
+                  className={cn(
+                    "px-4 py-2.5 rounded-md text-sm font-medium flex items-center gap-2 transition-all relative",
+                    isActive
+                      ? "bg-gray-100 text-gray-900 border border-gray-300"
+                      : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                  )}
+                >
+                  <Icon className={cn(
+                    "w-4 h-4",
+                    isActive ? "text-gray-700" : "text-gray-500"
+                  )} />
+                  <span>{tab.label}</span>
                   {tab.count !== undefined && (
                     <span
                       className={cn(
-                        "px-2.5 py-1 text-xs font-semibold rounded-full",
+                        "ml-1 px-2 py-0.5 text-xs font-semibold rounded-full",
                         isActive
-                          ? "bg-blue-600 text-white"
-                          : "bg-gray-200 text-gray-700 group-hover:bg-blue-600 group-hover:text-white"
+                          ? "bg-gray-200 text-gray-700"
+                          : "bg-gray-100 text-gray-600"
                       )}
                     >
                       {tab.count}
                     </span>
                   )}
-                </div>
-                <h3
-                  className={cn(
-                    "text-base font-semibold text-left",
-                    isActive ? "text-blue-900" : "text-gray-900"
-                  )}
-                >
-                  {tab.label}
-                </h3>
-                {isActive && (
-                  <div className="absolute bottom-0 left-0 right-0 h-1 bg-blue-600 rounded-b-lg" />
-                )}
-              </button>
-            );
-          })}
+                </button>
+              );
+            })}
+          </nav>
         </div>
 
         {/* Content Container */}
