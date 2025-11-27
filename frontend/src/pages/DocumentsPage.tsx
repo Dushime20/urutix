@@ -1,14 +1,18 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useParams, useSearchParams } from 'react-router-dom';
-import { Plus, Search, Filter, Upload, Eye, Edit, Trash2, Download, CheckCircle, XCircle, FileText, Box, Truck, CreditCard } from 'lucide-react';
+import { useParams } from 'react-router-dom';
+import { Plus, Search, Eye, Trash2, Download, FileText, Box, Truck, CreditCard, X, Upload } from 'lucide-react';
 import { documentApi } from '../services/documents/documentApi';
 import type { CreateDocumentRequest } from '../services/documents/documentApi';
-import { notificationApi } from '../services/notifications/notificationApi';
+import toast from 'react-hot-toast';
 
-const DocumentsPage: React.FC = () => {
-  const { entityType, entityId } = useParams();
-  const [searchParams] = useSearchParams();
+interface DocumentsPageProps {
+  entityTypeOverride?: string;
+}
+
+const DocumentsPage: React.FC<DocumentsPageProps> = ({ entityTypeOverride }) => {
+  const { entityType: urlEntityType, entityId } = useParams();
+  const entityType = entityTypeOverride || urlEntityType;
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploadForm, setUploadForm] = useState<Partial<CreateDocumentRequest>>({
     entityType: entityType || 'CARGO',
@@ -35,7 +39,11 @@ const DocumentsPage: React.FC = () => {
       setFilters(prev => ({ ...prev, entityType, category: entityType }));
       setUploadForm(prev => ({ ...prev, entityType, category: entityType }));
     }
-  }, [entityType]);
+    // Auto-populate entityId from URL if available
+    if (entityId) {
+      setUploadForm(prev => ({ ...prev, entityId }));
+    }
+  }, [entityType, entityId]);
 
   // Get entity display name and icon
   const getEntityInfo = (type: string) => {
@@ -96,15 +104,38 @@ const DocumentsPage: React.FC = () => {
   const uploadMutation = useMutation({
     mutationFn: (data: { request: CreateDocumentRequest; file: File }) =>
       documentApi.createDocument(data.request, data.file),
-    onSuccess: () => {
+    onSuccess: (data) => {
+      // Invalidate all document-related queries to ensure fresh data
       queryClient.invalidateQueries({ queryKey: ['documents'] });
+      queryClient.invalidateQueries({ queryKey: ['documentStatistics'] });
+      
+      // Show success notification
+      toast.success(`Document "${data.title || 'uploaded'}" uploaded successfully!`, {
+        duration: 4000,
+        icon: '✅',
+      });
+      
+      // Close modal and reset form
       setShowUploadModal(false);
       setSelectedFile(null);
       setUploadForm({
         entityType: entityType || 'CARGO',
         category: entityType || 'CARGO',
-        documentType: 'OTHER',
+        documentType: 'OTHER', // Always reset to valid enum value
         priority: 'NORMAL',
+        title: undefined,
+        entityId: entityId || undefined, // Keep entityId if from URL
+      });
+      
+      // Refetch documents to show the new document immediately
+      refetch();
+    },
+    onError: (error: any) => {
+      // Show error notification
+      const errorMessage = error?.response?.data?.message || error?.message || 'Failed to upload document';
+      toast.error(errorMessage, {
+        duration: 5000,
+        icon: '❌',
       });
     },
   });
@@ -114,6 +145,19 @@ const DocumentsPage: React.FC = () => {
     mutationFn: (id: string) => documentApi.deleteDocument(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['documents'] });
+      queryClient.invalidateQueries({ queryKey: ['documentStatistics'] });
+      toast.success('Document deleted successfully', {
+        duration: 3000,
+        icon: '🗑️',
+      });
+      refetch();
+    },
+    onError: (error: any) => {
+      const errorMessage = error?.response?.data?.message || error?.message || 'Failed to delete document';
+      toast.error(errorMessage, {
+        duration: 4000,
+        icon: '❌',
+      });
     },
   });
 
@@ -122,7 +166,20 @@ const DocumentsPage: React.FC = () => {
     mutationFn: (ids: string[]) => Promise.all(ids.map(id => documentApi.deleteDocument(id))),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['documents'] });
+      queryClient.invalidateQueries({ queryKey: ['documentStatistics'] });
+      toast.success(`${selectedDocuments.length} document(s) deleted successfully`, {
+        duration: 3000,
+        icon: '🗑️',
+      });
       setSelectedDocuments([]);
+      refetch();
+    },
+    onError: (error: any) => {
+      const errorMessage = error?.response?.data?.message || error?.message || 'Failed to delete documents';
+      toast.error(errorMessage, {
+        duration: 4000,
+        icon: '❌',
+      });
     },
   });
 
@@ -131,23 +188,106 @@ const DocumentsPage: React.FC = () => {
     const file = event.target.files?.[0];
     if (file) {
       setSelectedFile(file);
-      // Auto-fill some fields based on file type
-      if (file.type === 'application/pdf') {
-        setUploadForm(prev => ({ ...prev, documentType: 'PDF_DOCUMENT' }));
-      } else if (file.type.startsWith('image/')) {
-        setUploadForm(prev => ({ ...prev, documentType: 'IMAGE' }));
-      }
+      // Don't auto-fill documentType as it should be selected by user
+      // The backend enum doesn't have PDF_DOCUMENT or IMAGE types
     }
   }, []);
 
+  // UUID validation function
+  const isValidUUID = (str: string): boolean => {
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    return uuidRegex.test(str);
+  };
+
   // Handle upload
   const handleUpload = useCallback(() => {
-    if (selectedFile && uploadForm.title && uploadForm.entityId) {
-      uploadMutation.mutate({
-        request: uploadForm as CreateDocumentRequest,
-        file: selectedFile,
+    if (!selectedFile) {
+      toast.error('Please select a file to upload', {
+        duration: 3000,
+        icon: '⚠️',
       });
+      return;
     }
+    
+    if (!uploadForm.title) {
+      toast.error('Please enter a document title', {
+        duration: 3000,
+        icon: '⚠️',
+      });
+      return;
+    }
+    
+    if (!uploadForm.entityId) {
+      toast.error('Please enter an entity ID', {
+        duration: 3000,
+        icon: '⚠️',
+      });
+      return;
+    }
+    
+    // Validate UUID format
+    if (!isValidUUID(uploadForm.entityId.trim())) {
+      toast.error('Entity ID must be a valid UUID format (e.g., 550e8400-e29b-41d4-a716-446655440000)', {
+        duration: 5000,
+        icon: '⚠️',
+      });
+      return;
+    }
+    
+    // Validate file size (10MB limit)
+    if (selectedFile.size > 10 * 1024 * 1024) {
+      toast.error('File size exceeds 10MB limit. Please choose a smaller file.', {
+        duration: 4000,
+        icon: '⚠️',
+      });
+      return;
+    }
+    
+    // Ensure documentType is set to a valid value (default to 'OTHER' if not set or invalid)
+    const validDocumentTypes = [
+      'DRIVER_LICENSE', 'DRIVER_MEDICAL_CERT', 'DRIVER_DRUG_TEST', 'DRIVER_BACKGROUND_CHECK', 
+      'DRIVER_TRAINING_CERT', 'DRIVER_INSURANCE', 'VEHICLE_REGISTRATION', 'VEHICLE_INSURANCE', 
+      'VEHICLE_INSPECTION', 'VEHICLE_MAINTENANCE', 'VEHICLE_PERMIT', 'CARGO_MANIFEST', 
+      'CARGO_INSURANCE', 'CARGO_CUSTOMS', 'CARGO_WEIGHT_CERT', 'TRIP_PERMIT', 'TRIP_ROUTE_PLAN', 
+      'TRIP_WEIGHT_TICKET', 'POD', 'INVOICE', 'RECEIPT', 'PAYMENT_PROOF', 'EXPENSE_RECEIPT', 
+      'BUSINESS_LICENSE', 'BUSINESS_INSURANCE', 'BUSINESS_TAX_CERT', 'BUSINESS_PERMIT', 
+      'SAFETY_CERT', 'ENVIRONMENTAL_CERT', 'QUALITY_CERT', 'CONTRACT', 'AGREEMENT', 'POLICY', 
+      'USER_ID_PROOF', 'USER_ADDRESS_PROOF', 'USER_BANK_DETAILS', 'MANUAL', 'OTHER'
+    ];
+    
+    const documentType = uploadForm.documentType && validDocumentTypes.includes(uploadForm.documentType)
+      ? uploadForm.documentType
+      : 'OTHER';
+    
+    // Create a clean request object with only valid values - explicitly set documentType
+    const cleanRequest: CreateDocumentRequest = {
+      entityType: uploadForm.entityType || 'CARGO',
+      entityId: uploadForm.entityId.trim(),
+      documentType: documentType, // Always use validated documentType (never PDF_DOCUMENT or IMAGE)
+      category: uploadForm.category || uploadForm.entityType || 'CARGO',
+      title: uploadForm.title || '',
+      priority: uploadForm.priority || 'NORMAL',
+      description: uploadForm.description,
+      expiryDate: uploadForm.expiryDate,
+      tags: uploadForm.tags,
+      metadata: uploadForm.metadata,
+      sendNotification: uploadForm.sendNotification,
+    };
+    
+    // Debug: Log to ensure we're not sending invalid values
+    if (!validDocumentTypes.includes(cleanRequest.documentType)) {
+      console.error('Invalid documentType detected:', cleanRequest.documentType);
+      toast.error('Invalid document type. Please select a valid document type.', {
+        duration: 4000,
+        icon: '⚠️',
+      });
+      return;
+    }
+    
+    uploadMutation.mutate({
+      request: cleanRequest,
+      file: selectedFile,
+    });
   }, [selectedFile, uploadForm, uploadMutation]);
 
   // Handle document selection
@@ -188,6 +328,11 @@ const DocumentsPage: React.FC = () => {
       setSelectedDocuments([]);
     }
   }, [safeDocumentsData.documents]);
+  
+  // Use handleSelectAll in the checkbox
+  const handleSelectAllChange = (checked: boolean) => {
+    handleSelectAll(checked);
+  };
 
   // Check if all documents are selected
   const allSelected = selectedDocuments.length > 0 && selectedDocuments.length === (safeDocumentsData.documents.length || 0);
@@ -616,7 +761,16 @@ const DocumentsPage: React.FC = () => {
       {showUploadModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-4 w-full max-w-md shadow-xl">
-            <h2 className="text-sm font-semibold mb-3">Upload Document</h2>
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-sm font-semibold">Upload Document</h2>
+              <button
+                onClick={() => setShowUploadModal(false)}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+                disabled={uploadMutation.isPending}
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
             
             <div className="space-y-3">
               <div>
@@ -628,6 +782,7 @@ const DocumentsPage: React.FC = () => {
                   onChange={handleFileSelect}
                   className="w-full border border-gray-300 rounded-lg p-1.5 text-sm"
                   accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.txt"
+                  disabled={uploadMutation.isPending}
                 />
                 {selectedFile && (
                   <p className="text-xs text-gray-600 mt-1">
@@ -646,6 +801,7 @@ const DocumentsPage: React.FC = () => {
                   onChange={(e) => setUploadForm(prev => ({ ...prev, title: e.target.value }))}
                   className="w-full border border-gray-300 rounded-lg p-1.5 text-sm"
                   placeholder="Document title"
+                  disabled={uploadMutation.isPending}
                 />
               </div>
 
@@ -657,6 +813,7 @@ const DocumentsPage: React.FC = () => {
                   value={uploadForm.entityType || ''}
                   onChange={(e) => setUploadForm(prev => ({ ...prev, entityType: e.target.value }))}
                   className="w-full border border-gray-300 rounded-lg p-1.5 text-sm"
+                  disabled={uploadMutation.isPending}
                 >
                   <option value="DRIVER">Driver</option>
                   <option value="VEHICLE">Vehicle</option>
@@ -676,6 +833,7 @@ const DocumentsPage: React.FC = () => {
                   onChange={(e) => setUploadForm(prev => ({ ...prev, entityId: e.target.value }))}
                   className="w-full border border-gray-300 rounded-lg p-1.5 text-sm"
                   placeholder="UUID of the entity"
+                  disabled={uploadMutation.isPending}
                 />
               </div>
 
@@ -687,6 +845,7 @@ const DocumentsPage: React.FC = () => {
                   value={uploadForm.documentType || ''}
                   onChange={(e) => setUploadForm(prev => ({ ...prev, documentType: e.target.value }))}
                   className="w-full border border-gray-300 rounded-lg p-1.5 text-sm"
+                  disabled={uploadMutation.isPending}
                 >
                   <option value="DRIVERS_LICENSE">Driver's License</option>
                   <option value="VEHICLE_REGISTRATION">Vehicle Registration</option>
@@ -706,6 +865,7 @@ const DocumentsPage: React.FC = () => {
                   value={uploadForm.priority || ''}
                   onChange={(e) => setUploadForm(prev => ({ ...prev, priority: e.target.value }))}
                   className="w-full border border-gray-300 rounded-lg p-1.5 text-sm"
+                  disabled={uploadMutation.isPending}
                 >
                   <option value="LOW">Low</option>
                   <option value="NORMAL">Normal</option>
@@ -724,6 +884,7 @@ const DocumentsPage: React.FC = () => {
                   value={uploadForm.expiryDate || ''}
                   onChange={(e) => setUploadForm(prev => ({ ...prev, expiryDate: e.target.value }))}
                   className="w-full border border-gray-300 rounded-lg p-1.5 text-sm"
+                  disabled={uploadMutation.isPending}
                 />
               </div>
             </div>
@@ -732,15 +893,26 @@ const DocumentsPage: React.FC = () => {
               <button
                 onClick={() => setShowUploadModal(false)}
                 className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                disabled={uploadMutation.isPending}
               >
                 Cancel
               </button>
               <button
                 onClick={handleUpload}
                 disabled={!selectedFile || !uploadForm.title || !uploadForm.entityId || uploadMutation.isPending}
-                className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center"
               >
-                {uploadMutation.isPending ? 'Uploading...' : 'Upload'}
+                {uploadMutation.isPending ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Uploading...
+                  </>
+                ) : (
+                  <>
+                    <Upload className="w-4 h-4 mr-2" />
+                    Upload Document
+                  </>
+                )}
               </button>
             </div>
           </div>

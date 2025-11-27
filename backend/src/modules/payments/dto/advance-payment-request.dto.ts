@@ -1,4 +1,4 @@
-import { IsString, IsNumber, IsEnum, IsOptional, Min, Max, IsUUID } from 'class-validator';
+import { IsString, IsNumber, IsEnum, IsOptional, Min, IsUUID, IsNotEmpty } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export enum AdvanceUrgency {
@@ -13,6 +13,7 @@ export class AdvancePaymentRequestDto {
     example: '550e8400-e29b-41d4-a716-446655440001',
   })
   @IsUUID()
+  @IsNotEmpty()
   tripId: string;
 
   @ApiProperty({
@@ -29,6 +30,7 @@ export class AdvancePaymentRequestDto {
     example: 'Need funds for fuel and driver wages before trip start',
   })
   @IsString()
+  @IsNotEmpty()
   reason: string;
 
   @ApiPropertyOptional({
@@ -40,4 +42,3 @@ export class AdvancePaymentRequestDto {
   @IsOptional()
   urgency?: AdvanceUrgency = AdvanceUrgency.MEDIUM;
 }
-
