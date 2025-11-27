@@ -7,8 +7,8 @@ import {
   CreditCard,
   FolderOpen,
 } from "lucide-react";
-import DocumentsPage from "@/pages/DocumentsPage";
-import { cn } from "@/utils/cn";
+import DocumentsPage from "../../DocumentsPage";
+import { cn } from "../../../utils/cn";
 
 type TabType = "all" | "cargo" | "trip" | "financial";
 
@@ -146,8 +146,16 @@ const UnifiedDocumentManagement = () => {
         {/* Tab Content */}
         <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
           <div className="p-6 pt-6">
-            {/* DocumentsPage will read entityType from URL params */}
-            <DocumentsPage />
+            {/* Pass entityType to DocumentsPage based on active tab */}
+            <DocumentsPage 
+              key={activeTab} 
+              entityTypeOverride={
+                activeTab === 'cargo' ? 'CARGO' :
+                activeTab === 'trip' ? 'TRIP' :
+                activeTab === 'financial' ? 'FINANCIAL' :
+                undefined
+              }
+            />
           </div>
         </div>
       </div>
