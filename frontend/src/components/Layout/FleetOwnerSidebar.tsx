@@ -14,8 +14,6 @@ import {
   FaHistory,
   FaStar,
   FaQuestionCircle,
-  FaCreditCard,
-  FaMoneyBillWave,
   FaThumbsUp,
   FaGift,
   FaChartLine,
@@ -100,17 +98,6 @@ const FleetOwnerSidebar: React.FC<FleetOwnerSidebarProps> = ({ isCollapsed, onTo
       section: '',
       items: [
         {
-          name: 'Payment Management',
-          path: '/dashboard/fleet/payments',
-          icon: FaCreditCard,
-          description: 'View cargo owners who have paid and those who haven\'t'
-        }
-      ]
-    },
-    {
-      section: '',
-      items: [
-        {
           name: 'Safety Records',
           path: '/dashboard/fleet/safety',
           icon: FaShieldAlt,
@@ -120,7 +107,7 @@ const FleetOwnerSidebar: React.FC<FleetOwnerSidebarProps> = ({ isCollapsed, onTo
           name: 'Financial Management',
           path: '/dashboard/fleet/financial',
           icon: FaDollarSign,
-          description: 'Billing, invoicing, and financial analytics'
+          description: 'Billing, invoicing, payments, and financial analytics'
         }
       ]
     },

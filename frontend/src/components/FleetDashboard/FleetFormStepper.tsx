@@ -953,17 +953,17 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="w-full max-w-6xl max-h-[95vh] overflow-hidden p-0 flex flex-col">
+      <DialogContent className="w-full max-w-5xl max-h-[90vh] overflow-hidden p-0 flex flex-col">
         {/* Header */}
-        <DialogHeader className="flex-shrink-0 flex justify-between p-6 border-b border-gray-200">
+        <DialogHeader className="flex-shrink-0 flex justify-between p-4 border-b border-gray-200">
           <div>
-            <DialogTitle className="text-2xl font-bold text-gray-900">
+            <DialogTitle className="text-lg font-semibold text-gray-900">
               {mode === 'create' 
                 ? `Create ${activeTab === 'drivers' ? 'Driver' : 'Truck'}` 
                 : `Edit ${activeTab === 'drivers' ? 'Driver' : 'Truck'}`
               }
             </DialogTitle>
-            <DialogDescription className="text-gray-600 mt-1">
+            <DialogDescription className="text-xs text-gray-500 mt-0.5">
               Enter detailed {activeTab === 'drivers' ? 'driver' : 'truck'} information
             </DialogDescription>
           </div>
@@ -972,8 +972,8 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
         {/* Main Content Area with Sidebar */}
         <div className="flex flex-1 overflow-hidden min-h-0">
           {/* Vertical Sidebar Navigation */}
-          <div className="w-64 bg-gray-50 border-r border-gray-200 overflow-y-auto flex-shrink-0">
-            <nav className="p-4 space-y-2">
+          <div className="w-56 bg-gray-50 border-r border-gray-200 overflow-y-auto flex-shrink-0">
+            <nav className="p-3 space-y-1">
               {steps.map((step) => {
                 const isActive = currentStep === step.id;
                 const isCompleted = isStepComplete(step.id);
@@ -984,10 +984,10 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
                     key={step.id}
                     type="button"
                     onClick={() => setCurrentStep(step.id)}
-                    className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-left transition-colors ${
+                    className={`w-full flex items-center space-x-2 px-3 py-2 rounded-md text-left transition-colors ${
                       isActive
-                        ? "bg-primary-100 text-primary-700 border border-primary-200"
-                        : "text-gray-600 hover:bg-gray-100"
+                        ? "bg-gray-100 text-gray-900 border border-gray-300"
+                        : "text-gray-600 hover:bg-gray-50"
                     }`}
                     title={
                       isCompleted
@@ -998,26 +998,26 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
                     }
                   >
                     <div className="flex items-center justify-center flex-shrink-0">
-                      <div className="w-4 h-4 flex items-center justify-center">
+                      <div className="w-3.5 h-3.5 flex items-center justify-center">
                         {React.cloneElement(step.icon, { 
-                          className: "w-4 h-4 text-gray-500"
+                          className: "w-3.5 h-3.5 text-gray-500"
                         })}
                       </div>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className={`text-sm font-medium ${
-                        isActive ? 'text-primary-700' : 'text-gray-700'
+                      <p className={`text-xs font-medium ${
+                        isActive ? 'text-gray-900' : 'text-gray-600'
                       }`}>
                         {step.title}
                       </p>
                     </div>
                     {isCompleted ? (
-                      <span className="ml-auto text-green-500 flex-shrink-0" title="Complete">
+                      <span className="ml-auto text-gray-600 flex-shrink-0 text-xs" title="Complete">
                         &#10003;
                       </span>
                     ) : (
                       <span
-                        className="ml-auto text-gray-300 flex-shrink-0"
+                        className="ml-auto text-gray-300 flex-shrink-0 text-xs"
                         title="Incomplete"
                       >
                         &#9675;
@@ -1031,12 +1031,12 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
 
           {/* Form Content - Responsive */}
           <div className="flex-1 overflow-y-auto min-h-0">
-            <div className="p-6">
+            <div className="p-4">
               <form 
                 onSubmit={handleSubmit} 
                 id="fleet-form-stepper"
               >
-                <div ref={stepContentRef} className="max-w-4xl mx-auto">
+                <div ref={stepContentRef} className="max-w-3xl mx-auto">
                   {renderStepContent()}
                 </div>
               </form>
@@ -1045,39 +1045,38 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
         </div>
 
         {/* Footer - Responsive */}
-        <DialogFooter className="flex-shrink-0 bg-gray-50 px-6 py-4 border-t border-gray-200 flex justify-between items-center">
+        <DialogFooter className="flex-shrink-0 bg-gray-50 px-4 py-3 border-t border-gray-200 flex justify-between items-center">
           <button
             type="button"
             onClick={prevStep}
             disabled={currentStep === 1}
-                className={`flex items-center px-4 py-2 rounded-lg border text-sm ${
+                className={`flex items-center px-3 py-1.5 rounded-md border text-xs ${
               currentStep === 1
                 ? 'border-gray-300 text-gray-400 cursor-not-allowed'
-                : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                : 'border-gray-300 text-gray-700 hover:bg-gray-100'
             }`}
           >
-            <FaArrowLeft className="w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2" />
-            <span className="hidden sm:inline">Previous</span>
+            <FaArrowLeft className="w-3 h-3 mr-1.5" />
+            <span>Previous</span>
           </button>
 
-          <div className="flex space-x-2 md:space-x-3">
+          <div className="flex space-x-2">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm"
+              className="px-3 py-1.5 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-100 text-xs"
             >
-              <span className="hidden sm:inline">Cancel</span>
-              <span className="sm:hidden">✕</span>
+              Cancel
             </button>
             
             {currentStep < steps.length ? (
               <button
                 type="button"
                 onClick={nextStep}
-                className="flex items-center px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 text-sm"
+                className="flex items-center px-3 py-1.5 bg-gray-700 text-white rounded-md hover:bg-gray-800 text-xs"
               >
-                <span className="hidden sm:inline">Next</span>
-                <FaArrowRight className="w-3 h-3 md:w-4 md:h-4 ml-1 md:ml-2" />
+                <span>Next</span>
+                <FaArrowRight className="w-3 h-3 ml-1.5" />
               </button>
             ) : (
               <button
@@ -1113,18 +1112,12 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
                   console.log('🚀 Triggering form submission...');
                   handleManualSubmit();
                 }}
-                className="flex items-center px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                className="flex items-center px-3 py-1.5 bg-gray-700 text-white rounded-md hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed text-xs"
               >
                 {loading ? (
-                  <>
-                    <span className="hidden sm:inline">Submitting...</span>
-                    <span className="sm:hidden">...</span>
-                  </>
+                  <span>Submitting...</span>
                 ) : (
-                  <>
-                    <span className="hidden sm:inline">Submit {activeTab === 'drivers' ? 'Driver' : 'Truck'}</span>
-                    <span className="sm:hidden">✓</span>
-                  </>
+                  <span>Submit {activeTab === 'drivers' ? 'Driver' : 'Truck'}</span>
                 )}
               </button>
             )}

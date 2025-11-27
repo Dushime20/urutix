@@ -17,6 +17,7 @@ import { PaymentAnalyticsService } from './services/payment-analytics.service';
 import { CreatePaymentDto, PaymentMetadata } from './dto/create-payment.dto';
 import { UpdatePaymentStatusDto } from './dto/update-payment-status.dto';
 import { PaymentFilterDto } from './dto/payment-filter.dto';
+import { AdvancePaymentRequestDto } from './dto/advance-payment-request.dto';
 import {
   ReconciliationRequestDto,
   ReconciliationResponseDto,
@@ -975,6 +976,139 @@ export class PaymentsController {
       };
     } catch (error) {
       throw new BadRequestException(`Fraud audit failed: ${error.message}`);
+    }
+  }
+
+  @Post('advance-request')
+  @UseGuards(RateLimitGuard)
+  @ApiOperation({
+    summary: 'Request advance payment for a trip',
+    description: 'Truck owners can request advance payment for a trip before completion',
+  })
+  @ApiBody({
+    type: AdvancePaymentRequestDto,
+    description: 'Advance payment request data',
+  })
+  @ApiCreatedResponse({
+    description: 'Advance payment request submitted successfully',
+    schema: {
+      example: {
+        message: 'Advance payment request submitted successfully',
+        request: {
+          id: '550e8400-e29b-41d4-a716-446655440004',
+          tripId: '550e8400-e29b-41d4-a716-446655440001',
+          requestedAmount: 500.0,
+          status: 'pending',
+          urgency: 'medium',
+          createdAt: '2024-01-15T10:30:00Z',
+        },
+      },
+    },
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Unauthorized - Invalid or missing JWT token',
+  })
+  @ApiForbiddenResponse({
+    description: 'Forbidden - Access denied for this tenant',
+  })
+  @ApiBadRequestResponse({ description: 'Invalid advance payment request data' })
+  @ApiTooManyRequestsResponse({ description: 'Rate limit exceeded' })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  async requestAdvancePayment(
+    @Body(new ValidationPipe({ transform: true }))
+    advanceRequestDto: AdvancePaymentRequestDto,
+    @Request() req,
+  ) {
+    try {
+      const request = await this.paymentsService.requestAdvancePayment(
+        advanceRequestDto,
+        req.user.tenantId,
+        req.user.userId,
+      );
+
+      return {
+        message: 'Advance payment request submitted successfully',
+        request: {
+          id: request.id,
+          tripId: request.tripId,
+          requestedAmount: request.amount,
+          status: request.status,
+          urgency: advanceRequestDto.urgency,
+          createdAt: request.createdAt,
+        },
+      };
+    } catch (error) {
+      throw new BadRequestException(
+        `Advance payment request failed: ${error.message}`,
+      );
+    }
+  }
+
+  @Get('forecast')
+  @ApiOperation({
+    summary: 'Get payment forecast',
+    description: 'Get payment forecast for upcoming payments (next 30 days)',
+  })
+  @ApiQuery({
+    name: 'days',
+    description: 'Number of days to forecast (default: 30)',
+    required: false,
+    example: '30',
+  })
+  @ApiOkResponse({
+    description: 'Payment forecast retrieved successfully',
+    schema: {
+      example: {
+        message: 'Payment forecast retrieved successfully',
+        forecast: {
+          period: '30 days',
+          totalUpcoming: 5000.0,
+          totalPending: 3000.0,
+          totalOverdue: 500.0,
+          payments: [
+            {
+              id: '550e8400-e29b-41d4-a716-446655440000',
+              tripId: '550e8400-e29b-41d4-a716-446655440001',
+              tripNumber: 'TRIP-2024-001',
+              amount: 500.0,
+              currency: 'USD',
+              dueDate: '2024-01-20T00:00:00Z',
+              status: 'pending',
+              paymentType: 'advance',
+              daysUntilDue: 5,
+            },
+          ],
+        },
+      },
+    },
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Unauthorized - Invalid or missing JWT token',
+  })
+  @ApiForbiddenResponse({
+    description: 'Forbidden - Access denied for this tenant',
+  })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  async getPaymentForecast(
+    @Request() req,
+    @Query('days') days?: string,
+  ) {
+    try {
+      const forecastDays = days ? parseInt(days, 10) : 30;
+      const forecast = await this.paymentsService.getPaymentForecast(
+        req.user.tenantId,
+        req.user.userId,
+        forecastDays,
+      );
+
+      return {
+        message: 'Payment forecast retrieved successfully',
+        forecast,
+      };
+    } catch (error) {
+      throw new BadRequestException(
+        `Payment forecast retrieval failed: ${error.message}`,
+      );
     }
   }
 }

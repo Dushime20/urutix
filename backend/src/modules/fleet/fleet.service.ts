@@ -284,44 +284,82 @@ export class FleetService {
     userId?: string,
     filters?: any,
   ): Promise<Truck[]> {
-    const query = this.truckRepository
-      .createQueryBuilder('truck')
-      .leftJoinAndSelect('truck.owner', 'owner')
-      .where('truck.tenantId = :tenantId', { tenantId });
-
-    // Remove the userId filter to show all trucks in the tenant
-    // Only filter by userId if explicitly requested (for user-specific views)
-    // if (userId) {
-    //   query.andWhere('truck.ownerId = :userId', { userId });
-    // }
-
-    // Apply filters
-    if (filters?.search) {
-      const searchLower = filters.search.toLowerCase();
-      query.andWhere(
-        '(LOWER(truck.plateNumber) LIKE :search OR LOWER(truck.make) LIKE :search OR LOWER(truck.model) LIKE :search)',
-        { search: `%${searchLower}%` },
-      );
+    try {
+      console.log(`🔍 Fleet Service - Finding trucks for tenant: ${tenantId}`);
+      console.log(`🔍 Fleet Service - TenantId value: "${tenantId}"`);
+      console.log(`🔍 Fleet Service - TenantId type: ${typeof tenantId}`);
+      
+      // Use query builder to ensure tenantId is included in the query
+      // Start with tenantId as the first condition to ensure it's always included
+      const queryBuilder = this.truckRepository
+        .createQueryBuilder('truck')
+        .where('truck.tenantId = :tenantId', { tenantId: tenantId })
+        .andWhere('truck.isActive = :isActive', { isActive: true })
+        .andWhere('truck.deletedAt IS NULL')
+        .setParameter('tenantId', tenantId)
+        .setParameter('isActive', true);
+      
+      // Apply filters
+      if (filters?.status) {
+        queryBuilder.andWhere('truck.status = :status', { status: filters.status });
+      }
+      
+      // Apply search filter
+      if (filters?.search) {
+        const searchLower = filters.search.toLowerCase();
+        queryBuilder.andWhere(
+          '(LOWER(truck.plateNumber) LIKE :search OR LOWER(truck.make) LIKE :search OR LOWER(truck.model) LIKE :search)',
+          { search: `%${searchLower}%` }
+        );
+      }
+      
+      // Apply pagination
+      if (filters?.limit) {
+        queryBuilder.take(filters.limit);
+      }
+      if (filters?.page && filters?.limit) {
+        queryBuilder.skip((filters.page - 1) * filters.limit);
+      }
+      
+      // Order by
+      queryBuilder.orderBy('truck.createdAt', 'DESC');
+      
+      // Log the query before execution
+      const sql = queryBuilder.getSql();
+      const params = queryBuilder.getParameters();
+      console.log(`🔍 Fleet Service - Query SQL:`, sql);
+      console.log(`🔍 Fleet Service - Query parameters:`, JSON.stringify(params, null, 2));
+      console.log(`🔍 Fleet Service - SQL includes tenantId?`, sql.includes('tenantId'));
+      
+      // Verify tenantId is in parameters
+      if (!params.tenantId) {
+        console.error('❌ CRITICAL: tenantId is missing from query parameters!');
+        console.error('❌ Parameters:', params);
+        throw new Error('tenantId parameter is missing from query');
+      }
+      
+      // Execute query
+      const trucks = await queryBuilder.getMany();
+      
+      console.log(`🔍 Fleet Service - Raw query result: ${trucks.length} trucks`);
+      console.log(`🔍 Fleet Service - Trucks IDs:`, trucks.map(t => t.id));
+      console.log(`✅ Fleet Service - Found ${trucks.length} trucks for tenant ${tenantId}`);
+      
+      if (trucks.length === 0) {
+        console.warn(`⚠️ No trucks found for tenant ${tenantId}`);
+        console.warn(`⚠️ This might indicate:`);
+        console.warn(`   - Tenant ID mismatch`);
+        console.warn(`   - All trucks are soft-deleted`);
+        console.warn(`   - All trucks have isActive = false`);
+      }
+      
+      return trucks;
+    } catch (error) {
+      console.error('❌ Fleet Service - Error finding trucks:', error);
+      console.error('❌ Error message:', error.message);
+      console.error('❌ Error stack:', error.stack);
+      throw error;
     }
-
-    if (filters?.status) {
-      query.andWhere('truck.status = :status', { status: filters.status });
-    }
-
-    if (filters?.location) {
-      const locationLower = filters.location.toLowerCase();
-      query.andWhere('LOWER(truck.currentLocation) LIKE :location', {
-        location: `%${locationLower}%`,
-      });
-    }
-
-    // Apply pagination
-    if (filters?.page && filters?.limit) {
-      const skip = (filters.page - 1) * filters.limit;
-      query.skip(skip).take(filters.limit);
-    }
-
-    return query.getMany();
   }
 
   async findOneTruck(id: string, tenantId: string): Promise<Truck> {
@@ -2132,12 +2170,18 @@ export class FleetService {
       throw new NotFoundException('Route not found');
     }
 
-    // Verify the truck exists and belongs to the user/tenant
+    // Verify the truck exists and belongs to the tenant
+    // Allow any user in the tenant to assign routes to trucks (not just the owner)
     const truck = await this.truckRepository.findOne({
-      where: { id: truckId, ownerId: userId, tenantId },
+      where: { id: truckId, tenantId },
     });
     if (!truck) {
-      throw new NotFoundException('Truck not found or not owned by user');
+      throw new NotFoundException('Truck not found or does not belong to your organization');
+    }
+    
+    // Optional: Log if the truck owner is different from the current user (for audit purposes)
+    if (truck.ownerId !== userId) {
+      console.log(`ℹ️ Route assignment: User ${userId} is assigning route to truck ${truckId} owned by ${truck.ownerId}`);
     }
 
     // Check if assignment already exists

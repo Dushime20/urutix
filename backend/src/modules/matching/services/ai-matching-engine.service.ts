@@ -947,7 +947,7 @@ export class AIMatchingEngineService {
         status: VehicleStatus.AVAILABLE,
         isActive: true,
       },
-      relations: ['owner', 'currentDriver'],
+      relations: ['owner'],
     });
   }
 

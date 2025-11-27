@@ -79,9 +79,11 @@ const FleetOwnerDashboard: React.FC = () => {
   const loadDashboardData = useCallback(async () => {
     setLoading(true);
     try {
-      // Load trucks
+      // Load trucks - fleetApi.getTrucks() already returns the trucks array directly
       const trucksData = await fleetApi.getTrucks();
-      setTrucks(trucksData);
+      console.log('🚛 FleetOwnerDashboard - Trucks data:', trucksData);
+      console.log('🚛 FleetOwnerDashboard - Trucks length:', Array.isArray(trucksData) ? trucksData.length : 'N/A');
+      setTrucks(Array.isArray(trucksData) ? trucksData : []);
 
       // Load drivers
       const driversData = await fleetApi.getDrivers();

@@ -79,7 +79,10 @@ const UnifiedFleetManagement: React.FC = () => {
   const loadTrucks = useCallback(async () => {
     setLoadingTrucks(true);
     try {
+      // fleetApi.getTrucks() already returns the trucks array directly
       const trucksData = await fleetApi.getTrucks({});
+      console.log('🚛 UnifiedFleetManagement - Trucks data:', trucksData);
+      console.log('🚛 UnifiedFleetManagement - Trucks length:', Array.isArray(trucksData) ? trucksData.length : 'N/A');
       setTrucks(Array.isArray(trucksData) ? trucksData : []);
     } catch (error: any) {
       console.error('Error loading trucks:', error);

@@ -442,7 +442,6 @@ export class MatchingService {
       // Execute the query
       const trucks = await queryBuilder
         .leftJoinAndSelect('truck.owner', 'owner')
-        .leftJoinAndSelect('truck.currentDriver', 'currentDriver')
         .getMany();
 
       // Log the raw SQL that was actually executed

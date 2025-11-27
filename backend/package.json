@@ -28,12 +28,14 @@
     "fix:truck-owner": "node src/database/seeds/fix-truck-owner-user.js",
     "seed:all": "node src/database/seeds/seed-all-data.js",
     "seed:complete": "node src/database/seeds/seed-complete-system.js",
+    "seed:payments": "node src/database/seeds/seed-payment-workflow.js",
     "create:admin": "ts-node src/scripts/create-admin-user.ts",
   "user:set-password": "ts-node src/scripts/set-user-password.ts",
   "users:list": "ts-node src/scripts/list-users.ts",
   "diagnose:login": "ts-node src/scripts/diagnose-login-issue.ts",
   "seed:users": "ts-node src/scripts/seed-users.ts",
-  "seed:matching": "ts-node -r tsconfig-paths/register src/scripts/seed-matching-data.ts"
+  "seed:matching": "ts-node -r tsconfig-paths/register src/scripts/seed-matching-data.ts",
+  "seed:matching-demo": "ts-node -r tsconfig-paths/register src/scripts/seed-matching-demo.ts"
   },
   "dependencies": {
     "@nestjs/axios": "^4.0.1",

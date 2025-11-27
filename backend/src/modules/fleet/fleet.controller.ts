@@ -211,28 +211,48 @@ export class FleetController {
     @Query('limit') limit?: number,
   ) {
     console.log('🚛 Fleet Controller - findAllTrucks Debug:');
-    console.log('Request user:', req.user);
+    console.log('Request user:', JSON.stringify(req.user, null, 2));
     console.log('User ID:', req.user?.userId);
     console.log('User role:', req.user?.role);
     console.log('Tenant ID:', req.user?.tenantId);
     console.log('Query params:', { search, status, location, page, limit });
+    
+    // Log the exact tenant ID being used
+    if (req.user?.tenantId) {
+      console.log(`🔍 Searching for trucks with tenantId: "${req.user.tenantId}"`);
+    }
 
     if (!req.user?.tenantId) {
       console.error('❌ No tenant ID found in request user');
+      console.error('❌ Request user object:', JSON.stringify(req.user, null, 2));
       throw new Error('Tenant ID not found in request');
     }
 
-    const trucks = await this.fleetService.findAllTrucks(
-      req.user.tenantId,
-      req.user.userId,
-      { search, status, location, page, limit },
-    );
+    try {
+      const tenantId = req.user.tenantId;
+      console.log(`🔍 Controller - Calling findAllTrucks with tenantId: "${tenantId}"`);
+      console.log(`🔍 Controller - TenantId type: ${typeof tenantId}`);
+      console.log(`🔍 Controller - TenantId length: ${tenantId?.length}`);
+      
+      const trucks = await this.fleetService.findAllTrucks(
+        tenantId,
+        req.user.userId,
+        { search, status, location, page, limit },
+      );
 
-    console.log('✅ Trucks retrieved successfully:', trucks.length);
-    return {
-      message: 'Trucks retrieved successfully',
-      trucks,
-    };
+      console.log('✅ Controller - Trucks retrieved successfully:', trucks.length);
+      console.log('✅ Controller - Returning trucks:', trucks.map(t => ({ id: t.id, plateNumber: t.plateNumber })));
+      
+      return {
+        message: 'Trucks retrieved successfully',
+        trucks: trucks || [], // Ensure we always return an array
+      };
+    } catch (error) {
+      console.error('❌ Fleet Controller - Error in findAllTrucks:', error);
+      console.error('❌ Error message:', error.message);
+      console.error('❌ Error stack:', error.stack);
+      throw error;
+    }
   }
 
   @Get('trucks/:id')

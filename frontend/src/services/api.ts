@@ -147,6 +147,9 @@ export const paymentsAPI = {
   refund: (id: string, data: any) => api.post(`/payments/${id}/refund`, data),
   getAnalytics: () => api.get('/payments/analytics'),
   getHistory: (tripId: string) => api.get(`/payments/trip/${tripId}/history`),
+  requestAdvance: (data: { tripId: string; amount: number; reason: string; urgency: string }) => 
+    api.post('/payments/advance-request', data),
+  getForecast: (params?: any) => api.get('/payments/forecast', { params }),
 };
 
 // Locations API

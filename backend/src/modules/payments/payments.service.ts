@@ -4,12 +4,14 @@ import {
   NotFoundException,
   ForbiddenException,
   ConflictException,
+  BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between } from 'typeorm';
 import { Payment } from '../../entities/payment.entity';
 import { Trip } from '../../entities/trip.entity';
 import { CreatePaymentDto } from './dto/create-payment.dto';
+import { AdvancePaymentRequestDto } from './dto/advance-payment-request.dto';
 import {
   PaymentStatus,
   PaymentType,
@@ -487,5 +489,193 @@ export class PaymentsService {
       where: { tripId, tenantId },
       order: { createdAt: 'DESC' },
     });
+  }
+
+  async requestAdvancePayment(
+    advanceRequestDto: AdvancePaymentRequestDto,
+    tenantId: string,
+    userId: string,
+  ): Promise<Payment> {
+    // Verify trip exists and user has permission (truck owner)
+    const trip = await this.tripRepository.findOne({
+      where: { id: advanceRequestDto.tripId, tenantId },
+      relations: ['load', 'truck'],
+    });
+
+    if (!trip) {
+      throw new NotFoundException('Trip not found');
+    }
+
+    // Verify user is the truck owner
+    if (trip.truck?.ownerId !== userId) {
+      throw new ForbiddenException(
+        'Only the truck owner can request advance payment for this trip',
+      );
+    }
+
+    // Check if trip is in a valid state for advance payment
+    const validStatuses = ['PLANNED', 'IN_PROGRESS'];
+    if (!validStatuses.includes(trip.status)) {
+      throw new BadRequestException(
+        'Advance payment can only be requested for planned or in-progress trips',
+      );
+    }
+
+    // Check if advance payment already exists
+    const existingAdvance = await this.paymentRepository.findOne({
+      where: {
+        tripId: advanceRequestDto.tripId,
+        tenantId,
+        paymentType: PaymentType.ADVANCE,
+      },
+    });
+
+    if (existingAdvance) {
+      throw new ConflictException(
+        'Advance payment already exists for this trip',
+      );
+    }
+
+    // Calculate maximum advance amount (70% of trip value)
+    const maxAdvance = trip.agreedPrice * 0.7;
+    if (advanceRequestDto.amount > maxAdvance) {
+      throw new BadRequestException(
+        `Advance amount cannot exceed ${maxAdvance} ${trip.currencyCode || 'USD'}`,
+      );
+    }
+
+    // Create advance payment request
+    const advancePayment = this.paymentRepository.create({
+      tripId: advanceRequestDto.tripId,
+      tenantId,
+      payerId: trip.load.cargoOwnerId, // Cargo owner pays
+      amount: advanceRequestDto.amount,
+      currency: trip.currencyCode || 'USD',
+      paymentMethod: PaymentMethod.BANK_TRANSFER,
+      paymentType: PaymentType.ADVANCE,
+      status: PaymentStatus.PENDING,
+      description: `Advance payment request: ${advanceRequestDto.reason}`,
+      notes: `Urgency: ${advanceRequestDto.urgency}`,
+      metadata: {
+        advanceRequest: true,
+        urgency: advanceRequestDto.urgency,
+        reason: advanceRequestDto.reason,
+        requestedBy: userId,
+        requestedAt: new Date().toISOString(),
+      },
+    });
+
+    const savedPayment = await this.paymentRepository.save(advancePayment);
+    await this.auditService.log('ADVANCE_PAYMENT_REQUESTED', savedPayment, {
+      urgency: advanceRequestDto.urgency,
+      reason: advanceRequestDto.reason,
+    });
+
+    return savedPayment;
+  }
+
+  async getPaymentForecast(
+    tenantId: string,
+    userId?: string,
+    days: number = 30,
+  ): Promise<{
+    period: string;
+    totalUpcoming: number;
+    totalPending: number;
+    totalOverdue: number;
+    payments: Array<{
+      id: string;
+      tripId: string;
+      tripNumber?: string;
+      amount: number;
+      currency: string;
+      dueDate?: Date;
+      status: PaymentStatus;
+      paymentType: PaymentType;
+      daysUntilDue: number;
+    }>;
+  }> {
+    const now = new Date();
+    const forecastEnd = new Date(now.getTime() + days * 24 * 60 * 60 * 1000);
+
+    const query = this.paymentRepository
+      .createQueryBuilder('payment')
+      .leftJoinAndSelect('payment.trip', 'trip')
+      .where('payment.tenantId = :tenantId', { tenantId })
+      .andWhere(
+        '(payment.dueDate IS NULL OR payment.dueDate <= :forecastEnd)',
+        { forecastEnd },
+      )
+      .andWhere(
+        `payment.status IN (:...statuses)`,
+        {
+          statuses: [
+            PaymentStatus.PENDING,
+            PaymentStatus.PROCESSING,
+            PaymentStatus.ESCROW,
+          ],
+        },
+      );
+
+    if (userId) {
+      // For truck owners, get payments where they are the recipient
+      // This requires checking if the user is the truck owner of the trip
+      query
+        .leftJoin('trip.truck', 'truck')
+        .andWhere('(truck.ownerId = :userId OR payment.payerId = :userId)', {
+          userId,
+        });
+    }
+
+    const payments = await query
+      .orderBy('payment.dueDate', 'ASC')
+      .addOrderBy('payment.createdAt', 'ASC')
+      .getMany();
+
+    let totalUpcoming = 0;
+    let totalPending = 0;
+    let totalOverdue = 0;
+
+    const forecastPayments = payments.map((payment) => {
+      const dueDate = payment.dueDate || payment.createdAt;
+      const daysUntilDue = Math.ceil(
+        (dueDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
+      );
+
+      const amount = parseFloat(payment.amount.toString()) || 0;
+
+      if (daysUntilDue < 0) {
+        totalOverdue += amount;
+      } else if (daysUntilDue <= 7) {
+        totalUpcoming += amount;
+      }
+
+      if (
+        payment.status === PaymentStatus.PENDING ||
+        payment.status === PaymentStatus.PROCESSING
+      ) {
+        totalPending += amount;
+      }
+
+      return {
+        id: payment.id,
+        tripId: payment.tripId,
+        tripNumber: (payment.trip as any)?.tripNumber,
+        amount,
+        currency: payment.currency,
+        dueDate,
+        status: payment.status,
+        paymentType: payment.paymentType,
+        daysUntilDue,
+      };
+    });
+
+    return {
+      period: `${days} days`,
+      totalUpcoming,
+      totalPending,
+      totalOverdue,
+      payments: forecastPayments,
+    };
   }
 }

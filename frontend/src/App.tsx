@@ -251,7 +251,8 @@ function App() {
               <Route path="rewards" element={<UnifiedDriverManagement />} />
               <Route path="scoring" element={<UnifiedDriverManagement />} />
               <Route path="safety" element={<FleetSafety />} />
-              <Route path="financial" element={<FleetDashboard />} />
+              <Route path="financial" element={<UnifiedFinancialManagement />} />
+              <Route path="cost-analysis" element={<UnifiedFinancialManagement />} />
               <Route path="insurance" element={<FleetDashboard />} />
               
               {/* Fleet Transaction Flow Routes */}

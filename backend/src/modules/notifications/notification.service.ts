@@ -692,20 +692,68 @@ export class NotificationService {
     tenantId: string,
     limit: number = 50,
   ): Promise<Notification[]> {
-    return this.notificationRepository.find({
-      where: { recipientId, tenantId },
-      order: { createdAt: 'DESC' },
-      take: limit,
-    });
+    try {
+      return await this.notificationRepository.find({
+        where: { recipientId, tenantId },
+        order: { createdAt: 'DESC' },
+        take: limit,
+      });
+    } catch (error: any) {
+      // If there's a column error (e.g., metadata or isRead doesn't exist), 
+      // try a simpler query without those columns
+      if (error?.message?.includes('column') || error?.code === '42703') {
+        console.warn('Notification query failed, attempting fallback query:', error.message);
+        try {
+          // Use query builder to select only existing columns
+          return await this.notificationRepository
+            .createQueryBuilder('notification')
+            .where('notification.recipientId = :recipientId', { recipientId })
+            .andWhere('notification.tenantId = :tenantId', { tenantId })
+            .orderBy('notification.createdAt', 'DESC')
+            .limit(limit)
+            .getMany();
+        } catch (fallbackError: any) {
+          console.error('Fallback query also failed:', fallbackError);
+          throw new BadRequestException(
+            `Failed to fetch notifications: ${fallbackError.message}`,
+          );
+        }
+      }
+      throw new BadRequestException(
+        `Failed to fetch notifications: ${error.message}`,
+      );
+    }
   }
 
   /**
    * Get unread notifications count
    */
   async getUnreadCount(recipientId: string, tenantId: string): Promise<number> {
-    return this.notificationRepository.count({
-      where: { recipientId, tenantId, isRead: false },
-    });
+    try {
+      return await this.notificationRepository.count({
+        where: { recipientId, tenantId, isRead: false },
+      });
+    } catch (error: any) {
+      // If isRead column doesn't exist, use readAt as fallback
+      if (error?.message?.includes('column') || error?.code === '42703') {
+        console.warn('isRead column not found, using readAt fallback:', error.message);
+        try {
+          return await this.notificationRepository
+            .createQueryBuilder('notification')
+            .where('notification.recipientId = :recipientId', { recipientId })
+            .andWhere('notification.tenantId = :tenantId', { tenantId })
+            .andWhere('notification.readAt IS NULL')
+            .getCount();
+        } catch (fallbackError: any) {
+          console.error('Fallback unread count query also failed:', fallbackError);
+          // Return 0 as safe fallback
+          return 0;
+        }
+      }
+      // Return 0 as safe fallback for any other error
+      console.error('Error getting unread count:', error);
+      return 0;
+    }
   }
 
   /**

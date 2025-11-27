@@ -188,7 +188,7 @@ export class RealTimeAvailabilityService {
       // Get from database
       const truck = await this.truckRepository.findOne({
         where: { id: truckId, tenantId },
-        relations: ['currentDriver'],
+        // Note: currentDriverId is a column, not a relation
       });
 
       if (!truck) {
