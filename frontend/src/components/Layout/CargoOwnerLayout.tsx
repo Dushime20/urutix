@@ -70,7 +70,7 @@ const CargoOwnerLayout: React.FC = () => {
         <img 
           src={logoUrutiX} 
           alt="UrutiX Logo Background" 
-          className="pointer-events-none select-none fixed inset-0 w-full h-full object-cover opacity-5 z-0" 
+          className="pointer-events-none select-none fixed inset-0 w-full h-full object-cover opacity-10 z-0" 
           style={{objectPosition: 'center'}} 
         />
         

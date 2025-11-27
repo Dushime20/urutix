@@ -18,6 +18,7 @@ import {
   FaBell,
   FaStar
 } from 'react-icons/fa';
+import logoUrutiX from '@/assets/logo-urutix.svg';
 
 interface FAQItem {
   id: string;
@@ -120,8 +121,15 @@ const CargoHelpSupport: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gray-50 py-8 relative">
+      {/* Background Logo */}
+      <img 
+        src={logoUrutiX} 
+        alt="UrutiX Logo Background" 
+        className="pointer-events-none select-none fixed inset-0 w-full h-full object-cover opacity-10 z-0" 
+        style={{objectPosition: 'center'}} 
+      />
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         {/* Header */}
         <div className="text-center mb-12">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-primary-100 rounded-full mb-4">
