@@ -109,11 +109,26 @@ const AdminTenants: React.FC = () => {
 
   // Transform backend tenants data to frontend format
   const tenants = useMemo(() => {
-    if (!tenantsData?.tenants || !Array.isArray(tenantsData.tenants)) {
+    // Backend returns { success: true, data: [...tenants], message: "..." }
+    // Check multiple possible response structures
+    let tenantsArray: any[] = [];
+    
+    if (tenantsData?.data && Array.isArray(tenantsData.data)) {
+      tenantsArray = tenantsData.data;
+    } else if (tenantsData?.tenants && Array.isArray(tenantsData.tenants)) {
+      tenantsArray = tenantsData.tenants;
+    } else if (Array.isArray(tenantsData)) {
+      tenantsArray = tenantsData;
+    }
+    
+    if (!tenantsArray || tenantsArray.length === 0) {
+      console.log('⚠️ No tenants found in response:', tenantsData);
       return [];
     }
     
-    const transformed = tenantsData.tenants.map((tenant: any) => {
+    console.log(`✅ Found ${tenantsArray.length} tenants to display`);
+    
+    const transformed = tenantsArray.map((tenant: any) => {
       const mapped = {
         id: tenant.id,
         name: tenant.name,

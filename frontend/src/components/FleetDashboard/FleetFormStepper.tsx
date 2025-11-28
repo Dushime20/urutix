@@ -479,6 +479,45 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
   };
 
   // Convert form data to proper types for submission
+  // Helper function to convert date to ISO 8601 format
+  const toISOString = (date: any): string | undefined => {
+    // Handle empty/null/undefined
+    if (!date || date === '' || date === null || date === undefined) {
+      return undefined;
+    }
+    
+    // If it's already an ISO string, return it
+    if (typeof date === 'string' && date.includes('T')) {
+      return date;
+    }
+    
+    // If it's a date string in YYYY-MM-DD format (from HTML date input), convert to ISO
+    if (typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      // Create date at midnight UTC to avoid timezone issues
+      const isoDate = new Date(date + 'T00:00:00.000Z').toISOString();
+      console.log(`📅 Converted date "${date}" to ISO: "${isoDate}"`);
+      return isoDate;
+    }
+    
+    // If it's a Date object, convert to ISO
+    if (date instanceof Date) {
+      if (isNaN(date.getTime())) {
+        console.warn(`⚠️ Invalid Date object:`, date);
+        return undefined;
+      }
+      return date.toISOString();
+    }
+    
+    // Try to parse as date
+    const parsed = new Date(date);
+    if (!isNaN(parsed.getTime())) {
+      return parsed.toISOString();
+    }
+    
+    console.warn(`⚠️ Could not parse date:`, date, typeof date);
+    return undefined;
+  };
+
   const convertFormDataForSubmission = (data: Partial<FleetFormData>): any => {
     // Normalize driver payload to backend CreateDriverDto if submitting a driver
     if (activeTab === 'drivers') {
@@ -486,31 +525,74 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
       const nowIso = new Date().toISOString();
       const twoYearsIso = new Date(new Date().setFullYear(new Date().getFullYear() + 2)).toISOString();
 
-      return {
+      // Log raw date values for debugging
+      console.log('📅 Raw date values from form:', {
+        dateOfBirth: d.dateOfBirth,
+        licenseIssueDate: d.licenseIssueDate,
+        licenseExpiry: d.licenseExpiry,
+        hireDate: d.hireDate,
+      });
+
+      // Convert dates - ensure they are valid ISO strings
+      const dateOfBirthISO = toISOString(d.dateOfBirth);
+      const licenseIssueDateISO = toISOString(d.licenseIssueDate);
+      const licenseExpiryISO = toISOString(d.licenseExpiry);
+      const hireDateISO = toISOString(d.hireDate);
+
+      // Validate required dates
+      if (!dateOfBirthISO) {
+        console.error('❌ dateOfBirth is missing or invalid:', d.dateOfBirth);
+        throw new Error('Date of birth is required and must be a valid date');
+      }
+      if (!licenseIssueDateISO) {
+        console.error('❌ licenseIssueDate is missing or invalid:', d.licenseIssueDate);
+        throw new Error('License issue date is required and must be a valid date');
+      }
+      if (!licenseExpiryISO) {
+        console.error('❌ licenseExpiry is missing or invalid:', d.licenseExpiry);
+        throw new Error('License expiry date is required and must be a valid date');
+      }
+      if (!hireDateISO) {
+        console.error('❌ hireDate is missing or invalid:', d.hireDate);
+        throw new Error('Hire date is required and must be a valid date');
+      }
+
+      // Log converted dates
+      console.log('📅 Converted ISO dates:', {
+        dateOfBirth: dateOfBirthISO,
+        licenseIssueDate: licenseIssueDateISO,
+        licenseExpiry: licenseExpiryISO,
+        hireDate: hireDateISO,
+      });
+
+      const payload = {
         // required by backend DTO
         firstName: d.firstName || '',
         lastName: d.lastName || '',
         email: d.contactInfo?.email || '',
         phone: d.contactInfo?.phone || '',
-        dateOfBirth: d.dateOfBirth || nowIso,
+        dateOfBirth: dateOfBirthISO,
         address: d.address || '',
         employeeId: d.employeeId, // optional
         licenseNumber: d.licenseNumber || '',
-        licenseIssueDate: d.licenseIssueDate || nowIso,
-        licenseExpiry: d.licenseExpiry || twoYearsIso,
+        licenseIssueDate: licenseIssueDateISO,
+        licenseExpiry: licenseExpiryISO,
         licenseState: d.licenseState || 'N/A',
         licenseCountry: d.licenseCountry || 'N/A',
         employmentType: d.employmentType || 'FULL_TIME',
-        hireDate: d.hireDate || nowIso,
-        terminationDate: d.terminationDate,
+        hireDate: hireDateISO,
+        terminationDate: toISOString(d.terminationDate),
         status: d.status || 'ACTIVE',
         hourlyRate: d.hourlyRate ? Number(d.hourlyRate) : undefined,
         mileageRate: d.mileageRate ? Number(d.mileageRate) : undefined,
-        medicalCertExpiry: d.medicalCertExpiry,
-        drugTestDate: d.drugTestDate,
-        backgroundCheckDate: d.backgroundCheckDate,
-        trainingCompletionDate: d.trainingCompletionDate,
+        medicalCertExpiry: toISOString(d.medicalCertExpiry),
+        drugTestDate: toISOString(d.drugTestDate),
+        backgroundCheckDate: toISOString(d.backgroundCheckDate),
+        trainingCompletionDate: toISOString(d.trainingCompletionDate),
       };
+
+      console.log('📦 Final payload with dates:', payload);
+      return payload;
     }
 
     // Normalize truck payload to backend CreateTruckDto

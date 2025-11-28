@@ -72,7 +72,6 @@ export const databaseConfig: TypeOrmModuleOptions = {
   username: process.env.DB_USERNAME || 'postgres',
   password: process.env.DB_PASSWORD || '',
   database: process.env.DB_NAME || 'urutix',
-  migrations: ['src/database/migrations/*.ts'],
   migrationsRun: false,
   entities: [
     User,
@@ -147,7 +146,6 @@ export const testDatabaseConfig: TypeOrmModuleOptions = {
   username: process.env.TEST_DB_USERNAME || 'postgres',
   password: process.env.TEST_DB_PASSWORD || '',
   database: process.env.TEST_DB_NAME || 'urutix_test',
-  migrations: ['src/database/migrations/*.ts'],
   migrationsRun: false,
   entities: [
     User,

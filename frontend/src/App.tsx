@@ -28,6 +28,8 @@ import TenantAdminLayout from './components/Layout/TenantAdminLayout';
 import LenderLayout from './components/Layout/LenderLayout';
 import Auth from './pages/Auth';
 import Home from './pages/Home';
+import DriverPasswordSetup from './pages/DriverPasswordSetup';
+import TenantPasswordSetup from './pages/TenantPasswordSetup';
 
 // Lazy load all page components to reduce initial bundle size
 const CargoList = lazy(() => import('./pages/dashboard/cargos/list'));
@@ -128,6 +130,8 @@ function App() {
             <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/auth" element={<Auth />} />
+            <Route path="/driver/setup-password" element={<DriverPasswordSetup />} />
+            <Route path="/tenant/setup-password" element={<TenantPasswordSetup />} />
             
             {/* Cargo Owner Routes */}
             <Route path="/dashboard" element={<CargoOwnerLayout />}>

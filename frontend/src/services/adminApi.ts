@@ -100,24 +100,41 @@ export const fetchAuditLogs = async () => {
 
 // Tenants
 export const fetchTenants = async () => {
-  console.log("🔍 fetchTenants: Making API call to /admin/tenants");
+  console.log("🔍 fetchTenants: Making API call to /tenants");
   try {
-    const res = await api.get('/admin/tenants');
+    const res = await api.get('/tenants');
     console.log("📦 fetchTenants: Full response:", res);
     console.log("📦 fetchTenants: Response.data:", res.data);
-    console.log("📦 fetchTenants: Response.data.tenants:", res.data?.tenants);
-    console.log("📦 fetchTenants: Response.data.tenants length:", res.data?.tenants?.length);
-    console.log("📦 fetchTenants: Response.data.tenants is array?", Array.isArray(res.data?.tenants));
     
-    if (res.data?.tenants && Array.isArray(res.data.tenants)) {
-      console.log("✅ fetchTenants: Successfully fetched", res.data.tenants.length, "tenants");
-      console.log("✅ fetchTenants: All tenants from API:", JSON.stringify(res.data.tenants, null, 2));
+    // Backend returns: { success: true, data: [...tenants], message: "..." }
+    // Check for data.data (nested) or data.tenants or direct array
+    let tenantsArray: any[] = [];
+    
+    if (res.data?.data && Array.isArray(res.data.data)) {
+      tenantsArray = res.data.data;
+      console.log("✅ fetchTenants: Found tenants in res.data.data:", tenantsArray.length);
+    } else if (res.data?.tenants && Array.isArray(res.data.tenants)) {
+      tenantsArray = res.data.tenants;
+      console.log("✅ fetchTenants: Found tenants in res.data.tenants:", tenantsArray.length);
+    } else if (Array.isArray(res.data)) {
+      tenantsArray = res.data;
+      console.log("✅ fetchTenants: Response.data is direct array:", tenantsArray.length);
     } else {
-      console.warn("⚠️ fetchTenants: No tenants array in response");
+      console.warn("⚠️ fetchTenants: No tenants array found in response");
       console.warn("⚠️ fetchTenants: Response structure:", JSON.stringify(res.data, null, 2));
     }
     
-    return res.data;
+    if (tenantsArray.length > 0) {
+      console.log("✅ fetchTenants: Successfully fetched", tenantsArray.length, "tenants");
+      console.log("✅ fetchTenants: First tenant:", JSON.stringify(tenantsArray[0], null, 2));
+    }
+    
+    // Return in a consistent format
+    return {
+      tenants: tenantsArray,
+      data: tenantsArray, // Also include as data for compatibility
+      ...res.data, // Include other response properties
+    };
   } catch (error: any) {
     console.error("❌ fetchTenants: Error:", error);
     console.error("❌ fetchTenants: Error message:", error?.message);
@@ -146,7 +163,7 @@ export const fetchAllTrips = async (tenantId?: string) => {
 
 // Create tenant
 export const createTenant = async (payload: any) => {
-  const res = await api.post('/admin/tenants', payload);
+  const res = await api.post('/tenants', payload);
   return res.data;
 };
 

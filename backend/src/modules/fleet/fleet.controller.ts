@@ -13,8 +13,8 @@ import {
   Query,
   ValidationPipe,
   HttpException,
-  UnauthorizedException,
   BadRequestException,
+  UnauthorizedException,
   ConflictException,
   InternalServerErrorException,
 } from '@nestjs/common';
@@ -1925,13 +1925,37 @@ export class FleetController {
     description:
       'Conflict - driver with same license number or user already exists',
   })
-  async createDriver(@Body() createDriverDto: CreateDriverDto, @Request() req) {
+  async createDriver(
+    @Body(
+      new ValidationPipe({
+        transform: true,
+        whitelist: true,
+        forbidNonWhitelisted: false,
+        transformOptions: {
+          enableImplicitConversion: true,
+        },
+      }),
+    )
+    createDriverDto: CreateDriverDto,
+    @Request() req,
+  ) {
     try {
       console.log('👤 Creating driver request:', {
         driverData: createDriverDto,
+        email: createDriverDto.email,
+        firstName: createDriverDto.firstName,
+        lastName: createDriverDto.lastName,
+        phone: createDriverDto.phone,
         userId: req.user?.userId,
         tenantId: req.user?.tenantId,
       });
+
+      // Validate email is provided
+      if (!createDriverDto.email || createDriverDto.email.trim() === '') {
+        throw new BadRequestException(
+          'Email address is required to create a driver account. Please provide a valid email address.',
+        );
+      }
 
       // Validate user authentication
       if (!req.user) {

@@ -40,6 +40,10 @@ import {
   ResetPasswordResponseDto,
 } from './dto/reset-password.dto';
 import {
+  SetupDriverPasswordDto,
+  SetupDriverPasswordResponseDto,
+} from './dto/setup-driver-password.dto';
+import {
   ChangePasswordDto,
   ChangePasswordResponseDto,
 } from './dto/change-password.dto';
@@ -544,6 +548,101 @@ export class EnhancedAuthController {
       const clientIp = this.getClientIp(req);
       this.logger.error(
         `Email verification failed from IP: ${clientIp}: ${error.message}`,
+      );
+      throw error;
+    }
+  }
+
+  @Post('driver/setup-password')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Set up driver password',
+    description:
+      'Set up password for a driver account created by truck owner. Activates the account after password is set.',
+  })
+  @ApiBody({
+    type: SetupDriverPasswordDto,
+    description: 'Driver password setup data',
+  })
+  @ApiOkResponse({
+    description: 'Password set successfully',
+    type: SetupDriverPasswordResponseDto,
+  })
+  @ApiBadRequestResponse({
+    description: 'Invalid token or weak password',
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean', example: false },
+        message: {
+          type: 'string',
+          example: 'Password must be at least 8 characters long',
+        },
+        statusCode: { type: 'number', example: 400 },
+      },
+    },
+  })
+  async setupDriverPassword(
+    @Body() setupPasswordDto: SetupDriverPasswordDto,
+    @Req() req: Request,
+  ): Promise<SetupDriverPasswordResponseDto> {
+    try {
+      const clientIp = this.getClientIp(req);
+      this.logger.log(`Driver password setup attempt from IP: ${clientIp}`);
+
+      const result = await this.authService.setupDriverPassword(
+        setupPasswordDto,
+        clientIp,
+      );
+
+      this.logger.log(`Driver password setup completed from IP: ${clientIp}`);
+      return result;
+    } catch (error) {
+      const clientIp = this.getClientIp(req);
+      this.logger.error(
+        `Driver password setup failed from IP: ${clientIp}: ${error.message}`,
+      );
+      throw error;
+    }
+  }
+
+  @Post('tenant/setup-password')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(EnhancedRateLimitGuard)
+  @ApiOperation({
+    summary: 'Setup tenant password',
+    description: 'Set initial password for tenant admin account using setup token',
+  })
+  @ApiBody({
+    type: SetupDriverPasswordDto,
+    description: 'Password setup data',
+  })
+  @ApiOkResponse({
+    description: 'Password set successfully',
+    type: SetupDriverPasswordResponseDto,
+  })
+  @ApiBadRequestResponse({
+    description: 'Invalid token or validation error',
+  })
+  async setupTenantPassword(
+    @Body() setupPasswordDto: SetupDriverPasswordDto,
+    @Req() req: Request,
+  ): Promise<SetupDriverPasswordResponseDto> {
+    try {
+      const clientIp = this.getClientIp(req);
+      this.logger.log(`Tenant password setup attempt from IP: ${clientIp}`);
+
+      const result = await this.authService.setupTenantPassword(
+        setupPasswordDto,
+        clientIp,
+      );
+
+      this.logger.log(`Tenant password setup completed from IP: ${clientIp}`);
+      return result;
+    } catch (error) {
+      const clientIp = this.getClientIp(req);
+      this.logger.error(
+        `Tenant password setup failed from IP: ${clientIp}: ${error.message}`,
       );
       throw error;
     }
