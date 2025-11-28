@@ -838,7 +838,6 @@ export class FleetService {
         trainingCompletionDate: createDriverDto.trainingCompletionDate ? convertToDate(createDriverDto.trainingCompletionDate) : undefined,
         userId: driverUserId,
         employerId: userId,
->>>>>>> 806ab5c5872e3a429e2218be02aa3a812e0d893c
         tenantId,
         // Override status from DTO to ensure it's ACTIVE for new drivers
         status: DriverStatus.ACTIVE,
