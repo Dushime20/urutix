@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import toast from 'react-hot-toast';
 import { 
   createTenantRoute, 
   fetchTenants, 
   fetchAdminRoutes, 
   updateTenantRoute, 
   deleteTenantRoute,
-  fetchRouteAnalytics
+  fetchRouteAnalytics,
+  bulkUpdateRouteStatus
 } from '../services/adminApi';
 import { fleetApi, type FleetItem } from '../services/fleetApi';
 import { useAuth } from '../contexts/AuthContext';
@@ -35,7 +37,7 @@ interface Route {
   trafficLevel: 'light' | 'moderate' | 'heavy';
   tollCost?: number;
   fuelCost?: number;
-  assignedTrucks?: number;
+  assignedTrucks?: string[] | number; // Can be array of IDs or count
   completedTrips?: number;
 }
 
@@ -108,25 +110,40 @@ const AdminRoutes: React.FC = () => {
 
   // Mutations
   const { mutate: createRoute, isPending: isCreating } = useMutation({
-    mutationFn: () => createTenantRoute(tenantId, { 
-      name, 
-      origin, 
-      destination, 
-      distance, 
-      estimatedTime, 
-      status: 'active',
-      priority,
-      routeType,
-      tollCost,
-      fuelCost
-    }),
+    mutationFn: () => {
+      if (!tenantId) throw new Error('Please select a tenant');
+      if (!name.trim()) throw new Error('Route name is required');
+      if (!origin.trim()) throw new Error('Origin is required');
+      if (!destination.trim()) throw new Error('Destination is required');
+      if (distance <= 0) throw new Error('Distance must be greater than 0');
+      if (estimatedTime <= 0) throw new Error('Estimated time must be greater than 0');
+      
+      return createTenantRoute(tenantId, { 
+        name: name.trim(), 
+        origin: origin.trim(), 
+        destination: destination.trim(), 
+        distance, 
+        estimatedTime, 
+        status: 'active',
+        priority,
+        routeType,
+        tollCost: tollCost || 0,
+        fuelCost: fuelCost || 0
+      });
+    },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['admin-routes'] });
       qc.invalidateQueries({ queryKey: ['route-analytics'] });
       resetForm();
       setShowCreateModal(false);
+      toast.success('Route created successfully!');
     },
     onError: (error: any) => {
+      const errorMessage = error?.response?.data?.message || 
+                          error?.response?.data?.error || 
+                          error?.message || 
+                          'Failed to create route. Please try again.';
+      toast.error(errorMessage);
       console.error('Error creating route:', {
         message: error?.message,
         status: error?.response?.status,
@@ -141,24 +158,39 @@ const AdminRoutes: React.FC = () => {
       fleetApi.assignRouteToTruck(truckId, routeId),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['admin-routes'] });
+      qc.invalidateQueries({ queryKey: ['fleet-trucks'] });
       setShowAssignTrucksModal(false);
       setRouteForAssignment(null);
+      toast.success('Route assigned to truck successfully!');
+    },
+    onError: (error: any) => {
+      const errorMessage = error?.response?.data?.message || 
+                          error?.response?.data?.error || 
+                          error?.message || 
+                          'Failed to assign route to truck. Please try again.';
+      toast.error(errorMessage);
     },
   });
 
   const { mutate: updateRoute, isPending: isUpdating } = useMutation({
     mutationFn: () => {
       if (!editingRoute) throw new Error('No route to update');
+      if (!editingRoute.name?.trim()) throw new Error('Route name is required');
+      if (!editingRoute.origin?.trim()) throw new Error('Origin is required');
+      if (!editingRoute.destination?.trim()) throw new Error('Destination is required');
+      if (editingRoute.distance <= 0) throw new Error('Distance must be greater than 0');
+      if (editingRoute.estimatedTime <= 0) throw new Error('Estimated time must be greater than 0');
+      
       return updateTenantRoute(editingRoute.id, {
-        name: editingRoute.name,
-        origin: editingRoute.origin,
-        destination: editingRoute.destination,
+        name: editingRoute.name.trim(),
+        origin: editingRoute.origin.trim(),
+        destination: editingRoute.destination.trim(),
         distance: editingRoute.distance,
         estimatedTime: editingRoute.estimatedTime,
         priority: editingRoute.priority,
         routeType: editingRoute.routeType,
-        tollCost: editingRoute.tollCost,
-        fuelCost: editingRoute.fuelCost
+        tollCost: editingRoute.tollCost || 0,
+        fuelCost: editingRoute.fuelCost || 0
       });
     },
     onSuccess: () => {
@@ -166,10 +198,15 @@ const AdminRoutes: React.FC = () => {
       qc.invalidateQueries({ queryKey: ['route-analytics'] });
       setShowEditModal(false);
       setEditingRoute(null);
+      toast.success('Route updated successfully!');
     },
-    onError: (error) => {
+    onError: (error: any) => {
+      const errorMessage = error?.response?.data?.message || 
+                          error?.response?.data?.error || 
+                          error?.message || 
+                          'Failed to update route. Please try again.';
+      toast.error(errorMessage);
       console.error('Error updating route:', error);
-      // You can add toast notification here
     }
   });
 
@@ -180,10 +217,15 @@ const AdminRoutes: React.FC = () => {
       qc.invalidateQueries({ queryKey: ['route-analytics'] });
       setShowDetailsModal(false);
       setSelectedRoute(null);
+      toast.success('Route deleted successfully!');
     },
-    onError: (error) => {
+    onError: (error: any) => {
+      const errorMessage = error?.response?.data?.message || 
+                          error?.response?.data?.error || 
+                          error?.message || 
+                          'Failed to delete route. Please try again.';
+      toast.error(errorMessage);
       console.error('Error deleting route:', error);
-      // You can add toast notification here
     }
   });
 
@@ -211,16 +253,107 @@ const AdminRoutes: React.FC = () => {
     }
   };
 
-  // Use real data from API
-  const routes = routesData || [];
+  // Status update mutation
+  const { mutate: updateRouteStatus, isPending: isUpdatingStatus } = useMutation({
+    mutationFn: ({ routeId, status }: { routeId: string; status: string }) => 
+      updateTenantRoute(routeId, { status }),
+    onSuccess: (_, variables) => {
+      qc.invalidateQueries({ queryKey: ['admin-routes'] });
+      qc.invalidateQueries({ queryKey: ['route-analytics'] });
+      toast.success(`Route status updated to ${variables.status.replace('_', ' ')}`);
+    },
+    onError: (error: any) => {
+      const errorMessage = error?.response?.data?.message || 
+                          error?.response?.data?.error || 
+                          error?.message || 
+                          'Failed to update route status. Please try again.';
+      toast.error(errorMessage);
+    }
+  });
+
+  // Bulk status update mutation
+  const { mutate: bulkUpdateStatus, isPending: isBulkUpdating } = useMutation({
+    mutationFn: ({ routeIds, status }: { routeIds: string[]; status: string }) => 
+      bulkUpdateRouteStatus(routeIds, status),
+    onSuccess: (_, variables) => {
+      qc.invalidateQueries({ queryKey: ['admin-routes'] });
+      qc.invalidateQueries({ queryKey: ['route-analytics'] });
+      setSelectedRouteIds([]);
+      toast.success(`${variables.routeIds.length} route(s) status updated to ${variables.status.replace('_', ' ')}`);
+    },
+    onError: (error: any) => {
+      const errorMessage = error?.response?.data?.message || 
+                          error?.response?.data?.error || 
+                          error?.message || 
+                          'Failed to update route statuses. Please try again.';
+      toast.error(errorMessage);
+    }
+  });
+
+  // Bulk delete mutation
+  const { mutate: bulkDeleteRoutes } = useMutation({
+    mutationFn: async (routeIds: string[]) => {
+      await Promise.all(routeIds.map(id => deleteTenantRoute(id)));
+    },
+    onSuccess: (_, routeIds) => {
+      qc.invalidateQueries({ queryKey: ['admin-routes'] });
+      qc.invalidateQueries({ queryKey: ['route-analytics'] });
+      setSelectedRouteIds([]);
+      toast.success(`${routeIds.length} route(s) deleted successfully!`);
+    },
+    onError: (error: any) => {
+      const errorMessage = error?.response?.data?.message || 
+                          error?.response?.data?.error || 
+                          error?.message || 
+                          'Failed to delete routes. Please try again.';
+      toast.error(errorMessage);
+    }
+  });
+
+  const handleStatusUpdate = (routeId: string, newStatus: string) => {
+    updateRouteStatus({ routeId, status: newStatus });
+  };
+
+  const handleBulkStatusUpdate = (status: string) => {
+    if (selectedRouteIds.length === 0) {
+      toast.error('Please select at least one route');
+      return;
+    }
+    if (window.confirm(`Update ${selectedRouteIds.length} route(s) status to ${status.replace('_', ' ')}?`)) {
+      bulkUpdateStatus({ routeIds: selectedRouteIds, status });
+    }
+  };
+
+  const handleBulkDelete = () => {
+    if (selectedRouteIds.length === 0) {
+      toast.error('Please select at least one route');
+      return;
+    }
+    if (window.confirm(`Are you sure you want to delete ${selectedRouteIds.length} route(s)? This action cannot be undone.`)) {
+      bulkDeleteRoutes(selectedRouteIds);
+    }
+  };
+
+  // Get tenants for dropdown and create tenant map
+  const tenants: Tenant[] = tenantsData?.tenants || [];
+  const tenantMap = new Map<string, string>();
+  tenants.forEach((tenant) => {
+    tenantMap.set(tenant.id, tenant.name);
+  });
+
+  // Use real data from API - ensure it's always an array and map tenant names
+  const routes: Route[] = (Array.isArray(routesData) ? routesData : (routesData?.routes || [])).map((route: any) => ({
+    ...route,
+    tenantName: tenantMap.get(route.tenantId) || route.tenant?.name || route.tenantName || 'N/A'
+  }));
   
   // Filter and sort routes
   const filteredRoutes = routes
     .filter((route: Route) => {
-      const matchesSearch = route.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          route.origin.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          route.destination.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          route.tenantName.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesSearch = route.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          route.origin?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          route.destination?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          route.tenantName?.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesStatus = statusFilter === 'all' || route.status === statusFilter;
       const matchesTenant = tenantFilter === 'all' || route.tenantId === tenantFilter;
       const matchesPriority = priorityFilter === 'all' || route.priority === priorityFilter;
@@ -242,35 +375,37 @@ const AdminRoutes: React.FC = () => {
   const endIdx = startIdx + pageSize;
   const pagedRoutes = filteredRoutes.slice(startIdx, endIdx);
 
-  // Get tenants for dropdown
-  const tenants: Tenant[] = tenantsData?.tenants || [];
-
-  // Use real analytics data
+  // Use real analytics data with proper null checks
   const stats = [
     { 
       label: 'Total Routes', 
-      value: analyticsData?.totalRoutes || routes.length, 
+      value: analyticsData?.totalRoutes ?? routes.length, 
       icon: FaRoute, 
       color: 'from-blue-500 to-blue-600',
       description: 'All registered routes'
     },
     { 
       label: 'Active Routes', 
-      value: analyticsData?.activeRoutes || routes.filter((r: Route) => r.status === 'active').length, 
+      value: analyticsData?.activeRoutes ?? routes.filter((r: Route) => r.status === 'active').length, 
       icon: FaCheck, 
       color: 'from-green-500 to-green-600',
       description: 'Currently operational'
     },
     { 
       label: 'Total Distance', 
-      value: `${(analyticsData?.totalDistance || routes.reduce((sum: number, r: Route) => sum + r.distance, 0)).toLocaleString()} km`, 
+      value: `${(analyticsData?.totalDistance ?? routes.reduce((sum: number, r: Route) => sum + (r.distance || 0), 0)).toLocaleString()} km`, 
       icon: FaRoad, 
       color: 'from-purple-500 to-purple-600',
       description: 'Combined route distance'
     },
     { 
       label: 'Assigned Trucks', 
-      value: routes.reduce((sum: number, r: Route) => sum + (r.assignedTrucks || 0), 0), 
+      value: routes.reduce((sum: number, r: Route) => {
+        if (Array.isArray(r.assignedTrucks)) {
+          return sum + r.assignedTrucks.length;
+        }
+        return sum + (typeof r.assignedTrucks === 'number' ? r.assignedTrucks : 0);
+      }, 0), 
       icon: FaTruck, 
       color: 'from-yellow-500 to-yellow-600',
       description: 'Trucks using routes'
@@ -294,14 +429,14 @@ const AdminRoutes: React.FC = () => {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto">
-            <FaExclamationTriangle className="text-red-500 text-2xl" />
+          <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto">
+            <FaExclamationTriangle className="text-red-500 text-lg" />
           </div>
-          <h2 className="mt-4 text-xl font-semibold text-gray-900">Error Loading Routes</h2>
-          <p className="mt-2 text-gray-600">Failed to load route data. Please try again later.</p>
+          <h2 className="mt-3 text-base font-semibold text-gray-900">Error Loading Routes</h2>
+          <p className="mt-1.5 text-sm text-gray-600">Failed to load route data. Please try again later.</p>
           <button 
             onClick={() => window.location.reload()} 
-            className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+            className="mt-3 px-2.5 py-1.5 text-xs bg-blue-500 text-white rounded-lg hover:bg-blue-600 font-medium"
           >
             Retry
           </button>
@@ -364,38 +499,46 @@ const AdminRoutes: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Route Management</h1>
-          <p className="text-gray-600 mt-1">Manage logistics routes and transportation corridors</p>
+          <h1 className="text-lg font-bold text-gray-900">Route Management</h1>
+          <p className="text-xs text-gray-600 mt-0.5">Manage logistics routes and transportation corridors</p>
         </div>
         {isAdmin && (
           <button
             onClick={() => setShowCreateModal(true)}
-            className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-6 py-3 rounded-xl flex items-center space-x-2 hover:from-blue-600 hover:to-blue-700 transition-all duration-200 shadow-lg"
+            className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-2.5 py-1.5 rounded-lg flex items-center gap-1.5 hover:from-blue-600 hover:to-blue-700 transition-all duration-200 shadow-sm text-xs font-medium"
           >
-            <FaPlus />
+            <FaPlus className="w-3 h-3" />
             <span>Add Route</span>
           </button>
         )}
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2.5">
         {stats.map((stat, index) => {
           const Icon = stat.icon;
           return (
-            <div key={index} className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-shadow duration-300">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">{stat.label}</p>
-                  <p className="text-2xl font-bold text-gray-900 mt-1">{stat.value}</p>
-                  <p className="text-xs text-gray-400 mt-1">{stat.description}</p>
-                </div>
-                <div className={`w-12 h-12 bg-gradient-to-r ${stat.color} rounded-xl flex items-center justify-center`}>
-                  <Icon className="text-white text-lg" />
+            <div key={index} className="bg-white rounded-lg shadow-sm border border-gray-200 p-2.5 hover:shadow-md transition-all duration-200 group relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-100 transition-opacity" style={{
+                background: stat.color === 'from-blue-500 to-blue-600' ? 'linear-gradient(to bottom right, rgba(59, 130, 246, 0.05), transparent)' :
+                           stat.color === 'from-green-500 to-green-600' ? 'linear-gradient(to bottom right, rgba(16, 185, 129, 0.05), transparent)' :
+                           stat.color === 'from-purple-500 to-purple-600' ? 'linear-gradient(to bottom right, rgba(168, 85, 247, 0.05), transparent)' :
+                           'linear-gradient(to bottom right, rgba(245, 158, 11, 0.05), transparent)'
+              }}></div>
+              <div className="relative">
+                <div className="flex items-center justify-between">
+                  <div className="flex-1">
+                    <p className="text-xs text-gray-600 mb-0.5">{stat.label}</p>
+                    <p className="text-lg font-bold text-gray-900 mb-0.5">{stat.value}</p>
+                    <p className="text-[10px] text-gray-500">{stat.description}</p>
+                  </div>
+                  <div className={`w-10 h-10 bg-gradient-to-r ${stat.color} rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform`}>
+                    <Icon className="text-white text-sm" />
+                  </div>
                 </div>
               </div>
             </div>
@@ -404,21 +547,21 @@ const AdminRoutes: React.FC = () => {
       </div>
 
       {/* Toolbar: filters, bulk actions */}
-      <div className="bg-white rounded-2xl shadow-lg p-4 border border-gray-200">
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+      <div className="bg-white rounded-lg shadow-sm p-2.5 border border-gray-200">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-2">
           <div className="relative">
-            <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+            <FaSearch className="absolute left-2.5 top-1/2 transform -translate-y-1/2 text-gray-400 w-3.5 h-3.5" />
             <input
               type="text"
-              placeholder="Search routes... (name, origin, destination, tenant)"
-              className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="Search routes..."
+              className="w-full pl-9 pr-3 py-1.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
           
           <select
-            className="px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="px-2 py-1.5 text-xs border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
           >
@@ -430,7 +573,7 @@ const AdminRoutes: React.FC = () => {
           </select>
 
           <select
-            className="px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="px-2 py-1.5 text-xs border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             value={tenantFilter}
             onChange={(e) => setTenantFilter(e.target.value)}
           >
@@ -441,7 +584,7 @@ const AdminRoutes: React.FC = () => {
           </select>
 
           <select
-            className="px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="px-2 py-1.5 text-xs border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             value={priorityFilter}
             onChange={(e) => setPriorityFilter(e.target.value)}
           >
@@ -451,20 +594,56 @@ const AdminRoutes: React.FC = () => {
             <option value="low">Low Priority</option>
           </select>
 
-          <button className="px-3 py-2 border border-gray-200 rounded-lg flex items-center justify-center space-x-2 hover:bg-gray-50 transition-colors">
-            <FaDownload />
+          <button className="px-2 py-1.5 text-xs border border-gray-200 rounded-lg flex items-center justify-center gap-1.5 hover:bg-gray-50 transition-colors">
+            <FaDownload className="w-3 h-3" />
             <span>Export</span>
           </button>
         </div>
 
         {/* Bulk actions */}
-        <div className="mt-3 flex items-center justify-between">
-          <div className="text-sm text-gray-600">
-            {selectedRouteIds.length > 0 ? `${selectedRouteIds.length} selected` : `${total} routes`}
+        <div className="mt-2 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="text-xs text-gray-600">
+              {selectedRouteIds.length > 0 ? `${selectedRouteIds.length} selected` : `${total} routes`}
+            </div>
+            {selectedRouteIds.length > 0 && isAdmin && (
+              <div className="flex items-center gap-1.5">
+                <select
+                  className="px-1.5 py-0.5 text-xs border border-gray-200 rounded"
+                  onChange={(e) => {
+                    if (e.target.value) {
+                      handleBulkStatusUpdate(e.target.value);
+                      e.target.value = '';
+                    }
+                  }}
+                  disabled={isBulkUpdating}
+                >
+                  <option value="">Bulk Status Update</option>
+                  <option value="active">Set Active</option>
+                  <option value="inactive">Set Inactive</option>
+                  <option value="under_construction">Set Under Construction</option>
+                  <option value="blocked">Set Blocked</option>
+                </select>
+                <button
+                  onClick={handleBulkDelete}
+                  className="px-1.5 py-0.5 text-xs text-red-600 border border-red-200 rounded hover:bg-red-50 transition-colors"
+                  disabled={isBulkUpdating}
+                >
+                  <FaTrash className="w-3 h-3 inline mr-1" />
+                  Delete Selected
+                </button>
+                <button
+                  onClick={() => setSelectedRouteIds([])}
+                  className="px-1.5 py-0.5 text-xs text-gray-600 border border-gray-200 rounded hover:bg-gray-50 transition-colors"
+                >
+                  Clear
+                </button>
+              </div>
+            )}
           </div>
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center gap-1.5">
             <select
-              className="px-2 py-1 border border-gray-200 rounded"
+              className="px-1.5 py-0.5 text-xs border border-gray-200 rounded"
               value={pageSize}
               onChange={(e) => { setPageSize(Number(e.target.value)); setPage(1); }}
             >
@@ -478,12 +657,12 @@ const AdminRoutes: React.FC = () => {
       </div>
 
       {/* Routes Table */}
-      <div className="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-200">
+      <div className="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-200">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full text-xs">
             <thead className="bg-gray-50 border-b border-gray-200 sticky top-0 z-10">
               <tr>
-                <th className="px-4 py-3 w-10">
+                <th className="px-2 py-1.5 w-8">
                   <input
                     type="checkbox"
                     checked={selectedRouteIds.length > 0 && selectedRouteIds.length === pagedRoutes.length}
@@ -496,32 +675,32 @@ const AdminRoutes: React.FC = () => {
                     }}
                   />
                 </th>
-                <th className="px-4 py-3 text-left font-semibold text-gray-900">
+                <th className="px-2 py-1.5 text-left font-semibold text-gray-900 text-xs">
                   <button 
-                    className="flex items-center space-x-1"
+                    className="flex items-center gap-1"
                     onClick={() => {
                       setSortBy('name');
                       setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
                     }}
                   >
                     <span>Route</span>
-                    <FaSort />
+                    <FaSort className="w-3 h-3" />
                   </button>
                 </th>
-                <th className="px-4 py-3 text-left font-semibold text-gray-900">Tenant</th>
-                <th className="px-4 py-3 text-left font-semibold text-gray-900">Distance & Time</th>
-                <th className="px-4 py-3 text-left font-semibold text-gray-900">Status</th>
-                <th className="px-4 py-3 text-left font-semibold text-gray-900">Priority</th>
-                <th className="px-4 py-3 text-left font-semibold text-gray-900">Type</th>
-                <th className="px-4 py-3 text-left font-semibold text-gray-900">Traffic</th>
-                <th className="px-4 py-3 text-left font-semibold text-gray-900">Performance</th>
-                <th className="px-4 py-3 text-left font-semibold text-gray-900">Actions</th>
+                <th className="px-2 py-1.5 text-left font-semibold text-gray-900 text-xs">Tenant</th>
+                <th className="px-2 py-1.5 text-left font-semibold text-gray-900 text-xs">Distance & Time</th>
+                <th className="px-2 py-1.5 text-left font-semibold text-gray-900 text-xs">Status</th>
+                <th className="px-2 py-1.5 text-left font-semibold text-gray-900 text-xs">Priority</th>
+                <th className="px-2 py-1.5 text-left font-semibold text-gray-900 text-xs">Type</th>
+                <th className="px-2 py-1.5 text-left font-semibold text-gray-900 text-xs">Traffic</th>
+                <th className="px-2 py-1.5 text-left font-semibold text-gray-900 text-xs">Performance</th>
+                <th className="px-2 py-1.5 text-left font-semibold text-gray-900 text-xs">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
               {pagedRoutes.map((route: Route) => (
                 <tr key={route.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-4 py-3 w-10">
+                  <td className="px-2 py-1.5 w-8">
                     <input
                       type="checkbox"
                       checked={selectedRouteIds.includes(route.id)}
@@ -534,109 +713,106 @@ const AdminRoutes: React.FC = () => {
                       }}
                     />
                   </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl flex items-center justify-center">
-                        <FaRoute className="text-white text-sm" />
+                  <td className="px-2 py-1.5">
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
+                        <FaRoute className="text-white text-xs" />
                       </div>
                       <div>
-                        <div className="font-semibold text-gray-900">{route.name}</div>
-                        <div className="text-sm text-gray-500 flex items-center space-x-1">
-                          <FaMapMarkerAlt className="text-xs" />
+                        <div className="font-semibold text-gray-900 text-xs">{route.name}</div>
+                        <div className="text-[10px] text-gray-500 flex items-center gap-0.5">
+                          <FaMapMarkerAlt className="w-2.5 h-2.5" />
                           <span>{route.origin}</span>
                         </div>
-                        <div className="text-sm text-gray-500 flex items-center space-x-1">
-                          <FaMapMarkerAlt className="text-xs" />
+                        <div className="text-[10px] text-gray-500 flex items-center gap-0.5">
+                          <FaMapMarkerAlt className="w-2.5 h-2.5" />
                           <span>{route.destination}</span>
                         </div>
                       </div>
                     </div>
                   </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center space-x-2">
-                      <FaBuilding className="text-gray-400 text-sm" />
-                      <span className="text-sm text-gray-900">{route.tenantName}</span>
+                  <td className="px-2 py-1.5">
+                    <div className="flex items-center gap-1">
+                      <FaBuilding className="text-gray-400 text-xs" />
+                      <span className="text-xs text-gray-900">{route.tenantName}</span>
                     </div>
                   </td>
-                  <td className="px-4 py-3">
-                    <div className="space-y-1">
-                      <div className="flex items-center space-x-1">
-                        <FaRoad className="text-gray-400 text-xs" />
-                        <span className="text-sm font-medium">{route.distance.toLocaleString()} km</span>
+                  <td className="px-2 py-1.5">
+                    <div className="space-y-0.5">
+                      <div className="flex items-center gap-0.5">
+                        <FaRoad className="text-gray-400 text-[10px]" />
+                        <span className="text-xs font-medium">{(route.distance || 0).toLocaleString()} km</span>
                       </div>
-                      <div className="flex items-center space-x-1">
-                        <FaClock className="text-gray-400 text-xs" />
-                        <span className="text-xs text-gray-500">{route.estimatedTime}h estimated</span>
+                      <div className="flex items-center gap-0.5">
+                        <FaClock className="text-gray-400 text-[10px]" />
+                        <span className="text-[10px] text-gray-500">{route.estimatedTime}h</span>
                       </div>
                     </div>
                   </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center space-x-2">
-                      {getStatusIcon(route.status)}
-                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(route.status)}`}>
-                        {route.status.replace('_', ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())}
-                      </span>
+                  <td className="px-2 py-1.5">
+                    <div className="flex items-center gap-1">
+                      <span className="text-[10px]">{getStatusIcon(route.status)}</span>
+                      {isAdmin ? (
+                        <select
+                          className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium border-0 ${getStatusColor(route.status)} cursor-pointer`}
+                          value={route.status}
+                          onChange={(e) => handleStatusUpdate(route.id, e.target.value)}
+                          disabled={isUpdatingStatus}
+                        >
+                          <option value="active">Active</option>
+                          <option value="inactive">Inactive</option>
+                          <option value="under_construction">Under Construction</option>
+                          <option value="blocked">Blocked</option>
+                        </select>
+                      ) : (
+                        <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium ${getStatusColor(route.status)}`}>
+                          {route.status.replace('_', ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())}
+                        </span>
+                      )}
                     </div>
                   </td>
-                  <td className="px-4 py-3">
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${getPriorityColor((route.priority || 'medium') as string)}`}>
+                  <td className="px-2 py-1.5">
+                    <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium ${getPriorityColor((route.priority || 'medium') as string)}`}>
                       {((route.priority || 'medium') as string).charAt(0).toUpperCase() + ((route.priority || 'medium') as string).slice(1)}
                     </span>
                   </td>
-                  <td className="px-4 py-3">
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${getRouteTypeColor((route.routeType || 'highway') as string)}`}>
+                  <td className="px-2 py-1.5">
+                    <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium ${getRouteTypeColor((route.routeType || 'highway') as string)}`}>
                       {((route.routeType || 'highway') as string).charAt(0).toUpperCase() + ((route.routeType || 'highway') as string).slice(1)}
                     </span>
                   </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center space-x-2">
+                  <td className="px-2 py-1.5">
+                    <div className="flex items-center gap-1">
                       {getTrafficIcon((route.trafficLevel || 'moderate') as string)}
-                      <span className="text-xs text-gray-500 capitalize">{(route.trafficLevel || 'moderate') as string}</span>
+                      <span className="text-[10px] text-gray-500 capitalize">{(route.trafficLevel || 'moderate') as string}</span>
                     </div>
                   </td>
-                  <td className="px-4 py-3">
-                    <div className="space-y-1">
-                      <div className="text-sm font-medium text-gray-900">{route.assignedTrucks} trucks</div>
-                      <div className="text-xs text-gray-500">{route.completedTrips} trips</div>
+                  <td className="px-2 py-1.5">
+                    <div className="space-y-0.5">
+                      <div className="text-xs font-medium text-gray-900">
+                        {Array.isArray(route.assignedTrucks) ? route.assignedTrucks.length : (typeof route.assignedTrucks === 'number' ? route.assignedTrucks : 0)} trucks
+                      </div>
+                      <div className="text-[10px] text-gray-500">{route.completedTrips || 0} trips</div>
                     </div>
                   </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center space-x-2">
+                  <td className="px-2 py-1.5">
+                    <div className="flex items-center gap-1">
                       <button 
                         onClick={() => {
                           setSelectedRoute(route);
                           setShowDetailsModal(true);
                         }}
-                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                        className="p-1 text-blue-600 hover:bg-blue-50 rounded transition-colors"
                         title="View Details"
                       >
-                        <FaEye />
+                        <FaEye className="w-3 h-3" />
                       </button>
                       <button 
                         onClick={() => handleEditRoute(route)}
-                        className="p-2 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors"
+                        className="p-1 text-gray-600 hover:bg-gray-50 rounded transition-colors"
                         title="Edit"
                       >
-                        <FaEdit />
-                      </button>
-                      <button 
-                        onClick={() => handleDeleteRoute(route.id)}
-                        className="p-2 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors"
-                        title="Delete"
-                      >
-                        <FaTrash />
-                      </button>
-                      <button 
-                        className="p-2 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors"
-                        title="Settings"
-                      >
-                        <FaCog />
-                      </button>
-                      <button 
-                        className="p-2 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors"
-                        title="More"
-                      >
-                        <FaEllipsisV />
+                        <FaEdit className="w-3 h-3" />
                       </button>
                     </div>
                   </td>
@@ -646,21 +822,21 @@ const AdminRoutes: React.FC = () => {
           </table>
         </div>
         {/* Pagination */}
-        <div className="flex items-center justify-between p-3 border-t border-gray-200 bg-gray-50">
-          <div className="text-xs text-gray-600">
+        <div className="flex items-center justify-between p-2 border-t border-gray-200 bg-gray-50">
+          <div className="text-[10px] text-gray-600">
             Showing {Math.min(endIdx, total)} of {total}
           </div>
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center gap-1.5">
             <button
-              className="px-2 py-1 border border-gray-300 rounded disabled:opacity-50"
+              className="px-1.5 py-0.5 text-xs border border-gray-300 rounded disabled:opacity-50 hover:bg-gray-100"
               onClick={() => setPage(Math.max(1, currentPage - 1))}
               disabled={currentPage === 1}
             >
               Previous
             </button>
-            <span className="text-xs text-gray-700">Page {currentPage} / {totalPages}</span>
+            <span className="text-[10px] text-gray-700">Page {currentPage} / {totalPages}</span>
             <button
-              className="px-2 py-1 border border-gray-300 rounded disabled:opacity-50"
+              className="px-1.5 py-0.5 text-xs border border-gray-300 rounded disabled:opacity-50 hover:bg-gray-100"
               onClick={() => setPage(Math.min(totalPages, currentPage + 1))}
               disabled={currentPage === totalPages}
             >
@@ -673,34 +849,34 @@ const AdminRoutes: React.FC = () => {
       {/* Create Route Modal */}
       {isAdmin && showCreateModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b border-gray-200">
+          <div className="bg-white rounded-lg shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+            <div className="p-3 border-b border-gray-200">
               <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-bold text-gray-900">Create New Route</h2>
+                <h2 className="text-base font-bold text-gray-900">Create New Route</h2>
                 <button
                   onClick={() => {
                     setShowCreateModal(false);
                     resetForm();
                   }}
-                  className="p-2 text-gray-400 hover:text-gray-600 rounded-lg"
+                  className="p-1 text-gray-400 hover:text-gray-600 rounded transition-colors"
                 >
-                  <FaTimes />
+                  <FaTimes className="w-4 h-4" />
                 </button>
               </div>
             </div>
             
-            <div className="p-6 space-y-6">
+            <div className="p-3 space-y-3">
               {/* Basic Information */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-gray-900">Basic Information</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <h3 className="text-xs font-semibold text-gray-900">Basic Information</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className="block text-xs font-semibold text-gray-700 mb-1">
                       Route Name *
                     </label>
                     <input
                       type="text"
-                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-2.5 py-1.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       placeholder="Enter route name"
                       value={name}
                       onChange={(e) => setName(e.target.value)}
@@ -708,11 +884,11 @@ const AdminRoutes: React.FC = () => {
                   </div>
                   
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className="block text-xs font-semibold text-gray-700 mb-1">
                       Tenant *
                     </label>
                     <select
-                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-2.5 py-1.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       value={tenantId}
                       onChange={(e) => setTenantId(e.target.value)}
                     >
@@ -726,16 +902,16 @@ const AdminRoutes: React.FC = () => {
               </div>
 
               {/* Route Details */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-gray-900">Route Details</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <h3 className="text-xs font-semibold text-gray-900">Route Details</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className="block text-xs font-semibold text-gray-700 mb-1">
                       Origin *
                     </label>
                     <input
                       type="text"
-                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-2.5 py-1.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       placeholder="Starting location"
                       value={origin}
                       onChange={(e) => setOrigin(e.target.value)}
@@ -743,12 +919,12 @@ const AdminRoutes: React.FC = () => {
                   </div>
                   
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className="block text-xs font-semibold text-gray-700 mb-1">
                       Destination *
                     </label>
                     <input
                       type="text"
-                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-2.5 py-1.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       placeholder="End location"
                       value={destination}
                       onChange={(e) => setDestination(e.target.value)}
@@ -756,14 +932,14 @@ const AdminRoutes: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className="block text-xs font-semibold text-gray-700 mb-1">
                       Distance (km) *
                     </label>
                     <input
                       type="number"
-                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-2.5 py-1.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       placeholder="0"
                       value={distance || ''}
                       onChange={(e) => setDistance(Number(e.target.value) || 0)}
@@ -771,12 +947,12 @@ const AdminRoutes: React.FC = () => {
                   </div>
                   
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className="block text-xs font-semibold text-gray-700 mb-1">
                       Estimated Time (hours) *
                     </label>
                     <input
                       type="number"
-                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-2.5 py-1.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       placeholder="0"
                       value={estimatedTime || ''}
                       onChange={(e) => setEstimatedTime(Number(e.target.value) || 0)}
@@ -786,15 +962,15 @@ const AdminRoutes: React.FC = () => {
               </div>
 
               {/* Route Configuration */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-gray-900">Route Configuration</h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="space-y-2">
+                <h3 className="text-xs font-semibold text-gray-900">Route Configuration</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className="block text-xs font-semibold text-gray-700 mb-1">
                       Priority
                     </label>
                     <select
-                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-2.5 py-1.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       value={priority}
                       onChange={(e) => setPriority(e.target.value as 'high' | 'medium' | 'low')}
                     >
@@ -805,11 +981,11 @@ const AdminRoutes: React.FC = () => {
                   </div>
                   
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className="block text-xs font-semibold text-gray-700 mb-1">
                       Route Type
                     </label>
                     <select
-                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-2.5 py-1.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       value={routeType}
                       onChange={(e) => setRouteType(e.target.value as 'highway' | 'city' | 'rural' | 'mixed')}
                     >
@@ -821,14 +997,14 @@ const AdminRoutes: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className="block text-xs font-semibold text-gray-700 mb-1">
                       Toll Cost (RWF)
                     </label>
                     <input
                       type="number"
-                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-2.5 py-1.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       placeholder="0"
                       value={tollCost || ''}
                       onChange={(e) => setTollCost(Number(e.target.value) || 0)}
@@ -836,12 +1012,12 @@ const AdminRoutes: React.FC = () => {
                   </div>
                   
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className="block text-xs font-semibold text-gray-700 mb-1">
                       Estimated Fuel Cost (RWF)
                     </label>
                     <input
                       type="number"
-                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-2.5 py-1.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       placeholder="0"
                       value={fuelCost || ''}
                       onChange={(e) => setFuelCost(Number(e.target.value) || 0)}
@@ -850,12 +1026,12 @@ const AdminRoutes: React.FC = () => {
                 </div>
               </div>
 
-              <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-                <div className="flex items-start space-x-3">
-                  <FaShieldAlt className="text-blue-600 mt-1" />
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-2">
+                <div className="flex items-start gap-1.5">
+                  <FaShieldAlt className="text-blue-600 mt-0.5 text-xs" />
                   <div>
-                    <h4 className="font-semibold text-blue-900">Route Information</h4>
-                    <p className="text-sm text-blue-700 mt-1">
+                    <h4 className="font-semibold text-blue-900 text-xs">Route Information</h4>
+                    <p className="text-[10px] text-blue-700 mt-0.5">
                       This route will be available for the selected tenant's fleet operations. Ensure all information is accurate for optimal logistics planning.
                     </p>
                   </div>
@@ -863,22 +1039,22 @@ const AdminRoutes: React.FC = () => {
               </div>
             </div>
 
-            <div className="p-6 border-t border-gray-200 flex justify-end space-x-4">
+            <div className="p-2.5 border-t border-gray-200 flex justify-end gap-2">
               <button
                 onClick={() => {
                   setShowCreateModal(false);
                   resetForm();
                 }}
-                className="px-6 py-3 text-gray-600 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors"
+                className="px-2.5 py-1.5 text-xs text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
               >
                 Cancel
               </button>
               <button
                 onClick={handleCreateRoute}
                 disabled={isCreating || !name || !tenantId || !origin || !destination || !distance || !estimatedTime}
-                className="px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+                className="px-2.5 py-1.5 text-xs bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5 font-medium"
               >
-                {isCreating && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>}
+                {isCreating && <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></div>}
                 <span>{isCreating ? 'Creating...' : 'Create Route'}</span>
               </button>
             </div>
@@ -889,34 +1065,34 @@ const AdminRoutes: React.FC = () => {
       {/* Edit Route Modal */}
       {showEditModal && editingRoute && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b border-gray-200">
+          <div className="bg-white rounded-lg shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+            <div className="p-3 border-b border-gray-200">
               <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-bold text-gray-900">Edit Route</h2>
+                <h2 className="text-base font-bold text-gray-900">Edit Route</h2>
                 <button
                   onClick={() => {
                     setShowEditModal(false);
                     setEditingRoute(null);
                   }}
-                  className="p-2 text-gray-400 hover:text-gray-600 rounded-lg"
+                  className="p-1 text-gray-400 hover:text-gray-600 rounded transition-colors"
                 >
-                  <FaTimes />
+                  <FaTimes className="w-4 h-4" />
                 </button>
               </div>
             </div>
             
-            <div className="p-6 space-y-6">
+            <div className="p-3 space-y-3">
               {/* Basic Information */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-gray-900">Basic Information</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <h3 className="text-xs font-semibold text-gray-900">Basic Information</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className="block text-xs font-semibold text-gray-700 mb-1">
                       Route Name *
                     </label>
                     <input
                       type="text"
-                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-2.5 py-1.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       placeholder="Enter route name"
                       value={editingRoute.name}
                       onChange={(e) => setEditingRoute({ ...editingRoute, name: e.target.value })}
@@ -924,11 +1100,11 @@ const AdminRoutes: React.FC = () => {
                   </div>
                   
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className="block text-xs font-semibold text-gray-700 mb-1">
                       Tenant *
                     </label>
                     <select
-                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-2.5 py-1.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       value={editingRoute.tenantId}
                       onChange={(e) => setEditingRoute({ ...editingRoute, tenantId: e.target.value })}
                     >
@@ -942,16 +1118,16 @@ const AdminRoutes: React.FC = () => {
               </div>
 
               {/* Route Details */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-gray-900">Route Details</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <h3 className="text-xs font-semibold text-gray-900">Route Details</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className="block text-xs font-semibold text-gray-700 mb-1">
                       Origin *
                     </label>
                     <input
                       type="text"
-                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-2.5 py-1.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       placeholder="Starting location"
                       value={editingRoute.origin}
                       onChange={(e) => setEditingRoute({ ...editingRoute, origin: e.target.value })}
@@ -959,12 +1135,12 @@ const AdminRoutes: React.FC = () => {
                   </div>
                   
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className="block text-xs font-semibold text-gray-700 mb-1">
                       Destination *
                     </label>
                     <input
                       type="text"
-                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-2.5 py-1.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       placeholder="End location"
                       value={editingRoute.destination}
                       onChange={(e) => setEditingRoute({ ...editingRoute, destination: e.target.value })}
@@ -972,14 +1148,14 @@ const AdminRoutes: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className="block text-xs font-semibold text-gray-700 mb-1">
                       Distance (km) *
                     </label>
                     <input
                       type="number"
-                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-2.5 py-1.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       placeholder="0"
                       value={editingRoute.distance || ''}
                       onChange={(e) => setEditingRoute({ ...editingRoute, distance: Number(e.target.value) || 0 })}
@@ -987,12 +1163,12 @@ const AdminRoutes: React.FC = () => {
                   </div>
                   
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className="block text-xs font-semibold text-gray-700 mb-1">
                       Estimated Time (hours) *
                     </label>
                     <input
                       type="number"
-                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-2.5 py-1.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       placeholder="0"
                       value={editingRoute.estimatedTime || ''}
                       onChange={(e) => setEditingRoute({ ...editingRoute, estimatedTime: Number(e.target.value) || 0 })}
@@ -1002,15 +1178,15 @@ const AdminRoutes: React.FC = () => {
               </div>
 
               {/* Route Configuration */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-gray-900">Route Configuration</h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="space-y-2">
+                <h3 className="text-xs font-semibold text-gray-900">Route Configuration</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className="block text-xs font-semibold text-gray-700 mb-1">
                       Priority
                     </label>
                     <select
-                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-2.5 py-1.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       value={editingRoute.priority}
                       onChange={(e) => setEditingRoute({ ...editingRoute, priority: e.target.value as 'high' | 'medium' | 'low' })}
                     >
@@ -1021,11 +1197,11 @@ const AdminRoutes: React.FC = () => {
                   </div>
                   
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className="block text-xs font-semibold text-gray-700 mb-1">
                       Route Type
                     </label>
                     <select
-                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-2.5 py-1.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       value={editingRoute.routeType}
                       onChange={(e) => setEditingRoute({ ...editingRoute, routeType: e.target.value as 'highway' | 'city' | 'rural' | 'mixed' })}
                     >
@@ -1037,14 +1213,14 @@ const AdminRoutes: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className="block text-xs font-semibold text-gray-700 mb-1">
                       Toll Cost (RWF)
                     </label>
                     <input
                       type="number"
-                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-2.5 py-1.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       placeholder="0"
                       value={editingRoute.tollCost || ''}
                       onChange={(e) => setEditingRoute({ ...editingRoute, tollCost: Number(e.target.value) || 0 })}
@@ -1052,12 +1228,12 @@ const AdminRoutes: React.FC = () => {
                   </div>
                   
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className="block text-xs font-semibold text-gray-700 mb-1">
                       Estimated Fuel Cost (RWF)
                     </label>
                     <input
                       type="number"
-                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-2.5 py-1.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       placeholder="0"
                       value={editingRoute.fuelCost || ''}
                       onChange={(e) => setEditingRoute({ ...editingRoute, fuelCost: Number(e.target.value) || 0 })}
@@ -1066,12 +1242,12 @@ const AdminRoutes: React.FC = () => {
                 </div>
               </div>
 
-              <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-                <div className="flex items-start space-x-3">
-                  <FaShieldAlt className="text-blue-600 mt-1" />
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-2">
+                <div className="flex items-start gap-1.5">
+                  <FaShieldAlt className="text-blue-600 mt-0.5 text-xs" />
                   <div>
-                    <h4 className="font-semibold text-blue-900">Route Information</h4>
-                    <p className="text-sm text-blue-700 mt-1">
+                    <h4 className="font-semibold text-blue-900 text-xs">Route Information</h4>
+                    <p className="text-[10px] text-blue-700 mt-0.5">
                       This route will be available for the selected tenant's fleet operations. Ensure all information is accurate for optimal logistics planning.
                     </p>
                   </div>
@@ -1079,22 +1255,22 @@ const AdminRoutes: React.FC = () => {
               </div>
             </div>
 
-            <div className="p-6 border-t border-gray-200 flex justify-end space-x-4">
+            <div className="p-2.5 border-t border-gray-200 flex justify-end gap-2">
               <button
                 onClick={() => {
                   setShowEditModal(false);
                   setEditingRoute(null);
                 }}
-                className="px-6 py-3 text-gray-600 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors"
+                className="px-2.5 py-1.5 text-xs text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
               >
                 Cancel
               </button>
               <button
                 onClick={() => updateRoute()}
                 disabled={isUpdating || !editingRoute.name || !editingRoute.tenantId || !editingRoute.origin || !editingRoute.destination || !editingRoute.distance || !editingRoute.estimatedTime}
-                className="px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+                className="px-2.5 py-1.5 text-xs bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5 font-medium"
               >
-                {isUpdating && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>}
+                {isUpdating && <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></div>}
                 <span>{isUpdating ? 'Saving...' : 'Save Changes'}</span>
               </button>
             </div>
@@ -1105,134 +1281,142 @@ const AdminRoutes: React.FC = () => {
       {/* Route Details Modal */}
       {showDetailsModal && selectedRoute && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b border-gray-200">
+          <div className="bg-white rounded-lg shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+            <div className="p-3 border-b border-gray-200">
               <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-4">
-                  <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl flex items-center justify-center">
-                    <FaRoute className="text-white text-lg" />
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
+                    <FaRoute className="text-white text-sm" />
                   </div>
                   <div>
-                    <h2 className="text-2xl font-bold text-gray-900">{selectedRoute.name}</h2>
-                    <p className="text-gray-600">{selectedRoute.origin} → {selectedRoute.destination}</p>
+                    <h2 className="text-lg font-bold text-gray-900">{selectedRoute.name}</h2>
+                    <p className="text-xs text-gray-600">{selectedRoute.origin} → {selectedRoute.destination}</p>
                   </div>
                 </div>
                 <button
                   onClick={() => setShowDetailsModal(false)}
-                  className="p-2 text-gray-400 hover:text-gray-600 rounded-lg"
+                  className="p-1.5 text-gray-400 hover:text-gray-600 rounded-lg transition-colors"
                 >
-                  <FaTimes />
+                  <FaTimes className="w-4 h-4" />
                 </button>
               </div>
             </div>
             
-            <div className="p-6 space-y-6">
+            <div className="p-3 space-y-3">
               {/* Status and Type */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-4">
-                  <div className="flex items-center space-x-2">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <div className="flex items-center space-x-2 flex-wrap">
+                  <div className="flex items-center space-x-1.5">
                       {getStatusIcon((selectedRoute.status || 'active') as string)}
-                      <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor((selectedRoute.status || 'active') as string)}`}>
+                      <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium ${getStatusColor((selectedRoute.status || 'active') as string)}`}>
                         {((selectedRoute.status || 'active') as string).replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
                     </span>
                   </div>
-                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${getPriorityColor(selectedRoute.priority)}`}>
+                  <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium ${getPriorityColor(selectedRoute.priority)}`}>
                     {((selectedRoute.priority || 'medium') as string).charAt(0).toUpperCase() + ((selectedRoute.priority || 'medium') as string).slice(1)} Priority
                   </span>
-                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${getRouteTypeColor((selectedRoute.routeType || 'highway') as string)}`}>
+                    <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium ${getRouteTypeColor((selectedRoute.routeType || 'highway') as string)}`}>
                     {((selectedRoute.routeType || 'highway') as string).charAt(0).toUpperCase() + ((selectedRoute.routeType || 'highway') as string).slice(1)} Route
                   </span>
                 </div>
-                <div className="flex space-x-2">
-                  <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                <div className="flex space-x-1.5">
+                  <button 
+                    onClick={() => {
+                      handleEditRoute(selectedRoute);
+                      setShowDetailsModal(false);
+                    }}
+                    className="px-2.5 py-1.5 text-xs bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  >
                     Edit Route
                   </button>
-                  <button className="px-4 py-2 border border-gray-200 text-gray-600 rounded-lg hover:bg-gray-50 transition-colors">
+                  <button className="px-2.5 py-1.5 text-xs border border-gray-200 text-gray-600 rounded-lg hover:bg-gray-50 transition-colors">
                     View Map
                   </button>
                 </div>
               </div>
 
               {/* Key Metrics */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div className="bg-gradient-to-r from-blue-50 to-blue-100 rounded-xl p-4">
-                  <div className="flex items-center space-x-3">
-                    <FaRoad className="text-blue-600 text-lg" />
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                <div className="bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg p-2">
+                  <div className="flex items-center space-x-2">
+                    <FaRoad className="text-blue-600 text-xs" />
                     <div>
-                      <div className="text-2xl font-bold text-blue-900">{selectedRoute.distance.toLocaleString()}</div>
-                      <div className="text-sm text-blue-700">Kilometers</div>
+                      <div className="text-base font-bold text-blue-900">{(selectedRoute.distance || 0).toLocaleString()}</div>
+                      <div className="text-[10px] text-blue-700">Kilometers</div>
                     </div>
                   </div>
                 </div>
                 
-                <div className="bg-gradient-to-r from-green-50 to-green-100 rounded-xl p-4">
-                  <div className="flex items-center space-x-3">
-                    <FaClock className="text-green-600 text-lg" />
+                <div className="bg-gradient-to-r from-green-50 to-green-100 rounded-lg p-2">
+                  <div className="flex items-center space-x-2">
+                    <FaClock className="text-green-600 text-xs" />
                     <div>
-                      <div className="text-2xl font-bold text-green-900">{selectedRoute.estimatedTime}h</div>
-                      <div className="text-sm text-green-700">Estimated Time</div>
+                      <div className="text-base font-bold text-green-900">{selectedRoute.estimatedTime}h</div>
+                      <div className="text-[10px] text-green-700">Estimated Time</div>
                     </div>
                   </div>
                 </div>
                 
-                <div className="bg-gradient-to-r from-purple-50 to-purple-100 rounded-xl p-4">
-                  <div className="flex items-center space-x-3">
-                    <FaTruck className="text-purple-600 text-lg" />
+                <div className="bg-gradient-to-r from-purple-50 to-purple-100 rounded-lg p-2">
+                  <div className="flex items-center space-x-2">
+                    <FaTruck className="text-purple-600 text-xs" />
                     <div>
-                      <div className="text-2xl font-bold text-purple-900">{selectedRoute.assignedTrucks}</div>
-                      <div className="text-sm text-purple-700">Assigned Trucks</div>
+                      <div className="text-base font-bold text-purple-900">
+                        {Array.isArray(selectedRoute.assignedTrucks) ? selectedRoute.assignedTrucks.length : (typeof selectedRoute.assignedTrucks === 'number' ? selectedRoute.assignedTrucks : 0)}
+                      </div>
+                      <div className="text-[10px] text-purple-700">Assigned Trucks</div>
                     </div>
                   </div>
                 </div>
                 
-                <div className="bg-gradient-to-r from-yellow-50 to-yellow-100 rounded-xl p-4">
-                  <div className="flex items-center space-x-3">
-                    <FaCheck className="text-yellow-600 text-lg" />
+                <div className="bg-gradient-to-r from-yellow-50 to-yellow-100 rounded-lg p-2">
+                  <div className="flex items-center space-x-2">
+                    <FaCheck className="text-yellow-600 text-xs" />
                     <div>
-                      <div className="text-2xl font-bold text-yellow-900">{selectedRoute.completedTrips}</div>
-                      <div className="text-sm text-yellow-700">Completed Trips</div>
+                      <div className="text-base font-bold text-yellow-900">{selectedRoute.completedTrips || 0}</div>
+                      <div className="text-[10px] text-yellow-700">Completed Trips</div>
                     </div>
                   </div>
                 </div>
               </div>
 
               {/* Route Information */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-gray-900">Route Information</h3>
-                  <div className="space-y-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <h3 className="text-xs font-semibold text-gray-900">Route Information</h3>
+                  <div className="space-y-1.5 text-xs">
                     <div className="flex justify-between">
                       <span className="text-gray-600">Created:</span>
                       <span className="font-medium">{new Date(selectedRoute.createdAt).toLocaleDateString()}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">Last Used:</span>
-                      <span className="font-medium">{new Date(selectedRoute.lastUsed).toLocaleDateString()}</span>
+                      <span className="font-medium">{selectedRoute.lastUsed ? new Date(selectedRoute.lastUsed).toLocaleDateString() : 'N/A'}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">Tenant:</span>
-                      <span className="font-medium">{selectedRoute.tenantName}</span>
+                      <span className="font-medium">{selectedRoute.tenantName || 'N/A'}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">Traffic Level:</span>
-                      <div className="flex items-center space-x-2">
+                      <div className="flex items-center space-x-1.5">
                         {getTrafficIcon(selectedRoute.trafficLevel)}
-                        <span className="font-medium capitalize">{selectedRoute.trafficLevel}</span>
+                        <span className="font-medium capitalize text-[10px]">{selectedRoute.trafficLevel || 'moderate'}</span>
                       </div>
                     </div>
                   </div>
                 </div>
                 
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-gray-900">Cost Information</h3>
-                  <div className="space-y-3">
+                <div className="space-y-2">
+                  <h3 className="text-xs font-semibold text-gray-900">Cost Information</h3>
+                  <div className="space-y-1.5 text-xs">
                     <div className="flex justify-between">
                       <span className="text-gray-600">Toll Cost:</span>
-                      <span className="font-medium">RWF {selectedRoute.tollCost?.toLocaleString()}</span>
+                      <span className="font-medium">RWF {(selectedRoute.tollCost || 0).toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">Fuel Cost:</span>
-                      <span className="font-medium">RWF {selectedRoute.fuelCost?.toLocaleString()}</span>
+                      <span className="font-medium">RWF {(selectedRoute.fuelCost || 0).toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">Total Cost:</span>
@@ -1243,31 +1427,31 @@ const AdminRoutes: React.FC = () => {
               </div>
 
               {/* Quick Actions */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-gray-900">Quick Actions</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <h3 className="text-xs font-semibold text-gray-900">Quick Actions</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                   {isTruckOwner && selectedRoute.tenantId === user?.tenantId && (
                   <button 
-                    className="w-full flex items-center space-x-3 p-3 text-left border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                    className="w-full flex items-center space-x-2 p-2 text-left border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-xs"
                     onClick={() => {
                       setRouteForAssignment(selectedRoute);
                       setShowAssignTrucksModal(true);
                     }}
                   >
-                    <FaTruck className="text-gray-400" />
+                    <FaTruck className="text-gray-400 w-3 h-3" />
                     <span>Assign Trucks</span>
                   </button>
                   )}
-                  <button className="w-full flex items-center space-x-3 p-3 text-left border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-                    <FaMapMarkerAlt className="text-gray-400" />
+                  <button className="w-full flex items-center space-x-2 p-2 text-left border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-xs">
+                    <FaMapMarkerAlt className="text-gray-400 w-3 h-3" />
                     <span>View on Map</span>
                   </button>
-                  <button className="w-full flex items-center space-x-3 p-3 text-left border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-                    <FaCog className="text-gray-400" />
+                  <button className="w-full flex items-center space-x-2 p-2 text-left border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-xs">
+                    <FaCog className="text-gray-400 w-3 h-3" />
                     <span>Route Settings</span>
                   </button>
-                  <button className="w-full flex items-center space-x-3 p-3 text-left border border-red-200 rounded-lg hover:bg-red-50 transition-colors text-red-600">
-                    <FaBan className="text-red-400" />
+                  <button className="w-full flex items-center space-x-2 p-2 text-left border border-red-200 rounded-lg hover:bg-red-50 transition-colors text-red-600 text-xs">
+                    <FaBan className="text-red-400 w-3 h-3" />
                     <span>Deactivate Route</span>
                   </button>
                 </div>

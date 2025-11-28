@@ -18,6 +18,62 @@ export const fetchUsers = async () => {
   return res.data;
 };
 
+export const fetchAllUsers = async (tenantId?: string) => {
+  const res = await api.get('/admin/all/users', { params: tenantId ? { tenantId } : {} });
+  return res.data.users || [];
+};
+
+// Create user for tenant
+export const createTenantUser = async (tenantId: string, userData: {
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+  role: string;
+  phoneNumber?: string;
+  companyName?: string;
+}) => {
+  const res = await api.post(`/users/tenant/${tenantId}/user`, userData);
+  return res.data;
+};
+
+// Update user
+export const updateUser = async (userId: string, userData: {
+  firstName?: string;
+  lastName?: string;
+  phone?: string;
+  companyName?: string;
+  role?: string;
+  status?: string;
+}) => {
+  const res = await api.patch(`/users/${userId}`, userData);
+  return res.data;
+};
+
+// Delete user (soft delete)
+export const deleteUser = async (userId: string) => {
+  const res = await api.delete(`/users/${userId}`);
+  return res.data;
+};
+
+// Activate user
+export const activateUser = async (userId: string) => {
+  const res = await api.post(`/users/${userId}/activate`);
+  return res.data;
+};
+
+// Suspend user
+export const suspendUser = async (userId: string, reason?: string) => {
+  const res = await api.post(`/users/${userId}/suspend`, { reason });
+  return res.data;
+};
+
+// Get user by ID
+export const getUserById = async (userId: string) => {
+  const res = await api.get(`/users/${userId}`);
+  return res.data;
+};
+
 // Financial reporting
 export const fetchFinancials = async () => {
   const res = await api.get('/admin/financials');
@@ -86,11 +142,6 @@ export const fetchAllLoads = async (tenantId?: string) => {
 export const fetchAllTrips = async (tenantId?: string) => {
   const res = await api.get('/admin/all/trips', { params: tenantId ? { tenantId } : {} });
   return res.data.trips || []; // Extract trips array from response
-};
-
-export const fetchAllUsers = async (tenantId?: string) => {
-  const res = await api.get('/admin/all/users', { params: tenantId ? { tenantId } : {} });
-  return res.data.users || []; // Extract users array from response
 };
 
 // Create tenant

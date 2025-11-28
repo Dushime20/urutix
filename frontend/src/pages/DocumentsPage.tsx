@@ -1,10 +1,13 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useParams } from 'react-router-dom';
-import { Plus, Search, Eye, Trash2, Download, FileText, Box, Truck, CreditCard, X, Upload } from 'lucide-react';
+import { Plus, Search, Eye, Trash2, Download, FileText, Box, Truck, CreditCard, X, Upload, CheckCircle, XCircle, Clock, AlertCircle, Info, Filter } from 'lucide-react';
 import { documentApi } from '../services/documents/documentApi';
 import type { CreateDocumentRequest } from '../services/documents/documentApi';
 import toast from 'react-hot-toast';
+import EntitySelector from '../components/documents/EntitySelector';
+import { HelpIcon } from '../components/documents/HelpIcon';
+import { DocumentEmptyState } from '../components/documents/DocumentEmptyState';
 
 interface DocumentsPageProps {
   entityTypeOverride?: string;
@@ -30,6 +33,10 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ entityTypeOverride }) => 
   const [currentPage, setCurrentPage] = useState(1);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [selectedDocuments, setSelectedDocuments] = useState<string[]>([]);
+  const [dragActive, setDragActive] = useState(false);
+  const [selectedEntity, setSelectedEntity] = useState<{ id: string; name: string; type: string } | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const dragRef = useRef<HTMLDivElement>(null);
 
   const queryClient = useQueryClient();
 
@@ -42,6 +49,10 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ entityTypeOverride }) => 
     // Auto-populate entityId from URL if available
     if (entityId) {
       setUploadForm(prev => ({ ...prev, entityId }));
+      // Try to fetch entity details for display
+      if (entityType === 'CARGO') {
+        // EntitySelector will handle fetching when modal opens
+      }
     }
   }, [entityType, entityId]);
 
@@ -126,6 +137,7 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ entityTypeOverride }) => 
         title: undefined,
         entityId: entityId || undefined, // Keep entityId if from URL
       });
+      setSelectedEntity(null);
       
       // Refetch documents to show the new document immediately
       refetch();
@@ -187,11 +199,55 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ entityTypeOverride }) => 
   const handleFileSelect = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      setSelectedFile(file);
-      // Don't auto-fill documentType as it should be selected by user
-      // The backend enum doesn't have PDF_DOCUMENT or IMAGE types
+      validateAndSetFile(file);
     }
   }, []);
+
+  // Validate and set file
+  const validateAndSetFile = useCallback((file: File) => {
+    // Validate file size (10MB limit)
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('File size exceeds 10MB limit. Please choose a smaller file.', {
+        duration: 4000,
+        icon: '⚠️',
+      });
+      return;
+    }
+
+    // Validate file type
+    const allowedTypes = ['.pdf', '.doc', '.docx', '.jpg', '.jpeg', '.png', '.txt'];
+    const fileExtension = '.' + file.name.split('.').pop()?.toLowerCase();
+    if (!allowedTypes.includes(fileExtension)) {
+      toast.error(`File type not supported. Allowed types: ${allowedTypes.join(', ')}`, {
+        duration: 4000,
+        icon: '⚠️',
+      });
+      return;
+    }
+
+    setSelectedFile(file);
+  }, []);
+
+  // Handle drag and drop
+  const handleDrag = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === 'dragenter' || e.type === 'dragover') {
+      setDragActive(true);
+    } else if (e.type === 'dragleave') {
+      setDragActive(false);
+    }
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      validateAndSetFile(e.dataTransfer.files[0]);
+    }
+  }, [validateAndSetFile]);
 
   // UUID validation function
   const isValidUUID = (str: string): boolean => {
@@ -218,26 +274,17 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ entityTypeOverride }) => 
     }
     
     if (!uploadForm.entityId) {
-      toast.error('Please enter an entity ID', {
+      toast.error('Please select an entity', {
         duration: 3000,
         icon: '⚠️',
       });
       return;
     }
     
-    // Validate UUID format
-    if (!isValidUUID(uploadForm.entityId.trim())) {
+    // Validate UUID format (if manually entered)
+    if (!selectedEntity && !isValidUUID(uploadForm.entityId.trim())) {
       toast.error('Entity ID must be a valid UUID format (e.g., 550e8400-e29b-41d4-a716-446655440000)', {
         duration: 5000,
-        icon: '⚠️',
-      });
-      return;
-    }
-    
-    // Validate file size (10MB limit)
-    if (selectedFile.size > 10 * 1024 * 1024) {
-      toast.error('File size exceeds 10MB limit. Please choose a smaller file.', {
-        duration: 4000,
         icon: '⚠️',
       });
       return;
@@ -512,7 +559,7 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ entityTypeOverride }) => 
               <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 text-gray-400 w-3.5 h-3.5" />
               <input
                 type="text"
-                placeholder="Search documents..."
+                placeholder="Search documents by title, type, or entity..."
                 className="w-full pl-9 pr-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 value={filters.search}
                 onChange={(e) => handleSearch(e.target.value)}
@@ -520,29 +567,32 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ entityTypeOverride }) => 
             </div>
           </div>
           <div className="flex gap-2">
-            <select
-              className="px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-              value={filters.entityType}
-              onChange={(e) => handleFilterChange('entityType', e.target.value)}
-            >
-              <option value="">All Entity Types</option>
-              <option value="DRIVER">Driver</option>
-              <option value="VEHICLE">Vehicle</option>
-              <option value="CARGO">Cargo</option>
-              <option value="TRIP">Trip</option>
-              <option value="USER">User</option>
-            </select>
+            {/* Only show entity type filter if not already filtered by tab */}
+            {!entityType && (
+              <select
+                className="px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                value={filters.entityType}
+                onChange={(e) => handleFilterChange('entityType', e.target.value)}
+              >
+                <option value="">All Entity Types</option>
+                <option value="DRIVER">Driver</option>
+                <option value="VEHICLE">Vehicle</option>
+                <option value="CARGO">Cargo</option>
+                <option value="TRIP">Trip</option>
+                <option value="USER">User</option>
+              </select>
+            )}
+            {/* Category filter - distinct from entity type */}
             <select
               className="px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
               value={filters.category}
               onChange={(e) => handleFilterChange('category', e.target.value)}
             >
               <option value="">All Categories</option>
-              <option value="DRIVER">Driver</option>
-              <option value="VEHICLE">Vehicle</option>
-              <option value="CARGO">Cargo</option>
               <option value="COMPLIANCE">Compliance</option>
               <option value="FINANCIAL">Financial</option>
+              <option value="LEGAL">Legal</option>
+              <option value="OPERATIONAL">Operational</option>
             </select>
             <select
               className="px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
@@ -555,27 +605,76 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ entityTypeOverride }) => 
               <option value="REJECTED">Rejected</option>
               <option value="EXPIRED">Expired</option>
             </select>
+            {/* Clear filters button */}
+            {(filters.search || filters.category || filters.status || (!entityType && filters.entityType)) && (
+              <button
+                onClick={() => {
+                  setFilters({
+                    entityType: entityType || '',
+                    category: entityType || '',
+                    status: '',
+                    priority: '',
+                    search: '',
+                  });
+                  setCurrentPage(1);
+                }}
+                className="px-2.5 py-1.5 text-xs text-gray-600 hover:text-gray-900 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-1"
+              >
+                <X className="w-3 h-3" />
+                Clear
+              </button>
+            )}
           </div>
         </div>
+        {/* Active filter indicator */}
+        {entityType && (
+          <div className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded border border-blue-200 flex items-center gap-1">
+            <Info className="w-3 h-3" />
+            Filtering by: <span className="font-medium">{entityType}</span>
+          </div>
+        )}
       </div>
 
       {/* Bulk Actions */}
-      {selectedDocuments.length > 0 && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+      {selectedDocuments.length > 0 ? (
+        <div className="sticky top-0 bg-blue-600 text-white rounded-lg p-3 shadow-lg z-10">
           <div className="flex justify-between items-center">
-            <span className="text-xs text-blue-800 font-medium">
+            <span className="text-sm font-medium">
               {selectedDocuments.length} document(s) selected
             </span>
             <div className="flex gap-2">
               <button
+                onClick={() => {
+                  // Download selected documents
+                  selectedDocuments.forEach(id => {
+                    documentApi.downloadDocument(id);
+                  });
+                }}
+                className="bg-white text-blue-600 px-3 py-1.5 text-xs rounded-lg hover:bg-blue-50 flex items-center gap-1.5 transition-colors font-medium"
+              >
+                <Download className="w-3.5 h-3.5" />
+                Download
+              </button>
+              <button
                 onClick={handleBulkDelete}
-                className="bg-red-600 text-white px-2.5 py-1 text-xs rounded-lg hover:bg-red-700 flex items-center gap-1.5 transition-colors"
+                className="bg-red-600 text-white px-3 py-1.5 text-xs rounded-lg hover:bg-red-700 flex items-center gap-1.5 transition-colors font-medium"
               >
                 <Trash2 className="w-3.5 h-3.5" />
-                Delete Selected
+                Delete
+              </button>
+              <button
+                onClick={() => setSelectedDocuments([])}
+                className="bg-white/20 text-white px-3 py-1.5 text-xs rounded-lg hover:bg-white/30 flex items-center gap-1.5 transition-colors"
+              >
+                <X className="w-3.5 h-3.5" />
+                Clear
               </button>
             </div>
           </div>
+        </div>
+      ) : safeDocumentsData.documents.length > 0 && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-2 text-xs text-blue-800">
+          💡 Tip: Select multiple documents using checkboxes to perform bulk actions
         </div>
       )}
 
@@ -628,8 +727,22 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ entityTypeOverride }) => 
                 </tr>
               ) : safeDocumentsData.documents.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-4 text-center text-xs text-gray-500">
-                    No documents found
+                  <td colSpan={7} className="px-4 py-8">
+                    <DocumentEmptyState
+                      entityType={entityType}
+                      hasFilters={!!(filters.search || filters.category || filters.status || (!entityType && filters.entityType))}
+                      onUpload={() => setShowUploadModal(true)}
+                      onClearFilters={() => {
+                        setFilters({
+                          entityType: entityType || '',
+                          category: entityType || '',
+                          status: '',
+                          priority: '',
+                          search: '',
+                        });
+                        setCurrentPage(1);
+                      }}
+                    />
                   </td>
                 </tr>
               ) : (
@@ -665,9 +778,18 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ entityTypeOverride }) => 
                       <div className="text-xs text-gray-500">{document.category}</div>
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap">
-                      <span className={`inline-flex px-2 py-0.5 text-xs font-semibold rounded-full ${documentApi.getDocumentStatusColor(document.status)}`}>
-                        {document.status}
-                      </span>
+                      <div className="flex items-center gap-1.5">
+                        {document.status === 'PENDING' && <Clock className="w-3 h-3 text-yellow-600" />}
+                        {document.status === 'VERIFIED' && <CheckCircle className="w-3 h-3 text-green-600" />}
+                        {document.status === 'REJECTED' && <XCircle className="w-3 h-3 text-red-600" />}
+                        {document.status === 'EXPIRED' && <AlertCircle className="w-3 h-3 text-red-600" />}
+                        <span className={`inline-flex px-2 py-0.5 text-xs font-semibold rounded-full ${documentApi.getDocumentStatusColor(document.status)}`}>
+                          {document.status === 'PENDING' ? 'Pending Review' : 
+                           document.status === 'VERIFIED' ? 'Verified' :
+                           document.status === 'REJECTED' ? 'Rejected' :
+                           document.status === 'EXPIRED' ? 'Expired' : document.status}
+                        </span>
+                      </div>
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap">
                       <span className={`inline-flex px-2 py-0.5 text-xs font-semibold rounded-full ${documentApi.getDocumentPriorityColor(document.priority)}`}>
@@ -773,34 +895,92 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ entityTypeOverride }) => 
             </div>
             
             <div className="space-y-3">
+              {/* Drag and Drop File Upload */}
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1">
-                  File
+                  File *
+                  <HelpIcon
+                    content="Drag and drop your file here or click to browse. Supported formats: PDF, DOC, DOCX, JPG, PNG, TXT (Max 10MB)"
+                    position="right"
+                  />
                 </label>
-                <input
-                  type="file"
-                  onChange={handleFileSelect}
-                  className="w-full border border-gray-300 rounded-lg p-1.5 text-sm"
-                  accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.txt"
-                  disabled={uploadMutation.isPending}
-                />
-                {selectedFile && (
-                  <p className="text-xs text-gray-600 mt-1">
-                    Selected: {selectedFile.name} ({documentApi.formatFileSize(selectedFile.size)})
-                  </p>
-                )}
+                <div
+                  ref={dragRef}
+                  onDragEnter={handleDrag}
+                  onDragLeave={handleDrag}
+                  onDragOver={handleDrag}
+                  onDrop={handleDrop}
+                  className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
+                    dragActive
+                      ? 'border-blue-500 bg-blue-50'
+                      : 'border-gray-300 bg-gray-50 hover:border-gray-400 hover:bg-gray-100'
+                  }`}
+                >
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    onChange={handleFileSelect}
+                    className="hidden"
+                    accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.txt"
+                    disabled={uploadMutation.isPending}
+                  />
+                  {selectedFile ? (
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-center gap-2">
+                        <FileText className="w-8 h-8 text-blue-600" />
+                        <div className="text-left">
+                          <p className="text-sm font-medium text-gray-900">{selectedFile.name}</p>
+                          <p className="text-xs text-gray-500">{documentApi.formatFileSize(selectedFile.size)}</p>
+                        </div>
+                        <button
+                          onClick={() => {
+                            setSelectedFile(null);
+                            if (fileInputRef.current) fileInputRef.current.value = '';
+                          }}
+                          className="ml-2 text-gray-400 hover:text-red-600"
+                          type="button"
+                          disabled={uploadMutation.isPending}
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <Upload className="w-10 h-10 mx-auto text-gray-400" />
+                      <div>
+                        <button
+                          onClick={() => fileInputRef.current?.click()}
+                          className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+                          type="button"
+                          disabled={uploadMutation.isPending}
+                        >
+                          Click to upload
+                        </button>
+                        <span className="text-sm text-gray-500"> or drag and drop</span>
+                      </div>
+                      <p className="text-xs text-gray-400">
+                        PDF, DOC, DOCX, JPG, PNG, TXT (MAX. 10MB)
+                      </p>
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1">
                   Title *
+                  <HelpIcon
+                    content="Enter a descriptive title for your document. This will help you find it later."
+                    position="right"
+                  />
                 </label>
                 <input
                   type="text"
                   value={uploadForm.title || ''}
                   onChange={(e) => setUploadForm(prev => ({ ...prev, title: e.target.value }))}
                   className="w-full border border-gray-300 rounded-lg p-1.5 text-sm"
-                  placeholder="Document title"
+                  placeholder="e.g., Insurance Certificate 2024"
                   disabled={uploadMutation.isPending}
                 />
               </div>
@@ -808,10 +988,18 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ entityTypeOverride }) => 
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1">
                   Entity Type
+                  <HelpIcon
+                    content="Select the type of entity this document belongs to (Cargo, Trip, Driver, etc.)"
+                    position="right"
+                  />
                 </label>
                 <select
                   value={uploadForm.entityType || ''}
-                  onChange={(e) => setUploadForm(prev => ({ ...prev, entityType: e.target.value }))}
+                  onChange={(e) => {
+                    setUploadForm(prev => ({ ...prev, entityType: e.target.value }));
+                    setSelectedEntity(null);
+                    setUploadForm(prev => ({ ...prev, entityId: undefined }));
+                  }}
                   className="w-full border border-gray-300 rounded-lg p-1.5 text-sm"
                   disabled={uploadMutation.isPending}
                 >
@@ -825,44 +1013,129 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ entityTypeOverride }) => 
 
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1">
-                  Entity ID *
+                  Select {uploadForm.entityType || 'Entity'} *
+                  <HelpIcon
+                    content={`Search and select the ${uploadForm.entityType?.toLowerCase() || 'entity'} this document belongs to. You can also enter the ID manually if needed.`}
+                    position="right"
+                  />
                 </label>
-                <input
-                  type="text"
-                  value={uploadForm.entityId || ''}
-                  onChange={(e) => setUploadForm(prev => ({ ...prev, entityId: e.target.value }))}
-                  className="w-full border border-gray-300 rounded-lg p-1.5 text-sm"
-                  placeholder="UUID of the entity"
+                <EntitySelector
+                  entityType={uploadForm.entityType || 'CARGO'}
+                  value={uploadForm.entityId}
+                  onChange={(entity) => {
+                    if (entity) {
+                      setSelectedEntity(entity);
+                      setUploadForm(prev => ({ ...prev, entityId: entity.id }));
+                    } else {
+                      setSelectedEntity(null);
+                      setUploadForm(prev => ({ ...prev, entityId: undefined }));
+                    }
+                  }}
                   disabled={uploadMutation.isPending}
                 />
+                {/* Fallback manual entry */}
+                {!selectedEntity && (
+                  <div className="mt-2">
+                    <input
+                      type="text"
+                      value={uploadForm.entityId || ''}
+                      onChange={(e) => setUploadForm(prev => ({ ...prev, entityId: e.target.value }))}
+                      className="w-full border border-gray-300 rounded-lg p-1.5 text-sm mt-1"
+                      placeholder="Or enter UUID manually (e.g., 550e8400-e29b-41d4-a716-446655440000)"
+                      disabled={uploadMutation.isPending}
+                    />
+                    {uploadForm.entityId && !isValidUUID(uploadForm.entityId.trim()) && (
+                      <p className="text-xs text-red-600 mt-1">
+                        Invalid UUID format
+                      </p>
+                    )}
+                  </div>
+                )}
               </div>
 
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1">
                   Document Type
+                  <HelpIcon
+                    content="Select the specific type of document. This helps with organization and compliance tracking."
+                    position="right"
+                  />
                 </label>
                 <select
-                  value={uploadForm.documentType || ''}
+                  value={uploadForm.documentType || 'OTHER'}
                   onChange={(e) => setUploadForm(prev => ({ ...prev, documentType: e.target.value }))}
                   className="w-full border border-gray-300 rounded-lg p-1.5 text-sm"
                   disabled={uploadMutation.isPending}
                 >
-                  <option value="DRIVERS_LICENSE">Driver's License</option>
-                  <option value="VEHICLE_REGISTRATION">Vehicle Registration</option>
-                  <option value="INSURANCE_CERTIFICATE">Insurance Certificate</option>
-                  <option value="CARGO_MANIFEST">Cargo Manifest</option>
-                  <option value="INVOICE">Invoice</option>
-                  <option value="CONTRACT">Contract</option>
-                  <option value="OTHER">Other</option>
+                  <optgroup label="Driver Documents">
+                    <option value="DRIVER_LICENSE">Driver License</option>
+                    <option value="DRIVER_MEDICAL_CERT">Driver Medical Certificate</option>
+                    <option value="DRIVER_DRUG_TEST">Driver Drug Test</option>
+                    <option value="DRIVER_BACKGROUND_CHECK">Driver Background Check</option>
+                    <option value="DRIVER_TRAINING_CERT">Driver Training Certificate</option>
+                    <option value="DRIVER_INSURANCE">Driver Insurance</option>
+                  </optgroup>
+                  <optgroup label="Vehicle Documents">
+                    <option value="VEHICLE_REGISTRATION">Vehicle Registration</option>
+                    <option value="VEHICLE_INSURANCE">Vehicle Insurance</option>
+                    <option value="VEHICLE_INSPECTION">Vehicle Inspection</option>
+                    <option value="VEHICLE_MAINTENANCE">Vehicle Maintenance</option>
+                    <option value="VEHICLE_PERMIT">Vehicle Permit</option>
+                  </optgroup>
+                  <optgroup label="Cargo Documents">
+                    <option value="CARGO_MANIFEST">Cargo Manifest</option>
+                    <option value="CARGO_INSURANCE">Cargo Insurance</option>
+                    <option value="CARGO_CUSTOMS">Cargo Customs</option>
+                    <option value="CARGO_WEIGHT_CERT">Cargo Weight Certificate</option>
+                  </optgroup>
+                  <optgroup label="Trip Documents">
+                    <option value="TRIP_PERMIT">Trip Permit</option>
+                    <option value="TRIP_ROUTE_PLAN">Trip Route Plan</option>
+                    <option value="TRIP_WEIGHT_TICKET">Trip Weight Ticket</option>
+                    <option value="POD">Proof of Delivery (POD)</option>
+                  </optgroup>
+                  <optgroup label="Financial Documents">
+                    <option value="INVOICE">Invoice</option>
+                    <option value="RECEIPT">Receipt</option>
+                    <option value="PAYMENT_PROOF">Payment Proof</option>
+                    <option value="EXPENSE_RECEIPT">Expense Receipt</option>
+                  </optgroup>
+                  <optgroup label="Business Documents">
+                    <option value="BUSINESS_LICENSE">Business License</option>
+                    <option value="BUSINESS_INSURANCE">Business Insurance</option>
+                    <option value="BUSINESS_TAX_CERT">Business Tax Certificate</option>
+                    <option value="BUSINESS_PERMIT">Business Permit</option>
+                  </optgroup>
+                  <optgroup label="Compliance Documents">
+                    <option value="SAFETY_CERT">Safety Certificate</option>
+                    <option value="ENVIRONMENTAL_CERT">Environmental Certificate</option>
+                    <option value="QUALITY_CERT">Quality Certificate</option>
+                  </optgroup>
+                  <optgroup label="Legal Documents">
+                    <option value="CONTRACT">Contract</option>
+                    <option value="AGREEMENT">Agreement</option>
+                    <option value="POLICY">Policy</option>
+                  </optgroup>
+                  <optgroup label="Other">
+                    <option value="USER_ID_PROOF">User ID Proof</option>
+                    <option value="USER_ADDRESS_PROOF">User Address Proof</option>
+                    <option value="USER_BANK_DETAILS">User Bank Details</option>
+                    <option value="MANUAL">Manual</option>
+                    <option value="OTHER">Other</option>
+                  </optgroup>
                 </select>
               </div>
 
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1">
                   Priority
+                  <HelpIcon
+                    content="Priority helps us process urgent documents faster. Use 'Urgent' only for time-sensitive documents."
+                    position="right"
+                  />
                 </label>
                 <select
-                  value={uploadForm.priority || ''}
+                  value={uploadForm.priority || 'NORMAL'}
                   onChange={(e) => setUploadForm(prev => ({ ...prev, priority: e.target.value }))}
                   className="w-full border border-gray-300 rounded-lg p-1.5 text-sm"
                   disabled={uploadMutation.isPending}
@@ -878,6 +1151,10 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ entityTypeOverride }) => 
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1">
                   Expiry Date
+                  <HelpIcon
+                    content="Set an expiry date if this document has a validity period. You'll receive reminders before it expires."
+                    position="right"
+                  />
                 </label>
                 <input
                   type="date"

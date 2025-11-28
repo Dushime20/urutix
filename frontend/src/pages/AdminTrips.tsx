@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { fetchAllTrips, fetchTenants } from '../services/adminApi';
 import { 
   FaTruck, FaEdit, FaPlus, FaSearch, FaDownload,
   FaEye, FaCheck, FaTimes, FaBan, FaMapMarkerAlt,
-  FaSort, FaEllipsisV, FaClock, FaRoad, FaShippingFast,
-  FaCog, FaExclamationTriangle, FaBuilding, FaBox, 
+  FaSort, FaClock, FaRoad, FaShippingFast,
+  FaExclamationTriangle, FaBuilding, FaBox, 
   FaRoute, FaUser, FaDollarSign, FaWeightHanging, FaBarcode
 } from 'react-icons/fa';
 
@@ -22,6 +22,16 @@ interface Trip {
   destination: string;
   cargoType: string;
   cargoWeight: number;
+  cargoVolume?: number;
+  cargoTitle?: string;
+  cargoDescription?: string;
+  loadValue?: number;
+  isFragile?: boolean;
+  isHazardous?: boolean;
+  requiresRefrigeration?: boolean;
+  numberOfPieces?: number;
+  numberOfPallets?: number;
+  packagingType?: string;
   distance: number;
   estimatedDuration: number;
   actualDuration?: number;
@@ -66,6 +76,8 @@ const AdminTrips: React.FC = () => {
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [sortBy, setSortBy] = useState<string>('createdAt');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   // Use API data or fallback to mock data for demonstration
   const mockTrips: Trip[] = [
@@ -82,6 +94,13 @@ const AdminTrips: React.FC = () => {
       destination: 'Dar es Salaam, Tanzania',
       cargoType: 'Electronics',
       cargoWeight: 15.5,
+      cargoVolume: 25.3,
+      cargoTitle: 'Electronics Shipment',
+      isFragile: true,
+      loadValue: 2500000,
+      numberOfPieces: 120,
+      numberOfPallets: 8,
+      packagingType: 'Palletized',
       distance: 1456,
       estimatedDuration: 18,
       startTime: '2024-08-09T06:00:00Z',
@@ -109,6 +128,10 @@ const AdminTrips: React.FC = () => {
       destination: 'Mombasa, Kenya',
       cargoType: 'Consumer Goods',
       cargoWeight: 22.3,
+      cargoVolume: 45.2,
+      cargoTitle: 'Consumer Products',
+      numberOfPallets: 15,
+      packagingType: 'Palletized',
       distance: 485,
       estimatedDuration: 6,
       actualDuration: 6.5,
@@ -138,6 +161,11 @@ const AdminTrips: React.FC = () => {
       destination: 'Abuja, Nigeria',
       cargoType: 'Food Products',
       cargoWeight: 18.7,
+      cargoVolume: 38.5,
+      cargoTitle: 'Perishable Food Items',
+      requiresRefrigeration: true,
+      numberOfPallets: 12,
+      packagingType: 'Refrigerated',
       distance: 760,
       estimatedDuration: 8,
       startTime: '2024-08-10T05:00:00Z',
@@ -165,6 +193,13 @@ const AdminTrips: React.FC = () => {
       destination: 'Kampala Suburbs, Uganda',
       cargoType: 'Medical Supplies',
       cargoWeight: 5.2,
+      cargoVolume: 8.1,
+      cargoTitle: 'Urgent Medical Supplies',
+      isFragile: true,
+      isHazardous: true,
+      loadValue: 1800000,
+      numberOfPieces: 45,
+      packagingType: 'Crate',
       distance: 45,
       estimatedDuration: 2,
       startTime: '2024-08-09T14:00:00Z',
@@ -293,10 +328,24 @@ const AdminTrips: React.FC = () => {
 
   const allTrips = Array.isArray(trips) && trips.length > 0 ? trips : mockTrips;
 
+  // Get tenants for dropdown
+  const tenants: Tenant[] = tenantsData?.tenants || [];
+  const tenantMap = new Map<string, string>();
+  tenants.forEach((tenant) => {
+    tenantMap.set(tenant.id, tenant.name);
+  });
+
+  // Map trips with tenant names
+  const mappedTrips: Trip[] = useMemo(() => {
+    return allTrips.map((trip: any) => ({
+      ...trip,
+      tenantName: trip.tenantId ? (tenantMap.get(trip.tenantId) || trip.tenantName || 'N/A') : trip.tenantName || 'N/A'
+    }));
+  }, [allTrips, tenantMap]);
+
   // Filter and sort trips
-  const filteredTrips = allTrips
+  const filteredTrips = mappedTrips
     .filter((trip: Trip) => {
-      // Defensive checks for trip properties
       if (!trip || typeof trip !== 'object') return false;
       
       const searchFields = [
@@ -326,115 +375,200 @@ const AdminTrips: React.FC = () => {
       return aValue < bValue ? 1 : -1;
     });
 
+  const total = filteredTrips.length;
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const currentPage = Math.min(page, totalPages);
+  const startIdx = (currentPage - 1) * pageSize;
+  const endIdx = startIdx + pageSize;
+  const pagedTrips = filteredTrips.slice(startIdx, endIdx);
+
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'scheduled': return 'bg-blue-100 text-blue-800';
-      case 'in_progress': return 'bg-green-100 text-green-800';
-      case 'completed': return 'bg-gray-100 text-gray-800';
-      case 'cancelled': return 'bg-red-100 text-red-800';
-      case 'delayed': return 'bg-yellow-100 text-yellow-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'scheduled': return 'bg-gray-100 text-gray-700';
+      case 'in_progress': return 'bg-gray-100 text-gray-700';
+      case 'completed': return 'bg-gray-100 text-gray-700';
+      case 'cancelled': return 'bg-gray-100 text-gray-500';
+      case 'delayed': return 'bg-gray-100 text-gray-600';
+      default: return 'bg-gray-100 text-gray-700';
     }
   };
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case 'high': return 'bg-red-100 text-red-800';
-      case 'medium': return 'bg-yellow-100 text-yellow-800';
-      case 'low': return 'bg-green-100 text-green-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'high': return 'bg-gray-100 text-gray-700';
+      case 'medium': return 'bg-gray-100 text-gray-700';
+      case 'low': return 'bg-gray-100 text-gray-700';
+      default: return 'bg-gray-100 text-gray-700';
     }
   };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'scheduled': return <FaClock className="text-blue-500" />;
-      case 'in_progress': return <FaShippingFast className="text-green-500" />;
-      case 'completed': return <FaCheck className="text-gray-500" />;
-      case 'cancelled': return <FaBan className="text-red-500" />;
-      case 'delayed': return <FaExclamationTriangle className="text-yellow-500" />;
-      default: return <FaClock className="text-gray-500" />;
+      case 'scheduled': return <FaClock className="text-gray-500 text-[10px]" />;
+      case 'in_progress': return <FaShippingFast className="text-gray-600 text-[10px]" />;
+      case 'completed': return <FaCheck className="text-gray-500 text-[10px]" />;
+      case 'cancelled': return <FaBan className="text-gray-400 text-[10px]" />;
+      case 'delayed': return <FaExclamationTriangle className="text-gray-500 text-[10px]" />;
+      default: return <FaClock className="text-gray-500 text-[10px]" />;
     }
   };
 
   const getProgressColor = (progress: number, status: string) => {
     if (status === 'completed') return 'bg-gray-400';
-    if (status === 'cancelled') return 'bg-red-400';
-    if (status === 'delayed') return 'bg-yellow-400';
-    if (progress >= 80) return 'bg-green-400';
-    if (progress >= 50) return 'bg-blue-400';
+    if (status === 'cancelled') return 'bg-gray-300';
+    if (status === 'delayed') return 'bg-gray-400';
+    if (progress >= 80) return 'bg-gray-500';
+    if (progress >= 50) return 'bg-gray-400';
     return 'bg-gray-300';
   };
 
-  // Get tenants for dropdown
-  const tenants: Tenant[] = tenantsData?.tenants || [];
+  // Helper functions for better data display
+  const formatDate = (dateString: string) => {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  };
+
+  const formatTime = (dateString: string) => {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+  };
+
+  const formatDateTime = (dateString: string) => {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    return date.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+  };
+
+  const getTimeAgo = (dateString: string) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays < 7) return `${diffDays}d ago`;
+    return formatDate(dateString);
+  };
+
+  const getTimeUntil = (dateString: string) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = date.getTime() - now.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMs < 0) return 'Past';
+    if (diffMins < 60) return `In ${diffMins}m`;
+    if (diffHours < 24) return `In ${diffHours}h`;
+    if (diffDays < 7) return `In ${diffDays}d`;
+    return formatDate(dateString);
+  };
+
+  const formatCurrency = (amount: number) => {
+    if (!amount && amount !== 0) return 'N/A';
+    return `RWF ${amount.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+  };
+
+  const formatDistance = (distance: number) => {
+    if (!distance && distance !== 0) return 'N/A';
+    return `${distance.toLocaleString('en-US')} km`;
+  };
+
+  const formatWeight = (weight: number) => {
+    if (!weight && weight !== 0) return 'N/A';
+    return `${weight.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}T`;
+  };
+
+  const formatVolume = (volume: number) => {
+    if (!volume && volume !== 0) return null;
+    return `${volume.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} m³`;
+  };
+
+  const formatDuration = (hours: number) => {
+    if (!hours && hours !== 0) return 'N/A';
+    if (hours < 1) return `${Math.round(hours * 60)}m`;
+    if (hours < 24) return `${hours.toFixed(1)}h`;
+    const days = Math.floor(hours / 24);
+    const remainingHours = hours % 24;
+    return remainingHours > 0 ? `${days}d ${remainingHours.toFixed(1)}h` : `${days}d`;
+  };
+
+  const calculateProfit = (revenue: number, fuelCost: number, tollCost: number) => {
+    return (revenue ?? 0) - (fuelCost ?? 0) - (tollCost ?? 0);
+  };
+
+  const getProfitMargin = (revenue: number, fuelCost: number, tollCost: number) => {
+    const profit = calculateProfit(revenue, fuelCost, tollCost);
+    if (!revenue || revenue === 0) return 0;
+    return ((profit / revenue) * 100).toFixed(1);
+  };
 
   const stats = [
     { 
       label: 'Total Trips', 
-      value: allTrips.length, 
+      value: mappedTrips.length, 
       icon: FaTruck, 
-      color: 'from-blue-500 to-blue-600',
+      color: 'from-gray-600 to-gray-700',
       description: 'All registered trips'
     },
     { 
       label: 'Active Trips', 
-      value: allTrips.filter((t: Trip) => ['in_progress', 'scheduled'].includes(t.status)).length, 
+      value: mappedTrips.filter((t: Trip) => ['in_progress', 'scheduled'].includes(t.status)).length, 
       icon: FaShippingFast, 
-      color: 'from-green-500 to-green-600',
+      color: 'from-gray-600 to-gray-700',
       description: 'Currently active'
     },
     { 
       label: 'Total Revenue', 
-      value: `RWF ${allTrips.reduce((sum: number, t: Trip) => sum + t.revenue, 0).toLocaleString()}`, 
+      value: `RWF ${mappedTrips.reduce((sum: number, t: Trip) => sum + (t.revenue ?? 0), 0).toLocaleString()}`, 
       icon: FaDollarSign, 
-      color: 'from-purple-500 to-purple-600',
+      color: 'from-gray-600 to-gray-700',
       description: 'Combined trip revenue'
     },
     { 
       label: 'Completed Today', 
-      value: allTrips.filter((t: Trip) => t.status === 'completed' && 
+      value: mappedTrips.filter((t: Trip) => t.status === 'completed' && 
         new Date(t.endTime || '').toDateString() === new Date().toDateString()).length, 
       icon: FaCheck, 
-      color: 'from-yellow-500 to-yellow-600',
+      color: 'from-gray-600 to-gray-700',
       description: 'Trips completed today'
     },
   ];
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Trip Management</h1>
-          <p className="text-gray-600 mt-1">Monitor and manage all logistics trips across tenants</p>
-        </div>
-        <div className="flex items-center space-x-3">
-          <button className="bg-gradient-to-r from-green-500 to-green-600 text-white px-6 py-3 rounded-xl flex items-center space-x-2 hover:from-green-600 hover:to-green-700 transition-all duration-200 shadow-lg">
-            <FaPlus />
-            <span>Create Trip</span>
-          </button>
-          <button className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-6 py-3 rounded-xl flex items-center space-x-2 hover:from-blue-600 hover:to-blue-700 transition-all duration-200 shadow-lg">
-            <FaRoute />
-            <span>Trip Planner</span>
-          </button>
+          <h1 className="text-lg font-bold text-gray-900">Trip Management</h1>
+          <p className="text-xs text-gray-600 mt-0.5">Monitor and manage all logistics trips across tenants</p>
         </div>
       </div>
 
       {/* Loading and Error States */}
       {isLoading && (
-        <div className="bg-white rounded-2xl shadow-lg p-12 text-center">
-          <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading trips...</p>
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-600"></div>
+          <span className="ml-2 text-sm text-gray-600">Loading trips...</span>
         </div>
       )}
 
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-2xl p-6">
-          <div className="flex items-center space-x-3">
-            <FaExclamationTriangle className="text-red-500" />
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <div className="flex items-center gap-2">
+            <FaExclamationTriangle className="text-red-600" />
             <div>
-              <h3 className="font-semibold text-red-900">Error Loading Trips</h3>
-              <p className="text-red-700 text-sm mt-1">Failed to load trip data. Please try again.</p>
+              <h3 className="text-sm font-semibold text-red-900">Error Loading Trips</h3>
+              <p className="text-xs text-red-700 mt-0.5">Failed to load trip data. Please try again.</p>
             </div>
           </div>
         </div>
@@ -443,19 +577,22 @@ const AdminTrips: React.FC = () => {
       {!isLoading && !error && (
         <>
           {/* Stats Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2.5">
             {stats.map((stat, index) => {
               const Icon = stat.icon;
               return (
-                <div key={index} className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-shadow duration-300">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-gray-600">{stat.label}</p>
-                      <p className="text-2xl font-bold text-gray-900 mt-1">{stat.value}</p>
-                      <p className="text-xs text-gray-400 mt-1">{stat.description}</p>
-                    </div>
-                    <div className={`w-12 h-12 bg-gradient-to-r ${stat.color} rounded-xl flex items-center justify-center`}>
-                      <Icon className="text-white text-lg" />
+                <div key={index} className="bg-white rounded-lg shadow-sm border border-gray-200 p-2.5 hover:shadow-md transition-all duration-200 group relative overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-100 transition-opacity bg-gray-50"></div>
+                  <div className="relative">
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <p className="text-xs text-gray-600 mb-0.5">{stat.label}</p>
+                        <p className="text-lg font-bold text-gray-900 mb-0.5">{stat.value}</p>
+                        <p className="text-[10px] text-gray-500">{stat.description}</p>
+                      </div>
+                      <div className="w-10 h-10 bg-gray-700 rounded-lg flex items-center justify-center group-hover:bg-gray-800 transition-colors">
+                        <Icon className="text-white text-sm" />
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -464,21 +601,21 @@ const AdminTrips: React.FC = () => {
           </div>
 
           {/* Filters and Search */}
-          <div className="bg-white rounded-2xl shadow-lg p-6">
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+          <div className="bg-white rounded-lg shadow-sm p-2.5 border border-gray-200">
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-2">
               <div className="relative">
-                <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                <FaSearch className="absolute left-2.5 top-1/2 transform -translate-y-1/2 text-gray-400 w-3.5 h-3.5" />
                 <input
                   type="text"
                   placeholder="Search trips..."
-                  className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full pl-9 pr-3 py-1.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
               </div>
               
               <select
-                className="px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="px-2 py-1.5 text-xs border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent"
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
               >
@@ -491,7 +628,7 @@ const AdminTrips: React.FC = () => {
               </select>
 
               <select
-                className="px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="px-2 py-1.5 text-xs border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent"
                 value={tenantFilter}
                 onChange={(e) => setTenantFilter(e.target.value)}
               >
@@ -502,7 +639,7 @@ const AdminTrips: React.FC = () => {
               </select>
 
               <select
-                className="px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="px-2 py-1.5 text-xs border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent"
                 value={priorityFilter}
                 onChange={(e) => setPriorityFilter(e.target.value)}
               >
@@ -512,190 +649,325 @@ const AdminTrips: React.FC = () => {
                 <option value="low">Low Priority</option>
               </select>
 
-              <button className="px-4 py-3 border border-gray-200 rounded-xl flex items-center justify-center space-x-2 hover:bg-gray-50 transition-colors">
-                <FaDownload />
+              <button className="px-2 py-1.5 text-xs border border-gray-200 rounded-lg flex items-center justify-center gap-1.5 hover:bg-gray-50 transition-colors">
+                <FaDownload className="w-3 h-3" />
                 <span>Export</span>
               </button>
+            </div>
+
+            <div className="mt-2 flex items-center justify-between">
+              <div className="text-xs text-gray-600">
+                {total} trips
+              </div>
+              <div className="flex items-center gap-1.5">
+                <select
+                  className="px-1.5 py-0.5 text-xs border border-gray-200 rounded"
+                  value={pageSize}
+                  onChange={(e) => { setPageSize(Number(e.target.value)); setPage(1); }}
+                >
+                  <option value={10}>10 / page</option>
+                  <option value={25}>25 / page</option>
+                  <option value={50}>50 / page</option>
+                  <option value={100}>100 / page</option>
+                </select>
+              </div>
             </div>
           </div>
 
           {/* Trips Table */}
-          <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+          <div className="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-200">
             <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-50 border-b border-gray-200">
+              <table className="w-full text-xs">
+                <thead className="bg-gray-50 border-b border-gray-200 sticky top-0 z-10">
                   <tr>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">
+                    <th className="px-2 py-1.5 text-left text-xs font-semibold text-gray-900">
                       <button 
-                        className="flex items-center space-x-1"
+                        className="flex items-center gap-1"
                         onClick={() => {
                           setSortBy('reference');
                           setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
                         }}
                       >
                         <span>Trip</span>
-                        <FaSort />
+                        <FaSort className="w-3 h-3" />
                       </button>
                     </th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Route</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Driver & Truck</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Cargo</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Status</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Progress</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Priority</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Revenue</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Actions</th>
+                    <th className="px-2 py-1.5 text-left text-xs font-semibold text-gray-900">Route & Schedule</th>
+                    <th className="px-2 py-1.5 text-left text-xs font-semibold text-gray-900">Driver & Truck</th>
+                    <th className="px-2 py-1.5 text-left text-xs font-semibold text-gray-900">Cargo Details</th>
+                    <th className="px-2 py-1.5 text-left text-xs font-semibold text-gray-900">Status & Progress</th>
+                    <th className="px-2 py-1.5 text-left text-xs font-semibold text-gray-900">Financial</th>
+                    <th className="px-2 py-1.5 text-left text-xs font-semibold text-gray-900">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
-                  {filteredTrips.map((trip: Trip) => (
-                    <tr key={trip.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-6 py-4">
-                        <div className="flex items-center space-x-3">
-                          <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl flex items-center justify-center">
-                            <FaBarcode className="text-white text-sm" />
-                          </div>
-                          <div>
-                            <div className="font-semibold text-gray-900">{trip.reference}</div>
-                            <div className="text-sm text-gray-500 flex items-center space-x-1">
-                              <FaBuilding className="text-xs" />
-                              <span>{trip.tenantName}</span>
-                            </div>
-                            <div className="text-xs text-gray-400">
-                              {new Date(trip.createdAt).toLocaleDateString()}
-                            </div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="space-y-1">
-                          <div className="font-medium text-gray-900">{trip.routeName}</div>
-                          <div className="text-sm text-gray-500 flex items-center space-x-1">
-                            <FaMapMarkerAlt className="text-xs text-green-500" />
-                            <span>{trip.origin}</span>
-                          </div>
-                          <div className="text-sm text-gray-500 flex items-center space-x-1">
-                            <FaMapMarkerAlt className="text-xs text-red-500" />
-                            <span>{trip.destination}</span>
-                          </div>
-                          <div className="text-xs text-gray-400">
-                            {trip.distance.toLocaleString()} km • {trip.estimatedDuration}h
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="space-y-1">
-                          <div className="flex items-center space-x-1">
-                            <FaUser className="text-gray-400 text-xs" />
-                            <span className="text-sm font-medium text-gray-900">{trip.driverName}</span>
-                          </div>
-                          <div className="flex items-center space-x-1">
-                            <FaTruck className="text-gray-400 text-xs" />
-                            <span className="text-sm text-gray-500">{trip.truckNumber}</span>
-                          </div>
-                          {trip.currentLocation && (
-                            <div className="text-xs text-blue-600">
-                              📍 {trip.currentLocation}
-                            </div>
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="space-y-1">
-                          <div className="flex items-center space-x-1">
-                            <FaBox className="text-gray-400 text-xs" />
-                            <span className="text-sm font-medium text-gray-900">{trip.cargoType}</span>
-                          </div>
-                          <div className="flex items-center space-x-1">
-                            <FaWeightHanging className="text-gray-400 text-xs" />
-                            <span className="text-sm text-gray-500">{trip.cargoWeight}T</span>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center space-x-2">
-                          {getStatusIcon(trip.status)}
-                          <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(trip.status)}`}>
-                            {trip.status.replace('_', ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())}
-                          </span>
-                        </div>
-                        {trip.delay && trip.delay > 0 && (
-                          <div className="text-xs text-red-600 mt-1">
-                            +{trip.delay}h delay
-                          </div>
-                        )}
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm font-medium text-gray-900">{trip.progress}%</span>
-                            <span className="text-xs text-gray-500">
-                              {trip.status === 'completed' ? 'Completed' : 
-                               trip.status === 'cancelled' ? 'Cancelled' : 'In Progress'}
-                            </span>
-                          </div>
-                          <div className="w-full bg-gray-200 rounded-full h-2">
-                            <div 
-                              className={`h-2 rounded-full transition-all duration-300 ${getProgressColor(trip.progress, trip.status)}`}
-                              style={{ width: `${trip.progress}%` }}
-                            ></div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${getPriorityColor(trip.priority)}`}>
-                          {trip.priority.charAt(0).toUpperCase() + trip.priority.slice(1)}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="space-y-1">
-                          <div className="text-sm font-semibold text-gray-900">
-                            RWF {trip.revenue.toLocaleString()}
-                          </div>
-                          <div className="text-xs text-gray-500">
-                            Cost: RWF {(trip.fuelCost + trip.tollCost).toLocaleString()}
-                          </div>
-                          <div className="text-xs text-green-600">
-                            Profit: RWF {(trip.revenue - trip.fuelCost - trip.tollCost).toLocaleString()}
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center space-x-2">
-                          <button 
-                            onClick={() => {
-                              setSelectedTrip(trip);
-                              setShowDetailsModal(true);
-                            }}
-                            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                            title="View Details"
-                          >
-                            <FaEye />
-                          </button>
-                          <button 
-                            className="p-2 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors"
-                            title="Edit"
-                          >
-                            <FaEdit />
-                          </button>
-                          <button 
-                            className="p-2 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors"
-                            title="Track"
-                          >
-                            <FaMapMarkerAlt />
-                          </button>
-                          <button 
-                            className="p-2 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors"
-                            title="More"
-                          >
-                            <FaEllipsisV />
-                          </button>
-                        </div>
+                  {pagedTrips.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="px-2 py-8 text-center text-xs text-gray-500">
+                        No trips found
                       </td>
                     </tr>
-                  ))}
+                  ) : (
+                    pagedTrips.map((trip: Trip) => {
+                      const profit = calculateProfit(trip.revenue ?? 0, trip.fuelCost ?? 0, trip.tollCost ?? 0);
+                      const profitMargin = getProfitMargin(trip.revenue ?? 0, trip.fuelCost ?? 0, trip.tollCost ?? 0);
+                      const totalCost = (trip.fuelCost ?? 0) + (trip.tollCost ?? 0);
+                      
+                      return (
+                        <tr key={trip.id} className="hover:bg-gray-50 transition-colors">
+                          <td className="px-2 py-1.5">
+                            <div className="flex items-center gap-1.5">
+                              <div className="w-8 h-8 bg-gray-700 rounded-lg flex items-center justify-center flex-shrink-0">
+                                <FaBarcode className="text-white text-xs" />
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <div className="font-semibold text-gray-900 text-xs truncate">{trip.reference}</div>
+                                <div className="text-[10px] text-gray-500 flex items-center gap-0.5">
+                                  <FaBuilding className="text-[10px] flex-shrink-0" />
+                                  <span className="truncate">{trip.tenantName}</span>
+                                </div>
+                                <div className="text-[10px] text-gray-400">
+                                  Created {getTimeAgo(trip.createdAt)}
+                                </div>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-2 py-1.5">
+                            <div className="space-y-1">
+                              <div className="text-xs font-medium text-gray-900 truncate">{trip.routeName || 'N/A'}</div>
+                              <div className="space-y-0.5">
+                                <div className="text-[10px] text-gray-600 flex items-center gap-0.5">
+                                  <FaMapMarkerAlt className="text-green-500 text-[10px] flex-shrink-0" />
+                                  <span className="truncate">{trip.origin}</span>
+                                </div>
+                                <div className="text-[10px] text-gray-600 flex items-center gap-0.5">
+                                  <FaMapMarkerAlt className="text-red-500 text-[10px] flex-shrink-0" />
+                                  <span className="truncate">{trip.destination}</span>
+                                </div>
+                              </div>
+                              <div className="text-[10px] text-gray-500">
+                                {formatDistance(trip.distance ?? 0)} • {formatDuration(trip.estimatedDuration ?? 0)}
+                              </div>
+                              <div className="text-[10px] text-gray-500 space-y-0.5">
+                                <div>Start: {formatDateTime(trip.startTime)}</div>
+                                {trip.endTime && (
+                                  <div>End: {formatDateTime(trip.endTime)}</div>
+                                )}
+                                {!trip.endTime && trip.status === 'in_progress' && (
+                                  <div className="text-gray-400">ETA: {trip.estimatedDuration ? getTimeUntil(new Date(new Date(trip.startTime).getTime() + (trip.estimatedDuration * 3600000)).toISOString()) : 'N/A'}</div>
+                                )}
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-2 py-1.5">
+                            <div className="space-y-1">
+                              <div className="flex items-center gap-0.5">
+                                <FaUser className="text-gray-400 text-[10px] flex-shrink-0" />
+                                <span className="text-xs font-medium text-gray-900 truncate">{trip.driverName}</span>
+                              </div>
+                              <div className="flex items-center gap-0.5">
+                                <FaTruck className="text-gray-400 text-[10px] flex-shrink-0" />
+                                <span className="text-[10px] text-gray-500 truncate">{trip.truckNumber}</span>
+                              </div>
+                              {trip.currentLocation && (
+                                <div className="text-[10px] text-gray-500 truncate" title={trip.currentLocation}>
+                                  📍 {trip.currentLocation}
+                                </div>
+                              )}
+                              {trip.actualDuration && (
+                                <div className="text-[10px] text-gray-500">
+                                  Actual: {formatDuration(trip.actualDuration)}
+                                </div>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-2 py-1.5">
+                            <div className="space-y-1">
+                              {/* Cargo Title or Type */}
+                              {trip.cargoTitle ? (
+                                <div className="text-xs font-semibold text-gray-900 truncate" title={trip.cargoTitle}>
+                                  {trip.cargoTitle}
+                                </div>
+                              ) : (
+                                <div className="flex items-center gap-0.5">
+                                  <FaBox className="text-gray-400 text-[10px] flex-shrink-0" />
+                                  <span className="text-xs font-medium text-gray-900 truncate">{trip.cargoType || 'N/A'}</span>
+                                </div>
+                              )}
+                              
+                              {/* Cargo Type (if title exists) */}
+                              {trip.cargoTitle && (
+                                <div className="text-[10px] text-gray-500 truncate">
+                                  {trip.cargoType || 'General'}
+                                </div>
+                              )}
+                              
+                              {/* Weight and Volume */}
+                              <div className="space-y-0.5">
+                                <div className="flex items-center gap-0.5">
+                                  <FaWeightHanging className="text-gray-400 text-[10px] flex-shrink-0" />
+                                  <span className="text-[10px] text-gray-600">{formatWeight(trip.cargoWeight ?? 0)}</span>
+                                </div>
+                                {trip.cargoVolume && (
+                                  <div className="text-[10px] text-gray-500">
+                                    Vol: {formatVolume(trip.cargoVolume)}
+                                  </div>
+                                )}
+                              </div>
+                              
+                              {/* Special Requirements Badges */}
+                              <div className="flex items-center gap-0.5 flex-wrap">
+                                {trip.isFragile && (
+                                  <span className="px-1 py-0.5 rounded text-[9px] font-medium bg-red-50 text-red-700 border border-red-200" title="Fragile cargo - handle with care">
+                                    ⚠️ Fragile
+                                  </span>
+                                )}
+                                {trip.isHazardous && (
+                                  <span className="px-1 py-0.5 rounded text-[9px] font-medium bg-orange-50 text-orange-700 border border-orange-200" title="Hazardous materials">
+                                    ☢️ Hazmat
+                                  </span>
+                                )}
+                                {trip.requiresRefrigeration && (
+                                  <span className="px-1 py-0.5 rounded text-[9px] font-medium bg-blue-50 text-blue-700 border border-blue-200" title="Requires refrigeration">
+                                    ❄️ Refrigerated
+                                  </span>
+                                )}
+                              </div>
+                              
+                              {/* Additional Info */}
+                              <div className="space-y-0.5">
+                                {(trip.numberOfPieces || trip.numberOfPallets) && (
+                                  <div className="text-[10px] text-gray-500">
+                                    {trip.numberOfPieces && `${trip.numberOfPieces} pieces`}
+                                    {trip.numberOfPieces && trip.numberOfPallets && ' • '}
+                                    {trip.numberOfPallets && `${trip.numberOfPallets} pallets`}
+                                  </div>
+                                )}
+                                {trip.packagingType && (
+                                  <div className="text-[10px] text-gray-500">
+                                    📦 {trip.packagingType}
+                                  </div>
+                                )}
+                                {trip.loadValue && (
+                                  <div className="text-[10px] text-gray-500">
+                                    Value: {formatCurrency(trip.loadValue)}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-2 py-1.5">
+                            <div className="space-y-1.5">
+                              <div className="flex items-center gap-1 flex-wrap">
+                                {getStatusIcon(trip.status)}
+                                <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium ${getStatusColor(trip.status || 'scheduled')}`}>
+                                  {trip.status ? trip.status.replace('_', ' ').replace(/\b\w/g, (l: string) => l.toUpperCase()) : 'Scheduled'}
+                                </span>
+                                <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium ${getPriorityColor(trip.priority || 'medium')}`}>
+                                  {trip.priority ? (trip.priority.charAt(0).toUpperCase() + trip.priority.slice(1)) : 'Medium'}
+                                </span>
+                              </div>
+                              <div className="space-y-0.5">
+                                <div className="flex items-center justify-between">
+                                  <span className="text-[10px] text-gray-600">Progress</span>
+                                  <span className="text-xs font-medium text-gray-900">{trip.progress}%</span>
+                                </div>
+                                <div className="w-full bg-gray-200 rounded-full h-1.5">
+                                  <div 
+                                    className={`h-1.5 rounded-full transition-all duration-300 ${getProgressColor(trip.progress, trip.status)}`}
+                                    style={{ width: `${trip.progress}%` }}
+                                  ></div>
+                                </div>
+                              </div>
+                              {trip.delay && trip.delay > 0 && (
+                                <div className="text-[10px] text-gray-500">
+                                  ⚠️ +{formatDuration(trip.delay)} delay
+                                </div>
+                              )}
+                              {trip.actualDuration && trip.estimatedDuration && (
+                                <div className="text-[10px] text-gray-500">
+                                  {trip.actualDuration > trip.estimatedDuration ? (
+                                    <span className="text-gray-600">+{formatDuration(trip.actualDuration - trip.estimatedDuration)} over</span>
+                                  ) : (
+                                    <span className="text-gray-600">-{formatDuration(trip.estimatedDuration - trip.actualDuration)} under</span>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-2 py-1.5">
+                            <div className="space-y-1">
+                              <div className="text-xs font-semibold text-gray-900">
+                                {formatCurrency(trip.revenue ?? 0)}
+                              </div>
+                              <div className="text-[10px] text-gray-500">
+                                Cost: {formatCurrency(totalCost)}
+                              </div>
+                              <div className={`text-[10px] font-medium ${profit >= 0 ? 'text-gray-700' : 'text-gray-600'}`}>
+                                Profit: {formatCurrency(profit)}
+                              </div>
+                              {profitMargin !== '0.0' && (
+                                <div className="text-[10px] text-gray-500">
+                                  Margin: {profitMargin}%
+                                </div>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-2 py-1.5">
+                            <div className="flex items-center gap-1">
+                              <button 
+                                onClick={() => {
+                                  setSelectedTrip(trip);
+                                  setShowDetailsModal(true);
+                                }}
+                                className="p-1 text-gray-600 hover:bg-gray-100 rounded transition-colors"
+                                title="View Details"
+                              >
+                                <FaEye className="w-3 h-3" />
+                              </button>
+                              <button 
+                                className="p-1 text-gray-600 hover:bg-gray-50 rounded transition-colors"
+                                title="Edit"
+                              >
+                                <FaEdit className="w-3 h-3" />
+                              </button>
+                              <button 
+                                className="p-1 text-gray-600 hover:bg-gray-50 rounded transition-colors"
+                                title="Track"
+                              >
+                                <FaMapMarkerAlt className="w-3 h-3" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
                 </tbody>
               </table>
+            </div>
+            {/* Pagination */}
+            <div className="flex items-center justify-between p-2 border-t border-gray-200 bg-gray-50">
+              <div className="text-[10px] text-gray-600">
+                Showing {Math.min(endIdx, total)} of {total}
+              </div>
+              <div className="flex items-center gap-1.5">
+                <button
+                  className="px-1.5 py-0.5 text-xs border border-gray-300 rounded disabled:opacity-50 hover:bg-gray-100"
+                  onClick={() => setPage(Math.max(1, currentPage - 1))}
+                  disabled={currentPage === 1}
+                >
+                  Previous
+                </button>
+                <span className="text-[10px] text-gray-700">Page {currentPage} / {totalPages}</span>
+                <button
+                  className="px-1.5 py-0.5 text-xs border border-gray-300 rounded disabled:opacity-50 hover:bg-gray-100"
+                  onClick={() => setPage(Math.min(totalPages, currentPage + 1))}
+                  disabled={currentPage === totalPages}
+                >
+                  Next
+                </button>
+              </div>
             </div>
           </div>
         </>
@@ -704,111 +976,113 @@ const AdminTrips: React.FC = () => {
       {/* Trip Details Modal */}
       {showDetailsModal && selectedTrip && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-6xl max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b border-gray-200">
+          <div className="bg-white rounded-lg shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+            <div className="p-3 border-b border-gray-200">
               <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-4">
-                  <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl flex items-center justify-center">
-                    <FaBarcode className="text-white text-lg" />
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-gray-700 rounded-lg flex items-center justify-center">
+                    <FaBarcode className="text-white text-sm" />
                   </div>
                   <div>
-                    <h2 className="text-2xl font-bold text-gray-900">{selectedTrip.reference}</h2>
-                    <p className="text-gray-600">{selectedTrip.routeName}</p>
-                    <p className="text-sm text-gray-500">{selectedTrip.origin} → {selectedTrip.destination}</p>
+                    <h2 className="text-lg font-bold text-gray-900">{selectedTrip.reference}</h2>
+                    <p className="text-xs text-gray-600">{selectedTrip.routeName}</p>
+                    <p className="text-[10px] text-gray-500">{selectedTrip.origin} → {selectedTrip.destination}</p>
                   </div>
                 </div>
                 <button
                   onClick={() => setShowDetailsModal(false)}
-                  className="p-2 text-gray-400 hover:text-gray-600 rounded-lg"
+                  className="p-1.5 text-gray-400 hover:text-gray-600 rounded-lg transition-colors"
                 >
-                  <FaTimes />
+                  <FaTimes className="w-4 h-4" />
                 </button>
               </div>
             </div>
             
-            <div className="p-6 space-y-6">
+            <div className="p-3 space-y-3">
               {/* Status and Progress */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-4">
-                  <div className="flex items-center space-x-2">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <div className="flex items-center space-x-2 flex-wrap">
+                  <div className="flex items-center space-x-1.5">
                     {getStatusIcon(selectedTrip.status)}
-                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(selectedTrip.status)}`}>
-                      {selectedTrip.status.replace('_', ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())}
+                    <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium ${getStatusColor(selectedTrip.status || 'scheduled')}`}>
+                      {selectedTrip.status ? selectedTrip.status.replace('_', ' ').replace(/\b\w/g, (l: string) => l.toUpperCase()) : 'Scheduled'}
                     </span>
                   </div>
-                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${getPriorityColor(selectedTrip.priority)}`}>
-                    {selectedTrip.priority.charAt(0).toUpperCase() + selectedTrip.priority.slice(1)} Priority
+                  <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium ${getPriorityColor(selectedTrip.priority || 'medium')}`}>
+                    {selectedTrip.priority ? (selectedTrip.priority.charAt(0).toUpperCase() + selectedTrip.priority.slice(1)) : 'Medium'} Priority
                   </span>
-                  <div className="flex items-center space-x-2">
-                    <span className="text-sm text-gray-600">Progress:</span>
-                    <div className="w-32 bg-gray-200 rounded-full h-2">
+                  <div className="flex items-center space-x-1.5">
+                    <span className="text-xs text-gray-600">Progress:</span>
+                    <div className="w-24 bg-gray-200 rounded-full h-1.5">
                       <div 
-                        className={`h-2 rounded-full ${getProgressColor(selectedTrip.progress, selectedTrip.status)}`}
+                        className={`h-1.5 rounded-full ${getProgressColor(selectedTrip.progress, selectedTrip.status)}`}
                         style={{ width: `${selectedTrip.progress}%` }}
                       ></div>
                     </div>
-                    <span className="text-sm font-medium text-gray-900">{selectedTrip.progress}%</span>
+                    <span className="text-xs font-medium text-gray-900">{selectedTrip.progress}%</span>
                   </div>
-                </div>
-                <div className="flex space-x-2">
-                  <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-                    Track Live
-                  </button>
-                  <button className="px-4 py-2 border border-gray-200 text-gray-600 rounded-lg hover:bg-gray-50 transition-colors">
-                    Edit Trip
-                  </button>
                 </div>
               </div>
 
               {/* Key Metrics */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div className="bg-gradient-to-r from-blue-50 to-blue-100 rounded-xl p-4">
-                  <div className="flex items-center space-x-3">
-                    <FaRoad className="text-blue-600 text-lg" />
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                <div className="bg-gray-50 rounded-lg p-2 border border-gray-200">
+                  <div className="flex items-center space-x-2">
+                    <FaRoad className="text-gray-600 text-xs" />
                     <div>
-                      <div className="text-2xl font-bold text-blue-900">{selectedTrip.distance.toLocaleString()}</div>
-                      <div className="text-sm text-blue-700">Kilometers</div>
+                      <div className="text-base font-bold text-gray-900">{formatDistance(selectedTrip.distance ?? 0)}</div>
+                      <div className="text-[10px] text-gray-700">Total Distance</div>
                     </div>
                   </div>
                 </div>
                 
-                <div className="bg-gradient-to-r from-green-50 to-green-100 rounded-xl p-4">
-                  <div className="flex items-center space-x-3">
-                    <FaClock className="text-green-600 text-lg" />
+                <div className="bg-gray-50 rounded-lg p-2 border border-gray-200">
+                  <div className="flex items-center space-x-2">
+                    <FaClock className="text-gray-600 text-xs" />
                     <div>
-                      <div className="text-2xl font-bold text-green-900">{selectedTrip.estimatedDuration}h</div>
-                      <div className="text-sm text-green-700">Estimated Duration</div>
+                      <div className="text-base font-bold text-gray-900">{formatDuration(selectedTrip.estimatedDuration ?? 0)}</div>
+                      <div className="text-[10px] text-gray-700">
+                        {selectedTrip.actualDuration ? 'Actual' : 'Est. Duration'}
+                      </div>
+                      {selectedTrip.actualDuration && (
+                        <div className="text-[10px] text-gray-500">
+                          Est: {formatDuration(selectedTrip.estimatedDuration ?? 0)}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
                 
-                <div className="bg-gradient-to-r from-purple-50 to-purple-100 rounded-xl p-4">
-                  <div className="flex items-center space-x-3">
-                    <FaWeightHanging className="text-purple-600 text-lg" />
+                <div className="bg-gray-50 rounded-lg p-2 border border-gray-200">
+                  <div className="flex items-center space-x-2">
+                    <FaWeightHanging className="text-gray-600 text-xs" />
                     <div>
-                      <div className="text-2xl font-bold text-purple-900">{selectedTrip.cargoWeight}T</div>
-                      <div className="text-sm text-purple-700">Cargo Weight</div>
+                      <div className="text-base font-bold text-gray-900">{formatWeight(selectedTrip.cargoWeight ?? 0)}</div>
+                      <div className="text-[10px] text-gray-700">Cargo Weight</div>
                     </div>
                   </div>
                 </div>
                 
-                <div className="bg-gradient-to-r from-yellow-50 to-yellow-100 rounded-xl p-4">
-                  <div className="flex items-center space-x-3">
-                    <FaDollarSign className="text-yellow-600 text-lg" />
+                <div className="bg-gray-50 rounded-lg p-2 border border-gray-200">
+                  <div className="flex items-center space-x-2">
+                    <FaDollarSign className="text-gray-600 text-xs" />
                     <div>
-                      <div className="text-2xl font-bold text-yellow-900">RWF {selectedTrip.revenue.toLocaleString()}</div>
-                      <div className="text-sm text-yellow-700">Revenue</div>
+                      <div className="text-base font-bold text-gray-900">{formatCurrency(selectedTrip.revenue ?? 0)}</div>
+                      <div className="text-[10px] text-gray-700">Revenue</div>
+                      <div className="text-[10px] text-gray-500">
+                        Margin: {getProfitMargin(selectedTrip.revenue ?? 0, selectedTrip.fuelCost ?? 0, selectedTrip.tollCost ?? 0)}%
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
 
               {/* Trip Information Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 {/* Trip Details */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-gray-900">Trip Details</h3>
-                  <div className="space-y-3">
+                <div className="space-y-2">
+                  <h3 className="text-xs font-semibold text-gray-900">Trip Details</h3>
+                  <div className="space-y-1.5 text-xs">
                     <div className="flex justify-between">
                       <span className="text-gray-600">Tenant:</span>
                       <span className="font-medium">{selectedTrip.tenantName}</span>
@@ -821,72 +1095,141 @@ const AdminTrips: React.FC = () => {
                       <span className="text-gray-600">Truck:</span>
                       <span className="font-medium">{selectedTrip.truckNumber}</span>
                     </div>
+                    {selectedTrip.cargoTitle && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Cargo Title:</span>
+                        <span className="font-medium">{selectedTrip.cargoTitle}</span>
+                      </div>
+                    )}
                     <div className="flex justify-between">
                       <span className="text-gray-600">Cargo Type:</span>
-                      <span className="font-medium">{selectedTrip.cargoType}</span>
+                      <span className="font-medium">{selectedTrip.cargoType || 'N/A'}</span>
                     </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Weight:</span>
+                      <span className="font-medium">{formatWeight(selectedTrip.cargoWeight ?? 0)}</span>
+                    </div>
+                    {selectedTrip.cargoVolume && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Volume:</span>
+                        <span className="font-medium">{formatVolume(selectedTrip.cargoVolume)}</span>
+                      </div>
+                    )}
+                    {selectedTrip.loadValue && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Load Value:</span>
+                        <span className="font-medium">{formatCurrency(selectedTrip.loadValue)}</span>
+                      </div>
+                    )}
+                    {(selectedTrip.numberOfPieces || selectedTrip.numberOfPallets) && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Quantity:</span>
+                        <span className="font-medium">
+                          {selectedTrip.numberOfPieces && `${selectedTrip.numberOfPieces} pieces`}
+                          {selectedTrip.numberOfPieces && selectedTrip.numberOfPallets && ' • '}
+                          {selectedTrip.numberOfPallets && `${selectedTrip.numberOfPallets} pallets`}
+                        </span>
+                      </div>
+                    )}
+                    {selectedTrip.packagingType && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Packaging:</span>
+                        <span className="font-medium">{selectedTrip.packagingType}</span>
+                      </div>
+                    )}
+                    {(selectedTrip.isFragile || selectedTrip.isHazardous || selectedTrip.requiresRefrigeration) && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Special Requirements:</span>
+                        <span className="font-medium">
+                          {[
+                            selectedTrip.isFragile && 'Fragile',
+                            selectedTrip.isHazardous && 'Hazardous',
+                            selectedTrip.requiresRefrigeration && 'Refrigerated'
+                          ].filter(Boolean).join(', ')}
+                        </span>
+                      </div>
+                    )}
                     {selectedTrip.currentLocation && (
                       <div className="flex justify-between">
                         <span className="text-gray-600">Current Location:</span>
-                        <span className="font-medium text-blue-600">{selectedTrip.currentLocation}</span>
+                        <span className="font-medium text-gray-700">{selectedTrip.currentLocation}</span>
                       </div>
                     )}
                   </div>
                 </div>
                 
                 {/* Schedule Information */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-gray-900">Schedule</h3>
-                  <div className="space-y-3">
+                <div className="space-y-2">
+                  <h3 className="text-xs font-semibold text-gray-900">Schedule</h3>
+                  <div className="space-y-1.5 text-xs">
                     <div className="flex justify-between">
                       <span className="text-gray-600">Created:</span>
                       <span className="font-medium">{new Date(selectedTrip.createdAt).toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">Start Time:</span>
-                      <span className="font-medium">{new Date(selectedTrip.startTime).toLocaleString()}</span>
+                      <span className="font-medium">{formatDateTime(selectedTrip.startTime)}</span>
                     </div>
                     {selectedTrip.endTime && (
                       <div className="flex justify-between">
                         <span className="text-gray-600">End Time:</span>
-                        <span className="font-medium">{new Date(selectedTrip.endTime).toLocaleString()}</span>
+                        <span className="font-medium">{formatDateTime(selectedTrip.endTime)}</span>
                       </div>
                     )}
                     {selectedTrip.actualDuration && (
                       <div className="flex justify-between">
                         <span className="text-gray-600">Actual Duration:</span>
-                        <span className="font-medium">{selectedTrip.actualDuration}h</span>
+                        <span className="font-medium">{formatDuration(selectedTrip.actualDuration)}</span>
                       </div>
                     )}
                     {selectedTrip.delay && selectedTrip.delay > 0 && (
                       <div className="flex justify-between">
                         <span className="text-gray-600">Delay:</span>
-                        <span className="font-medium text-red-600">+{selectedTrip.delay}h</span>
+                        <span className="font-medium text-gray-600">+{formatDuration(selectedTrip.delay)}</span>
+                      </div>
+                    )}
+                    {selectedTrip.actualDuration && selectedTrip.estimatedDuration && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Time Difference:</span>
+                        <span className={`font-medium ${selectedTrip.actualDuration > selectedTrip.estimatedDuration ? 'text-gray-600' : 'text-gray-700'}`}>
+                          {selectedTrip.actualDuration > selectedTrip.estimatedDuration ? '+' : '-'}
+                          {formatDuration(Math.abs(selectedTrip.actualDuration - selectedTrip.estimatedDuration))}
+                        </span>
                       </div>
                     )}
                   </div>
                 </div>
                 
                 {/* Financial Information */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-gray-900">Financial</h3>
-                  <div className="space-y-3">
+                <div className="space-y-2">
+                  <h3 className="text-xs font-semibold text-gray-900">Financial</h3>
+                  <div className="space-y-1.5 text-xs">
                     <div className="flex justify-between">
                       <span className="text-gray-600">Revenue:</span>
-                      <span className="font-medium text-green-600">RWF {selectedTrip.revenue.toLocaleString()}</span>
+                      <span className="font-medium text-gray-700">{formatCurrency(selectedTrip.revenue ?? 0)}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">Fuel Cost:</span>
-                      <span className="font-medium text-red-600">RWF {selectedTrip.fuelCost.toLocaleString()}</span>
+                      <span className="font-medium text-gray-600">{formatCurrency(selectedTrip.fuelCost ?? 0)}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">Toll Cost:</span>
-                      <span className="font-medium text-red-600">RWF {selectedTrip.tollCost.toLocaleString()}</span>
+                      <span className="font-medium text-gray-600">{formatCurrency(selectedTrip.tollCost ?? 0)}</span>
                     </div>
-                    <div className="flex justify-between border-t pt-2">
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Total Cost:</span>
+                      <span className="font-medium text-gray-600">{formatCurrency((selectedTrip.fuelCost ?? 0) + (selectedTrip.tollCost ?? 0))}</span>
+                    </div>
+                    <div className="flex justify-between border-t pt-1.5">
                       <span className="text-gray-600 font-semibold">Net Profit:</span>
-                      <span className="font-bold text-green-600">
-                        RWF {(selectedTrip.revenue - selectedTrip.fuelCost - selectedTrip.tollCost).toLocaleString()}
+                      <span className={`font-bold ${calculateProfit(selectedTrip.revenue ?? 0, selectedTrip.fuelCost ?? 0, selectedTrip.tollCost ?? 0) >= 0 ? 'text-gray-700' : 'text-gray-600'}`}>
+                        {formatCurrency(calculateProfit(selectedTrip.revenue ?? 0, selectedTrip.fuelCost ?? 0, selectedTrip.tollCost ?? 0))}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Profit Margin:</span>
+                      <span className="font-medium text-gray-700">
+                        {getProfitMargin(selectedTrip.revenue ?? 0, selectedTrip.fuelCost ?? 0, selectedTrip.tollCost ?? 0)}%
                       </span>
                     </div>
                   </div>
@@ -895,46 +1238,13 @@ const AdminTrips: React.FC = () => {
 
               {/* Trip Notes */}
               {selectedTrip.notes && (
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-gray-900">Notes</h3>
-                  <div className="bg-gray-50 rounded-xl p-4">
-                    <p className="text-gray-700">{selectedTrip.notes}</p>
+                <div className="space-y-2">
+                  <h3 className="text-xs font-semibold text-gray-900">Notes</h3>
+                  <div className="bg-gray-50 rounded-lg p-2">
+                    <p className="text-xs text-gray-700">{selectedTrip.notes}</p>
                   </div>
                 </div>
               )}
-
-              {/* Quick Actions */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-gray-900">Quick Actions</h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  <button className="w-full flex items-center space-x-3 p-3 text-left border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-                    <FaMapMarkerAlt className="text-gray-400" />
-                    <span>Track Location</span>
-                  </button>
-                  <button className="w-full flex items-center space-x-3 p-3 text-left border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-                    <FaUser className="text-gray-400" />
-                    <span>Contact Driver</span>
-                  </button>
-                  <button className="w-full flex items-center space-x-3 p-3 text-left border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-                    <FaDownload className="text-gray-400" />
-                    <span>Download Report</span>
-                  </button>
-                  <button className="w-full flex items-center space-x-3 p-3 text-left border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-                    <FaCog className="text-gray-400" />
-                    <span>Trip Settings</span>
-                  </button>
-                  <button className="w-full flex items-center space-x-3 p-3 text-left border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-                    <FaEdit className="text-gray-400" />
-                    <span>Edit Details</span>
-                  </button>
-                  {selectedTrip.status !== 'completed' && selectedTrip.status !== 'cancelled' && (
-                    <button className="w-full flex items-center space-x-3 p-3 text-left border border-red-200 rounded-lg hover:bg-red-50 transition-colors text-red-600">
-                      <FaBan className="text-red-400" />
-                      <span>Cancel Trip</span>
-                    </button>
-                  )}
-                </div>
-              </div>
             </div>
           </div>
         </div>
@@ -944,5 +1254,3 @@ const AdminTrips: React.FC = () => {
 };
 
 export default AdminTrips;
-
-

@@ -1274,7 +1274,7 @@ const CargoDetailsModal = ({ isOpen, onClose, cargoId }: CargoDetailsModalProps)
                                 <div className="flex items-center space-x-2">
                                   <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
                                   <span className="text-sm font-medium text-gray-900">
-                                    {match.truckRating ? match.truckRating.toFixed(1) : 'N/A'}
+                                    {match.truckRating ? Number(match.truckRating).toFixed(1) : 'N/A'}
                                   </span>
                                 </div>
                               </div>

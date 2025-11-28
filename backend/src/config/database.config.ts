@@ -53,13 +53,27 @@ import { Notification } from '../entities/notification.entity';
 import { config } from 'dotenv';
 config();
 
+/**
+ * Main database configuration for the application.
+ * 
+ * Required environment variables:
+ * - DB_HOST: Database host (default: 'localhost')
+ * - DB_PORT: Database port (default: 5432)
+ * - DB_USERNAME: Database username (default: 'postgres')
+ * - DB_PASSWORD: Database password (required, no default)
+ * - DB_NAME: Database name (default: 'urutix')
+ * 
+ * Note: DB_PASSWORD should always be set via environment variable for security.
+ */
 export const databaseConfig: TypeOrmModuleOptions = {
   type: 'postgres',
   host: process.env.DB_HOST || 'localhost',
   port: parseInt(process.env.DB_PORT || '5432', 10),
   username: process.env.DB_USERNAME || 'postgres',
-  password: process.env.DB_PASSWORD || '123',
+  password: process.env.DB_PASSWORD || '',
   database: process.env.DB_NAME || 'urutix',
+  migrations: ['src/database/migrations/*.ts'],
+  migrationsRun: false,
   entities: [
     User,
     UserProfile,
@@ -118,13 +132,23 @@ export const databaseConfig: TypeOrmModuleOptions = {
       : false,
 };
 
+/**
+ * Test database configuration.
+ * 
+ * Uses separate environment variables with TEST_ prefix:
+ * - TEST_DB_HOST, TEST_DB_PORT, TEST_DB_USERNAME, TEST_DB_PASSWORD, TEST_DB_NAME
+ * 
+ * Note: synchronize is set to true for testing purposes only.
+ */
 export const testDatabaseConfig: TypeOrmModuleOptions = {
   type: 'postgres',
   host: process.env.TEST_DB_HOST || 'localhost',
-  port: parseInt(process.env.TEST_DB_PORT) || 5432,
+  port: parseInt(process.env.TEST_DB_PORT || '5432', 10),
   username: process.env.TEST_DB_USERNAME || 'postgres',
-  password: process.env.TEST_DB_PASSWORD || '123',
+  password: process.env.TEST_DB_PASSWORD || '',
   database: process.env.TEST_DB_NAME || 'urutix_test',
+  migrations: ['src/database/migrations/*.ts'],
+  migrationsRun: false,
   entities: [
     User,
     UserProfile,

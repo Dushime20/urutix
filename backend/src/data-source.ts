@@ -1,15 +1,23 @@
 import { DataSource } from 'typeorm';
-import { CreateAllTables1762849950556 } from './migrations/1762849950556-CreateAllTables';
 import { config } from 'dotenv';
 
 config();
 
+/**
+ * DataSource configuration for TypeORM migrations.
+ * 
+ * This is used by the TypeORM CLI for running migrations.
+ * Configuration should match database.config.ts for consistency.
+ * 
+ * Required environment variables:
+ * - DB_HOST, DB_PORT, DB_USERNAME, DB_PASSWORD, DB_NAME
+ */
 export const AppDataSource = new DataSource({
   type: 'postgres',
   host: process.env.DB_HOST || 'localhost',
-  port: parseInt(process.env.DB_PORT || '5433', 10),
+  port: parseInt(process.env.DB_PORT || '5432', 10),
   username: process.env.DB_USERNAME || 'postgres',
-  password: process.env.DB_PASSWORD || '123456',
+  password: process.env.DB_PASSWORD || '',
   database: process.env.DB_NAME || 'urutix',
   synchronize: false,
   logging: process.env.NODE_ENV === 'development',

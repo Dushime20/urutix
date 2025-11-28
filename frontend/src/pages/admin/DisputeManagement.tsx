@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { 
   FaGavel, FaExclamationTriangle, FaSearch, FaFilter, FaDownload,
-  FaEye, FaEdit, FaPlus, FaCalendar, FaClock, FaUser, FaTruck,
+  FaEye, FaEdit, FaCalendar, FaClock, FaUser, FaTruck,
   FaCheckCircle, FaTimesCircle, FaHourglassHalf, FaBalanceScale,
-  FaFileAlt, FaComments, FaDollarSign, FaFlag, FaShieldAlt
+  FaFileAlt, FaComments, FaDollarSign, FaFlag, FaShieldAlt, FaTimes
 } from 'react-icons/fa';
+import toast from 'react-hot-toast';
 
 interface Dispute {
   id: string;
@@ -126,50 +127,51 @@ const DisputeManagement: React.FC = () => {
   const [filterStatus, setFilterStatus] = useState('');
   const [filterType, setFilterType] = useState('');
   const [filterPriority, setFilterPriority] = useState('');
-  const [selectedDispute, setSelectedDispute] = useState<string | null>(null);
+  const [selectedDispute, setSelectedDispute] = useState<Dispute | null>(null);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'open': return 'bg-blue-100 text-blue-800';
-      case 'investigating': return 'bg-yellow-100 text-yellow-800';
-      case 'mediating': return 'bg-orange-100 text-orange-800';
-      case 'resolved': return 'bg-green-100 text-green-800';
-      case 'escalated': return 'bg-red-100 text-red-800';
-      case 'closed': return 'bg-gray-100 text-gray-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'open': return 'bg-gray-100 text-gray-700';
+      case 'investigating': return 'bg-gray-100 text-gray-700';
+      case 'mediating': return 'bg-gray-100 text-gray-600';
+      case 'resolved': return 'bg-gray-100 text-gray-700';
+      case 'escalated': return 'bg-gray-100 text-gray-600';
+      case 'closed': return 'bg-gray-100 text-gray-500';
+      default: return 'bg-gray-100 text-gray-600';
     }
   };
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case 'critical': return 'bg-red-500';
-      case 'high': return 'bg-orange-500';
-      case 'medium': return 'bg-yellow-500';
-      case 'low': return 'bg-green-500';
-      default: return 'bg-gray-500';
+      case 'critical': return 'bg-gray-600';
+      case 'high': return 'bg-gray-500';
+      case 'medium': return 'bg-gray-400';
+      case 'low': return 'bg-gray-300';
+      default: return 'bg-gray-400';
     }
   };
 
   const getTypeIcon = (type: string) => {
     switch (type) {
-      case 'payment': return <FaDollarSign className="text-green-600" />;
-      case 'delivery': return <FaTruck className="text-blue-600" />;
-      case 'damage': return <FaExclamationTriangle className="text-red-600" />;
-      case 'service': return <FaShieldAlt className="text-purple-600" />;
-      case 'contract': return <FaFileAlt className="text-orange-600" />;
-      default: return <FaFlag className="text-gray-600" />;
+      case 'payment': return <FaDollarSign className="text-gray-600 text-xs" />;
+      case 'delivery': return <FaTruck className="text-gray-600 text-xs" />;
+      case 'damage': return <FaExclamationTriangle className="text-gray-600 text-xs" />;
+      case 'service': return <FaShieldAlt className="text-gray-600 text-xs" />;
+      case 'contract': return <FaFileAlt className="text-gray-600 text-xs" />;
+      default: return <FaFlag className="text-gray-600 text-xs" />;
     }
   };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'open': return <FaFlag className="text-blue-500" />;
-      case 'investigating': return <FaSearch className="text-yellow-500" />;
-      case 'mediating': return <FaBalanceScale className="text-orange-500" />;
-      case 'resolved': return <FaCheckCircle className="text-green-500" />;
-      case 'escalated': return <FaExclamationTriangle className="text-red-500" />;
-      case 'closed': return <FaTimesCircle className="text-gray-500" />;
-      default: return <FaHourglassHalf className="text-gray-500" />;
+      case 'open': return <FaFlag className="text-gray-500 text-xs" />;
+      case 'investigating': return <FaSearch className="text-gray-500 text-xs" />;
+      case 'mediating': return <FaBalanceScale className="text-gray-500 text-xs" />;
+      case 'resolved': return <FaCheckCircle className="text-gray-600 text-xs" />;
+      case 'escalated': return <FaExclamationTriangle className="text-gray-500 text-xs" />;
+      case 'closed': return <FaTimesCircle className="text-gray-400 text-xs" />;
+      default: return <FaHourglassHalf className="text-gray-500 text-xs" />;
     }
   };
 
@@ -191,6 +193,21 @@ const DisputeManagement: React.FC = () => {
       hour: '2-digit',
       minute: '2-digit'
     });
+  };
+
+  const getTimeAgo = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays < 7) return `${diffDays}d ago`;
+    return formatDate(dateString);
   };
 
   const getDaysUntilDue = (dueDate: string) => {
@@ -219,14 +236,12 @@ const DisputeManagement: React.FC = () => {
         ? { ...dispute, status: newStatus as any, updatedAt: new Date().toISOString() } 
         : dispute
     ));
+    toast.success(`Dispute status updated to ${newStatus}`);
   };
 
-  const handleAssignDispute = (disputeId: string, assignee: string) => {
-    setDisputes(disputes.map(dispute => 
-      dispute.id === disputeId 
-        ? { ...dispute, assignedTo: assignee, updatedAt: new Date().toISOString() } 
-        : dispute
-    ));
+  const handleViewDetails = (dispute: Dispute) => {
+    setSelectedDispute(dispute);
+    setShowDetailsModal(true);
   };
 
   const stats = {
@@ -240,105 +255,111 @@ const DisputeManagement: React.FC = () => {
   };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
+    <div className="space-y-3">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
-        <div>
-          <h1 className="text-2xl font-bold">Dispute Management</h1>
-          <p className="text-gray-600">Manage and resolve customer disputes efficiently</p>
-        </div>
-        <div className="flex gap-2 items-center">
-          <button className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center space-x-2 transition-colors">
-            <FaPlus />
-            <span>Create Dispute</span>
-          </button>
-        </div>
+      <div>
+        <h1 className="text-lg font-bold text-gray-900">Dispute Management</h1>
+        <p className="text-xs text-gray-600 mt-0.5">Manage and resolve customer disputes efficiently</p>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-7 gap-4">
-        <div className="bg-white rounded-xl shadow-lg p-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-2.5">
+        <div className="bg-white rounded-lg border border-gray-200 p-2.5 hover:shadow-md transition-all duration-200">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xl font-bold text-gray-800">{stats.total}</p>
-              <p className="text-sm text-gray-600">Total</p>
+              <p className="text-lg font-bold text-gray-900">{stats.total}</p>
+              <p className="text-xs text-gray-600">Total</p>
             </div>
-            <FaGavel className="text-purple-500 text-2xl" />
+            <div className="w-8 h-8 bg-gray-700 rounded-lg flex items-center justify-center">
+              <FaGavel className="text-white text-xs" />
+            </div>
           </div>
         </div>
-        <div className="bg-white rounded-xl shadow-lg p-4">
+        <div className="bg-white rounded-lg border border-gray-200 p-2.5 hover:shadow-md transition-all duration-200">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xl font-bold text-gray-800">{stats.open}</p>
-              <p className="text-sm text-gray-600">Open</p>
+              <p className="text-lg font-bold text-gray-900">{stats.open}</p>
+              <p className="text-xs text-gray-600">Open</p>
             </div>
-            <FaFlag className="text-blue-500 text-2xl" />
+            <div className="w-8 h-8 bg-gray-700 rounded-lg flex items-center justify-center">
+              <FaFlag className="text-white text-xs" />
+            </div>
           </div>
         </div>
-        <div className="bg-white rounded-xl shadow-lg p-4">
+        <div className="bg-white rounded-lg border border-gray-200 p-2.5 hover:shadow-md transition-all duration-200">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xl font-bold text-gray-800">{stats.investigating}</p>
-              <p className="text-sm text-gray-600">Investigating</p>
+              <p className="text-lg font-bold text-gray-900">{stats.investigating}</p>
+              <p className="text-xs text-gray-600">Investigating</p>
             </div>
-            <FaSearch className="text-yellow-500 text-2xl" />
+            <div className="w-8 h-8 bg-gray-700 rounded-lg flex items-center justify-center">
+              <FaSearch className="text-white text-xs" />
+            </div>
           </div>
         </div>
-        <div className="bg-white rounded-xl shadow-lg p-4">
+        <div className="bg-white rounded-lg border border-gray-200 p-2.5 hover:shadow-md transition-all duration-200">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xl font-bold text-gray-800">{stats.mediating}</p>
-              <p className="text-sm text-gray-600">Mediating</p>
+              <p className="text-lg font-bold text-gray-900">{stats.mediating}</p>
+              <p className="text-xs text-gray-600">Mediating</p>
             </div>
-            <FaBalanceScale className="text-orange-500 text-2xl" />
+            <div className="w-8 h-8 bg-gray-700 rounded-lg flex items-center justify-center">
+              <FaBalanceScale className="text-white text-xs" />
+            </div>
           </div>
         </div>
-        <div className="bg-white rounded-xl shadow-lg p-4">
+        <div className="bg-white rounded-lg border border-gray-200 p-2.5 hover:shadow-md transition-all duration-200">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xl font-bold text-gray-800">{stats.resolved}</p>
-              <p className="text-sm text-gray-600">Resolved</p>
+              <p className="text-lg font-bold text-gray-900">{stats.resolved}</p>
+              <p className="text-xs text-gray-600">Resolved</p>
             </div>
-            <FaCheckCircle className="text-green-500 text-2xl" />
+            <div className="w-8 h-8 bg-gray-700 rounded-lg flex items-center justify-center">
+              <FaCheckCircle className="text-white text-xs" />
+            </div>
           </div>
         </div>
-        <div className="bg-white rounded-xl shadow-lg p-4">
+        <div className="bg-white rounded-lg border border-gray-200 p-2.5 hover:shadow-md transition-all duration-200">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xl font-bold text-gray-800">${stats.totalAmount.toLocaleString()}</p>
-              <p className="text-sm text-gray-600">Total Value</p>
+              <p className="text-lg font-bold text-gray-900">${stats.totalAmount.toLocaleString()}</p>
+              <p className="text-xs text-gray-600">Total Value</p>
             </div>
-            <FaDollarSign className="text-green-600 text-2xl" />
+            <div className="w-8 h-8 bg-gray-700 rounded-lg flex items-center justify-center">
+              <FaDollarSign className="text-white text-xs" />
+            </div>
           </div>
         </div>
-        <div className="bg-white rounded-xl shadow-lg p-4">
+        <div className="bg-white rounded-lg border border-gray-200 p-2.5 hover:shadow-md transition-all duration-200">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xl font-bold text-gray-800">{stats.avgResolutionTime}</p>
-              <p className="text-sm text-gray-600">Avg Resolution</p>
+              <p className="text-lg font-bold text-gray-900">{stats.avgResolutionTime}</p>
+              <p className="text-xs text-gray-600">Avg Resolution</p>
             </div>
-            <FaClock className="text-blue-600 text-2xl" />
+            <div className="w-8 h-8 bg-gray-700 rounded-lg flex items-center justify-center">
+              <FaClock className="text-white text-xs" />
+            </div>
           </div>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-xl shadow-lg p-6">
-        <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
+      <div className="bg-white rounded-lg border border-gray-200 p-2.5">
+        <div className="grid grid-cols-1 md:grid-cols-6 gap-2">
           <div className="relative">
-            <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+            <FaSearch className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400 text-xs" />
             <input
               type="text"
               placeholder="Search disputes..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500"
+              className="w-full pl-7 pr-2 py-1.5 text-xs border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent"
             />
           </div>
           <select
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500"
+            className="px-2 py-1.5 text-xs border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent bg-white"
           >
             <option value="">All Status</option>
             <option value="open">Open</option>
@@ -351,7 +372,7 @@ const DisputeManagement: React.FC = () => {
           <select
             value={filterType}
             onChange={(e) => setFilterType(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500"
+            className="px-2 py-1.5 text-xs border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent bg-white"
           >
             <option value="">All Types</option>
             <option value="payment">Payment</option>
@@ -363,7 +384,7 @@ const DisputeManagement: React.FC = () => {
           <select
             value={filterPriority}
             onChange={(e) => setFilterPriority(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500"
+            className="px-2 py-1.5 text-xs border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent bg-white"
           >
             <option value="">All Priorities</option>
             <option value="critical">Critical</option>
@@ -371,161 +392,287 @@ const DisputeManagement: React.FC = () => {
             <option value="medium">Medium</option>
             <option value="low">Low</option>
           </select>
-          <button className="bg-blue-100 hover:bg-blue-200 text-blue-700 px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors">
-            <FaFilter />
+          <button className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-2 py-1.5 rounded-lg flex items-center justify-center gap-1.5 transition-colors text-xs">
+            <FaFilter className="w-3 h-3" />
             <span>Advanced</span>
           </button>
-          <button className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors">
-            <FaDownload />
+          <button className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-2 py-1.5 rounded-lg flex items-center justify-center gap-1.5 transition-colors text-xs">
+            <FaDownload className="w-3 h-3" />
             <span>Export</span>
           </button>
         </div>
       </div>
 
       {/* Disputes Table */}
-      <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
-                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dispute</th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Parties</th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Timeline</th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Assigned</th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                <th className="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Dispute</th>
+                <th className="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Parties</th>
+                <th className="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Amount</th>
+                <th className="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Status</th>
+                <th className="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Timeline</th>
+                <th className="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Assigned</th>
+                <th className="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {filteredDisputes.map((dispute) => {
-                const daysUntilDue = getDaysUntilDue(dispute.dueDate);
-                return (
-                  <tr key={dispute.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-4">
-                      <div className="flex items-start space-x-3">
-                        <div className="flex-shrink-0 flex items-center">
-                          <div className={`w-3 h-3 rounded-full ${getPriorityColor(dispute.priority)} mr-2`}></div>
-                          {getTypeIcon(dispute.type)}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <div className="text-sm font-medium text-gray-900">{dispute.title}</div>
-                          <div className="text-sm text-gray-500">{dispute.disputeNumber}</div>
-                          <div className="text-xs text-gray-400 mt-1">{dispute.type.charAt(0).toUpperCase() + dispute.type.slice(1)}</div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="text-sm">
-                        <div className="font-medium text-gray-900">
-                          {dispute.submittedBy}
-                          <span className="text-xs text-gray-500 ml-1">({dispute.submitterRole.replace('_', ' ')})</span>
-                        </div>
-                        <div className="text-gray-500">vs</div>
-                        <div className="text-gray-700">{dispute.respondent}</div>
-                        {dispute.cargoId && (
-                          <div className="text-xs text-gray-400 mt-1">Cargo: {dispute.cargoId}</div>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="text-sm">
-                        <div className="text-lg font-bold text-gray-900">${dispute.amount.toLocaleString()}</div>
-                        <div className="text-xs text-gray-500">{dispute.currency}</div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center space-x-2">
-                        {getStatusIcon(dispute.status)}
-                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(dispute.status)}`}>
-                          {dispute.status.charAt(0).toUpperCase() + dispute.status.slice(1)}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-900">
-                      <div className="space-y-1">
-                        <div className="flex items-center">
-                          <FaCalendar className="text-gray-400 mr-2" />
-                          Created: {formatDate(dispute.createdAt)}
-                        </div>
-                        <div className="flex items-center">
-                          <FaClock className="text-gray-400 mr-2" />
-                          Due: {formatDate(dispute.dueDate)}
-                          {daysUntilDue <= 0 && <span className="text-red-500 font-medium ml-2">(Overdue)</span>}
-                          {daysUntilDue > 0 && daysUntilDue <= 2 && <span className="text-orange-500 font-medium ml-2">({daysUntilDue}d left)</span>}
-                        </div>
-                        <div className="flex items-center">
-                          <FaComments className="text-gray-400 mr-2" />
-                          {dispute.evidence} evidence, {dispute.messages} messages
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="text-sm">
-                        {dispute.assignedTo ? (
-                          <div className="flex items-center">
-                            <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-2">
-                              <FaUser className="text-blue-600 text-sm" />
-                            </div>
-                            <span className="text-gray-900">{dispute.assignedTo}</span>
+              {filteredDisputes.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="px-3 py-8 text-center text-xs text-gray-500">
+                    No disputes found
+                  </td>
+                </tr>
+              ) : (
+                filteredDisputes.map((dispute) => {
+                  const daysUntilDue = getDaysUntilDue(dispute.dueDate);
+                  return (
+                    <tr key={dispute.id} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-3 py-2.5 whitespace-nowrap">
+                        <div className="flex items-start gap-2">
+                          <div className="flex-shrink-0 flex items-center gap-1.5">
+                            <div className={`w-2 h-2 rounded-full ${getPriorityColor(dispute.priority)}`}></div>
+                            {getTypeIcon(dispute.type)}
                           </div>
-                        ) : (
-                          <span className="text-gray-400 italic">Unassigned</span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-sm font-medium">
-                      <div className="flex space-x-2">
-                        <button 
-                          onClick={() => setSelectedDispute(dispute.id)}
-                          className="text-blue-600 hover:text-blue-900 p-1 rounded transition-colors"
-                          title="View Details"
-                        >
-                          <FaEye />
-                        </button>
-                        <button className="text-green-600 hover:text-green-900 p-1 rounded transition-colors" title="Edit">
-                          <FaEdit />
-                        </button>
-                        {dispute.status !== 'resolved' && (
+                          <div className="min-w-0 flex-1">
+                            <div className="text-xs font-medium text-gray-900">{dispute.title}</div>
+                            <div className="text-[10px] text-gray-500">{dispute.disputeNumber}</div>
+                            <div className="text-[10px] text-gray-400 mt-0.5">{dispute.type.charAt(0).toUpperCase() + dispute.type.slice(1)}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-3 py-2.5 whitespace-nowrap">
+                        <div className="text-xs">
+                          <div className="font-medium text-gray-900">
+                            {dispute.submittedBy}
+                            <span className="text-[10px] text-gray-500 ml-1">({dispute.submitterRole.replace('_', ' ')})</span>
+                          </div>
+                          <div className="text-[10px] text-gray-500">vs</div>
+                          <div className="text-xs text-gray-700">{dispute.respondent}</div>
+                          {dispute.cargoId && (
+                            <div className="text-[10px] text-gray-400 mt-0.5">Cargo: {dispute.cargoId}</div>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-3 py-2.5 whitespace-nowrap">
+                        <div className="text-xs">
+                          <div className="text-sm font-bold text-gray-900">${dispute.amount.toLocaleString()}</div>
+                          <div className="text-[10px] text-gray-500">{dispute.currency}</div>
+                        </div>
+                      </td>
+                      <td className="px-3 py-2.5 whitespace-nowrap">
+                        <div className="flex items-center gap-1.5">
+                          {getStatusIcon(dispute.status)}
+                          <span className={`inline-flex px-1.5 py-0.5 text-[10px] font-medium rounded-full ${getStatusColor(dispute.status)}`}>
+                            {dispute.status.charAt(0).toUpperCase() + dispute.status.slice(1)}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-3 py-2.5 whitespace-nowrap text-xs text-gray-900">
+                        <div className="space-y-0.5">
+                          <div className="text-[10px] text-gray-600">Created: {getTimeAgo(dispute.createdAt)}</div>
+                          <div className="text-[10px] text-gray-600">
+                            Due: {formatDate(dispute.dueDate)}
+                            {daysUntilDue <= 0 && <span className="text-gray-600 font-medium ml-1">(Overdue)</span>}
+                            {daysUntilDue > 0 && daysUntilDue <= 2 && <span className="text-gray-600 font-medium ml-1">({daysUntilDue}d left)</span>}
+                          </div>
+                          <div className="text-[10px] text-gray-600">
+                            {dispute.evidence} evidence, {dispute.messages} msgs
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-3 py-2.5 whitespace-nowrap">
+                        <div className="text-xs">
+                          {dispute.assignedTo ? (
+                            <div className="flex items-center gap-1.5">
+                              <div className="w-6 h-6 bg-gray-100 rounded-full flex items-center justify-center">
+                                <FaUser className="text-gray-600 text-[10px]" />
+                              </div>
+                              <span className="text-xs text-gray-900">{dispute.assignedTo}</span>
+                            </div>
+                          ) : (
+                            <span className="text-[10px] text-gray-400 italic">Unassigned</span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-3 py-2.5 whitespace-nowrap text-xs font-medium">
+                        <div className="flex items-center gap-1">
                           <button 
-                            onClick={() => handleStatusChange(dispute.id, 'resolved')}
-                            className="text-green-600 hover:text-green-900 p-1 rounded transition-colors"
-                            title="Mark Resolved"
+                            onClick={() => handleViewDetails(dispute)}
+                            className="text-gray-600 hover:text-gray-900 p-1 rounded transition-colors"
+                            title="View Details"
                           >
-                            <FaCheckCircle />
+                            <FaEye className="w-3 h-3" />
                           </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
+                          {dispute.status !== 'resolved' && (
+                            <button 
+                              onClick={() => handleStatusChange(dispute.id, 'resolved')}
+                              className="text-gray-600 hover:text-gray-900 p-1 rounded transition-colors"
+                              title="Mark Resolved"
+                            >
+                              <FaCheckCircle className="w-3 h-3" />
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
             </tbody>
           </table>
         </div>
       </div>
 
-      {/* Recent Activity */}
-      <div className="bg-white rounded-xl shadow-lg p-6">
-        <h3 className="text-lg font-semibold text-gray-800 mb-4">Recent Dispute Activity</h3>
-        <div className="space-y-3">
-          {filteredDisputes.slice(0, 3).map((dispute) => (
-            <div key={dispute.id} className="border-l-4 border-red-500 pl-4 py-2">
-              <div className="text-sm font-medium text-gray-900">
-                {dispute.disputeNumber} - {dispute.title}
-              </div>
-              <div className="text-sm text-gray-600">
-                {dispute.status === 'resolved' && dispute.resolution 
-                  ? dispute.resolution 
-                  : dispute.description}
-              </div>
-              <div className="text-xs text-gray-500 mt-1">
-                Last updated: {formatDateTime(dispute.updatedAt)}
-              </div>
+      {/* Dispute Details Modal */}
+      {showDetailsModal && selectedDispute && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
+              <h3 className="text-sm font-bold text-gray-900">Dispute Details</h3>
+              <button
+                onClick={() => setShowDetailsModal(false)}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <FaTimes className="w-4 h-4" />
+              </button>
             </div>
-          ))}
+            <div className="p-4 space-y-3">
+              {/* Dispute Information */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-gray-50 rounded-lg p-2.5 border border-gray-200">
+                  <div className="text-[10px] text-gray-600 mb-0.5">Dispute Number</div>
+                  <div className="text-xs font-medium text-gray-900">{selectedDispute.disputeNumber}</div>
+                </div>
+                <div className="bg-gray-50 rounded-lg p-2.5 border border-gray-200">
+                  <div className="text-[10px] text-gray-600 mb-0.5">Status</div>
+                  <div className="flex items-center gap-1.5">
+                    {getStatusIcon(selectedDispute.status)}
+                    <span className={`text-xs font-medium ${getStatusColor(selectedDispute.status)}`}>
+                      {selectedDispute.status.charAt(0).toUpperCase() + selectedDispute.status.slice(1)}
+                    </span>
+                  </div>
+                </div>
+                <div className="bg-gray-50 rounded-lg p-2.5 border border-gray-200">
+                  <div className="text-[10px] text-gray-600 mb-0.5">Type</div>
+                  <div className="flex items-center gap-1.5">
+                    {getTypeIcon(selectedDispute.type)}
+                    <span className="text-xs font-medium text-gray-900">{selectedDispute.type.charAt(0).toUpperCase() + selectedDispute.type.slice(1)}</span>
+                  </div>
+                </div>
+                <div className="bg-gray-50 rounded-lg p-2.5 border border-gray-200">
+                  <div className="text-[10px] text-gray-600 mb-0.5">Priority</div>
+                  <div className="flex items-center gap-1.5">
+                    <div className={`w-2 h-2 rounded-full ${getPriorityColor(selectedDispute.priority)}`}></div>
+                    <span className="text-xs font-medium text-gray-900">{selectedDispute.priority.charAt(0).toUpperCase() + selectedDispute.priority.slice(1)}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Parties */}
+              <div className="bg-gray-50 rounded-lg p-2.5 border border-gray-200">
+                <div className="text-xs font-medium text-gray-900 mb-2">Parties</div>
+                <div className="space-y-1.5">
+                  <div>
+                    <div className="text-[10px] text-gray-600">Submitted By</div>
+                    <div className="text-xs text-gray-900">{selectedDispute.submittedBy} ({selectedDispute.submitterRole.replace('_', ' ')})</div>
+                  </div>
+                  <div>
+                    <div className="text-[10px] text-gray-600">Respondent</div>
+                    <div className="text-xs text-gray-900">{selectedDispute.respondent}</div>
+                  </div>
+                  {selectedDispute.cargoId && (
+                    <div>
+                      <div className="text-[10px] text-gray-600">Cargo ID</div>
+                      <div className="text-xs text-gray-900">{selectedDispute.cargoId}</div>
+                    </div>
+                  )}
+                  {selectedDispute.tripId && (
+                    <div>
+                      <div className="text-[10px] text-gray-600">Trip ID</div>
+                      <div className="text-xs text-gray-900">{selectedDispute.tripId}</div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Amount */}
+              <div className="bg-gray-50 rounded-lg p-2.5 border border-gray-200">
+                <div className="text-xs font-medium text-gray-900 mb-1">Amount</div>
+                <div className="text-lg font-bold text-gray-900">${selectedDispute.amount.toLocaleString()} {selectedDispute.currency}</div>
+              </div>
+
+              {/* Description */}
+              <div className="bg-gray-50 rounded-lg p-2.5 border border-gray-200">
+                <div className="text-xs font-medium text-gray-900 mb-1">Description</div>
+                <div className="text-xs text-gray-700">{selectedDispute.description}</div>
+              </div>
+
+              {/* Timeline */}
+              <div className="bg-gray-50 rounded-lg p-2.5 border border-gray-200">
+                <div className="text-xs font-medium text-gray-900 mb-2">Timeline</div>
+                <div className="space-y-1.5">
+                  <div>
+                    <div className="text-[10px] text-gray-600">Created</div>
+                    <div className="text-xs text-gray-900">{formatDateTime(selectedDispute.createdAt)}</div>
+                  </div>
+                  <div>
+                    <div className="text-[10px] text-gray-600">Last Updated</div>
+                    <div className="text-xs text-gray-900">{formatDateTime(selectedDispute.updatedAt)}</div>
+                  </div>
+                  <div>
+                    <div className="text-[10px] text-gray-600">Due Date</div>
+                    <div className="text-xs text-gray-900">
+                      {formatDate(selectedDispute.dueDate)}
+                      {getDaysUntilDue(selectedDispute.dueDate) <= 0 && <span className="text-gray-600 font-medium ml-1">(Overdue)</span>}
+                      {getDaysUntilDue(selectedDispute.dueDate) > 0 && getDaysUntilDue(selectedDispute.dueDate) <= 2 && (
+                        <span className="text-gray-600 font-medium ml-1">({getDaysUntilDue(selectedDispute.dueDate)}d left)</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Assignment & Activity */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-gray-50 rounded-lg p-2.5 border border-gray-200">
+                  <div className="text-[10px] text-gray-600 mb-0.5">Assigned To</div>
+                  <div className="text-xs text-gray-900">{selectedDispute.assignedTo || 'Unassigned'}</div>
+                </div>
+                <div className="bg-gray-50 rounded-lg p-2.5 border border-gray-200">
+                  <div className="text-[10px] text-gray-600 mb-0.5">Activity</div>
+                  <div className="text-xs text-gray-900">{selectedDispute.evidence} evidence, {selectedDispute.messages} messages</div>
+                </div>
+              </div>
+
+              {/* Resolution */}
+              {selectedDispute.resolution && (
+                <div className="bg-gray-50 rounded-lg p-2.5 border border-gray-200">
+                  <div className="text-xs font-medium text-gray-900 mb-1">Resolution</div>
+                  <div className="text-xs text-gray-700">{selectedDispute.resolution}</div>
+                </div>
+              )}
+
+              {/* Actions */}
+              {selectedDispute.status !== 'resolved' && (
+                <div className="flex items-center gap-2 pt-2 border-t border-gray-200">
+                  <button
+                    onClick={() => {
+                      handleStatusChange(selectedDispute.id, 'resolved');
+                      setShowDetailsModal(false);
+                    }}
+                    className="flex-1 px-3 py-1.5 bg-gray-800 text-white rounded-lg hover:bg-gray-900 transition-colors text-xs font-medium"
+                  >
+                    Mark Resolved
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };

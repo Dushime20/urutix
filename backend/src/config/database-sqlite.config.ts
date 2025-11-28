@@ -1,3 +1,9 @@
+/**
+ * SQLite database configuration.
+ * 
+ * NOTE: This file is currently unused. The application uses PostgreSQL.
+ * This configuration may be kept for reference or future SQLite support.
+ */
 import { TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { User } from '../entities/user.entity';
 import { UserProfile } from '../entities/user-profile.entity';
