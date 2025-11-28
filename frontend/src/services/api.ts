@@ -67,6 +67,10 @@ export const authAPI = {
   register: (data: any) => api.post('/auth/register', data),
   getProfile: () => api.get('/auth/profile'),
   testAuth: () => api.get('/auth/profile'), // Simple auth test
+  setupDriverPassword: (data: { token: string; password: string; confirmPassword: string }) =>
+    api.post('/auth/driver/setup-password', data),
+  setupTenantPassword: (data: { token: string; password: string; confirmPassword: string }) =>
+    api.post('/auth/tenant/setup-password', data),
 };
 
 // Trips API

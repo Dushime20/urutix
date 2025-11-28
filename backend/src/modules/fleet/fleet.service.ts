@@ -6,6 +6,7 @@ import {
   ConflictException,
   HttpException,
   InternalServerErrorException,
+  Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -18,15 +19,19 @@ import {
 import { Driver, DriverStatus } from '../../entities/driver.entity';
 import { Route } from '../../entities/route.entity';
 import { RouteTruck } from '../../entities/route-truck.entity';
-import { CreateTruckDto } from './dto/create-truck.dto';
-import { CreateDriverDto } from './dto/create-driver.dto';
 import { User, UserRole, UserStatus } from '../../entities/user.entity';
 import { UserProfile } from '../../entities/user-profile.entity';
+import { PasswordResetToken } from '../../entities/password-reset-token.entity';
+import { CreateTruckDto } from './dto/create-truck.dto';
+import { CreateDriverDto } from './dto/create-driver.dto';
+import { EmailService } from '../auth/email.service';
 import * as bcrypt from 'bcryptjs';
 import * as crypto from 'crypto';
 
 @Injectable()
 export class FleetService {
+  private readonly logger = new Logger(FleetService.name);
+
   constructor(
     @InjectRepository(Truck)
     private readonly truckRepository: Repository<Truck>,
@@ -40,6 +45,9 @@ export class FleetService {
     private readonly userRepository: Repository<User>,
     @InjectRepository(UserProfile)
     private readonly userProfileRepository: Repository<UserProfile>,
+    @InjectRepository(PasswordResetToken)
+    private readonly passwordResetTokenRepository: Repository<PasswordResetToken>,
+    private readonly emailService: EmailService,
   ) {}
 
   // Truck operations
@@ -522,7 +530,7 @@ export class FleetService {
         );
       }
 
-      // Check if user with this email already exists
+      // Check if user with email already exists
       let driverUser = await this.userRepository.findOne({
         where: { email: createDriverDto.email, tenantId },
       });
@@ -530,61 +538,307 @@ export class FleetService {
       let driverUserId: string;
 
       if (driverUser) {
-        // User already exists - check if they already have DRIVER role
-        if (driverUser.role !== UserRole.DRIVER) {
-          // Update existing user to DRIVER role if they don't have it
-          driverUser.role = UserRole.DRIVER;
-          if (driverUser.status === UserStatus.DEACTIVATED) {
-            driverUser.status = UserStatus.ACTIVE;
-          }
-          await this.userRepository.save(driverUser);
-          console.log('✅ Updated existing user to DRIVER role:', driverUser.id);
+        // User exists, check if they're already a driver
+        const existingDriverForUser = await this.driverRepository.findOne({
+          where: { userId: driverUser.id },
+        });
+
+        if (existingDriverForUser) {
+          throw new ConflictException(
+            `A driver account already exists for email ${createDriverDto.email}`,
+          );
         }
+
         driverUserId = driverUser.id;
+
+        // Update user role to DRIVER if not already
+        if (driverUser.role !== UserRole.DRIVER) {
+          driverUser.role = UserRole.DRIVER;
+          await this.userRepository.save(driverUser);
+        }
+
+        // Update or create user profile
+        let userProfile = await this.userProfileRepository.findOne({
+          where: { userId: driverUserId },
+        });
+        if (userProfile) {
+          userProfile.firstName = createDriverDto.firstName;
+          userProfile.lastName = createDriverDto.lastName;
+          await this.userProfileRepository.save(userProfile);
+        } else {
+          userProfile = this.userProfileRepository.create({
+            userId: driverUserId,
+            tenantId: tenantId, // Add tenantId to user profile
+            firstName: createDriverDto.firstName,
+            lastName: createDriverDto.lastName,
+          });
+          await this.userProfileRepository.save(userProfile);
+        }
+
+        // Generate password setup token and send email
+        // Check if user needs password setup (status is PENDING_VERIFICATION or no password set)
+        const needsPasswordSetup =
+          driverUser.status === UserStatus.PENDING_VERIFICATION ||
+          !driverUser.passwordHash;
+
+        if (needsPasswordSetup) {
+          this.logger.log('👤 Existing user needs password setup, generating token...');
+          
+          // Generate password setup token
+          const token = crypto.randomBytes(32).toString('hex');
+          const expiresAt = new Date();
+          expiresAt.setDate(expiresAt.getDate() + 7); // Token expires in 7 days
+
+          // Invalidate any existing tokens for this email
+          await this.passwordResetTokenRepository.update(
+            { email: createDriverDto.email.trim().toLowerCase(), used: false },
+            { used: true },
+          );
+
+          const passwordSetupToken = this.passwordResetTokenRepository.create({
+            email: createDriverDto.email.trim().toLowerCase(),
+            token,
+            expiresAt,
+            used: false,
+          });
+          await this.passwordResetTokenRepository.save(passwordSetupToken);
+
+          // Send password setup email
+          this.logger.log('📧 ========== EMAIL SENDING PROCESS START (EXISTING USER) ==========');
+          this.logger.log('📧 Sending password setup email to existing user...');
+          
+          const normalizedEmail = createDriverDto.email.trim().toLowerCase();
+          
+          this.logger.log('📧 Email details:', {
+            originalEmail: createDriverDto.email,
+            normalizedEmail: normalizedEmail,
+            firstName: createDriverDto.firstName,
+            lastName: createDriverDto.lastName,
+            token: token.substring(0, 10) + '...',
+          });
+          this.logger.log(`📧 EmailService instance: ${this.emailService ? 'EXISTS' : 'MISSING'}`);
+          
+          try {
+            if (!this.emailService) {
+              throw new Error('EmailService is not injected properly');
+            }
+            
+            this.logger.log('📧 Calling emailService.sendDriverPasswordSetupEmail...');
+            this.logger.log(`📧 Email address being sent to: ${normalizedEmail}`);
+            
+            await this.emailService.sendDriverPasswordSetupEmail(
+              normalizedEmail,
+              createDriverDto.firstName,
+              createDriverDto.lastName,
+              token,
+            );
+            
+            this.logger.log(`✅ Password setup email sent successfully to: ${normalizedEmail}`);
+            this.logger.log(`✅ Check the inbox (and spam folder) for: ${normalizedEmail}`);
+          } catch (emailError: any) {
+            // Log error but don't fail driver creation
+            this.logger.error('❌ ========== EMAIL SENDING FAILED ==========');
+            this.logger.error(`❌ Failed to send password setup email: ${emailError?.message || emailError}`);
+            this.logger.error(`❌ Email error message: ${emailError?.message}`);
+            this.logger.error(`❌ Email error stack: ${emailError?.stack}`);
+            this.logger.error(`❌ Email error details: ${JSON.stringify(emailError, null, 2)}`);
+            this.logger.warn(
+              '⚠️ Driver created successfully but email NOT sent. Driver can still set password using the token.',
+            );
+            this.logger.warn('⚠️ Please check SMTP configuration in .env file');
+            this.logger.error('❌ ========== END EMAIL ERROR ==========');
+            // Continue with driver creation even if email fails
+          }
+          this.logger.log('📧 ========== EMAIL SENDING PROCESS END ==========');
+        } else {
+          const normalizedEmail = createDriverDto.email.trim().toLowerCase();
+          this.logger.log(`👤 User ${normalizedEmail} already has password set, skipping email`);
+        }
       } else {
-        // Create new user account for the driver
-        console.log('👤 Creating new user account for driver...');
+        // Create new user for driver
+        console.log('👤 Creating user account for driver...');
+        console.log('👤 Driver email:', createDriverDto.email);
+        console.log('👤 Driver phone:', createDriverDto.phone);
         
-        // Generate a temporary password (driver will need to reset it on first login)
-        const temporaryPassword = crypto.randomBytes(12).toString('hex');
-        const hashedPassword = await bcrypt.hash(temporaryPassword, 14);
+        // Validate email is provided
+        if (!createDriverDto.email || createDriverDto.email.trim() === '') {
+          throw new BadRequestException(
+            'Email is required to create a driver account. Please provide a valid email address.',
+          );
+        }
+
+        // Validate email format
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(createDriverDto.email)) {
+          throw new BadRequestException(
+            'Invalid email format. Please provide a valid email address.',
+          );
+        }
+        
+        // Generate temporary password (will be replaced when driver sets password)
+        const tempPassword = crypto.randomBytes(32).toString('hex');
+        const tempPasswordHash = await bcrypt.hash(tempPassword, 12);
 
         driverUser = this.userRepository.create({
-          email: createDriverDto.email,
+          email: createDriverDto.email.trim().toLowerCase(), // Normalize email
           phone: createDriverDto.phone,
-          passwordHash: hashedPassword,
+          passwordHash: tempPasswordHash,
           role: UserRole.DRIVER,
-          status: UserStatus.ACTIVE, // Active since truck owner is creating them
+          status: UserStatus.PENDING_VERIFICATION, // Will be activated after password setup
           tenantId,
         });
 
         driverUser = await this.userRepository.save(driverUser);
         driverUserId = driverUser.id;
-        console.log('✅ User account created for driver:', driverUserId);
 
         // Create user profile
-        const driverProfile = this.userProfileRepository.create({
+        const userProfile = this.userProfileRepository.create({
           userId: driverUserId,
-          tenantId,
+          tenantId: tenantId, // Add tenantId to user profile
           firstName: createDriverDto.firstName,
           lastName: createDriverDto.lastName,
         });
+        await this.userProfileRepository.save(userProfile);
 
-        await this.userProfileRepository.save(driverProfile);
-        console.log('✅ User profile created for driver');
+        // Generate password setup token
+        const token = crypto.randomBytes(32).toString('hex');
+        const expiresAt = new Date();
+        expiresAt.setDate(expiresAt.getDate() + 7); // Token expires in 7 days
 
-        // Log temporary password for admin/truck owner reference
-        // TODO: Send welcome email with password reset link via email service
-        // The driver should reset their password on first login for security
-        console.log(`⚠️ IMPORTANT: Temporary password for driver ${createDriverDto.email}: ${temporaryPassword}`);
-        console.log(`⚠️ Driver should reset password on first login. Consider sending password reset email.`);
+        const passwordSetupToken = this.passwordResetTokenRepository.create({
+          email: createDriverDto.email,
+          token,
+          expiresAt,
+          used: false,
+        });
+        await this.passwordResetTokenRepository.save(passwordSetupToken);
+
+        // Send password setup email (non-blocking - don't fail driver creation if email fails)
+        this.logger.log('📧 ========== EMAIL SENDING PROCESS START ==========');
+        this.logger.log('📧 Sending password setup email...');
+        
+        // Normalize email (already validated above)
+        const normalizedEmail = createDriverDto.email.trim().toLowerCase();
+        
+        this.logger.log('📧 Email details:', {
+          originalEmail: createDriverDto.email,
+          normalizedEmail: normalizedEmail,
+          firstName: createDriverDto.firstName,
+          lastName: createDriverDto.lastName,
+          token: token.substring(0, 10) + '...',
+        });
+        this.logger.log(`📧 EmailService instance: ${this.emailService ? 'EXISTS' : 'MISSING'}`);
+        
+        try {
+          if (!this.emailService) {
+            throw new Error('EmailService is not injected properly');
+          }
+          
+          this.logger.log('📧 Calling emailService.sendDriverPasswordSetupEmail...');
+          this.logger.log(`📧 Email address being sent to: ${normalizedEmail}`);
+          
+          await this.emailService.sendDriverPasswordSetupEmail(
+            normalizedEmail,
+            createDriverDto.firstName,
+            createDriverDto.lastName,
+            token,
+          );
+          
+          this.logger.log(`✅ Password setup email sent successfully to: ${normalizedEmail}`);
+          this.logger.log(`✅ Check the inbox (and spam folder) for: ${normalizedEmail}`);
+        } catch (emailError: any) {
+          // Log error but don't fail driver creation
+          this.logger.error('❌ ========== EMAIL SENDING FAILED ==========');
+          this.logger.error(`❌ Failed to send password setup email: ${emailError?.message || emailError}`);
+          this.logger.error(`❌ Email error message: ${emailError?.message}`);
+          this.logger.error(`❌ Email error stack: ${emailError?.stack}`);
+          this.logger.error(`❌ Email error details: ${JSON.stringify(emailError, null, 2)}`);
+          this.logger.warn(
+            '⚠️ Driver created successfully but email NOT sent. Driver can still set password using the token.',
+          );
+          this.logger.warn('⚠️ Please check SMTP configuration in .env file');
+          this.logger.error('❌ ========== END EMAIL ERROR ==========');
+          // Continue with driver creation even if email fails
+        }
+        this.logger.log('📧 ========== EMAIL SENDING PROCESS END ==========');
       }
 
-      // Create driver entity with the driver's user ID (not the truck owner's ID)
+      // Create driver entity
+      // Convert ISO date strings to Date objects for database
+      const convertToDate = (dateValue: string | Date | undefined): Date | undefined => {
+        if (!dateValue) return undefined;
+        // If it's already a Date object, return it
+        if (dateValue instanceof Date) return dateValue;
+        // If it's a string, parse it
+        if (typeof dateValue === 'string') {
+          const date = new Date(dateValue);
+          if (isNaN(date.getTime())) {
+            this.logger.warn(`⚠️ Invalid date string: ${dateValue}`);
+            return undefined;
+          }
+          return date;
+        }
+        return undefined;
+      };
+
+      // Validate required date fields
+      const dateOfBirthDate = convertToDate(createDriverDto.dateOfBirth);
+      const licenseIssueDateDate = convertToDate(createDriverDto.licenseIssueDate);
+      const licenseExpiryDate = convertToDate(createDriverDto.licenseExpiry);
+      const hireDateDate = convertToDate(createDriverDto.hireDate);
+
+      if (!dateOfBirthDate) {
+        throw new BadRequestException(
+          `dateOfBirth is required and must be a valid date. Received: ${createDriverDto.dateOfBirth}`,
+        );
+      }
+      if (!licenseIssueDateDate) {
+        throw new BadRequestException(
+          `licenseIssueDate is required and must be a valid date. Received: ${createDriverDto.licenseIssueDate}`,
+        );
+      }
+      if (!licenseExpiryDate) {
+        throw new BadRequestException(
+          `licenseExpiry is required and must be a valid date. Received: ${createDriverDto.licenseExpiry}`,
+        );
+      }
+      if (!hireDateDate) {
+        throw new BadRequestException(
+          `hireDate is required and must be a valid date. Received: ${createDriverDto.hireDate}`,
+        );
+      }
+
+      // Log the data being saved for debugging
+      this.logger.log('💾 Creating driver with data:', {
+        firstName: createDriverDto.firstName,
+        lastName: createDriverDto.lastName,
+        email: createDriverDto.email,
+        phone: createDriverDto.phone,
+        dateOfBirth: dateOfBirthDate,
+        licenseNumber: createDriverDto.licenseNumber,
+        licenseIssueDate: licenseIssueDateDate,
+        licenseExpiry: licenseExpiryDate,
+        hireDate: hireDateDate,
+        userId: driverUserId,
+        employerId: userId,
+        tenantId,
+      });
+
       const driver = this.driverRepository.create({
         ...createDriverDto,
-        userId: driverUserId, // Use the driver's user account ID
-        employerId: userId, // Truck owner is the employer
+        // Convert date strings to Date objects
+        dateOfBirth: dateOfBirthDate,
+        licenseIssueDate: licenseIssueDateDate,
+        licenseExpiry: licenseExpiryDate,
+        hireDate: hireDateDate,
+        terminationDate: createDriverDto.terminationDate ? convertToDate(createDriverDto.terminationDate) : undefined,
+        medicalCertExpiry: createDriverDto.medicalCertExpiry ? convertToDate(createDriverDto.medicalCertExpiry) : undefined,
+        drugTestDate: createDriverDto.drugTestDate ? convertToDate(createDriverDto.drugTestDate) : undefined,
+        backgroundCheckDate: createDriverDto.backgroundCheckDate ? convertToDate(createDriverDto.backgroundCheckDate) : undefined,
+        trainingCompletionDate: createDriverDto.trainingCompletionDate ? convertToDate(createDriverDto.trainingCompletionDate) : undefined,
+        userId: driverUserId,
+        employerId: userId,
+>>>>>>> 806ab5c5872e3a429e2218be02aa3a812e0d893c
         tenantId,
         // Override status from DTO to ensure it's ACTIVE for new drivers
         status: DriverStatus.ACTIVE,
@@ -650,8 +904,41 @@ export class FleetService {
       }
 
       if (error.code === '23502') {
-        // Not null violation
-        throw new BadRequestException('Required field is missing');
+        // Not null violation - extract the column name from the error message
+        const errorMessage = error.message || error.toString() || '';
+        this.logger.error(`❌ Database constraint violation (23502): ${errorMessage}`);
+        this.logger.error(`❌ Full error object:`, JSON.stringify(error, null, 2));
+        
+        // Try multiple patterns to extract column name
+        let columnName = 'unknown';
+        const patterns = [
+          /column "(\w+)" violates not-null constraint/i,
+          /null value in column "(\w+)" violates not-null constraint/i,
+          /column "(\w+)" of relation "(\w+)" violates not-null constraint/i,
+          /"(\w+)" violates not-null/i,
+        ];
+        
+        for (const pattern of patterns) {
+          const match = errorMessage.match(pattern);
+          if (match && match[1]) {
+            columnName = match[1];
+            break;
+          }
+        }
+        
+        // Also check error.detail if available
+        if (error.detail) {
+          this.logger.error(`❌ Error detail: ${error.detail}`);
+          const detailMatch = error.detail.match(/column "(\w+)"|"(\w+)"/i);
+          if (detailMatch && (detailMatch[1] || detailMatch[2])) {
+            columnName = detailMatch[1] || detailMatch[2];
+          }
+        }
+        
+        this.logger.error(`❌ Extracted column name: ${columnName}`);
+        throw new BadRequestException(
+          `Required field '${columnName}' is missing or null. Please provide a value for this field. Error details: ${errorMessage}`,
+        );
       }
 
       // Generic error
