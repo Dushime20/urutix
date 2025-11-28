@@ -4,6 +4,7 @@ import { Bid } from '../../entities/bid.entity';
 import { Auction } from '../../entities/auction.entity';
 import { Load } from '../../entities/load.entity';
 import { User } from '../../entities/user.entity';
+import { UserProfile } from '../../entities/user-profile.entity';
 import { Truck } from '../../entities/truck.entity';
 import { AuctionWatch } from '../../entities/auction-watch.entity';
 import { AuctionView } from '../../entities/auction-view.entity';
@@ -17,6 +18,7 @@ import { BiddingController } from './bidding.controller';
       Auction,
       Load,
       User,
+      UserProfile,
       Truck,
       AuctionWatch,
       AuctionView,

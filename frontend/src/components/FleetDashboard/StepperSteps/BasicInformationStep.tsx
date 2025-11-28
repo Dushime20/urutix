@@ -1,5 +1,5 @@
 import React from 'react';
-import { FaTruck, FaIdCard, FaCalendar, FaWeight } from 'react-icons/fa';
+import { FaTruck, FaIdCard, FaCalendar } from 'react-icons/fa';
 
 interface BasicInformationStepProps {
   formData: any;
@@ -47,12 +47,39 @@ const BasicInformationStep: React.FC<BasicInformationStepProps> = ({
             <input
               type="text"
               value={formData.vin || ''}
-              onChange={(e) => handleInputChange('vin', e.target.value)}
-              className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-500 focus:border-gray-500"
+              onChange={(e) => {
+                // Only allow alphanumeric characters (excluding I, O, Q as per VIN standards)
+                const value = e.target.value.toUpperCase().replace(/[^A-HJ-NPR-Z0-9]/g, '');
+                // Limit to 17 characters
+                if (value.length <= 17) {
+                  handleInputChange('vin', value);
+                }
+              }}
+              className={`w-full px-2.5 py-1.5 text-sm border rounded-md focus:outline-none focus:ring-1 focus:ring-gray-500 focus:border-gray-500 ${
+                formData.vin?.length === 17 
+                  ? 'border-green-500 bg-green-50' 
+                  : formData.vin?.length > 0 
+                  ? 'border-yellow-400' 
+                  : 'border-gray-300'
+              }`}
               required
               maxLength={17}
-              placeholder="Enter VIN number"
+              placeholder="Enter 17-character VIN"
             />
+            <div className="mt-1 flex items-center justify-between">
+              <span className={`text-xs ${
+                formData.vin?.length === 17 
+                  ? 'text-green-600' 
+                  : formData.vin?.length > 0 
+                  ? 'text-yellow-600' 
+                  : 'text-gray-500'
+              }`}>
+                {formData.vin?.length || 0} / 17 characters
+              </span>
+              {formData.vin?.length === 17 && (
+                <span className="text-xs text-green-600 font-medium">✓ Valid VIN length</span>
+              )}
+            </div>
           </div>
 
           <div>
@@ -111,13 +138,26 @@ const BasicInformationStep: React.FC<BasicInformationStepProps> = ({
               <input
                 type="number"
                 value={formData.year || ''}
-                onChange={(e) => handleInputChange('year', parseInt(e.target.value))}
-                className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-500 focus:border-gray-500"
+                onChange={(e) => {
+                  const value = e.target.value;
+                  handleInputChange('year', value === '' ? '' : parseInt(value));
+                }}
+                className={`w-full px-2.5 py-1.5 text-sm border rounded-md focus:outline-none focus:ring-1 focus:ring-gray-500 focus:border-gray-500 ${
+                  formData.year && typeof formData.year === 'number' && formData.year > new Date().getFullYear()
+                    ? 'border-red-500 bg-red-50'
+                    : 'border-gray-300'
+                }`}
                 required
                 min="1900"
                 max="2030"
                 placeholder="e.g., 2023"
               />
+              {formData.year && typeof formData.year === 'number' && formData.year > new Date().getFullYear() && (
+                <p className="mt-1 text-xs text-red-600 flex items-center gap-1">
+                  <span>⚠</span>
+                  <span>Year cannot be in the future. Current year is {new Date().getFullYear()}</span>
+                </p>
+              )}
             </div>
 
             <div>
@@ -132,79 +172,6 @@ const BasicInformationStep: React.FC<BasicInformationStepProps> = ({
                 placeholder="e.g., White"
               />
             </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Capacity Information */}
-      <div className="space-y-3">
-        <h4 className="text-xs font-medium text-gray-700 flex items-center mb-2">
-          <FaWeight className="w-3.5 h-3.5 mr-1.5 text-gray-600" />
-          Capacity Information
-        </h4>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">
-              Weight Capacity (kg) *
-            </label>
-            <input
-              type="number"
-              value={formData.capacityWeight || ''}
-              onChange={(e) => handleInputChange('capacityWeight', parseFloat(e.target.value))}
-              className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-500 focus:border-gray-500"
-              required
-              min="1"
-              placeholder="e.g., 25000"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">
-              Volume Capacity (m³) *
-            </label>
-            <input
-              type="number"
-              value={formData.capacityVolume || ''}
-              onChange={(e) => handleInputChange('capacityVolume', parseFloat(e.target.value))}
-              className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-500 focus:border-gray-500"
-              required
-              min="1"
-              placeholder="e.g., 100"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">
-              Current Mileage (km)
-            </label>
-            <input
-              type="number"
-              value={formData.mileage || ''}
-              onChange={(e) => handleInputChange('mileage', e.target.value)}
-              className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-500 focus:border-gray-500"
-              min="0"
-              placeholder="e.g., 150000"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">
-              Fuel Type *
-            </label>
-            <select
-              value={formData.fuelType || ''}
-              onChange={(e) => handleInputChange('fuelType', e.target.value)}
-              className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-500 focus:border-gray-500"
-              required
-            >
-              <option value="">Select fuel type</option>
-              <option value="DIESEL">Diesel</option>
-              <option value="GASOLINE">Gasoline</option>
-              <option value="ELECTRIC">Electric</option>
-              <option value="HYBRID">Hybrid</option>
-              <option value="NATURAL_GAS">Natural Gas</option>
-            </select>
           </div>
         </div>
       </div>

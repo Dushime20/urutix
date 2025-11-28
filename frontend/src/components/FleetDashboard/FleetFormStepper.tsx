@@ -742,9 +742,8 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
       await onSubmit(convertedData);
       console.log('✅ Form submitted successfully');
       
-      // Dismiss loading toast and show success
+      // Dismiss loading toast (success toast is handled by parent component)
       toast.dismiss(loadingToast);
-      toast.success(`${activeTab === 'drivers' ? 'Driver' : 'Truck'} created successfully!`);
       onClose();
     } catch (error: any) {
       console.error('❌ Error submitting form:', error);
@@ -824,9 +823,8 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
       await onSubmit(convertedData);
       console.log('✅ Form submitted successfully');
       
-      // Dismiss loading toast and show success
+      // Dismiss loading toast (success toast is handled by parent component)
       toast.dismiss(loadingToast);
-      toast.success(`${activeTab === 'drivers' ? 'Driver' : 'Truck'} created successfully!`);
       onClose();
     } catch (error: any) {
       console.error('❌ Error submitting form:', error);

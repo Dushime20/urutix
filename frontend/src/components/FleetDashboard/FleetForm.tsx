@@ -668,11 +668,39 @@ const FleetForm: React.FC<FleetFormProps> = ({
                     <input
                       type="text"
                       value={formData.vin || ''}
-                      onChange={(e) => handleInputChange('vin', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                      onChange={(e) => {
+                        // Only allow alphanumeric characters (excluding I, O, Q as per VIN standards)
+                        const value = e.target.value.toUpperCase().replace(/[^A-HJ-NPR-Z0-9]/g, '');
+                        // Limit to 17 characters
+                        if (value.length <= 17) {
+                          handleInputChange('vin', value);
+                        }
+                      }}
+                      className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
+                        formData.vin?.length === 17 
+                          ? 'border-green-500 bg-green-50' 
+                          : formData.vin?.length > 0 
+                          ? 'border-yellow-400' 
+                          : 'border-gray-300'
+                      }`}
                       required
                       maxLength={17}
+                      placeholder="Enter 17-character VIN"
                     />
+                    <div className="mt-1 flex items-center justify-between">
+                      <span className={`text-xs ${
+                        formData.vin?.length === 17 
+                          ? 'text-green-600' 
+                          : formData.vin?.length > 0 
+                          ? 'text-yellow-600' 
+                          : 'text-gray-500'
+                      }`}>
+                        {formData.vin?.length || 0} / 17 characters
+                      </span>
+                      {formData.vin?.length === 17 && (
+                        <span className="text-xs text-green-600 font-medium">✓ Valid VIN length</span>
+                      )}
+                    </div>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -707,12 +735,25 @@ const FleetForm: React.FC<FleetFormProps> = ({
                     <input
                       type="number"
                       value={formData.year || ''}
-                      onChange={(e) => handleInputChange('year', parseInt(e.target.value) || '')}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        handleInputChange('year', value === '' ? '' : parseInt(value) || '');
+                      }}
+                      className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
+                        formData.year && typeof formData.year === 'number' && formData.year > new Date().getFullYear()
+                          ? 'border-red-500 bg-red-50'
+                          : 'border-gray-300'
+                      }`}
                       required
                       min={1900}
                       max={2030}
                     />
+                    {formData.year && typeof formData.year === 'number' && formData.year > new Date().getFullYear() && (
+                      <p className="mt-1 text-xs text-red-600 flex items-center gap-1">
+                        <span>⚠</span>
+                        <span>Year cannot be in the future. Current year is {new Date().getFullYear()}</span>
+                      </p>
+                    )}
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">

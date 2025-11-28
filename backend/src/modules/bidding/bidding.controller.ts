@@ -8,6 +8,7 @@ import {
   Param,
   UseGuards,
   Request,
+  Query,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -16,6 +17,7 @@ import {
   ApiBearerAuth,
   ApiParam,
   ApiBody,
+  ApiQuery,
 } from '@nestjs/swagger';
 import {
   BiddingService,
@@ -407,12 +409,37 @@ export class BiddingController {
       },
     },
   })
+  @Get('auctions')
+  @ApiOperation({
+    summary: 'Get all auctions',
+    description: 'Retrieve all auctions for the current tenant, optionally filtered by status',
+  })
+  @ApiQuery({
+    name: 'status',
+    required: false,
+    enum: ['ACTIVE', 'SCHEDULED', 'CLOSED', 'CANCELLED'],
+    description: 'Filter auctions by status',
+  })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Page number for pagination',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Number of items per page',
+  })
   async getAuctions(
     @Request()
     req = { user: { tenantId: '00000000-0000-0000-0000-000000000001' } },
+    @Query('status') status?: string,
   ): Promise<Auction[]> {
     return this.biddingService.getAuctions(
       req.user?.tenantId || '00000000-0000-0000-0000-000000000001',
+      status,
     );
   }
 
@@ -624,13 +651,37 @@ export class BiddingController {
     req = {
       user: {
         userId: '701a9079-6100-4b47-a3b9-f9b070bfa7c6',
-        tenantId: '00000000-0000-0000-000000000001',
+        tenantId: '00000000-0000-0000-0000-000000000001',
+        role: 'TRUCK_OWNER',
       },
     },
   ): Promise<Bid[]> {
     return this.biddingService.getMyBids(
       req.user?.userId || '701a9079-6100-4b47-a3b9-f9b070bfa7c6',
       req.user?.tenantId || '00000000-0000-0000-0000-000000000001',
+      req.user?.role,
+    );
+  }
+
+  @Get('history')
+  @ApiOperation({ 
+    summary: 'Get bid history',
+    description: 'Get bid history - for truck owners: their submitted bids, for cargo owners: bids on their auctions'
+  })
+  async getBidHistory(
+    @Request()
+    req = {
+      user: {
+        userId: '701a9079-6100-4b47-a3b9-f9b070bfa7c6',
+        tenantId: '00000000-0000-0000-0000-000000000001',
+        role: 'TRUCK_OWNER',
+      },
+    },
+  ): Promise<Bid[]> {
+    return this.biddingService.getBidHistory(
+      req.user?.userId || '701a9079-6100-4b47-a3b9-f9b070bfa7c6',
+      req.user?.tenantId || '00000000-0000-0000-0000-000000000001',
+      req.user?.role,
     );
   }
 

@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { FaEye, FaEyeSlash, FaSpinner } from 'react-icons/fa';
+import { CheckCircle2, Circle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -24,7 +25,12 @@ const registerSchema = z.object({
   lastName: z.string().min(1, { message: 'Last name is required' }),
   companyName: z.string().min(1, { message: 'Please select a company' }),
   email: z.string().email({ message: 'Invalid email address' }),
-  password: z.string().min(6, { message: 'Password must be at least 6 characters' }),
+  password: z.string()
+    .min(8, { message: 'Password must be at least 8 characters' })
+    .regex(/[A-Z]/, { message: 'Password must contain at least one uppercase letter' })
+    .regex(/[a-z]/, { message: 'Password must contain at least one lowercase letter' })
+    .regex(/[0-9]/, { message: 'Password must contain at least one number' })
+    .regex(/[^A-Za-z0-9]/, { message: 'Password must contain at least one special character' }),
   confirmPassword: z.string().min(6, { message: 'Please confirm your password' }),
   userType: z.enum(['CARGO_OWNER', 'TRUCK_OWNER']),
 }).refine((data) => data.password === data.confirmPassword, {
@@ -51,9 +57,20 @@ const Auth = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [selectedTenant, setSelectedTenant] = useState<Tenant | null>(null);
   const [selectedTenantId, setSelectedTenantId] = useState<string>('');
+  const [loginEmailError, setLoginEmailError] = useState<string | null>(null);
+  const [registerEmailError, setRegisterEmailError] = useState<string | null>(null);
+  
+  // Password validation criteria
+  const [passwordCriteria, setPasswordCriteria] = useState({
+    minLength: false,
+    hasUppercase: false,
+    hasLowercase: false,
+    hasNumber: false,
+    hasSpecialChar: false,
+  });
 
   // Fetch active tenants for dropdown (for both CARGO_OWNER and TRUCK_OWNER)
-  const { data: tenantsData, isLoading: isLoadingTenants } = useQuery({
+  const { data: tenantsData, isLoading: isLoadingTenants, refetch: refetchTenants } = useQuery({
     queryKey: ['active-tenants'],
     queryFn: async () => {
       const response = await tenantAPI.searchTenants({});
@@ -72,7 +89,8 @@ const Auth = () => {
       return [];
     },
     enabled: true, // Always fetch tenants for both user types
-    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+    staleTime: 30 * 1000, // Cache for 30 seconds (reduced from 5 minutes to show new tenants faster)
+    refetchOnWindowFocus: true, // Refetch when window regains focus to get latest tenants
   });
 
   const tenants = tenantsData || [];
@@ -96,6 +114,30 @@ const Auth = () => {
       userType: 'CARGO_OWNER',
     },
   });
+
+  // Watch password field for real-time validation
+  const passwordValue = registerForm.watch('password');
+
+  // Update password criteria as user types
+  useEffect(() => {
+    if (passwordValue) {
+      setPasswordCriteria({
+        minLength: passwordValue.length >= 8,
+        hasUppercase: /[A-Z]/.test(passwordValue),
+        hasLowercase: /[a-z]/.test(passwordValue),
+        hasNumber: /[0-9]/.test(passwordValue),
+        hasSpecialChar: /[^A-Za-z0-9]/.test(passwordValue),
+      });
+    } else {
+      setPasswordCriteria({
+        minLength: false,
+        hasUppercase: false,
+        hasLowercase: false,
+        hasNumber: false,
+        hasSpecialChar: false,
+      });
+    }
+  }, [passwordValue]);
 
 
   const onLoginSubmit = async (values: any) => {
@@ -283,12 +325,31 @@ const Auth = () => {
                   <input
                     {...loginForm.register('email')}
                     type="email"
-                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200"
+                    className={`w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 ${
+                      loginEmailError ? 'border-red-500' : 'border-gray-300'
+                    }`}
                     placeholder="Enter your email"
                     required
+                    onBlur={(e) => {
+                      const emailValue = e.target.value.trim();
+                      if (emailValue && !emailValue.includes('@')) {
+                        setLoginEmailError('Email must contain an @ sign');
+                      } else {
+                        setLoginEmailError(null);
+                      }
+                    }}
+                    onChange={(e) => {
+                      loginForm.setValue('email', e.target.value);
+                      if (loginEmailError && e.target.value.includes('@')) {
+                        setLoginEmailError(null);
+                      }
+                    }}
                   />
-                  {loginForm.formState.errors.email && (
-                    <p className="mt-2 text-sm text-red-600">{loginForm.formState.errors.email.message}</p>
+                  {loginEmailError && (
+                    <p className="mt-1 text-xs text-red-600">{loginEmailError}</p>
+                  )}
+                  {loginForm.formState.errors.email && !loginEmailError && (
+                    <p className="mt-1 text-xs text-red-600">{loginForm.formState.errors.email.message}</p>
                   )}
                 </div>
 
@@ -607,6 +668,59 @@ const Auth = () => {
                           {showPassword ? <FaEyeSlash className="h-4 w-4" /> : <FaEye className="h-4 w-4" />}
                         </button>
                       </div>
+                      {/* Password Validation Criteria */}
+                      <div className="mt-2 space-y-1">
+                        <div className="flex items-center gap-2">
+                          {passwordCriteria.minLength ? (
+                            <CheckCircle2 className="h-3 w-3 text-green-500" />
+                          ) : (
+                            <Circle className="h-3 w-3 text-gray-300" />
+                          )}
+                          <span className={`text-xs ${passwordCriteria.minLength ? 'text-green-600' : 'text-gray-500'}`}>
+                            at least 8 characters
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {passwordCriteria.hasUppercase ? (
+                            <CheckCircle2 className="h-3 w-3 text-green-500" />
+                          ) : (
+                            <Circle className="h-3 w-3 text-gray-300" />
+                          )}
+                          <span className={`text-xs ${passwordCriteria.hasUppercase ? 'text-green-600' : 'text-gray-500'}`}>
+                            one uppercase letter
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {passwordCriteria.hasLowercase ? (
+                            <CheckCircle2 className="h-3 w-3 text-green-500" />
+                          ) : (
+                            <Circle className="h-3 w-3 text-gray-300" />
+                          )}
+                          <span className={`text-xs ${passwordCriteria.hasLowercase ? 'text-green-600' : 'text-gray-500'}`}>
+                            one lowercase letter
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {passwordCriteria.hasNumber ? (
+                            <CheckCircle2 className="h-3 w-3 text-green-500" />
+                          ) : (
+                            <Circle className="h-3 w-3 text-gray-300" />
+                          )}
+                          <span className={`text-xs ${passwordCriteria.hasNumber ? 'text-green-600' : 'text-gray-500'}`}>
+                            one number
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {passwordCriteria.hasSpecialChar ? (
+                            <CheckCircle2 className="h-3 w-3 text-green-500" />
+                          ) : (
+                            <Circle className="h-3 w-3 text-gray-300" />
+                          )}
+                          <span className={`text-xs ${passwordCriteria.hasSpecialChar ? 'text-green-600' : 'text-gray-500'}`}>
+                            one special character
+                          </span>
+                        </div>
+                      </div>
                       {registerForm.formState.errors.password && (
                         <p className="mt-1 text-xs text-red-600">{registerForm.formState.errors.password.message}</p>
                       )}
@@ -639,10 +753,29 @@ const Auth = () => {
                       <input
                         {...registerForm.register('email')}
                         type="email"
-                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200"
+                        className={`w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 ${
+                          registerEmailError ? 'border-red-500' : 'border-gray-300'
+                        }`}
                         placeholder="Enter your email"
+                        onBlur={(e) => {
+                          const emailValue = e.target.value.trim();
+                          if (emailValue && !emailValue.includes('@')) {
+                            setRegisterEmailError('Email must contain an @ sign');
+                          } else {
+                            setRegisterEmailError(null);
+                          }
+                        }}
+                        onChange={(e) => {
+                          registerForm.setValue('email', e.target.value);
+                          if (registerEmailError && e.target.value.includes('@')) {
+                            setRegisterEmailError(null);
+                          }
+                        }}
                       />
-                      {registerForm.formState.errors.email && (
+                      {registerEmailError && (
+                        <p className="mt-1 text-xs text-red-600">{registerEmailError}</p>
+                      )}
+                      {registerForm.formState.errors.email && !registerEmailError && (
                         <p className="mt-1 text-xs text-red-600">{registerForm.formState.errors.email.message}</p>
                       )}
                     </div>

@@ -1,7 +1,23 @@
-import React, { useState } from 'react';
-import { FaGavel } from 'react-icons/fa';
+import React, { useState, useEffect } from 'react';
+import { FaGavel, FaSpinner } from 'react-icons/fa';
+import { loadsAPI } from '../../services/load';
+import { biddingAPI } from '../../services/biddingApi';
+import { useAuth } from '../../contexts/AuthContext';
+import toast from 'react-hot-toast';
+
+interface Cargo {
+  id: string;
+  title?: string;
+  description?: string;
+  origin?: string;
+  destination?: string;
+  status?: string;
+}
 
 const CreateAuction: React.FC = () => {
+  const { user } = useAuth();
+  const [cargos, setCargos] = useState<Cargo[]>([]);
+  const [loadingCargos, setLoadingCargos] = useState(false);
   const [formData, setFormData] = useState({
     loadId: '',
     auctionType: 'REVERSE',
@@ -12,6 +28,46 @@ const CreateAuction: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+
+  useEffect(() => {
+    loadCargos();
+  }, [user]);
+
+  const loadCargos = async () => {
+    if (!user) return;
+    
+    setLoadingCargos(true);
+    try {
+      const response = await loadsAPI.getAll();
+      // Handle different response structures
+      let cargosList: Cargo[] = [];
+      if (response.data?.items) {
+        cargosList = response.data.items;
+      } else if (response.data?.cargos) {
+        cargosList = response.data.cargos;
+      } else if (Array.isArray(response.data)) {
+        cargosList = response.data;
+      } else if (Array.isArray(response)) {
+        cargosList = response;
+      }
+      
+      // Filter cargos that can be auctioned (CREATED, PUBLISHED status)
+      const availableCargos = cargosList.filter(
+        (cargo: Cargo) => 
+          cargo.status === 'CREATED' || 
+          cargo.status === 'PUBLISHED' ||
+          !cargo.status // Include cargos without status if needed
+      );
+      
+      setCargos(availableCargos);
+    } catch (err: any) {
+      console.error('Error loading cargos:', err);
+      toast.error('Failed to load cargos. Please try again.');
+      setCargos([]);
+    } finally {
+      setLoadingCargos(false);
+    }
+  };
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({
@@ -26,30 +82,40 @@ const CreateAuction: React.FC = () => {
     setError(null);
     setSuccess(null);
 
-    try {
-      // Submit auction creation
-      const response = await fetch('/api/bidding/auctions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      });
+    if (!formData.loadId) {
+      setError('Please select a cargo');
+      setLoading(false);
+      return;
+    }
 
-      if (response.ok) {
-        setSuccess('Auction created successfully!');
-        setFormData({
-          loadId: '',
-          auctionType: 'REVERSE',
-          auctionStart: '',
-          auctionEnd: '',
-          reservePrice: '',
-        });
-      } else {
-        throw new Error('Failed to create auction');
-      }
-    } catch (error) {
-      setError('Failed to create auction. Please try again.');
+    try {
+      // Submit auction creation using biddingAPI
+      const auctionData = {
+        loadId: formData.loadId,
+        auctionType: formData.auctionType as 'REVERSE' | 'FORWARD' | 'DUTCH' | 'SEALED',
+        auctionStart: formData.auctionStart,
+        auctionEnd: formData.auctionEnd,
+        reservePrice: formData.reservePrice ? parseFloat(formData.reservePrice) : undefined,
+      };
+
+      await biddingAPI.createAuction(auctionData);
+      
+      toast.success('Auction created successfully!');
+      setSuccess('Auction created successfully!');
+      setFormData({
+        loadId: '',
+        auctionType: 'REVERSE',
+        auctionStart: '',
+        auctionEnd: '',
+        reservePrice: '',
+      });
+      
+      // Reload cargos to refresh the list
+      await loadCargos();
+    } catch (error: any) {
+      const errorMessage = error?.response?.data?.message || 'Failed to create auction. Please try again.';
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -102,16 +168,35 @@ const CreateAuction: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Load ID *
+                Select Cargo *
               </label>
-              <input
-                type="text"
-                value={formData.loadId}
-                onChange={(e) => handleInputChange('loadId', e.target.value)}
-                placeholder="Enter load ID"
-                required
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
+              {loadingCargos ? (
+                <div className="w-full px-3 py-2 border border-gray-300 rounded-md flex items-center gap-2 text-gray-500">
+                  <FaSpinner className="animate-spin" />
+                  <span>Loading cargos...</span>
+                </div>
+              ) : (
+                <select
+                  value={formData.loadId}
+                  onChange={(e) => handleInputChange('loadId', e.target.value)}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option value="">-- Select a cargo --</option>
+                  {cargos.map((cargo) => (
+                    <option key={cargo.id} value={cargo.id}>
+                      {cargo.title || cargo.description || `Cargo ${cargo.id.slice(0, 8)}`}
+                      {cargo.origin && cargo.destination && ` (${cargo.origin} → ${cargo.destination})`}
+                      {cargo.status && ` [${cargo.status}]`}
+                    </option>
+                  ))}
+                </select>
+              )}
+              {cargos.length === 0 && !loadingCargos && (
+                <p className="mt-1 text-xs text-gray-500">
+                  No cargos available. Create a cargo first to create an auction.
+                </p>
+              )}
             </div>
 
             <div>
@@ -183,6 +268,8 @@ const CreateAuction: React.FC = () => {
                   auctionEnd: '',
                   reservePrice: '',
                 });
+                setError(null);
+                setSuccess(null);
               }}
               className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
             >

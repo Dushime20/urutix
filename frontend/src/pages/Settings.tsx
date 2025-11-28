@@ -1,8 +1,31 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FaCog, FaBell, FaLock, FaKey, FaGlobe, FaPalette, FaUsers, FaPlus, FaEdit, FaTrash, FaUserPlus } from 'react-icons/fa';
+import { useAuth } from '../contexts/AuthContext';
+import { authAPI } from '../services/api';
 
 const Settings: React.FC = () => {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('general');
+  const [userProfile, setUserProfile] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadUserProfile();
+  }, [user]);
+
+  const loadUserProfile = async () => {
+    try {
+      setLoading(true);
+      const response = await authAPI.getProfile();
+      const userData = response.data?.data?.user || response.data?.user || response.data;
+      setUserProfile(userData || user);
+    } catch (err: any) {
+      console.error('Error loading user profile:', err);
+      setUserProfile(user);
+    } finally {
+      setLoading(false);
+    }
+  };
   const [notifications, setNotifications] = useState({
     email: true,
     push: true,
@@ -427,7 +450,7 @@ const Settings: React.FC = () => {
                     </label>
                     <input
                       type="text"
-                      value="Cargo Owner"
+                      value={userProfile?.role ? userProfile.role.replace('_', ' ') : (user?.role ? user.role.replace('_', ' ') : '')}
                       disabled
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100"
                     />
@@ -438,7 +461,33 @@ const Settings: React.FC = () => {
                     </label>
                     <input
                       type="text"
-                      value="January 2024"
+                      value={userProfile?.createdAt || userProfile?.emailVerifiedAt 
+                        ? new Date(userProfile.createdAt || userProfile.emailVerifiedAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+                        : (user?.emailVerifiedAt 
+                          ? new Date(user.emailVerifiedAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+                          : '')}
+                      disabled
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Email
+                    </label>
+                    <input
+                      type="text"
+                      value={userProfile?.email || user?.email || ''}
+                      disabled
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Company/Tenant
+                    </label>
+                    <input
+                      type="text"
+                      value={userProfile?.tenantName || user?.tenantName || ''}
                       disabled
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100"
                     />
