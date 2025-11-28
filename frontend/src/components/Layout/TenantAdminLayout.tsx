@@ -4,6 +4,7 @@ import { FaBars, FaBell, FaUser, FaSearch, FaSignOutAlt, FaCog } from 'react-ico
 import { useAuth } from '../../contexts/AuthContext';
 import { AdminLayoutProvider, useAdminLayout } from '../../contexts/AdminLayoutContext';
 import { TenantAdminSidebar, TenantAdminTopbar } from '../TenantAdmin';
+import logoUrutix from '../../assets/logo-urutix.svg';
 
 const TenantAdminLayoutContent: React.FC = () => {
   const { user, isLoading, logout } = useAuth();
@@ -165,8 +166,17 @@ const TenantAdminLayoutContent: React.FC = () => {
         </header>
 
         {/* Main Content Area */}
-        <main className="flex-1 overflow-auto">
-          <div className={`${isCompactMode ? 'p-3' : 'p-6'} transition-all duration-300`}>
+        <main className="flex-1 overflow-auto relative">
+          {/* Background Logo */}
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0" style={{ opacity: 0.05 }}>
+            <img 
+              src={logoUrutix} 
+              alt="UrutiX Logo Background" 
+              className="w-full h-full object-contain max-w-5xl max-h-5xl"
+            />
+          </div>
+          
+          <div className={`${isCompactMode ? 'p-3' : 'p-6'} transition-all duration-300 relative z-10`}>
             <div className="max-w-7xl mx-auto">
               <Outlet />
             </div>

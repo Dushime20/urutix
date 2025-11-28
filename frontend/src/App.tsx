@@ -14,7 +14,7 @@ const TruckBidsPage = lazy(() => import('./pages/TruckBidsPage'));
 const FleetBidsPage = lazy(() => import('./pages/FleetBidsPage'));
 const MyBidsPage = lazy(() => import('./pages/MyBidsPage'));
 const DriversListPage = lazy(() => import('./pages/DriversListPage'));
-const DriverDashboard = lazy(() => import('./pages/DriverDashboard'));
+const DriverDashboard = lazy(() => import('./components/DriverDashboard/DriverDashboard'));
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
 const Analytics = lazy(() => import('./pages/Analytics'));
 const FleetAnalytics = lazy(() => import('./pages/FleetAnalytics'));
@@ -54,6 +54,10 @@ const FinancialAdminDashboard = lazy(() => import('./pages/admin/FinancialAdminD
 const TenantDashboardPage = lazy(() => import('./pages/TenantDashboard'));
 const TenantFleetManagement = lazy(() => import('./components/TenantAdmin/TenantFleetManagement'));
 const TenantCargoOperations = lazy(() => import('./components/TenantAdmin/TenantCargoOperations'));
+const TenantAdminRoutes = lazy(() => import('./components/TenantAdmin/TenantAdminRoutes'));
+const TenantAdminDrivers = lazy(() => import('./components/TenantAdmin/TenantAdminDrivers'));
+const TenantAdminCargo = lazy(() => import('./components/TenantAdmin/TenantAdminCargo'));
+const TenantAdminTrips = lazy(() => import('./components/TenantAdmin/TenantAdminTrips'));
 const Profile = lazy(() => import('./pages/Profile'));
 const Settings = lazy(() => import('./pages/Settings'));
 const LenderPolicySettingsPage = lazy(() => import('./pages/LenderPolicySettingsPage'));
@@ -312,10 +316,10 @@ function App() {
             <Route path="/tenant-admin" element={<TenantAdminLayout />}>
               <Route index element={<TenantDashboardPage />} />
               <Route path="fleet" element={<TenantFleetManagement />} />
-              <Route path="cargo" element={<TenantCargoOperations />} />
-              <Route path="drivers" element={<TenantDashboardPage />} />
-              <Route path="routes" element={<TenantDashboardPage />} />
-              <Route path="trips" element={<TenantDashboardPage />} />
+              <Route path="cargo" element={<TenantAdminCargo />} />
+              <Route path="drivers" element={<TenantAdminDrivers />} />
+              <Route path="routes" element={<TenantAdminRoutes />} />
+              <Route path="trips" element={<TenantAdminTrips />} />
               <Route path="financial" element={<TenantDashboardPage />} />
               <Route path="analytics" element={<TenantDashboardPage />} />
               <Route path="reports" element={<TenantDashboardPage />} />

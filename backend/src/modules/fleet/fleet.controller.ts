@@ -2140,11 +2140,27 @@ export class FleetController {
     @Query('page') page?: number,
     @Query('limit') limit?: number,
   ) {
+    console.log('👤 Fleet Controller - findAllDrivers Debug:');
+    console.log('Request user:', JSON.stringify(req.user, null, 2));
+    console.log('User ID:', req.user?.userId);
+    console.log('User role:', req.user?.role);
+    console.log('Tenant ID:', req.user?.tenantId);
+    console.log('Query params:', { search, status, location, page, limit });
+
+    if (!req.user?.tenantId) {
+      console.error('❌ No tenant ID found in request user');
+      throw new BadRequestException('Tenant ID not found in request');
+    }
+
     const drivers = await this.fleetService.findAllDrivers(
       req.user.tenantId,
       req.user.userId,
       { search, status, location, page, limit },
+      req.user.role, // Pass user role to service
     );
+
+    console.log(`✅ Found ${drivers.length} drivers for tenant ${req.user.tenantId}`);
+
     return {
       message: 'Drivers retrieved successfully',
       drivers,
