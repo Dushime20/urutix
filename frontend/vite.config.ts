@@ -67,4 +67,9 @@ export default defineConfig({
       },
     },
   },
+  preview: {
+    port: 5713,
+    host: '0.0.0.0',
+    strictPort: true,
+  },
 })

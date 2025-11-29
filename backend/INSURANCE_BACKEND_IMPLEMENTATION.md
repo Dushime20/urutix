@@ -341,17 +341,6 @@ PORT=3000
 NODE_ENV=production
 ```
 
-### **Docker Support**
-```dockerfile
-FROM node:18-alpine
-WORKDIR /app
-COPY package*.json ./
-RUN npm ci --only=production
-COPY dist ./dist
-EXPOSE 3000
-CMD ["npm", "run", "start:prod"]
-```
-
 ## 🔧 Configuration
 
 ### **Module Registration**
