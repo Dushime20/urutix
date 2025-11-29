@@ -2,11 +2,15 @@ module.exports = {
   apps: [
     {
       name: 'urutix-backend',
-      script: './backend/dist/main.js',
+      script: './dist/main.js',
       cwd: '/root/project/urutix/backend',
       instances: 1,
       exec_mode: 'fork',
       env: {
+        NODE_ENV: 'production',
+        PORT: 3000,
+      },
+      env_production: {
         NODE_ENV: 'production',
         PORT: 3000,
       },
@@ -28,6 +32,10 @@ module.exports = {
       instances: 1,
       exec_mode: 'fork',
       env: {
+        NODE_ENV: 'production',
+        PORT: 5713,
+      },
+      env_production: {
         NODE_ENV: 'production',
         PORT: 5713,
       },
