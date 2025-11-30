@@ -28,6 +28,7 @@
     "fix:truck-owner": "node src/database/seeds/fix-truck-owner-user.js",
     "seed:all": "node src/database/seeds/seed-all-data.js",
     "seed:complete": "node src/database/seeds/seed-complete-system.js",
+    "seed:companies": "node src/database/seeds/seed-companies.js",
     "seed:payments": "node src/database/seeds/seed-payment-workflow.js",
     "create:admin": "ts-node src/scripts/create-admin-user.ts",
     "user:set-password": "ts-node src/scripts/set-user-password.ts",
