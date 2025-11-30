@@ -53,23 +53,31 @@ const Tracking: React.FC = () => {
   const [showUpdateNotification, setShowUpdateNotification] = useState(false);
   const unsubscribeRefs = useRef<Map<string, () => void>>(new Map());
 
-  // Initialize WebSocket connection
+  // Initialize WebSocket connection (only if enabled)
   useEffect(() => {
+    // Check if WebSocket is enabled before attempting connection
+    if (!trackingWebSocket.isEnabled()) {
+      // WebSocket is disabled, skip connection
+      setWsConnected(false);
+      setWsError('Real-time updates disabled');
+      return;
+    }
+
     const initializeWebSocket = async () => {
       try {
         await trackingWebSocket.connect();
-        setWsConnected(true);
+        setWsConnected(trackingWebSocket.getConnectionStatus());
         setWsError(null);
       } catch (error) {
-        console.error('Failed to connect to WebSocket:', error);
-        setWsError('Failed to connect to real-time service');
+        // Silently handle connection failures - don't log errors
+        setWsError('Real-time updates unavailable');
         setWsConnected(false);
       }
     };
 
     initializeWebSocket();
 
-    // Cleanup on unmount
+    // Cleanup on unmount - safely disconnect
     return () => {
       trackingWebSocket.disconnect();
     };

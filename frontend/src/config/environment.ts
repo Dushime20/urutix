@@ -22,6 +22,13 @@ export const config = {
   features: {
     analytics: import.meta.env.VITE_ENABLE_ANALYTICS === 'true',
     debug: import.meta.env.VITE_ENABLE_DEBUG === 'true',
+    websocket: import.meta.env.VITE_ENABLE_WEBSOCKET !== 'false', // Default: true, can be disabled
+  },
+  
+  // WebSocket Configuration
+  websocket: {
+    enabled: import.meta.env.VITE_ENABLE_WEBSOCKET !== 'false', // Default: true
+    url: import.meta.env.VITE_WEBSOCKET_URL || 'ws://localhost:3001',
   },
 };
 

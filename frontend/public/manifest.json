@@ -1,0 +1,22 @@
+{
+  "name": "UrutiX Smart Logistic",
+  "short_name": "UrutiX",
+  "description": "Intelligent logistics and fleet management platform",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#22c55e",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "/urutix-logo.svg",
+      "sizes": "400x120",
+      "type": "image/svg+xml"
+    }
+  ]
+}
+
