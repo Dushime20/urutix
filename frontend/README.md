@@ -1,4 +1,6 @@
-# Cargo AI Matching Frontend
+# UrutiX Smart Logistic
+
+Intelligent logistics and fleet management platform built with React, TypeScript, and Vite.
 
 ## PostHog Analytics Setup
 
