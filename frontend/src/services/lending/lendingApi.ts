@@ -116,22 +116,33 @@ export const lendingApi = {
 
   // Admin endpoints
   createLender: async (data: { name: string; callback_url?: string; contact_email: string }) => {
-    const response = await api.post('/api/admin/lenders', data);
+    const response = await api.post('/admin/lenders', data);
     return response.data;
   },
 
   getAllLenders: async (): Promise<Lender[]> => {
-    const response = await api.get('/api/admin/lenders');
+    const response = await api.get('/admin/lenders');
+    return response.data;
+  },
+
+  // Tenant-specific endpoints
+  createTenantLender: async (data: { name: string; callback_url?: string; contact_email: string }) => {
+    const response = await api.post('/tenant/lenders', data);
+    return response.data;
+  },
+
+  getTenantLenders: async (): Promise<Lender[]> => {
+    const response = await api.get('/tenant/lenders');
     return response.data;
   },
 
   getLender: async (lenderId: string): Promise<Lender> => {
-    const response = await api.get(`/api/admin/lenders/${lenderId}`);
+    const response = await api.get(`/admin/lenders/${lenderId}`);
     return response.data;
   },
 
   updateLenderStatus: async (lenderId: string, status: 'active' | 'paused' | 'suspended') => {
-    const response = await api.post(`/api/admin/lenders/${lenderId}/status`, { status });
+    const response = await api.post(`/admin/lenders/${lenderId}/status`, { status });
     return response.data;
   },
 
@@ -142,18 +153,18 @@ export const lendingApi = {
     max_exposure: number;
     advance_percentage?: number;
   }) => {
-    const response = await api.post(`/api/admin/lenders/${lenderId}/policy`, data);
+    const response = await api.post(`/admin/lenders/${lenderId}/policy`, data);
     return response.data;
   },
 
   // Lender Profile Management
   getLenderProfile: async (lenderId: string) => {
-    const response = await api.get(`/api/admin/lenders/${lenderId}/profile`);
+    const response = await api.get(`/admin/lenders/${lenderId}/profile`);
     return response.data;
   },
 
   updateLenderProfile: async (lenderId: string, profileData: any) => {
-    const response = await api.put(`/api/admin/lenders/${lenderId}/profile`, profileData);
+    const response = await api.put(`/admin/lenders/${lenderId}/profile`, profileData);
     return response.data;
   },
 
@@ -167,7 +178,7 @@ export const lendingApi = {
     title?: string;
     bio?: string;
   }) => {
-    const response = await api.put(`/api/admin/lenders/${lenderId}/personal`, personalData);
+    const response = await api.put(`/admin/lenders/${lenderId}/personal`, personalData);
     return response.data;
   },
 
@@ -198,7 +209,7 @@ export const lendingApi = {
     specializations?: string[];
     certifications?: string[];
   }) => {
-    const response = await api.put(`/api/admin/lenders/${lenderId}/business`, businessData);
+    const response = await api.put(`/admin/lenders/${lenderId}/business`, businessData);
     return response.data;
   },
 
@@ -209,7 +220,7 @@ export const lendingApi = {
     bankName: string;
     swiftCode?: string;
   }) => {
-    const response = await api.put(`/api/admin/lenders/${lenderId}/banking`, bankingData);
+    const response = await api.put(`/admin/lenders/${lenderId}/banking`, bankingData);
     return response.data;
   },
 
@@ -223,7 +234,7 @@ export const lendingApi = {
     marketingEmails?: boolean;
     twoFactorAuth?: boolean;
   }) => {
-    const response = await api.put(`/api/admin/lenders/${lenderId}/preferences`, preferences);
+    const response = await api.put(`/admin/lenders/${lenderId}/preferences`, preferences);
     return response.data;
   },
 
@@ -464,22 +475,22 @@ export const lendingApi = {
 
   // Team Management
   getLenderTeam: async (lenderId: string): Promise<any[]> => {
-    const response = await api.get(`/api/admin/lenders/${lenderId}/team`);
+    const response = await api.get(`/admin/lenders/${lenderId}/team`);
     return response.data;
   },
 
   getLenderTeamStats: async (lenderId: string): Promise<any> => {
-    const response = await api.get(`/api/admin/lenders/${lenderId}/team/stats`);
+    const response = await api.get(`/admin/lenders/${lenderId}/team/stats`);
     return response.data;
   },
 
   getLenderRoles: async (lenderId: string): Promise<any[]> => {
-    const response = await api.get(`/api/admin/lenders/${lenderId}/roles`);
+    const response = await api.get(`/admin/lenders/${lenderId}/roles`);
     return response.data;
   },
 
   getAllPermissions: async (): Promise<any[]> => {
-    const response = await api.get('/api/admin/permissions');
+    const response = await api.get('/admin/permissions');
     return response.data;
   },
 
@@ -493,7 +504,7 @@ export const lendingApi = {
     additionalPermissions?: string[];
     avatar?: string;
   }): Promise<any> => {
-    const response = await api.post(`/api/admin/lenders/${lenderId}/team`, memberData);
+    const response = await api.post(`/admin/lenders/${lenderId}/team`, memberData);
     return response.data;
   },
 };

@@ -319,6 +319,134 @@ This link will expire in 7 days.
     this.logger.log('========== EMAIL SERVICE CALL END ==========');
   }
 
+  async sendLenderPasswordSetupEmail(
+    email: string,
+    lenderName: string,
+    token: string,
+  ): Promise<void> {
+    this.logger.log('========== LENDER EMAIL SERVICE CALLED ==========');
+    this.logger.log(`Attempting to send lender password setup email to: ${email}`);
+    
+    // Construct the setup URL - use FRONTEND_URL from env, or default to localhost:3001
+    const frontendUrl = this.configService.get('FRONTEND_URL') || 'http://localhost:3001';
+    const baseUrl = frontendUrl.replace(/\/$/, '');
+    const setupUrl = `${baseUrl}/lender/setup-password?token=${token}`;
+    
+    this.logger.log(`📧 Lender password setup URL: ${setupUrl}`);
+    const fromAddress =
+      this.configService.get<string>('SMTP_FROM') ||
+      this.configService.get<string>('EMAIL_FROM_ADDRESS') ||
+      this.configService.get<string>('SMTP_USER') ||
+      'noreply@urutix.com';
+
+    // Check SMTP configuration
+    const smtpHost = this.configService.get<string>('SMTP_HOST');
+    const smtpUser = this.configService.get<string>('SMTP_USER');
+    const smtpPass = this.configService.get<string>('SMTP_PASS');
+    
+    this.logger.log(`SMTP Configuration Check for lender email:`);
+    this.logger.log(`  SMTP_HOST: ${smtpHost ? 'SET' : 'NOT SET'}`);
+    this.logger.log(`  SMTP_USER: ${smtpUser ? 'SET' : 'NOT SET'}`);
+    this.logger.log(`  SMTP_PASS: ${smtpPass ? 'SET' : 'NOT SET'}`);
+    this.logger.log(`  Transporter exists: ${this.transporter ? 'YES' : 'NO'}`);
+    this.logger.log(`  Setup URL: ${setupUrl}`);
+    this.logger.log(`  From Address: ${fromAddress}`);
+
+    if (this.transporter) {
+      this.logger.log('✅ SMTP transporter is configured, attempting to send email...');
+      try {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+          throw new Error(`Invalid email format: ${email}`);
+        }
+
+        const htmlContent = this.getLenderPasswordSetupEmailTemplate(
+          lenderName,
+          setupUrl,
+        );
+        
+        const plainTextContent = `
+Welcome to UrutiX!
+
+Your lender account "${lenderName}" has been created. To get started, please set up your password by clicking the link below:
+
+${setupUrl}
+
+After setting your password, you'll be able to log in and access your lender dashboard.
+
+If you didn't expect this email, please contact support or ignore this message.
+
+This link will expire in 7 days.
+        `.trim();
+
+        const mailOptions = {
+          from: fromAddress,
+          to: email.trim().toLowerCase(),
+          subject: `Set up your UrutiX Lender Account Password - ${lenderName}`,
+          text: plainTextContent,
+          html: htmlContent,
+        };
+        
+        this.logger.log('📧 Mail options:', JSON.stringify({
+          from: mailOptions.from,
+          to: mailOptions.to,
+          subject: mailOptions.subject,
+        }, null, 2));
+        
+        this.logger.log('📧 Attempting to send email via SMTP...');
+        const result = await this.transporter.sendMail(mailOptions);
+        
+        this.logger.log('📧 Email send result:', JSON.stringify({
+          messageId: result.messageId,
+          accepted: result.accepted,
+          rejected: result.rejected || [],
+          response: result.response,
+        }, null, 2));
+        
+        if (result.accepted && result.accepted.length > 0) {
+          this.logger.log(`✅ Lender password setup email sent successfully to ${email}`);
+          this.logger.log(`✅ Message ID: ${result.messageId}`);
+        } else if (result.rejected && result.rejected.length > 0) {
+          this.logger.error(`❌ Email was rejected by server`);
+          this.logger.error(`❌ Rejected recipients:`, result.rejected);
+          throw new Error(`Email was rejected: ${result.rejected.join(', ')}`);
+        } else {
+          this.logger.warn(`⚠️ Email sent but no acceptance/rejection info available`);
+          this.logger.log(`📧 Email result:`, JSON.stringify(result, null, 2));
+        }
+      } catch (error: any) {
+        this.logger.error(`❌ Failed to send lender password setup email to ${email}`);
+        this.logger.error(`❌ Error: ${error.message}`);
+        if (error.code) {
+          this.logger.error(`❌ Error code: ${error.code}`);
+        }
+        if (error.response) {
+          this.logger.error(`❌ Error response: ${error.response}`);
+        }
+        if (error.responseCode) {
+          this.logger.error(`❌ Error response code: ${error.responseCode}`);
+        }
+        if (error.command) {
+          this.logger.error(`❌ Failed command: ${error.command}`);
+        }
+        this.logger.error(`❌ Full error:`, JSON.stringify(error, Object.getOwnPropertyNames(error)));
+        throw error;
+      }
+    } else {
+      const errorMessage = 'SMTP transporter is not configured. Email cannot be sent.';
+      this.logger.error(`❌ ${errorMessage}`);
+      this.logger.error('❌ To fix: Add SMTP configuration to your .env file:');
+      this.logger.error('   SMTP_HOST=smtp.gmail.com');
+      this.logger.error('   SMTP_PORT=587');
+      this.logger.error('   SMTP_USER=your-email@gmail.com');
+      this.logger.error('   SMTP_PASS=your-app-password');
+      this.logger.error('   FRONTEND_URL=http://localhost:3001');
+      // Throw error so caller knows email failed
+      throw new Error(errorMessage);
+    }
+    this.logger.log('========== LENDER EMAIL SERVICE CALL END ==========');
+  }
+
   async sendTenantPasswordSetupEmail(
     email: string,
     firstName: string,
@@ -464,6 +592,24 @@ This link will expire in 7 days.
         </a>
         <p>After setting your password, you'll be able to log in and access your driver dashboard.</p>
         <p>If you didn't expect this email, please contact your truck owner or ignore this message.</p>
+        <p>This link will expire in 7 days.</p>
+      </div>
+    `;
+  }
+
+  private getLenderPasswordSetupEmailTemplate(
+    lenderName: string,
+    setupUrl: string,
+  ): string {
+    return `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <h2>Welcome to UrutiX!</h2>
+        <p>Your lender account "<strong>${lenderName}</strong>" has been created. To get started, please set up your password by clicking the link below:</p>
+        <a href="${setupUrl}" style="display: inline-block; padding: 12px 24px; background-color: #007bff; color: white; text-decoration: none; border-radius: 4px; margin: 20px 0;">
+          Set Up Password
+        </a>
+        <p>After setting your password, you'll be able to log in and access your lender dashboard.</p>
+        <p>If you didn't expect this email, please contact support or ignore this message.</p>
         <p>This link will expire in 7 days.</p>
       </div>
     `;

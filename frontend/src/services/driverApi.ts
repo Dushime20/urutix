@@ -617,6 +617,15 @@ class DriverApiService {
     });
     return response.data;
   }
+
+  async getAssignedLoads(driverId: string): Promise<any[]> {
+    const response = await api.get(`/drivers/${driverId}/assigned-loads`);
+    return response.data;
+  }
+
+  async proceedWithJourney(driverId: string, loadIds: string[]): Promise<void> {
+    await api.post(`/drivers/${driverId}/proceed-journey`, { loadIds });
+  }
 }
 
 export const driverApi = new DriverApiService();

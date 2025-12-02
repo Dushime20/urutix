@@ -71,6 +71,8 @@ export const authAPI = {
     api.post('/auth/driver/setup-password', data),
   setupTenantPassword: (data: { token: string; password: string; confirmPassword: string }) =>
     api.post('/auth/tenant/setup-password', data),
+  setupLenderPassword: (data: { token: string; password: string; confirmPassword: string }) =>
+    api.post('/auth/lender/setup-password', data),
 };
 
 // Trips API

@@ -26,6 +26,7 @@ import {
 } from '../../entities/load.entity';
 import { User } from '../../entities/user.entity';
 import { Location } from '../../entities/location.entity';
+import { Truck } from '../../entities/truck.entity';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { LoadValidationV2Service } from './services/load-validation-v2.service';
 
@@ -40,6 +41,8 @@ export class LoadsV2Service {
     private readonly locationRepository: Repository<Location>,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    @InjectRepository(Truck)
+    private readonly truckRepository: Repository<Truck>,
     private readonly eventEmitter: EventEmitter2,
     private readonly loadValidationService: LoadValidationV2Service,
   ) {}
@@ -194,6 +197,100 @@ export class LoadsV2Service {
   ): Promise<PaginatedResponseV2<LoadResponseV2Dto>> {
     const userQuery = { ...queryDto, cargoOwnerId: user.id };
     return this.findAll(userQuery, user);
+  }
+
+  /**
+   * Get loads assigned to truck owner's trucks
+   */
+  async getAssignedLoadsForTruckOwner(
+    queryDto: LoadQueryV2Dto,
+    user: User,
+  ): Promise<PaginatedResponseV2<LoadResponseV2Dto>> {
+    try {
+      // Get all trucks owned by this truck owner
+      const trucks = await this.truckRepository.find({
+        where: { ownerId: user.id, tenantId: user.tenantId },
+        select: ['id'],
+      });
+
+      if (trucks.length === 0) {
+        return {
+          data: [],
+          meta: {
+            total: 0,
+            page: queryDto.page || 1,
+            limit: queryDto.limit || 20,
+            totalPages: 0,
+            hasNextPage: false,
+            hasPreviousPage: false,
+          },
+        };
+      }
+
+      const truckIds = trucks.map((truck) => truck.id);
+
+      const {
+        page = 1,
+        limit = 20,
+        sortBy = 'pickupDate',
+        sortOrder = 'ASC',
+        status,
+      } = queryDto;
+
+      const queryBuilder = this.loadRepository.createQueryBuilder('load');
+
+      // Apply tenant filtering
+      this.applyTenantFilter(queryBuilder, user);
+
+      // Filter by assigned trucks
+      queryBuilder.andWhere('load.assignedTruckId IN (:...truckIds)', {
+        truckIds,
+      });
+
+      // Filter by status if provided, otherwise show ASSIGNED and IN_TRANSIT
+      if (status) {
+        queryBuilder.andWhere('load.status = :status', { status });
+      } else {
+        queryBuilder.andWhere('load.status IN (:...statuses)', {
+          statuses: [LoadStatus.ASSIGNED, LoadStatus.IN_TRANSIT],
+        });
+      }
+
+      // Apply sorting
+      queryBuilder.orderBy(`load.${sortBy}`, sortOrder);
+
+      // Apply pagination
+      const skip = (page - 1) * limit;
+      queryBuilder.skip(skip).take(limit);
+
+      // Load relations
+      queryBuilder.leftJoinAndSelect('load.cargoOwner', 'cargoOwner');
+      queryBuilder.leftJoinAndSelect('cargoOwner.profile', 'cargoOwnerProfile');
+
+      const [loads, total] = await queryBuilder.getManyAndCount();
+
+      const totalPages = Math.ceil(total / limit);
+
+      return {
+        data: loads.map((load) => this.mapToResponseDto(load)),
+        meta: {
+          total,
+          page,
+          limit,
+          totalPages,
+          hasNextPage: page < totalPages,
+          hasPreviousPage: page > 1,
+        },
+      };
+    } catch (error) {
+      this.logger.error(
+        `Failed to get assigned loads for truck owner ${user.id}: ${error.message}`,
+      );
+      throw new HttpException(
+        error.message || 'Failed to retrieve assigned loads',
+        error.status || HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
   }
 
   /**

@@ -8,12 +8,14 @@ import toast from 'react-hot-toast';
 import EntitySelector from '../components/documents/EntitySelector';
 import { HelpIcon } from '../components/documents/HelpIcon';
 import { DocumentEmptyState } from '../components/documents/DocumentEmptyState';
+import { useConfirmDialog } from '../hooks/useConfirmDialog';
 
 interface DocumentsPageProps {
   entityTypeOverride?: string;
 }
 
 const DocumentsPage: React.FC<DocumentsPageProps> = ({ entityTypeOverride }) => {
+  const { confirm, DialogComponent } = useConfirmDialog();
   const { entityType: urlEntityType, entityId } = useParams();
   const entityType = entityTypeOverride || urlEntityType;
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -347,13 +349,20 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ entityTypeOverride }) => 
   }, []);
 
   // Handle bulk delete
-  const handleBulkDelete = useCallback(() => {
+  const handleBulkDelete = useCallback(async () => {
     if (selectedDocuments.length > 0) {
-      if (window.confirm(`Are you sure you want to delete ${selectedDocuments.length} documents?`)) {
+      const confirmed = await confirm({
+        title: "Delete Documents",
+        message: `Are you sure you want to delete ${selectedDocuments.length} document(s)? This action cannot be undone.`,
+        confirmText: "Delete",
+        cancelText: "Cancel",
+        variant: "danger",
+      });
+      if (confirmed) {
         bulkDeleteMutation.mutate(selectedDocuments);
       }
     }
-  }, [selectedDocuments, bulkDeleteMutation]);
+  }, [selectedDocuments, bulkDeleteMutation, confirm]);
 
   // Handle filter change
   const handleFilterChange = useCallback((key: string, value: string) => {
@@ -1195,6 +1204,9 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ entityTypeOverride }) => 
           </div>
         </div>
       )}
+
+      {/* Confirmation Dialog */}
+      {DialogComponent}
     </div>
   );
 };

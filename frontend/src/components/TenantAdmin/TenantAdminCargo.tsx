@@ -5,6 +5,7 @@ import { loadsAPI } from '../../services/load';
 import { useAuth } from '../../contexts/AuthContext';
 import EnhancedCargoForm from '../../pages/dashboard/cargos/create/components/form';
 import type { ICargoBody } from '../../pages/dashboard/cargos/create/types/cargo';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import {
   FaBox,
   FaPlus,
@@ -78,6 +79,7 @@ interface CargoStats {
 const TenantAdminCargo: React.FC = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const { confirm, DialogComponent } = useConfirmDialog();
 
   // State
   const [searchTerm, setSearchTerm] = useState('');
@@ -389,7 +391,14 @@ const TenantAdminCargo: React.FC = () => {
   };
 
   const handleDelete = async (cargo: CargoLoad) => {
-    if (!confirm(`Are you sure you want to delete cargo "${cargo.title}"?`)) return;
+    const confirmed = await confirm({
+      title: "Delete Cargo",
+      message: `Are you sure you want to delete cargo "${cargo.title}"? This action cannot be undone.`,
+      confirmText: "Delete",
+      cancelText: "Cancel",
+      variant: "danger",
+    });
+    if (!confirmed) return;
     deleteMutation.mutate(cargo.id);
   };
 
@@ -1313,6 +1322,9 @@ const TenantAdminCargo: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Confirmation Dialog */}
+      {DialogComponent}
     </div>
   );
 };

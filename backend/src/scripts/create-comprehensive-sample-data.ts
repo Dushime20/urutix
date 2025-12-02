@@ -4,7 +4,7 @@ import { FleetService } from '../modules/fleet/fleet.service';
 import { BiddingService } from '../modules/bidding/bidding.service';
 import { LoadsV2Service } from '../modules/loads/loads-v2.service';
 import { CreateTruckDto } from '../modules/fleet/dto/create-truck.dto';
-import { CreateDriverDto } from '../modules/fleet/dto/create-driver.dto';
+import { CreateFleetDriverDto } from '../modules/fleet/dto/create-driver.dto';
 import { FuelType, TruckType } from '../entities/truck.entity';
 import { DriverStatus, EmploymentType } from '../entities/driver.entity';
 import { AuctionType } from '../entities/auction.entity';
@@ -378,7 +378,7 @@ async function createComprehensiveSampleData() {
     console.log('\n👨‍💼 Creating sample drivers...');
 
     // Sample drivers data
-    const sampleDrivers: Partial<CreateDriverDto>[] = [
+    const sampleDrivers: Partial<CreateFleetDriverDto>[] = [
       {
         firstName: 'John',
         lastName: 'Smith',
@@ -439,7 +439,7 @@ async function createComprehensiveSampleData() {
     for (const driverData of sampleDrivers) {
       try {
         const driver = await fleetService.createDriver(
-          driverData as CreateDriverDto,
+          driverData as CreateFleetDriverDto,
           defaultUserId,
           defaultTenantId,
         );

@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { FaEye, FaEdit, FaTrash, FaCheck, FaTimes, FaHistory, FaEnvelope, FaPhone } from 'react-icons/fa';
+import toast from 'react-hot-toast';
 import { biddingAPI, biddingHelpers } from '../../services/biddingApi';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 
 interface Bid {
   id: string;
@@ -53,6 +55,7 @@ const BidHistory: React.FC<BidHistoryProps> = ({ userRole }) => {
     minAmount: '',
     maxAmount: '',
   });
+  const { confirm, DialogComponent } = useConfirmDialog();
 
   useEffect(() => {
     loadBidHistory();
@@ -60,11 +63,21 @@ const BidHistory: React.FC<BidHistoryProps> = ({ userRole }) => {
 
   const loadBidHistory = async () => {
     setLoading(true);
+    setError(null);
     try {
-      const response = await biddingAPI.getBidHistory(filters);
-      setBids(response.data);
+      // Use getMyBids for both cargo owners and truck owners
+      const response = await biddingAPI.getMyBids();
+      const bidsData = response.data || response;
+      
+      // Filter bids based on status filter
+      let filteredBids = Array.isArray(bidsData) ? bidsData : [];
+      if (filters.status && filters.status !== 'all') {
+        filteredBids = filteredBids.filter((bid: Bid) => bid.status === filters.status);
+      }
+      
+      setBids(filteredBids);
     } catch (error) {
-      setError('Failed to load bid history - using demo data');
+      setError('Failed to load bid history');
       console.error('Bid history error:', error);
       
       // Set demo bid history when API fails
@@ -131,11 +144,31 @@ const BidHistory: React.FC<BidHistoryProps> = ({ userRole }) => {
   };
 
   const handleAcceptBid = async (bidId: string) => {
+    const bid = bids.find(b => b.id === bidId);
+    if (!bid) return;
+
+    // Styled confirmation dialog
+    const confirmed = await confirm({
+      title: 'Accept Bid',
+      message: `Are you sure you want to accept this bid?\n\n` +
+        `Bid Amount: ${biddingHelpers.formatCurrency(bid.bidAmount, bid.bidCurrency)}\n` +
+        `Load: ${bid.load?.title || 'N/A'}\n\n` +
+        `This will assign the load to the truck owner and close the auction. The assigned driver will see it in their cargo management dashboard.`,
+      confirmText: 'Accept Bid',
+      cancelText: 'Cancel',
+      variant: 'info',
+    });
+
+    if (!confirmed) return;
+
     try {
-      await biddingAPI.acceptBid(bidId);
+      const response = await biddingAPI.acceptBid(bidId);
+      toast.success('Bid accepted successfully! The load has been assigned to the truck owner. The assigned driver will see it in their cargo management dashboard.');
       loadBidHistory(); // Refresh the list
-    } catch (error) {
+    } catch (error: any) {
       console.error('Accept bid error:', error);
+      const errorMessage = error?.response?.data?.message || error?.message || 'Failed to accept bid';
+      toast.error(errorMessage);
     }
   };
 
@@ -509,6 +542,9 @@ const BidHistory: React.FC<BidHistoryProps> = ({ userRole }) => {
           </div>
         </div>
       )}
+
+      {/* Styled Confirmation Dialog */}
+      {DialogComponent}
     </div>
   );
 };

@@ -218,11 +218,34 @@ const AdminLenderRegistrationPage: React.FC = () => {
       setShowModal(false);
       setLoading(false);
       toast.success('Lender registered successfully');
+      // Refresh lender list on success
+      setSuccess(true); // This will trigger useEffect to refetch
     } catch (err: any) {
       console.error('Error creating lender:', err);
-      setError(err.response?.data?.message || err.message || 'Error registering lender');
+      const errorMessage = err.response?.data?.message || err.message || 'Error registering lender';
+      
+      // Simplify error message for email conflicts
+      let displayError = errorMessage;
+      if (errorMessage.includes('already exists') || errorMessage.includes('email') || errorMessage.toLowerCase().includes('user with')) {
+        displayError = 'Email already exists';
+      }
+      
+      setError(displayError);
       setLoading(false);
-      toast.error(err.response?.data?.message || err.message || 'Error registering lender');
+      
+      // Don't close modal on error - keep it open so user can see the error
+      // Don't refresh lender list on error
+      
+      // Show simple error toast for email conflicts
+      if (errorMessage.includes('already exists') || errorMessage.includes('email') || errorMessage.toLowerCase().includes('user with')) {
+        toast.error('Email already exists', {
+          duration: 5000,
+        });
+      } else {
+        toast.error(displayError, {
+          duration: 5000,
+        });
+      }
     }
   };
 
@@ -538,8 +561,22 @@ const AdminLenderRegistrationPage: React.FC = () => {
                   placeholder="Contact Phone"
                 />
               </div>
-              {error && <div className="text-red-600 text-xs">{error}</div>}
-              {success && <div className="text-green-600 text-xs">Lender registered successfully!</div>}
+              {error && (
+                <div className="bg-red-50 border border-red-200 rounded p-2 text-xs">
+                  <div className="flex items-center gap-1.5">
+                    <FaExclamationTriangle className="text-red-600 flex-shrink-0 w-3 h-3" />
+                    <p className="text-red-700">{error}</p>
+                  </div>
+                </div>
+              )}
+              {success && (
+                <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-xs">
+                  <div className="flex items-center gap-2">
+                    <FaCheckCircle className="text-green-600" />
+                    <p className="text-green-800 font-semibold">Lender registered successfully!</p>
+                  </div>
+                </div>
+              )}
               <button
                 type="submit"
                 disabled={loading}

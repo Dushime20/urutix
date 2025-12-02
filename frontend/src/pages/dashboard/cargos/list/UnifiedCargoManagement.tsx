@@ -26,6 +26,7 @@ import type { ICargoBody, ICargoResponse } from "../create/types/cargo";
 import FilterSelect from "@/components/common/FilterSelect";
 import { FaLayerGroup, FaBox } from "react-icons/fa";
 import logoUrutiX from "@/assets/logo-urutix.svg";
+import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 
 type TabType = "all" | "active" | "create" | "template" | "bidding";
 
@@ -33,6 +34,7 @@ const UnifiedCargoManagement = () => {
   const { user } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
+  const { confirm, DialogComponent } = useConfirmDialog();
   
   // Determine initial tab based on route
   const getInitialTab = (): TabType => {
@@ -213,11 +215,15 @@ const UnifiedCargoManagement = () => {
   };
 
   const handleDeleteCargo = async (load: any) => {
-    if (
-      !window.confirm(
-        `Are you sure you want to delete "${load.title || "this cargo"}"?`
-      )
-    ) {
+    const confirmed = await confirm({
+      title: "Delete Cargo",
+      message: `Are you sure you want to delete "${load.title || "this cargo"}"? This action cannot be undone.`,
+      confirmText: "Delete",
+      cancelText: "Cancel",
+      variant: "danger",
+    });
+
+    if (!confirmed) {
       return;
     }
 
@@ -687,6 +693,9 @@ const UnifiedCargoManagement = () => {
           showTruckSelection={false}
         />
       )}
+
+      {/* Confirmation Dialog */}
+      {DialogComponent}
     </div>
   );
 };

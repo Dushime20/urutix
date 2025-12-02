@@ -27,6 +27,7 @@ const TenantAdminSidebar: React.FC = () => {
     { to: '/tenant-admin/fleet', label: 'Fleet Management', icon: FaTruck },
     { to: '/tenant-admin/cargo', label: 'Cargo Operations', icon: FaBox },
     { to: '/tenant-admin/drivers', label: 'Drivers', icon: FaUsers },
+    { to: '/tenant-admin/lenders', label: 'Lenders', icon: FaDollarSign },
     { to: '/tenant-admin/routes', label: 'Routes', icon: FaRoute },
     { to: '/tenant-admin/trips', label: 'Trip Management', icon: FaClipboardList },
     { to: '/tenant-admin/financial', label: 'Financial', icon: FaDollarSign },

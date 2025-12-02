@@ -16,6 +16,7 @@ import { Load, LoadStatus } from '../../entities/load.entity';
 import { User, UserRole } from '../../entities/user.entity';
 import { UserProfile } from '../../entities/user-profile.entity';
 import { Truck } from '../../entities/truck.entity';
+import { Driver } from '../../entities/driver.entity';
 import { AuctionWatch } from '../../entities/auction-watch.entity';
 import { AuctionView } from '../../entities/auction-view.entity';
 
@@ -102,6 +103,8 @@ export class BiddingService {
     private readonly userProfileRepository: Repository<UserProfile>,
     @InjectRepository(Truck)
     private readonly truckRepository: Repository<Truck>,
+    @InjectRepository(Driver)
+    private readonly driverRepository: Repository<Driver>,
     @InjectRepository(AuctionWatch)
     private readonly watchRepository: Repository<AuctionWatch>,
     @InjectRepository(AuctionView)
@@ -299,11 +302,11 @@ export class BiddingService {
   async acceptBid(
     bidId: string,
     cargoOwnerId: string,
-    _tenantId: string,
+    tenantId: string,
   ): Promise<Bid> {
     const bid = await this.bidRepository.findOne({
       where: { id: bidId },
-      relations: ['load'],
+      relations: ['load', 'truckOwner'],
     });
 
     if (!bid) {
@@ -321,11 +324,78 @@ export class BiddingService {
     bid.status = BidStatus.ACCEPTED;
     const acceptedBid = await this.bidRepository.save(bid);
 
-    // Update load status
+    // Get truck ID from bid details
+    const truckId = bid.bidDetails?.truckSpecifications?.truckId;
+    
+    if (!truckId) {
+      throw new BadRequestException('Bid must include a truck specification');
+    }
+
+    // Verify truck exists and belongs to the truck owner
+    const truck = await this.truckRepository.findOne({
+      where: { id: truckId, ownerId: bid.truckOwnerId, tenantId },
+    });
+
+    if (!truck) {
+      throw new NotFoundException('Truck specified in bid not found or does not belong to the truck owner');
+    }
+
+    // Update load status and assign truck
     await this.loadRepository.update(bid.loadId, {
       status: LoadStatus.ASSIGNED,
-      assignedTruckId: bid.bidDetails?.truckSpecifications?.truckId,
+      assignedTruckId: truckId,
+      updatedAt: new Date(),
     });
+
+    // Auto-assign driver if driverId is specified in bid details
+    const driverId = bid.bidDetails?.driverInfo?.driverId;
+    if (driverId) {
+      try {
+        const driver = await this.driverRepository.findOne({
+          where: { id: driverId, tenantId },
+        });
+
+        if (driver) {
+          // Check if driver is already assigned to a different truck
+          if (driver.currentTruckId && driver.currentTruckId !== truckId) {
+            // Driver is assigned to a different truck, but we'll still add them to this truck's assignedDrivers
+            // This allows a driver to be associated with multiple trucks if needed
+          }
+
+          // Add driver to truck's assignedDrivers array if not already present
+          const currentAssignedDrivers = Array.isArray(truck.assignedDrivers)
+            ? [...truck.assignedDrivers]
+            : [];
+
+          const existingAssignment = currentAssignedDrivers.find(
+            (d: any) => d.driverId === driverId,
+          );
+
+          if (!existingAssignment) {
+            currentAssignedDrivers.push({
+              driverId,
+              driverName: `${driver.firstName} ${driver.lastName}`,
+              assignmentDate: new Date().toISOString(),
+              status: 'active',
+            });
+
+            await this.truckRepository.update(truck.id, {
+              assignedDrivers: currentAssignedDrivers,
+            });
+          }
+
+          // Update driver's currentTruckId if not set or if it's different
+          if (!driver.currentTruckId || driver.currentTruckId !== truckId) {
+            await this.driverRepository.update(driver.id, {
+              currentTruckId: truckId,
+            });
+          }
+        }
+      } catch (error) {
+        // Log error but don't fail the bid acceptance
+        console.error('Failed to auto-assign driver:', error);
+      }
+    }
 
     // Close auction
     await this.auctionRepository.update(
@@ -337,6 +407,16 @@ export class BiddingService {
         awardedAt: new Date(),
       },
     );
+
+    // Reject all other pending bids for this load
+    await this.bidRepository
+      .createQueryBuilder()
+      .update(Bid)
+      .set({ status: BidStatus.REJECTED })
+      .where('loadId = :loadId', { loadId: bid.loadId })
+      .andWhere('status = :status', { status: BidStatus.PENDING })
+      .andWhere('id != :bidId', { bidId })
+      .execute();
 
     return acceptedBid;
   }

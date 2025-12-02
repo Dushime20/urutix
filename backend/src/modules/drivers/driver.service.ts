@@ -12,12 +12,15 @@ import {
   Between,
   MoreThanOrEqual,
   LessThanOrEqual,
+  In,
 } from 'typeorm';
 import {
   Driver,
   DriverStatus,
   EmploymentType,
 } from '../../entities/driver.entity';
+import { Load, LoadStatus } from '../../entities/load.entity';
+import { Truck } from '../../entities/truck.entity';
 import {
   CreateDriverDto,
   UpdateDriverDto,
@@ -34,6 +37,10 @@ export class DriverService {
   constructor(
     @InjectRepository(Driver)
     private driverRepository: Repository<Driver>,
+    @InjectRepository(Load)
+    private loadRepository: Repository<Load>,
+    @InjectRepository(Truck)
+    private truckRepository: Repository<Truck>,
     private readonly ocrService: OcrService,
   ) {}
 
@@ -743,6 +750,126 @@ export class DriverService {
     } catch (error) {
       this.logger.error(
         `Failed to unassign truck from driver ${id}: ${error.message}`,
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Get loads assigned to driver's truck
+   * Accepts either driverId or userId
+   */
+  async getAssignedLoads(driverIdOrUserId: string, tenantId: string): Promise<Load[]> {
+    try {
+      // First try to find driver by ID
+      let driver = await this.driverRepository.findOne({
+        where: { id: driverIdOrUserId, tenantId },
+      });
+
+      // If not found by ID, try to find by userId
+      if (!driver) {
+        driver = await this.driverRepository.findOne({
+          where: { userId: driverIdOrUserId, tenantId },
+        });
+      }
+
+      if (!driver) {
+        this.logger.warn(
+          `Driver not found with ID or userId: ${driverIdOrUserId} for tenant ${tenantId}`,
+        );
+        return [];
+      }
+
+      // Get truck IDs where this driver is assigned
+      const truckIds: string[] = [];
+
+      // Check driver's currentTruckId
+      if (driver.currentTruckId) {
+        truckIds.push(driver.currentTruckId);
+      }
+
+      // Also check all trucks where this driver is in the assignedDrivers array
+      const allTrucks = await this.truckRepository.find({
+        where: { tenantId },
+        select: ['id', 'assignedDrivers'],
+      });
+
+      allTrucks.forEach((truck) => {
+        if (Array.isArray(truck.assignedDrivers)) {
+          const isDriverAssigned = truck.assignedDrivers.some(
+            (d: any) => d.driverId === driver.id,
+          );
+          if (isDriverAssigned && truck.id && !truckIds.includes(truck.id)) {
+            truckIds.push(truck.id);
+          }
+        }
+      });
+
+      if (truckIds.length === 0) {
+        this.logger.warn(`Driver ${driver.id} has no assigned truck`);
+        return [];
+      }
+
+      // Get loads assigned to any of these trucks
+      const loads = await this.loadRepository.find({
+        where: truckIds.map((truckId) => ({
+          assignedTruckId: truckId,
+          status: LoadStatus.ASSIGNED,
+          tenantId,
+        })),
+        relations: ['cargoOwner'],
+        order: {
+          pickupDate: 'ASC',
+        },
+      });
+
+      this.logger.log(
+        `Found ${loads.length} assigned loads for driver ${driver.id} (trucks: ${truckIds.join(', ')})`,
+      );
+
+      return loads;
+    } catch (error) {
+      this.logger.error(
+        `Failed to get assigned loads for driver/user ${driverIdOrUserId}: ${error.message}`,
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Mark loads as checked/loaded and proceed with journey
+   */
+  async proceedWithJourney(
+    driverId: string,
+    loadIds: string[],
+    tenantId: string,
+  ): Promise<void> {
+    try {
+      const driver = await this.getDriverById(driverId, tenantId);
+
+      if (!driver.currentTruckId) {
+        throw new BadRequestException('Driver is not assigned to any truck');
+      }
+
+      // Update load statuses to IN_TRANSIT
+      await this.loadRepository.update(
+        {
+          id: In(loadIds),
+          assignedTruckId: driver.currentTruckId,
+          tenantId,
+        },
+        {
+          status: LoadStatus.IN_TRANSIT,
+          updatedAt: new Date(),
+        },
+      );
+
+      this.logger.log(
+        `Driver ${driverId} proceeded with journey for ${loadIds.length} loads`,
+      );
+    } catch (error) {
+      this.logger.error(
+        `Failed to proceed with journey for driver ${driverId}: ${error.message}`,
       );
       throw error;
     }

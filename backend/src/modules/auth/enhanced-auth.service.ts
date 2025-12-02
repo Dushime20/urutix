@@ -217,17 +217,23 @@ export class EnhancedAuthService {
         return null;
       }
 
-      // For drivers and tenant admins with PENDING_VERIFICATION status, they must set password first
+      // For drivers, tenant admins, and lenders with PENDING_VERIFICATION status, they must set password first
       // Other user types might be able to login with PENDING_VERIFICATION
       if (
-        (user.role === UserRole.DRIVER || user.role === UserRole.TENANT_ADMIN) &&
+        (user.role === UserRole.DRIVER || user.role === UserRole.TENANT_ADMIN || user.role === UserRole.LENDER) &&
         user.status === UserStatus.PENDING_VERIFICATION
       ) {
-        const roleName = user.role === UserRole.DRIVER ? 'driver' : 'tenant admin';
+        const roleName = 
+          user.role === UserRole.DRIVER ? 'driver' : 
+          user.role === UserRole.TENANT_ADMIN ? 'tenant admin' : 
+          'lender';
         this.logger.warn(
           `Login attempt for ${roleName} with pending verification: ${email} from IP: ${clientIp}. ${roleName} needs to set password first via email link.`,
         );
-        const accountType = user.role === UserRole.DRIVER ? 'driver' : 'tenant';
+        const accountType = 
+          user.role === UserRole.DRIVER ? 'driver' : 
+          user.role === UserRole.TENANT_ADMIN ? 'tenant' : 
+          'lender';
         throw new UnauthorizedException(
           `Your ${accountType} account is pending password setup. Please check your email and click the link to set up your password first.`,
         );
@@ -830,6 +836,75 @@ export class EnhancedAuthService {
       return { message: 'Password set successfully. You can now log in.' };
     } catch (error) {
       this.logger.error(`Tenant password setup failed: ${error.message}`);
+      throw error;
+    }
+  }
+
+  async setupLenderPassword(
+    setupPasswordDto: SetupDriverPasswordDto,
+    clientIp?: string,
+  ): Promise<SetupDriverPasswordResponseDto> {
+    try {
+      const { token, password, confirmPassword } = setupPasswordDto;
+
+      // Validate password strength
+      this.validatePasswordStrength(password);
+
+      if (password !== confirmPassword) {
+        throw new BadRequestException('Passwords do not match');
+      }
+
+      // Find and validate setup token
+      const setupTokenRecord = await this.passwordResetTokenRepository.findOne({
+        where: { token, used: false },
+      });
+
+      if (!setupTokenRecord) {
+        throw new BadRequestException('Invalid or expired setup token');
+      }
+
+      if (setupTokenRecord.expiresAt < new Date()) {
+        throw new BadRequestException('Setup token has expired');
+      }
+
+      // Find user
+      const user = await this.userRepository.findOne({
+        where: { email: setupTokenRecord.email },
+      });
+
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
+
+      // Verify user is a lender
+      if (user.role !== UserRole.LENDER) {
+        throw new BadRequestException('This token is only valid for lender accounts');
+      }
+
+      // Update password and activate account
+      const hashedPassword = await bcrypt.hash(password, 14);
+      user.passwordHash = hashedPassword;
+      user.status = UserStatus.ACTIVE; // Activate the account
+      user.loginAttempts = 0;
+      user.lockedUntil = undefined;
+      await this.userRepository.save(user);
+
+      // Mark token as used
+      setupTokenRecord.used = true;
+      await this.passwordResetTokenRepository.save(setupTokenRecord);
+
+      // Log password setup
+      await this.logAuditEvent('LENDER_PASSWORD_SETUP_COMPLETED', user.id, {
+        email: user.email,
+        clientIp,
+      });
+
+      this.logger.log(
+        `Lender password setup completed for: ${user.email} from IP: ${clientIp}`,
+      );
+      return { message: 'Password set successfully. You can now log in.' };
+    } catch (error) {
+      this.logger.error(`Lender password setup failed: ${error.message}`);
       throw error;
     }
   }

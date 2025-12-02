@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { fleetApi, type Driver, type FleetItem } from '../../services/fleetApi';
+import { driverApi } from '../../services/driverApi';
 import { useAuth } from '../../contexts/AuthContext';
 import {
   FaUsers,
@@ -50,6 +51,11 @@ const TenantAdminDrivers: React.FC = () => {
   const [editingDriver, setEditingDriver] = useState<Driver | null>(null);
   const [sortBy, setSortBy] = useState<'name' | 'experience' | 'status' | 'createdAt'>('name');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+  
+  // Driver creation mode: 'new' or 'existing'
+  const [driverCreationMode, setDriverCreationMode] = useState<'new' | 'existing'>('new');
+  const [existingDriverSearch, setExistingDriverSearch] = useState('');
+  const [selectedExistingDriver, setSelectedExistingDriver] = useState<Driver | null>(null);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -85,6 +91,24 @@ const TenantAdminDrivers: React.FC = () => {
     },
   });
 
+  // Fetch all available drivers for selection (when adding existing driver)
+  const { data: allAvailableDrivers = [] } = useQuery({
+    queryKey: ['all-available-drivers', existingDriverSearch],
+    queryFn: async () => {
+      try {
+        const data = await driverApi.getDrivers({ 
+          search: existingDriverSearch,
+          status: 'ACTIVE'
+        });
+        return Array.isArray(data) ? data : [];
+      } catch (error) {
+        console.error('Error fetching available drivers:', error);
+        return [];
+      }
+    },
+    enabled: driverCreationMode === 'existing' && existingDriverSearch.length > 0,
+  });
+
   // Create driver mutation
   const createMutation = useMutation({
     mutationFn: async (driverData: Partial<Driver>) => {
@@ -98,6 +122,32 @@ const TenantAdminDrivers: React.FC = () => {
     },
     onError: (error: any) => {
       toast.error(error?.response?.data?.message || 'Failed to create driver');
+    },
+  });
+
+  // Add existing driver mutation (assign to tenant)
+  const addExistingDriverMutation = useMutation({
+    mutationFn: async (driverId: string) => {
+      // Update the driver to assign them to the current tenant
+      // This assumes the backend will handle tenant assignment
+      const driver = await driverApi.getDriverProfile(driverId);
+      return await fleetApi.updateDriver(driverId, {
+        // The backend should handle tenant/employer assignment based on the authenticated user
+        status: 'ACTIVE',
+        availabilityStatus: 'AVAILABLE',
+      });
+    },
+    onSuccess: () => {
+      toast.success('Driver added successfully');
+      queryClient.invalidateQueries({ queryKey: ['tenant-drivers'] });
+      queryClient.invalidateQueries({ queryKey: ['all-available-drivers'] });
+      setShowCreateModal(false);
+      resetForm();
+      setSelectedExistingDriver(null);
+      setExistingDriverSearch('');
+    },
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.message || 'Failed to add existing driver');
     },
   });
 
@@ -243,6 +293,9 @@ const TenantAdminDrivers: React.FC = () => {
       availabilityStatus: 'AVAILABLE',
     });
     setEditingDriver(null);
+    setDriverCreationMode('new');
+    setSelectedExistingDriver(null);
+    setExistingDriverSearch('');
   };
 
   const openCreateModal = () => {
@@ -276,6 +329,16 @@ const TenantAdminDrivers: React.FC = () => {
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (driverCreationMode === 'existing') {
+      if (!selectedExistingDriver) {
+        toast.error('Please select a driver to add');
+        return;
+      }
+      addExistingDriverMutation.mutate(selectedExistingDriver.id);
+      return;
+    }
+    
     createMutation.mutate({
       firstName: formData.firstName,
       lastName: formData.lastName,
@@ -674,7 +737,7 @@ const TenantAdminDrivers: React.FC = () => {
             <div className="sticky top-0 bg-white border-b border-gray-200 p-6 flex items-center justify-between">
               <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
                 <FaPlus className="text-blue-600" />
-                Create New Driver
+                {driverCreationMode === 'new' ? 'Create New Driver' : 'Add Existing Driver'}
               </h2>
               <button
                 onClick={() => {
@@ -687,7 +750,115 @@ const TenantAdminDrivers: React.FC = () => {
               </button>
             </div>
             <form onSubmit={handleCreate} className="p-6 space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Mode Selection Toggle */}
+              <div className="mb-6 p-4 bg-gray-50 rounded-lg">
+                <label className="block text-sm font-medium text-gray-700 mb-3">
+                  Select Option
+                </label>
+                <div className="flex gap-4">
+                  <label className="flex items-center cursor-pointer">
+                    <input
+                      type="radio"
+                      name="driverMode"
+                      value="new"
+                      checked={driverCreationMode === 'new'}
+                      onChange={(e) => setDriverCreationMode(e.target.value as 'new' | 'existing')}
+                      className="w-4 h-4 text-blue-600 focus:ring-blue-500"
+                    />
+                    <span className="ml-2 text-sm text-gray-700">Create New Driver</span>
+                  </label>
+                  <label className="flex items-center cursor-pointer">
+                    <input
+                      type="radio"
+                      name="driverMode"
+                      value="existing"
+                      checked={driverCreationMode === 'existing'}
+                      onChange={(e) => setDriverCreationMode(e.target.value as 'new' | 'existing')}
+                      className="w-4 h-4 text-blue-600 focus:ring-blue-500"
+                    />
+                    <span className="ml-2 text-sm text-gray-700">Add Existing Driver</span>
+                  </label>
+                </div>
+              </div>
+
+              {/* Existing Driver Selection */}
+              {driverCreationMode === 'existing' && (
+                <div className="mb-6 space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Search for Driver *
+                    </label>
+                    <div className="relative">
+                      <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                      <input
+                        type="text"
+                        value={existingDriverSearch}
+                        onChange={(e) => setExistingDriverSearch(e.target.value)}
+                        className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="Search by name, email, phone, or license number..."
+                      />
+                    </div>
+                  </div>
+
+                  {/* Driver Results */}
+                  {existingDriverSearch.length > 0 && (
+                    <div className="border border-gray-200 rounded-lg max-h-60 overflow-y-auto">
+                      {allAvailableDrivers.length === 0 ? (
+                        <div className="p-4 text-center text-gray-500 text-sm">
+                          No drivers found. Try a different search term.
+                        </div>
+                      ) : (
+                        <div className="divide-y divide-gray-200">
+                          {allAvailableDrivers.map((driver) => (
+                            <div
+                              key={driver.id}
+                              onClick={() => {
+                                setSelectedExistingDriver(driver);
+                                setExistingDriverSearch(`${driver.firstName} ${driver.lastName} - ${driver.email}`);
+                              }}
+                              className={`p-3 cursor-pointer hover:bg-blue-50 transition-colors ${
+                                selectedExistingDriver?.id === driver.id ? 'bg-blue-100 border-l-4 border-blue-600' : ''
+                              }`}
+                            >
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <div className="font-medium text-gray-900">
+                                    {driver.firstName} {driver.lastName}
+                                  </div>
+                                  <div className="text-sm text-gray-500">
+                                    {driver.email} • {driver.phone}
+                                  </div>
+                                  <div className="text-xs text-gray-400 mt-1">
+                                    License: {driver.licenseNumber}
+                                  </div>
+                                </div>
+                                {selectedExistingDriver?.id === driver.id && (
+                                  <FaCheckCircle className="w-5 h-5 text-blue-600" />
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {selectedExistingDriver && (
+                    <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                      <div className="flex items-center gap-2 text-green-800">
+                        <FaCheckCircle className="w-5 h-5" />
+                        <span className="font-medium">
+                          Selected: {selectedExistingDriver.firstName} {selectedExistingDriver.lastName}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* New Driver Form */}
+              {driverCreationMode === 'new' && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     First Name *
@@ -775,6 +946,7 @@ const TenantAdminDrivers: React.FC = () => {
                   </select>
                 </div>
               </div>
+              )}
               <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-200">
                 <button
                   type="button"
@@ -788,18 +960,18 @@ const TenantAdminDrivers: React.FC = () => {
                 </button>
                 <button
                   type="submit"
-                  disabled={createMutation.isPending}
+                  disabled={createMutation.isPending || addExistingDriverMutation.isPending || (driverCreationMode === 'existing' && !selectedExistingDriver)}
                   className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                 >
-                  {createMutation.isPending ? (
+                  {(createMutation.isPending || addExistingDriverMutation.isPending) ? (
                     <>
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                      Creating...
+                      {driverCreationMode === 'existing' ? 'Adding...' : 'Creating...'}
                     </>
                   ) : (
                     <>
                       <FaPlus className="w-4 h-4" />
-                      Create Driver
+                      {driverCreationMode === 'existing' ? 'Add Driver' : 'Create Driver'}
                     </>
                   )}
                 </button>

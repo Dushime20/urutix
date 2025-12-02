@@ -26,6 +26,7 @@ import { FileUploadModule } from './modules/file-upload/file-upload.module';
 import { OcrModule } from './modules/ocr/ocr.module';
 import { SafetyModule } from './modules/safety/safety.module';
 import { TripsModule } from './modules/trips/trips.module';
+import { DriverModule } from './modules/drivers/driver.module';
 import { databaseConfig } from './config/database.config';
 import { ThrottlerModule } from '@nestjs/throttler';
 
@@ -57,6 +58,7 @@ import { ThrottlerModule } from '@nestjs/throttler';
     OcrModule,
     SafetyModule,
     TripsModule,
+    DriverModule,
   ],
   controllers: [AppController],
   providers: [AppService],

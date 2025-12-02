@@ -218,6 +218,40 @@ export class LoadsV2Controller {
     }
   }
 
+  @Get('assigned-loads')
+  @ApiOperation({
+    summary: "Get loads assigned to truck owner's trucks",
+    description: 'Retrieves loads assigned to trucks owned by the authenticated truck owner',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Assigned loads retrieved successfully',
+  })
+  async getAssignedLoads(
+    @Query() queryDto: LoadQueryV2Dto,
+    @Request()
+    req = {
+      user: {
+        id: '701a9079-6100-4b47-a3b9-f9b070bfa7c6',
+        tenantId: '00000000-0000-0000-0000-000000000001',
+        role: 'TRUCK_OWNER',
+      },
+    },
+  ): Promise<PaginatedResponseV2<LoadResponseV2Dto>> {
+    try {
+      const user = req.user as User;
+      return await this.loadsV2Service.getAssignedLoadsForTruckOwner(
+        queryDto,
+        user,
+      );
+    } catch (error) {
+      throw new HttpException(
+        error.message || 'Failed to retrieve assigned loads',
+        error.status || HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
   @Get('search')
   @ApiOperation({
     summary: 'Search loads V2',

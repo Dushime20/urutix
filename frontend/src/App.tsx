@@ -30,6 +30,7 @@ import Auth from './pages/Auth';
 import Home from './pages/Home';
 import DriverPasswordSetup from './pages/DriverPasswordSetup';
 import TenantPasswordSetup from './pages/TenantPasswordSetup';
+import LenderPasswordSetup from './pages/LenderPasswordSetup';
 
 // Lazy load all page components to reduce initial bundle size
 const CargoList = lazy(() => import('./pages/dashboard/cargos/list'));
@@ -60,6 +61,7 @@ const TenantAdminRoutes = lazy(() => import('./components/TenantAdmin/TenantAdmi
 const TenantAdminDrivers = lazy(() => import('./components/TenantAdmin/TenantAdminDrivers'));
 const TenantAdminCargo = lazy(() => import('./components/TenantAdmin/TenantAdminCargo'));
 const TenantAdminTrips = lazy(() => import('./components/TenantAdmin/TenantAdminTrips'));
+const TenantLenderManagementPage = lazy(() => import('./pages/TenantLenderManagementPage'));
 const Profile = lazy(() => import('./pages/Profile'));
 const Settings = lazy(() => import('./pages/Settings'));
 const LenderPolicySettingsPage = lazy(() => import('./pages/LenderPolicySettingsPage'));
@@ -136,6 +138,7 @@ function App() {
             <Route path="/auth" element={<Auth />} />
             <Route path="/driver/setup-password" element={<DriverPasswordSetup />} />
             <Route path="/tenant/setup-password" element={<TenantPasswordSetup />} />
+            <Route path="/lender/setup-password" element={<LenderPasswordSetup />} />
             
             {/* Cargo Owner Routes */}
             <Route path="/dashboard" element={<CargoOwnerLayout />}>
@@ -322,6 +325,7 @@ function App() {
               <Route path="fleet" element={<TenantFleetManagement />} />
               <Route path="cargo" element={<TenantAdminCargo />} />
               <Route path="drivers" element={<TenantAdminDrivers />} />
+              <Route path="lenders" element={<TenantLenderManagementPage />} />
               <Route path="routes" element={<TenantAdminRoutes />} />
               <Route path="trips" element={<TenantAdminTrips />} />
               <Route path="financial" element={<TenantDashboardPage />} />

@@ -24,6 +24,7 @@ import {
 } from 'react-icons/fa';
 import { fleetApi, type FleetItem, type Driver, type FleetAnalytics } from '../services/fleetApi';
 import { tripsAPI } from '../services/api';
+import { cargoOwnerAPI } from '../services/cargoApi';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
@@ -73,6 +74,8 @@ const FleetOwnerDashboard: React.FC = () => {
   const [recentActivities, setRecentActivities] = useState<RecentActivity[]>([]);
   const [trucks, setTrucks] = useState<FleetItem[]>([]);
   const [drivers, setDrivers] = useState<Driver[]>([]);
+  const [assignedLoads, setAssignedLoads] = useState<any[]>([]);
+  const [loadingLoads, setLoadingLoads] = useState(false);
   const navigate = useNavigate();
   const { user } = useAuth();
 
@@ -181,9 +184,31 @@ const FleetOwnerDashboard: React.FC = () => {
     }
   }, []);
 
+  const loadAssignedLoads = useCallback(async () => {
+    if (!user || user.role !== 'TRUCK_OWNER') return;
+    
+    setLoadingLoads(true);
+    try {
+      const response = await cargoOwnerAPI.getAssignedLoads({
+        page: 1,
+        limit: 10,
+        sortBy: 'pickupDate',
+        sortOrder: 'ASC',
+      });
+      const loads = response.data?.data || response.data || [];
+      setAssignedLoads(Array.isArray(loads) ? loads : []);
+    } catch (error: any) {
+      console.error('Error loading assigned loads:', error);
+      // Don't show error toast as this is optional data
+    } finally {
+      setLoadingLoads(false);
+    }
+  }, [user]);
+
   useEffect(() => {
     loadDashboardData();
-  }, [loadDashboardData]);
+    loadAssignedLoads();
+  }, [loadDashboardData, loadAssignedLoads]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -510,6 +535,71 @@ const FleetOwnerDashboard: React.FC = () => {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Assigned Loads Section */}
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-2.5">
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="text-xs font-semibold text-gray-900">Assigned Loads</h2>
+          {assignedLoads.length > 0 && (
+            <button
+              onClick={() => navigate('/fleet/loads')}
+              className="text-xs text-blue-600 hover:text-blue-800 font-medium"
+            >
+              View All
+            </button>
+          )}
+        </div>
+        {loadingLoads ? (
+          <div className="text-center py-4 text-gray-500">
+            <FaSync className="w-4 h-4 mx-auto mb-1 animate-spin" />
+            <p className="text-xs">Loading assigned loads...</p>
+          </div>
+        ) : assignedLoads.length === 0 ? (
+          <div className="text-center py-4 text-gray-500">
+            <FaBox className="w-6 h-6 mx-auto mb-1.5 text-gray-400" />
+            <p className="text-xs">No assigned loads yet</p>
+            <p className="text-[10px] text-gray-400 mt-1">Accepted bids will appear here</p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {assignedLoads.slice(0, 5).map((load: any) => (
+              <div
+                key={load.id}
+                className="flex items-start gap-2 p-2 bg-gray-50 rounded-md border border-gray-200 hover:bg-gray-100 transition-colors cursor-pointer"
+                onClick={() => navigate(`/loads/${load.id}`)}
+              >
+                <FaBox className="w-3.5 h-3.5 text-blue-600 mt-0.5 flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <h4 className="text-xs font-medium text-gray-900 truncate">
+                    {load.title || 'Untitled Load'}
+                  </h4>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded ${
+                      load.status === 'ASSIGNED' ? 'bg-blue-100 text-blue-700' :
+                      load.status === 'IN_TRANSIT' ? 'bg-purple-100 text-purple-700' :
+                      'bg-gray-100 text-gray-700'
+                    }`}>
+                      {load.status || 'ASSIGNED'}
+                    </span>
+                    {load.pickupDate && (
+                      <span className="text-[10px] text-gray-500 flex items-center gap-1">
+                        <FaCalendarAlt className="w-2.5 h-2.5" />
+                        {new Date(load.pickupDate).toLocaleDateString()}
+                      </span>
+                    )}
+                  </div>
+                  {load.pickupLocation || load.deliveryLocation ? (
+                    <p className="text-[10px] text-gray-600 mt-0.5 truncate">
+                      {load.pickupLocation?.name || load.pickupLocation?.address || 'Pickup'} → {load.deliveryLocation?.name || load.deliveryLocation?.address || 'Delivery'}
+                    </p>
+                  ) : null}
+                </div>
+                <FaEye className="w-3 h-3 text-gray-400 flex-shrink-0 mt-0.5" />
+              </div>
+            ))}
+          </div>
+        )}
       </div>
       </div>
     </div>

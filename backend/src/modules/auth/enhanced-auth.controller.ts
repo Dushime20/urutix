@@ -648,6 +648,48 @@ export class EnhancedAuthController {
     }
   }
 
+  @Post('lender/setup-password')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(EnhancedRateLimitGuard)
+  @ApiOperation({
+    summary: 'Setup lender password',
+    description: 'Set initial password for lender account using setup token',
+  })
+  @ApiBody({
+    type: SetupDriverPasswordDto,
+    description: 'Password setup data',
+  })
+  @ApiOkResponse({
+    description: 'Password set successfully',
+    type: SetupDriverPasswordResponseDto,
+  })
+  @ApiBadRequestResponse({
+    description: 'Invalid token or validation error',
+  })
+  async setupLenderPassword(
+    @Body() setupPasswordDto: SetupDriverPasswordDto,
+    @Req() req: Request,
+  ): Promise<SetupDriverPasswordResponseDto> {
+    try {
+      const clientIp = this.getClientIp(req);
+      this.logger.log(`Lender password setup attempt from IP: ${clientIp}`);
+
+      const result = await this.authService.setupLenderPassword(
+        setupPasswordDto,
+        clientIp,
+      );
+
+      this.logger.log(`Lender password setup completed from IP: ${clientIp}`);
+      return result;
+    } catch (error) {
+      const clientIp = this.getClientIp(req);
+      this.logger.error(
+        `Lender password setup failed from IP: ${clientIp}: ${error.message}`,
+      );
+      throw error;
+    }
+  }
+
   @Get('profile')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth('JWT-auth')

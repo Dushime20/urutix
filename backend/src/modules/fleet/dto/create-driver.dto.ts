@@ -13,7 +13,7 @@ import {
 } from 'class-validator';
 import { DriverStatus, EmploymentType } from '../../../entities/driver.entity';
 
-export class CreateDriverDto {
+export class CreateFleetDriverDto {
   @IsString()
   @MaxLength(100)
   firstName: string;

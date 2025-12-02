@@ -29,7 +29,7 @@ import {
 } from '@nestjs/swagger';
 import { FleetService } from './fleet.service';
 import { CreateTruckDto } from './dto/create-truck.dto';
-import { CreateDriverDto } from './dto/create-driver.dto';
+import { CreateFleetDriverDto } from './dto/create-driver.dto';
 import { AssignDriverDto } from './dto/assign-driver.dto';
 import { AssignRouteDto } from './dto/assign-route.dto';
 import { BulkAssignDto } from './dto/bulk-assign.dto';
@@ -1882,7 +1882,7 @@ export class FleetController {
     description:
       'Creates a new driver in the fleet with comprehensive information including license, certifications, and employment details',
   })
-  @ApiBody({ type: CreateDriverDto, description: 'Driver creation data' })
+  @ApiBody({ type: CreateFleetDriverDto, description: 'Driver creation data' })
   @ApiResponse({
     status: 201,
     description: 'Driver created successfully',
@@ -1936,7 +1936,7 @@ export class FleetController {
         },
       }),
     )
-    createDriverDto: CreateDriverDto,
+    createDriverDto: CreateFleetDriverDto,
     @Request() req,
   ) {
     try {
@@ -2282,7 +2282,7 @@ export class FleetController {
     format: 'uuid',
   })
   @ApiBody({
-    type: CreateDriverDto,
+    type: CreateFleetDriverDto,
     description: 'Driver update data - only provided fields will be updated',
     required: false,
   })
@@ -2334,7 +2334,7 @@ export class FleetController {
   })
   async updateDriver(
     @Param('id', ParseUUIDPipe) id: string,
-    @Body() updateDriverDto: Partial<CreateDriverDto>,
+    @Body() updateDriverDto: Partial<CreateFleetDriverDto>,
     @Request() req,
   ) {
     const driver = await this.fleetService.updateDriver(
