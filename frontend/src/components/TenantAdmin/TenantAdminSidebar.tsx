@@ -8,6 +8,7 @@ import {
 import { useAuth } from '../../contexts/AuthContext';
 import { useAdminLayout } from '../../contexts/AdminLayoutContext';
 import urutixLogo from '../../assets/urutix.png';
+import { TranslatedText } from '../translated-text';
 
 const TenantAdminSidebar: React.FC = () => {
   const { user, logout } = useAuth();
@@ -55,9 +56,11 @@ const TenantAdminSidebar: React.FC = () => {
                 <FaBuilding className="text-white text-sm" />
               </div>
               <div>
-                <h3 className="font-bold text-gray-900 text-sm">Tenant Admin</h3>
+                <h3 className="font-bold text-gray-900 text-sm">
+                  <TranslatedText text="Tenant Admin" />
+                </h3>
                 <p className="text-xs text-gray-500 truncate">
-                  {user?.tenantName && user.tenantName !== user?.tenantId ? user.tenantName : 'Default Tenant'}
+                  {user?.tenantName && user.tenantName !== user?.tenantId ? user.tenantName : <TranslatedText text="Default Tenant" />}
                 </p>
               </div>
             </div>
@@ -88,7 +91,7 @@ const TenantAdminSidebar: React.FC = () => {
                 end={item.to === '/tenant-admin'}
               >
                 <Icon className={`${sidebarCollapsed ? 'mx-auto' : 'mr-3'} w-5 h-5 flex-shrink-0`} />
-                {!sidebarCollapsed && <span>{item.label}</span>}
+                {!sidebarCollapsed && <span><TranslatedText text={item.label} /></span>}
               </NavLink>
             );
           })}

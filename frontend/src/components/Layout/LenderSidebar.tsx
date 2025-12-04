@@ -21,6 +21,7 @@ import {
   FaCreditCard,
   FaQuestionCircle
 } from 'react-icons/fa';
+import { TranslatedText } from '../translated-text';
 
 interface LenderSidebarProps {
   isCollapsed: boolean;
@@ -172,8 +173,12 @@ const LenderSidebar: React.FC<LenderSidebarProps> = ({ isCollapsed, onToggle }) 
           </div>
           {!isCollapsed && (
             <div>
-              <h2 className="text-lg font-bold text-gray-800">Lender Portal</h2>
-              <p className="text-xs text-gray-500">Lending Management</p>
+              <h2 className="text-lg font-bold text-gray-800">
+                <TranslatedText text="Lender Portal" />
+              </h2>
+              <p className="text-xs text-gray-500">
+                <TranslatedText text="Lending Management" />
+              </p>
             </div>
           )}
         </div>
@@ -185,7 +190,7 @@ const LenderSidebar: React.FC<LenderSidebarProps> = ({ isCollapsed, onToggle }) 
           <div key={sectionIndex} className="mb-6">
             {!isCollapsed && (
               <h3 className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                {section.section}
+                <TranslatedText text={section.section} />
               </h3>
             )}
             <div className="space-y-1">
@@ -209,9 +214,11 @@ const LenderSidebar: React.FC<LenderSidebarProps> = ({ isCollapsed, onToggle }) 
                   />
                   {!isCollapsed && (
                     <div className="ml-3">
-                      <span className="block">{item.name}</span>
+                      <span className="block">
+                        <TranslatedText text={item.name} />
+                      </span>
                       <span className="text-xs text-gray-500 group-hover:text-gray-600">
-                        {item.description}
+                        <TranslatedText text={item.description} />
                       </span>
                     </div>
                   )}
@@ -230,7 +237,7 @@ const LenderSidebar: React.FC<LenderSidebarProps> = ({ isCollapsed, onToggle }) 
           title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         >
           <FaCog className="w-4 h-4" />
-          {!isCollapsed && <span className="ml-2">Toggle Sidebar</span>}
+          {!isCollapsed && <span className="ml-2"><TranslatedText text="Toggle Sidebar" /></span>}
         </button>
       </div>
     </div>

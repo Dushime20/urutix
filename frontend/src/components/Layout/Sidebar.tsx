@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import sidebarBack from '../../assets/sidebar-back.svg';
+import { TranslatedText } from '../translated-text';
 
 const Sidebar = () => {
   const { user, logout } = useAuth();
@@ -146,7 +147,7 @@ const Sidebar = () => {
               }
             >
               <item.icon className="w-5 h-5" />
-              <span>{item.label}</span>
+              <span><TranslatedText text={item.label} /></span>
             </NavLink>
           ))}
         </nav>
@@ -158,7 +159,7 @@ const Sidebar = () => {
             className="flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors"
           >
             <Settings className="w-5 h-5" />
-            <span>Settings</span>
+            <span><TranslatedText text="Settings" /></span>
           </NavLink>
           
           <button
@@ -166,7 +167,7 @@ const Sidebar = () => {
             className="flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors w-full"
           >
             <LogOut className="w-5 h-5" />
-            <span>Logout</span>
+            <span><TranslatedText text="Logout" /></span>
           </button>
         </div>
       </div>

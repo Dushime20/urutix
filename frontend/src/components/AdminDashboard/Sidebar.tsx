@@ -7,6 +7,7 @@ import {
 } from 'react-icons/fa';
 import { useAdminLayout } from '../../contexts/AdminLayoutContext';
 import urutixLogo from '../../assets/urutix.png';
+import { TranslatedText } from '../translated-text';
 
 const Sidebar: React.FC = () => {
   const { sidebarCollapsed, toggleSidebar } = useAdminLayout();
@@ -46,7 +47,9 @@ const Sidebar: React.FC = () => {
               <FaTachometerAlt className="text-primary-600 text-xl" />
               <div>
                 <div className="text-xs uppercase text-gray-500 tracking-wider">UrutiX</div>
-                <div className="text-lg font-bold text-gray-900">Admin Console</div>
+                <div className="text-lg font-bold text-gray-900">
+                  <TranslatedText text="Admin Console" />
+                </div>
               </div>
             </div>
           )}
@@ -72,7 +75,7 @@ const Sidebar: React.FC = () => {
                 title={sidebarCollapsed ? item.label : undefined}
               >
                 <Icon className="text-lg flex-shrink-0" />
-                {!sidebarCollapsed && <span>{item.label}</span>}
+                {!sidebarCollapsed && <span><TranslatedText text={item.label} /></span>}
               </NavLink>
             );
           })}
