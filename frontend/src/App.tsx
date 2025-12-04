@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from './contexts/AuthContext';
+import { I18nProvider } from './contexts/i18n-context';
 import { Toaster } from 'react-hot-toast';
 import { lazy, Suspense } from 'react';
 
@@ -122,12 +123,16 @@ const queryClient = new QueryClient({
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <Router>
-          <Suspense fallback={<PageLoadingFallback />}>
-            <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/auth" element={<Auth />} />
+      <I18nProvider 
+        defaultLanguage="en"
+        googleTranslateApiKey={import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY}
+      >
+        <AuthProvider>
+          <Router>
+            <Suspense fallback={<PageLoadingFallback />}>
+              <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/auth" element={<Auth />} />
             
             {/* Cargo Owner Routes */}
             <Route path="/dashboard" element={<CargoOwnerLayout />}>
@@ -354,6 +359,7 @@ function App() {
         position="bottom-right"
         toastOptions={{ duration: 2000 }}
       />
+      </I18nProvider>
     </QueryClientProvider>
   );
 }
