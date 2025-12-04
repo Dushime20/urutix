@@ -421,7 +421,7 @@ const PublishForBidFlow: React.FC<PublishForBidFlowProps> = ({ cargoDetails, onC
             <span className="font-medium">Title:</span> {cargoDetails.title}
           </div>
           <div>
-                            <span className="font-medium">Weight:</span> {cargoDetails.weight} lbs
+                            <span className="font-medium">Weight:</span> {cargoDetails.weight} kg
           </div>
           <div>
                             <span className="font-medium">Route:</span> {cargoDetails.pickupLocation?.city || 'Pickup Location'} → {cargoDetails.deliveryLocation?.city || 'Delivery Location'}

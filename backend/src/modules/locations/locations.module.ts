@@ -6,9 +6,13 @@ import { LocationUtilsService } from './location-utils.service';
 import { Location } from '../../entities/location.entity';
 import { OpenStreetMapLocationService } from './openstreetmap-location.service';
 import { OSMLocationEnrichmentService } from './osm-location-enrichment.service';
+import { EnhancedAuthModule } from '../auth/enhanced-auth.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Location])],
+  imports: [
+    TypeOrmModule.forFeature([Location]),
+    EnhancedAuthModule,
+  ],
   controllers: [LocationsController],
   providers: [
     LocationsService,

@@ -19,6 +19,7 @@ import {
   Package
 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
+import { useAuth } from '../../contexts/AuthContext';
 import { driverApi } from '../../services/driverApi';
 import { DriverStats } from './DriverStats';
 import { CurrentTrip } from './CurrentTrip';
@@ -28,16 +29,58 @@ import { UpcomingTrips } from './UpcomingTrips';
 import { QuickActions } from './QuickActions';
 import { NotificationsPanel } from './NotificationsPanel';
 import { CargoManagement } from './CargoManagement';
+import DriverTrips from './DriverTrips';
 
-export const DriverDashboard: React.FC = () => {
+const DriverDashboard: React.FC = () => {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('overview');
-  const [driverId, setDriverId] = useState<string>(''); // This would come from auth context
+  const [driverId, setDriverId] = useState<string>('');
   const location = useLocation();
 
-  // Open Cargo Management tab when routed via /dashboard/cargo
+  // Find driver by userId when user is available
+  const { data: driverByUserId } = useQuery({
+    queryKey: ['driver-by-user-id', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      try {
+        // Try to find driver by userId
+        const drivers = await driverApi.getDrivers({ search: user.email || '' });
+        const driver = drivers.find((d: any) => d.userId === user.id || d.email === user.email);
+        return driver;
+      } catch (error) {
+        console.error('Error finding driver:', error);
+        return null;
+      }
+    },
+    enabled: !!user?.id && !driverId,
+  });
+
+  // Set driverId when driver is found
   useEffect(() => {
-    if (location.pathname.endsWith('/cargo')) {
+    if (driverByUserId?.id) {
+      setDriverId(driverByUserId.id);
+    } else if (user?.id) {
+      // Fallback: try using userId directly if no driver record found
+      setDriverId(user.id);
+    }
+  }, [driverByUserId, user]);
+
+  // Set active tab based on route
+  useEffect(() => {
+    if (location.pathname.endsWith('/trips')) {
+      setActiveTab('trips');
+    } else if (location.pathname.endsWith('/cargo')) {
       setActiveTab('cargo');
+    } else if (location.pathname.endsWith('/earnings')) {
+      setActiveTab('earnings');
+    } else if (location.pathname.endsWith('/safety')) {
+      setActiveTab('safety');
+    } else if (location.pathname.endsWith('/documents')) {
+      setActiveTab('documents');
+    } else if (location.pathname.endsWith('/messages')) {
+      setActiveTab('messages');
+    } else if (location.pathname.endsWith('/settings')) {
+      setActiveTab('settings');
     }
   }, [location.pathname]);
 
@@ -186,18 +229,25 @@ export const DriverDashboard: React.FC = () => {
 
         {activeTab === 'trips' && (
           <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-gray-900">Trip Management</h2>
-            {/* Trip history, current trip details, etc. */}
-            <div className="bg-white rounded-lg shadow p-6">
-              <p className="text-gray-500">Trip management features coming soon...</p>
-            </div>
+            {driverId ? (
+              <DriverTrips driverId={driverId} />
+            ) : (
+              <div className="bg-white rounded-lg shadow p-6">
+                <p className="text-gray-500">Loading driver information...</p>
+              </div>
+            )}
           </div>
         )}
 
         {activeTab === 'earnings' && (
           <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-gray-900">Earnings & Performance</h2>
-            <EarningsOverview driverId={driverId} />
+            {driverId ? (
+              <EarningsOverview driverId={driverId} />
+            ) : (
+              <div className="bg-white rounded-lg shadow p-6">
+                <p className="text-gray-500">Loading driver information...</p>
+              </div>
+            )}
           </div>
         )}
 
@@ -238,3 +288,5 @@ export const DriverDashboard: React.FC = () => {
     </div>
   );
 };
+
+export default DriverDashboard;

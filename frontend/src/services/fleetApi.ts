@@ -89,16 +89,31 @@ export const fleetApi = {
   async getTrucks(filters?: { search?: string; status?: string }): Promise<FleetItem[]> {
     try {
       console.log('🔑 Fetching trucks with authenticated API');
+      console.log('🔑 Filters:', filters);
 
       const params = new URLSearchParams();
       if (filters?.search) params.append('search', filters.search);
       if (filters?.status) params.append('status', filters.status);
 
-      const response = await api.get(`/fleet/trucks?${params.toString()}`);
-      console.log('✅ Trucks fetch successful:', response.data);
-      return response.data.trucks || [];
-    } catch (error) {
+      const url = `/fleet/trucks${params.toString() ? `?${params.toString()}` : ''}`;
+      console.log('🔑 Request URL:', url);
+      
+      const response = await api.get(url);
+      console.log('✅ Trucks fetch successful - Full response:', response);
+      console.log('✅ Trucks fetch - response.data:', response.data);
+      console.log('✅ Trucks fetch - response.data.trucks:', response.data?.trucks);
+      console.log('✅ Trucks fetch - response.data.trucks is array?', Array.isArray(response.data?.trucks));
+      console.log('✅ Trucks fetch - response.data.trucks length:', response.data?.trucks?.length);
+      
+      // Backend returns { message, trucks }
+      const trucks = response.data?.trucks || response.data || [];
+      console.log('✅ Returning trucks:', Array.isArray(trucks) ? trucks.length : 'Not an array');
+      return Array.isArray(trucks) ? trucks : [];
+    } catch (error: any) {
       console.error('❌ Error fetching trucks:', error);
+      console.error('❌ Error response:', error.response);
+      console.error('❌ Error response data:', error.response?.data);
+      console.error('❌ Error status:', error.response?.status);
       return [];
     }
   },

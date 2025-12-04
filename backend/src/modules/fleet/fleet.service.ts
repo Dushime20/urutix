@@ -6,6 +6,7 @@ import {
   ConflictException,
   HttpException,
   InternalServerErrorException,
+  Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -18,11 +19,19 @@ import {
 import { Driver, DriverStatus } from '../../entities/driver.entity';
 import { Route } from '../../entities/route.entity';
 import { RouteTruck } from '../../entities/route-truck.entity';
+import { User, UserRole, UserStatus } from '../../entities/user.entity';
+import { UserProfile } from '../../entities/user-profile.entity';
+import { PasswordResetToken } from '../../entities/password-reset-token.entity';
 import { CreateTruckDto } from './dto/create-truck.dto';
-import { CreateDriverDto } from './dto/create-driver.dto';
+import { CreateFleetDriverDto } from './dto/create-driver.dto';
+import { EmailService } from '../auth/email.service';
+import * as bcrypt from 'bcryptjs';
+import * as crypto from 'crypto';
 
 @Injectable()
 export class FleetService {
+  private readonly logger = new Logger(FleetService.name);
+
   constructor(
     @InjectRepository(Truck)
     private readonly truckRepository: Repository<Truck>,
@@ -32,6 +41,13 @@ export class FleetService {
     private readonly routeRepository: Repository<Route>,
     @InjectRepository(RouteTruck)
     private readonly routeTruckRepository: Repository<RouteTruck>,
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
+    @InjectRepository(UserProfile)
+    private readonly userProfileRepository: Repository<UserProfile>,
+    @InjectRepository(PasswordResetToken)
+    private readonly passwordResetTokenRepository: Repository<PasswordResetToken>,
+    private readonly emailService: EmailService,
   ) {}
 
   // Truck operations
@@ -284,44 +300,82 @@ export class FleetService {
     userId?: string,
     filters?: any,
   ): Promise<Truck[]> {
-    const query = this.truckRepository
-      .createQueryBuilder('truck')
-      .leftJoinAndSelect('truck.owner', 'owner')
-      .where('truck.tenantId = :tenantId', { tenantId });
-
-    // Remove the userId filter to show all trucks in the tenant
-    // Only filter by userId if explicitly requested (for user-specific views)
-    // if (userId) {
-    //   query.andWhere('truck.ownerId = :userId', { userId });
-    // }
-
-    // Apply filters
-    if (filters?.search) {
-      const searchLower = filters.search.toLowerCase();
-      query.andWhere(
-        '(LOWER(truck.plateNumber) LIKE :search OR LOWER(truck.make) LIKE :search OR LOWER(truck.model) LIKE :search)',
-        { search: `%${searchLower}%` },
-      );
+    try {
+      console.log(`🔍 Fleet Service - Finding trucks for tenant: ${tenantId}`);
+      console.log(`🔍 Fleet Service - TenantId value: "${tenantId}"`);
+      console.log(`🔍 Fleet Service - TenantId type: ${typeof tenantId}`);
+      
+      // Use query builder to ensure tenantId is included in the query
+      // Start with tenantId as the first condition to ensure it's always included
+      const queryBuilder = this.truckRepository
+        .createQueryBuilder('truck')
+        .where('truck.tenantId = :tenantId', { tenantId: tenantId })
+        .andWhere('truck.isActive = :isActive', { isActive: true })
+        .andWhere('truck.deletedAt IS NULL')
+        .setParameter('tenantId', tenantId)
+        .setParameter('isActive', true);
+      
+      // Apply filters
+      if (filters?.status) {
+        queryBuilder.andWhere('truck.status = :status', { status: filters.status });
+      }
+      
+      // Apply search filter
+      if (filters?.search) {
+        const searchLower = filters.search.toLowerCase();
+        queryBuilder.andWhere(
+          '(LOWER(truck.plateNumber) LIKE :search OR LOWER(truck.make) LIKE :search OR LOWER(truck.model) LIKE :search)',
+          { search: `%${searchLower}%` }
+        );
+      }
+      
+      // Apply pagination
+      if (filters?.limit) {
+        queryBuilder.take(filters.limit);
+      }
+      if (filters?.page && filters?.limit) {
+        queryBuilder.skip((filters.page - 1) * filters.limit);
+      }
+      
+      // Order by
+      queryBuilder.orderBy('truck.createdAt', 'DESC');
+      
+      // Log the query before execution
+      const sql = queryBuilder.getSql();
+      const params = queryBuilder.getParameters();
+      console.log(`🔍 Fleet Service - Query SQL:`, sql);
+      console.log(`🔍 Fleet Service - Query parameters:`, JSON.stringify(params, null, 2));
+      console.log(`🔍 Fleet Service - SQL includes tenantId?`, sql.includes('tenantId'));
+      
+      // Verify tenantId is in parameters
+      if (!params.tenantId) {
+        console.error('❌ CRITICAL: tenantId is missing from query parameters!');
+        console.error('❌ Parameters:', params);
+        throw new Error('tenantId parameter is missing from query');
+      }
+      
+      // Execute query
+      const trucks = await queryBuilder.getMany();
+      
+      console.log(`🔍 Fleet Service - Raw query result: ${trucks.length} trucks`);
+      console.log(`🔍 Fleet Service - Trucks IDs:`, trucks.map(t => t.id));
+      console.log(`✅ Fleet Service - Found ${trucks.length} trucks for tenant ${tenantId}`);
+      
+      if (trucks.length === 0) {
+        console.warn(`⚠️ No trucks found for tenant ${tenantId}`);
+        console.warn(`⚠️ This might indicate:`);
+        console.warn(`   - Tenant ID mismatch`);
+        console.warn(`   - All trucks are soft-deleted`);
+        console.warn(`   - All trucks have isActive = false`);
+      }
+      
+      return trucks;
+    } catch (error) {
+      console.error('❌ Fleet Service - Error finding trucks:', error);
+      console.error('❌ Error message:', error.message);
+      console.error('❌ Error stack:', error.stack);
+      throw error;
     }
-
-    if (filters?.status) {
-      query.andWhere('truck.status = :status', { status: filters.status });
-    }
-
-    if (filters?.location) {
-      const locationLower = filters.location.toLowerCase();
-      query.andWhere('LOWER(truck.currentLocation) LIKE :location', {
-        location: `%${locationLower}%`,
-      });
-    }
-
-    // Apply pagination
-    if (filters?.page && filters?.limit) {
-      const skip = (filters.page - 1) * filters.limit;
-      query.skip(skip).take(filters.limit);
-    }
-
-    return query.getMany();
   }
 
   async findOneTruck(id: string, tenantId: string): Promise<Truck> {
@@ -428,7 +482,7 @@ export class FleetService {
 
   // Driver operations
   async createDriver(
-    createDriverDto: CreateDriverDto,
+    createDriverDto: CreateFleetDriverDto,
     userId: string,
     tenantId: string,
   ): Promise<Driver> {
@@ -476,10 +530,201 @@ export class FleetService {
         );
       }
 
+      // Step 1: Check if user already exists BEFORE creating driver (same as lender creation)
+      this.logger.log(`Checking if user with email ${createDriverDto.email} already exists...`);
+      const existingUser = await this.userRepository.findOne({
+        where: { email: createDriverDto.email.trim().toLowerCase(), tenantId },
+      });
+
+      if (existingUser) {
+        this.logger.error(
+          `User with email ${createDriverDto.email} already exists. Cannot create driver with existing user email.`,
+        );
+        throw new ConflictException(
+          `A user with the email "${createDriverDto.email}" already exists in the system. Please use a different email address for this driver.`,
+        );
+      }
+
+      // Step 2: Create the driver entity (only if user doesn't exist)
+      // But first, we need to create the user account
+      this.logger.log(`No existing user found. Proceeding with driver creation...`);
+      
+      // Create new user for driver (following lender creation pattern)
+      this.logger.log(`👤 Creating new driver user account...`);
+      
+      // Validate email is provided
+      if (!createDriverDto.email || createDriverDto.email.trim() === '') {
+        throw new BadRequestException(
+          'Email is required to create a driver account. Please provide a valid email address.',
+        );
+      }
+
+      // Validate email format
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(createDriverDto.email)) {
+        throw new BadRequestException(
+          'Invalid email format. Please provide a valid email address.',
+        );
+      }
+      
+      // Generate temporary password (will be replaced when driver sets password)
+      const tempPassword = crypto.randomBytes(32).toString('hex');
+      const tempPasswordHash = await bcrypt.hash(tempPassword, 12);
+
+      const driverUser = this.userRepository.create({
+        email: createDriverDto.email.trim().toLowerCase(), // Normalize email
+        phone: createDriverDto.phone,
+        passwordHash: tempPasswordHash,
+        role: UserRole.DRIVER,
+        status: UserStatus.PENDING_VERIFICATION, // Will be activated after password setup
+        tenantId,
+      });
+
+      const savedDriverUser = await this.userRepository.save(driverUser);
+      const driverUserId = savedDriverUser.id;
+      this.logger.log(`✅ Driver user created with ID: ${driverUserId}`);
+
+      // Create user profile
+      const userProfile = this.userProfileRepository.create({
+        userId: driverUserId,
+        tenantId: tenantId,
+        firstName: createDriverDto.firstName,
+        lastName: createDriverDto.lastName,
+      });
+      await this.userProfileRepository.save(userProfile);
+      this.logger.log(`✅ User profile created for driver user`);
+
+      // Generate password setup token
+      this.logger.log(`📧 Generating password setup token for: ${createDriverDto.email}`);
+      const token = crypto.randomBytes(32).toString('hex');
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + 7); // Token expires in 7 days
+
+      // Invalidate any existing tokens for this email
+      await this.passwordResetTokenRepository.update(
+        { email: createDriverDto.email.trim().toLowerCase(), used: false },
+        { used: true },
+      );
+
+      const passwordSetupToken = this.passwordResetTokenRepository.create({
+        email: createDriverDto.email.trim().toLowerCase(),
+        token,
+        expiresAt,
+        used: false,
+      });
+      await this.passwordResetTokenRepository.save(passwordSetupToken);
+      this.logger.log(`✅ Password setup token generated and saved`);
+
+      // Send password setup email (always send for new users)
+      this.logger.log(`📧 ========== DRIVER EMAIL SENDING PROCESS START ==========`);
+      this.logger.log(`📧 Sending password setup email for new driver user...`);
+      this.logger.log(`📧 Email address: ${createDriverDto.email.trim().toLowerCase()}`);
+      this.logger.log(`📧 Driver name: ${createDriverDto.firstName} ${createDriverDto.lastName}`);
+      this.logger.log(`📧 EmailService instance: ${this.emailService ? 'EXISTS' : 'MISSING'}`);
+      
+      try {
+        if (!this.emailService) {
+          this.logger.error('❌ EmailService is not injected properly!');
+          this.logger.warn('⚠️ EmailService is not available, skipping email send');
+          throw new Error('EmailService is not available');
+        }
+        
+        this.logger.log('📧 Calling emailService.sendDriverPasswordSetupEmail...');
+        await this.emailService.sendDriverPasswordSetupEmail(
+          createDriverDto.email.trim().toLowerCase(),
+          createDriverDto.firstName,
+          createDriverDto.lastName,
+          token,
+        );
+        this.logger.log(
+          `✅ Driver password setup email sent successfully to ${createDriverDto.email}`,
+        );
+        this.logger.log(`✅ Check the inbox (and spam folder) for: ${createDriverDto.email}`);
+      } catch (emailError: any) {
+        this.logger.error(
+          `❌ Failed to send driver password setup email: ${emailError.message}`,
+        );
+        this.logger.error(`❌ Error stack: ${emailError.stack}`);
+        this.logger.warn(
+          `⚠️ Driver and user account were created successfully, but email could not be sent. The driver will need to use password reset to set their password.`,
+        );
+      }
+      this.logger.log(`📧 ========== DRIVER EMAIL SENDING PROCESS END ==========`);
+
       // Create driver entity
+      // Convert ISO date strings to Date objects for database
+      const convertToDate = (dateValue: string | Date | undefined): Date | undefined => {
+        if (!dateValue) return undefined;
+        // If it's already a Date object, return it
+        if (dateValue instanceof Date) return dateValue;
+        // If it's a string, parse it
+        if (typeof dateValue === 'string') {
+          const date = new Date(dateValue);
+          if (isNaN(date.getTime())) {
+            this.logger.warn(`⚠️ Invalid date string: ${dateValue}`);
+            return undefined;
+          }
+          return date;
+        }
+        return undefined;
+      };
+
+      // Validate required date fields
+      const dateOfBirthDate = convertToDate(createDriverDto.dateOfBirth);
+      const licenseIssueDateDate = convertToDate(createDriverDto.licenseIssueDate);
+      const licenseExpiryDate = convertToDate(createDriverDto.licenseExpiry);
+      const hireDateDate = convertToDate(createDriverDto.hireDate);
+
+      if (!dateOfBirthDate) {
+        throw new BadRequestException(
+          `dateOfBirth is required and must be a valid date. Received: ${createDriverDto.dateOfBirth}`,
+        );
+      }
+      if (!licenseIssueDateDate) {
+        throw new BadRequestException(
+          `licenseIssueDate is required and must be a valid date. Received: ${createDriverDto.licenseIssueDate}`,
+        );
+      }
+      if (!licenseExpiryDate) {
+        throw new BadRequestException(
+          `licenseExpiry is required and must be a valid date. Received: ${createDriverDto.licenseExpiry}`,
+        );
+      }
+      if (!hireDateDate) {
+        throw new BadRequestException(
+          `hireDate is required and must be a valid date. Received: ${createDriverDto.hireDate}`,
+        );
+      }
+
+      // Log the data being saved for debugging
+      this.logger.log('💾 Creating driver with data:', {
+        firstName: createDriverDto.firstName,
+        lastName: createDriverDto.lastName,
+        email: createDriverDto.email,
+        phone: createDriverDto.phone,
+        dateOfBirth: dateOfBirthDate,
+        licenseNumber: createDriverDto.licenseNumber,
+        licenseIssueDate: licenseIssueDateDate,
+        licenseExpiry: licenseExpiryDate,
+        hireDate: hireDateDate,
+        userId: driverUserId,
+        employerId: userId,
+        tenantId,
+      });
+
       const driver = this.driverRepository.create({
         ...createDriverDto,
-        userId,
+        // Convert date strings to Date objects
+        dateOfBirth: dateOfBirthDate,
+        licenseIssueDate: licenseIssueDateDate,
+        licenseExpiry: licenseExpiryDate,
+        hireDate: hireDateDate,
+        terminationDate: createDriverDto.terminationDate ? convertToDate(createDriverDto.terminationDate) : undefined,
+        medicalCertExpiry: createDriverDto.medicalCertExpiry ? convertToDate(createDriverDto.medicalCertExpiry) : undefined,
+        drugTestDate: createDriverDto.drugTestDate ? convertToDate(createDriverDto.drugTestDate) : undefined,
+        backgroundCheckDate: createDriverDto.backgroundCheckDate ? convertToDate(createDriverDto.backgroundCheckDate) : undefined,
+        trainingCompletionDate: createDriverDto.trainingCompletionDate ? convertToDate(createDriverDto.trainingCompletionDate) : undefined,
+        userId: driverUserId,
         employerId: userId,
         tenantId,
         // Override status from DTO to ensure it's ACTIVE for new drivers
@@ -497,6 +742,7 @@ export class FleetService {
       console.log('💾 Saving driver to database...');
       const savedDriver = await this.driverRepository.save(driver);
       console.log('✅ Driver saved successfully:', savedDriver.id);
+      console.log('✅ Driver user account ID:', driverUserId);
 
       return savedDriver;
     } catch (error) {
@@ -545,8 +791,41 @@ export class FleetService {
       }
 
       if (error.code === '23502') {
-        // Not null violation
-        throw new BadRequestException('Required field is missing');
+        // Not null violation - extract the column name from the error message
+        const errorMessage = error.message || error.toString() || '';
+        this.logger.error(`❌ Database constraint violation (23502): ${errorMessage}`);
+        this.logger.error(`❌ Full error object:`, JSON.stringify(error, null, 2));
+        
+        // Try multiple patterns to extract column name
+        let columnName = 'unknown';
+        const patterns = [
+          /column "(\w+)" violates not-null constraint/i,
+          /null value in column "(\w+)" violates not-null constraint/i,
+          /column "(\w+)" of relation "(\w+)" violates not-null constraint/i,
+          /"(\w+)" violates not-null/i,
+        ];
+        
+        for (const pattern of patterns) {
+          const match = errorMessage.match(pattern);
+          if (match && match[1]) {
+            columnName = match[1];
+            break;
+          }
+        }
+        
+        // Also check error.detail if available
+        if (error.detail) {
+          this.logger.error(`❌ Error detail: ${error.detail}`);
+          const detailMatch = error.detail.match(/column "(\w+)"|"(\w+)"/i);
+          if (detailMatch && (detailMatch[1] || detailMatch[2])) {
+            columnName = detailMatch[1] || detailMatch[2];
+          }
+        }
+        
+        this.logger.error(`❌ Extracted column name: ${columnName}`);
+        throw new BadRequestException(
+          `Required field '${columnName}' is missing or null. Please provide a value for this field. Error details: ${errorMessage}`,
+        );
       }
 
       // Generic error
@@ -559,17 +838,159 @@ export class FleetService {
     }
   }
 
+  /**
+   * Calculate years of experience from hire date or license issue date
+   */
+  private calculateExperience(driver: Driver): number {
+    let experience = 0;
+    const now = new Date();
+    
+    if (driver.hireDate) {
+      const hireDate = new Date(driver.hireDate);
+      const diffTime = Math.abs(now.getTime() - hireDate.getTime());
+      const diffYears = diffTime / (1000 * 60 * 60 * 24 * 365.25);
+      experience = Math.floor(diffYears);
+    } else if (driver.licenseIssueDate) {
+      // Fallback to license issue date if hire date is not available
+      const licenseDate = new Date(driver.licenseIssueDate);
+      const diffTime = Math.abs(now.getTime() - licenseDate.getTime());
+      const diffYears = diffTime / (1000 * 60 * 60 * 24 * 365.25);
+      experience = Math.floor(diffYears);
+    }
+    
+    return Math.max(0, experience); // Ensure non-negative
+  }
+
   async findAllDrivers(
     tenantId: string,
     userId?: string,
     filters?: any,
+    userRole?: string,
   ): Promise<Driver[]> {
+    console.log('📊 Fleet Service - findAllDrivers called with:');
+    console.log('  tenantId:', tenantId);
+    console.log('  userId:', userId);
+    console.log('  userRole:', userRole);
+    console.log('  filters:', filters);
+
+    // Explicitly use the drivers table to ensure we're querying the correct table
     const query = this.driverRepository
       .createQueryBuilder('driver')
-      .where('driver.tenantId = :tenantId', { tenantId });
+      .select('driver') // Explicitly select from driver entity
+      .where('driver.tenantId = :tenantId', { tenantId })
+      .andWhere('driver.deletedAt IS NULL'); // Exclude soft-deleted drivers
+    
+    console.log('  🔍 Query builder initialized with driverRepository');
+    console.log('  🔍 Repository target:', this.driverRepository.target);
 
-    if (userId) {
+    // Only filter by employerId for non-admin roles (truck owners should only see their drivers)
+    // Tenant admins and admins should see all drivers in their tenant
+    const normalizedRole = userRole ? String(userRole).toUpperCase().trim() : '';
+    const isAdminRole = normalizedRole === 'TENANT_ADMIN' || 
+                        normalizedRole === 'ADMIN' || 
+                        normalizedRole === 'SUPER_ADMIN';
+    
+    console.log('  🔍 Role check:', { 
+      userRole, 
+      normalizedRole, 
+      isAdminRole, 
+      userId,
+      willFilterByEmployer: userId && !isAdminRole
+    });
+    
+    if (userId && !isAdminRole) {
+      console.log('  🔍 Filtering by employerId:', userId);
       query.andWhere('driver.employerId = :userId', { userId });
+    } else {
+      if (isAdminRole) {
+        console.log('  ✅ Admin role detected - showing all drivers in tenant (no employerId filter)');
+      } else {
+        console.log('  ⚠️ No userId provided - showing all drivers in tenant');
+      }
+    }
+
+    // Log the SQL query for debugging - get the actual SQL that will be executed
+    const sql = query.getSql();
+    const queryString = query.getQuery();
+    const parameters = query.getParameters();
+    
+    console.log('  📝 ========== SQL QUERY DEBUG ==========');
+    console.log('  📝 SQL Query (getSql):', sql);
+    console.log('  📝 SQL Query (getQuery):', queryString);
+    console.log('  📝 Query Parameters:', JSON.stringify(parameters, null, 2));
+    
+    // Build the full SQL with parameters for debugging
+    let fullSql = sql;
+    Object.keys(parameters).forEach(key => {
+      const value = parameters[key];
+      const paramValue = typeof value === 'string' ? `'${value}'` : value;
+      fullSql = fullSql.replace(`:${key}`, paramValue);
+    });
+    console.log('  📝 Full SQL with parameters:', fullSql);
+    
+    // Verify the query is selecting from drivers table
+    const sqlLower = sql.toLowerCase();
+    if (sqlLower.includes('from trucks') || sqlLower.includes('from "trucks"')) {
+      console.error('  ❌ ERROR: SQL query is selecting from TRUCKS table instead of DRIVERS!');
+      console.error('  ❌ This is wrong! The query should select from "drivers" table.');
+    } else if (sqlLower.includes('from drivers') || sqlLower.includes('from "drivers"')) {
+      console.log('  ✅ SQL query correctly references DRIVERS table');
+    } else {
+      console.warn('  ⚠️ WARNING: Could not determine table name from SQL query');
+      console.warn('  ⚠️ SQL:', sql);
+    }
+    console.log('  📝 ======================================');
+    
+    // Also check raw count before applying filters - try both with and without deletedAt check
+    const rawCountWithDeleted = await this.driverRepository
+      .createQueryBuilder('driver')
+      .where('driver.tenantId = :tenantId', { tenantId })
+      .getCount();
+    console.log(`  📊 Raw driver count (including deleted) for tenant ${tenantId}: ${rawCountWithDeleted}`);
+    
+    const rawCount = await this.driverRepository
+      .createQueryBuilder('driver')
+      .where('driver.tenantId = :tenantId', { tenantId })
+      .andWhere('driver.deletedAt IS NULL')
+      .getCount();
+    console.log(`  📊 Raw driver count (excluding deleted) for tenant ${tenantId}: ${rawCount}`);
+    
+    // Also try a direct find to see what drivers exist
+    const directDrivers = await this.driverRepository
+      .createQueryBuilder('driver')
+      .where('driver.tenantId = :tenantId', { tenantId })
+      .andWhere('driver.deletedAt IS NULL')
+      .take(5)
+      .getMany();
+    console.log(`  🔍 Direct find returned ${directDrivers.length} drivers`);
+    if (directDrivers.length > 0) {
+      directDrivers.forEach((driver, index) => {
+        console.log(`  🔍 Driver ${index + 1}:`, {
+          id: driver.id,
+          name: `${driver.firstName} ${driver.lastName}`,
+          tenantId: driver.tenantId,
+          deletedAt: driver.deletedAt,
+          employerId: driver.employerId,
+        });
+      });
+    } else {
+      // Try without deletedAt filter to see if they're soft-deleted
+      const allDrivers = await this.driverRepository
+        .createQueryBuilder('driver')
+        .where('driver.tenantId = :tenantId', { tenantId })
+        .take(5)
+        .getMany();
+      console.log(`  ⚠️ Found ${allDrivers.length} drivers (including deleted) for tenant ${tenantId}`);
+      if (allDrivers.length > 0) {
+        allDrivers.forEach((driver, index) => {
+          console.log(`  ⚠️ Driver ${index + 1} (may be deleted):`, {
+            id: driver.id,
+            name: `${driver.firstName} ${driver.lastName}`,
+            tenantId: driver.tenantId,
+            deletedAt: driver.deletedAt,
+          });
+        });
+      }
     }
 
     // Apply filters
@@ -601,22 +1022,37 @@ export class FleetService {
     // Explicitly select currentTruckId to ensure it's returned
     // This is important for filtering available drivers in the frontend
     const drivers = await query.getMany();
+    
+    console.log(`  📊 Query returned ${drivers.length} drivers`);
+    if (drivers.length > 0) {
+      console.log('  📋 Driver IDs found:', drivers.map(d => d.id));
+      console.log('  📋 Driver names:', drivers.map(d => `${d.firstName} ${d.lastName}`));
+    }
+
+    // Calculate experience for each driver and add it to the response
+    const driversWithExperience = drivers.map((driver) => {
+      // Add experience as a computed property
+      return {
+        ...driver,
+        experience: this.calculateExperience(driver),
+      };
+    });
 
     // Log for debugging
-    console.log('📊 findAllDrivers - Total drivers:', drivers.length);
+    console.log('📊 findAllDrivers - Total drivers:', driversWithExperience.length);
     console.log(
       '📊 Drivers with currentTruckId:',
-      drivers.filter((d) => d.currentTruckId).length,
+      driversWithExperience.filter((d) => d.currentTruckId).length,
     );
-    drivers.forEach((driver) => {
+    driversWithExperience.forEach((driver) => {
       if (driver.currentTruckId) {
         console.log(
-          `  - Driver ${driver.firstName} ${driver.lastName} has currentTruckId: ${driver.currentTruckId}`,
+          `  - Driver ${driver.firstName} ${driver.lastName} has currentTruckId: ${driver.currentTruckId}, experience: ${driver.experience} years`,
         );
       }
     });
 
-    return drivers;
+    return driversWithExperience;
   }
 
   async findOneDriver(id: string, tenantId: string): Promise<Driver> {
@@ -628,12 +1064,16 @@ export class FleetService {
       throw new NotFoundException('Driver not found');
     }
 
-    return driver;
+    // Add experience as a computed property
+    return {
+      ...driver,
+      experience: this.calculateExperience(driver),
+    } as Driver & { experience: number };
   }
 
   async updateDriver(
     id: string,
-    updateDriverDto: Partial<CreateDriverDto>,
+    updateDriverDto: Partial<CreateFleetDriverDto>,
     tenantId: string,
     userId: string,
   ): Promise<Driver> {
@@ -2132,12 +2572,18 @@ export class FleetService {
       throw new NotFoundException('Route not found');
     }
 
-    // Verify the truck exists and belongs to the user/tenant
+    // Verify the truck exists and belongs to the tenant
+    // Allow any user in the tenant to assign routes to trucks (not just the owner)
     const truck = await this.truckRepository.findOne({
-      where: { id: truckId, ownerId: userId, tenantId },
+      where: { id: truckId, tenantId },
     });
     if (!truck) {
-      throw new NotFoundException('Truck not found or not owned by user');
+      throw new NotFoundException('Truck not found or does not belong to your organization');
+    }
+    
+    // Optional: Log if the truck owner is different from the current user (for audit purposes)
+    if (truck.ownerId !== userId) {
+      console.log(`ℹ️ Route assignment: User ${userId} is assigning route to truck ${truckId} owned by ${truck.ownerId}`);
     }
 
     // Check if assignment already exists

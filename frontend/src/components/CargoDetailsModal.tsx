@@ -33,7 +33,8 @@ import {
   Filter,
   Heart,
   MessageSquare,
-  Award
+  Award,
+  CheckCircle
 } from 'lucide-react';
 import type { Cargo } from '../types/cargo';
 import { loadsAPI } from '@/services/load';
@@ -909,11 +910,11 @@ const CargoDetailsModal = ({ isOpen, onClose, cargoId }: CargoDetailsModalProps)
                   <div className="bg-gradient-to-r from-gray-50 to-green-50 rounded-lg p-6 border border-gray-200">
                     <h3 className="text-lg font-semibold text-gray-900 mb-2 flex items-center">
                       <Target className="w-5 h-5 mr-2 text-green-600" />
-                      Matching Overview
+                      AI Matching Overview
                     </h3>
                     <p className="text-sm text-gray-600 mb-4">
-                      <Weight className="w-4 h-4 inline mr-1" />
-                      Matching is based <strong>only on weight</strong> - trucks are matched if their capacity can carry your cargo weight.
+                      <Zap className="w-4 h-4 inline mr-1" />
+                      Our <strong>AI-powered matching system</strong> evaluates trucks based on multiple criteria including capacity, equipment compatibility, distance, ratings, pricing, and special requirements to find the best matches for your cargo.
                     </p>
                     
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
@@ -993,51 +994,155 @@ const CargoDetailsModal = ({ isOpen, onClose, cargoId }: CargoDetailsModalProps)
                     )}
                   </div>
 
-                  {/* Matching Criteria */}
+                  {/* AI Matching Criteria */}
                   <div className="bg-gradient-to-r from-gray-50 to-blue-50 rounded-lg p-6 border border-gray-200">
                     <h3 className="text-lg font-semibold text-gray-900 mb-2 flex items-center">
                       <Filter className="w-5 h-5 mr-2 text-blue-600" />
-                      Matching Criteria
+                      AI Matching Criteria
                     </h3>
                     <p className="text-sm text-gray-600 mb-4">
-                      <Weight className="w-4 h-4 inline mr-1" />
-                      <strong>Weight-based matching:</strong> Only trucks with capacity ≥ {formatWeight(cargo.weight)} are shown.
+                      <Zap className="w-4 h-4 inline mr-1" />
+                      The AI evaluates trucks using <strong>multiple criteria</strong> to find the best matches. Each match is scored based on how well it meets your cargo requirements.
                     </p>
                     
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {/* Weight/Capacity Criteria */}
+                      <div className="bg-white p-4 rounded-lg border border-blue-200">
                         <h4 className="font-medium text-gray-900 mb-3 flex items-center">
                           <Weight className="w-4 h-4 mr-2 text-blue-600" />
-                          Weight Requirement (Primary)
+                          Capacity Matching
                         </h4>
                         <div className="space-y-2">
-                          <div className="flex items-center justify-between bg-blue-50 p-3 rounded-lg border border-blue-200">
-                            <span className="text-sm font-medium text-gray-700">Required Weight Capacity</span>
-                            <span className="text-sm font-bold text-blue-900">≥ {formatWeight(cargo.weight)}</span>
-                          </div>
-                          <div className="text-xs text-gray-500 mt-2">
-                            Only trucks that can carry at least {formatWeight(cargo.weight)} will be matched.
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div>
-                        <h4 className="font-medium text-gray-900 mb-3">Cargo Information</h4>
-                        <div className="space-y-2">
                           <div className="flex items-center justify-between">
-                            <span className="text-sm text-gray-600">Cargo Weight</span>
-                            <span className="text-sm font-medium text-gray-900">{formatWeight(cargo.weight)}</span>
+                            <span className="text-xs text-gray-600">Required Weight</span>
+                            <span className="text-xs font-bold text-blue-900">≥ {formatWeight(cargo.weight)}</span>
                           </div>
                           {cargo.volume && (
                             <div className="flex items-center justify-between">
-                              <span className="text-sm text-gray-600">Volume</span>
-                              <span className="text-sm font-medium text-gray-900">{formatVolume(cargo.volume)}</span>
+                              <span className="text-xs text-gray-600">Required Volume</span>
+                              <span className="text-xs font-bold text-blue-900">≥ {formatVolume(cargo.volume)}</span>
                             </div>
                           )}
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm text-gray-600">Cargo Type</span>
-                            <span className="text-sm font-medium text-gray-900">{getCargoTypeDisplayName(cargo.cargoType)}</span>
+                          <div className="text-xs text-gray-500 mt-2">
+                            Trucks must have sufficient capacity to carry your cargo.
                           </div>
+                        </div>
+                      </div>
+
+                      {/* Equipment Criteria */}
+                      <div className="bg-white p-4 rounded-lg border border-purple-200">
+                        <h4 className="font-medium text-gray-900 mb-3 flex items-center">
+                          <Shield className="w-4 h-4 mr-2 text-purple-600" />
+                          Equipment Requirements
+                        </h4>
+                        <div className="space-y-1">
+                          {cargo.requiresForklift && (
+                            <div className="flex items-center text-xs text-gray-700">
+                              <CheckCircle className="w-3 h-3 mr-1 text-green-500" />
+                              Forklift Required
+                            </div>
+                          )}
+                          {cargo.requiresCrane && (
+                            <div className="flex items-center text-xs text-gray-700">
+                              <CheckCircle className="w-3 h-3 mr-1 text-green-500" />
+                              Crane Required
+                            </div>
+                          )}
+                          {cargo.requiresLoadingDock && (
+                            <div className="flex items-center text-xs text-gray-700">
+                              <CheckCircle className="w-3 h-3 mr-1 text-green-500" />
+                              Loading Dock Required
+                            </div>
+                          )}
+                          {cargo.requiresRefrigeration && (
+                            <div className="flex items-center text-xs text-gray-700">
+                              <CheckCircle className="w-3 h-3 mr-1 text-green-500" />
+                              Refrigeration Required
+                            </div>
+                          )}
+                          {cargo.isHazardous && (
+                            <div className="flex items-center text-xs text-gray-700">
+                              <CheckCircle className="w-3 h-3 mr-1 text-green-500" />
+                              Hazmat Permit Required
+                            </div>
+                          )}
+                          {!cargo.requiresForklift && !cargo.requiresCrane && !cargo.requiresLoadingDock && !cargo.requiresRefrigeration && !cargo.isHazardous && (
+                            <div className="text-xs text-gray-500">No special equipment required</div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Cargo Type & Special Requirements */}
+                      <div className="bg-white p-4 rounded-lg border border-orange-200">
+                        <h4 className="font-medium text-gray-900 mb-3 flex items-center">
+                          <Package className="w-4 h-4 mr-2 text-orange-600" />
+                          Cargo Type & Requirements
+                        </h4>
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs text-gray-600">Cargo Type</span>
+                            <span className="text-xs font-medium text-gray-900">{getCargoTypeDisplayName(cargo.cargoType)}</span>
+                          </div>
+                          {cargo.isFragile && (
+                            <div className="flex items-center text-xs text-gray-700">
+                              <AlertTriangle className="w-3 h-3 mr-1 text-orange-500" />
+                              Fragile Handling
+                            </div>
+                          )}
+                          {cargo.isTimeCritical && (
+                            <div className="flex items-center text-xs text-gray-700">
+                              <Clock3 className="w-3 h-3 mr-1 text-red-500" />
+                              Time Critical
+                            </div>
+                          )}
+                          {cargo.requiresGpsMonitoring && (
+                            <div className="flex items-center text-xs text-gray-700">
+                              <Navigation className="w-3 h-3 mr-1 text-blue-500" />
+                              GPS Monitoring
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Scoring Factors Explanation */}
+                    <div className="mt-4 p-4 bg-indigo-50 rounded-lg border border-indigo-200">
+                      <h4 className="font-medium text-gray-900 mb-2 flex items-center">
+                        <TrendingUp className="w-4 h-4 mr-2 text-indigo-600" />
+                        AI Scoring Factors
+                      </h4>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs text-gray-700">
+                        <div className="flex items-center">
+                          <Weight className="w-3 h-3 mr-1 text-indigo-500" />
+                          <span>Capacity Score</span>
+                        </div>
+                        <div className="flex items-center">
+                          <Route className="w-3 h-3 mr-1 text-indigo-500" />
+                          <span>Distance Score</span>
+                        </div>
+                        <div className="flex items-center">
+                          <Shield className="w-3 h-3 mr-1 text-indigo-500" />
+                          <span>Equipment Score</span>
+                        </div>
+                        <div className="flex items-center">
+                          <Star className="w-3 h-3 mr-1 text-indigo-500" />
+                          <span>Rating Score</span>
+                        </div>
+                        <div className="flex items-center">
+                          <DollarSign className="w-3 h-3 mr-1 text-indigo-500" />
+                          <span>Price Score</span>
+                        </div>
+                        <div className="flex items-center">
+                          <Clock3 className="w-3 h-3 mr-1 text-indigo-500" />
+                          <span>Time Score</span>
+                        </div>
+                        <div className="flex items-center">
+                          <Thermometer className="w-3 h-3 mr-1 text-indigo-500" />
+                          <span>Temperature Score</span>
+                        </div>
+                        <div className="flex items-center">
+                          <Target className="w-3 h-3 mr-1 text-indigo-500" />
+                          <span>Overall Score</span>
                         </div>
                       </div>
                     </div>
@@ -1047,8 +1152,11 @@ const CargoDetailsModal = ({ isOpen, onClose, cargoId }: CargoDetailsModalProps)
                   <div className="bg-gradient-to-r from-gray-50 to-purple-50 rounded-lg p-6 border border-gray-200">
                     <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                       <Award className="w-5 h-5 mr-2 text-purple-600" />
-                      Recommended Trucks (Based on Weight: {formatWeight(cargo.weight)})
+                      AI-Recommended Trucks
                     </h3>
+                    <p className="text-sm text-gray-600 mb-4">
+                      Trucks are ranked by AI matching score based on all criteria. Higher scores indicate better overall compatibility with your cargo requirements.
+                    </p>
                     
                     {matchesLoading ? (
                       <div className="text-center py-8">
@@ -1123,69 +1231,248 @@ const CargoDetailsModal = ({ isOpen, onClose, cargoId }: CargoDetailsModalProps)
                     ) : (
                       <div className="space-y-4">
                         {matches.map((match: any, index: number) => {
-                          const matchScore = Math.round((match.overallScore || 0) * 100);
-                          const scoreColor = matchScore >= 90 ? 'green' : matchScore >= 70 ? 'blue' : 'yellow';
+                          const matchScore = Math.round((match.overallScore || match.confidence || 0) * 100);
+                          const getScoreColorClass = (score: number) => {
+                            if (score >= 90) return { bg: 'bg-green-500', badge: 'bg-green-100 text-green-800', text: 'text-green-600' };
+                            if (score >= 70) return { bg: 'bg-blue-500', badge: 'bg-blue-100 text-blue-800', text: 'text-blue-600' };
+                            return { bg: 'bg-yellow-500', badge: 'bg-yellow-100 text-yellow-800', text: 'text-yellow-600' };
+                          };
+                          const scoreColor = getScoreColorClass(matchScore);
+                          
+                          // Extract scoring breakdown if available
+                          const scoringBreakdown = match.scoringBreakdown || {};
+                          const capacityScore = Math.round((match.capacityScore || 0) * 100);
+                          const distanceScore = Math.round((match.distanceScore || 0) * 100);
+                          const equipmentScore = Math.round((match.equipmentScore || 0) * 100);
+                          const ratingScore = Math.round((match.ratingScore || 0) * 100);
+                          const priceScore = Math.round((match.priceScore || 0) * 100);
+                          const routeScore = Math.round((match.routeScore || 0) * 100);
+                          const timeScore = Math.round((match.timeScore || 0) * 100);
+                          
+                          const getIndividualScoreColor = (score: number) => {
+                            if (score >= 80) return 'text-green-600';
+                            if (score >= 60) return 'text-blue-600';
+                            return 'text-yellow-600';
+                          };
                           
                           return (
-                            <div key={match.truckId || index} className="bg-white rounded-lg p-4 border border-gray-200 hover:border-purple-300 transition-colors">
-                              <div className="flex items-center justify-between mb-3">
+                            <div key={match.truckId || index} className="bg-white rounded-lg p-6 border border-gray-200 hover:border-purple-300 transition-colors shadow-sm">
+                              {/* Header */}
+                              <div className="flex items-center justify-between mb-4">
                                 <div className="flex items-center space-x-3">
-                                  <div className={`w-3 h-3 bg-${scoreColor}-500 rounded-full`}></div>
-                                  <span className="font-medium text-gray-900">
-                                    {match.truckMake} {match.truckModel} - {match.plateNumber}
-                                  </span>
-                                  <span className={`px-2 py-1 bg-${scoreColor}-100 text-${scoreColor}-800 text-xs rounded-full`}>
+                                  <div className={`w-4 h-4 ${scoreColor.bg} rounded-full`}></div>
+                                  <div>
+                                    <span className="font-semibold text-gray-900 text-lg">
+                                      {match.truckMake} {match.truckModel}
+                                    </span>
+                                    <p className="text-sm text-gray-600">{match.plateNumber}</p>
+                                  </div>
+                                  <span className={`px-3 py-1 ${scoreColor.badge} text-sm font-bold rounded-full`}>
                                     {matchScore}% Match
                                   </span>
                                 </div>
                                 <div className="flex items-center space-x-2">
-                                  <Star className="w-4 h-4 text-yellow-500" />
-                                  <span className="text-sm text-gray-600">
-                                    {match.truckRating ? match.truckRating.toFixed(1) : 'N/A'}
+                                  <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
+                                  <span className="text-sm font-medium text-gray-900">
+                                    {match.truckRating ? Number(match.truckRating).toFixed(1) : 'N/A'}
                                   </span>
                                 </div>
                               </div>
+
+                              {/* AI Scoring Breakdown */}
+                              <div className="mb-4 p-4 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg border border-indigo-200">
+                                <h4 className="text-sm font-semibold text-gray-900 mb-3 flex items-center">
+                                  <Target className="w-4 h-4 mr-2 text-indigo-600" />
+                                  AI Scoring Breakdown
+                                </h4>
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                  <div className="text-center">
+                                    <div className="text-xs text-gray-600 mb-1">Capacity</div>
+                                    <div className={`text-lg font-bold ${capacityScore >= 80 ? 'text-green-600' : capacityScore >= 60 ? 'text-blue-600' : 'text-yellow-600'}`}>
+                                      {capacityScore}%
+                                    </div>
+                                  </div>
+                                  <div className="text-center">
+                                    <div className="text-xs text-gray-600 mb-1">Distance</div>
+                                    <div className={`text-lg font-bold ${distanceScore >= 80 ? 'text-green-600' : distanceScore >= 60 ? 'text-blue-600' : 'text-yellow-600'}`}>
+                                      {distanceScore}%
+                                    </div>
+                                  </div>
+                                  <div className="text-center">
+                                    <div className="text-xs text-gray-600 mb-1">Equipment</div>
+                                    <div className={`text-lg font-bold ${equipmentScore >= 80 ? 'text-green-600' : equipmentScore >= 60 ? 'text-blue-600' : 'text-yellow-600'}`}>
+                                      {equipmentScore}%
+                                    </div>
+                                  </div>
+                                  <div className="text-center">
+                                    <div className="text-xs text-gray-600 mb-1">Rating</div>
+                                    <div className={`text-lg font-bold ${ratingScore >= 80 ? 'text-green-600' : ratingScore >= 60 ? 'text-blue-600' : 'text-yellow-600'}`}>
+                                      {ratingScore}%
+                                    </div>
+                                  </div>
+                                  {priceScore > 0 && (
+                                    <div className="text-center">
+                                      <div className="text-xs text-gray-600 mb-1">Price</div>
+                                      <div className={`text-lg font-bold ${priceScore >= 80 ? 'text-green-600' : priceScore >= 60 ? 'text-blue-600' : 'text-yellow-600'}`}>
+                                        {priceScore}%
+                                      </div>
+                                    </div>
+                                  )}
+                                  {routeScore > 0 && (
+                                    <div className="text-center">
+                                      <div className="text-xs text-gray-600 mb-1">Route</div>
+                                      <div className={`text-lg font-bold ${routeScore >= 80 ? 'text-green-600' : routeScore >= 60 ? 'text-blue-600' : 'text-yellow-600'}`}>
+                                        {routeScore}%
+                                      </div>
+                                    </div>
+                                  )}
+                                  {timeScore > 0 && (
+                                    <div className="text-center">
+                                      <div className="text-xs text-gray-600 mb-1">Time</div>
+                                      <div className={`text-lg font-bold ${timeScore >= 80 ? 'text-green-600' : timeScore >= 60 ? 'text-blue-600' : 'text-yellow-600'}`}>
+                                        {timeScore}%
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
                               
-                              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3">
-                                <div>
-                                  <span className="text-xs text-gray-500">Truck Type</span>
+                              {/* Truck Details */}
+                              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                                <div className="bg-gray-50 p-3 rounded-lg">
+                                  <span className="text-xs text-gray-500 block mb-1">Truck Type</span>
                                   <p className="text-sm font-medium text-gray-900">{match.truckType || 'Standard Truck'}</p>
                                 </div>
-                                <div>
-                                  <span className="text-xs text-gray-500">Weight Capacity</span>
+                                <div className="bg-gray-50 p-3 rounded-lg">
+                                  <span className="text-xs text-gray-500 block mb-1">Weight Capacity</span>
                                   <p className="text-sm font-medium text-gray-900">
                                     {formatWeight(match.capacityWeight || 0)}
                                   </p>
                                   <p className="text-xs text-gray-500 mt-1">
-                                    Your cargo: {formatWeight(cargo.weight)} ({Math.round(((cargo.weight / (match.capacityWeight || 1)) * 100))}% utilization)
+                                    Utilization: {Math.round(((cargo.weight / (match.capacityWeight || 1)) * 100))}%
                                   </p>
                                 </div>
-                                <div>
-                                  <span className="text-xs text-gray-500">Match Reason</span>
-                                  <p className="text-xs font-medium text-gray-700 mt-1">
-                                    {match.matchReason || 'Weight-based match'}
+                                <div className="bg-gray-50 p-3 rounded-lg">
+                                  <span className="text-xs text-gray-500 block mb-1">Distance</span>
+                                  <p className="text-sm font-medium text-gray-900">
+                                    {match.distanceKm ? `${match.distanceKm.toFixed(0)} km` : 'N/A'}
                                   </p>
                                 </div>
                               </div>
-                              
-                              {match.driverName && (
-                                <div className="mb-3 p-2 bg-blue-50 rounded">
-                                  <p className="text-xs text-gray-600">
-                                    <span className="font-medium">Driver:</span> {match.driverName}
-                                    {match.driverRating && ` (Rating: ${match.driverRating.toFixed(1)})`}
+
+                              {/* Equipment Match Indicators */}
+                              <div className="mb-4 p-3 bg-green-50 rounded-lg border border-green-200">
+                                <h5 className="text-xs font-semibold text-gray-900 mb-2">Equipment Compatibility</h5>
+                                <div className="flex flex-wrap gap-2">
+                                  {match.hasRefrigeration && cargo.requiresRefrigeration && (
+                                    <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">
+                                      ✓ Refrigeration
+                                    </span>
+                                  )}
+                                  {match.hasLiftGate && cargo.requiresForklift && (
+                                    <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">
+                                      ✓ Lift Gate
+                                    </span>
+                                  )}
+                                  {match.hasHazmatPermit && cargo.isHazardous && (
+                                    <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">
+                                      ✓ Hazmat Permit
+                                    </span>
+                                  )}
+                                  {(!match.hasRefrigeration && !match.hasLiftGate && !match.hasHazmatPermit) && (
+                                    <span className="text-xs text-gray-500">Standard equipment</span>
+                                  )}
+                                </div>
+                              </div>
+
+                              {/* Match Reason */}
+                              {match.matchReason && (
+                                <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                                  <h5 className="text-xs font-semibold text-gray-900 mb-1 flex items-center">
+                                    <Info className="w-3 h-3 mr-1 text-blue-600" />
+                                    Why This Match?
+                                  </h5>
+                                  <p className="text-xs text-gray-700">
+                                    {match.matchReason}
                                   </p>
                                 </div>
                               )}
                               
+                              {/* Driver Information */}
+                              {match.driverName && (
+                                <div className="mb-4 p-3 bg-purple-50 rounded-lg border border-purple-200">
+                                  <h5 className="text-xs font-semibold text-gray-900 mb-2 flex items-center">
+                                    <Users className="w-3 h-3 mr-1 text-purple-600" />
+                                    Driver Information
+                                  </h5>
+                                  <div className="grid grid-cols-2 gap-2 text-xs">
+                                    <div>
+                                      <span className="text-gray-600">Name:</span>
+                                      <span className="ml-2 font-medium text-gray-900">{match.driverName}</span>
+                                    </div>
+                                    {match.driverRating && (
+                                      <div>
+                                        <span className="text-gray-600">Rating:</span>
+                                        <span className="ml-2 font-medium text-gray-900">{match.driverRating.toFixed(1)}/5</span>
+                                      </div>
+                                    )}
+                                    {match.driverLicenseNumber && (
+                                      <div>
+                                        <span className="text-gray-600">License:</span>
+                                        <span className="ml-2 font-medium text-gray-900">{match.driverLicenseNumber}</span>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Cost & Time Estimates */}
+                              <div className="mb-4 grid grid-cols-2 gap-3">
+                                {match.estimatedCost && (
+                                  <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-200">
+                                    <span className="text-xs text-gray-600 block mb-1">Estimated Cost</span>
+                                    <p className="text-sm font-bold text-yellow-900">
+                                      {formatCurrency(match.estimatedCost, cargo.currencyCode)}
+                                    </p>
+                                  </div>
+                                )}
+                                {match.estimatedDeliveryTime && (
+                                  <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
+                                    <span className="text-xs text-gray-600 block mb-1">Est. Delivery Time</span>
+                                    <p className="text-sm font-bold text-blue-900">
+                                      {match.estimatedDeliveryTime.toFixed(1)} hours
+                                    </p>
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Success Probability & Confidence */}
+                              {(match.successProbability || match.confidence) && (
+                                <div className="mb-4 p-3 bg-indigo-50 rounded-lg border border-indigo-200">
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-xs font-medium text-gray-700">AI Confidence</span>
+                                    <span className="text-sm font-bold text-indigo-900">
+                                      {Math.round((match.successProbability || match.confidence || 0) * 100)}%
+                                    </span>
+                                  </div>
+                                  <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
+                                    <div 
+                                      className="bg-indigo-600 h-2 rounded-full" 
+                                      style={{ width: `${(match.successProbability || match.confidence || 0) * 100}%` }}
+                                    ></div>
+                                  </div>
+                                </div>
+                              )}
                               
-                              <div className="flex items-center space-x-2">
-                                <button className="btn btn-primary btn-sm">
+                              {/* Action Buttons */}
+                              <div className="flex items-center space-x-2 pt-3 border-t border-gray-200">
+                                <button className="flex-1 btn btn-primary btn-sm">
                                   <MessageSquare className="w-4 h-4 mr-2" />
-                                  Contact
+                                  Contact Driver
                                 </button>
-                                <button className="btn btn-outline btn-sm">
+                                <button className="flex-1 btn btn-outline btn-sm">
                                   <Eye className="w-4 h-4 mr-2" />
-                                  View Details
+                                  View Full Details
                                 </button>
                               </div>
                             </div>

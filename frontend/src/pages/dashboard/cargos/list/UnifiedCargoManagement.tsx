@@ -25,6 +25,8 @@ import toast from "react-hot-toast";
 import type { ICargoBody, ICargoResponse } from "../create/types/cargo";
 import FilterSelect from "@/components/common/FilterSelect";
 import { FaLayerGroup, FaBox } from "react-icons/fa";
+import logoUrutiX from "@/assets/logo-urutix.svg";
+import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 
 type TabType = "all" | "active" | "create" | "template" | "bidding";
 
@@ -32,6 +34,7 @@ const UnifiedCargoManagement = () => {
   const { user } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
+  const { confirm, DialogComponent } = useConfirmDialog();
   
   // Determine initial tab based on route
   const getInitialTab = (): TabType => {
@@ -98,6 +101,8 @@ const UnifiedCargoManagement = () => {
   const [isLoadConfirmationOpen, setIsLoadConfirmationOpen] = useState(false);
   const [selectedCargoForConfirmation, setSelectedCargoForConfirmation] =
     useState<any>(null);
+  const [editingCargo, setEditingCargo] = useState<any>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   const {
     data: loadsResponse,
@@ -210,11 +215,15 @@ const UnifiedCargoManagement = () => {
   };
 
   const handleDeleteCargo = async (load: any) => {
-    if (
-      !window.confirm(
-        `Are you sure you want to delete "${load.title || "this cargo"}"?`
-      )
-    ) {
+    const confirmed = await confirm({
+      title: "Delete Cargo",
+      message: `Are you sure you want to delete "${load.title || "this cargo"}"? This action cannot be undone.`,
+      confirmText: "Delete",
+      cancelText: "Cancel",
+      variant: "danger",
+    });
+
+    if (!confirmed) {
       return;
     }
 
@@ -255,6 +264,121 @@ const UnifiedCargoManagement = () => {
       toast.error(message);
       throw new Error(message);
     }
+  };
+
+  const handleEditCargo = (load: any) => {
+    // Transform the load data to match the form schema
+    const editData: Partial<CargoFormSchemaType> = {
+      id: load.id,
+      title: load.title,
+      description: load.description,
+      weight: load.weight,
+      volume: load.volume,
+      cargoType: load.cargoType,
+      loadType: load.loadType || "FTL",
+      equipmentType: load.equipmentType || "DRY_VAN",
+      visibility: load.visibility || "public",
+      unitsRequired: load.unitsRequired || 1,
+      pickupDate: load.pickupDate,
+      deliveryDate: load.deliveryDate,
+      loadValue: load.loadValue,
+      offeredPrice: load.offeredPrice,
+      currencyCode: load.currencyCode || "USD",
+      paymentTerms: load.paymentTerms || "Net30",
+      isFragile: load.isFragile ?? false,
+      isHazardous: load.isHazardous ?? false,
+      requiresRefrigeration: load.requiresRefrigeration ?? false,
+      specialRequirements: load.specialHandlingInstructions,
+      autoMatchEnabled: load.autoMatchEnabled ?? true,
+      loadingInstructions: load.loadingInstructions,
+      unloadingInstructions: load.unloadingInstructions,
+      contactPerson: load.contactInfo?.contactPerson,
+      contactPhone: load.contactInfo?.contactPhone,
+      contactEmail: load.contactInfo?.contactEmail,
+      length: Number(load.length) || undefined,
+      width: Number(load.width) || undefined,
+      height: Number(load.height) || undefined,
+      stackableHeight: Number(load.stackableHeight) || undefined,
+      isStackable: load.isStackable ?? false,
+      temperatureMin: Number(load.temperatureMin) || undefined,
+      temperatureMax: Number(load.temperatureMax) || undefined,
+      requiresHumidityControl: load.requiresHumidityControl ?? false,
+      requiresForklift: load.requiresForklift ?? false,
+      requiresCrane: load.requiresCrane ?? false,
+      requiresLoadingDock: load.requiresLoadingDock ?? false,
+      loadingTimeEstimate: Number(load.loadingTimeEstimate) || undefined,
+      unloadingTimeEstimate: Number(load.unloadingTimeEstimate) || undefined,
+      hazmatClass: load.hazmatClass,
+      hazmatNumber: load.hazmatNumber,
+      urgencyLevel: load.urgencyLevel || "NORMAL",
+      isTimeCritical: load.isTimeCritical ?? false,
+      maxTransitTime: Number(load.maxTransitTime) || undefined,
+      packagingType: load.packagingType,
+      numberOfPieces: load.numberOfPieces,
+      numberOfPallets: load.numberOfPallets,
+      requiresGpsMonitoring: load.requiresGpsMonitoring ?? false,
+      requiresTemperatureMonitoring: load.requiresTemperatureMonitoring ?? false,
+      insuranceValue: load.insuranceValue,
+      requiresLowClearanceRoute: load.requiresLowClearanceRoute ?? false,
+      maxClearanceHeight: Number(load.maxClearanceHeight) || undefined,
+      requiresEscortVehicle: load.requiresEscortVehicle ?? false,
+      specialHandlingInstructions: load.specialHandlingInstructions,
+      emergencyContactInfo: load.emergencyContactInfo,
+      truckRequirements: load.truckRequirements || {},
+      carrierPreferences: load.carrierPreferences || {},
+      costPreferences: load.costPreferences || {},
+      requiresPreShipmentInspection: load.requiresPreShipmentInspection ?? false,
+      requiresDeliveryInspection: load.requiresDeliveryInspection ?? false,
+      requiresPhotographicDocumentation: load.requiresPhotographicDocumentation ?? false,
+      // Transform locations if available
+      locations: load.locations || [],
+      pickupLocation: load.pickupLocation ? {
+        name: load.pickupLocation.name || "",
+        address: load.pickupLocation.address || "",
+        latitude: load.pickupLocation.coordinates?.coordinates?.[1] || load.pickupLocation.latitude || 0,
+        longitude: load.pickupLocation.coordinates?.coordinates?.[0] || load.pickupLocation.longitude || 0,
+      } : undefined,
+      deliveryLocation: load.deliveryLocation ? {
+        name: load.deliveryLocation.name || "",
+        address: load.deliveryLocation.address || "",
+        latitude: load.deliveryLocation.coordinates?.coordinates?.[1] || load.deliveryLocation.latitude || 0,
+        longitude: load.deliveryLocation.coordinates?.coordinates?.[0] || load.deliveryLocation.longitude || 0,
+      } : undefined,
+    };
+    
+    setEditingCargo(editData);
+    setIsEditModalOpen(true);
+  };
+
+  const handleUpdateCargo = async (data: ICargoBody): Promise<ICargoResponse> => {
+    if (!editingCargo?.id) {
+      throw new Error("No cargo ID found for update");
+    }
+
+    try {
+      const response = await loadsAPI.update(editingCargo.id, data);
+      setIsEditModalOpen(false);
+      setEditingCargo(null);
+      refetch();
+      toast.success("Cargo updated successfully!");
+      // Backend returns { message, load }, extract the load
+      return (response as any).load || response;
+    } catch (error: any) {
+      const backendMessage =
+        error?.response?.data?.message ||
+        error?.response?.data?.error ||
+        (Array.isArray(error?.response?.data?.errors)
+          ? error.response.data.errors.join(", ")
+          : undefined);
+      const message = backendMessage || error?.message || "Failed to update cargo";
+      toast.error(message);
+      throw new Error(message);
+    }
+  };
+
+  const handleCloseEditModal = () => {
+    setIsEditModalOpen(false);
+    setEditingCargo(null);
   };
 
   const handleSaveDraft = async (formData: any) => {
@@ -300,70 +424,61 @@ const UnifiedCargoManagement = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <div className="min-h-screen bg-gray-50 relative">
+      {/* Background Logo */}
+      <img 
+        src={logoUrutiX} 
+        alt="UrutiX Logo Background" 
+        className="pointer-events-none select-none fixed inset-0 w-full h-full object-cover opacity-10 z-0" 
+        style={{objectPosition: 'center'}} 
+      />
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 relative z-10">
         {/* Header */}
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold text-gray-900">Cargo Management</h1>
-          <p className="text-gray-600 mt-1">
+        <div className="mb-4">
+          <h1 className="text-2xl font-bold text-gray-900">Cargo Management</h1>
+          <p className="text-sm text-gray-600 mt-1">
             Manage shipments, create new cargo, and track bidding
           </p>
         </div>
 
-        {/* Navigation Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
-          {tabs.map((tab) => {
-            const Icon = tab.icon;
-            const isActive = activeTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => handleTabChange(tab.id)}
-                className={cn(
-                  "relative bg-white rounded-lg border-2 p-5 transition-all duration-200 hover:shadow-lg group",
-                  isActive
-                    ? "border-blue-600 shadow-md bg-blue-50"
-                    : "border-gray-200 hover:border-blue-300 hover:bg-gray-50"
-                )}
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <div
-                    className={cn(
-                      "p-2 rounded-lg transition-colors",
-                      isActive
-                        ? "bg-blue-100 text-blue-600"
-                        : "bg-gray-100 text-gray-600 group-hover:bg-blue-100 group-hover:text-blue-600"
-                    )}
-                  >
-                    <Icon className="w-5 h-5" />
-                  </div>
+        {/* Navigation Tabs */}
+        <div className="bg-white rounded-lg border border-gray-200 mb-4">
+          <nav className="flex space-x-1 p-1">
+            {tabs.map((tab) => {
+              const Icon = tab.icon;
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => handleTabChange(tab.id)}
+                  className={cn(
+                    "px-4 py-2.5 rounded-md text-sm font-medium flex items-center gap-2 transition-all relative",
+                    isActive
+                      ? "bg-gray-100 text-gray-900 border border-gray-300"
+                      : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                  )}
+                >
+                  <Icon className={cn(
+                    "w-4 h-4",
+                    isActive ? "text-gray-700" : "text-gray-500"
+                  )} />
+                  <span>{tab.label}</span>
                   {tab.count !== undefined && (
                     <span
                       className={cn(
-                        "px-2.5 py-1 text-xs font-semibold rounded-full",
+                        "ml-1 px-2 py-0.5 text-xs font-semibold rounded-full",
                         isActive
-                          ? "bg-blue-600 text-white"
-                          : "bg-gray-200 text-gray-700 group-hover:bg-blue-600 group-hover:text-white"
+                          ? "bg-gray-200 text-gray-700"
+                          : "bg-gray-100 text-gray-600"
                       )}
                     >
                       {tab.count}
                     </span>
                   )}
-                </div>
-                <h3
-                  className={cn(
-                    "text-base font-semibold text-left",
-                    isActive ? "text-blue-900" : "text-gray-900"
-                  )}
-                >
-                  {tab.label}
-                </h3>
-                {isActive && (
-                  <div className="absolute bottom-0 left-0 right-0 h-1 bg-blue-600 rounded-b-lg" />
-                )}
-              </button>
-            );
-          })}
+                </button>
+              );
+            })}
+          </nav>
         </div>
 
         {/* Content Container */}
@@ -468,6 +583,7 @@ const UnifiedCargoManagement = () => {
                         handleViewClick={handleViewClick}
                         handleConfirmLoading={handleConfirmLoading}
                         handleDeleteCargo={handleDeleteCargo}
+                        handleEditCargo={handleEditCargo}
                       />
                     ))}
                   </div>
@@ -565,6 +681,21 @@ const UnifiedCargoManagement = () => {
           }}
         />
       )}
+
+      {/* Edit Cargo Modal */}
+      {isEditModalOpen && editingCargo && (
+        <EnhancedCargoForm
+          isOpen={isEditModalOpen}
+          onClose={handleCloseEditModal}
+          onSubmit={handleUpdateCargo}
+          mode="edit"
+          initialData={editingCargo}
+          showTruckSelection={false}
+        />
+      )}
+
+      {/* Confirmation Dialog */}
+      {DialogComponent}
     </div>
   );
 };

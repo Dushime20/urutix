@@ -67,6 +67,12 @@ export const authAPI = {
   register: (data: any) => api.post('/auth/register', data),
   getProfile: () => api.get('/auth/profile'),
   testAuth: () => api.get('/auth/profile'), // Simple auth test
+  setupDriverPassword: (data: { token: string; password: string; confirmPassword: string }) =>
+    api.post('/auth/driver/setup-password', data),
+  setupTenantPassword: (data: { token: string; password: string; confirmPassword: string }) =>
+    api.post('/auth/tenant/setup-password', data),
+  setupLenderPassword: (data: { token: string; password: string; confirmPassword: string }) =>
+    api.post('/auth/lender/setup-password', data),
 };
 
 // Trips API
@@ -147,6 +153,9 @@ export const paymentsAPI = {
   refund: (id: string, data: any) => api.post(`/payments/${id}/refund`, data),
   getAnalytics: () => api.get('/payments/analytics'),
   getHistory: (tripId: string) => api.get(`/payments/trip/${tripId}/history`),
+  requestAdvance: (data: { tripId: string; amount: number; reason: string; urgency: string }) => 
+    api.post('/payments/advance-request', data),
+  getForecast: (params?: any) => api.get('/payments/forecast', { params }),
 };
 
 // Locations API

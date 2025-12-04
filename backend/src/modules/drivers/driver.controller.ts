@@ -465,6 +465,57 @@ export class DriverController {
     return this.driverService.getDriverStats(id, req.user.tenantId);
   }
 
+  @Get(':id/assigned-loads')
+  @ApiOperation({
+    summary: 'Get loads assigned to driver\'s truck',
+    description: 'Retrieve all loads assigned to the truck that the driver is currently assigned to',
+  })
+  @ApiParam({ name: 'id', description: 'Driver ID', type: String })
+  @ApiOkResponse({
+    description: 'Assigned loads retrieved successfully',
+    type: [Object],
+  })
+  @ApiNotFoundResponse({ description: 'Driver not found' })
+  @ApiUnauthorizedResponse({ description: 'Unauthorized' })
+  async getAssignedLoads(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Request() req,
+  ) {
+    return this.driverService.getAssignedLoads(id, req.user.tenantId);
+  }
+
+  @Post(':id/proceed-journey')
+  @ApiOperation({
+    summary: 'Proceed with journey after checking cargo',
+    description: 'Mark selected loads as checked and update their status to IN_TRANSIT',
+  })
+  @ApiParam({ name: 'id', description: 'Driver ID', type: String })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        loadIds: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'Array of load IDs to mark as checked',
+        },
+      },
+    },
+  })
+  @ApiOkResponse({
+    description: 'Journey started successfully',
+  })
+  @ApiBadRequestResponse({ description: 'Invalid input or driver not assigned to truck' })
+  @ApiUnauthorizedResponse({ description: 'Unauthorized' })
+  async proceedWithJourney(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() body: { loadIds: string[] },
+    @Request() req,
+  ) {
+    await this.driverService.proceedWithJourney(id, body.loadIds, req.user.tenantId);
+    return { message: 'Journey started successfully' };
+  }
+
   @Put(':id/location')
   @ApiOperation({
     summary: 'Update driver location',

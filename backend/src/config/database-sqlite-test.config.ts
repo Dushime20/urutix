@@ -1,3 +1,9 @@
+/**
+ * SQLite test database configuration.
+ * 
+ * NOTE: This file is currently unused. The application uses PostgreSQL for testing.
+ * This configuration may be kept for reference or future SQLite test support.
+ */
 import { TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { Load } from '../entities/load.entity';
 import { Location } from '../entities/location.entity';

@@ -23,6 +23,10 @@ import {
   LenderRole,
   LenderPermission,
 } from '../../entities/LenderTeam';
+import { User } from '../../entities/user.entity';
+import { UserProfile } from '../../entities/user-profile.entity';
+import { PasswordResetToken } from '../../entities/password-reset-token.entity';
+import { EnhancedAuthModule } from '../auth/enhanced-auth.module';
 
 @Module({
   imports: [
@@ -38,7 +42,11 @@ import {
       LenderUser,
       LenderRole,
       LenderPermission,
+      User,
+      UserProfile,
+      PasswordResetToken,
     ]),
+    EnhancedAuthModule,
     ScheduleModule.forRoot(),
     EventEmitterModule.forRoot(),
   ],

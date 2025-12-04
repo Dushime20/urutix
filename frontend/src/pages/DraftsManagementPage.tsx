@@ -6,9 +6,12 @@ import {
 } from 'react-icons/fa';
 import { draftCargoApi, type DraftCargoResponse } from '../services/draftCargoApi';
 import EnhancedCargoForm from './dashboard/cargos/create/components/form';
+import { useConfirmDialog } from '../hooks/useConfirmDialog';
+import toast from 'react-hot-toast';
 
 const DraftsManagementPage: React.FC = () => {
   const navigate = useNavigate();
+  const { confirm, DialogComponent } = useConfirmDialog();
   const [drafts, setDrafts] = useState<DraftCargoResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -69,7 +72,7 @@ const DraftsManagementPage: React.FC = () => {
       setError(null);
       
       // Show success message
-      alert('Cargo moved to created status! It is now ready for matching and publishing to truck owners.');
+      toast.success('Cargo moved to created status! It is now ready for matching and publishing to truck owners.');
     } catch (error: any) {
       setError(`Failed to move draft to created status: ${error.message}`);
     } finally {
@@ -78,7 +81,14 @@ const DraftsManagementPage: React.FC = () => {
   };
 
   const handleDeleteDraft = async (draftId: string) => {
-    if (!confirm('Are you sure you want to delete this draft? This action cannot be undone.')) {
+    const confirmed = await confirm({
+      title: "Delete Draft",
+      message: "Are you sure you want to delete this draft? This action cannot be undone.",
+      confirmText: "Delete",
+      cancelText: "Cancel",
+      variant: "danger",
+    });
+    if (!confirmed) {
       return;
     }
 
@@ -313,6 +323,9 @@ const DraftsManagementPage: React.FC = () => {
             onSaveDraft={handleUpdateDraft}
           />
         )}
+
+        {/* Confirmation Dialog */}
+        {DialogComponent}
       </div>
     </div>
   );

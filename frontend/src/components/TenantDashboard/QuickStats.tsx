@@ -138,31 +138,31 @@ const QuickStats: React.FC<QuickStatsProps> = ({ metrics }) => {
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
       {stats.map((stat, index) => {
         const Icon = stat.icon;
         return (
-          <div key={index} className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow">
+          <div key={index} className="bg-white rounded-lg shadow p-3 hover:shadow-md transition-shadow">
             <div className="flex items-center justify-between">
-              <div className={`p-3 rounded-lg ${stat.bgColor}`}>
-                <Icon className={`w-6 h-6 ${stat.iconColor}`} />
+              <div className={`p-2 rounded-lg ${stat.bgColor}`}>
+                <Icon className={`w-4 h-4 ${stat.iconColor}`} />
               </div>
               <div className="flex items-center space-x-1">
                 {getTrendIcon(stat.trend)}
-                <span className={`text-sm font-medium ${getTrendColor(stat.trend)}`}>
+                <span className={`text-xs font-medium ${getTrendColor(stat.trend)}`}>
                   {stat.change}
                 </span>
               </div>
             </div>
             
-            <div className="mt-4">
-              <h3 className="text-sm font-medium text-gray-500 truncate">
+            <div className="mt-2">
+              <h3 className="text-xs font-medium text-gray-500 truncate">
                 {stat.title}
               </h3>
-              <p className="text-2xl font-bold text-gray-900 mt-1">
+              <p className="text-lg font-bold text-gray-900 mt-0.5">
                 {stat.value}
               </p>
-              <p className="text-xs text-gray-400 mt-1">
+              <p className="text-xs text-gray-400 mt-0.5">
                 {stat.description}
               </p>
             </div>

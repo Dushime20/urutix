@@ -14,6 +14,7 @@ import { CargoSkeleton } from "./CargoSkeleton";
 import { CargoTable } from "./CargoTable";
 import { ErrorBoundary } from "../ErrorBoundary";
 import EnhancedCargoForm from "../../pages/dashboard/cargos/create/components/form";
+import { useConfirmDialog } from "../../hooks/useConfirmDialog";
 
 import "leaflet/dist/leaflet.css";
 import {
@@ -26,6 +27,7 @@ import {
   publishCargo,
 } from "../../services/cargoApi";
 import api from "../../services/api";
+import toast from "react-hot-toast";
 // import type { Cargo, CargoFilters as CargoFiltersType, CargoData } from '../../types/cargo';
 
 // Temporary local interfaces to bypass module resolution issue
@@ -175,6 +177,7 @@ const cargoIcon = new Icon({
 });
 
 export const CargoDashboard: React.FC = () => {
+  const { confirm, DialogComponent } = useConfirmDialog();
   const [cargos, setCargos] = useState<Cargo[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -320,7 +323,7 @@ export const CargoDashboard: React.FC = () => {
   ) => {
     // Implement bulk action logic
     console.log(`Bulk action: ${action} on ${selectedIds.length} cargos`);
-    alert(`Bulk action: ${action} on ${selectedIds.length} cargos`);
+    toast.success(`Bulk action: ${action} on ${selectedIds.length} cargos`);
   };
 
   // CRUD Functions
@@ -357,7 +360,15 @@ export const CargoDashboard: React.FC = () => {
   );
 
   const handleDeleteCargo = useCallback(async (cargoId: string) => {
-    if (!window.confirm("Are you sure you want to delete this cargo?")) return;
+    const confirmed = await confirm({
+      title: "Delete Cargo",
+      message: "Are you sure you want to delete this cargo? This action cannot be undone.",
+      confirmText: "Delete",
+      cancelText: "Cancel",
+      variant: "danger",
+    });
+
+    if (!confirmed) return;
 
     try {
       await deleteCargo(cargoId);
@@ -366,7 +377,7 @@ export const CargoDashboard: React.FC = () => {
       console.error("Error deleting cargo:", error);
       setError("Failed to delete cargo");
     }
-  }, []);
+  }, [confirm]);
 
   const handlePublishCargo = useCallback(async (cargoId: string) => {
     try {
@@ -588,7 +599,7 @@ export const CargoDashboard: React.FC = () => {
     console.log("Truck selected:", truckMatch);
     // Here you can implement the booking logic
     // For now, just show a success message
-    alert(
+    toast.success(
       `Truck ${truckMatch.truckMake} ${truckMatch.truckModel} has been booked for your cargo!`
     );
   }, []);
@@ -725,6 +736,9 @@ export const CargoDashboard: React.FC = () => {
           showTruckSelection={formMode === "create"}
           onTruckSelected={handleTruckSelected}
         />
+
+        {/* Confirmation Dialog */}
+        {DialogComponent}
       </div>
     </ErrorBoundary>
   );

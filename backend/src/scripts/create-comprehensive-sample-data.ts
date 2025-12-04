@@ -4,7 +4,7 @@ import { FleetService } from '../modules/fleet/fleet.service';
 import { BiddingService } from '../modules/bidding/bidding.service';
 import { LoadsV2Service } from '../modules/loads/loads-v2.service';
 import { CreateTruckDto } from '../modules/fleet/dto/create-truck.dto';
-import { CreateDriverDto } from '../modules/fleet/dto/create-driver.dto';
+import { CreateFleetDriverDto } from '../modules/fleet/dto/create-driver.dto';
 import { FuelType, TruckType } from '../entities/truck.entity';
 import { DriverStatus, EmploymentType } from '../entities/driver.entity';
 import { AuctionType } from '../entities/auction.entity';
@@ -378,21 +378,21 @@ async function createComprehensiveSampleData() {
     console.log('\n👨‍💼 Creating sample drivers...');
 
     // Sample drivers data
-    const sampleDrivers: Partial<CreateDriverDto>[] = [
+    const sampleDrivers: Partial<CreateFleetDriverDto>[] = [
       {
         firstName: 'John',
         lastName: 'Smith',
         email: 'john.smith@fleet.com',
         phone: '+1-555-0101',
-        dateOfBirth: new Date('1985-03-15'),
+        dateOfBirth: new Date('1985-03-15').toISOString(),
         address: '123 Main St, Anytown, USA',
         licenseNumber: 'DL-001-2023',
-        licenseIssueDate: new Date('2023-01-15'),
-        licenseExpiry: new Date('2028-01-15'),
+        licenseIssueDate: new Date('2023-01-15').toISOString(),
+        licenseExpiry: new Date('2028-01-15').toISOString(),
         licenseState: 'California',
         licenseCountry: 'USA',
         employmentType: EmploymentType.FULL_TIME,
-        hireDate: new Date('2023-02-01'),
+        hireDate: new Date('2023-02-01').toISOString(),
         status: DriverStatus.ACTIVE,
         hourlyRate: 25,
         mileageRate: 0.65,
@@ -402,15 +402,15 @@ async function createComprehensiveSampleData() {
         lastName: 'Garcia',
         email: 'maria.garcia@fleet.com',
         phone: '+1-555-0202',
-        dateOfBirth: new Date('1990-07-22'),
+        dateOfBirth: new Date('1990-07-22').toISOString(),
         address: '456 Oak Ave, Somewhere, USA',
         licenseNumber: 'DL-002-2023',
-        licenseIssueDate: new Date('2023-03-20'),
-        licenseExpiry: new Date('2028-03-20'),
+        licenseIssueDate: new Date('2023-03-20').toISOString(),
+        licenseExpiry: new Date('2028-03-20').toISOString(),
         licenseState: 'Texas',
         licenseCountry: 'USA',
         employmentType: EmploymentType.FULL_TIME,
-        hireDate: new Date('2023-04-01'),
+        hireDate: new Date('2023-04-01').toISOString(),
         status: DriverStatus.ACTIVE,
         hourlyRate: 22,
         mileageRate: 0.58,
@@ -420,15 +420,15 @@ async function createComprehensiveSampleData() {
         lastName: 'Johnson',
         email: 'robert.johnson@fleet.com',
         phone: '+1-555-0303',
-        dateOfBirth: new Date('1988-11-08'),
+        dateOfBirth: new Date('1988-11-08').toISOString(),
         address: '789 Pine St, Elsewhere, USA',
         licenseNumber: 'DL-003-2023',
-        licenseIssueDate: new Date('2023-05-10'),
-        licenseExpiry: new Date('2028-05-10'),
+        licenseIssueDate: new Date('2023-05-10').toISOString(),
+        licenseExpiry: new Date('2028-05-10').toISOString(),
         licenseState: 'Florida',
         licenseCountry: 'USA',
         employmentType: EmploymentType.CONTRACT,
-        hireDate: new Date('2023-06-01'),
+        hireDate: new Date('2023-06-01').toISOString(),
         status: DriverStatus.ACTIVE,
         hourlyRate: 28,
         mileageRate: 0.72,
@@ -439,7 +439,7 @@ async function createComprehensiveSampleData() {
     for (const driverData of sampleDrivers) {
       try {
         const driver = await fleetService.createDriver(
-          driverData as CreateDriverDto,
+          driverData as CreateFleetDriverDto,
           defaultUserId,
           defaultTenantId,
         );

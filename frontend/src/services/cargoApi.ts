@@ -9,6 +9,7 @@ export const cargoOwnerAPI = {
   updateLoad: (id: string, data: any) => api.patch(`/loads-v2/${id}`, data),
   publishLoad: (id: string) => api.post(`/loads-v2/${id}/publish`),
   unpublishLoad: (id: string) => api.post(`/loads-v2/${id}/unpublish`),
+  getAssignedLoads: (params?: any) => api.get('/loads-v2/assigned-loads', { params }),
 
   // Smart Matching
   findMatches: (loadId: string, preferences: any) => 

@@ -191,7 +191,8 @@ export const loadsAPI = {
   getById: (id: string) => api.get(`/loads/${id}`),
   create: (data: ICargoBody) =>
     api.post<ICargoResponse>("/loads", sanitizeCargoPayload(data)).then((res) => res.data),
-  update: (id: string, data: any) => api.patch(`/loads/${id}`, data),
+  update: (id: string, data: any) => 
+    api.patch(`/loads/${id}`, sanitizeCargoPayload(data)).then((res) => res.data),
   delete: (id: string) => api.delete(`/loads/${id}`),
   saveDraft: (data: any) => api.post("/loads/draft", data),
 

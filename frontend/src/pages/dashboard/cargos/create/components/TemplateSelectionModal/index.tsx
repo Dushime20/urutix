@@ -48,7 +48,7 @@ const TemplateSelectionModal: React.FC<TemplateSelectionModalProps> = ({
         <ModalHeader onClose={onClose} />
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="flex-1 overflow-y-auto p-4">
           {/* Search and Filter */}
           <SearchAndFilter
             searchTerm={searchTerm}
@@ -60,7 +60,7 @@ const TemplateSelectionModal: React.FC<TemplateSelectionModalProps> = ({
 
           {/* Templates Grid */}
           {filteredTemplates.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
               {filteredTemplates.map((template) => (
                 <TemplateCard
                   key={template.id}

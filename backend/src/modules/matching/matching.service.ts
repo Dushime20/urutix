@@ -249,15 +249,13 @@ export class MatchingService {
         const allTrucks = await debugQuery.getMany();
         console.log(`📊 Total trucks in tenant: ${allTrucks.length}`);
         allTrucks.forEach((truck, index) => {
-          // Convert truck capacity from lbs to kg and compare with load weight (in kg)
-          const truckCapacityLbs = Number(truck.capacityWeight);
-          const truckCapacityKg = truckCapacityLbs * 0.453592; // Convert lbs to kg
+          // Compare truck capacity (in kg) with load weight (in kg)
+          const truckCapacityKg = Number(truck.capacityWeight);
           const loadWeightKg = Number(load.weight);
           const canCarry =
             truckCapacityKg && loadWeightKg && loadWeightKg <= truckCapacityKg;
           console.log(`🚛 All Truck ${index + 1}:`, {
             plateNumber: truck.plateNumber,
-            capacityWeightLbs: truckCapacityLbs,
             capacityWeightKg: truckCapacityKg,
             status: truck.status,
             isActive: truck.isActive,
@@ -377,20 +375,16 @@ export class MatchingService {
       });
 
       // Only add capacity filter if load.weight is valid
-      // Convert cargo weight from kg to lbs for database comparison
-      // (truck.capacityWeight is stored in lbs, cargo weight is in kg)
-      // 1 kg = 2.20462 lbs
+      // Both truck capacity and cargo weight are in kg
       if (load.weight && load.weight > 0) {
         const loadWeightKg = Number(load.weight);
-        const loadWeightLbs = loadWeightKg * 2.20462; // Convert kg to lbs
         console.log('🔍 Adding capacity filter:', {
-          loadWeightKg: load.weight,
-          loadWeightLbs: loadWeightLbs,
+          loadWeightKg: loadWeightKg,
           loadWeightType: typeof load.weight,
-          note: 'Converting cargo weight from kg to lbs for comparison with truck capacity (stored in lbs)',
+          note: 'Truck capacity and cargo weight are both in kg',
         });
         queryBuilder.andWhere('truck.capacityWeight >= :minCapacity', {
-          minCapacity: loadWeightLbs,
+          minCapacity: loadWeightKg,
         });
       } else {
         console.warn('⚠️ Load weight is invalid, skipping capacity filter', {
@@ -448,7 +442,6 @@ export class MatchingService {
       // Execute the query
       const trucks = await queryBuilder
         .leftJoinAndSelect('truck.owner', 'owner')
-        .leftJoinAndSelect('truck.currentDriver', 'currentDriver')
         .getMany();
 
       // Log the raw SQL that was actually executed
@@ -686,14 +679,11 @@ export class MatchingService {
     try {
       // Basic capacity check
       // Convert to numbers for proper comparison (handles string/decimal issues)
-      // Convert truck capacity from lbs to kg (1 lb = 0.453592 kg)
-      // Cargo weight is in kg, so we need to convert truck capacity to kg for comparison
-      const truckCapacityLbs = Number(truck.capacityWeight);
-      const truckCapacityKg = truckCapacityLbs * 0.453592; // Convert lbs to kg
-      const loadWeight = Number(load.weight); // Already in kg
+      // Both truck capacity and cargo weight are in kg
+      const truckCapacityKg = Number(truck.capacityWeight);
+      const loadWeight = Number(load.weight);
 
       console.log(`🔍 Capacity check for truck ${truck.plateNumber}:`, {
-        truckCapacityLbs: truckCapacityLbs,
         truckCapacityKg: truckCapacityKg,
         loadWeight: loadWeight,
         comparison: `${loadWeight} > ${truckCapacityKg} = ${loadWeight > truckCapacityKg}`,
@@ -705,7 +695,6 @@ export class MatchingService {
         console.log(
           `❌ Truck ${truck.plateNumber} rejected: capacity check failed`,
           {
-            truckCapacityLbs,
             truckCapacityKg,
             loadWeight,
             canCarry: loadWeight <= truckCapacityKg,
@@ -720,17 +709,58 @@ export class MatchingService {
       }
 
       console.log(`✅ Truck ${truck.plateNumber} passed capacity check:`, {
-        truckCapacityLbs,
         truckCapacityKg,
         loadWeight,
         utilization: ((loadWeight / truckCapacityKg) * 100).toFixed(2) + '%',
       });
 
-      // SIMPLIFIED: Only calculate capacity/weight score
+      // FULL AI MATCHING: Calculate all scoring factors
       const capacityScore = this.calculateCapacityScore(truck, load);
+      const distanceKm = this.calculateDistance(load, truck);
+      const distanceScore = this.calculateDistanceScore(load, truck, criteria);
+      const equipmentScore = this.calculateEquipmentScore(truck, load);
+      const ratingScore = this.calculateRatingScore(truck);
+      const priceScore = this.calculateCostScore(truck, load);
+      const temperatureScore = this.calculateTemperatureScore(truck, load);
+      const securityScore = this.calculateSecurityScore(truck, load);
+      const routeScore = this.calculateRouteScore(truck, load);
+      const timeScore = this.calculateTimeScore(truck, load);
+      const availabilityScore = this.calculateAvailabilityScore(truck);
+      const specialRequirementsScore = this.calculateSpecialRequirementsScore(truck, load);
 
-      // Overall score is based ONLY on weight/capacity matching
-      const overallScore = capacityScore;
+      // Get dynamic weights based on load requirements
+      const weights = this.getDynamicWeights(load);
+
+      // Calculate weighted overall score using all factors
+      const overallScore = 
+        capacityScore * weights.capacity +
+        distanceScore * weights.distance +
+        equipmentScore * weights.equipment +
+        ratingScore * weights.rating +
+        priceScore * weights.cost + // Use 'cost' from DynamicWeights interface
+        temperatureScore * (weights.temperature || 0.05) +
+        securityScore * (weights.security || 0.05) +
+        routeScore * (weights.route || 0.05) +
+        timeScore * (weights.time || 0.05) +
+        availabilityScore * (weights.availability || 0.05) +
+        specialRequirementsScore * (weights.specialRequirements || 0.1);
+
+      // Calculate cost estimates
+      const estimatedCost = this.estimateCost(distanceKm, loadWeight, truck);
+      const estimatedRevenue = this.estimateRevenue(distanceKm, loadWeight);
+      const profitMargin = estimatedRevenue > 0 
+        ? ((estimatedRevenue - estimatedCost) / estimatedRevenue) 
+        : 0;
+
+      // Calculate estimated delivery time
+      const estimatedDeliveryTime = this.estimateDeliveryTime(distanceKm, load);
+
+      // Calculate risk score (inverse of overall score for risk assessment)
+      const riskScore = Math.max(0, 1 - overallScore);
+
+      // Calculate recommended price (market average with margin)
+      const marketAverage = this.getMarketAverageCost(load);
+      const recommendedPrice = marketAverage * 1.1; // 10% margin
 
       // Get driver info if requested
       let driverInfo = {};
@@ -748,38 +778,67 @@ export class MatchingService {
         }
       }
 
-      // Calculate utilization percentage for match reason (using kg for both)
-      // truckCapacityKg is already declared above, reuse it
+      // Generate comprehensive match reason
       const utilization = ((loadWeight / truckCapacityKg) * 100).toFixed(1);
+      const matchReason = this.generateComprehensiveMatchReason(
+        truck,
+        load,
+        {
+          capacityScore,
+          distanceScore,
+          equipmentScore,
+          ratingScore,
+          priceScore,
+          temperatureScore,
+          securityScore,
+          routeScore,
+          timeScore,
+          overallScore,
+          utilization,
+          distanceKm,
+        }
+      );
+
+      // Calculate confidence based on how well all criteria are met
+      const confidence = Math.min(overallScore * 1.1, 1.0); // Slight boost for confidence
+      const successProbability = overallScore; // Success probability equals overall score
 
       return {
         truckId: truck.id,
         loadId: load.id,
-        overallScore,
-        capacityScore: capacityScore,
-        distanceScore: 0, // Not used in weight-only matching
-        equipmentScore: 0, // Not used in weight-only matching
-        ratingScore: 0, // Not used in weight-only matching
-        priceScore: 0, // Not used in weight-only matching
-        distanceKm: 0, // Not calculated for weight-only matching
-        estimatedCost: 0, // Not calculated for weight-only matching
-        estimatedRevenue: 0, // Not calculated for weight-only matching
-        profitMargin: 0, // Not calculated for weight-only matching
+        overallScore: Math.min(overallScore, 1.0), // Cap at 1.0
+        capacityScore,
+        distanceScore,
+        equipmentScore,
+        ratingScore,
+        priceScore,
+        distanceKm: Math.round(distanceKm * 10) / 10, // Round to 1 decimal
+        estimatedCost: Math.round(estimatedCost * 100) / 100, // Round to 2 decimals
+        estimatedRevenue: Math.round(estimatedRevenue * 100) / 100,
+        profitMargin: Math.round(profitMargin * 100) / 100,
         truckMake: truck.make || 'Unknown',
         truckModel: truck.model || 'Unknown',
         plateNumber: truck.plateNumber || 'N/A',
-        capacityWeight: truckCapacityKg, // Return capacity in kg for consistency
+        capacityWeight: truckCapacityKg,
         capacityVolume: truck.capacityVolume || 0,
         truckRating: truck.averageRating || 0,
+        truckType: truck.truckType || 'UNKNOWN',
         hasRefrigeration: truck.hasRefrigeration || false,
         hasLiftGate: truck.hasLiftGate || false,
         hasHazmatPermit: truck.hasHazmatPermit || false,
-        matchReason: `Weight match: Truck capacity (${truckCapacityKg.toFixed(1)}kg / ${Number(truck.capacityWeight).toFixed(1)}lbs) can carry cargo (${loadWeight}kg) - ${utilization}% utilization`,
-        confidence: capacityScore, // Confidence is same as capacity score for weight-only matching
-        successProbability: capacityScore, // Same as capacity score
-        estimatedDeliveryTime: null, // Not calculated for weight-only matching
-        riskScore: 0, // Not calculated for weight-only matching
-        recommendedPrice: 0, // Not calculated for weight-only matching
+        matchReason,
+        confidence,
+        successProbability,
+        estimatedDeliveryTime,
+        riskScore,
+        recommendedPrice: Math.round(recommendedPrice * 100) / 100,
+        // Additional scoring factors
+        temperatureScore,
+        securityScore,
+        routeScore,
+        timeScore,
+        availabilityScore,
+        specialRequirementsScore,
         ...driverInfo,
       } as MatchResultDto;
     } catch (error) {
@@ -1598,6 +1657,111 @@ export class MatchingService {
     }
 
     return reasons.join(', ');
+  }
+
+  private generateComprehensiveMatchReason(
+    truck: Truck,
+    load: Load,
+    scores: {
+      capacityScore: number;
+      distanceScore: number;
+      equipmentScore: number;
+      ratingScore: number;
+      priceScore: number;
+      temperatureScore: number;
+      securityScore: number;
+      routeScore: number;
+      timeScore: number;
+      overallScore: number;
+      utilization: string;
+      distanceKm: number;
+    },
+  ): string {
+    const reasons: string[] = [];
+
+    // Overall match quality
+    if (scores.overallScore >= 0.9) {
+      reasons.push('Excellent AI match');
+    } else if (scores.overallScore >= 0.75) {
+      reasons.push('Very good match');
+    } else if (scores.overallScore >= 0.6) {
+      reasons.push('Good match');
+    } else {
+      reasons.push('Acceptable match');
+    }
+
+    // Capacity match
+    if (scores.capacityScore >= 0.9) {
+      reasons.push(`Optimal capacity (${scores.utilization}% utilization)`);
+    } else if (scores.capacityScore >= 0.7) {
+      reasons.push(`Good capacity fit (${scores.utilization}% utilization)`);
+    }
+
+    // Distance match
+    if (scores.distanceScore >= 0.8) {
+      reasons.push(`Close proximity (${scores.distanceKm.toFixed(0)}km)`);
+    } else if (scores.distanceScore >= 0.5) {
+      reasons.push(`Moderate distance (${scores.distanceKm.toFixed(0)}km)`);
+    }
+
+    // Equipment compatibility
+    if (scores.equipmentScore >= 0.9) {
+      reasons.push('Perfect equipment match');
+    } else if (scores.equipmentScore >= 0.7) {
+      reasons.push('Good equipment compatibility');
+    }
+
+    // Special requirements
+    if (truck.hasRefrigeration && load.requiresRefrigeration) {
+      reasons.push('Refrigeration available');
+    }
+    if (truck.hasHazmatPermit && load.isHazardous) {
+      reasons.push('Hazmat certified');
+    }
+    if (truck.hasLiftGate && load.requiresForklift) {
+      reasons.push('Lift gate available');
+    }
+    if (truck.hasGps && load.requiresGpsMonitoring) {
+      reasons.push('GPS monitoring enabled');
+    }
+
+    // Rating
+    if (scores.ratingScore >= 0.8) {
+      reasons.push('Highly rated truck');
+    } else if (scores.ratingScore >= 0.6) {
+      reasons.push('Well-rated truck');
+    }
+
+    // Price competitiveness
+    if (scores.priceScore >= 0.9) {
+      reasons.push('Very competitive pricing');
+    } else if (scores.priceScore >= 0.7) {
+      reasons.push('Competitive pricing');
+    }
+
+    // Temperature control
+    if (scores.temperatureScore >= 0.8 && load.requiresRefrigeration) {
+      reasons.push('Temperature control available');
+    }
+
+    // Security features
+    if (scores.securityScore >= 0.8) {
+      reasons.push('Strong security features');
+    }
+
+    // Time critical
+    if (scores.timeScore >= 0.8 && load.isTimeCritical) {
+      reasons.push('Suitable for time-critical delivery');
+    }
+
+    // Route compatibility
+    if (scores.routeScore >= 0.9) {
+      reasons.push('Optimal route compatibility');
+    }
+
+    return reasons.length > 0
+      ? reasons.join(' • ')
+      : `AI match score: ${(scores.overallScore * 100).toFixed(0)}%`;
   }
 
   async getMarketInsights(tenantId: string): Promise<any> {

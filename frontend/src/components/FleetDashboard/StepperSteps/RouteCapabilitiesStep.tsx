@@ -68,7 +68,7 @@ export const RouteCapabilitiesStep: React.FC<RouteCapabilitiesStepProps> = ({
     <div className="space-y-6">
       <div className="border-b border-gray-200 pb-4">
         <h3 className="text-lg font-medium text-gray-900 flex items-center gap-2">
-          <FaRoute className="w-5 h-5 text-primary-600" />
+          <FaRoute className="w-5 h-5 text-gray-600" />
           Route Capabilities Configuration
         </h3>
         <p className="text-sm text-gray-600 mt-1">
@@ -86,13 +86,13 @@ export const RouteCapabilitiesStep: React.FC<RouteCapabilitiesStepProps> = ({
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {category.capabilities.map(({ key, label, description }) => (
-                <div key={key} className="border border-gray-200 rounded-lg p-3 hover:border-primary-300 transition-colors">
+                <div key={key} className="border border-gray-200 rounded-lg p-3 hover:border-gray-300 transition-colors">
                   <label className="flex items-start space-x-3 cursor-pointer">
                     <input
                       type="checkbox"
                       checked={formData.routeCapabilities?.[key] || false}
                       onChange={() => handleRouteToggle(key)}
-                      className="mt-1 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                      className="mt-1 rounded border-gray-300 text-gray-600 focus:ring-gray-500"
                     />
                     <div className="flex-1">
                       <div className="font-medium text-gray-900 text-sm">{label}</div>
@@ -121,7 +121,7 @@ export const RouteCapabilitiesStep: React.FC<RouteCapabilitiesStepProps> = ({
               type="number"
               value={formData.routeCapabilities?.maxDistance || ''}
               onChange={(e) => handleRouteInputChange('maxDistance', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent"
               placeholder="1000"
             />
           </div>
@@ -131,7 +131,7 @@ export const RouteCapabilitiesStep: React.FC<RouteCapabilitiesStepProps> = ({
               type="number"
               value={formData.routeCapabilities?.maxHoursToAvailability || ''}
               onChange={(e) => handleRouteInputChange('maxHoursToAvailability', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent"
               placeholder="24"
             />
           </div>
@@ -141,7 +141,7 @@ export const RouteCapabilitiesStep: React.FC<RouteCapabilitiesStepProps> = ({
               type="number"
               value={formData.routeCapabilities?.maxFerryLength || ''}
               onChange={(e) => handleRouteInputChange('maxFerryLength', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent"
               placeholder="20"
             />
           </div>
@@ -161,7 +161,7 @@ export const RouteCapabilitiesStep: React.FC<RouteCapabilitiesStepProps> = ({
                   type="checkbox"
                   checked={formData.routeCapabilities?.hasWeightRestrictions || false}
                   onChange={() => handleRouteToggle('hasWeightRestrictions')}
-                  className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                  className="rounded border-gray-300 text-gray-600 focus:ring-gray-500"
                 />
                 <span className="text-sm text-gray-700">Weight Restrictions</span>
               </label>
@@ -172,7 +172,7 @@ export const RouteCapabilitiesStep: React.FC<RouteCapabilitiesStepProps> = ({
                   type="checkbox"
                   checked={formData.routeCapabilities?.hasHeightRestrictions || false}
                   onChange={() => handleRouteToggle('hasHeightRestrictions')}
-                  className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                  className="rounded border-gray-300 text-gray-600 focus:ring-gray-500"
                 />
                 <span className="text-sm text-gray-700">Height Restrictions</span>
               </label>
@@ -183,7 +183,7 @@ export const RouteCapabilitiesStep: React.FC<RouteCapabilitiesStepProps> = ({
                   type="checkbox"
                   checked={formData.routeCapabilities?.hasWidthRestrictions || false}
                   onChange={() => handleRouteToggle('hasWidthRestrictions')}
-                  className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                  className="rounded border-gray-300 text-gray-600 focus:ring-gray-500"
                 />
                 <span className="text-sm text-gray-700">Width Restrictions</span>
               </label>
@@ -194,7 +194,7 @@ export const RouteCapabilitiesStep: React.FC<RouteCapabilitiesStepProps> = ({
                   type="checkbox"
                   checked={formData.routeCapabilities?.hasLengthRestrictions || false}
                   onChange={() => handleRouteToggle('hasLengthRestrictions')}
-                  className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                  className="rounded border-gray-300 text-gray-600 focus:ring-gray-500"
                 />
                 <span className="text-sm text-gray-700">Length Restrictions</span>
               </label>
@@ -215,11 +215,11 @@ export const RouteCapabilitiesStep: React.FC<RouteCapabilitiesStepProps> = ({
             if (selectedCapabilities.length === 0) return null;
             
             return (
-              <div key={category.title} className="border-l-4 border-primary-500 pl-3">
+              <div key={category.title} className="border-l-4 border-gray-500 pl-3">
                 <div className="text-sm font-medium text-gray-900 mb-1">{category.title}</div>
                 <div className="flex flex-wrap gap-1">
                   {selectedCapabilities.map(({ key, label }) => (
-                    <span key={key} className="px-2 py-1 bg-primary-100 text-primary-800 text-xs rounded">
+                    <span key={key} className="px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded">
                       {label}
                     </span>
                   ))}

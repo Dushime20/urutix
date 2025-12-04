@@ -32,6 +32,7 @@ import { RolesGuard } from './roles.guard';
       AuditLog,
       Tenant,
     ]),
+    ConfigModule,
     PassportModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
@@ -60,6 +61,7 @@ import { RolesGuard } from './roles.guard';
     TenantGuard,
     TenantService,
     RolesGuard,
+    EmailService,
   ],
 })
 export class EnhancedAuthModule {}

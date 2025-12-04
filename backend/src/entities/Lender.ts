@@ -16,9 +16,13 @@ export enum LenderStatus {
 
 @Entity('lenders')
 @Index(['status', 'created_at'])
+@Index(['tenant_id', 'status'])
 export class Lender {
   @PrimaryGeneratedColumn('uuid')
   id: string;
+
+  @Column({ type: 'uuid', nullable: true, name: 'tenant_id' })
+  tenant_id: string;
 
   @Column({ type: 'varchar', length: 255 })
   name: string;

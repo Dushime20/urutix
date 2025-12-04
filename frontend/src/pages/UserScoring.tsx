@@ -39,7 +39,15 @@ const UserScoring: React.FC = () => {
         : Array.isArray(response.data?.scores)
         ? response.data.scores
         : [];
-      setScores(scoresArray);
+      
+      // Normalize numeric fields (convert strings to numbers for decimal types from database)
+      const normalizedScores = scoresArray.map((score: any) => ({
+        ...score,
+        score: typeof score.score === 'string' ? parseFloat(score.score) : Number(score.score) || 0,
+        normalizedScore: typeof score.normalizedScore === 'string' ? parseFloat(score.normalizedScore) : Number(score.normalizedScore) || 0,
+      }));
+      
+      setScores(normalizedScores);
     } catch (error: any) {
       console.error('Error loading scores:', error);
       // If unauthorized, set empty array
@@ -113,23 +121,25 @@ const UserScoring: React.FC = () => {
     }
   };
 
-  const getScoreColor = (score: number) => {
-    if (score >= 800) return 'text-green-600';
-    if (score >= 600) return 'text-yellow-600';
-    if (score >= 400) return 'text-orange-600';
+  const getScoreColor = (score: number | string) => {
+    const numScore = typeof score === 'string' ? parseFloat(score) : Number(score) || 0;
+    if (numScore >= 800) return 'text-green-600';
+    if (numScore >= 600) return 'text-yellow-600';
+    if (numScore >= 400) return 'text-orange-600';
     return 'text-red-600';
   };
 
-  const getScoreGrade = (score: number) => {
-    if (score >= 800) return 'A+';
-    if (score >= 750) return 'A';
-    if (score >= 700) return 'A-';
-    if (score >= 650) return 'B+';
-    if (score >= 600) return 'B';
-    if (score >= 550) return 'B-';
-    if (score >= 500) return 'C+';
-    if (score >= 450) return 'C';
-    if (score >= 400) return 'C-';
+  const getScoreGrade = (score: number | string) => {
+    const numScore = typeof score === 'string' ? parseFloat(score) : Number(score) || 0;
+    if (numScore >= 800) return 'A+';
+    if (numScore >= 750) return 'A';
+    if (numScore >= 700) return 'A-';
+    if (numScore >= 650) return 'B+';
+    if (numScore >= 600) return 'B';
+    if (numScore >= 550) return 'B-';
+    if (numScore >= 500) return 'C+';
+    if (numScore >= 450) return 'C';
+    if (numScore >= 400) return 'C-';
     return 'D';
   };
 
@@ -185,13 +195,13 @@ const UserScoring: React.FC = () => {
             
             <div className="text-center mb-4">
               <div className={`text-4xl font-bold ${getScoreColor(score.normalizedScore)} mb-2`}>
-                {score.normalizedScore.toFixed(0)}
+                {Number(score.normalizedScore || 0).toFixed(0)}
               </div>
               <div className="text-2xl font-semibold text-gray-600 mb-1">
                 {getScoreGrade(score.normalizedScore)}
               </div>
               <div className="text-sm text-gray-500">
-                Raw Score: {score.score.toFixed(0)}/1000
+                Raw Score: {Number(score.score || 0).toFixed(0)}/1000
               </div>
             </div>
 
@@ -233,12 +243,12 @@ const UserScoring: React.FC = () => {
                         <div className="flex justify-between">
                           <span className="text-gray-600">Normalized Score:</span>
                           <span className={`font-semibold ${getScoreColor(score.normalizedScore)}`}>
-                            {score.normalizedScore.toFixed(1)}/100
+                            {Number(score.normalizedScore || 0).toFixed(1)}/100
                           </span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-gray-600">Raw Score:</span>
-                          <span className="font-semibold">{score.score.toFixed(0)}/1000</span>
+                          <span className="font-semibold">{Number(score.score || 0).toFixed(0)}/1000</span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-gray-600">Grade:</span>

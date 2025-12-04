@@ -1,7 +1,7 @@
 import React from 'react';
 import { 
   FaUsers, FaTruck, FaBox, FaDollarSign,
-  FaCheckCircle, FaExclamationTriangle
+  FaCheckCircle, FaExclamationTriangle, FaSync
 } from 'react-icons/fa';
 import { Line, Bar, Doughnut } from 'react-chartjs-2';
 import {
@@ -125,17 +125,22 @@ const AdminDashboard: React.FC = () => {
         display: true,
         position: 'bottom' as const,
         labels: {
-          padding: 20,
+          padding: 10,
           font: {
-            size: 12,
+            size: 10,
           },
+          boxWidth: 10,
+          boxHeight: 10,
         },
       },
       tooltip: {
         backgroundColor: 'rgba(0, 0, 0, 0.8)',
         titleColor: 'white',
         bodyColor: 'white',
-        cornerRadius: 8,
+        cornerRadius: 6,
+        titleFont: { size: 11 },
+        bodyFont: { size: 10 },
+        padding: 8,
       },
     },
     scales: {
@@ -143,12 +148,18 @@ const AdminDashboard: React.FC = () => {
         grid: {
           display: false,
         },
+        ticks: {
+          font: { size: 10 },
+        },
       },
       y: {
         grid: {
           color: 'rgba(0, 0, 0, 0.05)',
         },
         beginAtZero: true,
+        ticks: {
+          font: { size: 10 },
+        },
       },
     },
   };
@@ -162,85 +173,136 @@ const AdminDashboard: React.FC = () => {
   ];
 
   return (
-    <div className="p-4 max-w-7xl mx-auto">
+    <div className="space-y-3">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-3">
         <div>
-          <h1 className="text-2xl font-bold">Admin Dashboard</h1>
-          <p className="text-gray-600">Platform overview and key metrics</p>
+          <h1 className="text-lg font-bold text-gray-900">Admin Dashboard</h1>
+          <p className="text-xs text-gray-600 mt-0.5">Platform overview and key metrics</p>
         </div>
+        <button className="px-2.5 py-1.5 text-xs bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-1.5 transition-colors">
+          <FaSync className="w-3 h-3" />
+          Refresh
+        </button>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2.5 mb-3">
         {stats.map((stat, index) => {
           const Icon = stat.icon;
           return (
-            <div key={index} className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow duration-300">
-              <div className="flex items-center justify-between mb-4">
-                <div className={`w-12 h-12 bg-gradient-to-r ${stat.color} rounded-xl flex items-center justify-center`}>
-                  <Icon className="text-white text-lg" />
+            <div key={index} className="bg-white rounded-lg shadow-sm border border-gray-200 p-2.5 hover:shadow-md transition-all duration-200 group relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-100 transition-opacity" style={{
+                background: stat.color === 'from-blue-500 to-blue-600' ? 'linear-gradient(to bottom right, rgba(59, 130, 246, 0.05), transparent)' :
+                           stat.color === 'from-green-500 to-green-600' ? 'linear-gradient(to bottom right, rgba(16, 185, 129, 0.05), transparent)' :
+                           stat.color === 'from-purple-500 to-purple-600' ? 'linear-gradient(to bottom right, rgba(168, 85, 247, 0.05), transparent)' :
+                           'linear-gradient(to bottom right, rgba(245, 158, 11, 0.05), transparent)'
+              }}></div>
+              <div className="relative">
+                <div className="flex items-center justify-between mb-1.5">
+                  <div className={`w-10 h-10 bg-gradient-to-r ${stat.color} rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform`}>
+                    <Icon className="text-white text-sm" />
+                  </div>
+                  <span className={`text-xs font-semibold px-1.5 py-0.5 rounded-full ${
+                    stat.changeType === 'positive' ? 'text-green-600 bg-green-100' : 'text-red-600 bg-red-100'
+                  }`}>
+                    {stat.change}
+                  </span>
                 </div>
-                <span className={`text-sm font-semibold px-2 py-1 rounded-full ${
-                  stat.changeType === 'positive' ? 'text-green-600 bg-green-100' : 'text-red-600 bg-red-100'
-                }`}>
-                  {stat.change}
-                </span>
+                <div className="text-lg font-bold text-gray-900 mb-0.5">{stat.value}</div>
+                <div className="text-xs font-medium text-gray-600 mb-0.5">{stat.label}</div>
+                <div className="text-[10px] text-gray-500">{stat.description}</div>
               </div>
-              <div className="text-3xl font-bold text-gray-800 mb-1">{stat.value}</div>
-              <div className="text-sm text-gray-500 mb-1">{stat.label}</div>
-              <div className="text-xs text-gray-400">{stat.description}</div>
             </div>
           );
         })}
       </div>
 
       {/* Charts Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 bg-white rounded-lg shadow-md p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-semibold text-gray-800">Revenue Trend</h3>
-            <div className="flex space-x-2">
-              <button className="px-3 py-1 text-sm bg-blue-100 text-blue-600 rounded-lg">6M</button>
-              <button className="px-3 py-1 text-sm text-gray-500 rounded-lg hover:bg-gray-100">1Y</button>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+        <div className="lg:col-span-2 bg-white rounded-lg shadow-sm border border-gray-200 p-2.5">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-xs font-semibold text-gray-900">Revenue Trend</h3>
+            <div className="flex space-x-1.5">
+              <button className="px-2 py-0.5 text-xs bg-blue-100 text-blue-600 rounded-md font-medium">6M</button>
+              <button className="px-2 py-0.5 text-xs text-gray-500 rounded-md hover:bg-gray-100">1Y</button>
             </div>
           </div>
-          <div className="h-80">
-            <Line data={chartData} options={{ responsive: true, maintainAspectRatio: false }} />
+          <div className="h-64">
+            <Line data={chartData} options={{ 
+              ...chartOptions,
+              plugins: {
+                ...chartOptions.plugins,
+                legend: {
+                  ...chartOptions.plugins.legend,
+                  labels: {
+                    ...chartOptions.plugins.legend.labels,
+                    padding: 10,
+                    font: { size: 10 }
+                  }
+                }
+              }
+            }} />
           </div>
         </div>
         
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h3 className="text-lg font-semibold text-gray-800 mb-6">Cargo Status</h3>
-          <div className="h-80">
-            <Doughnut data={doughnutData} options={{ responsive: true, maintainAspectRatio: false }} />
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-2.5">
+          <h3 className="text-xs font-semibold text-gray-900 mb-2">Cargo Status</h3>
+          <div className="h-64">
+            <Doughnut data={doughnutData} options={{ 
+              ...chartOptions,
+              plugins: {
+                ...chartOptions.plugins,
+                legend: {
+                  ...chartOptions.plugins.legend,
+                  labels: {
+                    ...chartOptions.plugins.legend.labels,
+                    padding: 10,
+                    font: { size: 10 }
+                  }
+                }
+              }
+            }} />
           </div>
         </div>
       </div>
 
       {/* Bottom Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h3 className="text-lg font-semibold text-gray-800 mb-6">Performance Metrics</h3>
-          <div className="h-80">
-            <Bar data={barData} options={{ responsive: true, maintainAspectRatio: false }} />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-2.5">
+          <h3 className="text-xs font-semibold text-gray-900 mb-2">Performance Metrics</h3>
+          <div className="h-64">
+            <Bar data={barData} options={{ 
+              ...chartOptions,
+              plugins: {
+                ...chartOptions.plugins,
+                legend: {
+                  ...chartOptions.plugins.legend,
+                  labels: {
+                    ...chartOptions.plugins.legend.labels,
+                    padding: 10,
+                    font: { size: 10 }
+                  }
+                }
+              }
+            }} />
           </div>
         </div>
         
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-semibold text-gray-800">Recent Activity</h3>
-            <button className="text-blue-600 hover:text-blue-800 text-sm font-medium">View All</button>
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-2.5">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-xs font-semibold text-gray-900">Recent Activity</h3>
+            <button className="text-blue-600 hover:text-blue-800 text-xs font-medium">View All</button>
           </div>
-          <div className="space-y-4 max-h-80 overflow-y-auto">
+          <div className="space-y-1.5 max-h-64 overflow-y-auto">
             {recentActivities.map((activity, index) => {
               const Icon = activity.icon;
               return (
-                <div key={index} className="flex items-start space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
-                  <Icon className={`${activity.color} text-lg mt-0.5 flex-shrink-0`} />
-                  <div className="flex-1">
-                    <p className="text-sm text-gray-800">{activity.text}</p>
-                    <p className="text-xs text-gray-500 mt-1">{activity.time}</p>
+                <div key={index} className="flex items-start gap-1.5 p-1.5 rounded-lg hover:bg-gray-50 transition-colors">
+                  <Icon className={`${activity.color} text-sm mt-0.5 flex-shrink-0`} />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs text-gray-900 font-medium">{activity.text}</p>
+                    <p className="text-[10px] text-gray-500 mt-0.5">{activity.time}</p>
                   </div>
                 </div>
               );

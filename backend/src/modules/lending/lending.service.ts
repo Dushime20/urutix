@@ -50,6 +50,10 @@ import {
   LenderPermission,
   LenderUserStatus,
 } from '../../entities/LenderTeam';
+import { User, UserRole, UserStatus } from '../../entities/user.entity';
+import { UserProfile } from '../../entities/user-profile.entity';
+import { PasswordResetToken } from '../../entities/password-reset-token.entity';
+import { EmailService } from '../auth/email.service';
 import * as crypto from 'crypto';
 import * as bcrypt from 'bcryptjs';
 import axios from 'axios';
@@ -83,6 +87,17 @@ export class LendingService {
 
     @InjectRepository(LenderPermission)
     private lenderPermissionRepository: Repository<LenderPermission>,
+
+    @InjectRepository(User)
+    private userRepository: Repository<User>,
+
+    @InjectRepository(UserProfile)
+    private userProfileRepository: Repository<UserProfile>,
+
+    @InjectRepository(PasswordResetToken)
+    private passwordResetTokenRepository: Repository<PasswordResetToken>,
+
+    private emailService: EmailService,
 
     private dataSource: DataSource,
   ) {}
@@ -159,17 +174,176 @@ export class LendingService {
   // Lender Management
   async createLender(
     createLenderDto: CreateLenderDto,
+    tenantId?: string,
   ): Promise<LenderResponseDto> {
+    this.logger.log(`Starting lender creation process for: ${createLenderDto.name}`);
+    if (tenantId) {
+      this.logger.log(`Creating lender for tenant: ${tenantId}`);
+    }
+    
+    // Step 1: Check if user already exists BEFORE creating lender
+    // For tenant-specific lenders, check within the tenant scope
+    this.logger.log(`Checking if user with email ${createLenderDto.contact_email} already exists...`);
+    const existingUser = await this.userRepository.findOne({
+      where: tenantId 
+        ? { 
+            email: createLenderDto.contact_email.trim().toLowerCase(),
+            tenantId: tenantId,
+          }
+        : { email: createLenderDto.contact_email.trim().toLowerCase() },
+    });
+
+    if (existingUser) {
+      this.logger.error(
+        `User with email ${createLenderDto.contact_email} already exists. Cannot create lender with existing user email.`,
+      );
+      throw new ConflictException(
+        `A user with the email "${createLenderDto.contact_email}" already exists in the system. Please use a different email address for this lender.`,
+      );
+    }
+
+    // Step 2: Create the lender entity (only if user doesn't exist)
+    this.logger.log(`No existing user found. Proceeding with lender creation...`);
     const apiKey = this.generateApiKey();
     const hashedApiKey = await bcrypt.hash(apiKey, 10);
 
     const lender = this.lenderRepository.create({
       ...createLenderDto,
       api_key_hash: hashedApiKey,
+      tenant_id: tenantId || null,
     });
 
+    // Save lender to database - this must succeed before proceeding
     const savedLender = await this.lenderRepository.save(lender);
+    this.logger.log(`✅ Lender created successfully with ID: ${savedLender.id}`);
 
+    // Step 3: After lender is successfully created, proceed with user account creation
+    this.logger.log(`Proceeding with user account creation for email: ${createLenderDto.contact_email}`);
+    
+    try {
+      // Create new user for lender (following tenant creation pattern)
+      this.logger.log(`👤 Creating new lender user account...`);
+      
+      // Use provided tenantId or default tenant ID
+      const lenderTenantId = tenantId || '00000000-0000-0000-0000-000000000001';
+      
+      // Generate temporary password (will be replaced when lender sets password)
+      const tempPassword = crypto.randomBytes(32).toString('hex');
+      const tempPasswordHash = await bcrypt.hash(tempPassword, 12);
+
+      const lenderUser = this.userRepository.create({
+        email: createLenderDto.contact_email.trim().toLowerCase(),
+        passwordHash: tempPasswordHash,
+        role: UserRole.LENDER,
+        status: UserStatus.PENDING_VERIFICATION,
+        tenantId: lenderTenantId,
+      });
+
+      const savedUser = await this.userRepository.save(lenderUser);
+      this.logger.log(`✅ Lender user created with ID: ${savedUser.id}`);
+
+      // Create user profile (following tenant creation pattern)
+      const nameParts = (createLenderDto.name || 'Lender Admin').split(' ');
+      const userProfile = this.userProfileRepository.create({
+        userId: savedUser.id,
+        tenantId: lenderTenantId,
+        firstName: nameParts[0] || 'Lender',
+        lastName: nameParts.slice(1).join(' ') || 'Admin',
+        companyName: createLenderDto.name,
+      });
+      await this.userProfileRepository.save(userProfile);
+      this.logger.log(`✅ User profile created for lender user`);
+
+      // Generate password setup token
+      this.logger.log(`📧 Generating password setup token for: ${createLenderDto.contact_email}`);
+      const token = crypto.randomBytes(32).toString('hex');
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + 7); // Token expires in 7 days
+
+      // Invalidate any existing tokens for this email
+      await this.passwordResetTokenRepository.update(
+        { email: createLenderDto.contact_email.trim().toLowerCase(), used: false },
+        { used: true },
+      );
+
+      const passwordSetupToken = this.passwordResetTokenRepository.create({
+        email: createLenderDto.contact_email.trim().toLowerCase(),
+        token,
+        expiresAt,
+        used: false,
+      });
+      await this.passwordResetTokenRepository.save(passwordSetupToken);
+      this.logger.log(`✅ Password setup token generated and saved`);
+
+      // Send password setup email (always send for new users)
+      this.logger.log(`📧 ========== LENDER EMAIL SENDING PROCESS START ==========`);
+      this.logger.log(`📧 Sending password setup email for new lender user...`);
+      this.logger.log(`📧 Email address: ${createLenderDto.contact_email.trim().toLowerCase()}`);
+      this.logger.log(`📧 Lender name: ${createLenderDto.name}`);
+      this.logger.log(`📧 EmailService instance: ${this.emailService ? 'EXISTS' : 'MISSING'}`);
+      
+      try {
+        if (!this.emailService) {
+          this.logger.error('❌ EmailService is not injected properly!');
+          this.logger.warn('⚠️ EmailService is not available, skipping email send');
+          throw new Error('EmailService is not available');
+        }
+        
+        this.logger.log('📧 Calling emailService.sendLenderPasswordSetupEmail...');
+        await this.emailService.sendLenderPasswordSetupEmail(
+          createLenderDto.contact_email.trim().toLowerCase(),
+          createLenderDto.name,
+          token,
+        );
+        this.logger.log(
+          `✅ Lender password setup email sent successfully to ${createLenderDto.contact_email}`,
+        );
+        this.logger.log(`✅ Check the inbox (and spam folder) for: ${createLenderDto.contact_email}`);
+      } catch (emailError: any) {
+        this.logger.error(
+          `❌ Failed to send lender password setup email: ${emailError.message}`,
+        );
+        this.logger.error(`❌ Error stack: ${emailError.stack}`);
+        if (emailError.code) {
+          this.logger.error(`❌ Error code: ${emailError.code}`);
+        }
+        if (emailError.response) {
+          this.logger.error(`❌ Error response: ${emailError.response}`);
+        }
+        if (emailError.responseCode) {
+          this.logger.error(`❌ Error response code: ${emailError.responseCode}`);
+        }
+        if (emailError.command) {
+          this.logger.error(`❌ Failed command: ${emailError.command}`);
+        }
+        this.logger.error(`❌ Full email error:`, JSON.stringify(emailError, Object.getOwnPropertyNames(emailError)));
+        this.logger.warn(
+          `⚠️ Lender and user account were created successfully, but email could not be sent. The lender will need to use password reset to set their password.`,
+        );
+      }
+      this.logger.log(`📧 ========== LENDER EMAIL SENDING PROCESS END ==========`);
+    } catch (error) {
+      this.logger.error(
+        `❌ Error creating lender user account: ${error.message}`,
+      );
+      this.logger.error(
+        `⚠️ Lender was created successfully (ID: ${savedLender.id}), but user account creation failed. Rolling back lender creation.`,
+      );
+      
+      // Rollback: Delete the lender that was created
+      try {
+        await this.lenderRepository.remove(savedLender);
+        this.logger.log(`✅ Rolled back lender creation - lender deleted`);
+      } catch (rollbackError) {
+        this.logger.error(`❌ Failed to rollback lender creation: ${rollbackError.message}`);
+      }
+      
+      // Re-throw the original error so frontend can show it
+      throw error;
+    }
+
+    this.logger.log(`Lender creation process completed for: ${createLenderDto.name} (ID: ${savedLender.id})`);
+    
     return {
       id: savedLender.id,
       api_key: apiKey,
@@ -883,8 +1057,10 @@ export class LendingService {
 
   // ==== ADDITIONAL SERVICE METHODS ====
 
-  async getAllLenders(): Promise<Lender[]> {
+  async getAllLenders(tenantId?: string): Promise<Lender[]> {
+    const whereCondition = tenantId ? { tenant_id: tenantId } : {};
     return await this.lenderRepository.find({
+      where: whereCondition,
       relations: ['policies'],
       order: { created_at: 'DESC' },
     });

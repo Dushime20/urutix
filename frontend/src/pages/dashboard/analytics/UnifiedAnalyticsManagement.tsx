@@ -10,6 +10,7 @@ const Analytics = lazy(() => import("@/pages/Analytics"));
 const FinancialReportsPage = lazy(() => import("@/pages/FinancialReportsPage"));
 import CargoList from "@/pages/dashboard/cargos/list";
 import { cn } from "@/utils/cn";
+import logoUrutiX from "@/assets/logo-urutix.svg";
 
 type TabType = "analytics" | "reports" | "history";
 
@@ -76,70 +77,53 @@ const UnifiedAnalyticsManagement = () => {
   };
 
   return (
-    <div className="space-y-4">
-      {/* Header */}
-      <div className="mb-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-bold text-gray-900 mb-1">Analytics & Reports</h1>
-            <p className="text-xs text-gray-600">Track performance, generate reports, and view history</p>
-          </div>
+    <div className="min-h-screen bg-gray-50 relative">
+      {/* Background Logo */}
+      <img 
+        src={logoUrutiX} 
+        alt="UrutiX Logo Background" 
+        className="pointer-events-none select-none fixed inset-0 w-full h-full object-cover opacity-10 z-0" 
+        style={{objectPosition: 'center'}} 
+      />
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 relative z-10">
+        {/* Header */}
+        <div className="mb-4">
+          <h1 className="text-2xl font-bold text-gray-900">
+            Analytics & Reports
+          </h1>
+          <p className="text-sm text-gray-600 mt-1">
+            Track performance, generate reports, and view history
+          </p>
         </div>
-      </div>
 
-      {/* Navigation Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-4">
-        {tabs.map((tab) => {
-          const Icon = tab.icon;
-          const isActive = activeTab === tab.id;
-          return (
-            <button
-              key={tab.id}
-              onClick={() => handleTabChange(tab.id)}
-              className={cn(
-                "relative bg-white rounded-lg border p-3.5 transition-all duration-200 hover:shadow-sm group text-left",
-                isActive
-                  ? "border-gray-300 shadow-sm bg-gray-50"
-                  : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
-              )}
-            >
-              <div className="flex items-start justify-between mb-2">
-                <div
+        {/* Navigation Tabs */}
+        <div className="bg-white rounded-lg border border-gray-200 mb-4">
+          <nav className="flex space-x-1 p-1">
+            {tabs.map((tab) => {
+              const Icon = tab.icon;
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => handleTabChange(tab.id)}
                   className={cn(
-                    "p-1.5 rounded-md transition-colors",
+                    "px-4 py-2.5 rounded-md text-sm font-medium flex items-center gap-2 transition-all",
                     isActive
-                      ? "bg-gray-100 text-gray-700"
-                      : "bg-gray-50 text-gray-500 group-hover:bg-gray-100 group-hover:text-gray-700"
+                      ? "bg-gray-100 text-gray-900 border border-gray-300"
+                      : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
                   )}
                 >
                   <Icon className="w-4 h-4" />
-                </div>
-              </div>
-              <h3
-                className={cn(
-                  "text-sm font-semibold mb-1",
-                  isActive ? "text-gray-900" : "text-gray-900"
-                )}
-              >
-                {tab.label}
-              </h3>
-              <p className={cn(
-                "text-xs leading-tight",
-                isActive ? "text-gray-600" : "text-gray-500"
-              )}>
-                {tab.description}
-              </p>
-              {isActive && (
-                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-400 rounded-b-lg" />
-              )}
-            </button>
-          );
-        })}
-      </div>
+                  <span>{tab.label}</span>
+                </button>
+              );
+            })}
+          </nav>
+        </div>
 
-      {/* Tab Content */}
-      <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
-        <div className="p-4">
+        {/* Tab Content */}
+        <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
+          <div className="p-4">
             {activeTab === "analytics" && (
               <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500"></div></div>}>
                 <Analytics />
@@ -151,6 +135,7 @@ const UnifiedAnalyticsManagement = () => {
               </Suspense>
             )}
             {activeTab === "history" && renderHistoryContent()}
+          </div>
         </div>
       </div>
     </div>

@@ -22,6 +22,13 @@ export const config = {
   features: {
     analytics: import.meta.env.VITE_ENABLE_ANALYTICS === 'true',
     debug: import.meta.env.VITE_ENABLE_DEBUG === 'true',
+    websocket: import.meta.env.VITE_ENABLE_WEBSOCKET !== 'false', // Default: true, can be disabled
+  },
+  
+  // WebSocket Configuration
+  websocket: {
+    enabled: import.meta.env.VITE_ENABLE_WEBSOCKET !== 'false', // Default: true
+    url: import.meta.env.VITE_WEBSOCKET_URL || 'ws://localhost:3001',
   },
 };
 
@@ -47,15 +54,4 @@ export const shouldInitializePostHog = () => {
 // Helper function to get API base URL
 export const getApiBaseUrl = () => {
   return config.api.baseUrl;
-};
-
-// Helper function to get WebSocket/Socket.io base URL
-export const getWebSocketUrl = () => {
-  // Extract base URL from API base URL (remove /api suffix)
-  const apiUrl = getApiBaseUrl();
-  if (apiUrl.includes('/api')) {
-    return apiUrl.replace('/api', '');
-  }
-  // Fallback to environment variable or default
-  return import.meta.env.VITE_WEBSOCKET_URL || apiUrl.replace('/api', '') || 'http://localhost:3000';
 }; 

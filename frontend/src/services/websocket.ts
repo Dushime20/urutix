@@ -17,21 +17,60 @@ export interface ShipmentUpdate {
 export class TrackingWebSocket {
   private ws: WebSocket | null = null;
   private reconnectAttempts = 0;
-  private maxReconnectAttempts = 5;
-  private reconnectDelay = 1000;
+  private maxReconnectAttempts = 3; // Reduced attempts
+  private reconnectDelay = 2000; // Increased delay
   private listeners: Map<string, (update: ShipmentUpdate) => void> = new Map();
   private isConnected = false;
+  private isConnecting = false;
+  private connectionTimeout: NodeJS.Timeout | null = null;
+  private reconnectTimeout: NodeJS.Timeout | null = null;
+  private enabled: boolean;
 
-  constructor(private url: string) {}
+  constructor(private url: string, enabled: boolean = true) {
+    this.enabled = enabled;
+  }
 
   connect(): Promise<void> {
+    // If WebSocket is disabled, return early without attempting connection
+    if (!this.enabled) {
+      return Promise.resolve();
+    }
+
+    // If already connecting, return early
+    if (this.isConnecting) {
+      return Promise.resolve();
+    }
+
+    // If already connected, resolve immediately
+    if (this.isConnected && this.ws?.readyState === WebSocket.OPEN) {
+      return Promise.resolve();
+    }
+
     return new Promise((resolve, reject) => {
       try {
+        this.isConnecting = true;
+        
+        // Set connection timeout (5 seconds)
+        this.connectionTimeout = setTimeout(() => {
+          if (this.ws && this.ws.readyState !== WebSocket.OPEN) {
+            this.ws.close();
+            this.isConnecting = false;
+            // Silently fail - don't reject, just resolve without connection
+            console.warn('WebSocket connection timeout - continuing without real-time updates');
+            resolve();
+          }
+        }, 5000);
+
         this.ws = new WebSocket(this.url);
         
         this.ws.onopen = () => {
-          console.log('WebSocket connected to tracking service');
+          if (this.connectionTimeout) {
+            clearTimeout(this.connectionTimeout);
+            this.connectionTimeout = null;
+          }
+          console.log('✅ WebSocket connected to tracking service');
           this.isConnected = true;
+          this.isConnecting = false;
           this.reconnectAttempts = 0;
           resolve();
         };
@@ -46,34 +85,62 @@ export class TrackingWebSocket {
         };
 
         this.ws.onclose = (event) => {
-          console.log('WebSocket disconnected:', event.code, event.reason);
+          if (this.connectionTimeout) {
+            clearTimeout(this.connectionTimeout);
+            this.connectionTimeout = null;
+          }
           this.isConnected = false;
-          this.handleReconnection();
+          this.isConnecting = false;
+          
+          // Only attempt reconnection if it was previously connected and enabled
+          if (this.enabled && (this.reconnectAttempts === 0 || this.reconnectAttempts < this.maxReconnectAttempts)) {
+            this.handleReconnection();
+          }
         };
 
         this.ws.onerror = (error) => {
-          console.error('WebSocket error:', error);
-          reject(error);
+          if (this.connectionTimeout) {
+            clearTimeout(this.connectionTimeout);
+            this.connectionTimeout = null;
+          }
+          this.isConnecting = false;
+          
+          // Silently fail - don't log errors to avoid console spam
+          // WebSocket server might not be available, which is okay
+          resolve(); // Resolve instead of reject to not break the app
         };
       } catch (error) {
-        reject(error);
+        this.isConnecting = false;
+        // Silently fail - resolve instead of reject
+        resolve();
       }
     });
   }
 
   private handleReconnection(): void {
+    // Don't reconnect if disabled
+    if (!this.enabled) {
+      return;
+    }
+
+    // Clear any existing reconnect timeout
+    if (this.reconnectTimeout) {
+      clearTimeout(this.reconnectTimeout);
+    }
+
     if (this.reconnectAttempts < this.maxReconnectAttempts) {
       this.reconnectAttempts++;
-      console.log(`Attempting to reconnect... (${this.reconnectAttempts}/${this.maxReconnectAttempts})`);
       
-      setTimeout(() => {
-        this.connect().catch((error) => {
-          console.error('Reconnection failed:', error);
-        });
+      // Don't log reconnection attempts to reduce console noise
+      this.reconnectTimeout = setTimeout(() => {
+        if (this.enabled) {
+          this.connect().catch(() => {
+            // Silently handle reconnection failures
+          });
+        }
       }, this.reconnectDelay * this.reconnectAttempts);
-    } else {
-      console.error('Max reconnection attempts reached');
     }
+    // Silently stop reconnecting after max attempts (no console log)
   }
 
   subscribe(shipmentId: string, callback: (update: ShipmentUpdate) => void): () => void {
@@ -101,19 +168,60 @@ export class TrackingWebSocket {
   }
 
   disconnect(): void {
+    // Clear timeouts
+    if (this.reconnectTimeout) {
+      clearTimeout(this.reconnectTimeout);
+      this.reconnectTimeout = null;
+    }
+    if (this.connectionTimeout) {
+      clearTimeout(this.connectionTimeout);
+      this.connectionTimeout = null;
+    }
+    
+    // Safely close WebSocket if it exists
     if (this.ws) {
-      this.ws.close();
+      // Only close if not already closed or closing
+      if (this.ws.readyState === WebSocket.CONNECTING || this.ws.readyState === WebSocket.OPEN) {
+        try {
+          this.ws.close();
+        } catch (error) {
+          // Ignore errors when closing
+        }
+      }
       this.ws = null;
     }
     this.isConnected = false;
+    this.isConnecting = false;
   }
 
   getConnectionStatus(): boolean {
     return this.isConnected;
   }
+
+  isEnabled(): boolean {
+    return this.enabled;
+  }
+
+  // Enable or disable WebSocket (useful for testing or when server is unavailable)
+  setEnabled(enabled: boolean): void {
+    this.enabled = enabled;
+    if (!enabled && this.isConnected) {
+      this.disconnect();
+    }
+  }
 }
 
+// Import config for WebSocket settings
+import { config } from '../config/environment';
+
+// Get WebSocket URL from config
+const getWebSocketUrl = (): string => {
+  return config.websocket.url;
+};
+
 // Create a singleton instance
+// WebSocket is optional - app will work without it
 export const trackingWebSocket = new TrackingWebSocket(
-  import.meta.env.VITE_WEBSOCKET_URL || 'ws://localhost:3001/tracking'
+  getWebSocketUrl(),
+  config.websocket.enabled
 );

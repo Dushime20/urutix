@@ -2,30 +2,21 @@ import React, { useState, useEffect } from 'react';
 import { 
   Package, 
   CheckCircle, 
-  XCircle, 
   AlertTriangle, 
-  Clock, 
   MapPin, 
   Truck, 
-  FileText, 
-  Camera, 
   MessageSquare,
-  Phone,
-  Download,
   Eye,
-  Filter,
   Search,
   Calendar,
-  Star,
-  Flag,
-  Zap,
-  Shield,
   Thermometer,
   Weight,
   Ruler
 } from 'lucide-react';
 import { CargoDetails } from './CargoDetails';
 import { CargoInspection } from './CargoInspection';
+import { driverApi } from '../../services/driverApi';
+import toast from 'react-hot-toast';
 
 interface CargoItem {
   id: string;
@@ -47,8 +38,8 @@ interface CargoItem {
   value: number;
   fragility: 'LOW' | 'MEDIUM' | 'HIGH';
   temperature: {
-    min: number;
-    max: number;
+    min: number | null;
+    max: number | null;
     unit: 'C' | 'F';
   };
   hazardous: boolean;
@@ -79,104 +70,69 @@ export const CargoManagement: React.FC<CargoManagementProps> = ({ driverId }) =>
   const [filterPriority, setFilterPriority] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState<'priority' | 'pickupTime' | 'value' | 'createdAt'>('priority');
+  const [checkedCargos, setCheckedCargos] = useState<Set<string>>(new Set());
+  const [proceeding, setProceeding] = useState(false);
 
-  // Mock cargo data - in real app this would come from API
+  // Fetch assigned loads from API
   useEffect(() => {
-    setTimeout(() => {
-      setCargos([
-        {
-          id: 'CARGO-001',
-          name: 'High-Value Electronics & Pharmaceuticals',
-          description: 'Mixed shipment of sensitive electronic components and temperature-controlled pharmaceutical products',
-          status: 'PENDING',
-          priority: 'HIGH',
-          category: 'Mixed Cargo',
-          weight: 1250,
-          dimensions: { length: 200, width: 150, height: 100 },
-          pickupLocation: 'Tech Valley, CA',
-          deliveryLocation: 'Logistics Hub, TX',
-          pickupTime: '2024-01-20T08:00:00Z',
-          deliveryTime: '2024-01-21T14:00:00Z',
-          value: 75000,
-          fragility: 'HIGH',
-          temperature: { min: 15, max: 25, unit: 'C' },
-          hazardous: false,
-          shipper: {
-            name: 'TechPharm Solutions Ltd.',
-            contact: 'Sarah Johnson',
-            phone: '+1-555-0123',
-            email: 'sarah.johnson@techpharm.com'
-          },
-          inspectionStatus: 'PENDING',
-          notes: ['Requires security escort', 'Temperature monitoring needed'],
-          documents: ['Packing list', 'Safety data sheet', 'Customs declaration'],
-          createdAt: '2024-01-19T10:00:00Z',
-          updatedAt: '2024-01-19T10:00:00Z'
-        },
-        {
-          id: 'CARGO-002',
-          name: 'Agricultural Products',
-          description: 'Fresh produce and grains requiring careful handling',
-          status: 'INSPECTED',
-          priority: 'MEDIUM',
-          category: 'Agricultural',
-          weight: 800,
-          dimensions: { length: 150, width: 120, height: 80 },
-          pickupLocation: 'Farm Valley, CA',
-          deliveryLocation: 'Central Market, CA',
-          pickupTime: '2024-01-20T06:00:00Z',
-          deliveryTime: '2024-01-20T16:00:00Z',
-          value: 2500,
-          fragility: 'MEDIUM',
-          temperature: { min: 2, max: 8, unit: 'C' },
-          hazardous: false,
-          shipper: {
-            name: 'Fresh Harvest Co.',
-            contact: 'Mike Rodriguez',
-            phone: '+1-555-0124',
-            email: 'mike.rodriguez@freshharvest.com'
-          },
-          inspectionStatus: 'COMPLETED',
-          inspectionResult: { status: 'PASSED', issues: [] },
-          notes: ['Refrigerated transport required'],
-          documents: ['Packing list', 'Temperature log'],
-          createdAt: '2024-01-19T08:00:00Z',
-          updatedAt: '2024-01-19T15:00:00Z'
-        },
-        {
-          id: 'CARGO-003',
-          name: 'Industrial Machinery Parts',
-          description: 'Heavy machinery components for manufacturing',
-          status: 'APPROVED',
-          priority: 'URGENT',
-          category: 'Industrial',
-          weight: 2500,
-          dimensions: { length: 300, width: 200, height: 150 },
-          pickupLocation: 'Industrial District, CA',
-          deliveryLocation: 'Manufacturing Plant, NV',
-          pickupTime: '2024-01-20T07:00:00Z',
-          deliveryTime: '2024-01-20T18:00:00Z',
-          value: 45000,
-          fragility: 'LOW',
-          temperature: { min: -10, max: 40, unit: 'C' },
-          hazardous: false,
-          shipper: {
-            name: 'Industrial Supply Co.',
-            contact: 'David Chen',
-            phone: '+1-555-0125',
-            email: 'david.chen@industrialsupply.com'
-          },
-          inspectionStatus: 'COMPLETED',
-          inspectionResult: { status: 'PASSED', issues: [] },
-          notes: ['Heavy lifting equipment needed', 'Secure strapping required'],
-          documents: ['Packing list', 'Load securing guide'],
-          createdAt: '2024-01-19T09:00:00Z',
-          updatedAt: '2024-01-19T16:00:00Z'
-        }
-      ]);
-      setLoading(false);
-    }, 1000);
-  }, []);
+    const fetchAssignedLoads = async () => {
+      if (!driverId) return;
+      
+      try {
+        setLoading(true);
+        const loads = await driverApi.getAssignedLoads(driverId);
+        
+        // Map Load entity to CargoItem interface
+        const mappedCargos: CargoItem[] = loads.map((load: any) => {
+          const pickupLoc = load.pickupLocation || load.locations?.find((l: any) => l.type === 'PICKUP');
+          const deliveryLoc = load.deliveryLocation || load.locations?.find((l: any) => l.type === 'DELIVERY');
+          
+          return {
+            id: load.id,
+            name: load.title || load.cargoType || 'Cargo',
+            description: load.description || load.cargoDescription || '',
+            status: load.status === 'ASSIGNED' ? 'PENDING' : load.status,
+            priority: load.urgencyLevel || 'MEDIUM',
+            category: load.cargoType || 'General',
+            weight: load.weight || load.cargoWeight || 0,
+            dimensions: {
+              length: load.length || load.dimensions?.length || 0,
+              width: load.width || load.dimensions?.width || 0,
+              height: load.height || load.dimensions?.height || 0,
+            },
+            pickupLocation: pickupLoc?.address || pickupLoc?.name || 'N/A',
+            deliveryLocation: deliveryLoc?.address || deliveryLoc?.name || 'N/A',
+            pickupTime: load.pickupDate || load.pickupTime || '',
+            deliveryTime: load.deliveryDate || load.deliveryTime || '',
+            value: load.value || load.cargoValue || 0,
+            fragility: load.fragility || 'MEDIUM',
+            temperature: load.temperatureRequirements || { min: null, max: null, unit: 'C' },
+            hazardous: load.hazardous || false,
+            shipper: {
+              name: load.cargoOwner?.companyName || load.cargoOwner?.firstName + ' ' + load.cargoOwner?.lastName || 'N/A',
+              contact: load.cargoOwner?.firstName + ' ' + load.cargoOwner?.lastName || 'N/A',
+              phone: load.cargoOwner?.phone || load.contactPhone || 'N/A',
+              email: load.cargoOwner?.email || load.contactEmail || 'N/A'
+            },
+            inspectionStatus: 'PENDING',
+            notes: load.specialInstructions ? [load.specialInstructions] : [],
+            documents: load.requiredDocuments || [],
+            createdAt: load.createdAt || new Date().toISOString(),
+            updatedAt: load.updatedAt || new Date().toISOString()
+          };
+        });
+        
+        setCargos(mappedCargos);
+      } catch (error: any) {
+        console.error('Error fetching assigned loads:', error);
+        toast.error('Failed to load assigned cargo');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAssignedLoads();
+  }, [driverId]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -271,6 +227,66 @@ export const CargoManagement: React.FC<CargoManagementProps> = ({ driverId }) =>
   const handleContactShipper = () => {
     // In real app, this would open a communication interface
     console.log('Contacting shipper...');
+  };
+
+  const handleProceedJourney = async () => {
+    if (checkedCargos.size === 0) {
+      toast.error('Please select at least one cargo to proceed');
+      return;
+    }
+
+    try {
+      setProceeding(true);
+      await driverApi.proceedWithJourney(driverId, Array.from(checkedCargos));
+      toast.success(`Journey started successfully for ${checkedCargos.size} cargo item(s)`);
+      setCheckedCargos(new Set());
+      // Refresh the cargo list
+      const loads = await driverApi.getAssignedLoads(driverId);
+      const mappedCargos: CargoItem[] = loads.map((load: any) => {
+        const pickupLoc = load.pickupLocation || load.locations?.find((l: any) => l.type === 'PICKUP');
+        const deliveryLoc = load.deliveryLocation || load.locations?.find((l: any) => l.type === 'DELIVERY');
+        
+        return {
+          id: load.id,
+          name: load.title || load.cargoType || 'Cargo',
+          description: load.description || load.cargoDescription || '',
+          status: load.status === 'ASSIGNED' ? 'PENDING' : load.status,
+          priority: load.urgencyLevel || 'MEDIUM',
+          category: load.cargoType || 'General',
+          weight: load.weight || load.cargoWeight || 0,
+          dimensions: {
+            length: load.length || load.dimensions?.length || 0,
+            width: load.width || load.dimensions?.width || 0,
+            height: load.height || load.dimensions?.height || 0,
+          },
+          pickupLocation: pickupLoc?.address || pickupLoc?.name || 'N/A',
+          deliveryLocation: deliveryLoc?.address || deliveryLoc?.name || 'N/A',
+          pickupTime: load.pickupDate || load.pickupTime || '',
+          deliveryTime: load.deliveryDate || load.deliveryTime || '',
+          value: load.value || load.cargoValue || 0,
+          fragility: load.fragility || 'MEDIUM',
+          temperature: load.temperatureRequirements || { min: null, max: null, unit: 'C' },
+          hazardous: load.hazardous || false,
+          shipper: {
+            name: load.cargoOwner?.companyName || load.cargoOwner?.firstName + ' ' + load.cargoOwner?.lastName || 'N/A',
+            contact: load.cargoOwner?.firstName + ' ' + load.cargoOwner?.lastName || 'N/A',
+            phone: load.cargoOwner?.phone || load.contactPhone || 'N/A',
+            email: load.cargoOwner?.email || load.contactEmail || 'N/A'
+          },
+          inspectionStatus: 'PENDING',
+          notes: load.specialInstructions ? [load.specialInstructions] : [],
+          documents: load.requiredDocuments || [],
+          createdAt: load.createdAt || new Date().toISOString(),
+          updatedAt: load.updatedAt || new Date().toISOString()
+        };
+      });
+      setCargos(mappedCargos);
+    } catch (error: any) {
+      console.error('Error proceeding with journey:', error);
+      toast.error(error.response?.data?.message || 'Failed to proceed with journey');
+    } finally {
+      setProceeding(false);
+    }
   };
 
   const filteredCargos = cargos.filter(cargo => {
@@ -403,125 +419,170 @@ export const CargoManagement: React.FC<CargoManagementProps> = ({ driverId }) =>
       </div>
 
       {/* Cargo List */}
-      <div className="bg-white rounded-lg border border-gray-200">
-        <div className="p-4 border-b border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900">
-            Cargo Shipments ({sortedCargos.length})
-          </h3>
-        </div>
-        <div className="divide-y divide-gray-200">
-          {sortedCargos.map((cargo) => (
-            <div key={cargo.id} className="p-4 hover:bg-gray-50">
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center space-x-3 mb-2">
-                    <Package className="w-5 h-5 text-blue-600" />
-                    <h4 className="font-medium text-gray-900">{cargo.name}</h4>
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(cargo.status)}`}>
-                      {cargo.status.replace('_', ' ')}
-                    </span>
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getPriorityColor(cargo.priority)}`}>
-                      {cargo.priority}
-                    </span>
-                  </div>
-                  
-                  <p className="text-sm text-gray-600 mb-3">{cargo.description}</p>
-                  
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                    <div className="flex items-center space-x-2">
-                      <Weight className="w-4 h-4 text-gray-400" />
-                      <span>{cargo.weight} kg</span>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Ruler className="w-4 h-4 text-gray-400" />
-                      <span>{cargo.dimensions.length}×{cargo.dimensions.width}×{cargo.dimensions.height} cm</span>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <MapPin className="w-4 h-4 text-gray-400" />
-                      <span>{cargo.pickupLocation} → {cargo.deliveryLocation}</span>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Calendar className="w-4 h-4 text-gray-400" />
-                      <span>{new Date(cargo.pickupTime).toLocaleDateString()}</span>
+      {sortedCargos.length > 0 && (
+        <div className="bg-white rounded-lg border border-gray-200">
+          <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+            <h3 className="text-lg font-semibold text-gray-900">
+              Cargo Shipments ({sortedCargos.length})
+            </h3>
+            <div className="flex items-center gap-4">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={checkedCargos.size === sortedCargos.length && sortedCargos.length > 0}
+                  onChange={(e) => {
+                    if (e.target.checked) {
+                      setCheckedCargos(new Set(sortedCargos.map(c => c.id)));
+                    } else {
+                      setCheckedCargos(new Set());
+                    }
+                  }}
+                  className="w-4 h-4 text-primary-600 rounded focus:ring-primary-500"
+                />
+                <span className="text-sm text-gray-700">Select All</span>
+              </label>
+              {checkedCargos.size > 0 && (
+                <button
+                  onClick={handleProceedJourney}
+                  disabled={proceeding}
+                  className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                >
+                  <Truck className="w-4 h-4" />
+                  {proceeding ? 'Processing...' : `Proceed with Journey (${checkedCargos.size})`}
+                </button>
+              )}
+            </div>
+          </div>
+          <div className="divide-y divide-gray-200">
+            {sortedCargos.map((cargo) => (
+              <div key={cargo.id} className="p-4 hover:bg-gray-50">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-start gap-3 flex-1">
+                    <input
+                      type="checkbox"
+                      checked={checkedCargos.has(cargo.id)}
+                      onChange={(e) => {
+                        const newChecked = new Set(checkedCargos);
+                        if (e.target.checked) {
+                          newChecked.add(cargo.id);
+                        } else {
+                          newChecked.delete(cargo.id);
+                        }
+                        setCheckedCargos(newChecked);
+                      }}
+                      className="w-5 h-5 text-primary-600 rounded focus:ring-primary-500 mt-1 flex-shrink-0"
+                    />
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-3 mb-2">
+                        <Package className="w-5 h-5 text-blue-600" />
+                        <h4 className="font-medium text-gray-900">{cargo.name}</h4>
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(cargo.status)}`}>
+                          {cargo.status.replace('_', ' ')}
+                        </span>
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getPriorityColor(cargo.priority)}`}>
+                          {cargo.priority}
+                        </span>
+                      </div>
+                      
+                      <p className="text-sm text-gray-600 mb-3">{cargo.description}</p>
+                      
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                        <div className="flex items-center space-x-2">
+                          <Weight className="w-4 h-4 text-gray-400" />
+                          <span>{cargo.weight} kg</span>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Ruler className="w-4 h-4 text-gray-400" />
+                          <span>{cargo.dimensions.length}×{cargo.dimensions.width}×{cargo.dimensions.height} cm</span>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <MapPin className="w-4 h-4 text-gray-400" />
+                          <span>{cargo.pickupLocation} → {cargo.deliveryLocation}</span>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Calendar className="w-4 h-4 text-gray-400" />
+                          <span>{new Date(cargo.pickupTime).toLocaleDateString()}</span>
+                        </div>
+                      </div>
+
+                      {/* Special Requirements */}
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {cargo.fragility !== 'LOW' && (
+                          <span className="px-2 py-1 bg-orange-100 text-orange-800 text-xs rounded-full">
+                            {cargo.fragility} Fragility
+                          </span>
+                        )}
+                        {cargo.temperature && cargo.temperature.min !== null && cargo.temperature.max !== null && (
+                          <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full flex items-center space-x-1">
+                            <Thermometer className="w-3 h-3" />
+                            <span>{cargo.temperature.min}°{cargo.temperature.unit} - {cargo.temperature.max}°{cargo.temperature.unit}</span>
+                          </span>
+                        )}
+                        {cargo.hazardous && (
+                          <span className="px-2 py-1 bg-red-100 text-red-800 text-xs rounded-full flex items-center space-x-1">
+                            <AlertTriangle className="w-3 h-3" />
+                            <span>Hazardous</span>
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Inspection Status */}
+                      {cargo.inspectionStatus && (
+                        <div className="mt-3">
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${getInspectionStatusColor(cargo.inspectionStatus)}`}>
+                            Inspection: {cargo.inspectionStatus.replace('_', ' ')}
+                          </span>
+                        </div>
+                      )}
                     </div>
                   </div>
 
-                  {/* Special Requirements */}
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {cargo.fragility !== 'LOW' && (
-                      <span className="px-2 py-1 bg-orange-100 text-orange-800 text-xs rounded-full">
-                        {cargo.fragility} Fragility
-                      </span>
-                    )}
-                    {cargo.temperature && (
-                      <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full flex items-center space-x-1">
-                        <Thermometer className="w-3 h-3" />
-                        <span>{cargo.temperature.min}°{cargo.temperature.unit} - {cargo.temperature.max}°{cargo.temperature.unit}</span>
-                      </span>
-                    )}
-                    {cargo.hazardous && (
-                      <span className="px-2 py-1 bg-red-100 text-red-800 text-xs rounded-full flex items-center space-x-1">
-                        <AlertTriangle className="w-3 h-3" />
-                        <span>Hazardous</span>
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Inspection Status */}
-                  {cargo.inspectionStatus && (
-                    <div className="mt-3">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getInspectionStatusColor(cargo.inspectionStatus)}`}>
-                        Inspection: {cargo.inspectionStatus.replace('_', ' ')}
-                      </span>
+                  <div className="flex flex-col space-y-2 ml-4">
+                    <div className="text-right">
+                      <span className="text-lg font-semibold text-green-600">${cargo.value.toLocaleString()}</span>
                     </div>
-                  )}
-                </div>
-
-                <div className="flex flex-col space-y-2 ml-4">
-                  <div className="text-right">
-                    <span className="text-lg font-semibold text-green-600">${cargo.value.toLocaleString()}</span>
-                  </div>
-                  
-                  <div className="flex space-x-2">
-                    <button
-                      onClick={() => handleViewDetails(cargo)}
-                      className="p-2 text-blue-600 hover:bg-blue-50 rounded"
-                      title="View Details"
-                    >
-                      <Eye className="w-4 h-4" />
-                    </button>
                     
-                    {cargo.status === 'PENDING' && (
+                    <div className="flex space-x-2">
                       <button
-                        onClick={() => handleInspectCargo(cargo)}
-                        className="p-2 text-green-600 hover:bg-green-50 rounded"
-                        title="Inspect Cargo"
+                        onClick={() => handleViewDetails(cargo)}
+                        className="p-2 text-blue-600 hover:bg-blue-50 rounded"
+                        title="View Details"
                       >
-                        <CheckCircle className="w-4 h-4" />
+                        <Eye className="w-4 h-4" />
                       </button>
-                    )}
-                    
-                    <button
-                      onClick={handleContactShipper}
-                      className="p-2 text-purple-600 hover:bg-purple-50 rounded"
-                      title="Contact Shipper"
-                    >
-                      <MessageSquare className="w-4 h-4" />
-                    </button>
+                      
+                      {cargo.status === 'PENDING' && (
+                        <button
+                          onClick={() => handleInspectCargo(cargo)}
+                          className="p-2 text-green-600 hover:bg-green-50 rounded"
+                          title="Inspect Cargo"
+                        >
+                          <CheckCircle className="w-4 h-4" />
+                        </button>
+                      )}
+                      
+                      <button
+                        onClick={handleContactShipper}
+                        className="p-2 text-purple-600 hover:bg-purple-50 rounded"
+                        title="Contact Shipper"
+                      >
+                        <MessageSquare className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Empty State */}
-      {sortedCargos.length === 0 && (
-        <div className="text-center py-12">
+      {sortedCargos.length === 0 && !loading && (
+        <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
           <Package className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No cargo found</h3>
-          <p className="text-gray-600">Try adjusting your filters or search terms.</p>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">No cargo assigned</h3>
+          <p className="text-gray-600">No cargo has been assigned to your truck yet. Cargo will appear here once your truck owner accepts a bid.</p>
         </div>
       )}
     </div>

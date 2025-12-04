@@ -10,6 +10,7 @@ import TruckMatchingResults from './TruckMatchingResults';
 import BookingConfirmation from './BookingConfirmation';
 import CargoSummary from './CargoSummary';
 import type { CargoFormData as BaseCargoFormData } from '@/types/cargo';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 
 // Temporary local interfaces to bypass module resolution issues
 type CargoFormData = BaseCargoFormData & {
@@ -89,6 +90,7 @@ const CargoStepper: React.FC<CargoStepperProps> = ({
   onClose,
   onComplete
 }) => {
+  const { confirm, DialogComponent } = useConfirmDialog();
   const [currentStep, setCurrentStep] = useState(1);
   const [cargoData, setCargoData] = useState<CargoFormData | null>(null);
   const [matchedTrucks, setMatchedTrucks] = useState<MatchedTruck[]>([]);
@@ -250,9 +252,15 @@ const CargoStepper: React.FC<CargoStepperProps> = ({
   };
 
   // Handle close with confirmation
-  const handleClose = () => {
+  const handleClose = async () => {
     if (currentStep > 1) {
-      const confirmed = window.confirm('Are you sure you want to cancel? All progress will be lost.');
+      const confirmed = await confirm({
+        title: "Cancel Cargo Creation",
+        message: "Are you sure you want to cancel? All progress will be lost.",
+        confirmText: "Yes, Cancel",
+        cancelText: "Continue",
+        variant: "warning",
+      });
       if (confirmed) {
         handleReset();
         onClose();
@@ -461,6 +469,9 @@ const CargoStepper: React.FC<CargoStepperProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Confirmation Dialog */}
+      {DialogComponent}
     </div>
   );
 };

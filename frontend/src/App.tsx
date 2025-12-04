@@ -15,7 +15,7 @@ const TruckBidsPage = lazy(() => import('./pages/TruckBidsPage'));
 const FleetBidsPage = lazy(() => import('./pages/FleetBidsPage'));
 const MyBidsPage = lazy(() => import('./pages/MyBidsPage'));
 const DriversListPage = lazy(() => import('./pages/DriversListPage'));
-const DriverDashboard = lazy(() => import('./pages/DriverDashboard'));
+const DriverDashboard = lazy(() => import('./components/DriverDashboard/DriverDashboard'));
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
 const Analytics = lazy(() => import('./pages/Analytics'));
 const FleetAnalytics = lazy(() => import('./pages/FleetAnalytics'));
@@ -29,6 +29,9 @@ import TenantAdminLayout from './components/Layout/TenantAdminLayout';
 import LenderLayout from './components/Layout/LenderLayout';
 import Auth from './pages/Auth';
 import Home from './pages/Home';
+import DriverPasswordSetup from './pages/DriverPasswordSetup';
+import TenantPasswordSetup from './pages/TenantPasswordSetup';
+import LenderPasswordSetup from './pages/LenderPasswordSetup';
 
 // Lazy load all page components to reduce initial bundle size
 const CargoList = lazy(() => import('./pages/dashboard/cargos/list'));
@@ -55,6 +58,11 @@ const FinancialAdminDashboard = lazy(() => import('./pages/admin/FinancialAdminD
 const TenantDashboardPage = lazy(() => import('./pages/TenantDashboard'));
 const TenantFleetManagement = lazy(() => import('./components/TenantAdmin/TenantFleetManagement'));
 const TenantCargoOperations = lazy(() => import('./components/TenantAdmin/TenantCargoOperations'));
+const TenantAdminRoutes = lazy(() => import('./components/TenantAdmin/TenantAdminRoutes'));
+const TenantAdminDrivers = lazy(() => import('./components/TenantAdmin/TenantAdminDrivers'));
+const TenantAdminCargo = lazy(() => import('./components/TenantAdmin/TenantAdminCargo'));
+const TenantAdminTrips = lazy(() => import('./components/TenantAdmin/TenantAdminTrips'));
+const TenantLenderManagementPage = lazy(() => import('./pages/TenantLenderManagementPage'));
 const Profile = lazy(() => import('./pages/Profile'));
 const Settings = lazy(() => import('./pages/Settings'));
 const LenderPolicySettingsPage = lazy(() => import('./pages/LenderPolicySettingsPage'));
@@ -133,6 +141,9 @@ function App() {
               <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/auth" element={<Auth />} />
+              <Route path="/driver/setup-password" element={<DriverPasswordSetup />} />
+              <Route path="/tenant/setup-password" element={<TenantPasswordSetup />} />
+              <Route path="/lender/setup-password" element={<LenderPasswordSetup />} />
             
             {/* Cargo Owner Routes */}
             <Route path="/dashboard" element={<CargoOwnerLayout />}>
@@ -237,7 +248,7 @@ function App() {
               <Route path="trucks/create" element={<UnifiedFleetManagement />} />
               <Route path="trucks/:truckId/records" element={<TruckRecordsPage />} />
               <Route path="trips" element={<UnifiedFleetManagement />} />
-              <Route path="bids" element={<FleetBidsPage />} />
+              <Route path="bids" element={<TruckBidsPage />} />
               <Route path="drivers" element={<UnifiedDriverManagement />} />
               <Route path="drivers/create" element={<UnifiedDriverManagement />} />
               <Route path="assignments" element={<UnifiedDriverManagement />} />
@@ -256,7 +267,8 @@ function App() {
               <Route path="rewards" element={<UnifiedDriverManagement />} />
               <Route path="scoring" element={<UnifiedDriverManagement />} />
               <Route path="safety" element={<FleetSafety />} />
-              <Route path="financial" element={<FleetDashboard />} />
+              <Route path="financial" element={<UnifiedFinancialManagement />} />
+              <Route path="cost-analysis" element={<UnifiedFinancialManagement />} />
               <Route path="insurance" element={<FleetDashboard />} />
               
               {/* Fleet Transaction Flow Routes */}
@@ -316,10 +328,11 @@ function App() {
             <Route path="/tenant-admin" element={<TenantAdminLayout />}>
               <Route index element={<TenantDashboardPage />} />
               <Route path="fleet" element={<TenantFleetManagement />} />
-              <Route path="cargo" element={<TenantCargoOperations />} />
-              <Route path="drivers" element={<TenantDashboardPage />} />
-              <Route path="routes" element={<TenantDashboardPage />} />
-              <Route path="trips" element={<TenantDashboardPage />} />
+              <Route path="cargo" element={<TenantAdminCargo />} />
+              <Route path="drivers" element={<TenantAdminDrivers />} />
+              <Route path="lenders" element={<TenantLenderManagementPage />} />
+              <Route path="routes" element={<TenantAdminRoutes />} />
+              <Route path="trips" element={<TenantAdminTrips />} />
               <Route path="financial" element={<TenantDashboardPage />} />
               <Route path="analytics" element={<TenantDashboardPage />} />
               <Route path="reports" element={<TenantDashboardPage />} />

@@ -140,40 +140,47 @@ const FleetHelpSupport: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header */}
-      <div className="mb-6">
-        <h1 className="mb-2">Help & Support</h1>
-        <p className="text-sm text-gray-600">Find answers to common questions and get the help you need to manage your fleet effectively</p>
+      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-100 px-4 py-3 mb-4">
+        <div className="flex items-center gap-2.5">
+          <div className="p-2 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600">
+            <FaQuestionCircle className="w-4 h-4 text-white" />
+          </div>
+          <div>
+            <h1 className="text-lg font-bold text-gray-900">Help & Support</h1>
+            <p className="text-xs text-gray-600 mt-0.5">Find answers to common questions and get the help you need to manage your fleet effectively</p>
+          </div>
+        </div>
       </div>
 
       {/* Getting Started Section */}
-      <div className="mb-8">
-        <div className="bg-primary-600 rounded-lg shadow-lg border border-primary-700 p-6 text-white mb-5">
-          <div className="flex items-start gap-4">
+      <div className="mb-4">
+        <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg shadow-md border border-blue-700 p-4 text-white mb-4">
+          <div className="flex items-start gap-3">
             <div className="flex-shrink-0">
-              <div className="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center">
-                <FaRocket className="w-6 h-6 text-white" />
+              <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
+                <FaRocket className="w-5 h-5 text-white" />
               </div>
             </div>
             <div className="flex-1">
-              <h2 className="text-white mb-3">New to the Platform?</h2>
-              <p className="text-sm text-white/90 mb-5">
+              <h2 className="text-sm font-bold text-white mb-2">New to the Platform?</h2>
+              <p className="text-xs text-white/90 mb-3">
                 Take our interactive tour to learn how to use the system. We'll guide you through adding trucks, managing drivers, tracking maintenance, and more.
               </p>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
                 <button
                   onClick={handleStartTour}
-                  className="px-4 py-2.5 bg-white text-primary-600 rounded-lg hover:bg-gray-100 transition-colors font-medium text-sm flex items-center gap-2 shadow-md"
+                  className="px-3 py-1.5 bg-white text-blue-600 rounded-lg hover:bg-gray-100 transition-colors font-medium text-xs flex items-center gap-1.5 shadow-md"
                 >
-                  <FaPlayCircle className="w-4 h-4" />
+                  <FaPlayCircle className="w-3.5 h-3.5" />
                   Start Interactive Tour
                 </button>
                 <button
                   onClick={() => setShowHelpCenter(true)}
-                  className="px-4 py-2.5 bg-white/10 text-white border border-white/30 rounded-lg hover:bg-white/20 transition-colors font-medium text-sm flex items-center gap-2"
+                  className="px-3 py-1.5 bg-white/10 text-white border border-white/30 rounded-lg hover:bg-white/20 transition-colors font-medium text-xs flex items-center gap-1.5"
                 >
-                  <FaLightbulb className="w-4 h-4" />
+                  <FaLightbulb className="w-3.5 h-3.5" />
                   Browse Help Articles
                 </button>
               </div>
@@ -182,95 +189,95 @@ const FleetHelpSupport: React.FC = () => {
         </div>
 
         {/* Quick Help Cards */}
-        <div className="grid md:grid-cols-3 gap-4 mb-6">
+        <div className="grid md:grid-cols-3 gap-3 mb-4">
             <div
               onClick={() => setShowHelpCenter(true)}
-              className="bg-white rounded-lg border border-gray-200 p-5 hover:border-primary-500 hover:shadow-md transition-all cursor-pointer"
+              className="bg-white rounded-lg border border-gray-200 p-3 hover:border-blue-500 hover:shadow-md transition-all cursor-pointer"
             >
-              <div className="flex items-center gap-3 mb-3">
-                <div className="p-2.5 bg-blue-100 rounded-lg">
-                  <FaBook className="w-5 h-5 text-blue-600" />
+              <div className="flex items-center gap-2 mb-2">
+                <div className="p-2 bg-blue-100 rounded-lg">
+                  <FaBook className="w-4 h-4 text-blue-600" />
                 </div>
-                <h3>Help Center</h3>
+                <h3 className="text-sm font-semibold">Help Center</h3>
               </div>
-              <p className="text-sm text-gray-600 mb-3">
+              <p className="text-xs text-gray-600 mb-2">
                 Browse our comprehensive help articles organized by topic. Find step-by-step guides for all features.
               </p>
-              <div className="flex items-center text-primary-600 font-medium text-sm">
+              <div className="flex items-center text-blue-600 font-medium text-xs">
                 <span>Open Help Center</span>
-                <FaArrowRight className="w-3.5 h-3.5 ml-2" />
+                <FaArrowRight className="w-3 h-3 ml-1.5" />
               </div>
             </div>
 
             <div
               onClick={handleStartTour}
-              className="bg-white rounded-lg border border-gray-200 p-5 hover:border-primary-500 hover:shadow-md transition-all cursor-pointer"
+              className="bg-white rounded-lg border border-gray-200 p-3 hover:border-blue-500 hover:shadow-md transition-all cursor-pointer"
             >
-              <div className="flex items-center gap-3 mb-3">
-                <div className="p-2.5 bg-green-100 rounded-lg">
-                  <FaPlayCircle className="w-5 h-5 text-green-600" />
+              <div className="flex items-center gap-2 mb-2">
+                <div className="p-2 bg-green-100 rounded-lg">
+                  <FaPlayCircle className="w-4 h-4 text-green-600" />
                 </div>
-                <h3>Interactive Tour</h3>
+                <h3 className="text-sm font-semibold">Interactive Tour</h3>
               </div>
-              <p className="text-sm text-gray-600 mb-3">
+              <p className="text-xs text-gray-600 mb-2">
                 Take a guided tour of the platform. Learn how to add trucks, manage drivers, and use all features.
               </p>
-              <div className="flex items-center text-primary-600 font-medium text-sm">
+              <div className="flex items-center text-blue-600 font-medium text-xs">
                 <span>Start Tour</span>
-                <FaArrowRight className="w-3.5 h-3.5 ml-2" />
+                <FaArrowRight className="w-3 h-3 ml-1.5" />
               </div>
             </div>
 
-            <div className="bg-white rounded-lg border border-gray-200 p-5 hover:border-primary-500 hover:shadow-md transition-all">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="p-2.5 bg-purple-100 rounded-lg">
-                  <FaQuestionCircle className="w-5 h-5 text-purple-600" />
+            <div className="bg-white rounded-lg border border-gray-200 p-3 hover:border-blue-500 hover:shadow-md transition-all">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="p-2 bg-purple-100 rounded-lg">
+                  <FaQuestionCircle className="w-4 h-4 text-purple-600" />
                 </div>
-                <h3>FAQs</h3>
+                <h3 className="text-sm font-semibold">FAQs</h3>
               </div>
-              <p className="text-sm text-gray-600 mb-3">
+              <p className="text-xs text-gray-600 mb-2">
                 Find quick answers to the most frequently asked questions about using the platform.
               </p>
-              <div className="flex items-center text-primary-600 font-medium text-sm">
+              <div className="flex items-center text-blue-600 font-medium text-xs">
                 <span>View FAQs Below</span>
-                <FaArrowRight className="w-3.5 h-3.5 ml-2" />
+                <FaArrowRight className="w-3 h-3 ml-1.5" />
               </div>
             </div>
         </div>
       </div>
 
       {/* Search Bar */}
-      <div className="mb-8">
+      <div className="mb-4">
         <div className="relative max-w-2xl mx-auto">
-          <FaSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+          <FaSearch className="absolute left-2.5 top-1/2 transform -translate-y-1/2 text-gray-400 w-3.5 h-3.5" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search for help topics, questions, or keywords..."
-            className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
+            className="w-full pl-9 pr-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
         </div>
       </div>
 
       {/* Categories */}
-      <div className="mb-8">
-        <h2 className="mb-4">Browse by Category</h2>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+      <div className="mb-4">
+        <h2 className="text-sm font-semibold text-gray-900 mb-3">Browse by Category</h2>
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2">
             {categories.map((category) => {
               const IconComponent = category.icon;
               return (
                 <button
                   key={category.id}
                   onClick={() => setSelectedCategory(category.id)}
-                  className={`p-4 rounded-lg border-2 transition-all ${
+                  className={`p-2.5 rounded-lg border-2 transition-all ${
                     selectedCategory === category.id
-                      ? 'border-primary-600 bg-primary-50 text-primary-700'
-                      : 'border-gray-200 bg-white text-gray-700 hover:border-primary-300 hover:bg-gray-50'
+                      ? 'border-blue-600 bg-blue-50 text-blue-700'
+                      : 'border-gray-200 bg-white text-gray-700 hover:border-blue-300 hover:bg-gray-50'
                   }`}
                 >
-                  <IconComponent className="w-6 h-6 mx-auto mb-2" />
-                  <div className="text-sm font-medium">{category.name}</div>
+                  <IconComponent className="w-4 h-4 mx-auto mb-1.5" />
+                  <div className="text-xs font-medium">{category.name}</div>
                 </button>
               );
             })}
@@ -278,64 +285,64 @@ const FleetHelpSupport: React.FC = () => {
       </div>
 
       {/* Quick Contact */}
-      <div className="grid md:grid-cols-3 gap-4 mb-8">
-          <div className="bg-white rounded-lg border border-gray-200 p-5 text-center">
-            <div className="inline-flex items-center justify-center w-10 h-10 bg-blue-100 rounded-full mb-3">
-              <FaEnvelope className="w-5 h-5 text-blue-600" />
+      <div className="grid md:grid-cols-3 gap-3 mb-4">
+          <div className="bg-white rounded-lg border border-gray-200 p-3 text-center">
+            <div className="inline-flex items-center justify-center w-8 h-8 bg-blue-100 rounded-full mb-2">
+              <FaEnvelope className="w-4 h-4 text-blue-600" />
             </div>
-            <h3 className="mb-2">Email Support</h3>
-            <p className="text-sm text-gray-600 mb-4">Get help via email</p>
+            <h3 className="text-sm font-semibold mb-1">Email Support</h3>
+            <p className="text-xs text-gray-600 mb-2">Get help via email</p>
             <a
               href="mailto:support@urutix.com"
-              className="text-primary-600 hover:text-primary-700 font-medium"
+              className="text-blue-600 hover:text-blue-700 font-medium text-xs"
             >
               support@urutix.com
             </a>
           </div>
 
-          <div className="bg-white rounded-lg border border-gray-200 p-5 text-center">
-            <div className="inline-flex items-center justify-center w-10 h-10 bg-green-100 rounded-full mb-3">
-              <FaPhone className="w-5 h-5 text-green-600" />
+          <div className="bg-white rounded-lg border border-gray-200 p-3 text-center">
+            <div className="inline-flex items-center justify-center w-8 h-8 bg-green-100 rounded-full mb-2">
+              <FaPhone className="w-4 h-4 text-green-600" />
             </div>
-            <h3 className="mb-2">Phone Support</h3>
-            <p className="text-sm text-gray-600 mb-4">Call us for immediate assistance</p>
+            <h3 className="text-sm font-semibold mb-1">Phone Support</h3>
+            <p className="text-xs text-gray-600 mb-2">Call us for immediate assistance</p>
             <a
               href="tel:+254700000000"
-              className="text-primary-600 hover:text-primary-700 font-medium"
+              className="text-blue-600 hover:text-blue-700 font-medium text-xs"
             >
               +254 700 000 000
             </a>
           </div>
 
-          <div className="bg-white rounded-lg border border-gray-200 p-5 text-center">
-            <div className="inline-flex items-center justify-center w-10 h-10 bg-purple-100 rounded-full mb-3">
-              <FaComments className="w-5 h-5 text-purple-600" />
+          <div className="bg-white rounded-lg border border-gray-200 p-3 text-center">
+            <div className="inline-flex items-center justify-center w-8 h-8 bg-purple-100 rounded-full mb-2">
+              <FaComments className="w-4 h-4 text-purple-600" />
             </div>
-            <h3 className="mb-2">Live Chat</h3>
-            <p className="text-sm text-gray-600 mb-4">Chat with our support team</p>
-            <button className="text-primary-600 hover:text-primary-700 font-medium">
+            <h3 className="text-sm font-semibold mb-1">Live Chat</h3>
+            <p className="text-xs text-gray-600 mb-2">Chat with our support team</p>
+            <button className="text-blue-600 hover:text-blue-700 font-medium text-xs transition-colors">
               Start Chat
             </button>
           </div>
       </div>
 
       {/* FAQs */}
-      <div className="mb-8">
-        <div className="flex items-center justify-between mb-4">
-            <h2>
+      <div className="mb-4">
+        <div className="flex items-center justify-between mb-3">
+            <h2 className="text-sm font-semibold text-gray-900">
               Frequently Asked Questions
             </h2>
-            <span className="text-sm text-gray-600">
+            <span className="text-xs text-gray-600">
               {filteredFAQs.length} {filteredFAQs.length === 1 ? 'question' : 'questions'}
             </span>
           </div>
 
-          <div className="space-y-4">
+          <div className="space-y-2">
             {filteredFAQs.length === 0 ? (
-              <div className="text-center py-12 bg-white rounded-lg border border-gray-200">
-                <FaQuestionCircle className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                <h3 className="mb-2">No results found</h3>
-                <p className="text-sm text-gray-600">Try adjusting your search or category filter</p>
+              <div className="text-center py-8 bg-white rounded-lg border border-gray-200">
+                <FaQuestionCircle className="w-10 h-10 text-gray-400 mx-auto mb-3" />
+                <h3 className="text-sm font-semibold mb-1">No results found</h3>
+                <p className="text-xs text-gray-600">Try adjusting your search or category filter</p>
               </div>
             ) : (
               filteredFAQs.map((faq) => (
@@ -345,20 +352,20 @@ const FleetHelpSupport: React.FC = () => {
                 >
                   <button
                     onClick={() => toggleFAQ(faq.id)}
-                    className="w-full px-5 py-3.5 flex items-center justify-between text-left hover:bg-gray-50 transition-colors"
+                    className="w-full px-3 py-2.5 flex items-center justify-between text-left hover:bg-gray-50 transition-colors"
                   >
-                    <span className="text-base font-semibold text-gray-900 pr-4">
+                    <span className="text-xs font-semibold text-gray-900 pr-3">
                       {faq.question}
                     </span>
                     {expandedFAQ === faq.id ? (
-                      <FaChevronUp className="w-5 h-5 text-gray-500 flex-shrink-0" />
+                      <FaChevronUp className="w-3.5 h-3.5 text-gray-500 flex-shrink-0" />
                     ) : (
-                      <FaChevronDown className="w-5 h-5 text-gray-500 flex-shrink-0" />
+                      <FaChevronDown className="w-3.5 h-3.5 text-gray-500 flex-shrink-0" />
                     )}
                   </button>
                   {expandedFAQ === faq.id && (
-                    <div className="px-5 py-3.5 border-t border-gray-200 bg-gray-50">
-                      <p className="text-sm text-gray-700 leading-relaxed">{faq.answer}</p>
+                    <div className="px-3 py-2.5 border-t border-gray-200 bg-gray-50">
+                      <p className="text-xs text-gray-700 leading-relaxed">{faq.answer}</p>
                     </div>
                   )}
                 </div>
@@ -367,60 +374,60 @@ const FleetHelpSupport: React.FC = () => {
           </div>
         </div>
 
-        {/* Resources */}
-        <div className="bg-white rounded-lg border border-gray-200 p-5">
-          <h2 className="mb-4">Additional Resources</h2>
-          <div className="grid md:grid-cols-3 gap-5">
-            <div className="flex items-start space-x-4">
-              <div className="flex-shrink-0">
-                <div className="w-10 h-10 bg-primary-100 rounded-lg flex items-center justify-center">
-                  <FaBook className="w-5 h-5 text-primary-600" />
-                </div>
-              </div>
-              <div>
-                <h3 className="mb-2">Documentation</h3>
-                <p className="text-sm text-gray-600 mb-2">
-                  Comprehensive guides and documentation for all features
-                </p>
-                <a href="#" className="text-sm text-primary-600 hover:text-primary-700 font-medium">
-                  View Docs →
-                </a>
+      {/* Resources */}
+      <div className="bg-white rounded-lg border border-gray-200 p-3">
+        <h2 className="text-sm font-semibold text-gray-900 mb-3">Additional Resources</h2>
+        <div className="grid md:grid-cols-3 gap-3">
+          <div className="flex items-start space-x-2.5">
+            <div className="flex-shrink-0">
+              <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                <FaBook className="w-4 h-4 text-blue-600" />
               </div>
             </div>
+            <div>
+              <h3 className="text-xs font-semibold mb-1">Documentation</h3>
+              <p className="text-xs text-gray-600 mb-1.5">
+                Comprehensive guides and documentation for all features
+              </p>
+              <a href="#" className="text-xs text-blue-600 hover:text-blue-700 font-medium transition-colors">
+                View Docs →
+              </a>
+            </div>
+          </div>
 
-            <div className="flex items-start space-x-4">
-              <div className="flex-shrink-0">
-                <div className="w-10 h-10 bg-primary-100 rounded-lg flex items-center justify-center">
-                  <FaVideo className="w-5 h-5 text-primary-600" />
-                </div>
-              </div>
-              <div>
-                <h3 className="mb-2">Video Tutorials</h3>
-                <p className="text-sm text-gray-600 mb-2">
-                  Step-by-step video guides to help you get started
-                </p>
-                <a href="#" className="text-sm text-primary-600 hover:text-primary-700 font-medium">
-                  Watch Videos →
-                </a>
+          <div className="flex items-start space-x-2.5">
+            <div className="flex-shrink-0">
+              <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                <FaVideo className="w-4 h-4 text-blue-600" />
               </div>
             </div>
+            <div>
+              <h3 className="text-xs font-semibold mb-1">Video Tutorials</h3>
+              <p className="text-xs text-gray-600 mb-1.5">
+                Step-by-step video guides to help you get started
+              </p>
+              <a href="#" className="text-xs text-blue-600 hover:text-blue-700 font-medium transition-colors">
+                Watch Videos →
+              </a>
+            </div>
+          </div>
 
-            <div className="flex items-start space-x-4">
-              <div className="flex-shrink-0">
-                <div className="w-10 h-10 bg-primary-100 rounded-lg flex items-center justify-center">
-                  <FaFileAlt className="w-5 h-5 text-primary-600" />
-                </div>
-              </div>
-              <div>
-                <h3 className="mb-2">Knowledge Base</h3>
-                <p className="text-sm text-gray-600 mb-2">
-                  Browse our extensive knowledge base for detailed articles
-                </p>
-                <a href="#" className="text-sm text-primary-600 hover:text-primary-700 font-medium">
-                  Browse Articles →
-                </a>
+          <div className="flex items-start space-x-2.5">
+            <div className="flex-shrink-0">
+              <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                <FaFileAlt className="w-4 h-4 text-blue-600" />
               </div>
             </div>
+            <div>
+              <h3 className="text-xs font-semibold mb-1">Knowledge Base</h3>
+              <p className="text-xs text-gray-600 mb-1.5">
+                Browse our extensive knowledge base for detailed articles
+              </p>
+              <a href="#" className="text-xs text-blue-600 hover:text-blue-700 font-medium transition-colors">
+                Browse Articles →
+              </a>
+            </div>
+          </div>
         </div>
       </div>
 

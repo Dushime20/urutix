@@ -9,11 +9,11 @@ import {
   MaxLength,
   IsDateString,
   IsEmail,
-  IsPhoneNumber,
+  Matches,
 } from 'class-validator';
 import { DriverStatus, EmploymentType } from '../../../entities/driver.entity';
 
-export class CreateDriverDto {
+export class CreateFleetDriverDto {
   @IsString()
   @MaxLength(100)
   firstName: string;
@@ -25,11 +25,15 @@ export class CreateDriverDto {
   @IsEmail()
   email: string;
 
-  @IsPhoneNumber()
+  @IsString()
+  @Matches(/^[\d\s\-\+\(\)]+$/, {
+    message: 'Phone number must contain only digits, spaces, dashes, plus signs, and parentheses',
+  })
+  @MaxLength(20)
   phone: string;
 
-  @IsDateString()
-  dateOfBirth: Date;
+  @IsDateString({}, { message: 'dateOfBirth must be a valid ISO 8601 date string (e.g., 2023-12-25T00:00:00.000Z)' })
+  dateOfBirth: string;
 
   @IsString()
   address: string;
@@ -42,11 +46,11 @@ export class CreateDriverDto {
   @MaxLength(50)
   licenseNumber: string;
 
-  @IsDateString()
-  licenseIssueDate: Date;
+  @IsDateString({}, { message: 'licenseIssueDate must be a valid ISO 8601 date string' })
+  licenseIssueDate: string;
 
-  @IsDateString()
-  licenseExpiry: Date;
+  @IsDateString({}, { message: 'licenseExpiry must be a valid ISO 8601 date string' })
+  licenseExpiry: string;
 
   @IsString()
   @MaxLength(50)
@@ -59,12 +63,12 @@ export class CreateDriverDto {
   @IsEnum(EmploymentType)
   employmentType: EmploymentType;
 
-  @IsDateString()
-  hireDate: Date;
+  @IsDateString({}, { message: 'hireDate must be a valid ISO 8601 date string' })
+  hireDate: string;
 
   @IsOptional()
-  @IsDateString()
-  terminationDate?: Date;
+  @IsDateString({}, { message: 'terminationDate must be a valid ISO 8601 date string' })
+  terminationDate?: string;
 
   @IsOptional()
   @IsEnum(DriverStatus)
@@ -81,18 +85,18 @@ export class CreateDriverDto {
   mileageRate?: number;
 
   @IsOptional()
-  @IsDateString()
-  medicalCertExpiry?: Date;
+  @IsDateString({}, { message: 'medicalCertExpiry must be a valid ISO 8601 date string' })
+  medicalCertExpiry?: string;
 
   @IsOptional()
-  @IsDateString()
-  drugTestDate?: Date;
+  @IsDateString({}, { message: 'drugTestDate must be a valid ISO 8601 date string' })
+  drugTestDate?: string;
 
   @IsOptional()
-  @IsDateString()
-  backgroundCheckDate?: Date;
+  @IsDateString({}, { message: 'backgroundCheckDate must be a valid ISO 8601 date string' })
+  backgroundCheckDate?: string;
 
   @IsOptional()
-  @IsDateString()
-  trainingCompletionDate?: Date;
+  @IsDateString({}, { message: 'trainingCompletionDate must be a valid ISO 8601 date string' })
+  trainingCompletionDate?: string;
 }

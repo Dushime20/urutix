@@ -374,7 +374,7 @@ const EnhancedJourneyFlow: React.FC = () => {
               <span className="font-medium">Type:</span> {cargoData.cargoType}
             </div>
             <div>
-              <span className="font-medium">Weight:</span> {cargoData.weight} lbs
+              <span className="font-medium">Weight:</span> {cargoData.weight} kg
             </div>
             <div>
               <span className="font-medium">Value:</span> ${cargoData.loadValue?.toLocaleString()}
@@ -433,7 +433,7 @@ const EnhancedJourneyFlow: React.FC = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                 <div><strong>Driver:</strong> {selectedTruck.driver?.name || selectedTruck.driverName}</div>
                 <div><strong>Truck Type:</strong> {selectedTruck.truck?.type || selectedTruck.truckType}</div>
-                <div><strong>Capacity:</strong> {selectedTruck.truck?.capacity || selectedTruck.capacity} lbs</div>
+                <div><strong>Capacity:</strong> {selectedTruck.truck?.capacity || selectedTruck.capacity} kg</div>
                 <div><strong>Rating:</strong> {selectedTruck.driver?.rating || selectedTruck.rating} ⭐</div>
                 <div><strong>Match Score:</strong> {selectedTruck.matchScore}%</div>
                 <div><strong>Estimated Cost:</strong> ${selectedTruck.estimatedCost?.toLocaleString()}</div>
@@ -452,7 +452,7 @@ const EnhancedJourneyFlow: React.FC = () => {
                 <div><strong>Driver:</strong> {bidData.selectedBid?.driverInfo?.name || bidData.driverName}</div>
                 <div><strong>Experience:</strong> {bidData.selectedBid?.driverInfo?.experience || bidData.experience} years</div>
                 <div><strong>Truck Type:</strong> {bidData.selectedBid?.truckSpecifications?.truckType || bidData.truckType}</div>
-                <div><strong>Capacity:</strong> {bidData.selectedBid?.truckSpecifications?.capacity || bidData.capacity} lbs</div>
+                <div><strong>Capacity:</strong> {bidData.selectedBid?.truckSpecifications?.capacity || bidData.capacity} kg</div>
                 <div><strong>Estimated Time:</strong> {bidData.selectedBid?.estimatedTime || bidData.estimatedTime} hours</div>
                 <div><strong>Distance:</strong> {bidData.selectedBid?.distance || bidData.distance} miles</div>
               </div>

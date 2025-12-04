@@ -129,11 +129,11 @@ const UserRatings: React.FC = () => {
 
     for (let i = 0; i < 5; i++) {
       if (i < fullStars) {
-        stars.push(<FaStar key={i} className="text-yellow-400" />);
+        stars.push(<FaStar key={i} className="text-yellow-400 w-3 h-3" />);
       } else if (i === fullStars && hasHalfStar) {
-        stars.push(<FaStarHalfAlt key={i} className="text-yellow-400" />);
+        stars.push(<FaStarHalfAlt key={i} className="text-yellow-400 w-3 h-3" />);
       } else {
-        stars.push(<FaRegStar key={i} className="text-gray-300" />);
+        stars.push(<FaRegStar key={i} className="text-gray-300 w-3 h-3" />);
       }
     }
 
@@ -168,96 +168,104 @@ const UserRatings: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+      <div className="flex justify-center items-center h-48">
+        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500"></div>
       </div>
     );
   }
 
   return (
-    <div className="p-6">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-4">User Ratings & Reviews</h1>
-        <p className="text-gray-600">View and manage ratings from transporters and financing communities</p>
+    <div className="space-y-4">
+      {/* Header */}
+      <div className="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-xl border border-yellow-100 px-4 py-3 mb-4">
+        <div className="flex items-center gap-2.5">
+          <div className="p-2 rounded-lg bg-gradient-to-br from-yellow-500 to-orange-500">
+            <FaStar className="w-4 h-4 text-white" />
+          </div>
+          <div>
+            <h1 className="text-lg font-bold text-gray-900">User Ratings & Reviews</h1>
+            <p className="text-xs text-gray-600 mt-0.5">View and manage ratings from transporters and financing communities</p>
+          </div>
+        </div>
       </div>
 
       {/* Rating Statistics */}
       {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center mb-4">
-              <FaUsers className="text-blue-500 text-2xl mr-3" />
-              <h3 className="text-lg font-semibold">Transporter Ratings</h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+          <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-3">
+            <div className="flex items-center mb-2">
+              <FaUsers className="text-blue-500 text-lg mr-2" />
+              <h3 className="text-sm font-semibold">Transporter Ratings</h3>
             </div>
-            <div className="text-3xl font-bold text-blue-600 mb-2">
+            <div className="text-lg font-bold text-blue-600 mb-1">
               {stats.transporterRatings?.average?.toFixed(1) || '0.0'}
             </div>
-            <div className="flex mb-2">
+            <div className="flex mb-1">
               {renderStars(stats.transporterRatings?.average || 0)}
             </div>
-            <p className="text-sm text-gray-600">{stats.transporterRatings?.count || 0} ratings</p>
+            <p className="text-xs text-gray-600">{stats.transporterRatings?.count || 0} ratings</p>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center mb-4">
-              <FaHandshake className="text-green-500 text-2xl mr-3" />
-              <h3 className="text-lg font-semibold">Financing Ratings</h3>
+          <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-3">
+            <div className="flex items-center mb-2">
+              <FaHandshake className="text-green-500 text-lg mr-2" />
+              <h3 className="text-sm font-semibold">Financing Ratings</h3>
             </div>
-            <div className="text-3xl font-bold text-green-600 mb-2">
+            <div className="text-lg font-bold text-green-600 mb-1">
               {stats.financingRatings?.average?.toFixed(1) || '0.0'}
             </div>
-            <div className="flex mb-2">
+            <div className="flex mb-1">
               {renderStars(stats.financingRatings?.average || 0)}
             </div>
-            <p className="text-sm text-gray-600">{stats.financingRatings?.count || 0} ratings</p>
+            <p className="text-xs text-gray-600">{stats.financingRatings?.count || 0} ratings</p>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center mb-4">
-              <FaShieldAlt className="text-purple-500 text-2xl mr-3" />
-              <h3 className="text-lg font-semibold">Platform Ratings</h3>
+          <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-3">
+            <div className="flex items-center mb-2">
+              <FaShieldAlt className="text-purple-500 text-lg mr-2" />
+              <h3 className="text-sm font-semibold">Platform Ratings</h3>
             </div>
-            <div className="text-3xl font-bold text-purple-600 mb-2">
+            <div className="text-lg font-bold text-purple-600 mb-1">
               {stats.platformRatings?.average?.toFixed(1) || '0.0'}
             </div>
-            <div className="flex mb-2">
+            <div className="flex mb-1">
               {renderStars(stats.platformRatings?.average || 0)}
             </div>
-            <p className="text-sm text-gray-600">{stats.platformRatings?.count || 0} ratings</p>
+            <p className="text-xs text-gray-600">{stats.platformRatings?.count || 0} ratings</p>
           </div>
         </div>
       )}
 
       {/* Rating Form */}
-      <div className="bg-white rounded-lg shadow mb-8">
-        <div className="p-6 border-b">
-          <h2 className="text-xl font-semibold">Rate a User</h2>
+      <div className="bg-white rounded-lg border border-gray-200 shadow-sm mb-4">
+        <div className="p-3 border-b border-gray-200">
+          <h2 className="text-sm font-semibold">Rate a User</h2>
         </div>
-        <div className="p-6">
-          <form onSubmit={handleSubmitRating} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="p-3">
+          <form onSubmit={handleSubmitRating} className="space-y-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-xs font-medium text-gray-700 mb-1">
                   User ID to Rate
                 </label>
                 <input
                   type="text"
                   value={ratingForm.ratedUserId}
                   onChange={(e) => setRatingForm({ ...ratingForm, ratedUserId: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="Enter user ID"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-xs font-medium text-gray-700 mb-1">
                   Rating Type
                 </label>
                 <select
                   value={ratingForm.ratingType}
                   onChange={(e) => setRatingForm({ ...ratingForm, ratingType: e.target.value as any })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="transporter">Transporter</option>
                   <option value="financing_community">Financing Community</option>
@@ -266,15 +274,15 @@ const UserRatings: React.FC = () => {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-xs font-medium text-gray-700 mb-1">
                   Category
                 </label>
                 <select
                   value={ratingForm.category}
                   onChange={(e) => setRatingForm({ ...ratingForm, category: e.target.value as any })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="overall">Overall</option>
                   <option value="reliability">Reliability</option>
@@ -286,16 +294,16 @@ const UserRatings: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-xs font-medium text-gray-700 mb-1">
                   Rating (1-5)
                 </label>
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-1.5">
                   {[1, 2, 3, 4, 5].map((star) => (
                     <button
                       key={star}
                       type="button"
                       onClick={() => setRatingForm({ ...ratingForm, rating: star })}
-                      className="text-2xl"
+                      className="text-lg"
                     >
                       {star <= ratingForm.rating ? (
                         <FaStar className="text-yellow-400" />
@@ -304,19 +312,19 @@ const UserRatings: React.FC = () => {
                       )}
                     </button>
                   ))}
-                  <span className="ml-2 text-sm text-gray-600">{ratingForm.rating}/5</span>
+                  <span className="ml-2 text-xs text-gray-600">{ratingForm.rating}/5</span>
                 </div>
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-xs font-medium text-gray-700 mb-1">
                 Comment (Optional)
               </label>
               <textarea
                 value={ratingForm.comment}
                 onChange={(e) => setRatingForm({ ...ratingForm, comment: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 rows={3}
                 placeholder="Share your experience..."
               />
@@ -325,7 +333,7 @@ const UserRatings: React.FC = () => {
             <div className="flex justify-end">
               <button
                 type="submit"
-                className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
               >
                 Submit Rating
               </button>
@@ -335,39 +343,39 @@ const UserRatings: React.FC = () => {
       </div>
 
       {/* Ratings List */}
-      <div className="bg-white rounded-lg shadow">
-        <div className="p-6 border-b">
-          <h2 className="text-xl font-semibold">Recent Ratings</h2>
+      <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
+        <div className="p-3 border-b border-gray-200">
+          <h2 className="text-sm font-semibold">Recent Ratings</h2>
         </div>
-        <div className="p-6">
+        <div className="p-3">
           {ratings.length === 0 ? (
-            <p className="text-gray-500 text-center py-8">No ratings yet</p>
+            <p className="text-xs text-gray-500 text-center py-6">No ratings yet</p>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-3">
               {ratings.map((rating) => (
-                <div key={rating.id} className="border-b border-gray-200 pb-4 last:border-b-0">
+                <div key={rating.id} className="border-b border-gray-200 pb-3 last:border-b-0">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <div className="flex items-center mb-2">
+                      <div className="flex items-center mb-1.5">
                         {getRatingTypeIcon(rating.ratingType)}
-                        <span className="ml-2 text-sm font-medium text-gray-600">
+                        <span className="ml-2 text-xs font-medium text-gray-600">
                           {getRatingTypeLabel(rating.ratingType)}
                         </span>
-                        <span className="mx-2 text-gray-400">•</span>
-                        <span className="text-sm text-gray-500 capitalize">
+                        <span className="mx-1.5 text-gray-400">•</span>
+                        <span className="text-xs text-gray-500 capitalize">
                           {rating.category.replace('_', ' ')}
                         </span>
                       </div>
                       
-                      <div className="flex items-center mb-2">
+                      <div className="flex items-center mb-1.5">
                         {renderStars(rating.rating)}
-                        <span className="ml-2 text-sm text-gray-600">
+                        <span className="ml-2 text-xs text-gray-600">
                           {rating.rating}/5
                         </span>
                       </div>
 
                       {rating.comment && (
-                        <p className="text-gray-700 mb-2">{rating.comment}</p>
+                        <p className="text-xs text-gray-700 mb-1.5">{rating.comment}</p>
                       )}
 
                       <div className="flex items-center text-xs text-gray-500">
@@ -375,7 +383,7 @@ const UserRatings: React.FC = () => {
                           Rated by: {rating.raterUser?.profile?.firstName} {rating.raterUser?.profile?.lastName}
                           {rating.raterUser?.profile?.companyName && ` (${rating.raterUser.profile.companyName})`}
                         </span>
-                        <span className="mx-2">•</span>
+                        <span className="mx-1.5">•</span>
                         <span>{new Date(rating.createdAt).toLocaleDateString()}</span>
                       </div>
                     </div>

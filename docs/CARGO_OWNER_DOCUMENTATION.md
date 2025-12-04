@@ -1120,16 +1120,7 @@ export const paymentConfig = {
    npm run build
    ```
 
-2. **Docker Deployment**
-   ```bash
-   # Build Docker images
-   docker-compose build
-   
-   # Start services
-   docker-compose up -d
-   ```
-
-3. **Nginx Configuration**
+2. **Nginx Configuration**
    ```nginx
    server {
        listen 80;

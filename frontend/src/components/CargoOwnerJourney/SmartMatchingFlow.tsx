@@ -154,7 +154,7 @@ const SmartMatchingFlow: React.FC<SmartMatchingFlowProps> = ({ cargoDetails, onC
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
           <div className="flex items-center">
             <FaWeightHanging className="text-blue-500 mr-2" />
-            <span>{cargoDetails.weight} lbs - {cargoDetails.cargoType}</span>
+            <span>{cargoDetails.weight} kg - {cargoDetails.cargoType}</span>
           </div>
           <div className="flex items-center">
             <FaMapMarkerAlt className="text-blue-500 mr-2" />
@@ -271,7 +271,7 @@ const SmartMatchingFlow: React.FC<SmartMatchingFlowProps> = ({ cargoDetails, onC
                   <div>
                     <h4 className="font-medium text-gray-900 mb-2">Truck Details</h4>
                     <p className="text-sm text-gray-600">{truck.truck.make} {truck.truck.model} ({truck.truck.year})</p>
-                    <p className="text-sm text-gray-600">Capacity: {truck.truck.capacityWeight} lbs</p>
+                    <p className="text-sm text-gray-600">Capacity: {truck.truck.capacityWeight} kg</p>
                     <p className="text-sm text-gray-600">Type: {truck.truck.truckType}</p>
                     <p className="text-sm text-gray-600">Insurance: ${truck.truck.insuranceCoverage.toLocaleString()}</p>
                   </div>

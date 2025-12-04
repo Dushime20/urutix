@@ -26,17 +26,17 @@ const TemplateBenefits: React.FC = () => {
   ];
 
   return (
-    <div className="mt-8 bg-gradient-to-r from-teal-50 to-teal-100 rounded-xl p-6 border border-teal-100">
-      <div className="text-center mb-8">
-        <h4 className="text-base font-semibold text-teal-900 mb-2">
+    <div className="mt-4 bg-gradient-to-r from-teal-50 to-teal-100 rounded-xl p-4 border border-teal-100">
+      <div className="text-center mb-4">
+        <h4 className="text-sm font-semibold text-teal-900 mb-1">
           Why Use Templates?
         </h4>
-        <p className="text-teal-700 text-sm">
+        <p className="text-teal-700 text-xs">
           Streamline your shipping process with our pre-configured templates
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
         {benefits.map((benefit, index) => {
           const Icon = benefit.icon;
           return (
@@ -44,11 +44,11 @@ const TemplateBenefits: React.FC = () => {
               key={index}
               className="text-center group hover:transform hover:-translate-y-1 transition-all duration-300"
             >
-                                              <div className="bg-white rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow duration-300 border border-teal-100">
-                  <div className="w-10 h-10 bg-gradient-to-br from-teal-500 to-teal-600 rounded-lg flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform duration-300">
-                    <Icon className="text-white w-5 h-5" />
+                                              <div className="bg-white rounded-lg p-3 shadow-sm hover:shadow-md transition-shadow duration-300 border border-teal-100">
+                  <div className="w-8 h-8 bg-gradient-to-br from-teal-500 to-teal-600 rounded-lg flex items-center justify-center mx-auto mb-2 group-hover:scale-110 transition-transform duration-300">
+                    <Icon className="text-white w-4 h-4" />
                   </div>
-                  <h5 className="font-medium text-teal-900 mb-1.5 text-sm">
+                  <h5 className="font-medium text-teal-900 mb-1 text-xs">
                     {benefit.title}
                   </h5>
                   <p className="text-xs text-teal-700 leading-relaxed">
@@ -61,8 +61,8 @@ const TemplateBenefits: React.FC = () => {
       </div>
 
       {/* Additional Info */}
-      <div className="mt-8 text-center">
-        <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-teal-100 rounded-full">
+      <div className="mt-4 text-center">
+        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-teal-100 rounded-full">
           <span className="text-teal-600 text-xs font-medium">
             💡 Pro Tip: Templates can be customized after selection
           </span>

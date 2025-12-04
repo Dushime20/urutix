@@ -376,10 +376,10 @@ const EnhancedLoanRequestsPage: React.FC = () => {
   // Authentication checks
   if (!user) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Access Required</h2>
-          <p className="text-gray-600">Please log in to access loan requests.</p>
+          <h2 className="text-lg font-bold text-gray-900 mb-1.5">Access Required</h2>
+          <p className="text-sm text-gray-600">Please log in to access loan requests.</p>
         </div>
       </div>
     );
@@ -527,10 +527,10 @@ const EnhancedLoanRequestsPage: React.FC = () => {
   // Loading state
   if (fetching) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading loan requests...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-3 text-sm text-gray-600">Loading loan requests...</p>
         </div>
       </div>
     );
@@ -539,14 +539,14 @@ const EnhancedLoanRequestsPage: React.FC = () => {
   // Error state
   if (error && requests.length === 0) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <div className="text-center">
-          <FaExclamationTriangle className="h-16 w-16 text-red-500 mx-auto mb-4" />
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Error Loading Loan Requests</h2>
-          <p className="text-gray-600 mb-4">{error}</p>
+          <FaExclamationTriangle className="h-12 w-12 text-red-500 mx-auto mb-3" />
+          <h2 className="text-lg font-semibold text-gray-900 mb-1.5">Error Loading Loan Requests</h2>
+          <p className="text-sm text-gray-600 mb-3">{error}</p>
           <button 
             onClick={() => window.location.reload()} 
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+            className="bg-blue-600 text-white px-3 py-1.5 text-sm rounded-lg hover:bg-blue-700 transition-colors"
           >
             Retry
           </button>
@@ -629,112 +629,119 @@ const EnhancedLoanRequestsPage: React.FC = () => {
   const uniqueLenders = Array.from(new Set(requests.map(r => r.lender).filter(Boolean)));
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
+    <div className="min-h-screen bg-gray-50 p-4">
+      <div className="max-w-7xl mx-auto space-y-4">
         {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Loan Requests Dashboard</h1>
-            <p className="text-gray-600 mt-1">Review and manage loan applications from cargo borrowers</p>
-          </div>
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => setGroupByStatus(!groupByStatus)}
-              className={`flex items-center gap-2 px-4 py-2 border rounded-lg transition-colors ${
-                groupByStatus 
-                  ? 'bg-purple-50 border-purple-200 text-purple-700' 
-                  : 'bg-white border-gray-200 hover:bg-gray-50'
-              }`}
-            >
-              <FaBars className="text-purple-600" />
-              {groupByStatus ? 'Grouped by Status' : 'Group by Status'}
-            </button>
-            <button
-              onClick={() => setGroupByLender(!groupByLender)}
-              className={`flex items-center gap-2 px-4 py-2 border rounded-lg transition-colors ${
-                groupByLender 
-                  ? 'bg-blue-50 border-blue-200 text-blue-700' 
-                  : 'bg-white border-gray-200 hover:bg-gray-50'
-              }`}
-            >
-              <FaUsers className="text-blue-600" />
-              {groupByLender ? 'Grouped by Lender' : 'Group by Lender'}
-            </button>
-            <button
-              onClick={() => setShowAnalytics(!showAnalytics)}
-              className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-            >
-              <FaChartLine className="text-blue-600" />
-              {showAnalytics ? 'Hide' : 'Show'} Analytics
-            </button>
-            <button
-              onClick={handleExport}
-              className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-            >
-              <FaDownload className="text-green-600" /> Export
-            </button>
+        <div className="bg-gradient-to-r from-purple-50 to-indigo-50 rounded-xl border border-purple-100 px-4 py-3 mb-4">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <div className="p-2 rounded-lg bg-gradient-to-br from-purple-500 to-purple-600">
+                <FaFileContract className="w-4 h-4 text-white" />
+              </div>
+              <div>
+                <h1 className="text-lg font-bold text-gray-900">Loan Requests Dashboard</h1>
+                <p className="text-xs text-gray-600 mt-0.5">Review and manage loan applications from cargo borrowers</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <button
+                onClick={() => setGroupByStatus(!groupByStatus)}
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 text-xs border rounded-lg transition-colors ${
+                  groupByStatus 
+                    ? 'bg-purple-50 border-purple-200 text-purple-700' 
+                    : 'bg-white border-gray-200 hover:bg-gray-50'
+                }`}
+              >
+                <FaBars className="text-purple-600 w-3 h-3" />
+                {groupByStatus ? 'Grouped' : 'Group'} Status
+              </button>
+              <button
+                onClick={() => setGroupByLender(!groupByLender)}
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 text-xs border rounded-lg transition-colors ${
+                  groupByLender 
+                    ? 'bg-blue-50 border-blue-200 text-blue-700' 
+                    : 'bg-white border-gray-200 hover:bg-gray-50'
+                }`}
+              >
+                <FaUsers className="text-blue-600 w-3 h-3" />
+                {groupByLender ? 'Grouped' : 'Group'} Lender
+              </button>
+              <button
+                onClick={() => setShowAnalytics(!showAnalytics)}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                <FaChartLine className="text-blue-600 w-3 h-3" />
+                {showAnalytics ? 'Hide' : 'Show'} Analytics
+              </button>
+              <button
+                onClick={handleExport}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                <FaDownload className="text-green-600 w-3 h-3" /> Export
+              </button>
+            </div>
           </div>
         </div>
 
         {/* Analytics Dashboard */}
         {showAnalytics && analytics && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="bg-white rounded-lg p-3 border border-gray-200 shadow-sm">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600 font-medium">Total Requests</p>
-                  <p className="text-2xl font-bold text-gray-900 mt-1">{analytics.totalRequests}</p>
-                  <p className="text-xs text-green-600 flex items-center gap-1 mt-2">
-                    <FaArrowUp /> +{analytics.monthlyGrowth}% this month
+                  <p className="text-xs text-gray-600 font-medium">Total Requests</p>
+                  <p className="text-lg font-bold text-gray-900 mt-0.5">{analytics.totalRequests}</p>
+                  <p className="text-xs text-green-600 flex items-center gap-1 mt-1">
+                    <FaArrowUp className="w-2.5 h-2.5" /> +{analytics.monthlyGrowth}% this month
                   </p>
                 </div>
-                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                  <FaFileContract className="text-blue-600 text-xl" />
+                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                  <FaFileContract className="text-blue-600 text-sm" />
                 </div>
               </div>
             </div>
 
-            <div className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm">
+            <div className="bg-white rounded-lg p-3 border border-gray-200 shadow-sm">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600 font-medium">Pending Requests</p>
-                  <p className="text-2xl font-bold text-gray-900 mt-1">{analytics.pendingRequests}</p>
-                  <p className="text-xs text-gray-500 mt-2">
+                  <p className="text-xs text-gray-600 font-medium">Pending Requests</p>
+                  <p className="text-lg font-bold text-gray-900 mt-0.5">{analytics.pendingRequests}</p>
+                  <p className="text-xs text-gray-500 mt-1">
                     {((analytics.pendingRequests / analytics.totalRequests) * 100).toFixed(1)}% of total
                   </p>
                 </div>
-                <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
-                  <FaClock className="text-yellow-600 text-xl" />
+                <div className="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center">
+                  <FaClock className="text-yellow-600 text-sm" />
                 </div>
               </div>
             </div>
 
-            <div className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm">
+            <div className="bg-white rounded-lg p-3 border border-gray-200 shadow-sm">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600 font-medium">Total Requested</p>
-                  <p className="text-2xl font-bold text-gray-900 mt-1">RWF {(analytics.totalAmountRequested / 1000000).toFixed(1)}M</p>
-                  <p className="text-xs text-blue-600 flex items-center gap-1 mt-2">
-                    <FaDollarSign /> Avg: RWF {(analytics.averageAmount / 1000000).toFixed(1)}M
+                  <p className="text-xs text-gray-600 font-medium">Total Requested</p>
+                  <p className="text-lg font-bold text-gray-900 mt-0.5">RWF {(analytics.totalAmountRequested / 1000000).toFixed(1)}M</p>
+                  <p className="text-xs text-blue-600 flex items-center gap-1 mt-1">
+                    <FaDollarSign className="w-2.5 h-2.5" /> Avg: RWF {(analytics.averageAmount / 1000000).toFixed(1)}M
                   </p>
                 </div>
-                <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                  <FaMoneyBillWave className="text-purple-600 text-xl" />
+                <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                  <FaMoneyBillWave className="text-purple-600 text-sm" />
                 </div>
               </div>
             </div>
 
-            <div className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm">
+            <div className="bg-white rounded-lg p-3 border border-gray-200 shadow-sm">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600 font-medium">Approval Rate</p>
-                  <p className="text-2xl font-bold text-gray-900 mt-1">{analytics.approvalRate.toFixed(1)}%</p>
-                  <p className="text-xs text-emerald-600 flex items-center gap-1 mt-2">
-                    <FaStar /> Avg Risk: {analytics.averageRiskScore.toFixed(1)}
+                  <p className="text-xs text-gray-600 font-medium">Approval Rate</p>
+                  <p className="text-lg font-bold text-gray-900 mt-0.5">{analytics.approvalRate.toFixed(1)}%</p>
+                  <p className="text-xs text-emerald-600 flex items-center gap-1 mt-1">
+                    <FaStar className="w-2.5 h-2.5" /> Avg Risk: {analytics.averageRiskScore.toFixed(1)}
                   </p>
                 </div>
-                <div className="w-12 h-12 bg-emerald-100 rounded-lg flex items-center justify-center">
-                  <FaCheckCircle className="text-emerald-600 text-xl" />
+                <div className="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center">
+                  <FaCheckCircle className="text-emerald-600 text-sm" />
                 </div>
               </div>
             </div>
@@ -742,30 +749,30 @@ const EnhancedLoanRequestsPage: React.FC = () => {
         )}
 
         {/* Loan Requests Management Table */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100">
-          <div className="p-6 border-b border-gray-100">
-            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+          <div className="p-3 border-b border-gray-200">
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
               <div>
-                <h2 className="text-xl font-semibold text-gray-900">Loan Applications</h2>
-                <p className="text-sm text-gray-500 mt-1">Review borrower applications with advanced filtering and risk assessment</p>
+                <h2 className="text-sm font-semibold text-gray-900">Loan Applications</h2>
+                <p className="text-xs text-gray-500 mt-0.5">Review borrower applications with advanced filtering and risk assessment</p>
               </div>
               
               {/* Advanced Filters */}
-              <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
+              <div className="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
                 <div className="relative flex-1 sm:flex-initial">
-                  <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                  <FaSearch className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 w-3.5 h-3.5" />
                   <input
                     value={search}
                     onChange={e => setSearch(e.target.value)}
                     placeholder="Search requests..."
-                    className="pl-10 pr-3 py-2 w-full sm:w-64 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 text-sm"
+                    className="pl-9 pr-3 py-1.5 w-full sm:w-64 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 text-sm"
                   />
                 </div>
                 
                 <select
                   value={statusFilter}
                   onChange={e => setStatusFilter(e.target.value as any)}
-                  className="px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 text-sm"
+                  className="px-2.5 py-1.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 text-sm"
                 >
                   <option value="all">All Status</option>
                   <option value="pending">Pending</option>
@@ -779,7 +786,7 @@ const EnhancedLoanRequestsPage: React.FC = () => {
                 <select
                   value={priorityFilter}
                   onChange={e => setPriorityFilter(e.target.value as any)}
-                  className="px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 text-sm"
+                  className="px-2.5 py-1.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 text-sm"
                 >
                   <option value="all">All Priorities</option>
                   <option value="low">Low Priority</option>
@@ -791,7 +798,7 @@ const EnhancedLoanRequestsPage: React.FC = () => {
                 <select
                   value={lenderFilter}
                   onChange={e => setLenderFilter(e.target.value)}
-                  className="px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 text-sm"
+                  className="px-2.5 py-1.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 text-sm"
                 >
                   <option value="all">All Lenders</option>
                   {uniqueLenders.map(lender => (
@@ -802,22 +809,22 @@ const EnhancedLoanRequestsPage: React.FC = () => {
             </div>
           </div>
 
-          <div className="p-6">
+          <div className="p-3">
             {fetching && (
-              <div className="animate-pulse space-y-3">
+              <div className="animate-pulse space-y-2">
                 {[...Array(3)].map((_,i) => (
-                  <div key={i} className="h-16 bg-gray-100 rounded-lg" />
+                  <div key={i} className="h-12 bg-gray-100 rounded-lg" />
                 ))}
               </div>
             )}
 
             {!fetching && sorted.length === 0 && (
-              <div className="text-center py-16 border-2 border-dashed border-gray-200 rounded-xl">
-                <div className="mx-auto mb-4 w-16 h-16 rounded-full bg-blue-50 flex items-center justify-center">
-                  <FaFileContract className="text-blue-500 text-2xl" />
+              <div className="text-center py-8 border-2 border-dashed border-gray-200 rounded-lg">
+                <div className="mx-auto mb-3 w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center">
+                  <FaFileContract className="text-blue-500 text-lg" />
                 </div>
-                <h3 className="text-lg font-semibold text-gray-800 mb-2">No loan requests found</h3>
-                <p className="text-gray-500 text-sm mb-6">
+                <h3 className="text-sm font-semibold text-gray-800 mb-1">No loan requests found</h3>
+                <p className="text-gray-500 text-xs mb-4">
                   {search || statusFilter !== 'all' || priorityFilter !== 'all' || lenderFilter !== 'all'
                     ? 'Try adjusting your filters or search terms.'
                     : 'No loan requests have been submitted yet.'
@@ -829,43 +836,43 @@ const EnhancedLoanRequestsPage: React.FC = () => {
             {!fetching && sorted.length > 0 && (
               <div className="relative">
                 {/* Table View */}
-                <div className="overflow-x-auto rounded-xl ring-1 ring-gray-200">
-                  <table className="min-w-full text-sm">
+                <div className="overflow-x-auto rounded-lg ring-1 ring-gray-200">
+                  <table className="min-w-full text-xs">
                     <thead className="bg-gray-50 text-xs uppercase tracking-wide text-gray-600 select-none">
                       <tr>
-                        <th onClick={() => toggleSort('borrower_name')} className="pl-6 pr-3 py-4 font-semibold text-left cursor-pointer group">
+                        <th onClick={() => toggleSort('borrower_name')} className="pl-4 pr-2 py-2.5 font-semibold text-left cursor-pointer group">
                           <div className="inline-flex items-center gap-1">
                             Borrower
                             {sortBy === 'borrower_name' && <span className="text-[10px] font-normal">{sortDir === 'asc' ? '▲' : '▼'}</span>}
                             {sortBy !== 'borrower_name' && <span className="opacity-0 group-hover:opacity-60 transition">⇅</span>}
                           </div>
                         </th>
-                        <th onClick={() => toggleSort('requested_amount')} className="px-3 py-4 font-semibold text-left cursor-pointer group">
+                        <th onClick={() => toggleSort('requested_amount')} className="px-2 py-2.5 font-semibold text-left cursor-pointer group">
                           <div className="inline-flex items-center gap-1">
                             Loan Details
                             {sortBy === 'requested_amount' && <span className="text-[10px] font-normal">{sortDir === 'asc' ? '▲' : '▼'}</span>}
                             {sortBy !== 'requested_amount' && <span className="opacity-0 group-hover:opacity-60 transition">⇅</span>}
                           </div>
                         </th>
-                        <th className="px-3 py-4 font-semibold text-left">Cargo Information</th>
-                        <th className="px-3 py-4 font-semibold text-left">Status & Priority</th>
-                        <th onClick={() => toggleSort('risk_score')} className="px-3 py-4 font-semibold text-left cursor-pointer group">
+                        <th className="px-2 py-2.5 font-semibold text-left">Cargo Information</th>
+                        <th className="px-2 py-2.5 font-semibold text-left">Status & Priority</th>
+                        <th onClick={() => toggleSort('risk_score')} className="px-2 py-2.5 font-semibold text-left cursor-pointer group">
                           <div className="inline-flex items-center gap-1">
                             Risk Assessment
                             {sortBy === 'risk_score' && <span className="text-[10px] font-normal">{sortDir === 'asc' ? '▲' : '▼'}</span>}
                             {sortBy !== 'risk_score' && <span className="opacity-0 group-hover:opacity-60 transition">⇅</span>}
                           </div>
                         </th>
-                        <th className="px-3 py-4 font-semibold text-left">Lender</th>
-                        <th className="pr-6 pl-3 py-4 font-semibold text-right">Actions</th>
+                        <th className="px-2 py-2.5 font-semibold text-left">Lender</th>
+                        <th className="pr-4 pl-2 py-2.5 font-semibold text-right">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100 bg-white">
                       {sorted.map((request) => (
                         <tr key={request.id} className="group hover:bg-blue-50/60 transition-colors">
-                          <td className="pl-6 pr-3 py-4 align-middle">
-                            <div className="flex items-center gap-3">
-                              <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold ${
+                          <td className="pl-4 pr-2 py-3 align-middle">
+                            <div className="flex items-center gap-2">
+                              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-semibold text-xs ${
                                 request.status === 'approved' || request.status === 'disbursed' ? 'bg-green-500' :
                                 request.status === 'pending' ? 'bg-yellow-500' :
                                 request.status === 'rejected' || request.status === 'overdue' ? 'bg-red-500' : 'bg-gray-400'
@@ -873,24 +880,24 @@ const EnhancedLoanRequestsPage: React.FC = () => {
                                 {request.borrower_name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
                               </div>
                               <div>
-                                <p className="font-semibold text-gray-900">{request.borrower_name}</p>
+                                <p className="font-semibold text-gray-900 text-xs">{request.borrower_name}</p>
                                 {request.borrower_company && (
                                   <p className="text-xs text-gray-500 flex items-center gap-1">
-                                    <FaBuilding className="text-xs" />
+                                    <FaBuilding className="text-xs w-2.5 h-2.5" />
                                     {request.borrower_company}
                                   </p>
                                 )}
-                                <div className="flex items-center gap-1 text-xs text-gray-500 mt-1">
-                                  <FaEnvelope className="text-xs" />
+                                <div className="flex items-center gap-1 text-xs text-gray-500 mt-0.5">
+                                  <FaEnvelope className="text-xs w-2.5 h-2.5" />
                                   {request.borrower_email}
                                 </div>
                               </div>
                             </div>
                           </td>
-                          <td className="px-3 py-4 align-middle">
-                            <div className="space-y-1">
-                              <p className="font-semibold text-gray-900">RWF {(request.requested_amount / 1000000).toFixed(1)}M</p>
-                              <p className="text-sm text-gray-600">{request.interest_rate}% interest</p>
+                          <td className="px-2 py-3 align-middle">
+                            <div className="space-y-0.5">
+                              <p className="font-semibold text-gray-900 text-xs">RWF {(request.requested_amount / 1000000).toFixed(1)}M</p>
+                              <p className="text-xs text-gray-600">{request.interest_rate}% interest</p>
                               <p className="text-xs text-gray-500">{request.loan_term_months} months term</p>
                               {request.monthly_payment && (
                                 <p className="text-xs text-blue-600">
@@ -899,10 +906,10 @@ const EnhancedLoanRequestsPage: React.FC = () => {
                               )}
                             </div>
                           </td>
-                          <td className="px-3 py-4 align-middle">
-                            <div className="space-y-1">
-                              <p className="font-medium text-gray-900">{request.cargo_type}</p>
-                              <p className="text-sm text-gray-600">{request.cargo_weight}kg</p>
+                          <td className="px-2 py-3 align-middle">
+                            <div className="space-y-0.5">
+                              <p className="font-medium text-gray-900 text-xs">{request.cargo_type}</p>
+                              <p className="text-xs text-gray-600">{request.cargo_weight}kg</p>
                               <p className="text-xs text-gray-500">
                                 {request.pickup_location} → {request.delivery_location}
                               </p>
@@ -911,32 +918,32 @@ const EnhancedLoanRequestsPage: React.FC = () => {
                               </p>
                             </div>
                           </td>
-                          <td className="px-3 py-4 align-middle">
-                            <div className="space-y-2">
-                              <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(request.status)}`}>
+                          <td className="px-2 py-3 align-middle">
+                            <div className="space-y-1.5">
+                              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(request.status)}`}>
                                 <span className="w-1.5 h-1.5 rounded-full bg-current"></span>
                                 {request.status.charAt(0).toUpperCase() + request.status.slice(1)}
                               </span>
                               <div>
-                                <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium border ${getPriorityColor(request.priority)}`}>
-                                  {request.priority === 'urgent' ? <FaExclamationTriangle className="w-3 h-3" /> :
-                                   request.priority === 'high' ? <FaArrowUp className="w-3 h-3" /> :
-                                   request.priority === 'medium' ? <FaArrowDown className="w-3 h-3" /> :
-                                   <FaClock className="w-3 h-3" />}
+                                <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border ${getPriorityColor(request.priority)}`}>
+                                  {request.priority === 'urgent' ? <FaExclamationTriangle className="w-2.5 h-2.5" /> :
+                                   request.priority === 'high' ? <FaArrowUp className="w-2.5 h-2.5" /> :
+                                   request.priority === 'medium' ? <FaArrowDown className="w-2.5 h-2.5" /> :
+                                   <FaClock className="w-2.5 h-2.5" />}
                                   {request.priority.charAt(0).toUpperCase() + request.priority.slice(1)}
                                 </span>
                               </div>
                             </div>
                           </td>
-                          <td className="px-3 py-4 align-middle">
+                          <td className="px-2 py-3 align-middle">
                             <div className="space-y-1">
                               {request.risk_score && (
-                                <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium border ${getRiskScoreColor(request.risk_score)}`}>
-                                  <FaStar className="w-3 h-3" />
+                                <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium border ${getRiskScoreColor(request.risk_score)}`}>
+                                  <FaStar className="w-2.5 h-2.5" />
                                   {request.risk_score}
                                 </span>
                               )}
-                              <p className="text-sm text-gray-600">Credit: {request.credit_score}</p>
+                              <p className="text-xs text-gray-600">Credit: {request.credit_score}</p>
                               {request.collateral_type && (
                                 <p className="text-xs text-gray-500">
                                   Collateral: {request.collateral_type}
@@ -944,11 +951,11 @@ const EnhancedLoanRequestsPage: React.FC = () => {
                               )}
                             </div>
                           </td>
-                          <td className="px-3 py-4 align-middle">
+                          <td className="px-2 py-3 align-middle">
                             {request.lender ? (
                               <div className="space-y-1">
-                                <p className="font-medium text-gray-900 text-sm">{request.lender.name}</p>
-                                <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                                <p className="font-medium text-gray-900 text-xs">{request.lender.name}</p>
+                                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
                                   request.lender.type === 'bank' ? 'bg-blue-100 text-blue-700' :
                                   request.lender.type === 'microfinance' ? 'bg-green-100 text-green-700' :
                                   request.lender.type === 'cooperative' ? 'bg-purple-100 text-purple-700' : 'bg-orange-100 text-orange-700'
@@ -957,38 +964,38 @@ const EnhancedLoanRequestsPage: React.FC = () => {
                                 </span>
                               </div>
                             ) : (
-                              <span className="text-gray-400 text-sm">Unassigned</span>
+                              <span className="text-gray-400 text-xs">Unassigned</span>
                             )}
                           </td>
-                          <td className="pr-6 pl-3 py-4 text-right relative">
+                          <td className="pr-4 pl-2 py-3 text-right relative">
                             <div className="inline-flex items-center gap-1">
                               <button
                                 onClick={() => setOpenActionRow(r => r === request.id ? null : request.id)}
-                                className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition"
+                                className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition"
                                 title="More Actions"
                               >
-                                <FaEllipsisH />
+                                <FaEllipsisH className="w-3 h-3" />
                               </button>
                             </div>
                             {openActionRow === request.id && (
-                              <div className="absolute right-6 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-100 z-10 py-1 text-sm">
+                              <div className="absolute right-4 mt-2 w-44 bg-white rounded-lg shadow-lg border border-gray-100 z-10 py-1 text-xs">
                                 <button
                                   onClick={() => { setOpenActionRow(null); }}
-                                  className="w-full text-left px-3 py-2 hover:bg-gray-50 text-gray-700 flex items-center gap-2"
+                                  className="w-full text-left px-2.5 py-1.5 hover:bg-gray-50 text-gray-700 flex items-center gap-1.5"
                                 >
-                                  <FaEye className="text-blue-500" /> View Details
+                                  <FaEye className="text-blue-500 w-3 h-3" /> View Details
                                 </button>
                                 <button
                                   onClick={() => { setOpenActionRow(null); }}
-                                  className="w-full text-left px-3 py-2 hover:bg-gray-50 text-gray-700 flex items-center gap-2"
+                                  className="w-full text-left px-2.5 py-1.5 hover:bg-gray-50 text-gray-700 flex items-center gap-1.5"
                                 >
-                                  <FaEdit className="text-green-500" /> Edit Request
+                                  <FaEdit className="text-green-500 w-3 h-3" /> Edit Request
                                 </button>
                                 <button
                                   onClick={() => { setOpenActionRow(null); }}
-                                  className="w-full text-left px-3 py-2 hover:bg-gray-50 text-gray-700 flex items-center gap-2"
+                                  className="w-full text-left px-2.5 py-1.5 hover:bg-gray-50 text-gray-700 flex items-center gap-1.5"
                                 >
-                                  <FaHistory className="text-purple-500" /> View History
+                                  <FaHistory className="text-purple-500 w-3 h-3" /> View History
                                 </button>
                                 <div className="border-t border-gray-100 my-1"></div>
                                 {request.status === 'pending' && (
@@ -1004,9 +1011,9 @@ const EnhancedLoanRequestsPage: React.FC = () => {
                                           request.interest_rate || 10
                                         );
                                       }}
-                                      className="w-full text-left px-3 py-2 hover:bg-green-50 text-green-600 flex items-center gap-2"
+                                      className="w-full text-left px-2.5 py-1.5 hover:bg-green-50 text-green-600 flex items-center gap-1.5"
                                     >
-                                      <FaCheck className="text-green-500" /> Approve
+                                      <FaCheck className="text-green-500 w-3 h-3" /> Approve
                                     </button>
                                     <button
                                       onClick={() => { 
@@ -1018,9 +1025,9 @@ const EnhancedLoanRequestsPage: React.FC = () => {
                                           handleRejectLoan(request.id, reason);
                                         }
                                       }}
-                                      className="w-full text-left px-3 py-2 hover:bg-red-50 text-red-600 flex items-center gap-2"
+                                      className="w-full text-left px-2.5 py-1.5 hover:bg-red-50 text-red-600 flex items-center gap-1.5"
                                     >
-                                      <FaTimes className="text-red-500" /> Reject
+                                      <FaTimes className="text-red-500 w-3 h-3" /> Reject
                                     </button>
                                   </>
                                 )}
@@ -1032,9 +1039,9 @@ const EnhancedLoanRequestsPage: React.FC = () => {
                     </tbody>
                   </table>
                 </div>
-                <div className="flex justify-between items-center mt-4 text-xs text-gray-500">
+                <div className="flex justify-between items-center mt-3 text-xs text-gray-500">
                   <span>{sorted.length} request{sorted.length !== 1 && 's'} shown</span>
-                  <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-3">
                     <span className="hidden sm:inline">Sorted by {sortBy} ({sortDir})</span>
                     <span>Total Requested: RWF {(sorted.reduce((acc, r) => acc + r.requested_amount, 0) / 1000000).toFixed(1)}M</span>
                   </div>

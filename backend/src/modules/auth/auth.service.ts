@@ -14,7 +14,7 @@ import { UserProfile } from '../../entities/user-profile.entity';
 import { RefreshToken } from '../../entities/refresh-token.entity';
 import { PasswordResetToken } from '../../entities/password-reset-token.entity';
 import { EmailVerificationToken } from '../../entities/email-verification-token.entity';
-import { Tenant } from '../../entities/tenant.entity';
+import { Tenant, TenantStatus } from '../../entities/tenant.entity';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto, LoginResponseDto } from './dto/login.dto';
 import { RegisterResponseDto } from './dto/register.dto';
@@ -189,17 +189,41 @@ export class AuthService {
       loginDto.rememberMe || false,
     );
 
-    // Fetch tenant name separately using tenantId
+    // Fetch tenant and validate status
     let tenantName = 'Default Tenant';
     if (user.tenantId) {
       try {
         const tenant = await this.tenantRepository.findOne({
           where: { id: user.tenantId },
         });
-        if (tenant && tenant.name) {
+        
+        if (!tenant) {
+          throw new UnauthorizedException('Tenant not found');
+        }
+
+        // Check tenant status - only ACTIVE tenants can access the system
+        // Super admins can bypass this check
+        if (user.role !== 'SUPER_ADMIN' && user.role !== 'ADMIN') {
+          if (tenant.status !== TenantStatus.ACTIVE) {
+            let errorMessage = 'Your tenant account is not active.';
+            if (tenant.status === TenantStatus.PENDING_ACTIVATION) {
+              errorMessage = 'Your tenant account is pending activation. Please contact your administrator.';
+            } else if (tenant.status === TenantStatus.SUSPENDED) {
+              errorMessage = 'Your tenant account has been suspended. Please contact support.';
+            } else if (tenant.status === TenantStatus.DEACTIVATED) {
+              errorMessage = 'Your tenant account has been deactivated. Please contact support.';
+            }
+            throw new UnauthorizedException(errorMessage);
+          }
+        }
+
+        if (tenant.name) {
           tenantName = tenant.name;
         }
       } catch (error) {
+        if (error instanceof UnauthorizedException) {
+          throw error;
+        }
         console.error('Error fetching tenant:', error);
       }
     }
@@ -327,6 +351,9 @@ export class AuthService {
   ): Promise<ResetPasswordResponseDto> {
     const { token, password, confirmPassword } = resetPasswordDto;
 
+    // Validate password strength
+    this.validatePasswordStrength(password);
+
     if (password !== confirmPassword) {
       throw new BadRequestException('Passwords do not match');
     }
@@ -353,8 +380,8 @@ export class AuthService {
       throw new NotFoundException('User not found');
     }
 
-    // Update password
-    const hashedPassword = await bcrypt.hash(password, 12);
+    // Update password with stronger hashing
+    const hashedPassword = await bcrypt.hash(password, 14);
     user.passwordHash = hashedPassword;
     user.loginAttempts = 0;
     user.lockedUntil = undefined;
@@ -364,7 +391,18 @@ export class AuthService {
     resetTokenRecord.used = true;
     await this.passwordResetTokenRepository.save(resetTokenRecord);
 
-    return { message: 'Password reset successfully' };
+    // Security: Invalidate all existing refresh tokens for this user
+    // This forces re-login on all devices after password reset
+    await this.refreshTokenRepository.update(
+      { userId: user.id, revoked: false },
+      { 
+        revoked: true, 
+        revokedAt: new Date(),
+        revokedBy: user.id,
+      },
+    );
+
+    return { message: 'Password reset successfully. Please log in again.' };
   }
 
   async changePassword(
@@ -542,6 +580,12 @@ export class AuthService {
   }
 
   private async generatePasswordResetToken(email: string): Promise<string> {
+    // Invalidate any existing unused reset tokens for this email
+    await this.passwordResetTokenRepository.update(
+      { email, used: false },
+      { used: true },
+    );
+
     const token = crypto.randomBytes(32).toString('hex');
     const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
 
@@ -553,6 +597,53 @@ export class AuthService {
 
     await this.passwordResetTokenRepository.save(resetToken);
     return token;
+  }
+
+  /**
+   * Validate password strength
+   * Requirements:
+   * - Minimum 8 characters
+   * - At least one uppercase letter
+   * - At least one lowercase letter
+   * - At least one number
+   * - At least one special character
+   */
+  private validatePasswordStrength(password: string): void {
+    const minLength = 8;
+    const hasUpperCase = /[A-Z]/.test(password);
+    const hasLowerCase = /[a-z]/.test(password);
+    const hasNumbers = /\d/.test(password);
+    const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+
+    if (password.length < minLength) {
+      throw new BadRequestException(
+        `Password must be at least ${minLength} characters long`,
+      );
+    }
+
+    if (!hasUpperCase) {
+      throw new BadRequestException(
+        'Password must contain at least one uppercase letter',
+      );
+    }
+
+    if (!hasLowerCase) {
+      throw new BadRequestException(
+        'Password must contain at least one lowercase letter',
+      );
+    }
+
+    if (!hasNumbers) {
+      throw new BadRequestException(
+        'Password must contain at least one number',
+      );
+    }
+
+    if (!hasSpecialChar) {
+      throw new BadRequestException(
+        'Password must contain at least one special character (!@#$%^&*(),.?":{}|<>)',
+      );
+    }
   }
 
   // Add tenant resolution method

@@ -15,6 +15,7 @@ import {
   ValidationPipe,
   UsePipes,
   Headers,
+  BadRequestException,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -86,8 +87,30 @@ export class LendingController {
     status: 403,
     description: 'Forbidden - insufficient permissions',
   })
-  async createLender(@Body() createLenderDto: CreateLenderDto) {
-    return await this.lendingService.createLender(createLenderDto);
+  async createLender(@Body() createLenderDto: CreateLenderDto, @Request() req: any) {
+    // For ADMIN users, tenantId is null/undefined. For TENANT_ADMIN, use their tenantId
+    const tenantId = req.user?.role === UserRole.TENANT_ADMIN ? req.user.tenantId : null;
+    return await this.lendingService.createLender(createLenderDto, tenantId);
+  }
+
+  @Post('tenant/lenders')
+  @Roles(UserRole.TENANT_ADMIN)
+  @ApiOperation({
+    summary: 'Create a new lender for tenant',
+    description:
+      'Tenant admin endpoint to create a new lending institution for their tenant',
+  })
+  @ApiBody({ type: CreateLenderDto })
+  @ApiResponse({
+    status: 201,
+    description: 'Lender created successfully',
+  })
+  async createTenantLender(@Body() createLenderDto: CreateLenderDto, @Request() req: any) {
+    const tenantId = req.user?.tenantId;
+    if (!tenantId) {
+      throw new BadRequestException('Tenant ID is required');
+    }
+    return await this.lendingService.createLender(createLenderDto, tenantId);
   }
 
   @Post('admin/lenders/:lenderId/policy')
@@ -201,6 +224,7 @@ export class LendingController {
     return await this.lendingService.updateLenderStatus(lenderId, status);
   }
 
+  @Get('admin/lenders')
   @Roles(UserRole.ADMIN, UserRole.TENANT_ADMIN)
   @ApiOperation({
     summary: 'Get all lenders',
@@ -233,8 +257,28 @@ export class LendingController {
     status: 403,
     description: 'Forbidden - insufficient permissions',
   })
-  async getAllLenders(@Query('status') status?: string) {
-    return await this.lendingService.getAllLenders();
+  async getAllLenders(@Query('status') status?: string, @Request() req?: any) {
+    // For TENANT_ADMIN, filter by their tenantId. For ADMIN, return all
+    const tenantId = req?.user?.role === UserRole.TENANT_ADMIN ? req.user.tenantId : null;
+    return await this.lendingService.getAllLenders(tenantId);
+  }
+
+  @Get('tenant/lenders')
+  @Roles(UserRole.TENANT_ADMIN)
+  @ApiOperation({
+    summary: 'Get all lenders for tenant',
+    description: 'Tenant admin endpoint to retrieve list of lenders for their tenant',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Lenders retrieved successfully',
+  })
+  async getTenantLenders(@Request() req: any) {
+    const tenantId = req.user?.tenantId;
+    if (!tenantId) {
+      throw new BadRequestException('Tenant ID is required');
+    }
+    return await this.lendingService.getAllLenders(tenantId);
   }
 
   @Roles(UserRole.ADMIN, UserRole.TENANT_ADMIN)

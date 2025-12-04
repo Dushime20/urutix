@@ -12,10 +12,16 @@ import {
   FaTools,
   FaCertificate,
   FaRoute,
-  FaDollarSign
+  FaDollarSign,
+  FaSearch,
+  FaCheckCircle
 } from 'react-icons/fa';
+import { useQuery } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import type { FleetItem } from '../../types/fleet';
+import { driverApi } from '../../services/driverApi';
+import { fleetApi } from '../../services/fleetApi';
+import type { Driver } from '../../services/fleetApi';
 import {
   Dialog,
   DialogContent,
@@ -69,11 +75,44 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState<Partial<FleetFormData>>({});
   const [loading, setLoading] = useState(false);
+  
+  // Driver creation mode: 'new' or 'existing'
+  const [driverCreationMode, setDriverCreationMode] = useState<'new' | 'existing'>('new');
+  const [existingDriverSearch, setExistingDriverSearch] = useState('');
+  const [selectedExistingDriver, setSelectedExistingDriver] = useState<Driver | null>(null);
 
   // Debug loading state changes
   useEffect(() => {
     console.log('🔄 Loading state changed to:', loading);
   }, [loading]);
+
+  // Reset driver creation mode when modal closes or opens
+  useEffect(() => {
+    if (!isOpen) {
+      setDriverCreationMode('new');
+      setSelectedExistingDriver(null);
+      setExistingDriverSearch('');
+      setCurrentStep(1);
+    }
+  }, [isOpen]);
+
+  // Fetch all available drivers for selection (when adding existing driver)
+  const { data: allAvailableDrivers = [] } = useQuery({
+    queryKey: ['all-available-drivers-fleet', existingDriverSearch],
+    queryFn: async () => {
+      try {
+        const data = await driverApi.getDrivers({ 
+          search: existingDriverSearch,
+          status: 'ACTIVE'
+        });
+        return Array.isArray(data) ? data : [];
+      } catch (error) {
+        console.error('Error fetching available drivers:', error);
+        return [];
+      }
+    },
+    enabled: activeTab === 'drivers' && mode === 'create' && driverCreationMode === 'existing' && existingDriverSearch.length > 0,
+  });
 
   // Define steps based on activeTab
   const getSteps = () => {
@@ -102,6 +141,8 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
 
   useEffect(() => {
     if (initialData) {
+      // Initialize loadingCapabilities from initialData
+      const loadingCapabilities = initialData.loadingCapabilities || {};
       setFormData({
         // Truck fields
         plateNumber: initialData.plateNumber || '',
@@ -230,6 +271,10 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
         hasComposite: initialData.hasComposite || false,
         hasInsulated: initialData.hasInsulated || false,
         equipmentList: initialData.equipmentList || [],
+        // Nested objects
+        loadingCapabilities: loadingCapabilities,
+        cargoCapabilities: initialData.cargoCapabilities || {},
+        securityFeatures: initialData.securityFeatures || {},
         // Driver fields
         firstName: initialData.firstName || '',
         lastName: initialData.lastName || '',
@@ -242,6 +287,7 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
         }
       });
     } else {
+      // Initialize with empty nested objects
       setFormData({
         // Truck fields
         plateNumber: '',
@@ -369,6 +415,10 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
         hasComposite: false,
         hasInsulated: false,
         equipmentList: [],
+        // Nested objects - initialize empty
+        loadingCapabilities: {},
+        cargoCapabilities: {},
+        securityFeatures: {},
         // Driver fields
         firstName: '',
         lastName: '',
@@ -468,6 +518,45 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
   };
 
   // Convert form data to proper types for submission
+  // Helper function to convert date to ISO 8601 format
+  const toISOString = (date: any): string | undefined => {
+    // Handle empty/null/undefined
+    if (!date || date === '' || date === null || date === undefined) {
+      return undefined;
+    }
+    
+    // If it's already an ISO string, return it
+    if (typeof date === 'string' && date.includes('T')) {
+      return date;
+    }
+    
+    // If it's a date string in YYYY-MM-DD format (from HTML date input), convert to ISO
+    if (typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      // Create date at midnight UTC to avoid timezone issues
+      const isoDate = new Date(date + 'T00:00:00.000Z').toISOString();
+      console.log(`📅 Converted date "${date}" to ISO: "${isoDate}"`);
+      return isoDate;
+    }
+    
+    // If it's a Date object, convert to ISO
+    if (date instanceof Date) {
+      if (isNaN(date.getTime())) {
+        console.warn(`⚠️ Invalid Date object:`, date);
+        return undefined;
+      }
+      return date.toISOString();
+    }
+    
+    // Try to parse as date
+    const parsed = new Date(date);
+    if (!isNaN(parsed.getTime())) {
+      return parsed.toISOString();
+    }
+    
+    console.warn(`⚠️ Could not parse date:`, date, typeof date);
+    return undefined;
+  };
+
   const convertFormDataForSubmission = (data: Partial<FleetFormData>): any => {
     // Normalize driver payload to backend CreateDriverDto if submitting a driver
     if (activeTab === 'drivers') {
@@ -475,31 +564,74 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
       const nowIso = new Date().toISOString();
       const twoYearsIso = new Date(new Date().setFullYear(new Date().getFullYear() + 2)).toISOString();
 
-      return {
+      // Log raw date values for debugging
+      console.log('📅 Raw date values from form:', {
+        dateOfBirth: d.dateOfBirth,
+        licenseIssueDate: d.licenseIssueDate,
+        licenseExpiry: d.licenseExpiry,
+        hireDate: d.hireDate,
+      });
+
+      // Convert dates - ensure they are valid ISO strings
+      const dateOfBirthISO = toISOString(d.dateOfBirth);
+      const licenseIssueDateISO = toISOString(d.licenseIssueDate);
+      const licenseExpiryISO = toISOString(d.licenseExpiry);
+      const hireDateISO = toISOString(d.hireDate);
+
+      // Validate required dates
+      if (!dateOfBirthISO) {
+        console.error('❌ dateOfBirth is missing or invalid:', d.dateOfBirth);
+        throw new Error('Date of birth is required and must be a valid date');
+      }
+      if (!licenseIssueDateISO) {
+        console.error('❌ licenseIssueDate is missing or invalid:', d.licenseIssueDate);
+        throw new Error('License issue date is required and must be a valid date');
+      }
+      if (!licenseExpiryISO) {
+        console.error('❌ licenseExpiry is missing or invalid:', d.licenseExpiry);
+        throw new Error('License expiry date is required and must be a valid date');
+      }
+      if (!hireDateISO) {
+        console.error('❌ hireDate is missing or invalid:', d.hireDate);
+        throw new Error('Hire date is required and must be a valid date');
+      }
+
+      // Log converted dates
+      console.log('📅 Converted ISO dates:', {
+        dateOfBirth: dateOfBirthISO,
+        licenseIssueDate: licenseIssueDateISO,
+        licenseExpiry: licenseExpiryISO,
+        hireDate: hireDateISO,
+      });
+
+      const payload = {
         // required by backend DTO
         firstName: d.firstName || '',
         lastName: d.lastName || '',
         email: d.contactInfo?.email || '',
         phone: d.contactInfo?.phone || '',
-        dateOfBirth: d.dateOfBirth || nowIso,
+        dateOfBirth: dateOfBirthISO,
         address: d.address || '',
         employeeId: d.employeeId, // optional
         licenseNumber: d.licenseNumber || '',
-        licenseIssueDate: d.licenseIssueDate || nowIso,
-        licenseExpiry: d.licenseExpiry || twoYearsIso,
+        licenseIssueDate: licenseIssueDateISO,
+        licenseExpiry: licenseExpiryISO,
         licenseState: d.licenseState || 'N/A',
         licenseCountry: d.licenseCountry || 'N/A',
         employmentType: d.employmentType || 'FULL_TIME',
-        hireDate: d.hireDate || nowIso,
-        terminationDate: d.terminationDate,
+        hireDate: hireDateISO,
+        terminationDate: toISOString(d.terminationDate),
         status: d.status || 'ACTIVE',
         hourlyRate: d.hourlyRate ? Number(d.hourlyRate) : undefined,
         mileageRate: d.mileageRate ? Number(d.mileageRate) : undefined,
-        medicalCertExpiry: d.medicalCertExpiry,
-        drugTestDate: d.drugTestDate,
-        backgroundCheckDate: d.backgroundCheckDate,
-        trainingCompletionDate: d.trainingCompletionDate,
+        medicalCertExpiry: toISOString(d.medicalCertExpiry),
+        drugTestDate: toISOString(d.drugTestDate),
+        backgroundCheckDate: toISOString(d.backgroundCheckDate),
+        trainingCompletionDate: toISOString(d.trainingCompletionDate),
       };
+
+      console.log('📦 Final payload with dates:', payload);
+      return payload;
     }
 
     // Normalize truck payload to backend CreateTruckDto
@@ -717,6 +849,38 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
       return;
     }
     
+    // Handle existing driver selection
+    if (activeTab === 'drivers' && mode === 'create' && driverCreationMode === 'existing') {
+      if (!selectedExistingDriver) {
+        toast.error('Please select a driver to add');
+        return;
+      }
+      
+      setLoading(true);
+      const loadingToast = toast.loading('Adding driver...');
+      
+      try {
+        await fleetApi.updateDriver(selectedExistingDriver.id, {
+          status: 'ACTIVE',
+          availabilityStatus: 'AVAILABLE',
+        });
+        
+        toast.dismiss(loadingToast);
+        toast.success('Driver added successfully');
+        onClose();
+        
+        // Reset form
+        setSelectedExistingDriver(null);
+        setExistingDriverSearch('');
+        setDriverCreationMode('new');
+      } catch (error: any) {
+        toast.dismiss(loadingToast);
+        toast.error(error?.response?.data?.message || 'Failed to add existing driver');
+        setLoading(false);
+      }
+      return;
+    }
+    
     console.log('✅ Token found, proceeding with submission');
     console.log('📝 Setting loading to true...');
     setLoading(true);
@@ -731,9 +895,8 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
       await onSubmit(convertedData);
       console.log('✅ Form submitted successfully');
       
-      // Dismiss loading toast and show success
+      // Dismiss loading toast (success toast is handled by parent component)
       toast.dismiss(loadingToast);
-      toast.success(`${activeTab === 'drivers' ? 'Driver' : 'Truck'} created successfully!`);
       onClose();
     } catch (error: any) {
       console.error('❌ Error submitting form:', error);
@@ -813,9 +976,8 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
       await onSubmit(convertedData);
       console.log('✅ Form submitted successfully');
       
-      // Dismiss loading toast and show success
+      // Dismiss loading toast (success toast is handled by parent component)
       toast.dismiss(loadingToast);
-      toast.success(`${activeTab === 'drivers' ? 'Driver' : 'Truck'} created successfully!`);
       onClose();
     } catch (error: any) {
       console.error('❌ Error submitting form:', error);
@@ -942,27 +1104,69 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="w-full max-w-6xl max-h-[95vh] overflow-hidden p-0 flex flex-col">
+      <DialogContent className="w-full max-w-5xl max-h-[90vh] overflow-hidden p-0 flex flex-col">
         {/* Header */}
-        <DialogHeader className="flex-shrink-0 flex justify-between p-6 border-b border-gray-200">
+        <DialogHeader className="flex-shrink-0 flex justify-between p-4 border-b border-gray-200">
           <div>
-            <DialogTitle className="text-2xl font-bold text-gray-900">
+            <DialogTitle className="text-lg font-semibold text-gray-900">
               {mode === 'create' 
                 ? `Create ${activeTab === 'drivers' ? 'Driver' : 'Truck'}` 
                 : `Edit ${activeTab === 'drivers' ? 'Driver' : 'Truck'}`
               }
             </DialogTitle>
-            <DialogDescription className="text-gray-600 mt-1">
+            <DialogDescription className="text-xs text-gray-500 mt-0.5">
               Enter detailed {activeTab === 'drivers' ? 'driver' : 'truck'} information
             </DialogDescription>
           </div>
         </DialogHeader>
 
+        {/* Driver Mode Selection (only for create driver mode) */}
+        {activeTab === 'drivers' && mode === 'create' && (
+          <div className="px-4 py-3 bg-gray-50 border-b border-gray-200">
+            <label className="block text-sm font-medium text-gray-700 mb-3">
+              Select Option
+            </label>
+            <div className="flex gap-4">
+              <label className="flex items-center cursor-pointer">
+                <input
+                  type="radio"
+                  name="driverMode"
+                  value="new"
+                  checked={driverCreationMode === 'new'}
+                  onChange={(e) => {
+                    setDriverCreationMode(e.target.value as 'new' | 'existing');
+                    setSelectedExistingDriver(null);
+                    setExistingDriverSearch('');
+                    setCurrentStep(1);
+                  }}
+                  className="w-4 h-4 text-blue-600 focus:ring-blue-500"
+                />
+                <span className="ml-2 text-sm text-gray-700">Create New Driver</span>
+              </label>
+              <label className="flex items-center cursor-pointer">
+                <input
+                  type="radio"
+                  name="driverMode"
+                  value="existing"
+                  checked={driverCreationMode === 'existing'}
+                  onChange={(e) => {
+                    setDriverCreationMode(e.target.value as 'new' | 'existing');
+                    setCurrentStep(1);
+                  }}
+                  className="w-4 h-4 text-blue-600 focus:ring-blue-500"
+                />
+                <span className="ml-2 text-sm text-gray-700">Add Existing Driver</span>
+              </label>
+            </div>
+          </div>
+        )}
+
         {/* Main Content Area with Sidebar */}
         <div className="flex flex-1 overflow-hidden min-h-0">
           {/* Vertical Sidebar Navigation */}
-          <div className="w-64 bg-gray-50 border-r border-gray-200 overflow-y-auto flex-shrink-0">
-            <nav className="p-4 space-y-2">
+          {!(activeTab === 'drivers' && mode === 'create' && driverCreationMode === 'existing') && (
+          <div className="w-56 bg-gray-50 border-r border-gray-200 overflow-y-auto flex-shrink-0">
+            <nav className="p-3 space-y-1">
               {steps.map((step) => {
                 const isActive = currentStep === step.id;
                 const isCompleted = isStepComplete(step.id);
@@ -973,10 +1177,10 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
                     key={step.id}
                     type="button"
                     onClick={() => setCurrentStep(step.id)}
-                    className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-left transition-colors ${
+                    className={`w-full flex items-center space-x-2 px-3 py-2 rounded-md text-left transition-colors ${
                       isActive
-                        ? "bg-primary-100 text-primary-700 border border-primary-200"
-                        : "text-gray-600 hover:bg-gray-100"
+                        ? "bg-gray-100 text-gray-900 border border-gray-300"
+                        : "text-gray-600 hover:bg-gray-50"
                     }`}
                     title={
                       isCompleted
@@ -987,26 +1191,26 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
                     }
                   >
                     <div className="flex items-center justify-center flex-shrink-0">
-                      <div className="w-4 h-4 flex items-center justify-center">
+                      <div className="w-3.5 h-3.5 flex items-center justify-center">
                         {React.cloneElement(step.icon, { 
-                          className: "w-4 h-4 text-gray-500"
+                          className: "w-3.5 h-3.5 text-gray-500"
                         })}
                       </div>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className={`text-sm font-medium ${
-                        isActive ? 'text-primary-700' : 'text-gray-700'
+                      <p className={`text-xs font-medium ${
+                        isActive ? 'text-gray-900' : 'text-gray-600'
                       }`}>
                         {step.title}
                       </p>
                     </div>
                     {isCompleted ? (
-                      <span className="ml-auto text-green-500 flex-shrink-0" title="Complete">
+                      <span className="ml-auto text-gray-600 flex-shrink-0 text-xs" title="Complete">
                         &#10003;
                       </span>
                     ) : (
                       <span
-                        className="ml-auto text-gray-300 flex-shrink-0"
+                        className="ml-auto text-gray-300 flex-shrink-0 text-xs"
                         title="Incomplete"
                       >
                         &#9675;
@@ -1017,16 +1221,100 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
               })}
             </nav>
           </div>
+          )}
 
           {/* Form Content - Responsive */}
           <div className="flex-1 overflow-y-auto min-h-0">
-            <div className="p-6">
+            <div className="p-4">
               <form 
                 onSubmit={handleSubmit} 
                 id="fleet-form-stepper"
               >
-                <div ref={stepContentRef} className="max-w-4xl mx-auto">
-                  {renderStepContent()}
+                <div ref={stepContentRef} className="max-w-3xl mx-auto">
+                  {/* Existing Driver Selection UI */}
+                  {activeTab === 'drivers' && mode === 'create' && driverCreationMode === 'existing' ? (
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Search for Driver *
+                        </label>
+                        <div className="relative">
+                          <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                          <input
+                            type="text"
+                            value={existingDriverSearch}
+                            onChange={(e) => setExistingDriverSearch(e.target.value)}
+                            className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            placeholder="Search by name, email, phone, or license number..."
+                          />
+                        </div>
+                      </div>
+
+                      {/* Driver Results */}
+                      {existingDriverSearch.length > 0 && (
+                        <div className="border border-gray-200 rounded-lg max-h-60 overflow-y-auto">
+                          {allAvailableDrivers.length === 0 ? (
+                            <div className="p-4 text-center text-gray-500 text-sm">
+                              No drivers found. Try a different search term.
+                            </div>
+                          ) : (
+                            <div className="divide-y divide-gray-200">
+                              {allAvailableDrivers.map((driver) => (
+                                <div
+                                  key={driver.id}
+                                  onClick={() => {
+                                    setSelectedExistingDriver(driver);
+                                    setExistingDriverSearch(`${driver.firstName} ${driver.lastName} - ${driver.email}`);
+                                  }}
+                                  className={`p-3 cursor-pointer hover:bg-blue-50 transition-colors ${
+                                    selectedExistingDriver?.id === driver.id ? 'bg-blue-100 border-l-4 border-blue-600' : ''
+                                  }`}
+                                >
+                                  <div className="flex items-center justify-between">
+                                    <div>
+                                      <div className="font-medium text-gray-900">
+                                        {driver.firstName} {driver.lastName}
+                                      </div>
+                                      <div className="text-sm text-gray-500">
+                                        {driver.email} • {driver.phone}
+                                      </div>
+                                      <div className="text-xs text-gray-400 mt-1">
+                                        License: {driver.licenseNumber}
+                                      </div>
+                                    </div>
+                                    {selectedExistingDriver?.id === driver.id && (
+                                      <FaCheckCircle className="w-5 h-5 text-blue-600" />
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {selectedExistingDriver && (
+                        <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                          <div className="flex items-center gap-2 text-green-800">
+                            <FaCheckCircle className="w-5 h-5" />
+                            <span className="font-medium">
+                              Selected: {selectedExistingDriver.firstName} {selectedExistingDriver.lastName}
+                            </span>
+                          </div>
+                        </div>
+                      )}
+
+                      {!selectedExistingDriver && existingDriverSearch.length === 0 && (
+                        <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                          <p className="text-sm text-blue-800">
+                            Search for an existing driver by name, email, phone, or license number to add them to your fleet.
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    renderStepContent()
+                  )}
                 </div>
               </form>
             </div>
@@ -1034,39 +1322,60 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
         </div>
 
         {/* Footer - Responsive */}
-        <DialogFooter className="flex-shrink-0 bg-gray-50 px-6 py-4 border-t border-gray-200 flex justify-between items-center">
+        <DialogFooter className="flex-shrink-0 bg-gray-50 px-4 py-3 border-t border-gray-200 flex justify-between items-center">
           <button
             type="button"
             onClick={prevStep}
             disabled={currentStep === 1}
-                className={`flex items-center px-4 py-2 rounded-lg border text-sm ${
+                className={`flex items-center px-3 py-1.5 rounded-md border text-xs ${
               currentStep === 1
                 ? 'border-gray-300 text-gray-400 cursor-not-allowed'
-                : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                : 'border-gray-300 text-gray-700 hover:bg-gray-100'
             }`}
           >
-            <FaArrowLeft className="w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2" />
-            <span className="hidden sm:inline">Previous</span>
+            <FaArrowLeft className="w-3 h-3 mr-1.5" />
+            <span>Previous</span>
           </button>
 
-          <div className="flex space-x-2 md:space-x-3">
+          <div className="flex space-x-2">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm"
+              className="px-3 py-1.5 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-100 text-xs"
             >
-              <span className="hidden sm:inline">Cancel</span>
-              <span className="sm:hidden">✕</span>
+              Cancel
             </button>
             
-            {currentStep < steps.length ? (
+            {activeTab === 'drivers' && mode === 'create' && driverCreationMode === 'existing' ? (
+              <button
+                type="submit"
+                disabled={loading || !selectedExistingDriver}
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleSubmit(e);
+                }}
+                className="flex items-center px-3 py-1.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-xs"
+              >
+                {loading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-1.5"></div>
+                    Adding...
+                  </>
+                ) : (
+                  <>
+                    <FaCheckCircle className="w-3 h-3 mr-1.5" />
+                    Add Driver
+                  </>
+                )}
+              </button>
+            ) : currentStep < steps.length ? (
               <button
                 type="button"
                 onClick={nextStep}
-                className="flex items-center px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 text-sm"
+                className="flex items-center px-3 py-1.5 bg-gray-700 text-white rounded-md hover:bg-gray-800 text-xs"
               >
-                <span className="hidden sm:inline">Next</span>
-                <FaArrowRight className="w-3 h-3 md:w-4 md:h-4 ml-1 md:ml-2" />
+                <span>Next</span>
+                <FaArrowRight className="w-3 h-3 ml-1.5" />
               </button>
             ) : (
               <button
@@ -1102,18 +1411,12 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
                   console.log('🚀 Triggering form submission...');
                   handleManualSubmit();
                 }}
-                className="flex items-center px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                className="flex items-center px-3 py-1.5 bg-gray-700 text-white rounded-md hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed text-xs"
               >
                 {loading ? (
-                  <>
-                    <span className="hidden sm:inline">Submitting...</span>
-                    <span className="sm:hidden">...</span>
-                  </>
+                  <span>Submitting...</span>
                 ) : (
-                  <>
-                    <span className="hidden sm:inline">Submit {activeTab === 'drivers' ? 'Driver' : 'Truck'}</span>
-                    <span className="sm:hidden">✓</span>
-                  </>
+                  <span>Submit {activeTab === 'drivers' ? 'Driver' : 'Truck'}</span>
                 )}
               </button>
             )}

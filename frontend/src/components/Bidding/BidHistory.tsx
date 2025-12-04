@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { FaEye, FaEdit, FaTrash, FaCheck, FaTimes, FaHistory } from 'react-icons/fa';
+import { FaEye, FaEdit, FaTrash, FaCheck, FaTimes, FaHistory, FaEnvelope, FaPhone } from 'react-icons/fa';
+import toast from 'react-hot-toast';
 import { biddingAPI, biddingHelpers } from '../../services/biddingApi';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 
 interface Bid {
   id: string;
@@ -18,11 +20,22 @@ interface Bid {
     weight: number;
     loadValue: number;
   };
-  auction: {
+  auction?: {
     id: string;
     auctionType: string;
     status: string;
     auctionEnd: string;
+  };
+  truckOwner?: {
+    id: string;
+    email: string;
+    phone?: string;
+    profile?: {
+      firstName: string;
+      lastName: string;
+      companyName?: string;
+      phone?: string;
+    };
   };
 }
 
@@ -42,6 +55,7 @@ const BidHistory: React.FC<BidHistoryProps> = ({ userRole }) => {
     minAmount: '',
     maxAmount: '',
   });
+  const { confirm, DialogComponent } = useConfirmDialog();
 
   useEffect(() => {
     loadBidHistory();
@@ -49,11 +63,21 @@ const BidHistory: React.FC<BidHistoryProps> = ({ userRole }) => {
 
   const loadBidHistory = async () => {
     setLoading(true);
+    setError(null);
     try {
-      const response = await biddingAPI.getBidHistory(filters);
-      setBids(response.data);
+      // Use getMyBids for both cargo owners and truck owners
+      const response = await biddingAPI.getMyBids();
+      const bidsData = response.data || response;
+      
+      // Filter bids based on status filter
+      let filteredBids = Array.isArray(bidsData) ? bidsData : [];
+      if (filters.status && filters.status !== 'all') {
+        filteredBids = filteredBids.filter((bid: Bid) => bid.status === filters.status);
+      }
+      
+      setBids(filteredBids);
     } catch (error) {
-      setError('Failed to load bid history - using demo data');
+      setError('Failed to load bid history');
       console.error('Bid history error:', error);
       
       // Set demo bid history when API fails
@@ -120,11 +144,31 @@ const BidHistory: React.FC<BidHistoryProps> = ({ userRole }) => {
   };
 
   const handleAcceptBid = async (bidId: string) => {
+    const bid = bids.find(b => b.id === bidId);
+    if (!bid) return;
+
+    // Styled confirmation dialog
+    const confirmed = await confirm({
+      title: 'Accept Bid',
+      message: `Are you sure you want to accept this bid?\n\n` +
+        `Bid Amount: ${biddingHelpers.formatCurrency(bid.bidAmount, bid.bidCurrency)}\n` +
+        `Load: ${bid.load?.title || 'N/A'}\n\n` +
+        `This will assign the load to the truck owner and close the auction. The assigned driver will see it in their cargo management dashboard.`,
+      confirmText: 'Accept Bid',
+      cancelText: 'Cancel',
+      variant: 'info',
+    });
+
+    if (!confirmed) return;
+
     try {
-      await biddingAPI.acceptBid(bidId);
+      const response = await biddingAPI.acceptBid(bidId);
+      toast.success('Bid accepted successfully! The load has been assigned to the truck owner. The assigned driver will see it in their cargo management dashboard.');
       loadBidHistory(); // Refresh the list
-    } catch (error) {
+    } catch (error: any) {
       console.error('Accept bid error:', error);
+      const errorMessage = error?.response?.data?.message || error?.message || 'Failed to accept bid';
+      toast.error(errorMessage);
     }
   };
 
@@ -261,6 +305,11 @@ const BidHistory: React.FC<BidHistoryProps> = ({ userRole }) => {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Load
                   </th>
+                  {userRole === 'CARGO_OWNER' && (
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Truck Owner
+                    </th>
+                  )}
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Bid Amount
                   </th>
@@ -276,61 +325,96 @@ const BidHistory: React.FC<BidHistoryProps> = ({ userRole }) => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {bids.map((bid) => (
-                  <tr key={bid.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div>
-                        <div className="text-sm font-medium text-gray-900">{bid.load.title}</div>
-                        <div className="text-sm text-gray-500">{bid.load.weight} kg</div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">
-                        {formatCurrency(bid.bidAmount, bid.bidCurrency)}
-                      </div>
-                      {bid.successProbability && (
-                        <div className="text-sm text-gray-500">
-                          {bid.successProbability}% success
+                {bids.map((bid) => {
+                  const truckOwnerName = bid.truckOwner?.profile 
+                    ? `${bid.truckOwner.profile.firstName || ''} ${bid.truckOwner.profile.lastName || ''}`.trim() || 'Unknown'
+                    : bid.truckOwner?.email || 'Unknown';
+                  const truckOwnerPhone = bid.truckOwner?.profile?.phone || bid.truckOwner?.phone || '';
+                  const truckOwnerEmail = bid.truckOwner?.email || '';
+                  
+                  return (
+                    <tr key={bid.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div>
+                          <div className="text-sm font-medium text-gray-900">{bid.load.title}</div>
+                          <div className="text-sm text-gray-500">{bid.load.weight} kg</div>
                         </div>
+                      </td>
+                      {userRole === 'CARGO_OWNER' && (
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div>
+                            <div className="text-sm font-medium text-gray-900">{truckOwnerName}</div>
+                            {bid.truckOwner?.profile?.companyName && (
+                              <div className="text-xs text-gray-500">{bid.truckOwner.profile.companyName}</div>
+                            )}
+                            {truckOwnerEmail && (
+                              <div className="text-xs text-blue-600">
+                                <a href={`mailto:${truckOwnerEmail}`} className="hover:underline">
+                                  {truckOwnerEmail}
+                                </a>
+                              </div>
+                            )}
+                            {truckOwnerPhone && (
+                              <div className="text-xs text-blue-600">
+                                <a href={`tel:${truckOwnerPhone}`} className="hover:underline">
+                                  {truckOwnerPhone}
+                                </a>
+                              </div>
+                            )}
+                          </div>
+                        </td>
                       )}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      {getStatusBadge(bid.status)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {formatDate(bid.createdAt)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <div className="flex space-x-2">
-                        <button
-                          onClick={() => {
-                            setSelectedBid(bid);
-                            setShowDetailsModal(true);
-                          }}
-                          className="text-blue-600 hover:text-blue-900"
-                        >
-                          <FaEye className="h-4 w-4" />
-                        </button>
-                        {bid.status === 'PENDING' && userRole === 'TRUCK_OWNER' && (
-                          <button
-                            onClick={() => handleWithdrawBid(bid.id)}
-                            className="text-red-600 hover:text-red-900"
-                          >
-                            <FaTrash className="h-4 w-4" />
-                          </button>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-gray-900">
+                          {formatCurrency(bid.bidAmount, bid.bidCurrency)}
+                        </div>
+                        {bid.successProbability && (
+                          <div className="text-sm text-gray-500">
+                            {bid.successProbability}% success
+                          </div>
                         )}
-                        {bid.status === 'PENDING' && userRole === 'CARGO_OWNER' && (
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        {getStatusBadge(bid.status)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {formatDate(bid.createdAt)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <div className="flex space-x-2">
                           <button
-                            onClick={() => handleAcceptBid(bid.id)}
-                            className="text-green-600 hover:text-green-900"
+                            onClick={() => {
+                              setSelectedBid(bid);
+                              setShowDetailsModal(true);
+                            }}
+                            className="text-blue-600 hover:text-blue-900"
+                            title="View Details"
                           >
-                            <FaCheck className="h-4 w-4" />
+                            <FaEye className="h-4 w-4" />
                           </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                          {bid.status === 'PENDING' && userRole === 'TRUCK_OWNER' && (
+                            <button
+                              onClick={() => handleWithdrawBid(bid.id)}
+                              className="text-red-600 hover:text-red-900"
+                              title="Withdraw Bid"
+                            >
+                              <FaTrash className="h-4 w-4" />
+                            </button>
+                          )}
+                          {bid.status === 'PENDING' && userRole === 'CARGO_OWNER' && (
+                            <button
+                              onClick={() => handleAcceptBid(bid.id)}
+                              className="text-green-600 hover:text-green-900"
+                              title="Accept Bid"
+                            >
+                              <FaCheck className="h-4 w-4" />
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -394,6 +478,52 @@ const BidHistory: React.FC<BidHistoryProps> = ({ userRole }) => {
                   </div>
                 )}
 
+                {userRole === 'CARGO_OWNER' && selectedBid.truckOwner && (
+                  <div className="border-t pt-4 mt-4">
+                    <h5 className="text-sm font-semibold text-gray-900 mb-3">Truck Owner Contact Information</h5>
+                    <div className="space-y-2">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700">Name</label>
+                        <p className="text-sm text-gray-900">
+                          {selectedBid.truckOwner.profile 
+                            ? `${selectedBid.truckOwner.profile.firstName || ''} ${selectedBid.truckOwner.profile.lastName || ''}`.trim() || 'Unknown'
+                            : selectedBid.truckOwner.email || 'Unknown'}
+                        </p>
+                      </div>
+                      {selectedBid.truckOwner.profile?.companyName && (
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700">Company</label>
+                          <p className="text-sm text-gray-900">{selectedBid.truckOwner.profile.companyName}</p>
+                        </div>
+                      )}
+                      {selectedBid.truckOwner.email && (
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700">Email</label>
+                          <a 
+                            href={`mailto:${selectedBid.truckOwner.email}`}
+                            className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-2"
+                          >
+                            <FaEnvelope className="h-3 w-3" />
+                            {selectedBid.truckOwner.email}
+                          </a>
+                        </div>
+                      )}
+                      {(selectedBid.truckOwner.profile?.phone || selectedBid.truckOwner.phone) && (
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700">Phone</label>
+                          <a 
+                            href={`tel:${selectedBid.truckOwner.profile?.phone || selectedBid.truckOwner.phone}`}
+                            className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-2"
+                          >
+                            <FaPhone className="h-3 w-3" />
+                            {selectedBid.truckOwner.profile?.phone || selectedBid.truckOwner.phone}
+                          </a>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Created</label>
                   <p className="text-sm text-gray-900">{formatDate(selectedBid.createdAt)}</p>
@@ -412,6 +542,9 @@ const BidHistory: React.FC<BidHistoryProps> = ({ userRole }) => {
           </div>
         </div>
       )}
+
+      {/* Styled Confirmation Dialog */}
+      {DialogComponent}
     </div>
   );
 };

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { FaUser, FaEnvelope, FaPhone, FaBuilding, FaEdit, FaSave, FaTimes } from 'react-icons/fa';
 import { useAuth } from '../contexts/AuthContext';
+import { authAPI } from '../services/api';
 
 interface UserProfile {
   id: string;
@@ -46,50 +47,99 @@ const Profile: React.FC = () => {
   });
 
   useEffect(() => {
-    loadProfile();
-  }, []);
+    if (user) {
+      loadProfile();
+    }
+  }, [user]);
 
   const loadProfile = async () => {
     try {
       setLoading(true);
-      // In a real app, this would fetch from API
-      // For now, we'll simulate the profile data
-      const mockProfile: UserProfile = {
-        id: '1',
-        userId: user?.id || '',
-        firstName: 'John',
-        lastName: 'Doe',
-        companyName: 'Doe Logistics Ltd',
-        phone: '+254700123456',
-        address: '123 Industrial Area',
-        city: 'Nairobi',
-        state: 'Nairobi',
-        country: 'Kenya',
-        postalCode: '00100',
-        bio: 'Experienced cargo owner with over 10 years in logistics.',
-        websiteUrl: 'https://doelogistics.com',
-        rating: 4.8,
-        totalTrips: 156,
-        createdAt: '2024-01-01T00:00:00Z',
-        updatedAt: '2024-01-15T00:00:00Z',
+      setError(null);
+      
+      // Fetch profile from API
+      const response = await authAPI.getProfile();
+      const userData = response.data?.data?.user || response.data?.user || response.data;
+      
+      if (!userData) {
+        throw new Error('No user data received');
+      }
+      
+      // Use logged-in user data from context as fallback
+      const profileData: UserProfile = {
+        id: userData.id || user?.id || '',
+        userId: userData.id || user?.id || '',
+        firstName: userData.firstName || user?.firstName || '',
+        lastName: userData.lastName || user?.lastName || '',
+        companyName: userData.companyName || userData.tenantName || '',
+        phone: userData.phone || '',
+        address: userData.address || '',
+        city: userData.city || '',
+        state: userData.state || '',
+        country: userData.country || userData.countryCode || '',
+        postalCode: userData.postalCode || '',
+        bio: userData.bio || '',
+        websiteUrl: userData.websiteUrl || '',
+        rating: userData.rating || 0,
+        totalTrips: userData.totalTrips || 0,
+        createdAt: userData.createdAt || new Date().toISOString(),
+        updatedAt: userData.updatedAt || new Date().toISOString(),
       };
       
-      setProfile(mockProfile);
+      setProfile(profileData);
       setFormData({
-        firstName: mockProfile.firstName,
-        lastName: mockProfile.lastName,
-        companyName: mockProfile.companyName,
-        phone: mockProfile.phone || '',
-        address: mockProfile.address || '',
-        city: mockProfile.city || '',
-        state: mockProfile.state || '',
-        country: mockProfile.country || '',
-        postalCode: mockProfile.postalCode || '',
-        bio: mockProfile.bio || '',
-        websiteUrl: mockProfile.websiteUrl || '',
+        firstName: profileData.firstName || '',
+        lastName: profileData.lastName || '',
+        companyName: profileData.companyName || '',
+        phone: profileData.phone || '',
+        address: profileData.address || '',
+        city: profileData.city || '',
+        state: profileData.state || '',
+        country: profileData.country || '',
+        postalCode: profileData.postalCode || '',
+        bio: profileData.bio || '',
+        websiteUrl: profileData.websiteUrl || '',
       });
     } catch (err: any) {
-      setError('Failed to load profile');
+      console.error('Error loading profile:', err);
+      // If API fails, use logged-in user data from context
+      if (user) {
+        const fallbackProfile: UserProfile = {
+          id: user.id,
+          userId: user.id,
+          firstName: user.firstName || '',
+          lastName: user.lastName || '',
+          companyName: user.tenantName || '',
+          phone: '',
+          address: '',
+          city: '',
+          state: '',
+          country: '',
+          postalCode: '',
+          bio: '',
+          websiteUrl: '',
+          rating: 0,
+          totalTrips: 0,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+        setProfile(fallbackProfile);
+        setFormData({
+          firstName: fallbackProfile.firstName || '',
+          lastName: fallbackProfile.lastName || '',
+          companyName: fallbackProfile.companyName || '',
+          phone: '',
+          address: '',
+          city: '',
+          state: '',
+          country: '',
+          postalCode: '',
+          bio: '',
+          websiteUrl: '',
+        });
+      } else {
+        setError('Failed to load profile. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
@@ -158,103 +208,110 @@ const Profile: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+      <div className="flex items-center justify-center h-48">
+        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Profile</h1>
-          <p className="text-gray-600">Manage your account information</p>
-        </div>
-        <div className="flex space-x-3">
-          {editing ? (
-            <>
+      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-100 px-4 py-3 mb-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600">
+              <FaUser className="w-4 h-4 text-white" />
+            </div>
+            <div>
+              <h1 className="text-lg font-bold text-gray-900">Profile</h1>
+              <p className="text-xs text-gray-600 mt-0.5">Manage your account information</p>
+            </div>
+          </div>
+          <div className="flex space-x-2">
+            {editing ? (
+              <>
+                <button
+                  onClick={handleSave}
+                  disabled={loading}
+                  className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-1.5 disabled:opacity-50 transition-colors"
+                >
+                  <FaSave className="w-3.5 h-3.5" />
+                  <span>Save</span>
+                </button>
+                <button
+                  onClick={handleCancel}
+                  className="px-3 py-1.5 text-sm bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 flex items-center gap-1.5 transition-colors"
+                >
+                  <FaTimes className="w-3.5 h-3.5" />
+                  <span>Cancel</span>
+                </button>
+              </>
+            ) : (
               <button
-                onClick={handleSave}
-                disabled={loading}
-                className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 flex items-center space-x-2 disabled:opacity-50"
+                onClick={handleEdit}
+                className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-1.5 transition-colors"
               >
-                <FaSave className="w-4 h-4" />
-                <span>Save</span>
+                <FaEdit className="w-3.5 h-3.5" />
+                <span>Edit Profile</span>
               </button>
-              <button
-                onClick={handleCancel}
-                className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 flex items-center space-x-2"
-              >
-                <FaTimes className="w-4 h-4" />
-                <span>Cancel</span>
-              </button>
-            </>
-          ) : (
-            <button
-              onClick={handleEdit}
-              className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 flex items-center space-x-2"
-            >
-              <FaEdit className="w-4 h-4" />
-              <span>Edit Profile</span>
-            </button>
-          )}
+            )}
+          </div>
         </div>
       </div>
 
       {/* Alerts */}
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg">
+        <div className="bg-red-50 border border-red-200 text-red-700 p-3 rounded-lg text-xs">
           {error}
         </div>
       )}
       
       {success && (
-        <div className="bg-green-50 border border-green-200 text-green-700 p-4 rounded-lg">
+        <div className="bg-green-50 border border-green-200 text-green-700 p-3 rounded-lg text-xs">
           {success}
         </div>
       )}
 
       {/* Profile Content */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Profile Card */}
         <div className="lg:col-span-1">
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
-            <div className="text-center mb-6">
-              <div className="w-24 h-24 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <FaUser className="w-12 h-12 text-primary-600" />
+          <div className="bg-white rounded-lg border border-gray-200 p-3">
+            <div className="text-center mb-4">
+              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                <FaUser className="w-8 h-8 text-blue-600" />
               </div>
-              <h2 className="text-xl font-semibold text-gray-900">
+              <h2 className="text-sm font-semibold text-gray-900">
                 {profile?.firstName} {profile?.lastName}
               </h2>
-              <p className="text-gray-600">{profile?.companyName}</p>
-              <div className="flex items-center justify-center space-x-4 mt-2">
-                <span className="text-sm text-gray-500">Rating: {profile?.rating}/5</span>
-                <span className="text-sm text-gray-500">•</span>
-                <span className="text-sm text-gray-500">{profile?.totalTrips} trips</span>
+              <p className="text-xs text-gray-600 mt-0.5">{profile?.companyName}</p>
+              <div className="flex items-center justify-center space-x-3 mt-2">
+                <span className="text-xs text-gray-500">Rating: {profile?.rating}/5</span>
+                <span className="text-xs text-gray-500">•</span>
+                <span className="text-xs text-gray-500">{profile?.totalTrips} trips</span>
               </div>
             </div>
             
-            <div className="space-y-3">
-              <div className="flex items-center space-x-3">
-                <FaEnvelope className="w-4 h-4 text-gray-400" />
-                <span className="text-sm text-gray-600">{user?.email}</span>
+            <div className="space-y-2">
+              <div className="flex items-center space-x-2">
+                <FaEnvelope className="w-3.5 h-3.5 text-gray-400" />
+                <span className="text-xs text-gray-600">{user?.email}</span>
               </div>
               {profile?.phone && (
-                <div className="flex items-center space-x-3">
-                  <FaPhone className="w-4 h-4 text-gray-400" />
-                  <span className="text-sm text-gray-600">{profile.phone}</span>
+                <div className="flex items-center space-x-2">
+                  <FaPhone className="w-3.5 h-3.5 text-gray-400" />
+                  <span className="text-xs text-gray-600">{profile.phone}</span>
                 </div>
               )}
               {profile?.websiteUrl && (
-                <div className="flex items-center space-x-3">
-                  <FaBuilding className="w-4 h-4 text-gray-400" />
+                <div className="flex items-center space-x-2">
+                  <FaBuilding className="w-3.5 h-3.5 text-gray-400" />
                   <a 
                     href={profile.websiteUrl} 
                     target="_blank" 
                     rel="noopener noreferrer"
-                    className="text-sm text-primary-600 hover:underline"
+                    className="text-xs text-blue-600 hover:underline"
                   >
                     {profile.websiteUrl}
                   </a>
@@ -266,14 +323,14 @@ const Profile: React.FC = () => {
 
         {/* Profile Form */}
         <div className="lg:col-span-2">
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-6">
+          <div className="bg-white rounded-lg border border-gray-200 p-3">
+            <h3 className="text-sm font-semibold text-gray-900 mb-3">
               Personal Information
             </h3>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-xs font-medium text-gray-700 mb-1">
                   First Name
                 </label>
                 <input
@@ -281,12 +338,12 @@ const Profile: React.FC = () => {
                   value={formData.firstName}
                   onChange={(e) => handleInputChange('firstName', e.target.value)}
                   disabled={!editing}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:bg-gray-100"
+                  className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
                 />
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-xs font-medium text-gray-700 mb-1">
                   Last Name
                 </label>
                 <input
@@ -294,12 +351,12 @@ const Profile: React.FC = () => {
                   value={formData.lastName}
                   onChange={(e) => handleInputChange('lastName', e.target.value)}
                   disabled={!editing}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:bg-gray-100"
+                  className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
                 />
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-xs font-medium text-gray-700 mb-1">
                   Company Name
                 </label>
                 <input
@@ -307,12 +364,12 @@ const Profile: React.FC = () => {
                   value={formData.companyName}
                   onChange={(e) => handleInputChange('companyName', e.target.value)}
                   disabled={!editing}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:bg-gray-100"
+                  className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
                 />
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-xs font-medium text-gray-700 mb-1">
                   Phone Number
                 </label>
                 <input
@@ -320,12 +377,12 @@ const Profile: React.FC = () => {
                   value={formData.phone}
                   onChange={(e) => handleInputChange('phone', e.target.value)}
                   disabled={!editing}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:bg-gray-100"
+                  className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
                 />
               </div>
               
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-xs font-medium text-gray-700 mb-1">
                   Address
                 </label>
                 <input
@@ -333,12 +390,12 @@ const Profile: React.FC = () => {
                   value={formData.address}
                   onChange={(e) => handleInputChange('address', e.target.value)}
                   disabled={!editing}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:bg-gray-100"
+                  className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
                 />
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-xs font-medium text-gray-700 mb-1">
                   City
                 </label>
                 <input
@@ -346,12 +403,12 @@ const Profile: React.FC = () => {
                   value={formData.city}
                   onChange={(e) => handleInputChange('city', e.target.value)}
                   disabled={!editing}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:bg-gray-100"
+                  className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
                 />
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-xs font-medium text-gray-700 mb-1">
                   State/Province
                 </label>
                 <input
@@ -359,12 +416,12 @@ const Profile: React.FC = () => {
                   value={formData.state}
                   onChange={(e) => handleInputChange('state', e.target.value)}
                   disabled={!editing}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:bg-gray-100"
+                  className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
                 />
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-xs font-medium text-gray-700 mb-1">
                   Country
                 </label>
                 <input
@@ -372,12 +429,12 @@ const Profile: React.FC = () => {
                   value={formData.country}
                   onChange={(e) => handleInputChange('country', e.target.value)}
                   disabled={!editing}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:bg-gray-100"
+                  className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
                 />
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-xs font-medium text-gray-700 mb-1">
                   Postal Code
                 </label>
                 <input
@@ -385,12 +442,12 @@ const Profile: React.FC = () => {
                   value={formData.postalCode}
                   onChange={(e) => handleInputChange('postalCode', e.target.value)}
                   disabled={!editing}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:bg-gray-100"
+                  className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
                 />
               </div>
               
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-xs font-medium text-gray-700 mb-1">
                   Website
                 </label>
                 <input
@@ -398,20 +455,20 @@ const Profile: React.FC = () => {
                   value={formData.websiteUrl}
                   onChange={(e) => handleInputChange('websiteUrl', e.target.value)}
                   disabled={!editing}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:bg-gray-100"
+                  className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
                 />
               </div>
               
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-xs font-medium text-gray-700 mb-1">
                   Bio
                 </label>
                 <textarea
                   value={formData.bio}
                   onChange={(e) => handleInputChange('bio', e.target.value)}
                   disabled={!editing}
-                  rows={4}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:bg-gray-100"
+                  rows={3}
+                  className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
                 />
               </div>
             </div>

@@ -11,7 +11,7 @@ import { PriceSuggestion } from '../../entities/price-suggestion.entity';
 import { Location } from '../../entities/location.entity';
 import { User } from '../../entities/user.entity';
 import { LocationsModule } from '../locations/locations.module';
-
+import { MatchingModule } from '../matching/matching.module';
 import { EnhancedAuthModule } from '../auth/enhanced-auth.module';
 import { RolesGuard } from '../auth/roles.guard';
 import { TenantGuard } from '../auth/tenant.guard';
@@ -29,6 +29,7 @@ import { TenantGuard } from '../auth/tenant.guard';
       User,
     ]),
     LocationsModule,
+    MatchingModule,
     EnhancedAuthModule,
   ],
   controllers: [LoadsController],

@@ -3,25 +3,41 @@ import {
   NotFoundException,
   ConflictException,
   BadRequestException,
+  Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { FindOptionsWhere, FindOptionsOrder, ILike, In, Repository } from 'typeorm';
 import { Tenant, TenantStatus, TenantType } from '../../entities/tenant.entity';
-import { User, UserRole } from '../../entities/user.entity';
+import { User, UserRole, UserStatus } from '../../entities/user.entity';
+import { UserProfile } from '../../entities/user-profile.entity';
+import { PasswordResetToken } from '../../entities/password-reset-token.entity';
 import { FindTenantsDto } from './dto/tenant.dto';
-import { PaginatorResponse, Paginators } from 'src/utils/paginator';
-import { mergeWhere } from 'src/utils/query';
+import { PaginatorResponse, Paginators } from '../../utils/paginator';
+import { mergeWhere } from '../../utils/query';
+import { EmailService } from './email.service';
+import * as crypto from 'crypto';
+import * as bcrypt from 'bcryptjs';
 
 @Injectable()
 export class TenantService {
+  private readonly logger = new Logger(TenantService.name);
+
   constructor(
     @InjectRepository(Tenant)
     private readonly tenantRepository: Repository<Tenant>,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    @InjectRepository(UserProfile)
+    private readonly userProfileRepository: Repository<UserProfile>,
+    @InjectRepository(PasswordResetToken)
+    private readonly passwordResetTokenRepository: Repository<PasswordResetToken>,
+    private readonly emailService: EmailService,
   ) {}
 
   async createTenant(createTenantDto: any): Promise<Tenant> {
+    this.logger.log('🏢 Creating tenant...');
+    this.logger.log(`Tenant data: ${JSON.stringify(createTenantDto)}`);
+
     // Check if subdomain already exists
     if (createTenantDto.subdomain) {
       const existingTenant = await this.tenantRepository.findOne({
@@ -33,13 +49,237 @@ export class TenantService {
       }
     }
 
+    // Validate contact email is provided
+    if (!createTenantDto.contactEmail || createTenantDto.contactEmail.trim() === '') {
+      throw new BadRequestException(
+        'Contact email is required to create a tenant account. Please provide a valid email address.',
+      );
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const normalizedEmail = createTenantDto.contactEmail.trim().toLowerCase();
+    if (!emailRegex.test(normalizedEmail)) {
+      throw new BadRequestException(
+        'Invalid email format. Please provide a valid email address.',
+      );
+    }
+
+    this.logger.log(`📧 Contact email from form: ${createTenantDto.contactEmail}`);
+    this.logger.log(`📧 Normalized email (will be used for user account and email): ${normalizedEmail}`);
+
+    // Create tenant
     const tenant = this.tenantRepository.create({
       ...createTenantDto,
       status: TenantStatus.PENDING_ACTIVATION,
     });
 
     const savedTenant = await this.tenantRepository.save(tenant);
-    return Array.isArray(savedTenant) ? savedTenant[0] : savedTenant;
+    const finalTenant = Array.isArray(savedTenant) ? savedTenant[0] : savedTenant;
+
+    this.logger.log(`✅ Tenant created with ID: ${finalTenant.id}`);
+    this.logger.log(`📧 Email will be sent to: ${normalizedEmail} (from contactEmail field)`);
+
+    // Create tenant admin user account
+    try {
+      // Check if user already exists
+      let tenantAdminUser = await this.userRepository.findOne({
+        where: { email: normalizedEmail },
+      });
+
+      if (tenantAdminUser) {
+        this.logger.log(`👤 User ${normalizedEmail} already exists, updating...`);
+        
+        // Update user role to TENANT_ADMIN if not already
+        if (tenantAdminUser.role !== UserRole.TENANT_ADMIN) {
+          tenantAdminUser.role = UserRole.TENANT_ADMIN;
+        }
+        
+        // Update tenant ID
+        tenantAdminUser.tenantId = finalTenant.id;
+        
+        // Set status to PENDING_VERIFICATION if not active or doesn't have password
+        if (tenantAdminUser.status !== UserStatus.ACTIVE || !tenantAdminUser.passwordHash) {
+          tenantAdminUser.status = UserStatus.PENDING_VERIFICATION;
+        }
+        
+        await this.userRepository.save(tenantAdminUser);
+
+        // Update or create user profile
+        let userProfile = await this.userProfileRepository.findOne({
+          where: { userId: tenantAdminUser.id },
+        });
+        
+        if (userProfile) {
+          // Extract name from tenant name or use defaults
+          const nameParts = (finalTenant.name || 'Tenant Admin').split(' ');
+          userProfile.firstName = nameParts[0] || 'Tenant';
+          userProfile.lastName = nameParts.slice(1).join(' ') || 'Admin';
+          if (!userProfile.tenantId) {
+            userProfile.tenantId = finalTenant.id;
+          }
+          await this.userProfileRepository.save(userProfile);
+        } else {
+          const nameParts = (finalTenant.name || 'Tenant Admin').split(' ');
+          userProfile = this.userProfileRepository.create({
+            userId: tenantAdminUser.id,
+            tenantId: finalTenant.id,
+            firstName: nameParts[0] || 'Tenant',
+            lastName: nameParts.slice(1).join(' ') || 'Admin',
+          });
+          await this.userProfileRepository.save(userProfile);
+        }
+
+        // Always send password setup email when creating a tenant
+        // This ensures the tenant admin is notified about their new role, even if they already exist
+        this.logger.log(`📧 Sending password setup email for tenant admin (existing user)...`);
+        this.logger.log(`📧 User status: ${tenantAdminUser.status}, Has password: ${!!tenantAdminUser.passwordHash}`);
+        await this.sendTenantPasswordSetupEmail(
+          normalizedEmail,
+          userProfile.firstName,
+          userProfile.lastName,
+          finalTenant.name,
+          finalTenant.id,
+        );
+      } else {
+        // Create new user for tenant admin
+        this.logger.log(`👤 Creating new tenant admin user account...`);
+        
+        // Generate temporary password (will be replaced when tenant admin sets password)
+        const tempPassword = crypto.randomBytes(32).toString('hex');
+        const tempPasswordHash = await bcrypt.hash(tempPassword, 12);
+
+        tenantAdminUser = this.userRepository.create({
+          email: normalizedEmail,
+          passwordHash: tempPasswordHash,
+          role: UserRole.TENANT_ADMIN,
+          status: UserStatus.PENDING_VERIFICATION,
+          tenantId: finalTenant.id,
+        });
+
+        tenantAdminUser = await this.userRepository.save(tenantAdminUser);
+        this.logger.log(`✅ Tenant admin user created with ID: ${tenantAdminUser.id}`);
+
+        // Create user profile
+        const nameParts = (finalTenant.name || 'Tenant Admin').split(' ');
+        const userProfile = this.userProfileRepository.create({
+          userId: tenantAdminUser.id,
+          tenantId: finalTenant.id,
+          firstName: nameParts[0] || 'Tenant',
+          lastName: nameParts.slice(1).join(' ') || 'Admin',
+        });
+        await this.userProfileRepository.save(userProfile);
+
+        // Send password setup email (always send for new users)
+        this.logger.log(`📧 Sending password setup email for new tenant admin user...`);
+        await this.sendTenantPasswordSetupEmail(
+          normalizedEmail,
+          userProfile.firstName,
+          userProfile.lastName,
+          finalTenant.name,
+          finalTenant.id,
+        );
+      }
+    } catch (error: any) {
+      this.logger.error(`❌ Error creating tenant admin user: ${error.message}`);
+      this.logger.error(`❌ Error stack: ${error.stack}`);
+      if (error.code) {
+        this.logger.error(`❌ Error code: ${error.code}`);
+      }
+      // Don't fail tenant creation if user creation fails, but log it
+      this.logger.warn('Tenant created but user account creation failed. User can be created manually later.');
+      // Re-throw if it's a critical error that should prevent tenant creation
+      if (error instanceof BadRequestException || error instanceof ConflictException) {
+        throw error;
+      }
+    }
+
+    return finalTenant;
+  }
+
+  private async sendTenantPasswordSetupEmail(
+    email: string,
+    firstName: string,
+    lastName: string,
+    tenantName: string,
+    tenantId: string,
+  ): Promise<void> {
+    try {
+      this.logger.log('📧 ========== TENANT EMAIL SENDING PROCESS START ==========');
+      this.logger.log(`📧 Preparing to send tenant password setup email to: ${email}`);
+      this.logger.log(`📧 Email address (from contactEmail field): ${email}`);
+      this.logger.log(`📧 Tenant name: ${tenantName}`);
+      this.logger.log(`📧 First name: ${firstName}, Last name: ${lastName}`);
+      this.logger.log(`📧 EmailService instance: ${this.emailService ? 'EXISTS' : 'MISSING'}`);
+      
+      // Validate email is not empty
+      if (!email || email.trim() === '') {
+        this.logger.error('❌ Email address is empty! Cannot send email.');
+        return;
+      }
+
+      // Generate password setup token
+      const token = crypto.randomBytes(32).toString('hex');
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + 7); // Token expires in 7 days
+
+      const passwordSetupToken = this.passwordResetTokenRepository.create({
+        email: email,
+        token,
+        expiresAt,
+        used: false,
+      });
+      await this.passwordResetTokenRepository.save(passwordSetupToken);
+
+      this.logger.log(`📧 Token generated for tenant admin: ${email}`);
+      this.logger.log(`📧 Token (first 10 chars): ${token.substring(0, 10)}...`);
+
+      // Send password setup email (non-blocking)
+      try {
+        if (!this.emailService) {
+          this.logger.error('❌ EmailService is not injected properly!');
+          this.logger.warn('⚠️ EmailService is not available, skipping email send');
+          return;
+        }
+        
+        this.logger.log('📧 Calling emailService.sendTenantPasswordSetupEmail...');
+        this.logger.log(`📧 Email address being sent to: ${email}`);
+        
+        await this.emailService.sendTenantPasswordSetupEmail(
+          email,
+          firstName,
+          lastName,
+          tenantName,
+          token,
+        );
+        
+        this.logger.log(`✅ Password setup email sent successfully to: ${email}`);
+        this.logger.log(`✅ Check the inbox (and spam folder) for: ${email}`);
+      } catch (emailError: any) {
+        this.logger.error(`❌ Failed to send password setup email: ${emailError.message}`);
+        this.logger.error(`❌ Error stack: ${emailError.stack}`);
+        if (emailError.code) {
+          this.logger.error(`❌ Error code: ${emailError.code}`);
+        }
+        if (emailError.response) {
+          this.logger.error(`❌ Error response: ${emailError.response}`);
+        }
+        if (emailError.responseCode) {
+          this.logger.error(`❌ Error response code: ${emailError.responseCode}`);
+        }
+        if (emailError.command) {
+          this.logger.error(`❌ Failed command: ${emailError.command}`);
+        }
+        this.logger.error(`❌ Full email error:`, JSON.stringify(emailError, Object.getOwnPropertyNames(emailError)));
+        // Don't throw - tenant creation should succeed even if email fails
+      }
+      
+      this.logger.log('📧 ========== TENANT EMAIL SENDING PROCESS END ==========');
+    } catch (error: any) {
+      this.logger.error(`❌ Error in sendTenantPasswordSetupEmail: ${error.message}`);
+      this.logger.error(`❌ Error stack: ${error.stack}`);
+      // Don't throw - tenant creation should succeed even if email fails
+    }
   }
 
   async findTenantById(id: string): Promise<Tenant> {

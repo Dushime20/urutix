@@ -67,4 +67,10 @@ export default defineConfig({
       },
     },
   },
+  preview: {
+    port: 5713,
+    host: '0.0.0.0',
+    strictPort: true,
+    allowedHosts: ['urutix.com', 'www.urutix.com', '161.97.148.53'],
+  },
 })

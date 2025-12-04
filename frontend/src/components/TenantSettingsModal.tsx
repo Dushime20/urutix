@@ -343,9 +343,9 @@ const TenantSettingsModal: React.FC<TenantSettingsModalProps> = ({
                           <span>Refresh</span>
                         </button>
                       </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                          <label className="block text-xs font-medium text-gray-700 mb-1">
                             Change Status
                           </label>
                           <select
@@ -354,17 +354,17 @@ const TenantSettingsModal: React.FC<TenantSettingsModalProps> = ({
                               const newStatus = e.target.value;
                               setTenantData({ ...tenantData, status: newStatus });
                             }}
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                           >
                             <option value="PENDING_ACTIVATION">Pending Activation</option>
                             <option value="ACTIVE">Active</option>
                             <option value="SUSPENDED">Suspended</option>
                             <option value="DEACTIVATED">Deactivated</option>
                           </select>
-                          <p className="text-xs text-gray-500 mt-2">
+                          <p className="text-xs text-gray-500 mt-1.5">
                             Current database status: <span className="font-semibold">{tenantData.status || 'PENDING_ACTIVATION'}</span>
                           </p>
-                          <p className="text-xs text-gray-500 mt-1">
+                          <p className="text-xs text-gray-500 mt-0.5">
                             Select a new status and click "Update Status" to save changes.
                           </p>
                         </div>
@@ -389,16 +389,16 @@ const TenantSettingsModal: React.FC<TenantSettingsModalProps> = ({
                               }
                             }}
                             disabled={isChangingStatus || !tenantData.status}
-                            className="w-full px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                            className="w-full px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
                           >
                             {isChangingStatus ? (
                               <>
-                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                <div className="animate-spin rounded-full h-3.5 w-3.5 border-b-2 border-white"></div>
                                 <span>Updating...</span>
                               </>
                             ) : (
                               <>
-                                <FaSave className="w-4 h-4" />
+                                <FaSave className="w-3.5 h-3.5" />
                                 <span>Update Status</span>
                               </>
                             )}
@@ -502,15 +502,15 @@ const TenantSettingsModal: React.FC<TenantSettingsModalProps> = ({
                       <p className="text-xs text-blue-700">Configure timezone, language, currency, and notification preferences for this tenant.</p>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-xs font-medium text-gray-700 mb-1">
                           Timezone
                         </label>
                         <select
                           value={tenantData.settings?.timezone || 'UTC'}
                           onChange={(e) => updateNestedField('settings', 'timezone', e.target.value)}
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         >
                           <option value="UTC">UTC</option>
                           <option value="Africa/Nairobi">Africa/Nairobi</option>
@@ -521,13 +521,13 @@ const TenantSettingsModal: React.FC<TenantSettingsModalProps> = ({
                       </div>
 
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-xs font-medium text-gray-700 mb-1">
                           Language
                         </label>
                         <select
                           value={tenantData.settings?.language || 'en'}
                           onChange={(e) => updateNestedField('settings', 'language', e.target.value)}
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         >
                           <option value="en">English</option>
                           <option value="fr">French</option>
@@ -537,13 +537,13 @@ const TenantSettingsModal: React.FC<TenantSettingsModalProps> = ({
                       </div>
 
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-xs font-medium text-gray-700 mb-1">
                           Currency
                         </label>
                         <select
                           value={tenantData.settings?.currency || 'USD'}
                           onChange={(e) => updateNestedField('settings', 'currency', e.target.value)}
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         >
                           <option value="USD">USD</option>
                           <option value="KES">KES</option>
@@ -554,13 +554,13 @@ const TenantSettingsModal: React.FC<TenantSettingsModalProps> = ({
                       </div>
 
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-xs font-medium text-gray-700 mb-1">
                           Date Format
                         </label>
                         <select
                           value={tenantData.settings?.dateFormat || 'MM/DD/YYYY'}
                           onChange={(e) => updateNestedField('settings', 'dateFormat', e.target.value)}
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         >
                           <option value="MM/DD/YYYY">MM/DD/YYYY</option>
                           <option value="DD/MM/YYYY">DD/MM/YYYY</option>
@@ -615,15 +615,15 @@ const TenantSettingsModal: React.FC<TenantSettingsModalProps> = ({
                       <p className="text-xs text-green-700">Manage subscription plan and set limits for users, trucks, drivers, and monthly loads.</p>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-xs font-medium text-gray-700 mb-1">
                           Subscription Plan
                         </label>
                         <select
                           value={tenantData.subscriptionPlan || 'starter'}
                           onChange={(e) => updateField('subscriptionPlan', e.target.value)}
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         >
                           <option value="starter">Starter</option>
                           <option value="professional">Professional</option>
@@ -632,53 +632,53 @@ const TenantSettingsModal: React.FC<TenantSettingsModalProps> = ({
                       </div>
 
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-xs font-medium text-gray-700 mb-1">
                           Max Users
                         </label>
                         <input
                           type="number"
                           value={tenantData.maxUsers || ''}
                           onChange={(e) => updateField('maxUsers', e.target.value ? parseInt(e.target.value) : null)}
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                           placeholder="Unlimited (leave empty)"
                         />
                       </div>
 
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-xs font-medium text-gray-700 mb-1">
                           Max Trucks
                         </label>
                         <input
                           type="number"
                           value={tenantData.maxTrucks || ''}
                           onChange={(e) => updateField('maxTrucks', e.target.value ? parseInt(e.target.value) : null)}
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                           placeholder="Unlimited (leave empty)"
                         />
                       </div>
 
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-xs font-medium text-gray-700 mb-1">
                           Max Drivers
                         </label>
                         <input
                           type="number"
                           value={tenantData.maxDrivers || ''}
                           onChange={(e) => updateField('maxDrivers', e.target.value ? parseInt(e.target.value) : null)}
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                           placeholder="Unlimited (leave empty)"
                         />
                       </div>
 
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-xs font-medium text-gray-700 mb-1">
                           Max Loads Per Month
                         </label>
                         <input
                           type="number"
                           value={tenantData.maxLoadsPerMonth || ''}
                           onChange={(e) => updateField('maxLoadsPerMonth', e.target.value ? parseInt(e.target.value) : null)}
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                           placeholder="Unlimited (leave empty)"
                         />
                       </div>
@@ -737,15 +737,15 @@ const TenantSettingsModal: React.FC<TenantSettingsModalProps> = ({
                       <p className="text-xs text-yellow-700">Configure billing plan, cycle, and payment method for this tenant.</p>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-xs font-medium text-gray-700 mb-1">
                           Billing Plan
                         </label>
                         <select
                           value={tenantData.billingInfo?.plan || 'starter'}
                           onChange={(e) => updateNestedField('billingInfo', 'plan', e.target.value)}
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         >
                           <option value="starter">Starter</option>
                           <option value="professional">Professional</option>
@@ -754,13 +754,13 @@ const TenantSettingsModal: React.FC<TenantSettingsModalProps> = ({
                       </div>
 
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-xs font-medium text-gray-700 mb-1">
                           Billing Cycle
                         </label>
                         <select
                           value={tenantData.billingInfo?.billing_cycle || 'monthly'}
                           onChange={(e) => updateNestedField('billingInfo', 'billing_cycle', e.target.value)}
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         >
                           <option value="monthly">Monthly</option>
                           <option value="quarterly">Quarterly</option>
@@ -769,13 +769,13 @@ const TenantSettingsModal: React.FC<TenantSettingsModalProps> = ({
                       </div>
 
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-xs font-medium text-gray-700 mb-1">
                           Payment Method
                         </label>
                         <select
                           value={tenantData.billingInfo?.payment_method || ''}
                           onChange={(e) => updateNestedField('billingInfo', 'payment_method', e.target.value)}
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         >
                           <option value="">Not Set</option>
                           <option value="credit_card">Credit Card</option>
@@ -837,44 +837,44 @@ const TenantSettingsModal: React.FC<TenantSettingsModalProps> = ({
               </div>
 
               <div className="p-6">
-                <p className="text-sm text-gray-600 mb-4">
+                <p className="text-xs text-gray-600 mb-3">
                   Are you sure you want to suspend this tenant? Suspended tenants will not be able to access the system.
                 </p>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-xs font-medium text-gray-700 mb-1">
                   Reason (Optional)
                 </label>
                 <textarea
                   value={suspendReason}
                   onChange={(e) => setSuspendReason(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                  className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
                   rows={3}
                   placeholder="Enter reason for suspension..."
                 />
               </div>
 
-              <div className="flex items-center justify-end space-x-3 px-6 py-4 border-t border-gray-200 bg-gray-50">
+              <div className="flex items-center justify-end space-x-2 px-4 py-3 border-t border-gray-200 bg-gray-50">
                 <button
                   onClick={() => {
                     setShowSuspendModal(false);
                     setSuspendReason('');
                   }}
-                  className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                  className="px-3 py-1.5 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleSuspend}
                   disabled={isChangingStatus}
-                  className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+                  className="px-3 py-1.5 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
                 >
                   {isChangingStatus ? (
                     <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      <div className="animate-spin rounded-full h-3.5 w-3.5 border-b-2 border-white"></div>
                       <span>Suspending...</span>
                     </>
                   ) : (
                     <>
-                      <FaBan className="w-4 h-4" />
+                      <FaBan className="w-3.5 h-3.5" />
                       <span>Suspend Tenant</span>
                     </>
                   )}

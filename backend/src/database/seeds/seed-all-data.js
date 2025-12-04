@@ -169,20 +169,20 @@ async function createLoad(tenantId, cargoOwnerId, loadData) {
   
   await pool.query(`
     INSERT INTO loads (
-      id, "tenantId", "cargoOwnerId", title, description, status, "loadType",
+      id, "tenantId", "cargoOwnerId", title, description, status,
       "cargoType", weight, volume, "loadValue", "currencyCode",
-      "pickupDate", "deliveryDate", "urgencyLevel", visibility, 
-      locations, origin, destination, "createdAt", "updatedAt"
+      "pickupDate", "deliveryDate", "urgencyLevel", 
+      locations, "createdAt", "updatedAt"
     ) VALUES (
-      $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, NOW(), NOW()
+      $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, NOW(), NOW()
     )
   `, [
     loadId, tenantId, cargoOwnerId, loadData.title, loadData.description, loadData.status,
-    loadData.loadType || 'FTL', loadData.cargoType || 'GENERAL', loadData.weight || 1000,
+    loadData.cargoType || 'GENERAL', loadData.weight || 1000,
     loadData.volume || 10, loadData.value || 5000, loadData.currency || 'USD',
     loadData.pickupDate, loadData.deliveryDate,
-    loadData.urgencyLevel || 'NORMAL', loadData.visibility || 'public',
-    JSON.stringify(locationsArray), JSON.stringify(origin), JSON.stringify(destination)
+    loadData.urgencyLevel || 'NORMAL',
+    JSON.stringify(locationsArray)
   ]);
   
   return loadId;
@@ -321,18 +321,27 @@ async function createTrip(tenantId, loadId, truckId, driverId, tripData) {
 
 async function createPayment(tenantId, tripId, payerId, paymentData) {
   const paymentId = generateUUID();
+  const invoiceId = paymentData.invoiceId || generateUUID(); // Generate invoiceId if not provided
+  const invoiceNumber = paymentData.invoiceNumber || `INV-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 10000)).padStart(4, '0')}`;
+  const customerId = paymentData.customerId || payerId; // Use payerId as customerId if not provided
+  const customerName = paymentData.customerName || 'Customer'; // Default customer name
+  const paymentDate = paymentData.paymentDate || new Date(); // Use current date if not provided
+  const createdBy = paymentData.createdBy || payerId; // Use payerId as createdBy if not provided
+  
   await pool.query(`
     INSERT INTO payments (
       id, "tenantId", "tripId", "payerId", amount, currency, "paymentMethod",
-      "paymentType", status, description, metadata, "createdAt", "updatedAt"
+      "paymentType", status, description, metadata, "invoiceId", "invoiceNumber", 
+      "customerId", "customerName", "paymentDate", "createdBy", "createdAt", "updatedAt"
     ) VALUES (
-      $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW(), NOW()
+      $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, NOW(), NOW()
     )
   `, [
     paymentId, tenantId, tripId, payerId, paymentData.amount, paymentData.currency || 'USD',
-    paymentData.paymentMethod || 'digital_wallet', paymentData.paymentType || 'advance',
+    paymentData.paymentMethod || 'credit_card', paymentData.paymentType || 'advance',
     paymentData.status || 'completed', paymentData.description || null,
-    JSON.stringify(paymentData.metadata || {})
+    JSON.stringify(paymentData.metadata || {}), invoiceId, invoiceNumber,
+    customerId, customerName, paymentDate, createdBy
   ]);
   
   return paymentId;
@@ -921,7 +930,7 @@ async function seedAllData() {
       description: 'Advance payment to driver before trip',
       metadata: {
         recipientNumber: '+254756789012',
-        paymentMethod: 'digital_wallet'
+        paymentMethod: 'credit_card'
       }
     });
     console.log('✅ Advance payment for trip 1');
@@ -934,7 +943,7 @@ async function seedAllData() {
       description: 'Final payment from cargo owner after delivery',
       metadata: {
         recipientNumber: '+254734567890',
-        paymentMethod: 'digital_wallet'
+        paymentMethod: 'credit_card'
       }
     });
     console.log('✅ Final payment for trip 2');
@@ -947,7 +956,7 @@ async function seedAllData() {
       description: 'Final payment from cargo owner after delivery',
       metadata: {
         recipientNumber: '+254734567890',
-        paymentMethod: 'digital_wallet'
+        paymentMethod: 'credit_card'
       }
     });
     console.log('✅ Final payment for trip 4');

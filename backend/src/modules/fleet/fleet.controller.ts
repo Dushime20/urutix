@@ -13,8 +13,8 @@ import {
   Query,
   ValidationPipe,
   HttpException,
-  UnauthorizedException,
   BadRequestException,
+  UnauthorizedException,
   ConflictException,
   InternalServerErrorException,
 } from '@nestjs/common';
@@ -29,7 +29,7 @@ import {
 } from '@nestjs/swagger';
 import { FleetService } from './fleet.service';
 import { CreateTruckDto } from './dto/create-truck.dto';
-import { CreateDriverDto } from './dto/create-driver.dto';
+import { CreateFleetDriverDto } from './dto/create-driver.dto';
 import { AssignDriverDto } from './dto/assign-driver.dto';
 import { AssignRouteDto } from './dto/assign-route.dto';
 import { BulkAssignDto } from './dto/bulk-assign.dto';
@@ -211,28 +211,48 @@ export class FleetController {
     @Query('limit') limit?: number,
   ) {
     console.log('🚛 Fleet Controller - findAllTrucks Debug:');
-    console.log('Request user:', req.user);
+    console.log('Request user:', JSON.stringify(req.user, null, 2));
     console.log('User ID:', req.user?.userId);
     console.log('User role:', req.user?.role);
     console.log('Tenant ID:', req.user?.tenantId);
     console.log('Query params:', { search, status, location, page, limit });
+    
+    // Log the exact tenant ID being used
+    if (req.user?.tenantId) {
+      console.log(`🔍 Searching for trucks with tenantId: "${req.user.tenantId}"`);
+    }
 
     if (!req.user?.tenantId) {
       console.error('❌ No tenant ID found in request user');
+      console.error('❌ Request user object:', JSON.stringify(req.user, null, 2));
       throw new Error('Tenant ID not found in request');
     }
 
-    const trucks = await this.fleetService.findAllTrucks(
-      req.user.tenantId,
-      req.user.userId,
-      { search, status, location, page, limit },
-    );
+    try {
+      const tenantId = req.user.tenantId;
+      console.log(`🔍 Controller - Calling findAllTrucks with tenantId: "${tenantId}"`);
+      console.log(`🔍 Controller - TenantId type: ${typeof tenantId}`);
+      console.log(`🔍 Controller - TenantId length: ${tenantId?.length}`);
+      
+      const trucks = await this.fleetService.findAllTrucks(
+        tenantId,
+        req.user.userId,
+        { search, status, location, page, limit },
+      );
 
-    console.log('✅ Trucks retrieved successfully:', trucks.length);
-    return {
-      message: 'Trucks retrieved successfully',
-      trucks,
-    };
+      console.log('✅ Controller - Trucks retrieved successfully:', trucks.length);
+      console.log('✅ Controller - Returning trucks:', trucks.map(t => ({ id: t.id, plateNumber: t.plateNumber })));
+      
+      return {
+        message: 'Trucks retrieved successfully',
+        trucks: trucks || [], // Ensure we always return an array
+      };
+    } catch (error) {
+      console.error('❌ Fleet Controller - Error in findAllTrucks:', error);
+      console.error('❌ Error message:', error.message);
+      console.error('❌ Error stack:', error.stack);
+      throw error;
+    }
   }
 
   @Get('trucks/:id')
@@ -1862,7 +1882,7 @@ export class FleetController {
     description:
       'Creates a new driver in the fleet with comprehensive information including license, certifications, and employment details',
   })
-  @ApiBody({ type: CreateDriverDto, description: 'Driver creation data' })
+  @ApiBody({ type: CreateFleetDriverDto, description: 'Driver creation data' })
   @ApiResponse({
     status: 201,
     description: 'Driver created successfully',
@@ -1905,13 +1925,37 @@ export class FleetController {
     description:
       'Conflict - driver with same license number or user already exists',
   })
-  async createDriver(@Body() createDriverDto: CreateDriverDto, @Request() req) {
+  async createDriver(
+    @Body(
+      new ValidationPipe({
+        transform: true,
+        whitelist: true,
+        forbidNonWhitelisted: false,
+        transformOptions: {
+          enableImplicitConversion: true,
+        },
+      }),
+    )
+    createDriverDto: CreateFleetDriverDto,
+    @Request() req,
+  ) {
     try {
       console.log('👤 Creating driver request:', {
         driverData: createDriverDto,
+        email: createDriverDto.email,
+        firstName: createDriverDto.firstName,
+        lastName: createDriverDto.lastName,
+        phone: createDriverDto.phone,
         userId: req.user?.userId,
         tenantId: req.user?.tenantId,
       });
+
+      // Validate email is provided
+      if (!createDriverDto.email || createDriverDto.email.trim() === '') {
+        throw new BadRequestException(
+          'Email address is required to create a driver account. Please provide a valid email address.',
+        );
+      }
 
       // Validate user authentication
       if (!req.user) {
@@ -2120,11 +2164,27 @@ export class FleetController {
     @Query('page') page?: number,
     @Query('limit') limit?: number,
   ) {
+    console.log('👤 Fleet Controller - findAllDrivers Debug:');
+    console.log('Request user:', JSON.stringify(req.user, null, 2));
+    console.log('User ID:', req.user?.userId);
+    console.log('User role:', req.user?.role);
+    console.log('Tenant ID:', req.user?.tenantId);
+    console.log('Query params:', { search, status, location, page, limit });
+
+    if (!req.user?.tenantId) {
+      console.error('❌ No tenant ID found in request user');
+      throw new BadRequestException('Tenant ID not found in request');
+    }
+
     const drivers = await this.fleetService.findAllDrivers(
       req.user.tenantId,
       req.user.userId,
       { search, status, location, page, limit },
+      req.user.role, // Pass user role to service
     );
+
+    console.log(`✅ Found ${drivers.length} drivers for tenant ${req.user.tenantId}`);
+
     return {
       message: 'Drivers retrieved successfully',
       drivers,
@@ -2222,7 +2282,7 @@ export class FleetController {
     format: 'uuid',
   })
   @ApiBody({
-    type: CreateDriverDto,
+    type: CreateFleetDriverDto,
     description: 'Driver update data - only provided fields will be updated',
     required: false,
   })
@@ -2274,7 +2334,7 @@ export class FleetController {
   })
   async updateDriver(
     @Param('id', ParseUUIDPipe) id: string,
-    @Body() updateDriverDto: Partial<CreateDriverDto>,
+    @Body() updateDriverDto: Partial<CreateFleetDriverDto>,
     @Request() req,
   ) {
     const driver = await this.fleetService.updateDriver(

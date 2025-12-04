@@ -1,7 +1,8 @@
 {
-  "name": "frontend",
+  "name": "urutix-smart-logistic",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
+  "description": "UrutiX Smart Logistic - Intelligent logistics and fleet management platform",
   "type": "module",
   "scripts": {
     "dev": "vite",

@@ -11,12 +11,16 @@ export const LoadingEquipmentStep: React.FC<LoadingEquipmentStepProps> = ({
   handleInputChange,
 }) => {
   const handleEquipmentToggle = (equipment: string) => {
-    handleInputChange(equipment, !formData.loadingCapabilities?.[equipment]);
+    // Use dot notation to update nested loadingCapabilities object
+    const currentValue = formData.loadingCapabilities?.[equipment] || false;
+    const newValue = !currentValue;
+    handleInputChange(`loadingCapabilities.${equipment}`, newValue);
   };
 
   const handleTimeChange = (field: string, value: string) => {
     const numValue = value === '' ? undefined : parseFloat(value);
-    handleInputChange(field, numValue);
+    // Use dot notation to update nested loadingCapabilities object
+    handleInputChange(`loadingCapabilities.${field}`, numValue);
   };
 
   const equipmentOptions = [
@@ -38,7 +42,7 @@ export const LoadingEquipmentStep: React.FC<LoadingEquipmentStepProps> = ({
     <div className="space-y-6">
       <div className="border-b border-gray-200 pb-4">
         <h3 className="text-lg font-medium text-gray-900 flex items-center gap-2">
-          <FaTools className="w-5 h-5 text-primary-600" />
+          <FaTools className="w-5 h-5 text-gray-600" />
           Loading Equipment Configuration
         </h3>
         <p className="text-sm text-gray-600 mt-1">
@@ -54,13 +58,13 @@ export const LoadingEquipmentStep: React.FC<LoadingEquipmentStepProps> = ({
           </label>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {equipmentOptions.map(({ key, label, icon, description }) => (
-              <div key={key} className="border border-gray-200 rounded-lg p-4 hover:border-primary-300 transition-colors">
+              <div key={key} className="border border-gray-200 rounded-lg p-4 hover:border-gray-300 transition-colors">
                 <label className="flex items-start space-x-3 cursor-pointer">
                   <input
                     type="checkbox"
                     checked={formData.loadingCapabilities?.[key] || false}
                     onChange={() => handleEquipmentToggle(key)}
-                    className="mt-1 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                    className="mt-1 rounded border-gray-300 text-gray-600 focus:ring-gray-500"
                   />
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
@@ -90,7 +94,7 @@ export const LoadingEquipmentStep: React.FC<LoadingEquipmentStepProps> = ({
                 type="number"
                 value={formData.loadingCapabilities?.maxLoadingTime || ''}
                 onChange={(e) => handleTimeChange('maxLoadingTime', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent"
                 placeholder="30"
               />
             </div>
@@ -100,7 +104,7 @@ export const LoadingEquipmentStep: React.FC<LoadingEquipmentStepProps> = ({
                 type="number"
                 value={formData.loadingCapabilities?.maxUnloadingTime || ''}
                 onChange={(e) => handleTimeChange('maxUnloadingTime', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent"
                 placeholder="30"
               />
             </div>
@@ -114,7 +118,7 @@ export const LoadingEquipmentStep: React.FC<LoadingEquipmentStepProps> = ({
             {equipmentOptions
               .filter(({ key }) => formData.loadingCapabilities?.[key])
               .map(({ key, label, icon }) => (
-                <span key={key} className="px-3 py-1 bg-primary-100 text-primary-800 text-sm rounded-full flex items-center gap-1">
+                <span key={key} className="px-3 py-1 bg-gray-100 text-gray-800 text-sm rounded-full flex items-center gap-1">
                   <span>{icon}</span>
                   {label}
                 </span>

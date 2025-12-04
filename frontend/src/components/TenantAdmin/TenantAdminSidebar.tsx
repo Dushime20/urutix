@@ -7,6 +7,7 @@ import {
 } from 'react-icons/fa';
 import { useAuth } from '../../contexts/AuthContext';
 import { useAdminLayout } from '../../contexts/AdminLayoutContext';
+import urutixLogo from '../../assets/urutix.png';
 
 const TenantAdminSidebar: React.FC = () => {
   const { user, logout } = useAuth();
@@ -26,6 +27,7 @@ const TenantAdminSidebar: React.FC = () => {
     { to: '/tenant-admin/fleet', label: 'Fleet Management', icon: FaTruck },
     { to: '/tenant-admin/cargo', label: 'Cargo Operations', icon: FaBox },
     { to: '/tenant-admin/drivers', label: 'Drivers', icon: FaUsers },
+    { to: '/tenant-admin/lenders', label: 'Lenders', icon: FaDollarSign },
     { to: '/tenant-admin/routes', label: 'Routes', icon: FaRoute },
     { to: '/tenant-admin/trips', label: 'Trip Management', icon: FaClipboardList },
     { to: '/tenant-admin/financial', label: 'Financial', icon: FaDollarSign },
@@ -92,33 +94,23 @@ const TenantAdminSidebar: React.FC = () => {
           })}
         </nav>
 
-        {/* Tenant Info & Logout */}
-        <div className="border-t p-3">
-          {!sidebarCollapsed && (
-            <div className="mb-3 p-3 bg-primary-50 rounded-lg">
-              <div className="flex items-center space-x-2 mb-2">
-                <FaBuilding className="text-primary-600 text-sm" />
-                <span className="text-sm font-medium text-primary-900">Tenant Scope</span>
-              </div>
-              <p className="text-xs text-primary-700 mb-1">Managing operations for:</p>
-              <p className="text-sm font-bold text-primary-900 truncate">
-                {user?.tenantName && user.tenantName !== user?.tenantId ? user.tenantName : 'Default Tenant'}
-              </p>
-              <p className="text-xs text-primary-600 truncate">
-                Admin: {user?.firstName} {user?.lastName}
-              </p>
+        {/* Footer with Logo */}
+        <div className={`${sidebarCollapsed ? 'p-2' : 'p-4'} border-t flex items-center justify-center`}>
+          {sidebarCollapsed ? (
+            <img 
+              src={urutixLogo} 
+              alt="UrutiX Logo" 
+              className="w-full h-auto max-h-12 object-contain"
+            />
+          ) : (
+            <div className="w-full flex flex-col items-center gap-2">
+              <img 
+                src={urutixLogo} 
+                alt="UrutiX Logo" 
+                className="w-full h-auto max-h-32 object-contain"
+              />
             </div>
           )}
-          
-          <button
-            onClick={() => setShowLogoutDialog(true)}
-            className={`w-full flex items-center px-3 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors ${
-              sidebarCollapsed ? 'justify-center' : ''
-            }`}
-          >
-            <FaSignOutAlt className={`${sidebarCollapsed ? '' : 'mr-3'} w-5 h-5 flex-shrink-0`} />
-            {!sidebarCollapsed && <span>Sign Out</span>}
-          </button>
         </div>
       </aside>
 

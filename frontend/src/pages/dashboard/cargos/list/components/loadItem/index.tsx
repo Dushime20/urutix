@@ -47,11 +47,13 @@ export default function LoadItem({
   handleViewClick,
   handleConfirmLoading,
   handleDeleteCargo,
+  handleEditCargo,
 }: {
   load: Cargo;
   handleViewClick: (load: Cargo) => void;
   handleConfirmLoading: (load: Cargo) => void;
   handleDeleteCargo: (load: Cargo) => void;
+  handleEditCargo?: (load: Cargo) => void;
 }) {
   const navigate = useNavigate();
 
@@ -59,9 +61,12 @@ export default function LoadItem({
     return getSpecialRequirements(load);
   }, [load]);
 
-  const handleEditCargo = useCallback(
-    (load: Cargo) => {
-      // Transform the load data to match the CargoFormSchemaType
+  const handleEditClick = useCallback(() => {
+    if (handleEditCargo) {
+      // Use the passed handler (opens modal)
+      handleEditCargo(load);
+    } else {
+      // Fallback to old behavior if handler not provided (navigates to create page)
       const template: Partial<CargoFormSchemaType> = {
         id: load.id,
         title: load.title,
@@ -116,7 +121,6 @@ export default function LoadItem({
         specialHandlingInstructions: load.specialHandlingInstructions,
         emergencyContactInfo: load.emergencyContactInfo,
         truckRequirements: load.truckRequirements,
-        // Transform carrierPreferences to match the expected schema
         carrierPreferences: load.carrierPreferences
           ? {
               carrierName: load.carrierPreferences.preferredCarriers?.[0],
@@ -136,9 +140,8 @@ export default function LoadItem({
           template,
         })}`
       );
-    },
-    [navigate]
-  );
+    }
+  }, [handleEditCargo, load, navigate]);
 
   return (
     <div className="group p-8 transition-all duration-300 border-l-4 border-l-teal-500 shadow hover:shadow-md hover:-translate-y-1 rounded-lg bg-gray-100 hover:bg-white">
@@ -456,7 +459,7 @@ export default function LoadItem({
             <button
               className="p-3 bg-white text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-xl transition-all duration-200 shadow-sm hover:shadow-md"
               title="Edit Cargo"
-              onClick={() => handleEditCargo(load)}
+              onClick={handleEditClick}
             >
               <Edit className="w-4 h-4" />
             </button>

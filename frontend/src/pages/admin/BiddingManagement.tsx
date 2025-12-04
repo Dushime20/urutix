@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { 
   FaChartLine, FaDollarSign, FaTruck, FaSearch, FaFilter, FaDownload,
-  FaEye, FaEdit, FaPlus, FaCalendar, FaClock,
-  FaGavel, FaCheckCircle, FaTimesCircle, FaExclamationTriangle
+  FaEye, FaEdit, FaCalendar, FaClock,
+  FaGavel, FaCheckCircle, FaTimesCircle, FaExclamationTriangle, FaTimes
 } from 'react-icons/fa';
 import { useAdminLayout } from '../../contexts/AdminLayoutContext';
+import toast from 'react-hot-toast';
+import { biddingAPI } from '../../services/biddingApi';
 
 interface Bid {
   id: string;
@@ -23,76 +26,60 @@ interface Bid {
 }
 
 const BiddingManagement: React.FC = () => {
-  const { viewMode, isCompactMode } = useAdminLayout();
-  const [bids, setBids] = useState<Bid[]>([
-    {
-      id: '1',
-      cargoId: 'CRG001',
-      cargoTitle: 'Electronics Shipment',
-      bidderName: 'John Driver',
-      bidderCompany: 'FastTrans Ltd',
-      bidAmount: 850,
-      status: 'pending',
-      submittedAt: '2024-08-10T10:30:00Z',
-      validUntil: '2024-08-15T23:59:59Z',
-      notes: 'Express delivery available',
-      estimatedDelivery: '2024-08-12',
-      truckCapacity: 5000,
-      rating: 4.8
-    },
-    {
-      id: '2',
-      cargoId: 'CRG002',
-      cargoTitle: 'Medical Supplies',
-      bidderName: 'Sarah Wilson',
-      bidderCompany: 'MedTransport',
-      bidAmount: 650,
-      status: 'accepted',
-      submittedAt: '2024-08-09T14:20:00Z',
-      validUntil: '2024-08-14T23:59:59Z',
-      notes: 'Refrigerated truck available',
-      estimatedDelivery: '2024-08-11',
-      truckCapacity: 3000,
-      rating: 4.9
-    },
-    {
-      id: '3',
-      cargoId: 'CRG003',
-      cargoTitle: 'Chemical Products',
-      bidderName: 'Mike Johnson',
-      bidderCompany: 'HazCargo Pro',
-      bidAmount: 1200,
-      status: 'rejected',
-      submittedAt: '2024-08-08T16:45:00Z',
-      validUntil: '2024-08-13T23:59:59Z',
-      notes: 'Hazmat certified driver',
-      estimatedDelivery: '2024-08-13',
-      truckCapacity: 4000,
-      rating: 4.6
+  const { viewMode } = useAdminLayout();
+  const qc = useQueryClient();
+
+  // Fetch bids from API
+  const { data: bidsData, isLoading: bidsLoading, error: bidsError } = useQuery({
+    queryKey: ['admin-bids'],
+    queryFn: async () => {
+      try {
+        const response = await biddingAPI.getBids();
+        // Handle different response structures
+        const data = response.data?.data || response.data;
+        if (Array.isArray(data)) {
+          return data;
+        }
+        if (data?.items && Array.isArray(data.items)) {
+          return data.items;
+        }
+        if (data?.bids && Array.isArray(data.bids)) {
+          return data.bids;
+        }
+        return [];
+      } catch (error: any) {
+        console.error('Error fetching bids:', error);
+        toast.error('Failed to fetch bids');
+        return [];
+      }
     }
-  ]);
+  });
+
+  const bids: Bid[] = bidsData || [];
 
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const [filterCargoId, setFilterCargoId] = useState('');
+  const [selectedBid, setSelectedBid] = useState<Bid | null>(null);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'pending': return 'bg-yellow-100 text-yellow-800';
-      case 'accepted': return 'bg-green-100 text-green-800';
-      case 'rejected': return 'bg-red-100 text-red-800';
-      case 'withdrawn': return 'bg-gray-100 text-gray-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'pending': return 'bg-gray-100 text-gray-700';
+      case 'accepted': return 'bg-gray-100 text-gray-700';
+      case 'rejected': return 'bg-gray-100 text-gray-600';
+      case 'withdrawn': return 'bg-gray-100 text-gray-500';
+      default: return 'bg-gray-100 text-gray-600';
     }
   };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'pending': return <FaClock className="text-yellow-500" />;
-      case 'accepted': return <FaCheckCircle className="text-green-500" />;
-      case 'rejected': return <FaTimesCircle className="text-red-500" />;
-      case 'withdrawn': return <FaExclamationTriangle className="text-gray-500" />;
-      default: return <FaClock className="text-gray-500" />;
+      case 'pending': return <FaClock className="text-gray-500 text-xs" />;
+      case 'accepted': return <FaCheckCircle className="text-gray-600 text-xs" />;
+      case 'rejected': return <FaTimesCircle className="text-gray-500 text-xs" />;
+      case 'withdrawn': return <FaExclamationTriangle className="text-gray-400 text-xs" />;
+      default: return <FaClock className="text-gray-500 text-xs" />;
     }
   };
 
@@ -116,11 +103,26 @@ const BiddingManagement: React.FC = () => {
     });
   };
 
+  const getTimeAgo = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays < 7) return `${diffDays}d ago`;
+    return formatDate(dateString);
+  };
+
   const getRatingStars = (rating: number) => {
     const stars = [];
     for (let i = 1; i <= 5; i++) {
       stars.push(
-        <span key={i} className={i <= rating ? 'text-yellow-400' : 'text-gray-300'}>
+        <span key={i} className={i <= rating ? 'text-gray-600' : 'text-gray-300'}>
           ★
         </span>
       );
@@ -139,106 +141,152 @@ const BiddingManagement: React.FC = () => {
     return matchesSearch && matchesStatus && matchesCargoId;
   });
 
+  const { mutate: acceptBid, isPending: isAccepting } = useMutation({
+    mutationFn: async (bidId: string) => {
+      await biddingAPI.acceptBid(bidId);
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['admin-bids'] });
+      toast.success('Bid accepted successfully');
+    },
+    onError: (error: any) => {
+      console.error('Error accepting bid:', error);
+      toast.error(error?.response?.data?.message || 'Failed to accept bid');
+    }
+  });
+
+  const { mutate: rejectBid, isPending: isRejecting } = useMutation({
+    mutationFn: async (bidId: string) => {
+      // Since there's no reject endpoint, we'll use updateBid to change status
+      await biddingAPI.updateBid(bidId, { status: 'rejected' });
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['admin-bids'] });
+      toast.success('Bid rejected');
+    },
+    onError: (error: any) => {
+      console.error('Error rejecting bid:', error);
+      toast.error(error?.response?.data?.message || 'Failed to reject bid');
+    }
+  });
+
   const handleAcceptBid = (bidId: string) => {
-    setBids(bids.map(bid => 
-      bid.id === bidId ? { ...bid, status: 'accepted' as const } : bid
-    ));
-    // You could add a toast notification here
-    console.log(`Bid ${bidId} accepted successfully`);
+    acceptBid(bidId);
   };
 
   const handleRejectBid = (bidId: string) => {
-    setBids(bids.map(bid => 
-      bid.id === bidId ? { ...bid, status: 'rejected' as const } : bid
-    ));
-    // You could add a toast notification here
-    console.log(`Bid ${bidId} rejected successfully`);
+    rejectBid(bidId);
+  };
+
+  const handleViewDetails = (bid: Bid) => {
+    setSelectedBid(bid);
+    setShowDetailsModal(true);
+  };
+
+  const stats = {
+    total: bids.length,
+    pending: bids.filter(b => b.status === 'pending').length,
+    accepted: bids.filter(b => b.status === 'accepted').length,
+    rejected: bids.filter(b => b.status === 'rejected').length,
+    totalValue: bids.reduce((acc, b) => acc + b.bidAmount, 0),
+    avgRating: bids.length > 0 ? (Math.round(bids.reduce((acc, b) => acc + b.rating, 0) / bids.length * 10) / 10) : 0
   };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
+    <div className="space-y-3">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
-        <div>
-          <h1 className="text-2xl font-bold">Bidding Management</h1>
-          <p className="text-gray-600">Monitor and manage cargo bidding processes</p>
-        </div>
-        <div className="flex gap-2 items-center">
-          <button className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 flex items-center space-x-2 transition-colors">
-            <FaPlus />
-            <span>Create Auction</span>
-          </button>
-        </div>
+      <div>
+        <h1 className="text-lg font-bold text-gray-900">Bidding Management</h1>
+        <p className="text-xs text-gray-600 mt-0.5">Monitor and manage cargo bidding processes</p>
       </div>
 
       {/* Bidding Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
-        <div className="bg-white rounded-xl shadow-lg p-6">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2.5">
+        <div className="bg-white rounded-lg border border-gray-200 p-2.5 hover:shadow-md transition-all duration-200">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-2xl font-bold text-gray-800">{bids.length}</p>
-              <p className="text-gray-600">Total Bids</p>
+              <p className="text-lg font-bold text-gray-900">{stats.total}</p>
+              <p className="text-xs text-gray-600">Total Bids</p>
             </div>
-            <FaGavel className="text-purple-500 text-3xl" />
+            <div className="w-8 h-8 bg-gray-700 rounded-lg flex items-center justify-center">
+              <FaGavel className="text-white text-xs" />
+            </div>
           </div>
         </div>
-        <div className="bg-white rounded-xl shadow-lg p-6">
+        <div className="bg-white rounded-lg border border-gray-200 p-2.5 hover:shadow-md transition-all duration-200">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-2xl font-bold text-gray-800">{bids.filter(b => b.status === 'pending').length}</p>
-              <p className="text-gray-600">Pending</p>
+              <p className="text-lg font-bold text-gray-900">{stats.pending}</p>
+              <p className="text-xs text-gray-600">Pending</p>
             </div>
-            <FaClock className="text-yellow-500 text-3xl" />
+            <div className="w-8 h-8 bg-gray-700 rounded-lg flex items-center justify-center">
+              <FaClock className="text-white text-xs" />
+            </div>
           </div>
         </div>
-        <div className="bg-white rounded-xl shadow-lg p-6">
+        <div className="bg-white rounded-lg border border-gray-200 p-2.5 hover:shadow-md transition-all duration-200">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-2xl font-bold text-gray-800">{bids.filter(b => b.status === 'accepted').length}</p>
-              <p className="text-gray-600">Accepted</p>
+              <p className="text-lg font-bold text-gray-900">{stats.accepted}</p>
+              <p className="text-xs text-gray-600">Accepted</p>
             </div>
-            <FaCheckCircle className="text-green-500 text-3xl" />
+            <div className="w-8 h-8 bg-gray-700 rounded-lg flex items-center justify-center">
+              <FaCheckCircle className="text-white text-xs" />
+            </div>
           </div>
         </div>
-        <div className="bg-white rounded-xl shadow-lg p-6">
+        <div className="bg-white rounded-lg border border-gray-200 p-2.5 hover:shadow-md transition-all duration-200">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-2xl font-bold text-gray-800">${bids.reduce((acc, b) => acc + b.bidAmount, 0).toLocaleString()}</p>
-              <p className="text-gray-600">Total Value</p>
+              <p className="text-lg font-bold text-gray-900">{stats.rejected}</p>
+              <p className="text-xs text-gray-600">Rejected</p>
             </div>
-            <FaDollarSign className="text-blue-500 text-3xl" />
+            <div className="w-8 h-8 bg-gray-700 rounded-lg flex items-center justify-center">
+              <FaTimesCircle className="text-white text-xs" />
+            </div>
           </div>
         </div>
-        <div className="bg-white rounded-xl shadow-lg p-6">
+        <div className="bg-white rounded-lg border border-gray-200 p-2.5 hover:shadow-md transition-all duration-200">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-2xl font-bold text-gray-800">
-                {bids.length > 0 ? (Math.round(bids.reduce((acc, b) => acc + b.rating, 0) / bids.length * 10) / 10) : 0}
-              </p>
-              <p className="text-gray-600">Avg Rating</p>
+              <p className="text-lg font-bold text-gray-900">${stats.totalValue.toLocaleString()}</p>
+              <p className="text-xs text-gray-600">Total Value</p>
             </div>
-            <FaChartLine className="text-orange-500 text-3xl" />
+            <div className="w-8 h-8 bg-gray-700 rounded-lg flex items-center justify-center">
+              <FaDollarSign className="text-white text-xs" />
+            </div>
+          </div>
+        </div>
+        <div className="bg-white rounded-lg border border-gray-200 p-2.5 hover:shadow-md transition-all duration-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-lg font-bold text-gray-900">{stats.avgRating}</p>
+              <p className="text-xs text-gray-600">Avg Rating</p>
+            </div>
+            <div className="w-8 h-8 bg-gray-700 rounded-lg flex items-center justify-center">
+              <FaChartLine className="text-white text-xs" />
+            </div>
           </div>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-xl shadow-lg p-6">
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+      <div className="bg-white rounded-lg border border-gray-200 p-2.5">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-2">
           <div className="relative">
-            <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+            <FaSearch className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400 text-xs" />
             <input
               type="text"
               placeholder="Search bids..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+              className="w-full pl-7 pr-2 py-1.5 text-xs border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent"
             />
           </div>
           <select
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+            className="px-2 py-1.5 text-xs border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent bg-white"
           >
             <option value="">All Status</option>
             <option value="pending">Pending</option>
@@ -249,259 +297,262 @@ const BiddingManagement: React.FC = () => {
           <select
             value={filterCargoId}
             onChange={(e) => setFilterCargoId(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+            className="px-2 py-1.5 text-xs border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent bg-white"
           >
             <option value="">All Cargos</option>
-            <option value="CRG001">CRG001</option>
-            <option value="CRG002">CRG002</option>
-            <option value="CRG003">CRG003</option>
+            {Array.from(new Set(bids.map(b => b.cargoId))).map(cargoId => (
+              <option key={cargoId} value={cargoId}>{cargoId}</option>
+            ))}
           </select>
-          <button className="bg-blue-100 hover:bg-blue-200 text-blue-700 px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors">
-            <FaFilter />
+          <button className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-2 py-1.5 rounded-lg flex items-center justify-center gap-1.5 transition-colors text-xs">
+            <FaFilter className="w-3 h-3" />
             <span>More Filters</span>
           </button>
-          <button className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors">
-            <FaDownload />
+          <button className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-2 py-1.5 rounded-lg flex items-center justify-center gap-1.5 transition-colors text-xs">
+            <FaDownload className="w-3 h-3" />
             <span>Export</span>
           </button>
         </div>
       </div>
 
-      {/* Bids Display */}
-      {viewMode === 'grid' ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredBids.map((bid) => (
-            <div key={bid.id} className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex items-center space-x-2">
-                  <FaGavel className="text-purple-600" />
-                  <span className="font-semibold text-gray-900">#{bid.id}</span>
-                </div>
-                <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(bid.status)}`}>
-                  {bid.status}
-                </span>
-              </div>
-              
-              <div className="space-y-3">
-                <div>
-                  <div className="text-sm font-medium text-gray-900">{bid.cargoTitle}</div>
-                  <div className="text-sm text-gray-500">{bid.cargoId}</div>
-                </div>
-                
-                <div className="flex items-center space-x-2">
-                  <div className="text-lg font-bold text-green-600">${bid.bidAmount}</div>
-                  <div className="text-sm text-gray-500">• {bid.truckCapacity}kg</div>
-                </div>
-                
-                <div className="text-sm text-gray-600">
-                  <div className="font-medium">{bid.bidderName}</div>
-                  <div>{bid.bidderCompany}</div>
-                </div>
-                
-                <div className="flex items-center justify-between pt-2">
-                  <div className="text-xs text-gray-500">
-                    Est: {formatDate(bid.estimatedDelivery)}
-                  </div>
-                  <div className="flex space-x-2">
-                    <button className="text-blue-600 hover:text-blue-800 p-1 rounded">
-                      <FaEye className="w-4 h-4" />
-                    </button>
-                    {bid.status === 'pending' && (
-                      <>
-                        <button 
-                          onClick={() => handleAcceptBid(bid.id)}
-                          className="text-green-600 hover:text-green-800 p-1 rounded"
-                        >
-                          <FaCheckCircle className="w-4 h-4" />
-                        </button>
-                        <button 
-                          onClick={() => handleRejectBid(bid.id)}
-                          className="text-red-600 hover:text-red-800 p-1 rounded"
-                        >
-                          <FaTimesCircle className="w-4 h-4" />
-                        </button>
-                      </>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : viewMode === 'card' ? (
-        <div className="space-y-4">
-          {filteredBids.map((bid) => (
-            <div key={bid.id} className="bg-white rounded-lg shadow-md p-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-4">
-                  <div className="flex items-center space-x-2">
-                    <FaGavel className="text-purple-600" />
-                    <span className="font-semibold">#{bid.id}</span>
-                  </div>
-                  <div>
-                    <div className="font-medium text-gray-900">{bid.cargoTitle}</div>
-                    <div className="text-sm text-gray-500">{bid.cargoId}</div>
-                  </div>
-                  <div className="text-sm text-gray-600">
-                    <div className="font-medium">{bid.bidderName}</div>
-                    <div>{bid.bidderCompany}</div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-lg font-bold text-green-600">${bid.bidAmount}</div>
-                    <div className="text-sm text-gray-500">{bid.truckCapacity}kg capacity</div>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-3">
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(bid.status)}`}>
-                    {bid.status}
-                  </span>
-                  <div className="flex space-x-2">
-                    <button className="text-blue-600 hover:text-blue-800 p-2 rounded">
-                      <FaEye />
-                    </button>
-                    {bid.status === 'pending' && (
-                      <>
-                        <button 
-                          onClick={() => handleAcceptBid(bid.id)}
-                          className="text-green-600 hover:text-green-800 p-2 rounded"
-                        >
-                          <FaCheckCircle />
-                        </button>
-                        <button 
-                          onClick={() => handleRejectBid(bid.id)}
-                          className="text-red-600 hover:text-red-800 p-2 rounded"
-                        >
-                          <FaTimesCircle />
-                        </button>
-                      </>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : (
-        // List/Table View
-        <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+      {/* Bids Table */}
+      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+        {bidsLoading ? (
+          <div className="px-3 py-8 text-center text-xs text-gray-500">
+            Loading bids...
+          </div>
+        ) : bidsError ? (
+          <div className="px-3 py-8 text-center text-xs text-red-500">
+            Error loading bids. Please try again.
+          </div>
+        ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-200">
-              <tr>
-                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bid Details</th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bidder</th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Timeline</th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {filteredBids.map((bid) => (
-                <tr key={bid.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-blue-600 rounded-full flex items-center justify-center text-white font-semibold">
-                        <FaGavel />
-                      </div>
-                      <div className="ml-4">
-                        <div className="text-sm font-medium text-gray-900">{bid.cargoTitle}</div>
-                        <div className="text-sm text-gray-500">Cargo ID: {bid.cargoId}</div>
-                        <div className="text-sm text-gray-500">Bid ID: {bid.id}</div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">
-                      <div className="font-medium">{bid.bidderName}</div>
-                      <div className="text-gray-500">{bid.bidderCompany}</div>
-                      <div className="flex items-center mt-1">
-                        <span className="text-sm mr-2">Rating:</span>
-                        <div className="flex">{getRatingStars(bid.rating)}</div>
-                        <span className="text-sm text-gray-500 ml-1">({bid.rating})</span>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">
-                      <div className="text-lg font-bold text-green-600">${bid.bidAmount}</div>
-                      <div className="text-sm text-gray-500">
-                        <div className="flex items-center">
-                          <FaTruck className="mr-1" />
-                          {bid.truckCapacity} kg capacity
+              <thead className="bg-gray-50 border-b border-gray-200">
+                <tr>
+                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Bid Details</th>
+                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Bidder</th>
+                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Amount</th>
+                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Status</th>
+                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Timeline</th>
+                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {filteredBids.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="px-3 py-8 text-center text-xs text-gray-500">
+                      No bids found
+                    </td>
+                  </tr>
+                ) : (
+                filteredBids.map((bid) => (
+                  <tr key={bid.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-3 py-2.5 whitespace-nowrap">
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 bg-gray-700 rounded-lg flex items-center justify-center">
+                          <FaGavel className="text-white text-xs" />
+                        </div>
+                        <div>
+                          <div className="text-xs font-medium text-gray-900">{bid.cargoTitle}</div>
+                          <div className="text-[10px] text-gray-500">ID: {bid.cargoId} • Bid: {bid.id}</div>
                         </div>
                       </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center space-x-2">
-                      {getStatusIcon(bid.status)}
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(bid.status)}`}>
-                        {bid.status.charAt(0).toUpperCase() + bid.status.slice(1)}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    <div className="space-y-1">
-                      <div className="flex items-center">
-                        <FaCalendar className="text-gray-400 mr-2" />
-                        Submitted: {formatDateTime(bid.submittedAt)}
+                    </td>
+                    <td className="px-3 py-2.5 whitespace-nowrap">
+                      <div className="text-xs text-gray-900">
+                        <div className="font-medium">{bid.bidderName}</div>
+                        <div className="text-[10px] text-gray-500">{bid.bidderCompany}</div>
+                        <div className="flex items-center gap-1 mt-0.5">
+                          <div className="flex text-[10px]">{getRatingStars(bid.rating)}</div>
+                          <span className="text-[10px] text-gray-500">({bid.rating})</span>
+                        </div>
                       </div>
-                      <div className="flex items-center">
-                        <FaClock className="text-gray-400 mr-2" />
-                        Valid until: {formatDate(bid.validUntil)}
+                    </td>
+                    <td className="px-3 py-2.5 whitespace-nowrap">
+                      <div className="text-xs text-gray-900">
+                        <div className="text-sm font-bold text-gray-900">${bid.bidAmount.toLocaleString()}</div>
+                        <div className="text-[10px] text-gray-500 flex items-center gap-1">
+                          <FaTruck className="w-2.5 h-2.5" />
+                          {bid.truckCapacity.toLocaleString()} kg
+                        </div>
                       </div>
-                      <div className="flex items-center">
-                        <FaTruck className="text-gray-400 mr-2" />
-                        Est. delivery: {formatDate(bid.estimatedDelivery)}
+                    </td>
+                    <td className="px-3 py-2.5 whitespace-nowrap">
+                      <div className="flex items-center gap-1.5">
+                        {getStatusIcon(bid.status)}
+                        <span className={`inline-flex px-1.5 py-0.5 text-[10px] font-medium rounded-full ${getStatusColor(bid.status)}`}>
+                          {bid.status.charAt(0).toUpperCase() + bid.status.slice(1)}
+                        </span>
                       </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <div className="flex space-x-2">
-                      <button className="text-blue-600 hover:text-blue-900 p-1 rounded transition-colors">
-                        <FaEye />
-                      </button>
-                      {bid.status === 'pending' && (
-                        <>
-                          <button 
-                            onClick={() => handleAcceptBid(bid.id)}
-                            className="text-green-600 hover:text-green-900 p-1 rounded transition-colors"
-                          >
-                            <FaCheckCircle />
-                          </button>
-                          <button 
-                            onClick={() => handleRejectBid(bid.id)}
-                            className="text-red-600 hover:text-red-900 p-1 rounded transition-colors"
-                          >
-                            <FaTimesCircle />
-                          </button>
-                        </>
-                      )}
-                      <button className="text-gray-600 hover:text-gray-900 p-1 rounded transition-colors">
-                        <FaEdit />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                    </td>
+                    <td className="px-3 py-2.5 whitespace-nowrap text-xs text-gray-900">
+                      <div className="space-y-0.5">
+                        <div className="text-[10px] text-gray-600">Submitted: {getTimeAgo(bid.submittedAt)}</div>
+                        <div className="text-[10px] text-gray-600">Valid until: {formatDate(bid.validUntil)}</div>
+                        <div className="text-[10px] text-gray-600">Est. delivery: {formatDate(bid.estimatedDelivery)}</div>
+                      </div>
+                    </td>
+                    <td className="px-3 py-2.5 whitespace-nowrap text-xs font-medium">
+                      <div className="flex items-center gap-1">
+                        <button 
+                          onClick={() => handleViewDetails(bid)}
+                          className="text-gray-600 hover:text-gray-900 p-1 rounded transition-colors"
+                          title="View Details"
+                        >
+                          <FaEye className="w-3 h-3" />
+                        </button>
+                        {bid.status === 'pending' && (
+                          <>
+                            <button 
+                              onClick={() => handleAcceptBid(bid.id)}
+                              className="text-gray-600 hover:text-gray-900 p-1 rounded transition-colors"
+                              title="Accept Bid"
+                            >
+                              <FaCheckCircle className="w-3 h-3" />
+                            </button>
+                            <button 
+                              onClick={() => handleRejectBid(bid.id)}
+                              className="text-gray-600 hover:text-gray-900 p-1 rounded transition-colors"
+                              title="Reject Bid"
+                            >
+                              <FaTimesCircle className="w-3 h-3" />
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
-      )}
 
-      {/* Notes Section */}
-      {filteredBids.length > 0 && (
-        <div className="bg-white rounded-xl shadow-lg p-6">
-          <h3 className="text-lg font-semibold text-gray-800 mb-4">Recent Bid Notes</h3>
-          <div className="space-y-3">
-            {filteredBids.slice(0, 3).map((bid) => (
-              <div key={bid.id} className="border-l-4 border-purple-500 pl-4 py-2">
-                <div className="text-sm font-medium text-gray-900">{bid.cargoTitle} - {bid.bidderName}</div>
-                <div className="text-sm text-gray-600">{bid.notes}</div>
+      {/* Bid Details Modal */}
+      {showDetailsModal && selectedBid && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
+              <h3 className="text-sm font-bold text-gray-900">Bid Details</h3>
+              <button
+                onClick={() => setShowDetailsModal(false)}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <FaTimes className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="p-4 space-y-3">
+              {/* Bid Information */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-gray-50 rounded-lg p-2.5 border border-gray-200">
+                  <div className="text-[10px] text-gray-600 mb-0.5">Bid ID</div>
+                  <div className="text-xs font-medium text-gray-900">{selectedBid.id}</div>
+                </div>
+                <div className="bg-gray-50 rounded-lg p-2.5 border border-gray-200">
+                  <div className="text-[10px] text-gray-600 mb-0.5">Cargo ID</div>
+                  <div className="text-xs font-medium text-gray-900">{selectedBid.cargoId}</div>
+                </div>
+                <div className="bg-gray-50 rounded-lg p-2.5 border border-gray-200">
+                  <div className="text-[10px] text-gray-600 mb-0.5">Cargo Title</div>
+                  <div className="text-xs font-medium text-gray-900">{selectedBid.cargoTitle}</div>
+                </div>
+                <div className="bg-gray-50 rounded-lg p-2.5 border border-gray-200">
+                  <div className="text-[10px] text-gray-600 mb-0.5">Status</div>
+                  <div className="flex items-center gap-1.5">
+                    {getStatusIcon(selectedBid.status)}
+                    <span className={`text-xs font-medium ${getStatusColor(selectedBid.status)}`}>
+                      {selectedBid.status.charAt(0).toUpperCase() + selectedBid.status.slice(1)}
+                    </span>
+                  </div>
+                </div>
               </div>
-            ))}
+
+              {/* Bidder Information */}
+              <div className="bg-gray-50 rounded-lg p-2.5 border border-gray-200">
+                <div className="text-xs font-medium text-gray-900 mb-2">Bidder Information</div>
+                <div className="space-y-1.5">
+                  <div>
+                    <div className="text-[10px] text-gray-600">Name</div>
+                    <div className="text-xs text-gray-900">{selectedBid.bidderName}</div>
+                  </div>
+                  <div>
+                    <div className="text-[10px] text-gray-600">Company</div>
+                    <div className="text-xs text-gray-900">{selectedBid.bidderCompany}</div>
+                  </div>
+                  <div>
+                    <div className="text-[10px] text-gray-600">Rating</div>
+                    <div className="flex items-center gap-1">
+                      <div className="flex text-xs">{getRatingStars(selectedBid.rating)}</div>
+                      <span className="text-xs text-gray-600">({selectedBid.rating})</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Bid Amount & Capacity */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-gray-50 rounded-lg p-2.5 border border-gray-200">
+                  <div className="text-[10px] text-gray-600 mb-0.5">Bid Amount</div>
+                  <div className="text-sm font-bold text-gray-900">${selectedBid.bidAmount.toLocaleString()}</div>
+                </div>
+                <div className="bg-gray-50 rounded-lg p-2.5 border border-gray-200">
+                  <div className="text-[10px] text-gray-600 mb-0.5">Truck Capacity</div>
+                  <div className="text-sm font-medium text-gray-900">{selectedBid.truckCapacity.toLocaleString()} kg</div>
+                </div>
+              </div>
+
+              {/* Timeline */}
+              <div className="bg-gray-50 rounded-lg p-2.5 border border-gray-200">
+                <div className="text-xs font-medium text-gray-900 mb-2">Timeline</div>
+                <div className="space-y-1.5">
+                  <div>
+                    <div className="text-[10px] text-gray-600">Submitted</div>
+                    <div className="text-xs text-gray-900">{formatDateTime(selectedBid.submittedAt)}</div>
+                  </div>
+                  <div>
+                    <div className="text-[10px] text-gray-600">Valid Until</div>
+                    <div className="text-xs text-gray-900">{formatDate(selectedBid.validUntil)}</div>
+                  </div>
+                  <div>
+                    <div className="text-[10px] text-gray-600">Estimated Delivery</div>
+                    <div className="text-xs text-gray-900">{formatDate(selectedBid.estimatedDelivery)}</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Notes */}
+              <div className="bg-gray-50 rounded-lg p-2.5 border border-gray-200">
+                <div className="text-xs font-medium text-gray-900 mb-1">Notes</div>
+                <div className="text-xs text-gray-700">{selectedBid.notes}</div>
+              </div>
+
+              {/* Actions */}
+              {selectedBid.status === 'pending' && (
+                <div className="flex items-center gap-2 pt-2 border-t border-gray-200">
+                  <button
+                    onClick={() => {
+                      handleAcceptBid(selectedBid.id);
+                      setShowDetailsModal(false);
+                    }}
+                    className="flex-1 px-3 py-1.5 bg-gray-800 text-white rounded-lg hover:bg-gray-900 transition-colors text-xs font-medium"
+                  >
+                    Accept Bid
+                  </button>
+                  <button
+                    onClick={() => {
+                      handleRejectBid(selectedBid.id);
+                      setShowDetailsModal(false);
+                    }}
+                    className="flex-1 px-3 py-1.5 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors text-xs font-medium"
+                  >
+                    Reject Bid
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}

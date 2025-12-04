@@ -291,11 +291,18 @@ export class NotificationController {
     @Query('limit') limit: number = 50,
     @CurrentUser() user: any,
   ): Promise<Notification[]> {
-    return this.notificationService.getNotificationsByRecipient(
-      user.userId,
-      user.tenantId,
-      limit,
-    );
+    try {
+      return await this.notificationService.getNotificationsByRecipient(
+        user.userId,
+        user.tenantId,
+        limit,
+      );
+    } catch (error: any) {
+      console.error('Error fetching user notifications:', error);
+      // Return empty array instead of throwing to prevent UI crashes
+      // The frontend already handles empty arrays gracefully
+      return [];
+    }
   }
 
   @Get('my/unread-count')
@@ -326,11 +333,17 @@ export class NotificationController {
     },
   })
   async getUnreadCount(@CurrentUser() user: any): Promise<{ count: number }> {
-    const count = await this.notificationService.getUnreadCount(
-      user.userId,
-      user.tenantId,
-    );
-    return { count };
+    try {
+      const count = await this.notificationService.getUnreadCount(
+        user.userId,
+        user.tenantId,
+      );
+      return { count };
+    } catch (error: any) {
+      console.error('Error fetching unread count:', error);
+      // Return 0 as safe fallback
+      return { count: 0 };
+    }
   }
 
   @Get('entity/:entityType/:entityId')
