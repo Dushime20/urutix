@@ -6,7 +6,7 @@ export interface FilterSelectOption {
 }
 
 export interface FilterSelectProps {
-  label?: string;
+  label?: string | React.ReactNode;
   value: string;
   placeholder?: string;
   options: FilterSelectOption[];
@@ -38,7 +38,7 @@ export const FilterSelect: React.FC<FilterSelectProps> = ({
       className={`filter-select-wrapper ${className}`}
       aria-label={label ? undefined : ariaLabel}
     >
-      {label ? <span className="filter-select-label">{label}</span> : null}
+      {label ? <span className="filter-select-label">{typeof label === 'string' ? label : label}</span> : null}
       <div className="relative flex items-center">
         {icon ? (
           <span className="pointer-events-none absolute left-3 text-base text-slate-400">

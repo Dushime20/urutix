@@ -8,6 +8,7 @@ import { FiGrid, FiList } from 'react-icons/fi';
 import { useAuth } from '../../contexts/AuthContext';
 import { useAdminLayout } from '../../contexts/AdminLayoutContext';
 import TenantSwitcher from './TenantSwitcher';
+import { LanguageSwitcher } from '@/components/language-switcher';
 
 const Topbar: React.FC = () => {
   const { user, logout } = useAuth();
@@ -51,6 +52,9 @@ const Topbar: React.FC = () => {
             <div className="hidden sm:block text-sm text-gray-600">Scope</div>
             <TenantSwitcher />
           </div>
+          
+          {/* Language Switcher */}
+          <LanguageSwitcher variant="default" />
           
           {/* Toggle Controls */}
           <div className="flex items-center gap-2">

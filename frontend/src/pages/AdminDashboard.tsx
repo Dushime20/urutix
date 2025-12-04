@@ -3,6 +3,7 @@ import {
   FaUsers, FaTruck, FaBox, FaDollarSign,
   FaCheckCircle, FaExclamationTriangle, FaSync
 } from 'react-icons/fa';
+import { TranslatedText } from '../components/translated-text';
 import { Line, Bar, Doughnut } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -177,12 +178,16 @@ const AdminDashboard: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-3">
         <div>
-          <h1 className="text-lg font-bold text-gray-900">Admin Dashboard</h1>
-          <p className="text-xs text-gray-600 mt-0.5">Platform overview and key metrics</p>
+          <h1 className="text-lg font-bold text-gray-900">
+            <TranslatedText text="Admin Dashboard" />
+          </h1>
+          <p className="text-xs text-gray-600 mt-0.5">
+            <TranslatedText text="Platform overview and key metrics" />
+          </p>
         </div>
         <button className="px-2.5 py-1.5 text-xs bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-1.5 transition-colors">
           <FaSync className="w-3 h-3" />
-          Refresh
+          <TranslatedText text="Refresh" />
         </button>
       </div>
 
@@ -210,8 +215,12 @@ const AdminDashboard: React.FC = () => {
                   </span>
                 </div>
                 <div className="text-lg font-bold text-gray-900 mb-0.5">{stat.value}</div>
-                <div className="text-xs font-medium text-gray-600 mb-0.5">{stat.label}</div>
-                <div className="text-[10px] text-gray-500">{stat.description}</div>
+                <div className="text-xs font-medium text-gray-600 mb-0.5">
+                  <TranslatedText text={stat.label} />
+                </div>
+                <div className="text-[10px] text-gray-500">
+                  <TranslatedText text={stat.description} />
+                </div>
               </div>
             </div>
           );
@@ -222,7 +231,9 @@ const AdminDashboard: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
         <div className="lg:col-span-2 bg-white rounded-lg shadow-sm border border-gray-200 p-2.5">
           <div className="flex items-center justify-between mb-2">
-            <h3 className="text-xs font-semibold text-gray-900">Revenue Trend</h3>
+            <h3 className="text-xs font-semibold text-gray-900">
+              <TranslatedText text="Revenue Trend" />
+            </h3>
             <div className="flex space-x-1.5">
               <button className="px-2 py-0.5 text-xs bg-blue-100 text-blue-600 rounded-md font-medium">6M</button>
               <button className="px-2 py-0.5 text-xs text-gray-500 rounded-md hover:bg-gray-100">1Y</button>
@@ -247,7 +258,9 @@ const AdminDashboard: React.FC = () => {
         </div>
         
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-2.5">
-          <h3 className="text-xs font-semibold text-gray-900 mb-2">Cargo Status</h3>
+          <h3 className="text-xs font-semibold text-gray-900 mb-2">
+            <TranslatedText text="Cargo Status" />
+          </h3>
           <div className="h-64">
             <Doughnut data={doughnutData} options={{ 
               ...chartOptions,
@@ -270,7 +283,9 @@ const AdminDashboard: React.FC = () => {
       {/* Bottom Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-2.5">
-          <h3 className="text-xs font-semibold text-gray-900 mb-2">Performance Metrics</h3>
+          <h3 className="text-xs font-semibold text-gray-900 mb-2">
+            <TranslatedText text="Performance Metrics" />
+          </h3>
           <div className="h-64">
             <Bar data={barData} options={{ 
               ...chartOptions,
@@ -291,8 +306,12 @@ const AdminDashboard: React.FC = () => {
         
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-2.5">
           <div className="flex items-center justify-between mb-2">
-            <h3 className="text-xs font-semibold text-gray-900">Recent Activity</h3>
-            <button className="text-blue-600 hover:text-blue-800 text-xs font-medium">View All</button>
+            <h3 className="text-xs font-semibold text-gray-900">
+              <TranslatedText text="Recent Activity" />
+            </h3>
+            <button className="text-blue-600 hover:text-blue-800 text-xs font-medium">
+              <TranslatedText text="View All" />
+            </button>
           </div>
           <div className="space-y-1.5 max-h-64 overflow-y-auto">
             {recentActivities.map((activity, index) => {

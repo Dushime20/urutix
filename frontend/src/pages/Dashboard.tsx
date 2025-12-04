@@ -12,6 +12,8 @@ import {
   Navigation,
   Settings
 } from 'lucide-react';
+import { TranslatedText } from '../components/translated-text';
+import { useTranslation } from '../hooks/useTranslation';
 // Dynamically import recharts to reduce initial bundle size
 import { 
   LineChart, 
@@ -33,6 +35,7 @@ import { useCargoOwnerLayout } from '../contexts/CargoOwnerLayoutContext';
 const Dashboard = () => {
   const layoutContext = useCargoOwnerLayout();
   const isSidebarCollapsed = layoutContext?.sidebarCollapsed ?? false;
+  const { tSync } = useTranslation();
 
   const [stats, setStats] = useState({
     totalRevenue: 125000,
@@ -98,7 +101,9 @@ const Dashboard = () => {
       
       <div className="relative flex items-center justify-between">
         <div className="flex-1 min-w-0">
-          <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">{title}</p>
+          <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
+            <TranslatedText text={title} />
+          </p>
           <p className="text-xl font-bold text-gray-900 truncate">{value}</p>
           {change && (
             <div className="flex items-center mt-1.5">
@@ -112,7 +117,9 @@ const Dashboard = () => {
                 )}
                 {changeType === 'positive' ? '+' : ''}{change}%
               </span>
-              <span className="text-xs text-gray-400 ml-1">vs last month</span>
+              <span className="text-xs text-gray-400 ml-1">
+                <TranslatedText text="vs last month" />
+              </span>
             </div>
           )}
         </div>
@@ -148,12 +155,16 @@ const Dashboard = () => {
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-semibold text-gray-900 group-hover:text-primary-700 transition-colors">
-            {activity.title}
+            <TranslatedText text={activity.title} />
           </p>
-          <p className="text-xs text-gray-600 mt-0.5">{activity.description}</p>
+          <p className="text-xs text-gray-600 mt-0.5">
+            <TranslatedText text={activity.description} />
+          </p>
           <div className="flex items-center mt-1.5 space-x-2">
             <Clock className="w-3 h-3 text-gray-400" />
-            <p className="text-xs text-gray-500">{activity.time}</p>
+            <p className="text-xs text-gray-500">
+              <TranslatedText text={activity.time} />
+            </p>
           </div>
         </div>
         <div className={`flex-shrink-0 w-2 h-2 rounded-full mt-2 ${
@@ -169,8 +180,12 @@ const Dashboard = () => {
       <div className="bg-gradient-to-r from-primary-50 via-white to-primary-50 rounded-xl p-5 border border-primary-100/50">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-1">Dashboard</h1>
-            <p className="text-sm text-gray-600">Welcome back! Here's what's happening with your cargo operations.</p>
+            <h1 className="text-2xl font-bold text-gray-900 mb-1">
+              <TranslatedText text="Dashboard" />
+            </h1>
+            <p className="text-sm text-gray-600">
+              <TranslatedText text="Welcome back! Here's what's happening with your cargo operations." />
+            </p>
           </div>
           <div className="hidden md:flex items-center space-x-2 px-4 py-2 bg-white rounded-lg border border-gray-200 shadow-sm">
             <Clock className="w-4 h-4 text-gray-400" />
@@ -238,13 +253,13 @@ const Dashboard = () => {
           <div className="flex items-center justify-between mb-3 pb-3 border-b border-gray-100">
             <h3 className="text-sm font-bold text-gray-900 flex items-center">
               <Package className="w-4 h-4 mr-2 text-primary-600" />
-              Document Management
+              <TranslatedText text="Document Management" />
             </h3>
             <a 
               href="/dashboard/documents" 
               className="text-xs font-semibold text-primary-600 hover:text-primary-700 transition-colors"
             >
-              View All →
+              <TranslatedText text="View All" /> →
             </a>
           </div>
           <div className="space-y-2">
@@ -256,8 +271,12 @@ const Dashboard = () => {
                 <Package className="w-4 h-4 text-blue-600" />
               </div>
               <div className="flex-1 min-w-0">
-                <div className="text-xs font-semibold text-gray-900 group-hover:text-blue-700">Cargo Documents</div>
-                <div className="text-[10px] text-gray-500">Manage cargo manifests, contracts</div>
+                <div className="text-xs font-semibold text-gray-900 group-hover:text-blue-700">
+                  <TranslatedText text="Cargo Documents" />
+                </div>
+                <div className="text-[10px] text-gray-500">
+                  <TranslatedText text="Manage cargo manifests, contracts" />
+                </div>
               </div>
             </a>
             <a 
@@ -268,8 +287,12 @@ const Dashboard = () => {
                 <Truck className="w-4 h-4 text-green-600" />
               </div>
               <div className="flex-1 min-w-0">
-                <div className="text-xs font-semibold text-gray-900 group-hover:text-green-700">Trip Documents</div>
-                <div className="text-[10px] text-gray-500">Route plans, delivery confirmations</div>
+                <div className="text-xs font-semibold text-gray-900 group-hover:text-green-700">
+                  <TranslatedText text="Trip Documents" />
+                </div>
+                <div className="text-[10px] text-gray-500">
+                  <TranslatedText text="Route plans, delivery confirmations" />
+                </div>
               </div>
             </a>
             <a 
@@ -280,8 +303,12 @@ const Dashboard = () => {
                 <CreditCard className="w-4 h-4 text-purple-600" />
               </div>
               <div className="flex-1 min-w-0">
-                <div className="text-xs font-semibold text-gray-900 group-hover:text-purple-700">Financial Documents</div>
-                <div className="text-[10px] text-gray-500">Invoices, receipts, contracts</div>
+                <div className="text-xs font-semibold text-gray-900 group-hover:text-purple-700">
+                  <TranslatedText text="Financial Documents" />
+                </div>
+                <div className="text-[10px] text-gray-500">
+                  <TranslatedText text="Invoices, receipts, contracts" />
+                </div>
               </div>
             </a>
           </div>
@@ -292,13 +319,13 @@ const Dashboard = () => {
           <div className="flex items-center justify-between mb-3 pb-3 border-b border-gray-100">
             <h3 className="text-sm font-bold text-gray-900 flex items-center">
               <Settings className="w-4 h-4 mr-2 text-primary-600" />
-              Notification Center
+              <TranslatedText text="Notification Center" />
             </h3>
             <a 
               href="/dashboard/notification-center" 
               className="text-xs font-semibold text-primary-600 hover:text-primary-700 transition-colors"
             >
-              View All →
+              <TranslatedText text="View All" /> →
             </a>
           </div>
           <div className="space-y-2">
@@ -310,8 +337,12 @@ const Dashboard = () => {
                 <Settings className="w-4 h-4 text-gray-600" />
               </div>
               <div className="flex-1 min-w-0">
-                <div className="text-xs font-semibold text-gray-900">System Updates</div>
-                <div className="text-[10px] text-gray-500">Platform notifications and updates</div>
+                <div className="text-xs font-semibold text-gray-900">
+                  <TranslatedText text="System Updates" />
+                </div>
+                <div className="text-[10px] text-gray-500">
+                  <TranslatedText text="Platform notifications and updates" />
+                </div>
               </div>
             </a>
             <a 
@@ -322,8 +353,12 @@ const Dashboard = () => {
                 <Package className="w-4 h-4 text-blue-600" />
               </div>
               <div className="flex-1 min-w-0">
-                <div className="text-xs font-semibold text-gray-900 group-hover:text-blue-700">Cargo Alerts</div>
-                <div className="text-[10px] text-gray-500">Status updates and delivery notifications</div>
+                <div className="text-xs font-semibold text-gray-900 group-hover:text-blue-700">
+                  <TranslatedText text="Cargo Alerts" />
+                </div>
+                <div className="text-[10px] text-gray-500">
+                  <TranslatedText text="Status updates and delivery notifications" />
+                </div>
               </div>
             </a>
             <a 
@@ -334,8 +369,12 @@ const Dashboard = () => {
                 <CreditCard className="w-4 h-4 text-purple-600" />
               </div>
               <div className="flex-1 min-w-0">
-                <div className="text-xs font-semibold text-gray-900 group-hover:text-purple-700">Financial Alerts</div>
-                <div className="text-[10px] text-gray-500">Payment confirmations and alerts</div>
+                <div className="text-xs font-semibold text-gray-900 group-hover:text-purple-700">
+                  <TranslatedText text="Financial Alerts" />
+                </div>
+                <div className="text-[10px] text-gray-500">
+                  <TranslatedText text="Payment confirmations and alerts" />
+                </div>
               </div>
             </a>
           </div>
@@ -349,7 +388,7 @@ const Dashboard = () => {
           <div className="flex items-center justify-between mb-3 pb-3 border-b border-gray-100">
             <h3 className="text-sm font-bold text-gray-900 flex items-center">
               <TrendingUp className="w-4 h-4 mr-2 text-primary-600" />
-              Revenue Trend
+              <TranslatedText text="Revenue Trend" />
             </h3>
           </div>
           <ResponsiveContainer width="100%" height={250}>
@@ -389,7 +428,7 @@ const Dashboard = () => {
           <div className="flex items-center justify-between mb-3 pb-3 border-b border-gray-100">
             <h3 className="text-sm font-bold text-gray-900 flex items-center">
               <Package className="w-4 h-4 mr-2 text-primary-600" />
-              Trip Status Distribution
+              <TranslatedText text="Trip Status Distribution" />
             </h3>
           </div>
           <ResponsiveContainer width="100%" height={250}>
@@ -399,7 +438,7 @@ const Dashboard = () => {
                 cx="50%"
                 cy="50%"
                 labelLine={false}
-                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                label={({ name, percent }) => `${tSync(name)} ${(percent * 100).toFixed(0)}%`}
                 outerRadius={70}
                 fill="#8884d8"
                 dataKey="value"
@@ -427,12 +466,12 @@ const Dashboard = () => {
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-bold text-gray-900 flex items-center">
               <Navigation className="w-4 h-4 mr-2 text-primary-600" />
-              Trucks In Transit
+              <TranslatedText text="Trucks In Transit" />
             </h3>
             <div className="flex items-center space-x-2 px-2.5 py-1 bg-primary-100 rounded-lg">
               <div className="w-2 h-2 bg-primary-600 rounded-full animate-pulse"></div>
               <span className="text-xs font-semibold text-primary-700">
-                {inTransitTrucks?.length || 0} Active
+                {inTransitTrucks?.length || 0} <TranslatedText text="Active" />
               </span>
             </div>
           </div>
@@ -441,7 +480,9 @@ const Dashboard = () => {
           {inTransitLoading ? (
             <div className="p-8 text-center">
               <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary-600 mx-auto"></div>
-              <p className="text-xs text-gray-500 mt-2">Loading trucks...</p>
+              <p className="text-xs text-gray-500 mt-2">
+                <TranslatedText text="Loading trucks..." />
+              </p>
             </div>
           ) : inTransitTrucks?.length > 0 ? (
             inTransitTrucks.map((truck: any) => (
@@ -452,8 +493,8 @@ const Dashboard = () => {
                       <h4 className="text-sm font-bold text-gray-900">
                         {truck.plateNumber}
                       </h4>
-                      <span className="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-primary-100 text-primary-700 border border-primary-200">
-                        IN TRANSIT
+                        <span className="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-primary-100 text-primary-700 border border-primary-200">
+                        <TranslatedText text="IN TRANSIT" />
                       </span>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-xs text-gray-600">
@@ -463,11 +504,11 @@ const Dashboard = () => {
                       </div>
                       <div className="flex items-center space-x-1.5">
                         <MapPin className="w-3.5 h-3.5 text-gray-400" />
-                        <span className="truncate">{truck.currentLocation || 'Unknown location'}</span>
+                        <span className="truncate">{truck.currentLocation || <TranslatedText text="Unknown location" />}</span>
                       </div>
                       <div className="flex items-center space-x-1.5">
                         <Users className="w-3.5 h-3.5 text-gray-400" />
-                        <span className="truncate">{truck.currentDriver?.name || 'No driver assigned'}</span>
+                        <span className="truncate">{truck.currentDriver?.name || <TranslatedText text="No driver assigned" />}</span>
                       </div>
                     </div>
                   </div>
@@ -484,8 +525,12 @@ const Dashboard = () => {
               <div className="w-12 h-12 mx-auto mb-3 bg-gray-100 rounded-full flex items-center justify-center">
                 <Truck className="w-6 h-6 text-gray-400" />
               </div>
-              <p className="text-xs font-medium text-gray-500">No trucks currently in transit</p>
-              <p className="text-[10px] text-gray-400 mt-1">Trucks will appear here when they start a trip</p>
+              <p className="text-xs font-medium text-gray-500">
+                <TranslatedText text="No trucks currently in transit" />
+              </p>
+              <p className="text-[10px] text-gray-400 mt-1">
+                <TranslatedText text="Trucks will appear here when they start a trip" />
+              </p>
             </div>
           )}
         </div>
@@ -497,13 +542,13 @@ const Dashboard = () => {
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-bold text-gray-900 flex items-center">
               <Clock className="w-4 h-4 mr-2 text-primary-600" />
-              Recent Activity
+              <TranslatedText text="Recent Activity" />
             </h3>
             <a 
               href="/dashboard/notification-center" 
               className="text-xs font-semibold text-primary-600 hover:text-primary-700 transition-colors"
             >
-              View All →
+              <TranslatedText text="View All" /> →
             </a>
           </div>
         </div>
@@ -517,8 +562,12 @@ const Dashboard = () => {
               <div className="w-12 h-12 mx-auto mb-3 bg-gray-100 rounded-full flex items-center justify-center">
                 <CheckCircle className="w-6 h-6 text-gray-400" />
               </div>
-              <p className="text-xs font-medium text-gray-500">No recent activity</p>
-              <p className="text-[10px] text-gray-400 mt-1">Activity will appear here as it happens</p>
+              <p className="text-xs font-medium text-gray-500">
+                <TranslatedText text="No recent activity" />
+              </p>
+              <p className="text-[10px] text-gray-400 mt-1">
+                <TranslatedText text="Activity will appear here as it happens" />
+              </p>
             </div>
           )}
         </div>

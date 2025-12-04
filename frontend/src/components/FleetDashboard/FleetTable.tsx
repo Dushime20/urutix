@@ -1,6 +1,8 @@
 import React from 'react';
 import { FaTruck, FaUser, FaMapMarkerAlt, FaPhone, FaEnvelope, FaEdit, FaTrash, FaEye } from 'react-icons/fa';
 import type { FleetItem } from '../../types/fleet';
+import { TranslatedText } from '../translated-text';
+import { useTranslation } from '../../hooks/useTranslation';
 
 interface FleetTableProps {
   fleetItems: FleetItem[];
@@ -38,18 +40,20 @@ const FleetTableComp: React.FC<FleetTableProps> = ({
     }
   };
 
+  const { tSync } = useTranslation();
+  
   const getStatusText = (status: string) => {
     switch (status) {
       case 'AVAILABLE':
-        return 'Available';
+        return tSync('Available');
       case 'IN_TRANSIT':
-        return 'In Transit';
+        return tSync('In Transit');
       case 'MAINTENANCE':
-        return 'Maintenance';
+        return tSync('Maintenance');
       case 'OUT_OF_SERVICE':
-        return 'Out of Service';
+        return tSync('Out of Service');
       default:
-        return status.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+        return tSync(status.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()));
     }
   };
 
@@ -279,44 +283,44 @@ const FleetTableComp: React.FC<FleetTableProps> = ({
           <thead className="bg-gray-50">
             <tr>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                {activeTab === 'trucks' ? 'Truck' : 'Driver'}
+                {activeTab === 'trucks' ? <TranslatedText text="Truck" /> : <TranslatedText text="Driver" />}
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Status
+                <TranslatedText text="Status" />
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Location
+                <TranslatedText text="Location" />
               </th>
               {activeTab === 'trucks' ? (
                 <>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    License Plate
+                    <TranslatedText text="License Plate" />
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Vehicle
+                    <TranslatedText text="Vehicle" />
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Driver
+                    <TranslatedText text="Driver" />
                   </th>
                 </>
               ) : (
                 <>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    License Number
+                    <TranslatedText text="License Number" />
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Experience
+                    <TranslatedText text="Experience" />
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Assigned Truck
+                    <TranslatedText text="Assigned Truck" />
                   </th>
                 </>
               )}
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Contact
+                <TranslatedText text="Contact" />
               </th>
               <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Actions
+                <TranslatedText text="Actions" />
               </th>
             </tr>
           </thead>

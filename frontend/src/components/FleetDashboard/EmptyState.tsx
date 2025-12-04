@@ -1,5 +1,6 @@
 import React from 'react';
 import { FaPlus, FaTruck, FaUsers, FaChartBar, FaFileAlt } from 'react-icons/fa';
+import { TranslatedText } from '../translated-text';
 
 interface EmptyStateProps {
   type: 'trucks' | 'drivers' | 'analytics' | 'documents' | 'maintenance' | 'inspections';
@@ -60,6 +61,9 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
       color: 'yellow'
     }
   };
+  
+  // Helper to translate text
+  const translate = (text: string) => text;
 
   const config = configs[type];
   const IconComponent = config.icon;
@@ -78,10 +82,10 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
         <IconComponent className="w-12 h-12" />
       </div>
       <h3 className="text-xl font-semibold text-gray-900 mb-2">
-        {title || config.defaultTitle}
+        <TranslatedText text={title || config.defaultTitle} />
       </h3>
       <p className="text-gray-600 text-center max-w-md mb-6">
-        {description || config.defaultDescription}
+        <TranslatedText text={description || config.defaultDescription} />
       </p>
       {onAction && (
         <button
@@ -89,7 +93,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
           className="px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors flex items-center gap-2 font-medium shadow-lg"
         >
           <FaPlus className="w-4 h-4" />
-          {actionLabel || config.defaultActionLabel}
+          <TranslatedText text={actionLabel || config.defaultActionLabel} />
         </button>
       )}
     </div>

@@ -9,6 +9,7 @@ import Profile from "@/pages/Profile";
 import SettingsPage from "@/pages/Settings";
 import { cn } from "@/utils/cn";
 import logoUrutiX from "@/assets/logo-urutix.svg";
+import { TranslatedText } from "@/components/translated-text";
 
 type TabType = "profile" | "settings";
 
@@ -72,10 +73,10 @@ const UnifiedAccountManagement = () => {
         {/* Header */}
         <div className="mb-4">
           <h1 className="text-2xl font-bold text-gray-900">
-            Account & Settings
+            <TranslatedText text="Account & Settings" />
           </h1>
           <p className="text-sm text-gray-600 mt-1">
-            Manage your profile and account settings
+            <TranslatedText text="Manage your profile and account settings" />
           </p>
         </div>
 
@@ -97,7 +98,7 @@ const UnifiedAccountManagement = () => {
                   )}
                 >
                   <Icon className="w-4 h-4" />
-                  <span>{tab.label}</span>
+                  <span><TranslatedText text={tab.label} /></span>
                 </button>
               );
             })}

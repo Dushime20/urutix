@@ -8,6 +8,7 @@ import { HelpCenter } from '../FleetDashboard/HelpCenter';
 import FleetOwnerOnboarding from '../FleetDashboard/FleetOwnerOnboarding';
 import { FloatingHelpButton } from '../FleetDashboard/FloatingHelpButton';
 import logoUrutiX from '../../assets/logo-urutix.svg';
+import { LanguageSwitcher } from '@/components/language-switcher';
 
 const FleetOwnerLayout: React.FC = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -207,6 +208,9 @@ const FleetOwnerLayout: React.FC = () => {
           <div className="flex items-center justify-end">
             {/* User Menu */}
             <div className="flex items-center space-x-4">
+              {/* Language Switcher */}
+              <LanguageSwitcher variant="default" />
+              
               {/* Help Center */}
               <div className="relative group">
                 <button

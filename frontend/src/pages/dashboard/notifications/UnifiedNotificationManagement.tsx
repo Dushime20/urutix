@@ -94,10 +94,10 @@ const UnifiedNotificationManagement = () => {
         {/* Header */}
         <div className="mb-4">
           <h1 className="text-2xl font-bold text-gray-900">
-            Communication & Notifications
+            <TranslatedText text="Communication & Notifications" />
           </h1>
           <p className="text-sm text-gray-600 mt-1">
-            Manage all your notifications and alerts
+            <TranslatedText text="Manage all your notifications and alerts" />
           </p>
         </div>
 
@@ -119,7 +119,7 @@ const UnifiedNotificationManagement = () => {
                   )}
                 >
                   <Icon className="w-4 h-4" />
-                  <span>{tab.label}</span>
+                  <span><TranslatedText text={tab.label} /></span>
                 </button>
               );
             })}

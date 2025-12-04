@@ -10,5 +10,5 @@ export interface Tenant {
 }
 
 export interface TenantSearchParams {
-  q: string;
+  q?: string;
 }

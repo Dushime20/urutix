@@ -6,6 +6,7 @@ import { AdminLayoutProvider, useAdminLayout } from '../../contexts/AdminLayoutC
 import AdminSidebar from '../AdminDashboard/Sidebar';
 import Topbar from '../AdminDashboard/Topbar';
 import AuthDebug from '../AuthDebug';
+import { LanguageSwitcher } from '@/components/language-switcher';
 import logoUrutiX from '../../assets/logo-urutix.svg';
 
 const AdminLayoutContent: React.FC = () => {
@@ -90,6 +91,9 @@ const AdminLayoutContent: React.FC = () => {
 
             {/* Right Side Header */}
             <div className="flex items-center gap-2.5">
+              {/* Language Switcher */}
+              <LanguageSwitcher variant="default" />
+              
               {/* Notifications */}
               <button className="relative p-1.5 rounded-lg hover:bg-gray-100 transition-colors">
                 <FaBell className="w-4 h-4 text-gray-600" />

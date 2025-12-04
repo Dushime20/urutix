@@ -31,6 +31,7 @@
     "seed:complete": "node src/database/seeds/seed-complete-system.js",
     "seed:companies": "node src/database/seeds/seed-companies.js",
     "seed:admin": "node src/database/seeds/seed-admin.js",
+    "seed:admin-user": "node src/database/seeds/seed-admin-user.js",
     "seed:payments": "node src/database/seeds/seed-payment-workflow.js",
     "create:admin": "ts-node src/scripts/create-admin-user.ts",
     "user:set-password": "ts-node src/scripts/set-user-password.ts",

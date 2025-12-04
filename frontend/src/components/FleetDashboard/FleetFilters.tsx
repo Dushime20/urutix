@@ -28,6 +28,8 @@ const FleetFiltersComp: React.FC<FleetFiltersProps> = ({
   // Debug logging
   console.log('FleetFilters component rendering');
   
+  const { tSync } = useTranslation();
+  
   const statusOptions = [
     { value: '', label: 'All Status' },
     { value: FLEET_STATUS.AVAILABLE, label: 'Available' },
@@ -35,6 +37,9 @@ const FleetFiltersComp: React.FC<FleetFiltersProps> = ({
     { value: FLEET_STATUS.MAINTENANCE, label: 'Maintenance' },
     { value: FLEET_STATUS.OUT_OF_SERVICE, label: 'Out of Service' }
   ];
+  
+  // Translate status labels
+  const getTranslatedLabel = (label: string) => tSync(label);
 
   const handleStatusChange = (status: string) => {
     setFilters({
@@ -64,7 +69,7 @@ const FleetFiltersComp: React.FC<FleetFiltersProps> = ({
             <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
             <input
               type="text"
-              placeholder={`Search ${activeTab}...`}
+              placeholder={activeTab === 'trucks' ? 'Search trucks...' : activeTab === 'drivers' ? 'Search drivers...' : `Search ${activeTab}...`}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
@@ -81,7 +86,7 @@ const FleetFiltersComp: React.FC<FleetFiltersProps> = ({
           >
             {statusOptions.map((option) => (
               <option key={option.value} value={option.value}>
-                {option.label}
+                {getTranslatedLabel(option.label)}
               </option>
             ))}
           </select>
@@ -107,7 +112,7 @@ const FleetFiltersComp: React.FC<FleetFiltersProps> = ({
           className="px-4 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors flex items-center gap-2"
         >
           <FaFilter className="w-4 h-4" />
-          Clear Filters
+          <TranslatedText text="Clear Filters" />
         </button>
       </div>
 
@@ -116,7 +121,7 @@ const FleetFiltersComp: React.FC<FleetFiltersProps> = ({
         <div className="mt-4 flex flex-wrap gap-2">
           {search && (
             <span className="px-3 py-1 bg-primary-100 text-primary-800 rounded-full text-sm flex items-center gap-1">
-              Search: {search}
+              <TranslatedText text="Search" />: {search}
               <button
                 onClick={() => setSearch('')}
                 className="ml-1 hover:text-primary-600"
@@ -127,7 +132,7 @@ const FleetFiltersComp: React.FC<FleetFiltersProps> = ({
           )}
           {filters.status && (
             <span className="px-3 py-1 bg-primary-100 text-primary-800 rounded-full text-sm flex items-center gap-1">
-              Status: {filters.status}
+              <TranslatedText text="Status" />: {filters.status}
               <button
                 onClick={() => handleStatusChange('')}
                 className="ml-1 hover:text-primary-600"
@@ -138,7 +143,7 @@ const FleetFiltersComp: React.FC<FleetFiltersProps> = ({
           )}
           {filters.location && (
             <span className="px-3 py-1 bg-primary-100 text-primary-800 rounded-full text-sm flex items-center gap-1">
-              Location: {filters.location}
+              <TranslatedText text="Location" />: {filters.location}
               <button
                 onClick={() => handleLocationChange('')}
                 className="ml-1 hover:text-primary-600"

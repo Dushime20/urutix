@@ -27,6 +27,7 @@ import {
 } from 'react-icons/fa';
 import sidebarBack from '../../assets/sidebar-back.svg';
 import urutixLogo from '../../assets/urutix.png';
+import { TranslatedText } from '../translated-text';
 
 interface FleetOwnerSidebarProps {
   isCollapsed: boolean;
@@ -155,9 +156,11 @@ const FleetOwnerSidebar: React.FC<FleetOwnerSidebarProps> = ({ isCollapsed, onTo
               </div>
               <div>
                 <span className="block text-xs font-semibold uppercase tracking-wider text-gray-400">
-                  Dashboard
+                  <TranslatedText text="Dashboard" />
                 </span>
-                <span className="block text-base font-bold text-gray-900">Fleet Owner</span>
+                <span className="block text-base font-bold text-gray-900">
+                  <TranslatedText text="Fleet Owner" />
+                </span>
               </div>
             </div>
           )}
@@ -178,7 +181,7 @@ const FleetOwnerSidebar: React.FC<FleetOwnerSidebarProps> = ({ isCollapsed, onTo
           <div key={sectionIndex} className="px-3">
             {!isCollapsed && section.section && section.section !== 'Driver Management' && (
               <h3 className="mb-2 px-2 text-xs font-semibold uppercase tracking-wider text-gray-400">
-                {section.section}
+                <TranslatedText text={section.section} />
               </h3>
             )}
             <div className="space-y-2 mb-4">
@@ -210,7 +213,9 @@ const FleetOwnerSidebar: React.FC<FleetOwnerSidebarProps> = ({ isCollapsed, onTo
                           <IconComponent className="h-4 w-4" />
                         </div>
                         {!isCollapsed && (
-                          <span className="flex-1 truncate">{item.name}</span>
+                          <span className="flex-1 truncate">
+                            <TranslatedText text={item.name} />
+                          </span>
                         )}
                         {isActive && isCollapsed && (
                           <span className="absolute inset-y-2 right-1 w-1 rounded-full bg-white" />

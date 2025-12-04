@@ -1,5 +1,6 @@
 import React from 'react';
 import { FaEye, FaEdit, FaTrash, FaMapMarkerAlt, FaCalendar, FaBox } from 'react-icons/fa';
+import { TranslatedText } from '../translated-text';
 // import type { Cargo } from '../../types/cargo';
 
 // Temporary local interface to bypass module resolution issue
@@ -122,7 +123,7 @@ export const CargoTable: React.FC<CargoTableProps> = ({
     if (cargo.pickupLocation?.address && cargo.pickupLocation.address.trim() !== '') {
       return cargo.pickupLocation.address;
     }
-    return cargo.pickupLocation?.name || 'Pickup';
+    return cargo.pickupLocation?.name || 'Pickup'; // Will be translated in display
   };
 
   // Helper function to get delivery location display
@@ -130,7 +131,7 @@ export const CargoTable: React.FC<CargoTableProps> = ({
     if (cargo.deliveryLocation?.address && cargo.deliveryLocation.address.trim() !== '') {
       return cargo.deliveryLocation.address;
     }
-    return cargo.deliveryLocation?.name || 'Delivery';
+    return cargo.deliveryLocation?.name || 'Delivery'; // Will be translated in display
   };
 
   const getStatusColor = (status: string) => {
@@ -212,6 +213,7 @@ export const CargoTable: React.FC<CargoTableProps> = ({
                   }}
                   className="p-1 text-blue-600 hover:text-blue-800 transition-colors"
                   title="Edit"
+                  aria-label="Edit"
                 >
                   <FaEdit className="w-4 h-4" />
                 </button>
@@ -224,6 +226,7 @@ export const CargoTable: React.FC<CargoTableProps> = ({
                   }}
                   className="p-1 text-red-600 hover:text-red-800 transition-colors"
                   title="Delete"
+                  aria-label="Delete"
                 >
                   <FaTrash className="w-4 h-4" />
                 </button>
@@ -236,6 +239,7 @@ export const CargoTable: React.FC<CargoTableProps> = ({
                   }}
                   className="p-1 text-green-600 hover:text-green-800 transition-colors"
                   title="Publish"
+                  aria-label="Publish"
                 >
                   <FaEye className="w-4 h-4" />
                 </button>
@@ -255,22 +259,22 @@ export const CargoTable: React.FC<CargoTableProps> = ({
         <thead className="bg-gray-50">
           <tr>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Cargo ID
+              <TranslatedText text="Cargo ID" />
             </th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Route
+              <TranslatedText text="Route" />
             </th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Status
+              <TranslatedText text="Status" />
             </th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Price
+              <TranslatedText text="Price" />
             </th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Created
+              <TranslatedText text="Created" />
             </th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Actions
+              <TranslatedText text="Actions" />
             </th>
           </tr>
         </thead>
@@ -294,7 +298,9 @@ export const CargoTable: React.FC<CargoTableProps> = ({
                     </span>
                   </div>
                 ) : (
-                  <span className="text-gray-400">No location specified</span>
+                  <span className="text-gray-400">
+                    <TranslatedText text="No location specified" />
+                  </span>
                 )}
               </td>
               <td className="px-6 py-4 whitespace-nowrap">

@@ -12,6 +12,7 @@ import { useQuery } from '@tanstack/react-query';
 import { tenantAPI } from '../services/api';
 import type { Tenant } from '../types/tenant';
 import toast from 'react-hot-toast';
+import { TranslatedText } from '../components/translated-text';
 
 
 // Zod schemas
@@ -79,8 +80,6 @@ const Auth = () => {
         return response.data.data.results;
       } else if (response.data?.data?.results) {
         return response.data.data.results;
-      } else if (response.data?.results) {
-        return response.data.results;
       } else if (Array.isArray(response.data)) {
         return response.data;
       } else if (response.data?.data && Array.isArray(response.data.data)) {
@@ -307,10 +306,10 @@ const Auth = () => {
           {/* Form Header */}
           <div className="px-6 pt-6 pb-4">
             <h2 className="text-xl font-bold text-gray-900 mb-1">
-              {isLogin ? 'Welcome back' : 'Create your account'}
+              {isLogin ? <TranslatedText text="Welcome back" /> : <TranslatedText text="Create your account" />}
             </h2>
             <p className="text-sm text-gray-600">
-              {isLogin ? 'Sign in to access your dashboard' : 'Join thousands of users in the logistics industry'}
+              {isLogin ? <TranslatedText text="Sign in to access your dashboard" /> : <TranslatedText text="Join thousands of users in the logistics industry" />}
             </p>
           </div>
 
@@ -320,7 +319,7 @@ const Auth = () => {
               <form onSubmit={loginForm.handleSubmit(onLoginSubmit)} className="space-y-4">
                 <div>
                   <label htmlFor="email" className="block text-xs font-medium text-gray-700 mb-1.5">
-                    Email address
+                    <TranslatedText text="Email address" />
                   </label>
                   <input
                     {...loginForm.register('email')}
@@ -355,7 +354,7 @@ const Auth = () => {
 
                 <div>
                   <label htmlFor="password" className="block text-xs font-medium text-gray-700 mb-1.5">
-                    Password
+                    <TranslatedText text="Password" />
                   </label>
                   <div className="relative">
                     <input
@@ -393,7 +392,7 @@ const Auth = () => {
                     <FaSpinner className="animate-spin h-4 w-4" />
                   ) : (
                     <>
-                      <span>Sign In</span>
+                      <span><TranslatedText text="Sign In" /></span>
                       <ArrowRight className="h-3.5 w-3.5" />
                     </>
                   )}
@@ -401,13 +400,13 @@ const Auth = () => {
 
                 <div className="text-center">
                   <p className="text-sm text-gray-600">
-                    Don't have an account?{' '}
+                    <TranslatedText text="Don't have an account?" />{' '}
                     <button
                       type="button"
                       onClick={() => setIsLogin(false)}
                       className="font-medium text-primary-600 hover:text-primary-500 transition-colors"
                     >
-                      Sign up
+                      <TranslatedText text="Sign up" />
                     </button>
                   </p>
                 </div>
@@ -417,7 +416,7 @@ const Auth = () => {
                 {/* User Type Selection */}
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-2">
-                    I am a...
+                    <TranslatedText text="I am a..." />
                   </label>
                   <div className="grid grid-cols-2 gap-2">
                     {userTypes.map((type) => (
@@ -441,9 +440,11 @@ const Auth = () => {
                         <div className="flex flex-col items-center space-y-1">
                           <type.icon className={`h-5 w-5 ${selectedUserType === type.id ? type.textColor : type.textColor}`} />
                           <div className="text-center">
-                            <div className={`font-medium text-xs ${selectedUserType === type.id ? type.textColor : 'text-gray-900'}`}>{type.title}</div>
+                            <div className={`font-medium text-xs ${selectedUserType === type.id ? type.textColor : 'text-gray-900'}`}>
+                              <TranslatedText text={type.title} />
+                            </div>
                             <div className={`text-[10px] ${selectedUserType === type.id ? type.textColor : 'text-gray-500'}`}>
-                              {type.description}
+                              <TranslatedText text={type.description} />
                             </div>
                           </div>
                         </div>
@@ -459,7 +460,7 @@ const Auth = () => {
                     {/* First Name */}
                     <div>
                       <label htmlFor="firstName" className="block text-xs font-medium text-gray-700 mb-1.5">
-                        First name
+                        <TranslatedText text="First name" />
                       </label>
                       <input
                         {...registerForm.register('firstName')}
@@ -481,7 +482,7 @@ const Auth = () => {
                         {isLoadingTenants ? (
                           <div className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg bg-gray-50 flex items-center space-x-2">
                             <FaSpinner className="animate-spin h-3.5 w-3.5 text-gray-400" />
-                            <span className="text-xs text-gray-500">Loading companies...</span>
+                            <span className="text-xs text-gray-500"><TranslatedText text="Loading companies..." /></span>
                           </div>
                         ) : (
                           <>
@@ -569,7 +570,7 @@ const Auth = () => {
                         {isLoadingTenants ? (
                           <div className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg bg-gray-50 flex items-center space-x-2">
                             <FaSpinner className="animate-spin h-3.5 w-3.5 text-gray-400" />
-                            <span className="text-xs text-gray-500">Loading companies...</span>
+                            <span className="text-xs text-gray-500"><TranslatedText text="Loading companies..." /></span>
                           </div>
                         ) : (
                           <>
@@ -651,7 +652,7 @@ const Auth = () => {
                     {/* Password */}
                     <div>
                       <label htmlFor="password" className="block text-xs font-medium text-gray-700 mb-1.5">
-                        Password
+                        <TranslatedText text="Password" />
                       </label>
                       <div className="relative">
                         <input
@@ -677,7 +678,7 @@ const Auth = () => {
                             <Circle className="h-3 w-3 text-gray-300" />
                           )}
                           <span className={`text-xs ${passwordCriteria.minLength ? 'text-green-600' : 'text-gray-500'}`}>
-                            at least 8 characters
+                            <TranslatedText text="at least 8 characters" />
                           </span>
                         </div>
                         <div className="flex items-center gap-2">
@@ -687,7 +688,7 @@ const Auth = () => {
                             <Circle className="h-3 w-3 text-gray-300" />
                           )}
                           <span className={`text-xs ${passwordCriteria.hasUppercase ? 'text-green-600' : 'text-gray-500'}`}>
-                            one uppercase letter
+                            <TranslatedText text="one uppercase letter" />
                           </span>
                         </div>
                         <div className="flex items-center gap-2">
@@ -697,7 +698,7 @@ const Auth = () => {
                             <Circle className="h-3 w-3 text-gray-300" />
                           )}
                           <span className={`text-xs ${passwordCriteria.hasLowercase ? 'text-green-600' : 'text-gray-500'}`}>
-                            one lowercase letter
+                            <TranslatedText text="one lowercase letter" />
                           </span>
                         </div>
                         <div className="flex items-center gap-2">
@@ -707,7 +708,7 @@ const Auth = () => {
                             <Circle className="h-3 w-3 text-gray-300" />
                           )}
                           <span className={`text-xs ${passwordCriteria.hasNumber ? 'text-green-600' : 'text-gray-500'}`}>
-                            one number
+                            <TranslatedText text="one number" />
                           </span>
                         </div>
                         <div className="flex items-center gap-2">
@@ -717,7 +718,7 @@ const Auth = () => {
                             <Circle className="h-3 w-3 text-gray-300" />
                           )}
                           <span className={`text-xs ${passwordCriteria.hasSpecialChar ? 'text-green-600' : 'text-gray-500'}`}>
-                            one special character
+                            <TranslatedText text="one special character" />
                           </span>
                         </div>
                       </div>
@@ -732,7 +733,7 @@ const Auth = () => {
                     {/* Last Name */}
                     <div>
                       <label htmlFor="lastName" className="block text-xs font-medium text-gray-700 mb-1.5">
-                        Last name
+                        <TranslatedText text="Last name" />
                       </label>
                       <input
                         {...registerForm.register('lastName')}
@@ -748,7 +749,7 @@ const Auth = () => {
                     {/* Email */}
                     <div>
                       <label htmlFor="email" className="block text-xs font-medium text-gray-700 mb-1.5">
-                        Email address
+                        <TranslatedText text="Email address" />
                       </label>
                       <input
                         {...registerForm.register('email')}
@@ -783,7 +784,7 @@ const Auth = () => {
                     {/* Confirm Password */}
                     <div>
                       <label htmlFor="confirmPassword" className="block text-xs font-medium text-gray-700 mb-1.5">
-                        Confirm password
+                        <TranslatedText text="Confirm password" />
                       </label>
                       <div className="relative">
                         <input
@@ -824,7 +825,7 @@ const Auth = () => {
                     <FaSpinner className="animate-spin h-4 w-4" />
                   ) : (
                     <>
-                      <span>Create Account</span>
+                      <span><TranslatedText text="Create Account" /></span>
                       <ArrowRight className="h-3.5 w-3.5" />
                     </>
                   )}
@@ -833,13 +834,13 @@ const Auth = () => {
                 {/* Sign In Link */}
                 <div className="text-center">
                   <p className="text-xs text-gray-600">
-                    Already have an account?{' '}
+                    <TranslatedText text="Already have an account?" />{' '}
                     <button
                       type="button"
                       onClick={() => setIsLogin(true)}
                       className="font-medium text-primary-600 hover:text-primary-500 transition-colors"
                     >
-                      Sign in
+                      <TranslatedText text="Sign in" />
                     </button>
                   </p>
                 </div>

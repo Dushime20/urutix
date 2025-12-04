@@ -22,6 +22,7 @@ import { FleetStatus } from '../../types/fleet';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { TruckAnalytics } from './TruckAnalytics';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
+import { TranslatedText } from '../translated-text';
 
 // Fix default marker icon for Leaflet in React
 import iconUrl from 'leaflet/dist/images/marker-icon.png';
@@ -418,8 +419,12 @@ export const FleetDashboard: React.FC = () => {
     <ErrorBoundary>
       <div className="p-6">
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Fleet Dashboard</h1>
-          <p className="text-gray-600">Manage your trucks and drivers</p>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">
+            <TranslatedText text="Fleet Dashboard" />
+          </h1>
+          <p className="text-gray-600">
+            <TranslatedText text="Manage your trucks and drivers" />
+          </p>
         </div>
         
         {/* Simple test content */}
@@ -427,15 +432,21 @@ export const FleetDashboard: React.FC = () => {
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Dashboard Status</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="bg-blue-50 p-4 rounded-lg">
-              <h3 className="font-medium text-blue-900">Trucks</h3>
+              <h3 className="font-medium text-blue-900">
+                <TranslatedText text="Trucks" />
+              </h3>
               <p className="text-2xl font-bold text-blue-600">2</p>
             </div>
             <div className="bg-green-50 p-4 rounded-lg">
-              <h3 className="font-medium text-green-900">Drivers</h3>
+              <h3 className="font-medium text-green-900">
+                <TranslatedText text="Drivers" />
+              </h3>
               <p className="text-2xl font-bold text-green-600">2</p>
             </div>
             <div className="bg-orange-50 p-4 rounded-lg">
-              <h3 className="font-medium text-orange-900">Active Trips</h3>
+              <h3 className="font-medium text-orange-900">
+                <TranslatedText text="Active Trips" />
+              </h3>
               <p className="text-2xl font-bold text-orange-600">1</p>
             </div>
           </div>
@@ -445,19 +456,21 @@ export const FleetDashboard: React.FC = () => {
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <h2 className="text-lg font-semibold text-gray-900">Fleet Management</h2>
+              <h2 className="text-lg font-semibold text-gray-900">
+                <TranslatedText text="Fleet Management" />
+              </h2>
               <div className="flex items-center gap-2">
                 <button 
                   onClick={handleCreateTruck}
                   className="px-3 py-1 text-sm bg-primary-600 text-white rounded hover:bg-primary-700"
                 >
-                  Add Truck
+                  <TranslatedText text="Add Truck" />
                 </button>
                 <button 
                   onClick={handleCreateDriver}
                   className="px-3 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700"
                 >
-                  Add Driver
+                  <TranslatedText text="Add Driver" />
                 </button>
               </div>
             </div>
@@ -498,7 +511,7 @@ export const FleetDashboard: React.FC = () => {
                 }`}
               >
                 <FaTruck className="w-4 h-4" />
-                Trucks
+                <TranslatedText text="Trucks" />
               </button>
               <button
                 onClick={() => {
@@ -512,7 +525,7 @@ export const FleetDashboard: React.FC = () => {
                 }`}
               >
                 <FaUser className="w-4 h-4" />
-                Drivers
+                <TranslatedText text="Drivers" />
               </button>
               <button
                 onClick={() => {
@@ -526,7 +539,7 @@ export const FleetDashboard: React.FC = () => {
                 }`}
               >
                 <FaChartBar className="w-4 h-4" />
-                Analytics
+                <TranslatedText text="Analytics" />
               </button>
               <button
                 onClick={() => {
@@ -540,7 +553,7 @@ export const FleetDashboard: React.FC = () => {
                 }`}
               >
                 <FaExclamationTriangle className="w-4 h-4" />
-                Safety
+                <TranslatedText text="Safety" />
               </button>
               <button
                 onClick={() => {
@@ -554,7 +567,7 @@ export const FleetDashboard: React.FC = () => {
                 }`}
               >
                 <FaDollarSign className="w-4 h-4" />
-                Financial
+                <TranslatedText text="Financial" />
               </button>
               <button
                 onClick={() => {
@@ -568,7 +581,7 @@ export const FleetDashboard: React.FC = () => {
                 }`}
               >
                 <FaRoute className="w-4 h-4" />
-                Routes
+                <TranslatedText text="Routes" />
               </button>
             </nav>
           </div>
@@ -581,15 +594,17 @@ export const FleetDashboard: React.FC = () => {
           <div className="my-4">
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900">Fleet Locations</h3>
+                <h3 className="text-lg font-semibold text-gray-900">
+                  <TranslatedText text="Fleet Locations" />
+                </h3>
                 <div className="flex items-center gap-2 text-sm text-gray-600">
                   <span className="flex items-center gap-1">
                     <FaTruck className="w-3 h-3" />
-                    Trucks: {fleetItems.filter(item => item.type === 'truck').length}
+                    <TranslatedText text="Trucks" />: {fleetItems.filter(item => item.type === 'truck').length}
                   </span>
                   <span className="flex items-center gap-1">
                     <FaUser className="w-3 h-3" />
-                    Drivers: {fleetItems.filter(item => item.type === 'driver').length}
+                    <TranslatedText text="Drivers" />: {fleetItems.filter(item => item.type === 'driver').length}
                   </span>
                 </div>
               </div>

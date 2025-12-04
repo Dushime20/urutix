@@ -5,6 +5,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { AdminLayoutProvider, useAdminLayout } from '../../contexts/AdminLayoutContext';
 import { TenantAdminSidebar, TenantAdminTopbar } from '../TenantAdmin';
 import logoUrutix from '../../assets/logo-urutix.svg';
+import { LanguageSwitcher } from '@/components/language-switcher';
 
 const TenantAdminLayoutContent: React.FC = () => {
   const { user, isLoading, logout } = useAuth();
@@ -102,6 +103,9 @@ const TenantAdminLayoutContent: React.FC = () => {
 
             {/* Right Side Header */}
             <div className="flex items-center space-x-4">
+              {/* Language Switcher */}
+              <LanguageSwitcher variant="default" />
+              
               {/* Notifications */}
               <button className="relative p-2 rounded-lg hover:bg-gray-100 transition-colors">
                 <FaBell className="w-5 h-5 text-gray-600" />

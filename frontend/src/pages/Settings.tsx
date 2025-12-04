@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { FaCog, FaBell, FaLock, FaKey, FaGlobe, FaPalette, FaUsers, FaPlus, FaEdit, FaTrash, FaUserPlus } from 'react-icons/fa';
 import { useAuth } from '../contexts/AuthContext';
 import { authAPI } from '../services/api';
+import { TranslatedText } from '../components/translated-text';
 
 const Settings: React.FC = () => {
   const { user } = useAuth();
@@ -313,14 +314,14 @@ const Settings: React.FC = () => {
   };
 
   const handleDeleteReceiver = (receiverId: string) => {
-    if (window.confirm('Are you sure you want to remove this team member?')) {
+    if (window.confirm('Are you sure you want to remove this team member?')) { // TODO: Translate
       setReceivers(prev => prev.filter(r => r.id !== receiverId));
     }
   };
 
   const handleSaveReceiver = () => {
     if (!receiverForm.name || !receiverForm.email) {
-      alert('Please fill in all required fields');
+      alert('Please fill in all required fields'); // TODO: Translate
       return;
     }
 
@@ -409,8 +410,12 @@ const Settings: React.FC = () => {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
-        <p className="text-gray-600">Manage your account settings and preferences</p>
+        <h1 className="text-2xl font-bold text-gray-900">
+          <TranslatedText text="Settings" />
+        </h1>
+        <p className="text-gray-600">
+          <TranslatedText text="Manage your account settings and preferences" />
+        </p>
       </div>
 
       {/* Settings Tabs */}
@@ -430,7 +435,7 @@ const Settings: React.FC = () => {
                   }`}
                 >
                   <Icon className="w-4 h-4" />
-                  <span>{tab.label}</span>
+                  <span><TranslatedText text={tab.label} /></span>
                 </button>
               );
             })}
@@ -442,7 +447,9 @@ const Settings: React.FC = () => {
           {activeTab === 'general' && (
             <div className="space-y-6">
               <div>
-                <h3 className="text-lg font-medium text-gray-900 mb-4">Account Information</h3>
+                <h3 className="text-lg font-medium text-gray-900 mb-4">
+                  <TranslatedText text="Account Information" />
+                </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">

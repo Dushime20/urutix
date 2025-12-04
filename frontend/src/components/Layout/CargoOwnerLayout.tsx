@@ -5,6 +5,7 @@ import CargoOwnerSidebar from './CargoOwnerSidebar';
 import { CargoOwnerLayoutProvider } from '../../contexts/CargoOwnerLayoutContext';
 import { useAuth } from '../../contexts/AuthContext';
 import logoUrutiX from '../../assets/logo-urutix.svg';
+import { LanguageSwitcher } from '@/components/language-switcher';
 
 const CargoOwnerLayout: React.FC = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -99,6 +100,9 @@ const CargoOwnerLayout: React.FC = () => {
 
               {/* Right Side Header */}
               <div className="flex items-center space-x-3">
+                {/* Language Switcher */}
+                <LanguageSwitcher variant="default" />
+                
                 {/* Notifications */}
                 <button className="relative p-1.5 rounded-lg hover:bg-gray-100 transition-colors">
                   <FaBell className="w-4 h-4 text-gray-600" />

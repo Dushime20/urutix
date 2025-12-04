@@ -30,6 +30,7 @@ import { QuickActions } from './QuickActions';
 import { NotificationsPanel } from './NotificationsPanel';
 import { CargoManagement } from './CargoManagement';
 import DriverTrips from './DriverTrips';
+import { TranslatedText } from '../translated-text';
 
 const DriverDashboard: React.FC = () => {
   const { user } = useAuth();
@@ -154,7 +155,9 @@ const DriverDashboard: React.FC = () => {
                   <h1 className="text-xl font-semibold text-gray-900">
                     {driver?.firstName} {driver?.lastName}
                   </h1>
-                  <p className="text-sm text-gray-500">Driver Dashboard</p>
+                  <p className="text-sm text-gray-500">
+                    <TranslatedText text="Driver Dashboard" />
+                  </p>
                 </div>
               </div>
             </div>
@@ -162,7 +165,7 @@ const DriverDashboard: React.FC = () => {
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-2 text-sm text-gray-600">
                 <MapPin className="w-4 h-4" />
-                <span>{driver?.currentLocation || 'Location unavailable'}</span>
+                <span>{driver?.currentLocation || <TranslatedText text="Location unavailable" />}</span>
               </div>
               <div className="flex items-center space-x-2 text-sm text-gray-600">
                 <Clock className="w-4 h-4" />
@@ -190,7 +193,7 @@ const DriverDashboard: React.FC = () => {
                   }`}
                 >
                   <Icon className="w-4 h-4" />
-                  <span>{tab.label}</span>
+                  <span><TranslatedText text={tab.label} /></span>
                 </button>
               );
             })}

@@ -11,6 +11,7 @@ const FinancialReportsPage = lazy(() => import("@/pages/FinancialReportsPage"));
 import CargoList from "@/pages/dashboard/cargos/list";
 import { cn } from "@/utils/cn";
 import logoUrutiX from "@/assets/logo-urutix.svg";
+import { TranslatedText } from "@/components/translated-text";
 
 type TabType = "analytics" | "reports" | "history";
 
@@ -89,10 +90,10 @@ const UnifiedAnalyticsManagement = () => {
         {/* Header */}
         <div className="mb-4">
           <h1 className="text-2xl font-bold text-gray-900">
-            Analytics & Reports
+            <TranslatedText text="Analytics & Reports" />
           </h1>
           <p className="text-sm text-gray-600 mt-1">
-            Track performance, generate reports, and view history
+            <TranslatedText text="Track performance, generate reports, and view history" />
           </p>
         </div>
 
@@ -114,7 +115,7 @@ const UnifiedAnalyticsManagement = () => {
                   )}
                 >
                   <Icon className="w-4 h-4" />
-                  <span>{tab.label}</span>
+                  <span><TranslatedText text={tab.label} /></span>
                 </button>
               );
             })}

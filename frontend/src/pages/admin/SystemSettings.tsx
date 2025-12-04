@@ -6,6 +6,7 @@ import {
   FaEye, FaEyeSlash, FaCopy, FaSync, FaUpload,
   FaDownload, FaTrash, FaCheck, FaTimes
 } from 'react-icons/fa';
+import { TranslatedText } from '../../components/translated-text';
 
 const SystemSettings: React.FC = () => {
   const [activeSection, setActiveSection] = useState('general');
@@ -729,8 +730,12 @@ const SystemSettings: React.FC = () => {
         return (
           <div className="text-center py-12">
             <FaCog className="text-6xl text-gray-300 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-800">Settings Section</h3>
-            <p className="text-gray-600">This section is under development.</p>
+            <h3 className="text-lg font-medium text-gray-800">
+              <TranslatedText text="Settings Section" />
+            </h3>
+            <p className="text-gray-600">
+              <TranslatedText text="This section is under development." />
+            </p>
           </div>
         );
     }
@@ -741,8 +746,12 @@ const SystemSettings: React.FC = () => {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold text-gray-800">System Settings</h2>
-          <p className="text-gray-600">Configure platform settings and preferences</p>
+          <h2 className="text-2xl font-bold text-gray-800">
+            <TranslatedText text="System Settings" />
+          </h2>
+          <p className="text-gray-600">
+            <TranslatedText text="Configure platform settings and preferences" />
+          </p>
         </div>
         {unsavedChanges && (
           <div className="flex space-x-3">
@@ -751,7 +760,7 @@ const SystemSettings: React.FC = () => {
               className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
             >
               <FaUndo />
-              <span>Reset</span>
+              <span><TranslatedText text="Reset" /></span>
             </button>
             <button
               onClick={handleSave}
@@ -759,7 +768,7 @@ const SystemSettings: React.FC = () => {
               className="bg-purple-600 hover:bg-purple-700 disabled:bg-purple-400 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
             >
               {isLoading ? <FaSync className="animate-spin" /> : <FaSave />}
-              <span>{isLoading ? 'Saving...' : 'Save Changes'}</span>
+              <span>{isLoading ? <TranslatedText text="Saving..." /> : <TranslatedText text="Save Changes" />}</span>
             </button>
           </div>
         )}
@@ -782,7 +791,7 @@ const SystemSettings: React.FC = () => {
                   }`}
                 >
                   <Icon className="mr-3" />
-                  <span className="font-medium">{section.label}</span>
+                  <span className="font-medium"><TranslatedText text={section.label} /></span>
                 </button>
               );
             })}
@@ -793,7 +802,7 @@ const SystemSettings: React.FC = () => {
         <div className="flex-1 bg-white rounded-xl shadow-lg p-6">
           <div className="mb-6">
             <h3 className="text-xl font-semibold text-gray-800">
-              {settingSections.find(s => s.id === activeSection)?.label}
+              <TranslatedText text={settingSections.find(s => s.id === activeSection)?.label || ''} />
             </h3>
           </div>
           {renderContent()}

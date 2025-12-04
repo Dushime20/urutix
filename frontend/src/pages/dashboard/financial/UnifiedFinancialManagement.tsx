@@ -18,6 +18,7 @@ const TruckOwnerFinancialDashboard = lazy(() => import("@/components/FleetDashbo
 const TripCostAnalysis = lazy(() => import("@/components/FleetDashboard/TripCostAnalysis"));
 import { cn } from "@/utils/cn";
 import logoUrutiX from "@/assets/logo-urutix.svg";
+import { TranslatedText } from "@/components/translated-text";
 
 type TabType = "payments" | "loans" | "reports" | "cost-analysis";
 
@@ -97,6 +98,9 @@ const UnifiedFinancialManagement = () => {
       description: "View financial reports and analytics",
     },
   ];
+  
+  // Translate tab labels
+  const getTranslatedLabel = (label: string) => label;
 
   return (
     <div className="min-h-screen bg-gray-50 relative">
@@ -111,10 +115,10 @@ const UnifiedFinancialManagement = () => {
         {/* Header */}
         <div className="mb-4">
           <h1 className="text-2xl font-bold text-gray-900">
-            Financial Management
+            <TranslatedText text="Financial Management" />
           </h1>
           <p className="text-sm text-gray-600 mt-1">
-            Manage payments, loans, and financial reports
+            <TranslatedText text="Manage payments, loans, and financial reports" />
           </p>
         </div>
 
@@ -136,7 +140,7 @@ const UnifiedFinancialManagement = () => {
                   )}
                 >
                   <Icon className="w-4 h-4" />
-                  <span>{tab.label}</span>
+                  <span><TranslatedText text={tab.label} /></span>
                 </button>
               );
             })}

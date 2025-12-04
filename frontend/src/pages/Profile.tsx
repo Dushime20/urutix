@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { FaUser, FaEnvelope, FaPhone, FaBuilding, FaEdit, FaSave, FaTimes } from 'react-icons/fa';
 import { useAuth } from '../contexts/AuthContext';
 import { authAPI } from '../services/api';
+import { TranslatedText } from '../components/translated-text';
 
 interface UserProfile {
   id: string;
@@ -224,8 +225,12 @@ const Profile: React.FC = () => {
               <FaUser className="w-4 h-4 text-white" />
             </div>
             <div>
-              <h1 className="text-lg font-bold text-gray-900">Profile</h1>
-              <p className="text-xs text-gray-600 mt-0.5">Manage your account information</p>
+              <h1 className="text-lg font-bold text-gray-900">
+                <TranslatedText text="Profile" />
+              </h1>
+              <p className="text-xs text-gray-600 mt-0.5">
+                <TranslatedText text="Manage your account information" />
+              </p>
             </div>
           </div>
           <div className="flex space-x-2">
@@ -237,14 +242,14 @@ const Profile: React.FC = () => {
                   className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-1.5 disabled:opacity-50 transition-colors"
                 >
                   <FaSave className="w-3.5 h-3.5" />
-                  <span>Save</span>
+                  <span><TranslatedText text="Save" /></span>
                 </button>
                 <button
                   onClick={handleCancel}
                   className="px-3 py-1.5 text-sm bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 flex items-center gap-1.5 transition-colors"
                 >
                   <FaTimes className="w-3.5 h-3.5" />
-                  <span>Cancel</span>
+                  <span><TranslatedText text="Cancel" /></span>
                 </button>
               </>
             ) : (
@@ -253,7 +258,7 @@ const Profile: React.FC = () => {
                 className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-1.5 transition-colors"
               >
                 <FaEdit className="w-3.5 h-3.5" />
-                <span>Edit Profile</span>
+                <span><TranslatedText text="Edit Profile" /></span>
               </button>
             )}
           </div>
@@ -287,9 +292,13 @@ const Profile: React.FC = () => {
               </h2>
               <p className="text-xs text-gray-600 mt-0.5">{profile?.companyName}</p>
               <div className="flex items-center justify-center space-x-3 mt-2">
-                <span className="text-xs text-gray-500">Rating: {profile?.rating}/5</span>
+                <span className="text-xs text-gray-500">
+                  <TranslatedText text="Rating" />: {profile?.rating}/5
+                </span>
                 <span className="text-xs text-gray-500">•</span>
-                <span className="text-xs text-gray-500">{profile?.totalTrips} trips</span>
+                <span className="text-xs text-gray-500">
+                  {profile?.totalTrips} <TranslatedText text="trips" />
+                </span>
               </div>
             </div>
             
@@ -325,13 +334,13 @@ const Profile: React.FC = () => {
         <div className="lg:col-span-2">
           <div className="bg-white rounded-lg border border-gray-200 p-3">
             <h3 className="text-sm font-semibold text-gray-900 mb-3">
-              Personal Information
+              <TranslatedText text="Personal Information" />
             </h3>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1">
-                  First Name
+                  <TranslatedText text="First Name" />
                 </label>
                 <input
                   type="text"
@@ -344,7 +353,7 @@ const Profile: React.FC = () => {
               
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1">
-                  Last Name
+                  <TranslatedText text="Last Name" />
                 </label>
                 <input
                   type="text"
@@ -357,7 +366,7 @@ const Profile: React.FC = () => {
               
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1">
-                  Company Name
+                  <TranslatedText text="Company Name" />
                 </label>
                 <input
                   type="text"
@@ -370,7 +379,7 @@ const Profile: React.FC = () => {
               
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1">
-                  Phone Number
+                  <TranslatedText text="Phone Number" />
                 </label>
                 <input
                   type="tel"
@@ -383,7 +392,7 @@ const Profile: React.FC = () => {
               
               <div className="md:col-span-2">
                 <label className="block text-xs font-medium text-gray-700 mb-1">
-                  Address
+                  <TranslatedText text="Address" />
                 </label>
                 <input
                   type="text"
@@ -396,7 +405,7 @@ const Profile: React.FC = () => {
               
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1">
-                  City
+                  <TranslatedText text="City" />
                 </label>
                 <input
                   type="text"
@@ -409,7 +418,7 @@ const Profile: React.FC = () => {
               
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1">
-                  State/Province
+                  <TranslatedText text="State/Province" />
                 </label>
                 <input
                   type="text"
@@ -422,7 +431,7 @@ const Profile: React.FC = () => {
               
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1">
-                  Country
+                  <TranslatedText text="Country" />
                 </label>
                 <input
                   type="text"
@@ -435,7 +444,7 @@ const Profile: React.FC = () => {
               
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1">
-                  Postal Code
+                  <TranslatedText text="Postal Code" />
                 </label>
                 <input
                   type="text"
@@ -448,7 +457,7 @@ const Profile: React.FC = () => {
               
               <div className="md:col-span-2">
                 <label className="block text-xs font-medium text-gray-700 mb-1">
-                  Website
+                  <TranslatedText text="Website" />
                 </label>
                 <input
                   type="url"
@@ -461,7 +470,7 @@ const Profile: React.FC = () => {
               
               <div className="md:col-span-2">
                 <label className="block text-xs font-medium text-gray-700 mb-1">
-                  Bio
+                  <TranslatedText text="Bio" />
                 </label>
                 <textarea
                   value={formData.bio}

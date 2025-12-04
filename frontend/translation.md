@@ -2,7 +2,8 @@
 
 ## Overview
 
-UrutiIQ uses a *dynamic, on-the-fly translation system* similar to Google Translate. Unlike traditional i18n systems that require hard-coded translation files, this system automatically translates text using translation APIs in real-time.
+
+ uses a *dynamic, on-the-fly translation system* similar to Google Translate. Unlike traditional i18n systems that require hard-coded translation files, this system automatically translates text using translation APIs in real-time.
 
 ### Key Features
 
@@ -617,7 +618,7 @@ translationService.configureGoogleTranslate('your-api-key');
 
 ## Summary
 
-The UrutiIQ translation system provides:
+The  translation system provides:
 
 - ✅ *Zero-configuration* dynamic translations
 - ✅ *20+ languages* supported out of the box

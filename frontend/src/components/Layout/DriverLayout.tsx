@@ -3,6 +3,7 @@ import { Outlet, useNavigate } from 'react-router-dom';
 import { FaBell, FaUser, FaSearch, FaSignOutAlt, FaCog } from 'react-icons/fa';
 import DriverSidebar from './DriverSidebar';
 import { useAuth } from '../../contexts/AuthContext';
+import { LanguageSwitcher } from '@/components/language-switcher';
 
 const DriverLayout: React.FC = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -82,6 +83,9 @@ const DriverLayout: React.FC = () => {
 
             {/* Right Side Header */}
             <div className="flex items-center space-x-4">
+              {/* Language Switcher */}
+              <LanguageSwitcher variant="default" />
+              
               {/* Notifications */}
               <button className="relative p-2 rounded-lg hover:bg-gray-100 transition-colors">
                 <FaBell className="w-5 h-5 text-gray-600" />

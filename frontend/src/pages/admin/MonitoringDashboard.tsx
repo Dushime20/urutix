@@ -5,6 +5,7 @@ import {
   FaSync, FaDownload, FaBell, FaCog, FaUsers, FaTruck,
   FaBox, FaRoute, FaDollarSign, FaThermometerHalf, FaTimes
 } from 'react-icons/fa';
+import { TranslatedText } from '../../components/translated-text';
 
 interface SystemMetric {
   name: string;
@@ -282,9 +283,9 @@ const MonitoringDashboard: React.FC = () => {
     const diffMins = Math.floor(diffMs / 60000);
     const diffHours = Math.floor(diffMs / 3600000);
 
-    if (diffMins < 1) return 'Just now';
-    if (diffMins < 60) return `${diffMins}m ago`;
-    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffMins < 1) return 'Just now'; // This will be translated in the component
+    if (diffMins < 60) return `${diffMins}m ago`; // This will be translated in the component
+    if (diffHours < 24) return `${diffHours}h ago`; // This will be translated in the component
     return date.toLocaleTimeString();
   };
 
@@ -301,8 +302,12 @@ const MonitoringDashboard: React.FC = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-lg font-bold text-gray-900">System Monitoring</h1>
-          <p className="text-xs text-gray-600 mt-0.5">Real-time system health and performance monitoring</p>
+          <h1 className="text-lg font-bold text-gray-900">
+            <TranslatedText text="System Monitoring" />
+          </h1>
+          <p className="text-xs text-gray-600 mt-0.5">
+            <TranslatedText text="Real-time system health and performance monitoring" />
+          </p>
         </div>
         <div className="flex items-center gap-2">
           <select 
@@ -324,7 +329,7 @@ const MonitoringDashboard: React.FC = () => {
             }`}
           >
             <FaChartLine className="w-3 h-3" />
-            <span>{isRealTime ? 'Live' : 'Paused'}</span>
+            <span>{isRealTime ? <TranslatedText text="Live" /> : <TranslatedText text="Paused" />}</span>
           </button>
           <button className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors">
             <FaDownload className="w-3.5 h-3.5 text-gray-600" />
@@ -349,7 +354,7 @@ const MonitoringDashboard: React.FC = () => {
                   }`}
                 >
                   <Icon className="w-3 h-3" />
-                  <span>{tab.label}</span>
+                  <span><TranslatedText text={tab.label} /></span>
                 </button>
               );
             })}
@@ -375,7 +380,7 @@ const MonitoringDashboard: React.FC = () => {
                       <span className="text-xs text-gray-500 mb-0.5">{metric.unit}</span>
                     </div>
                     <div className="text-[10px] text-gray-500">
-                      Updated {getTimeAgo(metric.lastUpdated)}
+                      <TranslatedText text="Updated" /> {getTimeAgo(metric.lastUpdated)}
                     </div>
                   </div>
                 ))}
@@ -389,7 +394,9 @@ const MonitoringDashboard: React.FC = () => {
                       <FaUsers className="text-white text-sm" />
                     </div>
                     <div>
-                      <p className="text-xs text-gray-600 mb-0.5">Active Users</p>
+                      <p className="text-xs text-gray-600 mb-0.5">
+                        <TranslatedText text="Active Users" />
+                      </p>
                       <p className="text-lg font-bold text-gray-900">1,290</p>
                     </div>
                   </div>
@@ -400,7 +407,9 @@ const MonitoringDashboard: React.FC = () => {
                       <FaBox className="text-white text-sm" />
                     </div>
                     <div>
-                      <p className="text-xs text-gray-600 mb-0.5">Active Loads</p>
+                      <p className="text-xs text-gray-600 mb-0.5">
+                        <TranslatedText text="Active Loads" />
+                      </p>
                       <p className="text-lg font-bold text-gray-900">91</p>
                     </div>
                   </div>
@@ -411,7 +420,9 @@ const MonitoringDashboard: React.FC = () => {
                       <FaTruck className="text-white text-sm" />
                     </div>
                     <div>
-                      <p className="text-xs text-gray-600 mb-0.5">Active Trucks</p>
+                      <p className="text-xs text-gray-600 mb-0.5">
+                        <TranslatedText text="Active Trucks" />
+                      </p>
                       <p className="text-lg font-bold text-gray-900">161</p>
                     </div>
                   </div>
@@ -422,7 +433,9 @@ const MonitoringDashboard: React.FC = () => {
                       <FaRoute className="text-white text-sm" />
                     </div>
                     <div>
-                      <p className="text-xs text-gray-600 mb-0.5">Active Routes</p>
+                      <p className="text-xs text-gray-600 mb-0.5">
+                        <TranslatedText text="Active Routes" />
+                      </p>
                       <p className="text-lg font-bold text-gray-900">45</p>
                     </div>
                   </div>
@@ -436,7 +449,9 @@ const MonitoringDashboard: React.FC = () => {
             <div className="space-y-3">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
                 <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-                  <h3 className="text-xs font-semibold text-gray-900 mb-3">Resource Usage</h3>
+                  <h3 className="text-xs font-semibold text-gray-900 mb-3">
+                    <TranslatedText text="Resource Usage" />
+                  </h3>
                   <div className="space-y-3">
                     {systemMetrics.slice(0, 4).map((metric, index) => (
                       <div key={index}>
@@ -465,7 +480,9 @@ const MonitoringDashboard: React.FC = () => {
                 </div>
 
                 <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-                  <h3 className="text-xs font-semibold text-gray-900 mb-3">System Status</h3>
+                  <h3 className="text-xs font-semibold text-gray-900 mb-3">
+                    <TranslatedText text="System Status" />
+                  </h3>
                   <div className="space-y-2">
                     <div className="flex items-center justify-between p-2 bg-gray-50 rounded-lg border border-gray-200">
                       <div className="flex items-center gap-2">
@@ -535,7 +552,9 @@ const MonitoringDashboard: React.FC = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2.5">
                 <div className="bg-gray-50 rounded-lg p-2.5 border border-gray-200">
                   <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs text-gray-600">Avg CPU</span>
+                    <span className="text-xs text-gray-600">
+                      <TranslatedText text="Avg CPU" />
+                    </span>
                     <FaServer className="text-gray-400 text-xs" />
                   </div>
                   <div className="text-lg font-bold text-gray-900">
@@ -544,7 +563,9 @@ const MonitoringDashboard: React.FC = () => {
                 </div>
                 <div className="bg-gray-50 rounded-lg p-2.5 border border-gray-200">
                   <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs text-gray-600">Avg Memory</span>
+                    <span className="text-xs text-gray-600">
+                      <TranslatedText text="Avg Memory" />
+                    </span>
                     <FaDatabase className="text-gray-400 text-xs" />
                   </div>
                   <div className="text-lg font-bold text-gray-900">
@@ -553,7 +574,9 @@ const MonitoringDashboard: React.FC = () => {
                 </div>
                 <div className="bg-gray-50 rounded-lg p-2.5 border border-gray-200">
                   <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs text-gray-600">Avg Response</span>
+                    <span className="text-xs text-gray-600">
+                      <TranslatedText text="Avg Response" />
+                    </span>
                     <FaNetworkWired className="text-gray-400 text-xs" />
                   </div>
                   <div className="text-lg font-bold text-gray-900">
@@ -562,7 +585,9 @@ const MonitoringDashboard: React.FC = () => {
                 </div>
                 <div className="bg-gray-50 rounded-lg p-2.5 border border-gray-200">
                   <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs text-gray-600">Peak Users</span>
+                    <span className="text-xs text-gray-600">
+                      <TranslatedText text="Peak Users" />
+                    </span>
                     <FaUsers className="text-gray-400 text-xs" />
                   </div>
                   <div className="text-lg font-bold text-gray-900">
@@ -585,14 +610,16 @@ const MonitoringDashboard: React.FC = () => {
                     onChange={(e) => setShowAcknowledged(e.target.checked)}
                     className="w-3.5 h-3.5 text-gray-600 focus:ring-gray-500 border-gray-300 rounded"
                   />
-                  <span className="text-xs text-gray-600">Show Acknowledged</span>
+                  <span className="text-xs text-gray-600">
+                    <TranslatedText text="Show Acknowledged" />
+                  </span>
                 </label>
               </div>
 
               <div className="space-y-2">
                 {filteredAlerts.length === 0 ? (
                   <div className="text-center py-8 text-xs text-gray-500">
-                    No alerts found
+                    <TranslatedText text="No alerts found" />
                   </div>
                 ) : (
                   filteredAlerts.map(alert => {
@@ -623,7 +650,7 @@ const MonitoringDashboard: React.FC = () => {
                               onClick={() => acknowledgeAlert(alert.id)}
                               className="px-2 py-1 bg-gray-800 text-white rounded text-xs hover:bg-gray-900 transition-colors ml-2 flex-shrink-0"
                             >
-                              Acknowledge
+                              <TranslatedText text="Acknowledge" />
                             </button>
                           )}
                         </div>
@@ -640,18 +667,26 @@ const MonitoringDashboard: React.FC = () => {
             <div className="space-y-3">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-                  <h3 className="text-xs font-semibold text-gray-900 mb-3">User Activity</h3>
+                  <h3 className="text-xs font-semibold text-gray-900 mb-3">
+                    <TranslatedText text="User Activity" />
+                  </h3>
                   <div className="space-y-2.5">
                     <div className="flex justify-between items-center">
-                      <span className="text-xs text-gray-600">Online Users</span>
+                      <span className="text-xs text-gray-600">
+                        <TranslatedText text="Online Users" />
+                      </span>
                       <span className="font-medium text-gray-700">1,290</span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-xs text-gray-600">Active Sessions</span>
+                      <span className="text-xs text-gray-600">
+                        <TranslatedText text="Active Sessions" />
+                      </span>
                       <span className="font-medium text-gray-700">1,847</span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-xs text-gray-600">New Users Today</span>
+                      <span className="text-xs text-gray-600">
+                        <TranslatedText text="New Users Today" />
+                      </span>
                       <span className="font-medium text-gray-700">23</span>
                     </div>
                     <div className="flex justify-between items-center">
@@ -662,7 +697,9 @@ const MonitoringDashboard: React.FC = () => {
                 </div>
 
                 <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-                  <h3 className="text-xs font-semibold text-gray-900 mb-3">Recent Activity</h3>
+                  <h3 className="text-xs font-semibold text-gray-900 mb-3">
+                    <TranslatedText text="Recent Activity" />
+                  </h3>
                   <div className="space-y-2">
                     <div className="flex items-center space-x-2 p-2 bg-white rounded border border-gray-200">
                       <div className="w-1.5 h-1.5 bg-gray-500 rounded-full"></div>

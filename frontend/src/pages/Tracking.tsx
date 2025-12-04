@@ -5,6 +5,8 @@ import { FaTruck, FaMapMarkedAlt, FaClock, FaBox, FaUser, FaPhone, FaWifi, FaExc
 import 'leaflet/dist/leaflet.css';
 import { trackingWebSocket } from '../services/websocket';
 import type { ShipmentUpdate } from '../services/websocket';
+import { TranslatedText } from '../components/translated-text';
+import { useTranslation } from '../hooks/useTranslation';
 
 interface Shipment {
   id: string;
@@ -44,6 +46,7 @@ interface Shipment {
 }
 
 const Tracking: React.FC = () => {
+  const { tSync } = useTranslation();
   const [shipments, setShipments] = useState<Shipment[]>([]);
   const [selectedShipment, setSelectedShipment] = useState<Shipment | null>(null);
   const [loading, setLoading] = useState(true);
@@ -245,15 +248,15 @@ const Tracking: React.FC = () => {
   const getStatusText = (status: string) => {
     switch (status) {
       case 'IN_TRANSIT':
-        return 'In Transit';
+        return tSync('In Transit');
       case 'PICKED_UP':
-        return 'Picked Up';
+        return tSync('Picked Up');
       case 'DELIVERED':
-        return 'Delivered';
+        return tSync('Delivered');
       case 'DELAYED':
-        return 'Delayed';
+        return tSync('Delayed');
       default:
-        return status;
+        return tSync(status);
     }
   };
 
@@ -285,9 +288,11 @@ const Tracking: React.FC = () => {
               <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg p-1.5">
                 <FaMapMarkedAlt className="text-white" size={16} />
               </div>
-              Live Tracking
+              <TranslatedText text="Live Tracking" />
             </h1>
-            <p className="text-xs text-gray-600">Track your shipments in real-time</p>
+            <p className="text-xs text-gray-600">
+              <TranslatedText text="Track your shipments in real-time" />
+            </p>
           </div>
           
           {/* WebSocket Connection Status */}
@@ -308,7 +313,7 @@ const Tracking: React.FC = () => {
                   }}
                   className="ml-1.5 px-2 py-0.5 bg-red-200 hover:bg-red-300 rounded text-xs font-medium"
                 >
-                  Retry
+                  <TranslatedText text="Retry" />
                 </button>
               </div>
             )}
@@ -320,7 +325,7 @@ const Tracking: React.FC = () => {
             }`}>
               <FaWifi className={`w-3.5 h-3.5 ${wsConnected ? 'text-green-600' : 'text-yellow-600'}`} />
               <span>
-                {wsConnected ? 'Live Updates' : 'Connecting...'}
+                {wsConnected ? <TranslatedText text="Live Updates" /> : <TranslatedText text="Connecting..." />}
               </span>
             </div>
           </div>
@@ -334,10 +339,10 @@ const Tracking: React.FC = () => {
             <div className="w-2 h-2 bg-blue-500 rounded-full animate-ping"></div>
             <div className="flex-1">
               <p className="text-xs font-medium text-blue-800">
-                Real-time update received
+                <TranslatedText text="Real-time update received" />
               </p>
               <p className="text-xs text-blue-600">
-                Last updated: {lastUpdate?.toLocaleTimeString()}
+                <TranslatedText text="Last updated" />: {lastUpdate?.toLocaleTimeString()}
               </p>
             </div>
             <button
@@ -355,8 +360,12 @@ const Tracking: React.FC = () => {
         <div className="lg:col-span-1">
           <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
             <div className="p-3 border-b border-gray-200">
-              <h2 className="text-sm font-semibold text-gray-900">Active Shipments</h2>
-              <p className="text-xs text-gray-600 mt-0.5">{shipments.length} shipments in transit</p>
+              <h2 className="text-sm font-semibold text-gray-900">
+                <TranslatedText text="Active Shipments" />
+              </h2>
+              <p className="text-xs text-gray-600 mt-0.5">
+                {shipments.length} <TranslatedText text="shipments in transit" />
+              </p>
             </div>
             <div className="p-3 space-y-3">
               {shipments.map((shipment) => (
@@ -379,7 +388,9 @@ const Tracking: React.FC = () => {
                       {wsConnected && (
                         <div className="flex items-center space-x-1 flex-shrink-0">
                           <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
-                          <span className="text-xs text-green-600 font-medium">LIVE</span>
+                          <span className="text-xs text-green-600 font-medium">
+                            <TranslatedText text="LIVE" />
+                          </span>
                         </div>
                       )}
                     </div>
@@ -399,20 +410,24 @@ const Tracking: React.FC = () => {
                     </div>
                     <div className="flex items-center text-xs text-gray-600">
                       <FaClock className="w-3 h-3 mr-1.5 flex-shrink-0" />
-                      <span className="truncate">ETA: {new Date(shipment.estimatedDelivery).toLocaleString()}</span>
+                      <span className="truncate">
+                        <TranslatedText text="ETA" />: {new Date(shipment.estimatedDelivery).toLocaleString()}
+                      </span>
                     </div>
                   </div>
 
                   {/* Progress Bar */}
                   <div className="mt-2.5">
                     <div className="flex justify-between text-xs text-gray-600 mb-1">
-                      <span>Progress</span>
+                      <span><TranslatedText text="Progress" /></span>
                       <div className="flex items-center space-x-1.5">
                         <span className="font-medium">{shipment.progress}%</span>
                         {wsConnected && (
                           <div className="flex items-center space-x-1">
                             <div className="w-1 h-1 bg-green-500 rounded-full animate-pulse"></div>
-                            <span className="text-green-600 text-xs">Live</span>
+                            <span className="text-green-600 text-xs">
+                              <TranslatedText text="Live" />
+                            </span>
                           </div>
                         )}
                       </div>
@@ -434,7 +449,9 @@ const Tracking: React.FC = () => {
         <div className="lg:col-span-2 space-y-4">
           {/* Map */}
           <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-3">
-            <h2 className="text-sm font-semibold text-gray-900 mb-3">Live Map</h2>
+            <h2 className="text-sm font-semibold text-gray-900 mb-3">
+              <TranslatedText text="Live Map" />
+            </h2>
             <div className="h-80 rounded-lg overflow-hidden border border-gray-200">
               <MapContainer
                 center={[-1.2921, 36.8219]}
@@ -456,7 +473,9 @@ const Tracking: React.FC = () => {
                     >
                       <Popup>
                         <div>
-                          <h3 className="font-medium">Pickup Location</h3>
+                          <h3 className="font-medium">
+                            <TranslatedText text="Pickup Location" />
+                          </h3>
                           <p className="text-sm">{selectedShipment.pickupLocation.name}</p>
                           <p className="text-xs text-gray-600">{selectedShipment.pickupLocation.address}</p>
                         </div>
@@ -469,7 +488,9 @@ const Tracking: React.FC = () => {
                     >
                       <Popup>
                         <div>
-                          <h3 className="font-medium">Delivery Location</h3>
+                          <h3 className="font-medium">
+                            <TranslatedText text="Delivery Location" />
+                          </h3>
                           <p className="text-sm">{selectedShipment.deliveryLocation.name}</p>
                           <p className="text-xs text-gray-600">{selectedShipment.deliveryLocation.address}</p>
                         </div>
@@ -482,10 +503,14 @@ const Tracking: React.FC = () => {
                     >
                       <Popup>
                         <div>
-                          <h3 className="font-medium">Current Location</h3>
-                          <p className="text-sm">Driver: {selectedShipment.driver.name}</p>
+                          <h3 className="font-medium">
+                            <TranslatedText text="Current Location" />
+                          </h3>
+                          <p className="text-sm">
+                            <TranslatedText text="Driver" />: {selectedShipment.driver.name}
+                          </p>
                           <p className="text-xs text-gray-600">
-                            Updated: {new Date(selectedShipment.currentLocation.timestamp).toLocaleString()}
+                            <TranslatedText text="Updated" />: {new Date(selectedShipment.currentLocation.timestamp).toLocaleString()}
                           </p>
                         </div>
                       </Popup>
@@ -500,57 +525,81 @@ const Tracking: React.FC = () => {
           {selectedShipment && (
             <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-4">
               <div className="flex items-center justify-between mb-3">
-                <h2 className="text-sm font-semibold text-gray-900">Shipment Details</h2>
+                <h2 className="text-sm font-semibold text-gray-900">
+                  <TranslatedText text="Shipment Details" />
+                </h2>
                 {wsConnected && (
                   <div className="flex items-center space-x-1.5 px-2.5 py-1 bg-green-100 text-green-700 rounded-full border border-green-200">
                     <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
-                    <span className="text-xs font-medium">Live Tracking</span>
+                    <span className="text-xs font-medium">
+                      <TranslatedText text="Live Tracking" />
+                    </span>
                   </div>
                 )}
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <h3 className="text-xs font-semibold text-gray-900 mb-2">Cargo Information</h3>
+                  <h3 className="text-xs font-semibold text-gray-900 mb-2">
+                    <TranslatedText text="Cargo Information" />
+                  </h3>
                   <div className="space-y-1.5">
                     <div className="flex justify-between items-center">
-                      <span className="text-xs text-gray-600">Cargo ID:</span>
+                      <span className="text-xs text-gray-600">
+                        <TranslatedText text="Cargo ID" />:
+                      </span>
                       <span className="text-xs font-medium">{selectedShipment.cargoId}</span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-xs text-gray-600">Title:</span>
+                      <span className="text-xs text-gray-600">
+                        <TranslatedText text="Title" />:
+                      </span>
                       <span className="text-xs font-medium truncate ml-2">{selectedShipment.cargoTitle}</span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-xs text-gray-600">Status:</span>
+                      <span className="text-xs text-gray-600">
+                        <TranslatedText text="Status" />:
+                      </span>
                       <span className={`text-xs font-medium px-2 py-0.5 rounded ${getStatusColor(selectedShipment.status)}`}>
                         {getStatusText(selectedShipment.status)}
                       </span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-xs text-gray-600">Progress:</span>
+                      <span className="text-xs text-gray-600">
+                        <TranslatedText text="Progress" />:
+                      </span>
                       <span className="text-xs font-medium">{selectedShipment.progress}%</span>
                     </div>
                   </div>
                 </div>
 
                 <div>
-                  <h3 className="text-xs font-semibold text-gray-900 mb-2">Driver & Vehicle</h3>
+                  <h3 className="text-xs font-semibold text-gray-900 mb-2">
+                    <TranslatedText text="Driver & Vehicle" />
+                  </h3>
                   <div className="space-y-1.5">
                     <div className="flex justify-between items-center">
-                      <span className="text-xs text-gray-600">Driver:</span>
+                      <span className="text-xs text-gray-600">
+                        <TranslatedText text="Driver" />:
+                      </span>
                       <span className="text-xs font-medium">{selectedShipment.driver.name}</span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-xs text-gray-600">Phone:</span>
+                      <span className="text-xs text-gray-600">
+                        <TranslatedText text="Phone" />:
+                      </span>
                       <span className="text-xs font-medium">{selectedShipment.driver.phone}</span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-xs text-gray-600">Vehicle:</span>
+                      <span className="text-xs text-gray-600">
+                        <TranslatedText text="Vehicle" />:
+                      </span>
                       <span className="text-xs font-medium">{selectedShipment.vehicle.plateNumber}</span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-xs text-gray-600">Type:</span>
+                      <span className="text-xs text-gray-600">
+                        <TranslatedText text="Type" />:
+                      </span>
                       <span className="text-xs font-medium">{selectedShipment.vehicle.type}</span>
                     </div>
                   </div>
@@ -558,22 +607,30 @@ const Tracking: React.FC = () => {
               </div>
 
               <div className="mt-4 pt-4 border-t border-gray-200">
-                <h3 className="text-xs font-semibold text-gray-900 mb-2.5">Timeline</h3>
+                <h3 className="text-xs font-semibold text-gray-900 mb-2.5">
+                  <TranslatedText text="Timeline" />
+                </h3>
                 <div className="space-y-2">
                   {selectedShipment.actualPickup && (
                     <div className="flex items-center text-xs">
                       <div className="w-2 h-2 bg-green-500 rounded-full mr-2 flex-shrink-0"></div>
-                      <span className="text-gray-600">Picked up on {new Date(selectedShipment.actualPickup).toLocaleString()}</span>
+                      <span className="text-gray-600">
+                        <TranslatedText text="Picked up on" /> {new Date(selectedShipment.actualPickup).toLocaleString()}
+                      </span>
                     </div>
                   )}
                   <div className="flex items-center text-xs">
                     <div className="w-2 h-2 bg-blue-500 rounded-full mr-2 flex-shrink-0"></div>
-                    <span className="text-gray-600">Estimated delivery: {new Date(selectedShipment.estimatedDelivery).toLocaleString()}</span>
+                    <span className="text-gray-600">
+                      <TranslatedText text="Estimated delivery" />: {new Date(selectedShipment.estimatedDelivery).toLocaleString()}
+                    </span>
                   </div>
                   {selectedShipment.actualDelivery && (
                     <div className="flex items-center text-xs">
                       <div className="w-2 h-2 bg-green-500 rounded-full mr-2 flex-shrink-0"></div>
-                      <span className="text-gray-600">Delivered on {new Date(selectedShipment.actualDelivery).toLocaleString()}</span>
+                      <span className="text-gray-600">
+                        <TranslatedText text="Delivered on" /> {new Date(selectedShipment.actualDelivery).toLocaleString()}
+                      </span>
                     </div>
                   )}
                   
@@ -583,11 +640,11 @@ const Tracking: React.FC = () => {
                       <div className="w-2 h-2 bg-blue-500 rounded-full mr-2 mt-0.5 flex-shrink-0 animate-pulse"></div>
                       <div className="flex-1">
                         <span className="text-gray-600">
-                          Current location updated: {new Date(selectedShipment.currentLocation.timestamp).toLocaleString()}
+                          <TranslatedText text="Current location updated" />: {new Date(selectedShipment.currentLocation.timestamp).toLocaleString()}
                         </span>
                         {lastUpdate && (
                           <div className="text-xs text-blue-600 mt-0.5">
-                            Last real-time update: {lastUpdate.toLocaleTimeString()}
+                            <TranslatedText text="Last real-time update" />: {lastUpdate.toLocaleTimeString()}
                           </div>
                         )}
                       </div>

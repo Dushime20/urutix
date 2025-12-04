@@ -91,10 +91,10 @@ const UnifiedDocumentManagement = () => {
         {/* Header */}
         <div className="mb-4">
           <h1 className="text-2xl font-bold text-gray-900">
-            Document Management
+            <TranslatedText text="Document Management" />
           </h1>
           <p className="text-sm text-gray-600 mt-1">
-            Manage all your cargo, trip, and financial documents
+            <TranslatedText text="Manage all your cargo, trip, and financial documents" />
           </p>
         </div>
 
@@ -116,7 +116,7 @@ const UnifiedDocumentManagement = () => {
                   )}
                 >
                   <Icon className="w-4 h-4" />
-                  <span>{tab.label}</span>
+                  <span><TranslatedText text={tab.label} /></span>
                 </button>
               );
             })}

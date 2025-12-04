@@ -3,7 +3,9 @@ import { FaSearch, FaFilter, FaLayerGroup, FaBox } from "react-icons/fa";
 import FilterSelect, {
   type FilterSelectOption,
 } from "@/components/common/FilterSelect";
+import { TranslatedText } from "../translated-text";
 
+// Status options - labels will be translated in FilterSelect component
 const statusOptions: FilterSelectOption[] = [
   { value: "", label: "All Status" },
   { value: "DRAFT", label: "Draft" },
@@ -16,6 +18,7 @@ const statusOptions: FilterSelectOption[] = [
   { value: "COMPLETED", label: "Completed" },
 ];
 
+// Cargo type options - labels will be translated in FilterSelect component
 const cargoTypeOptions: FilterSelectOption[] = [
   { value: "", label: "All Types" },
   { value: "GENERAL", label: "General" },
@@ -77,14 +80,14 @@ export const CargoFilters: React.FC<CargoFiltersProps> = ({
 
           <div className="flex flex-wrap gap-3">
             <FilterSelect
-              label="Status"
+              label={<TranslatedText text="Status" />}
               value={filters.status || ""}
               options={statusOptions}
               onChange={handleStatusChange}
               icon={<FaLayerGroup className="text-purple-500" />}
             />
             <FilterSelect
-              label="Cargo Type"
+              label={<TranslatedText text="Cargo Type" />}
               value={filters.cargoType || ""}
               options={cargoTypeOptions}
               onChange={handleCargoTypeChange}
@@ -102,7 +105,7 @@ export const CargoFilters: React.FC<CargoFiltersProps> = ({
             aria-label="Clear filters"
           >
             <FaFilter className="text-xs" />
-            Clear filters
+            <TranslatedText text="Clear filters" />
           </button>
         </div>
       </div>

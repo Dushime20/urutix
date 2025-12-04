@@ -28,6 +28,7 @@ import {
 } from "../../services/cargoApi";
 import api from "../../services/api";
 import toast from "react-hot-toast";
+import { TranslatedText } from "../translated-text";
 // import type { Cargo, CargoFilters as CargoFiltersType, CargoData } from '../../types/cargo';
 
 // Temporary local interfaces to bypass module resolution issue
@@ -617,14 +618,16 @@ export const CargoDashboard: React.FC = () => {
     <ErrorBoundary>
       <div className="p-4 max-w-7xl mx-auto">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
-          <h1 className="text-2xl font-bold">Cargo Dashboard</h1>
+          <h1 className="text-2xl font-bold">
+            <TranslatedText text="Cargo Dashboard" />
+          </h1>
           <div className="flex gap-2 items-center">
             <Button
               onClick={handleCreateNew}
               className="flex items-center gap-2"
             >
               <FaPlus className="w-4 h-4" />
-              Create New Cargo
+              <TranslatedText text="Create New Cargo" />
             </Button>
             <Button
               variant={view === "grid" ? "secondary" : "ghost"}

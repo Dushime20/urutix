@@ -11,6 +11,7 @@ import UserRewards from "@/pages/UserRewards";
 import UserScoring from "@/pages/UserScoring";
 import { cn } from "@/utils/cn";
 import logoUrutiX from "@/assets/logo-urutix.svg";
+import { TranslatedText } from "@/components/translated-text";
 
 type TabType = "ratings" | "rewards" | "scoring";
 
@@ -83,10 +84,10 @@ const UnifiedReputationManagement = () => {
         {/* Header */}
         <div className="mb-4">
           <h1 className="text-2xl font-bold text-gray-900">
-            Reputation & Rewards
+            <TranslatedText text="Reputation & Rewards" />
           </h1>
           <p className="text-sm text-gray-600 mt-1">
-            Manage your ratings, rewards, and credit scoring
+            <TranslatedText text="Manage your ratings, rewards, and credit scoring" />
           </p>
         </div>
 
@@ -108,7 +109,7 @@ const UnifiedReputationManagement = () => {
                   )}
                 >
                   <Icon className="w-4 h-4" />
-                  <span>{tab.label}</span>
+                  <span><TranslatedText text={tab.label} /></span>
                 </button>
               );
             })}

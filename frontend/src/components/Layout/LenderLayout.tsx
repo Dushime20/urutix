@@ -3,6 +3,7 @@ import { Outlet, useNavigate } from 'react-router-dom';
 import { FaBars, FaBell, FaUser, FaSearch, FaSignOutAlt, FaCog } from 'react-icons/fa';
 import LenderSidebar from './LenderSidebar';
 import { useAuth } from '../../contexts/AuthContext';
+import { LanguageSwitcher } from '@/components/language-switcher';
 
 const LenderLayout: React.FC = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -101,6 +102,9 @@ const LenderLayout: React.FC = () => {
 
             {/* Right side */}
             <div className="flex items-center space-x-4">
+              {/* Language Switcher */}
+              <LanguageSwitcher variant="default" />
+              
               {/* Notifications */}
               <button className="relative text-gray-500 hover:text-gray-700 focus:outline-none">
                 <FaBell className="w-5 h-5" />

@@ -4,6 +4,7 @@ import { useSearchParams } from 'react-router-dom';
 import { Plus, Search, Bell, Trash2, CheckCircle, Box, Truck, CreditCard, Settings } from 'lucide-react';
 import { notificationApi } from '../services/notifications/notificationApi';
 import type { CreateNotificationRequest, Notification } from '../services/notifications/notificationApi';
+import { TranslatedText } from '../components/translated-text';
 
 const NotificationsPage: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -166,7 +167,9 @@ const NotificationsPage: React.FC = () => {
     return (
       <div className="p-3">
         <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-          <p className="text-xs text-red-800">Error loading notifications: {error.message}</p>
+          <p className="text-xs text-red-800">
+            <TranslatedText text="Error loading notifications" />: {error.message}
+          </p>
         </div>
       </div>
     );
@@ -183,25 +186,30 @@ const NotificationsPage: React.FC = () => {
             </div>
             <div>
               <h1 className="text-lg font-bold text-gray-900">
-                {filters.category ? `${categoryInfo.name} Notifications` : 'Notification Center'}
+                {filters.category ? (
+                  <TranslatedText text={`${categoryInfo.name} Notifications`} />
+                ) : (
+                  <TranslatedText text="Notification Center" />
+                )}
               </h1>
               <p className="text-xs text-gray-600 mt-0.5">
-                {filters.category 
-                  ? `Manage all ${categoryInfo.name.toLowerCase()} notifications and alerts`
-                  : 'Manage all notifications across the platform'
-                }
+                {filters.category ? (
+                  <TranslatedText text={`Manage all ${categoryInfo.name.toLowerCase()} notifications and alerts`} />
+                ) : (
+                  <TranslatedText text="Manage all notifications across the platform" />
+                )}
               </p>
             </div>
           </div>
           <div className="flex items-center gap-2">
             {unreadCount && (
               <div className="bg-red-100 text-red-800 px-2.5 py-1 rounded-lg text-xs font-medium border border-red-200">
-                {unreadCount.count} unread
+                {unreadCount.count} <TranslatedText text="unread" />
               </div>
             )}
             {!unreadCount && (
               <div className="bg-gray-100 text-gray-600 px-2.5 py-1 rounded-lg text-xs font-medium border border-gray-200">
-                0 unread
+                0 <TranslatedText text="unread" />
               </div>
             )}
             <button
@@ -209,13 +217,13 @@ const NotificationsPage: React.FC = () => {
               className="bg-blue-600 text-white px-3 py-1.5 text-sm rounded-lg hover:bg-blue-700 flex items-center gap-1.5 transition-colors"
             >
               <Plus className="w-3.5 h-3.5" />
-              Create {filters.category ? categoryInfo.name : ''} Notification
+              <TranslatedText text="Create" /> {filters.category ? categoryInfo.name : ''} <TranslatedText text="Notification" />
             </button>
           </div>
         </div>
         {filters.category && (
           <div className="text-xs text-gray-600 mt-2 pt-2 border-t border-blue-200">
-            Category: <span className="font-medium text-gray-700">{filters.category}</span>
+            <TranslatedText text="Category" />: <span className="font-medium text-gray-700">{filters.category}</span>
           </div>
         )}
       </div>
@@ -241,38 +249,38 @@ const NotificationsPage: React.FC = () => {
               value={filters.category}
               onChange={(e) => handleFilterChange('category', e.target.value)}
             >
-              <option value="">All Categories</option>
-              <option value="SYSTEM">System</option>
-              <option value="DRIVER">Driver</option>
-              <option value="VEHICLE">Vehicle</option>
-              <option value="CARGO">Cargo</option>
-              <option value="TRIP">Trip</option>
-              <option value="FINANCIAL">Financial</option>
-              <option value="COMPLIANCE">Compliance</option>
+              <option value=""><TranslatedText text="All Categories" /></option>
+              <option value="SYSTEM"><TranslatedText text="System" /></option>
+              <option value="DRIVER"><TranslatedText text="Driver" /></option>
+              <option value="VEHICLE"><TranslatedText text="Vehicle" /></option>
+              <option value="CARGO"><TranslatedText text="Cargo" /></option>
+              <option value="TRIP"><TranslatedText text="Trip" /></option>
+              <option value="FINANCIAL"><TranslatedText text="Financial" /></option>
+              <option value="COMPLIANCE"><TranslatedText text="Compliance" /></option>
             </select>
             <select
               className="px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
               value={filters.status}
               onChange={(e) => handleFilterChange('status', e.target.value)}
             >
-              <option value="">All Statuses</option>
-              <option value="PENDING">Pending</option>
-              <option value="SENT">Sent</option>
-              <option value="DELIVERED">Delivered</option>
-              <option value="READ">Read</option>
-              <option value="FAILED">Failed</option>
+              <option value=""><TranslatedText text="All Statuses" /></option>
+              <option value="PENDING"><TranslatedText text="Pending" /></option>
+              <option value="SENT"><TranslatedText text="Sent" /></option>
+              <option value="DELIVERED"><TranslatedText text="Delivered" /></option>
+              <option value="READ"><TranslatedText text="Read" /></option>
+              <option value="FAILED"><TranslatedText text="Failed" /></option>
             </select>
             <select
               className="px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
               value={filters.priority}
               onChange={(e) => handleFilterChange('priority', e.target.value)}
             >
-              <option value="">All Priorities</option>
-              <option value="LOW">Low</option>
-              <option value="NORMAL">Normal</option>
-              <option value="HIGH">High</option>
-              <option value="URGENT">Urgent</option>
-              <option value="CRITICAL">Critical</option>
+              <option value=""><TranslatedText text="All Priorities" /></option>
+              <option value="LOW"><TranslatedText text="Low" /></option>
+              <option value="NORMAL"><TranslatedText text="Normal" /></option>
+              <option value="HIGH"><TranslatedText text="High" /></option>
+              <option value="URGENT"><TranslatedText text="Urgent" /></option>
+              <option value="CRITICAL"><TranslatedText text="Critical" /></option>
             </select>
           </div>
         </div>
@@ -283,7 +291,7 @@ const NotificationsPage: React.FC = () => {
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
           <div className="flex justify-between items-center">
             <span className="text-xs text-blue-800 font-medium">
-              {selectedNotifications.length} notification(s) selected
+              {selectedNotifications.length} <TranslatedText text="notification(s) selected" />
             </span>
             <div className="flex gap-2">
               <button
@@ -291,7 +299,7 @@ const NotificationsPage: React.FC = () => {
                 className="bg-green-600 text-white px-2.5 py-1 text-xs rounded-lg hover:bg-green-700 flex items-center gap-1.5 transition-colors"
               >
                 <CheckCircle className="w-3.5 h-3.5" />
-                Mark as Read
+                <TranslatedText text="Mark as Read" />
               </button>
             </div>
           </div>
@@ -321,22 +329,22 @@ const NotificationsPage: React.FC = () => {
                   />
                 </th>
                 <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Notification
+                  <TranslatedText text="Notification" />
                 </th>
                 <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Category
+                  <TranslatedText text="Category" />
                 </th>
                 <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
+                  <TranslatedText text="Status" />
                 </th>
                 <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Priority
+                  <TranslatedText text="Priority" />
                 </th>
                 <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Channels
+                  <TranslatedText text="Channels" />
                 </th>
                 <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
+                  <TranslatedText text="Actions" />
                 </th>
               </tr>
             </thead>
@@ -344,13 +352,13 @@ const NotificationsPage: React.FC = () => {
               {isLoading ? (
                 <tr>
                   <td colSpan={7} className="px-4 py-4 text-center text-xs text-gray-500">
-                    Loading notifications...
+                    <TranslatedText text="Loading notifications..." />
                   </td>
                 </tr>
               ) : notificationsData?.notifications.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="px-4 py-4 text-center text-xs text-gray-500">
-                    No notifications found
+                    <TranslatedText text="No notifications found" />
                   </td>
                 </tr>
               ) : (
@@ -415,7 +423,7 @@ const NotificationsPage: React.FC = () => {
                       <div className="flex gap-1.5 items-center">
                         {notification.requiresAction && (
                           <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 border border-yellow-200">
-                            Action Required
+                            <TranslatedText text="Action Required" />
                           </span>
                         )}
                         {!notification.readAt && (
@@ -453,7 +461,7 @@ const NotificationsPage: React.FC = () => {
               disabled={currentPage === 1}
               className="px-2.5 py-1.5 text-xs border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors"
             >
-              Previous
+              <TranslatedText text="Previous" />
             </button>
             {Array.from({ length: notificationsData.totalPages }, (_, i) => i + 1).map((page) => (
               <button
@@ -473,7 +481,7 @@ const NotificationsPage: React.FC = () => {
               disabled={currentPage === notificationsData.totalPages}
               className="px-2.5 py-1.5 text-xs border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors"
             >
-              Next
+              <TranslatedText text="Next" />
             </button>
           </nav>
         </div>
@@ -483,12 +491,14 @@ const NotificationsPage: React.FC = () => {
       {showCreateModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-4 w-full max-w-md shadow-xl">
-            <h2 className="text-sm font-semibold mb-3">Create Notification</h2>
+            <h2 className="text-sm font-semibold mb-3">
+              <TranslatedText text="Create Notification" />
+            </h2>
             
             <div className="space-y-3">
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1">
-                  Title *
+                  <TranslatedText text="Title" /> *
                 </label>
                 <input
                   type="text"
@@ -501,7 +511,7 @@ const NotificationsPage: React.FC = () => {
 
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1">
-                  Message *
+                  <TranslatedText text="Message" /> *
                 </label>
                 <textarea
                   value={createForm.message || ''}
@@ -514,7 +524,7 @@ const NotificationsPage: React.FC = () => {
 
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1">
-                  Recipient ID *
+                  <TranslatedText text="Recipient ID" /> *
                 </label>
                 <input
                   type="text"
@@ -527,43 +537,43 @@ const NotificationsPage: React.FC = () => {
 
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1">
-                  Category
+                  <TranslatedText text="Category" />
                 </label>
                 <select
                   value={createForm.category || ''}
                   onChange={(e) => setCreateForm(prev => ({ ...prev, category: e.target.value }))}
                   className="w-full border border-gray-300 rounded-lg p-1.5 text-sm"
                 >
-                  <option value="SYSTEM">System</option>
-                  <option value="DRIVER">Driver</option>
-                  <option value="VEHICLE">Vehicle</option>
-                  <option value="CARGO">Cargo</option>
-                  <option value="TRIP">Trip</option>
-                  <option value="FINANCIAL">Financial</option>
-                  <option value="COMPLIANCE">Compliance</option>
+                  <option value="SYSTEM"><TranslatedText text="System" /></option>
+                  <option value="DRIVER"><TranslatedText text="Driver" /></option>
+                  <option value="VEHICLE"><TranslatedText text="Vehicle" /></option>
+                  <option value="CARGO"><TranslatedText text="Cargo" /></option>
+                  <option value="TRIP"><TranslatedText text="Trip" /></option>
+                  <option value="FINANCIAL"><TranslatedText text="Financial" /></option>
+                  <option value="COMPLIANCE"><TranslatedText text="Compliance" /></option>
                 </select>
               </div>
 
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1">
-                  Priority
+                  <TranslatedText text="Priority" />
                 </label>
                 <select
                   value={createForm.priority || ''}
                   onChange={(e) => setCreateForm(prev => ({ ...prev, priority: e.target.value }))}
                   className="w-full border border-gray-300 rounded-lg p-1.5 text-sm"
                 >
-                  <option value="LOW">Low</option>
-                  <option value="NORMAL">Normal</option>
-                  <option value="HIGH">High</option>
-                  <option value="URGENT">Urgent</option>
-                  <option value="CRITICAL">Critical</option>
+                  <option value="LOW"><TranslatedText text="Low" /></option>
+                  <option value="NORMAL"><TranslatedText text="Normal" /></option>
+                  <option value="HIGH"><TranslatedText text="High" /></option>
+                  <option value="URGENT"><TranslatedText text="Urgent" /></option>
+                  <option value="CRITICAL"><TranslatedText text="Critical" /></option>
                 </select>
               </div>
 
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1">
-                  Channels
+                  <TranslatedText text="Channels" />
                 </label>
                 <div className="space-y-1.5">
                   {['IN_APP', 'EMAIL', 'SMS', 'PUSH'].map((channel) => (
@@ -582,7 +592,7 @@ const NotificationsPage: React.FC = () => {
 
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1">
-                  Requires Action
+                  <TranslatedText text="Requires Action" />
                 </label>
                 <label className="flex items-center">
                   <input
@@ -591,7 +601,9 @@ const NotificationsPage: React.FC = () => {
                     onChange={(e) => setCreateForm(prev => ({ ...prev, requiresAction: e.target.checked }))}
                     className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-4 h-4"
                   />
-                  <span className="ml-2 text-xs text-gray-700">User must take action</span>
+                  <span className="ml-2 text-xs text-gray-700">
+                    <TranslatedText text="User must take action" />
+                  </span>
                 </label>
               </div>
 
@@ -599,7 +611,7 @@ const NotificationsPage: React.FC = () => {
                 <>
                   <div>
                     <label className="block text-xs font-medium text-gray-700 mb-1">
-                      Action URL
+                      <TranslatedText text="Action URL" />
                     </label>
                     <input
                       type="text"
@@ -611,7 +623,7 @@ const NotificationsPage: React.FC = () => {
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-gray-700 mb-1">
-                      Action Text
+                      <TranslatedText text="Action Text" />
                     </label>
                     <input
                       type="text"
@@ -630,14 +642,14 @@ const NotificationsPage: React.FC = () => {
                 onClick={() => setShowCreateModal(false)}
                 className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
               >
-                Cancel
+                <TranslatedText text="Cancel" />
               </button>
               <button
                 onClick={handleCreateNotification}
                 disabled={!createForm.title || !createForm.message || !createForm.recipientId || createMutation.isPending}
                 className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
-                {createMutation.isPending ? 'Creating...' : 'Create'}
+                {createMutation.isPending ? <TranslatedText text="Creating..." /> : <TranslatedText text="Create" />}
               </button>
             </div>
           </div>

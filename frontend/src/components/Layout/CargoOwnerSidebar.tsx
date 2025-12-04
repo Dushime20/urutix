@@ -13,6 +13,7 @@ import {
   FaUser
 } from 'react-icons/fa';
 import urutixLogo from '../../assets/urutix.png';
+import { TranslatedText } from '../translated-text';
 
 interface CargoOwnerSidebarProps {
   isCollapsed: boolean;
@@ -114,9 +115,11 @@ const CargoOwnerSidebar: React.FC<CargoOwnerSidebarProps> = ({ isCollapsed, onTo
               </div>
               <div>
                 <span className="block text-[10px] font-semibold uppercase tracking-wider text-gray-400">
-                  Dashboard
+                  <TranslatedText text="Dashboard" />
                 </span>
-                <span className="block text-sm font-bold text-gray-900">Cargo Owner</span>
+                <span className="block text-sm font-bold text-gray-900">
+                  <TranslatedText text="Cargo Owner" />
+                </span>
               </div>
             </div>
           )}
@@ -137,7 +140,7 @@ const CargoOwnerSidebar: React.FC<CargoOwnerSidebarProps> = ({ isCollapsed, onTo
           <div key={sectionIndex} className="mb-4 px-2">
             {!isCollapsed && section.section && (
               <h3 className="mb-2 px-2 text-[10px] font-semibold uppercase tracking-wider text-gray-400">
-                {section.section}
+                <TranslatedText text={section.section} />
               </h3>
             )}
             <div className="space-y-1.5">
@@ -169,7 +172,9 @@ const CargoOwnerSidebar: React.FC<CargoOwnerSidebarProps> = ({ isCollapsed, onTo
                           <IconComponent className="h-3.5 w-3.5" />
                         </div>
                         {!isCollapsed && (
-                          <span className="flex-1 truncate">{item.name}</span>
+                          <span className="flex-1 truncate">
+                            <TranslatedText text={item.name} />
+                          </span>
                         )}
                         {isActive && isCollapsed && (
                           <span className="absolute inset-y-1.5 right-1 w-0.5 rounded-full bg-white" />

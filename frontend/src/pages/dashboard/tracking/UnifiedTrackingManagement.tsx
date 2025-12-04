@@ -10,6 +10,7 @@ const Tracking = lazy(() => import("@/pages/Tracking"));
 import RoutesPage from "@/pages/Routes";
 import { cn } from "@/utils/cn";
 import logoUrutiX from "@/assets/logo-urutix.svg";
+import { TranslatedText } from "@/components/translated-text";
 
 type TabType = "tracking" | "routes";
 
@@ -73,10 +74,10 @@ const UnifiedTrackingManagement = () => {
         {/* Header */}
         <div className="mb-4">
           <h1 className="text-2xl font-bold text-gray-900">
-            Maps & Tracking
+            <TranslatedText text="Maps & Tracking" />
           </h1>
           <p className="text-sm text-gray-600 mt-1">
-            Track shipments in real-time and plan optimal routes
+            <TranslatedText text="Track shipments in real-time and plan optimal routes" />
           </p>
         </div>
 
@@ -98,7 +99,7 @@ const UnifiedTrackingManagement = () => {
                   )}
                 >
                   <Icon className="w-4 h-4" />
-                  <span>{tab.label}</span>
+                  <span><TranslatedText text={tab.label} /></span>
                 </button>
               );
             })}
