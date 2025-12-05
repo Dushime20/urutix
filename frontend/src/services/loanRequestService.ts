@@ -22,7 +22,7 @@ class LoanRequestService {
     return response.data;
   }
 
-  async createLoanRequestForCargo(cargoId: string, data: CreateCargoLoanRequestDto): Promise<LoanRequest> {
+  async createLoanRequestForCargo(cargoId: string, data: CreateCargoLoanRequestDto & { lender_id?: string }): Promise<LoanRequest> {
     const response = await api.post(`${this.baseUrl}/cargo/${cargoId}/loan-request`, data);
     return response.data;
   }

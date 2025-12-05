@@ -22,6 +22,10 @@ import {
   Save,
   Upload
 } from 'lucide-react';
+import { driverApi } from '../../services/driverApi';
+import api from '../../services/api';
+import { documentApi } from '../../services/documents/documentApi';
+import toast from 'react-hot-toast';
 
 interface CargoItem {
   id: string;
@@ -97,28 +101,76 @@ export const CargoInspection: React.FC<CargoInspectionProps> = ({
     recommendations: [],
     signature: ''
   });
+  
+  // Track inspection checklist items status
+  const [checklistStatus, setChecklistStatus] = useState<Record<string, 'passed' | 'failed' | null>>({
+    packaging: null,
+    seals: null,
+    labels: null,
+    contents: null,
+    temperature: null,
+    security: null,
+  });
+  
+  // Track uploaded photos (with preview URLs and file objects)
+  const [uploadedPhotos, setUploadedPhotos] = useState<Array<{ url: string; file?: File; id: string }>>([]);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  
+  // Track document verification status
+  const [documentStatus, setDocumentStatus] = useState<Record<string, 'verified' | 'missing' | null>>({});
 
-  // Mock cargo data - in real app this would come from API
+  // Fetch real cargo data from API
   useEffect(() => {
-    setTimeout(() => {
-      setCargo({
-        id: cargoId,
-        name: 'Electronics Components',
-        description: 'High-value electronic components requiring careful handling',
-        quantity: 150,
-        unit: 'pieces',
-        weight: 750,
-        dimensions: { length: 120, width: 80, height: 60 },
-        category: 'Electronics',
-        specialRequirements: ['Fragile', 'Temperature controlled', 'Anti-static packaging'],
-        fragility: 'HIGH',
-        temperature: { min: 15, max: 25, unit: 'C' },
-        hazardous: false,
-        images: [],
-        documents: ['Packing list', 'Safety data sheet', 'Customs declaration']
-      });
-      setLoading(false);
-    }, 1000);
+    const fetchCargoData = async () => {
+      try {
+        setLoading(true);
+        const load = await driverApi.getLoadById(cargoId);
+        
+        // Map Load entity to CargoItem interface
+        const mappedCargo: CargoItem = {
+          id: load.id || cargoId,
+          name: load.title || 'Cargo',
+          description: load.description || 'No description available',
+          quantity: load.numberOfPieces || load.unitsRequired || 0,
+          unit: 'pieces',
+          weight: load.weight || 0,
+          dimensions: {
+            length: load.length || 0,
+            width: load.width || 0,
+            height: load.height || 0,
+          },
+          category: load.cargoType || 'General',
+          specialRequirements: [
+            ...(load.isFragile ? ['Fragile'] : []),
+            ...(load.requiresRefrigeration ? ['Temperature controlled'] : []),
+            ...(load.isHazardous ? ['Hazardous material'] : []),
+            ...(load.requiresForklift ? ['Requires forklift'] : []),
+            ...(load.requiresCrane ? ['Requires crane'] : []),
+            ...(load.requiresLoadingDock ? ['Requires loading dock'] : []),
+            ...(load.requiresHumidityControl ? ['Humidity control'] : []),
+          ],
+          fragility: load.isFragile ? 'HIGH' : (load.cargoType === 'FRAGILE' ? 'HIGH' : 'MEDIUM'),
+          temperature: {
+            min: load.temperatureMin || null,
+            max: load.temperatureMax || null,
+            unit: 'C'
+          },
+          hazardous: load.isHazardous || false,
+          hazmatClass: load.hazmatClass || undefined,
+          images: [],
+          documents: load.requiredDocuments || []
+        };
+        
+        setCargo(mappedCargo);
+      } catch (error: any) {
+        console.error('Error fetching cargo data:', error);
+        toast.error('Failed to load cargo details');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCargoData();
   }, [cargoId]);
 
   const addIssue = (issue: Omit<InspectionIssue, 'id'>) => {
@@ -140,6 +192,136 @@ export const CargoInspection: React.FC<CargoInspectionProps> = ({
         issue.id === issueId ? { ...issue, ...updates } : issue
       ) || []
     }));
+  };
+
+  const handleChecklistItem = (itemId: string, status: 'passed' | 'failed') => {
+    setChecklistStatus(prev => ({
+      ...prev,
+      [itemId]: status
+    }));
+    
+    if (status === 'failed') {
+      // Add issue when marked as failed
+      addIssue({
+        type: 'DAMAGE',
+        severity: 'MEDIUM',
+        description: `Issue found with ${itemId.replace(/([A-Z])/g, ' $1').toLowerCase()}`,
+        location: 'General',
+        actionRequired: 'Document and report issue'
+      });
+    }
+  };
+
+  const handlePhotoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please upload an image file');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Image size must be less than 5MB');
+      return;
+    }
+
+    // Declare photoId outside try block so it's accessible in catch
+    const photoId = Date.now().toString();
+    let previewUrl: string | null = null;
+
+    try {
+      setUploadingPhoto(true);
+      
+      // Create preview URL
+      previewUrl = URL.createObjectURL(file);
+      
+      // Add to uploaded photos with preview
+      setUploadedPhotos(prev => [...prev, { url: previewUrl!, file, id: photoId }]);
+      
+      // Upload using document API
+      const documentRequest = {
+        entityType: 'CARGO', // Use 'CARGO' as EntityType enum doesn't have 'LOAD'
+        entityId: cargoId,
+        documentType: 'OTHER', // Use 'OTHER' as DocumentType enum doesn't have 'INSPECTION_PHOTO'
+        category: 'OPERATIONAL', // Use 'OPERATIONAL' as DocumentCategory enum doesn't have 'INSPECTION'
+        title: `Inspection Photo - ${new Date().toLocaleString()}`,
+        description: 'Cargo inspection photo',
+        priority: 'NORMAL',
+      };
+
+      const uploadedDocument = await documentApi.createDocument(documentRequest, file);
+
+      // Update with server URL
+      if (uploadedDocument?.fileUrl) {
+        // Revoke preview URL
+        if (previewUrl) {
+          URL.revokeObjectURL(previewUrl);
+        }
+        
+        setUploadedPhotos(prev => 
+          prev.map(photo => 
+            photo.id === photoId 
+              ? { ...photo, url: uploadedDocument.fileUrl, file: undefined }
+              : photo
+          )
+        );
+        
+        // Add to inspection result photos
+        setInspectionResult(prev => ({
+          ...prev,
+          photos: [...(prev.photos || []), uploadedDocument.fileUrl]
+        }));
+        
+        toast.success('Photo uploaded successfully');
+      }
+    } catch (error: any) {
+      console.error('Error uploading photo:', error);
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to upload photo';
+      toast.error(errorMessage);
+      
+      // Remove from uploaded photos if upload failed
+      setUploadedPhotos(prev => {
+        const photo = prev.find(p => p.id === photoId);
+        if (photo) {
+          // Revoke blob URL if it's a preview
+          if (photo.url.startsWith('blob:') && previewUrl) {
+            URL.revokeObjectURL(photo.url);
+          }
+        }
+        return prev.filter(p => p.id !== photoId);
+      });
+    } finally {
+      setUploadingPhoto(false);
+      // Reset file input
+      if (event.target) {
+        event.target.value = '';
+      }
+    }
+  };
+
+  const removePhoto = (photoId: string) => {
+    const photoToRemove = uploadedPhotos.find(p => p.id === photoId);
+    
+    if (photoToRemove) {
+      // Revoke blob URL if it's a preview
+      if (photoToRemove.url.startsWith('blob:')) {
+        URL.revokeObjectURL(photoToRemove.url);
+      }
+      
+      // Remove from uploaded photos
+      setUploadedPhotos(prev => prev.filter(p => p.id !== photoId));
+      
+      // Remove from inspection result photos
+      setInspectionResult(prev => ({
+        ...prev,
+        photos: prev.photos?.filter(url => url !== photoToRemove.url) || []
+      }));
+      
+      toast.success('Photo removed');
+    }
   };
 
   const addPhoto = (photoUrl: string) => {
@@ -247,19 +429,23 @@ export const CargoInspection: React.FC<CargoInspectionProps> = ({
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Quantity:</span>
-                    <span className="font-medium">{cargo.quantity} {cargo.unit}</span>
+                    <span className="font-medium">{cargo.quantity > 0 ? `${cargo.quantity} ${cargo.unit}` : 'Not Available'}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Weight:</span>
-                    <span className="font-medium">{cargo.weight} kg</span>
+                    <span className="font-medium">{cargo.weight > 0 ? `${cargo.weight} kg` : 'Not Available'}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Dimensions:</span>
-                    <span className="font-medium">{cargo.dimensions.length}×{cargo.dimensions.width}×{cargo.dimensions.height} cm</span>
+                    <span className="font-medium">
+                      {cargo.dimensions.length > 0 && cargo.dimensions.width > 0 && cargo.dimensions.height > 0
+                        ? `${cargo.dimensions.length}×${cargo.dimensions.width}×${cargo.dimensions.height} cm`
+                        : 'Not Available'}
+                    </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Category:</span>
-                    <span className="font-medium">{cargo.category}</span>
+                    <span className="font-medium">{cargo.category || 'Not Available'}</span>
                   </div>
                 </div>
               </div>
@@ -272,25 +458,38 @@ export const CargoInspection: React.FC<CargoInspectionProps> = ({
                     <Shield className="w-5 h-5 text-blue-600" />
                     <span className="text-sm">Fragility: <span className="font-medium">{cargo.fragility}</span></span>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <Thermometer className="w-5 h-5 text-orange-600" />
-                    <span className="text-sm">Temperature: {cargo.temperature.min}°{cargo.temperature.unit} - {cargo.temperature.max}°{cargo.temperature.unit}</span>
-                  </div>
+                  {cargo.temperature.min !== null && cargo.temperature.max !== null ? (
+                    <div className="flex items-center space-x-2">
+                      <Thermometer className="w-5 h-5 text-orange-600" />
+                      <span className="text-sm">Temperature: {cargo.temperature.min}°{cargo.temperature.unit} - {cargo.temperature.max}°{cargo.temperature.unit}</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center space-x-2">
+                      <Thermometer className="w-5 h-5 text-gray-400" />
+                      <span className="text-sm text-gray-500">No temperature requirements</span>
+                    </div>
+                  )}
                   {cargo.hazardous && (
                     <div className="flex items-center space-x-2">
                       <AlertTriangle className="w-5 h-5 text-red-600" />
-                      <span className="text-sm text-red-600 font-medium">Hazardous Material - Class {cargo.hazmatClass}</span>
+                      <span className="text-sm text-red-600 font-medium">
+                        Hazardous Material{cargo.hazmatClass ? ` - Class ${cargo.hazmatClass}` : ''}
+                      </span>
                     </div>
                   )}
                   <div className="space-y-2">
                     <span className="text-sm font-medium text-gray-700">Requirements:</span>
-                    <div className="flex flex-wrap gap-2">
-                      {cargo.specialRequirements.map((req, index) => (
-                        <span key={index} className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
-                          {req}
-                        </span>
-                      ))}
-                    </div>
+                    {cargo.specialRequirements.length > 0 ? (
+                      <div className="flex flex-wrap gap-2">
+                        {cargo.specialRequirements.map((req, index) => (
+                          <span key={index} className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
+                            {req}
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <span className="text-sm text-gray-500">No special requirements</span>
+                    )}
                   </div>
                 </div>
               </div>
@@ -327,40 +526,57 @@ export const CargoInspection: React.FC<CargoInspectionProps> = ({
                   { id: 'contents', label: 'Content Verification', description: 'Check quantity and condition of contents' },
                   { id: 'temperature', label: 'Temperature Control', description: 'Verify temperature monitoring devices' },
                   { id: 'security', label: 'Security Features', description: 'Check tamper-evident features' }
-                ].map((item) => (
-                  <div key={item.id} className="border rounded-lg p-4">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <h4 className="font-medium text-gray-900">{item.label}</h4>
-                        <p className="text-sm text-gray-600">{item.description}</p>
-                      </div>
-                      <div className="flex space-x-2">
-                        <button
-                          onClick={() => {
-                            // Mark as passed
-                          }}
-                          className="p-2 text-green-600 hover:bg-green-50 rounded"
-                        >
-                          <CheckCircle className="w-5 h-5" />
-                        </button>
-                        <button
-                          onClick={() => {
-                            addIssue({
-                              type: 'DAMAGE',
-                              severity: 'MEDIUM',
-                              description: `Issue with ${item.label.toLowerCase()}`,
-                              location: 'General',
-                              actionRequired: 'Document and report issue'
-                            });
-                          }}
-                          className="p-2 text-red-600 hover:bg-red-50 rounded"
-                        >
-                          <XCircle className="w-5 h-5" />
-                        </button>
+                ].map((item) => {
+                  const status = checklistStatus[item.id];
+                  return (
+                    <div 
+                      key={item.id} 
+                      className={`border rounded-lg p-4 ${
+                        status === 'passed' ? 'bg-green-50 border-green-200' :
+                        status === 'failed' ? 'bg-red-50 border-red-200' :
+                        'bg-white border-gray-200'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <h4 className="font-medium text-gray-900">{item.label}</h4>
+                          <p className="text-sm text-gray-600">{item.description}</p>
+                          {status && (
+                            <p className={`text-xs mt-1 font-medium ${
+                              status === 'passed' ? 'text-green-700' : 'text-red-700'
+                            }`}>
+                              {status === 'passed' ? '✓ Passed' : '✗ Failed'}
+                            </p>
+                          )}
+                        </div>
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={() => handleChecklistItem(item.id, 'passed')}
+                            className={`p-2 rounded transition-colors ${
+                              status === 'passed' 
+                                ? 'bg-green-100 text-green-700' 
+                                : 'text-green-600 hover:bg-green-50'
+                            }`}
+                            title="Mark as passed"
+                          >
+                            <CheckCircle className="w-5 h-5" />
+                          </button>
+                          <button
+                            onClick={() => handleChecklistItem(item.id, 'failed')}
+                            className={`p-2 rounded transition-colors ${
+                              status === 'failed' 
+                                ? 'bg-red-100 text-red-700' 
+                                : 'text-red-600 hover:bg-red-50'
+                            }`}
+                            title="Mark as failed"
+                          >
+                            <XCircle className="w-5 h-5" />
+                          </button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
 
@@ -368,19 +584,46 @@ export const CargoInspection: React.FC<CargoInspectionProps> = ({
             <div className="space-y-4">
               <h4 className="font-medium text-gray-900">Photo Documentation</h4>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <button className="border-2 border-dashed border-gray-300 rounded-lg p-6 hover:border-blue-400 hover:bg-blue-50">
-                  <Camera className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                  <span className="text-sm text-gray-600">Add Photo</span>
-                </button>
-                {inspectionResult.photos?.map((photo, index) => (
-                  <div key={index} className="relative">
-                    <img src={photo} alt={`Inspection photo ${index + 1}`} className="w-full h-24 object-cover rounded-lg" />
-                    <button className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center">
+                <label className="border-2 border-dashed border-gray-300 rounded-lg p-6 hover:border-blue-400 hover:bg-blue-50 cursor-pointer transition-colors">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handlePhotoUpload}
+                    disabled={uploadingPhoto}
+                    className="hidden"
+                  />
+                  {uploadingPhoto ? (
+                    <div className="flex flex-col items-center">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-2"></div>
+                      <span className="text-sm text-gray-600">Uploading...</span>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center">
+                      <Camera className="w-8 h-8 text-gray-400 mb-2" />
+                      <span className="text-sm text-gray-600">Add Photo</span>
+                    </div>
+                  )}
+                </label>
+                {uploadedPhotos.map((photo) => (
+                  <div key={photo.id} className="relative group">
+                    <img 
+                      src={photo.url} 
+                      alt={`Inspection photo`} 
+                      className="w-full h-24 object-cover rounded-lg" 
+                    />
+                    <button
+                      onClick={() => removePhoto(photo.id)}
+                      className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
+                      title="Remove photo"
+                    >
                       ×
                     </button>
                   </div>
                 ))}
               </div>
+              {uploadedPhotos.length === 0 && (
+                <p className="text-sm text-gray-500">No photos uploaded yet</p>
+              )}
             </div>
 
             <div className="flex justify-between">
@@ -408,24 +651,71 @@ export const CargoInspection: React.FC<CargoInspectionProps> = ({
             <div className="space-y-4">
               <h4 className="font-medium text-gray-900">Required Documents</h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {cargo.documents.map((doc, index) => (
-                  <div key={index} className="border rounded-lg p-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-3">
-                        <FileText className="w-5 h-5 text-blue-600" />
-                        <span className="font-medium">{doc}</span>
+                {cargo.documents.length > 0 ? (
+                  cargo.documents.map((doc, index) => {
+                    const docKey = `doc-${index}`;
+                    const status = documentStatus[docKey];
+                    return (
+                      <div 
+                        key={index} 
+                        className={`border rounded-lg p-4 ${
+                          status === 'verified' ? 'bg-green-50 border-green-200' :
+                          status === 'missing' ? 'bg-red-50 border-red-200' :
+                          'bg-white border-gray-200'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-3">
+                            <FileText className="w-5 h-5 text-blue-600" />
+                            <span className="font-medium">{doc}</span>
+                          </div>
+                          <div className="flex space-x-2">
+                            <button
+                              onClick={() => setDocumentStatus(prev => ({ ...prev, [docKey]: 'verified' }))}
+                              className={`p-2 rounded transition-colors ${
+                                status === 'verified' 
+                                  ? 'bg-green-100 text-green-700' 
+                                  : 'text-green-600 hover:bg-green-50'
+                              }`}
+                              title="Mark as verified"
+                            >
+                              <CheckCircle className="w-5 h-5" />
+                            </button>
+                            <button
+                              onClick={() => {
+                                setDocumentStatus(prev => ({ ...prev, [docKey]: 'missing' }));
+                                addIssue({
+                                  type: 'DOCUMENTATION',
+                                  severity: 'MEDIUM',
+                                  description: `Missing or incomplete: ${doc}`,
+                                  location: 'Documentation',
+                                  actionRequired: 'Obtain and verify document'
+                                });
+                              }}
+                              className={`p-2 rounded transition-colors ${
+                                status === 'missing' 
+                                  ? 'bg-red-100 text-red-700' 
+                                  : 'text-red-600 hover:bg-red-50'
+                              }`}
+                              title="Mark as missing"
+                            >
+                              <XCircle className="w-5 h-5" />
+                            </button>
+                          </div>
+                        </div>
+                        {status && (
+                          <p className={`text-xs mt-2 font-medium ${
+                            status === 'verified' ? 'text-green-700' : 'text-red-700'
+                          }`}>
+                            {status === 'verified' ? '✓ Verified' : '✗ Missing'}
+                          </p>
+                        )}
                       </div>
-                      <div className="flex space-x-2">
-                        <button className="p-2 text-green-600 hover:bg-green-50 rounded">
-                          <CheckCircle className="w-5 h-5" />
-                        </button>
-                        <button className="p-2 text-red-600 hover:bg-red-50 rounded">
-                          <XCircle className="w-5 h-5" />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
+                    );
+                  })
+                ) : (
+                  <p className="text-sm text-gray-500">No documents specified</p>
+                )}
               </div>
             </div>
 

@@ -205,6 +205,7 @@ function App() {
               <Route path="profile" element={<UnifiedAccountManagement />} />
               <Route path="settings" element={<UnifiedAccountManagement />} />
               <Route path="payments" element={<UnifiedFinancialManagement />} />
+              <Route path="payment" element={<UnifiedFinancialManagement />} />
               <Route path="loan-requests" element={<UnifiedFinancialManagement />} />
               <Route path="documents" element={<UnifiedDocumentManagement />} />
               <Route path="documents/:entityType" element={<UnifiedDocumentManagement />} />

@@ -37,10 +37,10 @@ import {
 } from './dto/load-v2.dto';
 import { LoadResponseV2Dto } from './dto/load-response-v2.dto';
 import { User } from '../../entities/user.entity';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @ApiTags('loads-v2')
 @Controller('loads-v2')
-// @UseGuards(JwtAuthGuard) // Temporarily disabled for testing
 @ApiBearerAuth()
 @UseInterceptors(ClassSerializerInterceptor)
 @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
@@ -188,6 +188,7 @@ export class LoadsV2Controller {
   }
 
   @Get('my-loads')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({
     summary: "Get user's loads V2",
     description: 'Retrieves loads created by the authenticated user',
@@ -198,16 +199,12 @@ export class LoadsV2Controller {
   })
   async findMyLoads(
     @Query() queryDto: LoadQueryV2Dto,
-    @Request()
-    req = {
-      user: {
-        id: '701a9079-6100-4b47-a3b9-f9b070bfa7c6',
-        tenantId: '00000000-0000-0000-0000-000000000001',
-        role: 'CARGO_OWNER',
-      },
-    },
+    @Request() req,
   ): Promise<PaginatedResponseV2<LoadResponseV2Dto>> {
     try {
+      if (!req.user) {
+        throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
+      }
       const user = req.user as User;
       return await this.loadsV2Service.findByUser(queryDto, user);
     } catch (error) {
@@ -284,6 +281,7 @@ export class LoadsV2Controller {
   }
 
   @Get(':id')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({
     summary: 'Get load by ID V2',
     description: 'Retrieves a specific load by its ID',
@@ -298,6 +296,10 @@ export class LoadsV2Controller {
     status: 404,
     description: 'Load not found',
   })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized',
+  })
   async findOne(
     @Param('id', ParseUUIDPipe) id: string,
     @Request()
@@ -311,8 +313,26 @@ export class LoadsV2Controller {
   ): Promise<LoadResponseV2Dto> {
     try {
       const user = req.user as User;
+      
+      // Log for debugging
+      if (!user) {
+        throw new HttpException(
+          'User not authenticated',
+          HttpStatus.UNAUTHORIZED,
+        );
+      }
+      
       return await this.loadsV2Service.findOne(id, user);
     } catch (error) {
+      // Log the full error for debugging
+      console.error('Error in findOne controller:', {
+        loadId: id,
+        userId: req.user?.id,
+        userRole: req.user?.role,
+        error: error.message,
+        stack: error.stack,
+      });
+      
       throw new HttpException(
         error.message || 'Failed to retrieve load',
         error.status || HttpStatus.INTERNAL_SERVER_ERROR,
@@ -321,6 +341,7 @@ export class LoadsV2Controller {
   }
 
   @Patch(':id')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({
     summary: 'Update load V2',
     description: 'Updates an existing load',
@@ -338,16 +359,12 @@ export class LoadsV2Controller {
   async update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateLoadDto: UpdateLoadV2Dto,
-    @Request()
-    req = {
-      user: {
-        id: '701a9079-6100-4b47-a3b9-f9b070bfa7c6',
-        tenantId: '00000000-0000-0000-0000-000000000001',
-        role: 'CARGO_OWNER',
-      },
-    },
+    @Request() req,
   ): Promise<LoadResponseV2Dto> {
     try {
+      if (!req.user) {
+        throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
+      }
       const user = req.user as User;
       return await this.loadsV2Service.update(id, updateLoadDto, user);
     } catch (error) {

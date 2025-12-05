@@ -64,6 +64,7 @@ export enum LoadStatus {
   PUBLISHED = 'PUBLISHED',
   PENDING_CONFIRMATION = 'PENDING_CONFIRMATION',
   ASSIGNED = 'ASSIGNED',
+  LOADED = 'LOADED', // Driver has accepted and loaded the cargo
   IN_TRANSIT = 'IN_TRANSIT',
   DELIVERED = 'DELIVERED',
   CLOSED = 'CLOSED',

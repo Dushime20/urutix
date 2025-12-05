@@ -16,10 +16,11 @@ const FinancialReportsPage = lazy(() => import("@/pages/FinancialReportsPage"));
 // Truck owner specific financial dashboard
 const TruckOwnerFinancialDashboard = lazy(() => import("@/components/FleetDashboard/TruckOwnerFinancialDashboard"));
 const TripCostAnalysis = lazy(() => import("@/components/FleetDashboard/TripCostAnalysis"));
+const CargoOwnerPayment = lazy(() => import("@/components/CargoOwnerPayment/CargoOwnerPayment"));
 import { cn } from "@/utils/cn";
 import logoUrutiX from "@/assets/logo-urutix.svg";
 
-type TabType = "payments" | "loans" | "reports" | "cost-analysis";
+type TabType = "payments" | "payment" | "loans" | "reports" | "cost-analysis";
 
 const UnifiedFinancialManagement = () => {
   const location = useLocation();
@@ -28,6 +29,7 @@ const UnifiedFinancialManagement = () => {
   // Determine initial tab based on route
   const getInitialTab = (): TabType => {
     if (location.pathname.includes("/loan-requests")) return "loans";
+    if (location.pathname.includes("/payment")) return "payment";
     if (location.pathname.includes("/reports")) return "reports";
     if (location.pathname.includes("/cost-analysis")) return "cost-analysis";
     return "payments";
@@ -57,6 +59,8 @@ const UnifiedFinancialManagement = () => {
 
     if (tab === "loans") {
       navigate(`${basePath}/loan-requests`, { replace: true });
+    } else if (tab === "payment") {
+      navigate(`${basePath}/payment`, { replace: true });
     } else if (tab === "reports") {
       navigate(`${basePath}/reports`, { replace: true });
     } else if (tab === "cost-analysis") {
@@ -78,6 +82,13 @@ const UnifiedFinancialManagement = () => {
       icon: CreditCard,
       description: "Manage payments and transactions",
     },
+    // Add Payment tab for cargo owners (under Loan Requests section)
+    ...(location.pathname.includes("/cargo-owner") ? [{
+      id: "payment" as TabType,
+      label: "Payment",
+      icon: DollarSign,
+      description: "Pay for accepted cargo loads",
+    }] : []),
     ...(location.pathname.includes("/fleet") ? [{
       id: "cost-analysis" as TabType,
       label: "Cost Analysis",
@@ -154,6 +165,11 @@ const UnifiedFinancialManagement = () => {
               ) : (
                 <Payments />
               )
+            )}
+            {activeTab === "payment" && (
+              <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-600"></div></div>}>
+                <CargoOwnerPayment />
+              </Suspense>
             )}
             {activeTab === "cost-analysis" && (
               <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-600"></div></div>}>

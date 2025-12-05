@@ -16,6 +16,7 @@ import {
 import { CargoDetails } from './CargoDetails';
 import { CargoInspection } from './CargoInspection';
 import { driverApi } from '../../services/driverApi';
+import api from '../../services/api';
 import toast from 'react-hot-toast';
 
 interface CargoItem {
@@ -114,7 +115,7 @@ export const CargoManagement: React.FC<CargoManagementProps> = ({ driverId }) =>
               phone: load.cargoOwner?.phone || load.contactPhone || 'N/A',
               email: load.cargoOwner?.email || load.contactEmail || 'N/A'
             },
-            inspectionStatus: 'PENDING',
+            inspectionStatus: load.metadata?.inspectionStatus || 'PENDING',
             notes: load.specialInstructions ? [load.specialInstructions] : [],
             documents: load.requiredDocuments || [],
             createdAt: load.createdAt || new Date().toISOString(),
@@ -177,8 +178,20 @@ export const CargoManagement: React.FC<CargoManagementProps> = ({ driverId }) =>
     setViewMode('details');
   };
 
-  const handleInspectionComplete = (result: any) => {
-    if (selectedCargo) {
+  const handleInspectionComplete = async (result: any) => {
+    if (!selectedCargo) return;
+
+    try {
+      // Save inspection status to backend metadata
+      await api.patch(`/loads-v2/${selectedCargo.id}`, {
+        metadata: {
+          inspectionStatus: 'COMPLETED',
+          inspectionResult: result,
+          inspectionCompletedAt: new Date().toISOString(),
+        },
+      });
+
+      // Update local state
       setCargos(prev => prev.map(cargo => 
         cargo.id === selectedCargo.id 
           ? { 
@@ -190,20 +203,31 @@ export const CargoManagement: React.FC<CargoManagementProps> = ({ driverId }) =>
             }
           : cargo
       ));
+      toast.success('Inspection completed and saved!');
       setViewMode('list');
       setSelectedCargo(null);
+    } catch (error: any) {
+      console.error('Error saving inspection:', error);
+      toast.error('Failed to save inspection status');
     }
   };
 
-  const handleAcceptCargo = () => {
-    if (selectedCargo) {
+  const handleAcceptCargo = async () => {
+    if (!selectedCargo || !driverId) return;
+
+    try {
+      await driverApi.acceptAndLoad(driverId, selectedCargo.id);
       setCargos(prev => prev.map(cargo => 
         cargo.id === selectedCargo.id 
-          ? { ...cargo, status: 'APPROVED', updatedAt: new Date().toISOString() }
+          ? { ...cargo, status: 'LOADED', updatedAt: new Date().toISOString() }
           : cargo
       ));
+      toast.success('Cargo accepted and loaded successfully!');
       setViewMode('list');
       setSelectedCargo(null);
+    } catch (error: any) {
+      console.error('Error accepting cargo:', error);
+      toast.error(error.response?.data?.message || 'Failed to accept and load cargo');
     }
   };
 

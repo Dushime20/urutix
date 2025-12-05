@@ -194,4 +194,7 @@ export class LoadResponseV2Dto {
 
   @ApiProperty({ description: 'Requires photographic documentation' })
   requiresPhotographicDocumentation: boolean;
+
+  @ApiProperty({ description: 'Metadata for additional properties', required: false })
+  metadata?: Record<string, any>;
 }

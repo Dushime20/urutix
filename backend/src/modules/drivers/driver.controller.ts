@@ -484,6 +484,38 @@ export class DriverController {
     return this.driverService.getAssignedLoads(id, req.user.tenantId);
   }
 
+  @Post(':id/accept-and-load')
+  @ApiOperation({
+    summary: 'Accept and load cargo',
+    description: 'Driver accepts the assigned load and marks it as loaded, making it ready for payment',
+  })
+  @ApiParam({ name: 'id', description: 'Driver ID', type: String })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        loadId: {
+          type: 'string',
+          description: 'Load ID to accept and load',
+        },
+      },
+      required: ['loadId'],
+    },
+  })
+  @ApiOkResponse({
+    description: 'Cargo accepted and loaded successfully',
+  })
+  @ApiBadRequestResponse({ description: 'Invalid input or load cannot be accepted' })
+  @ApiUnauthorizedResponse({ description: 'Unauthorized' })
+  async acceptAndLoad(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() body: { loadId: string },
+    @Request() req,
+  ) {
+    await this.driverService.acceptAndLoad(id, body.loadId, req.user.tenantId);
+    return { message: 'Cargo accepted and loaded successfully' };
+  }
+
   @Post(':id/proceed-journey')
   @ApiOperation({
     summary: 'Proceed with journey after checking cargo',

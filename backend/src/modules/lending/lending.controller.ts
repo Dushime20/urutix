@@ -16,6 +16,7 @@ import {
   UsePipes,
   Headers,
   BadRequestException,
+  NotFoundException,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -162,7 +163,7 @@ export class LendingController {
   @UseGuards(JwtAuthGuard)
   async createLoanRequestForCargo(
     @Param('cargoId', ParseUUIDPipe) cargoId: string,
-    @Body() body: { trip_id: string },
+    @Body() body: { trip_id?: string; lender_id?: string },
     @Request() req: any,
   ) {
     return await this.lendingService.createLoanRequestForLoadedCargo(
@@ -170,6 +171,7 @@ export class LendingController {
       body.trip_id,
       req.user.tenantId,
       req?.user?.userId,
+      body.lender_id,
     );
   }
 
@@ -734,6 +736,120 @@ export class LendingController {
       lenderId,
       fromDate,
       toDate,
+    );
+  }
+
+  @Get('lending/my-lender-id')
+  @ApiOperation({
+    summary: 'Get lender entity ID for current user',
+    description: 'Returns the Lender entity ID for the authenticated LENDER user',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Lender ID retrieved successfully',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Lender entity not found for this user',
+  })
+  async getMyLenderId(@Request() req: any) {
+    const user = req.user;
+    if (!user || user.role !== 'LENDER') {
+      throw new BadRequestException('User must be a LENDER');
+    }
+
+    // Find lender by user email
+    const lender = await this.lendingService.getLenderByUserEmail(user.email);
+    if (!lender) {
+      throw new NotFoundException('Lender entity not found for this user');
+    }
+
+    return { lenderId: lender.id };
+  }
+
+  @Get('lending/lenders/:lenderId/analytics')
+  @ApiOperation({
+    summary: 'Get lender analytics',
+    description: 'Retrieve analytics data for a specific lender',
+  })
+  @ApiParam({
+    name: 'lenderId',
+    description: 'UUID of the lender',
+    type: 'string',
+    format: 'uuid',
+  })
+  @ApiQuery({
+    name: 'period',
+    required: false,
+    description: 'Time period for analytics',
+    enum: ['7d', '30d', '90d', '12months'],
+    default: '30d',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Lender analytics retrieved successfully',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - invalid or missing JWT token',
+  })
+  @ApiResponse({ status: 404, description: 'Lender not found' })
+  async getLenderAnalytics(
+    @Param('lenderId', ParseUUIDPipe) lenderId: string,
+    @Query('period') period: string = '30d',
+  ) {
+    return await this.lendingService.getLenderAnalytics(lenderId, period);
+  }
+
+  @Get('lending/lenders/:lenderId/loan-requests')
+  @ApiOperation({
+    summary: 'Get loan requests for a lender',
+    description: 'Retrieve all loan requests assigned to a specific lender',
+  })
+  @ApiParam({
+    name: 'lenderId',
+    description: 'UUID of the lender',
+    type: 'string',
+    format: 'uuid',
+  })
+  @ApiQuery({
+    name: 'status',
+    required: false,
+    description: 'Filter by loan request status',
+    enum: ['pending', 'approved', 'rejected', 'disbursed', 'repaid', 'failed', 'defaulted'],
+  })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    description: 'Page number for pagination',
+    type: 'number',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    description: 'Number of items per page',
+    type: 'number',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Loan requests retrieved successfully',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - invalid or missing JWT token',
+  })
+  @ApiResponse({ status: 404, description: 'Lender not found' })
+  async getLenderLoanRequests(
+    @Param('lenderId', ParseUUIDPipe) lenderId: string,
+    @Query('status') status?: string,
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 10,
+  ) {
+    return await this.lendingService.getLenderLoanRequests(
+      lenderId,
+      status,
+      page,
+      limit,
     );
   }
 
