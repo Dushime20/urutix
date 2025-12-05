@@ -6,6 +6,7 @@ import {
   FaChartBar,
   FaCreditCard,
   FaFileAlt,
+  FaFileInvoice,
   FaList,
   FaMapMarkedAlt,
   FaQuestionCircle,
@@ -63,6 +64,11 @@ const CargoOwnerSidebar: React.FC<CargoOwnerSidebarProps> = ({ isCollapsed, onTo
           name: 'Financial Management',
           path: '/cargo-owner/payments',
           icon: FaCreditCard
+        },
+        {
+          name: 'Invoices',
+          path: '/cargo-owner/invoices',
+          icon: FaFileInvoice
         },
         {
           name: 'Document Management',

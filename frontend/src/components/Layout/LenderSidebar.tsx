@@ -19,7 +19,8 @@ import {
   FaBuilding,
   FaCalculator,
   FaCreditCard,
-  FaQuestionCircle
+  FaQuestionCircle,
+  FaReceipt
 } from 'react-icons/fa';
 
 interface LenderSidebarProps {
@@ -121,6 +122,12 @@ const LenderSidebar: React.FC<LenderSidebarProps> = ({ isCollapsed, onToggle }) 
           path: '/lender/history',
           icon: FaHistory,
           description: 'View all transactions'
+        },
+        {
+          name: 'Receipts',
+          path: '/lender/receipts',
+          icon: FaReceipt,
+          description: 'View payment receipts'
         }
       ]
     },

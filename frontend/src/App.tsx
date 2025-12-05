@@ -85,6 +85,8 @@ const LenderDashboardPage = lazy(() => import('./pages/LenderDashboardPage'));
 const EnhancedLoanRequestsPage = lazy(() => import('./pages/EnhancedLoanRequestsPage'));
 const UnifiedFinancialManagement = lazy(() => import('./pages/dashboard/financial'));
 const UnifiedDocumentManagement = lazy(() => import('./pages/dashboard/documents'));
+const InvoiceViewer = lazy(() => import('./components/CargoOwner/InvoiceViewer'));
+const ReceiptViewer = lazy(() => import('./components/Lender/ReceiptViewer'));
 const DocumentsPage = lazy(() => import('./pages/DocumentsPage'));
 const UnifiedNotificationManagement = lazy(() => import('./pages/dashboard/notifications'));
 const UnifiedReputationManagement = lazy(() => import('./pages/dashboard/reputation'));
@@ -207,6 +209,8 @@ function App() {
               <Route path="payments" element={<UnifiedFinancialManagement />} />
               <Route path="payment" element={<UnifiedFinancialManagement />} />
               <Route path="loan-requests" element={<UnifiedFinancialManagement />} />
+              <Route path="financial-info" element={<UnifiedFinancialManagement />} />
+              <Route path="invoices" element={<InvoiceViewer />} />
               <Route path="documents" element={<UnifiedDocumentManagement />} />
               <Route path="documents/:entityType" element={<UnifiedDocumentManagement />} />
               <Route path="notification-center" element={<UnifiedNotificationManagement />} />
@@ -356,6 +360,9 @@ function App() {
               <Route path="notifications" element={<LenderNotificationsPage />} />
               <Route path="team" element={<LenderTeamManagementPage />} />
               <Route path="support" element={<LenderSupportPage />} />
+              <Route path="financial" element={<UnifiedFinancialManagement />} />
+              <Route path="financial-info" element={<UnifiedFinancialManagement />} />
+              <Route path="receipts" element={<ReceiptViewer />} />
             </Route>
 
             {/* Alias: support /dashboard/admin by redirecting to /admin */}

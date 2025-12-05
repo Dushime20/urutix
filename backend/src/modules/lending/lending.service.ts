@@ -4,7 +4,10 @@ import {
   NotFoundException,
   Logger,
   ConflictException,
+  Inject,
+  forwardRef,
 } from '@nestjs/common';
+import { ModuleRef } from '@nestjs/core';
 import {
   InsufficientCreditException,
   LoanLimitExceededException,
@@ -101,6 +104,9 @@ export class LendingService {
     private emailService: EmailService,
 
     private dataSource: DataSource,
+
+    @Inject(forwardRef(() => ModuleRef))
+    private moduleRef: ModuleRef,
   ) {}
 
   // Credit and Risk Management
@@ -818,6 +824,169 @@ export class LendingService {
       }
 
       return savedDisbursement;
+    });
+  }
+
+  async disburseWithPayment(
+    loanId: string,
+    paymentDto: { paymentMethod: string; phoneNumber?: string; truckOwnerPhoneNumber?: string },
+    lenderUserId: string,
+    tenantId: string,
+  ): Promise<any> {
+    return await this.dataSource.transaction(async (manager) => {
+      const loan = await manager.findOne(LoanRequest, {
+        where: { id: loanId },
+        relations: ['lender'],
+      } as any);
+
+      if (!loan) {
+        throw new NotFoundException('Loan request not found');
+      }
+
+      if (loan.status !== LoanRequestStatus.APPROVED) {
+        throw new BadRequestException(
+          'Loan must be approved before disbursement',
+        );
+      }
+
+      // Get trip from loan
+      const trip = await manager.findOne('Trip', {
+        where: { id: loan.trip_id },
+        relations: ['load', 'load.assignedTruck'],
+      } as any);
+
+      if (!trip) {
+        throw new NotFoundException('Trip not found for this loan');
+      }
+
+      // Get truck owner phone number - try multiple sources
+      let truckOwnerPhone = paymentDto.truckOwnerPhoneNumber;
+      
+      if (!truckOwnerPhone && trip.load?.assignedTruckId) {
+        // Get truck details
+        const truck = await manager.findOne('Truck', {
+          where: { id: trip.load.assignedTruckId },
+          relations: ['owner', 'owner.profile'],
+        } as any);
+        
+        if (truck?.owner) {
+          // Try to get phone from profile preferences
+          truckOwnerPhone = truck.owner.profile?.preferences?.paymentInfo?.phoneNumber ||
+                           truck.owner.phone ||
+                           truck.owner.profile?.phone;
+          
+          // If still not found, fetch full user profile
+          if (!truckOwnerPhone) {
+            const ownerUser = await manager.findOne('User', {
+              where: { id: truck.owner.id },
+              relations: ['profile'],
+            } as any);
+            
+            truckOwnerPhone = ownerUser?.profile?.preferences?.paymentInfo?.phoneNumber ||
+                             ownerUser?.phone;
+          }
+        }
+      }
+
+      if (!truckOwnerPhone && paymentDto.paymentMethod === 'mobile_money') {
+        throw new BadRequestException(
+          'Truck owner phone number is required for mobile money payment. ' +
+          'Please ensure the truck owner has added their payment information in their profile.'
+        );
+      }
+
+      // Create disbursement
+      const disbursement = manager.create(LoanDisbursement, {
+        loan_request_id: loanId,
+        beneficiaries: loan.requested_split,
+        status: DisbursementStatus.INITIATED,
+        attempts: 1,
+      });
+
+      const savedDisbursement = await manager.save(LoanDisbursement, disbursement);
+
+      // Process payment via mobile money if requested
+      if (paymentDto.paymentMethod === 'mobile_money' && truckOwnerPhone) {
+        try {
+          // Use ModuleRef to get PaymentsService dynamically to avoid circular dependency
+          if (this.moduleRef) {
+            const paymentsService = this.moduleRef.get('PaymentsService', { strict: false });
+            
+            if (paymentsService) {
+              const { PaymentMethod, PaymentType } = await import('../../entities/payment.entity');
+              
+              const createPaymentDto = {
+                tripId: trip.id,
+                amount: loan.approved_amount || loan.requested_amount,
+                currency: 'RWF',
+                paymentMethod: PaymentMethod.DIGITAL_WALLET,
+                paymentType: PaymentType.TRIP_PAYMENT,
+                description: `Loan disbursement payment for loan ${loan.id}`,
+                referenceNumber: `LOAN-${loan.id}-DISB-${Date.now()}`,
+                metadata: {
+                  lenderId: loan.lender_id,
+                  lenderName: loan.lender?.name,
+                  financedAmount: loan.approved_amount || loan.requested_amount,
+                  isLenderPayment: true,
+                  phoneNumber: truckOwnerPhone,
+                  loanId: loan.id,
+                  disbursementId: savedDisbursement.id,
+                },
+              };
+
+              const payment = await paymentsService.createPayment(
+                createPaymentDto,
+                tenantId,
+                lenderUserId,
+              );
+
+              // Process the payment
+              const processedPayment = await paymentsService.processPayment(
+                payment.id,
+                tenantId,
+              );
+
+              if (processedPayment.status === 'completed' || processedPayment.status === 'processing') {
+                disbursement.status = DisbursementStatus.DISBURSED;
+                disbursement.disbursement_date = new Date();
+                disbursement.external_txn_ref = processedPayment.transactionId || `DISB-${Date.now()}`;
+                loan.status = LoanRequestStatus.DISBURSED;
+                await manager.save(LoanDisbursement, disbursement);
+                await manager.save(LoanRequest, loan);
+              } else {
+                throw new BadRequestException('Payment processing failed');
+              }
+
+              return {
+                success: true,
+                disbursement: savedDisbursement,
+                payment: {
+                  id: processedPayment.id,
+                  status: processedPayment.status,
+                  transactionId: processedPayment.transactionId,
+                },
+              };
+            } else {
+              throw new BadRequestException('PaymentsService not available');
+            }
+          } else {
+            throw new BadRequestException('ModuleRef not available');
+          }
+        } catch (error) {
+          this.logger.error(`Mobile money payment failed for disbursement: ${error.message}`);
+          throw new BadRequestException(`Payment processing failed: ${error.message}`);
+        }
+      }
+
+      // Fallback to regular disbursement
+      await this.processDisbursementToBeneficiaries(savedDisbursement);
+      loan.status = LoanRequestStatus.DISBURSED;
+      await manager.save(LoanRequest, loan);
+
+      return {
+        success: true,
+        disbursement: savedDisbursement,
+      };
     });
   }
 

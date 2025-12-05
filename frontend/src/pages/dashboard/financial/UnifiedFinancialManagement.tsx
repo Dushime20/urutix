@@ -15,12 +15,14 @@ import EnhancedLoanRequestsPage from "@/pages/EnhancedLoanRequestsPage";
 const FinancialReportsPage = lazy(() => import("@/pages/FinancialReportsPage"));
 // Truck owner specific financial dashboard
 const TruckOwnerFinancialDashboard = lazy(() => import("@/components/FleetDashboard/TruckOwnerFinancialDashboard"));
+const TruckOwnerFinancialManagement = lazy(() => import("@/components/FleetDashboard/TruckOwnerFinancialManagement"));
 const TripCostAnalysis = lazy(() => import("@/components/FleetDashboard/TripCostAnalysis"));
 const CargoOwnerPayment = lazy(() => import("@/components/CargoOwnerPayment/CargoOwnerPayment"));
+const FinancialInformation = lazy(() => import("@/components/CargoOwnerPayment/FinancialInformation"));
 import { cn } from "@/utils/cn";
 import logoUrutiX from "@/assets/logo-urutix.svg";
 
-type TabType = "payments" | "payment" | "loans" | "reports" | "cost-analysis";
+type TabType = "payments" | "payment" | "loans" | "reports" | "cost-analysis" | "financial-info";
 
 const UnifiedFinancialManagement = () => {
   const location = useLocation();
@@ -32,6 +34,7 @@ const UnifiedFinancialManagement = () => {
     if (location.pathname.includes("/payment")) return "payment";
     if (location.pathname.includes("/reports")) return "reports";
     if (location.pathname.includes("/cost-analysis")) return "cost-analysis";
+    if (location.pathname.includes("/financial-info")) return "financial-info";
     return "payments";
   };
 
@@ -65,6 +68,8 @@ const UnifiedFinancialManagement = () => {
       navigate(`${basePath}/reports`, { replace: true });
     } else if (tab === "cost-analysis") {
       navigate(`${basePath}/cost-analysis`, { replace: true });
+    } else if (tab === "financial-info") {
+      navigate(`${basePath}/financial-info`, { replace: true });
     } else {
       // For cargo-owner, use /payments; for others, use /financial
       if (basePath === "/cargo-owner") {
@@ -95,6 +100,13 @@ const UnifiedFinancialManagement = () => {
       icon: Calculator,
       description: "Analyze trip costs and profitability",
     }] : []),
+    // Add Financial Information tab for cargo owners and lenders
+    ...((location.pathname.includes("/cargo-owner") || location.pathname.includes("/lender")) ? [{
+      id: "financial-info" as TabType,
+      label: "Financial Information",
+      icon: CreditCard,
+      description: "Manage your payment information",
+    }] : []),
     {
       id: "loans" as TabType,
       label: "Loan Requests",
@@ -120,18 +132,18 @@ const UnifiedFinancialManagement = () => {
       />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 relative z-10">
         {/* Header */}
-        <div className="mb-4">
-          <h1 className="text-2xl font-bold text-gray-900">
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
             Financial Management
           </h1>
-          <p className="text-sm text-gray-600 mt-1">
+          <p className="text-sm text-gray-600">
             Manage payments, loans, and financial reports
           </p>
         </div>
 
         {/* Navigation Tabs */}
-        <div className="bg-white rounded-lg border border-gray-200 mb-4">
-          <nav className="flex space-x-1 p-1">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200/60 mb-6 overflow-hidden">
+          <nav className="flex space-x-1 p-1 bg-gray-50/50">
             {tabs.map((tab) => {
               const Icon = tab.icon;
               const isActive = activeTab === tab.id;
@@ -140,10 +152,10 @@ const UnifiedFinancialManagement = () => {
                   key={tab.id}
                   onClick={() => handleTabChange(tab.id)}
                   className={cn(
-                    "px-4 py-2.5 rounded-md text-sm font-medium flex items-center gap-2 transition-all",
+                    "px-5 py-3 rounded-lg text-sm font-semibold flex items-center gap-2 transition-all duration-200",
                     isActive
-                      ? "bg-gray-100 text-gray-900 border border-gray-300"
-                      : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                      ? "bg-white text-primary-600 shadow-sm border border-primary-200"
+                      : "text-gray-600 hover:text-gray-900 hover:bg-white/50"
                   )}
                 >
                   <Icon className="w-4 h-4" />
@@ -155,12 +167,12 @@ const UnifiedFinancialManagement = () => {
         </div>
 
         {/* Tab Content */}
-        <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
-          <div className="p-4">
+        <div className="bg-white rounded-xl border border-gray-200/60 shadow-sm">
+          <div className="p-6">
             {activeTab === "payments" && (
               location.pathname.includes("/fleet") ? (
                 <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-600"></div></div>}>
-                  <TruckOwnerFinancialDashboard />
+                  <TruckOwnerFinancialManagement />
                 </Suspense>
               ) : (
                 <Payments />
@@ -177,6 +189,11 @@ const UnifiedFinancialManagement = () => {
               </Suspense>
             )}
             {activeTab === "loans" && <EnhancedLoanRequestsPage />}
+            {activeTab === "financial-info" && (
+              <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-600"></div></div>}>
+                <FinancialInformation />
+              </Suspense>
+            )}
             {activeTab === "reports" && (
               <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-600"></div></div>}>
                 <FinancialReportsPage />

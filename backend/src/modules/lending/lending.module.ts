@@ -27,6 +27,7 @@ import { User } from '../../entities/user.entity';
 import { UserProfile } from '../../entities/user-profile.entity';
 import { PasswordResetToken } from '../../entities/password-reset-token.entity';
 import { EnhancedAuthModule } from '../auth/enhanced-auth.module';
+import { PaymentsModule } from '../payments/payments.module';
 
 @Module({
   imports: [
@@ -47,6 +48,7 @@ import { EnhancedAuthModule } from '../auth/enhanced-auth.module';
       PasswordResetToken,
     ]),
     EnhancedAuthModule,
+    PaymentsModule,
     ScheduleModule.forRoot(),
     EventEmitterModule.forRoot(),
   ],

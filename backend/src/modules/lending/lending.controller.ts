@@ -557,6 +557,54 @@ export class LendingController {
     return await this.lendingService.initiateDisbursement(loanId);
   }
 
+  @Post('lending/loan-requests/:loanId/disburse-with-payment')
+  @ApiOperation({
+    summary: 'Initiate loan disbursement with payment',
+    description: 'Initiate disbursement and process payment via mobile money or bank transfer',
+  })
+  @ApiParam({
+    name: 'loanId',
+    description: 'UUID of the loan request',
+    type: 'string',
+    format: 'uuid',
+  })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        paymentMethod: {
+          type: 'string',
+          enum: ['mobile_money', 'bank_transfer'],
+          default: 'mobile_money',
+        },
+        phoneNumber: {
+          type: 'string',
+          description: 'Lender phone number for mobile money payment',
+        },
+        truckOwnerPhoneNumber: {
+          type: 'string',
+          description: 'Truck owner phone number to receive payment',
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Disbursement and payment initiated successfully',
+  })
+  async disburseWithPayment(
+    @Param('loanId', ParseUUIDPipe) loanId: string,
+    @Body() paymentDto: any,
+    @Request() req,
+  ) {
+    return await this.lendingService.disburseWithPayment(
+      loanId,
+      paymentDto,
+      req.user.userId,
+      req.user.tenantId,
+    );
+  }
+
   // ===== PLATFORM WEBHOOK ENDPOINTS =====
 
   @Post('platform/v1/lender_disbursements')

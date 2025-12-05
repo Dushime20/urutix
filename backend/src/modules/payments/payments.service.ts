@@ -5,6 +5,7 @@ import {
   ForbiddenException,
   ConflictException,
   BadRequestException,
+  Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between } from 'typeorm';
@@ -23,6 +24,8 @@ import { PaymentFilterDto } from './dto/payment-filter.dto';
 
 @Injectable()
 export class PaymentsService {
+  private readonly logger = new Logger(PaymentsService.name);
+
   // Reconciliation: compare internal and provider records
   async reconcilePayments(providerPayments: any[]): Promise<any[]> {
     const internalPayments = await this.paymentRepository.find();
@@ -58,6 +61,7 @@ export class PaymentsService {
     private readonly providerIntegrationService: import('./services/provider-integration.service').ProviderIntegrationService,
     private readonly idempotencyService: import('./services/idempotency.service').IdempotencyService,
     private readonly reconciliationService: import('./services/reconciliation.service').ReconciliationService,
+    private readonly invoiceReceiptService?: import('./services/invoice-receipt.service').InvoiceReceiptService,
   ) {}
 
   async createPayment(
@@ -314,6 +318,17 @@ export class PaymentsService {
           provider: payment.paymentMethod,
           transactionId: processingResult.transactionId,
         });
+
+        // Generate invoice and receipt if payment is from lender
+        try {
+          if (this.invoiceReceiptService) {
+            await this.invoiceReceiptService.handlePaymentCompletion(updated);
+          }
+        } catch (error) {
+          // Log but don't fail payment processing
+          this.logger.warn('Failed to generate invoice/receipt:', error);
+        }
+
         return updated;
       } else {
         // Handle processing failure

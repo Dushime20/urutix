@@ -10,12 +10,14 @@ import {
   AlertCircle,
   Search,
   Filter,
-  ArrowRight
+  ArrowRight,
+  User
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import api from '../../services/api';
 import { loanRequestService } from '../../services/loanRequestService';
 import toast from 'react-hot-toast';
+import FinancialInformation from './FinancialInformation';
 
 interface Load {
   id: string;
@@ -65,6 +67,8 @@ const CargoOwnerPayment: React.FC = () => {
   const [directPaymentMethod, setDirectPaymentMethod] = useState<'momo' | 'card' | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [truckOwnerId, setTruckOwnerId] = useState<string | null>(null);
+  const [truckOwnerName, setTruckOwnerName] = useState<string>('');
 
   // Fetch loads with status LOADED
   useEffect(() => {
@@ -115,6 +119,69 @@ const CargoOwnerPayment: React.FC = () => {
       setLoads([]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Fetch truck owner information when a load is selected
+  const fetchTruckOwnerInfo = async (load: Load) => {
+    try {
+      // Try to get truck owner from trip
+      if (load.assignedTruckId) {
+        // Fetch truck details
+        const truckResponse = await api.get(`/fleet/trucks/${load.assignedTruckId}`);
+        const truck = truckResponse.data?.data || truckResponse.data;
+        
+        if (truck?.ownerId) {
+          setTruckOwnerId(truck.ownerId);
+          
+          // Fetch truck owner profile for name
+          try {
+            const ownerResponse = await api.get(`/users/${truck.ownerId}/profile`);
+            const owner = ownerResponse.data?.data || ownerResponse.data;
+            const ownerName = owner?.profile?.firstName && owner?.profile?.lastName
+              ? `${owner.profile.firstName} ${owner.profile.lastName}`
+              : owner?.profile?.companyName || owner?.email?.split('@')[0] || 'Truck Owner';
+            setTruckOwnerName(ownerName);
+          } catch (err) {
+            setTruckOwnerName('Truck Owner');
+          }
+          return;
+        }
+      }
+      
+      // Try to get from trip if available
+      try {
+        const tripsResponse = await api.get('/trips', {
+          params: { loadId: load.id, limit: 1 }
+        });
+        const trips = tripsResponse.data?.data || tripsResponse.data || [];
+        if (trips.length > 0 && trips[0].truck?.ownerId) {
+          setTruckOwnerId(trips[0].truck.ownerId);
+          
+          // Fetch truck owner profile for name
+          try {
+            const ownerResponse = await api.get(`/users/${trips[0].truck.ownerId}/profile`);
+            const owner = ownerResponse.data?.data || ownerResponse.data;
+            const ownerName = owner?.profile?.firstName && owner?.profile?.lastName
+              ? `${owner.profile.firstName} ${owner.profile.lastName}`
+              : owner?.profile?.companyName || owner?.email?.split('@')[0] || 'Truck Owner';
+            setTruckOwnerName(ownerName);
+          } catch (err) {
+            setTruckOwnerName('Truck Owner');
+          }
+          return;
+        }
+      } catch (err) {
+        console.warn('Could not fetch trip for truck owner:', err);
+      }
+      
+      // Reset if no truck owner found
+      setTruckOwnerId(null);
+      setTruckOwnerName('');
+    } catch (error: any) {
+      console.error('Error fetching truck owner info:', error);
+      setTruckOwnerId(null);
+      setTruckOwnerName('');
     }
   };
 
@@ -171,38 +238,75 @@ const CargoOwnerPayment: React.FC = () => {
     }
   };
 
-  const handleInitiatePayment = (load: Load) => {
+  const handleInitiatePayment = async (load: Load) => {
     setSelectedLoad(load);
     setShowPaymentModal(true);
     setPaymentMode(null);
     setSelectedLender(null);
     setDirectPaymentMethod(null);
+    // Fetch truck owner information
+    await fetchTruckOwnerInfo(load);
   };
 
   const handleDirectPayment = async () => {
     if (!selectedLoad || !directPaymentMethod) return;
 
     try {
-      // TODO: Integrate with actual payment gateway (Momo/Card)
-      toast.success(`Redirecting to ${directPaymentMethod === 'momo' ? 'Mobile Money' : 'Card'} payment...`);
-      
-      // Simulate payment processing
-      // In production, this would redirect to payment gateway
-      console.log('Processing direct payment:', {
-        loadId: selectedLoad.id,
-        amount: selectedLoad.offeredPrice,
-        method: directPaymentMethod,
-      });
+      if (directPaymentMethod === 'momo') {
+        // Get user's phone number from profile
+        const userProfile = await api.get('/auth/profile').then(res => res.data?.data?.user || res.data?.user);
+        const phoneNumber = userProfile?.phone || userProfile?.profile?.preferences?.paymentInfo?.phoneNumber;
+        
+        if (!phoneNumber) {
+          toast.error('Please add your phone number in your payment information first');
+          return;
+        }
 
-      // After successful payment, update load status
-      // await api.patch(`/loads-v2/${selectedLoad.id}`, { status: 'PAID' });
-      
-      setShowPaymentModal(false);
-      setSelectedLoad(null);
-      fetchLoadsReadyForPayment();
+        // Get trip ID from the load
+        const tripResponse = await api.get(`/trips`, {
+          params: { loadId: selectedLoad.id }
+        });
+        const trips = tripResponse.data?.data || tripResponse.data || [];
+        const trip = trips[0];
+        
+        if (!trip || !trip.id) {
+          toast.error('Trip not found for this cargo');
+          return;
+        }
+
+        // Initiate mobile money payment
+        toast.loading('Initiating Mobile Money payment...');
+        const response = await api.post('/payments/mobile-money/initiate', {
+          tripId: trip.id,
+          amount: selectedLoad.offeredPrice,
+          currency: 'RWF',
+          phoneNumber: phoneNumber,
+          description: `Payment for cargo: ${selectedLoad.title || selectedLoad.description}`,
+          paymentType: 'trip_payment',
+        });
+
+        toast.dismiss();
+        if (response.data?.success) {
+          toast.success('Mobile Money payment initiated! Please complete the payment on your phone.');
+          setShowPaymentModal(false);
+          setSelectedLoad(null);
+          fetchLoadsReadyForPayment();
+        } else {
+          toast.error('Failed to initiate payment');
+        }
+      } else {
+        // Card payment - TODO: implement card payment gateway
+        toast.success(`Redirecting to Card payment...`);
+        console.log('Processing card payment:', {
+          loadId: selectedLoad.id,
+          amount: selectedLoad.offeredPrice,
+          method: directPaymentMethod,
+        });
+      }
     } catch (error: any) {
       console.error('Payment error:', error);
-      toast.error('Payment processing failed');
+      toast.dismiss();
+      toast.error(error.response?.data?.message || 'Payment processing failed');
     }
   };
 
@@ -404,6 +508,25 @@ const CargoOwnerPayment: React.FC = () => {
                   >
                     ← Back
                   </button>
+                  
+                  {/* Truck Owner Payment Information */}
+                  {truckOwnerId && (
+                    <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                      <div className="flex items-center gap-2 mb-3">
+                        <User className="w-5 h-5 text-blue-600" />
+                        <h4 className="font-semibold text-gray-900">Truck Owner Payment Information</h4>
+                      </div>
+                      <p className="text-sm text-gray-600 mb-3">
+                        Use the payment information below to make payment to the truck owner:
+                      </p>
+                      <FinancialInformation 
+                        userId={truckOwnerId} 
+                        userName={truckOwnerName}
+                        readOnly={true}
+                        showTitle={false}
+                      />
+                    </div>
+                  )}
                   
                   <h4 className="font-semibold text-gray-900 mb-4">Select Payment Method</h4>
                   

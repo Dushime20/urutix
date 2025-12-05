@@ -32,6 +32,12 @@ export interface PaymentMetadata {
     cargoType?: string;
     weight?: number;
   };
+  phoneNumber?: string;
+  paymentMethod?: string;
+  lenderId?: string;
+  lenderName?: string;
+  financedAmount?: number;
+  isLenderPayment?: boolean;
   customFields?: Record<string, any>;
 }
 

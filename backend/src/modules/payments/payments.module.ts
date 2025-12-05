@@ -3,6 +3,10 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { Payment } from '../../entities/payment.entity';
 import { Trip } from '../../entities/trip.entity';
+import { Receipt } from '../../entities/receipt.entity';
+import { Invoice, InvoiceItem } from '../financial/entities/invoice.entity';
+import { Load } from '../../entities/load.entity';
+import { User } from '../../entities/user.entity';
 
 import { PaymentsService } from './payments.service';
 import { PaymentsController } from './payments.controller';
@@ -15,15 +19,21 @@ import { MicroLendingService } from './services/micro-lending.service';
 import { TenantPaymentConfigService } from './services/tenant-payment-config.service';
 import { TransactionStateService } from './services/transaction-state.service';
 import { ProviderIntegrationService } from './services/provider-integration.service';
+import { MobileMoneyPaymentService } from './services/mobile-money-payment.service';
+import { InvoiceReceiptService } from './services/invoice-receipt.service';
 import { IdempotencyService } from './services/idempotency.service';
 import { ReconciliationService } from './services/reconciliation.service';
 import { PaymentAnalyticsService } from './services/payment-analytics.service';
 import { RateLimitGuard } from './guards/rate-limit.guard';
+import { HttpModule } from '@nestjs/axios';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Payment, Trip]),
+    TypeOrmModule.forFeature([Payment, Trip, Receipt, Invoice, InvoiceItem, Load, User]),
     EventEmitterModule.forRoot(),
+    HttpModule,
+    NotificationsModule,
   ],
   providers: [
     PaymentsService,
@@ -36,6 +46,8 @@ import { RateLimitGuard } from './guards/rate-limit.guard';
     TenantPaymentConfigService,
     TransactionStateService,
     ProviderIntegrationService,
+    MobileMoneyPaymentService,
+    InvoiceReceiptService,
     IdempotencyService,
     ReconciliationService,
     PaymentAnalyticsService,
@@ -53,6 +65,8 @@ import { RateLimitGuard } from './guards/rate-limit.guard';
     TenantPaymentConfigService,
     TransactionStateService,
     ProviderIntegrationService,
+    MobileMoneyPaymentService,
+    InvoiceReceiptService,
     IdempotencyService,
     ReconciliationService,
     PaymentAnalyticsService,

@@ -44,6 +44,7 @@ import {
   SetupDriverPasswordDto,
   SetupDriverPasswordResponseDto,
 } from './dto/setup-driver-password.dto';
+import { UpdateProfileDto } from './dto/update-profile.dto';
 import { EmailService } from './email.service';
 import { EnhancedRateLimitGuard } from './enhanced-rate-limit.guard';
 import { TenantService } from './tenant.service';
@@ -1059,10 +1060,114 @@ export class EnhancedAuthService {
         tenantName: tenantName,
         status: user.status,
         emailVerifiedAt: user.emailVerifiedAt,
+        profile: user.profile,
       };
     } catch (error) {
       this.logger.error(
         `Get profile failed for user ${userId}: ${error.message}`,
+      );
+      throw error;
+    }
+  }
+
+  async updateProfile(userId: string, updateProfileDto: UpdateProfileDto): Promise<any> {
+    try {
+      const user = await this.userRepository.findOne({
+        where: { id: userId },
+        relations: ['profile'],
+      });
+
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
+
+      // Get or create user profile
+      // First check if profile exists in database (relation might not be loaded)
+      let userProfile = await this.userProfileRepository.findOne({
+        where: { userId: user.id },
+      });
+
+      // If profile doesn't exist, create a new one
+      if (!userProfile) {
+        userProfile = this.userProfileRepository.create({
+          userId: user.id,
+          tenantId: user.tenantId,
+          firstName: user.profile?.firstName || '',
+          lastName: user.profile?.lastName || '',
+          preferences: user.profile?.preferences || {},
+        });
+        await this.userProfileRepository.save(userProfile);
+      }
+
+      // Update preferences if provided
+      if (updateProfileDto.preferences) {
+        const currentPreferences = userProfile.preferences || {};
+        userProfile.preferences = {
+          ...currentPreferences,
+          ...updateProfileDto.preferences,
+        };
+      }
+
+      // Handle nested profile.preferences structure (from frontend)
+      if (updateProfileDto.profile?.preferences) {
+        const currentPreferences = userProfile.preferences || {};
+        userProfile.preferences = {
+          ...currentPreferences,
+          ...updateProfileDto.profile.preferences,
+        };
+      }
+
+      // Update other profile fields if provided
+      if (updateProfileDto.profile) {
+        if (updateProfileDto.profile.firstName) {
+          userProfile.firstName = updateProfileDto.profile.firstName;
+        }
+        if (updateProfileDto.profile.lastName) {
+          userProfile.lastName = updateProfileDto.profile.lastName;
+        }
+        if (updateProfileDto.profile.companyName) {
+          userProfile.companyName = updateProfileDto.profile.companyName;
+        }
+      }
+
+      // Save updated profile
+      await this.userProfileRepository.save(userProfile);
+
+      // Fetch tenant name
+      let tenantName = 'Default Tenant';
+      if (user.tenantId) {
+        try {
+          const tenant = await this.tenantRepository.findOne({
+            where: { id: user.tenantId },
+          });
+          if (tenant && tenant.name) {
+            tenantName = tenant.name;
+          }
+        } catch (error) {
+          this.logger.error('Error fetching tenant:', error);
+        }
+      }
+
+      // Log audit event
+      await this.logAuditEvent('PROFILE_UPDATED', userId, {
+        updatedFields: Object.keys(updateProfileDto),
+      });
+
+      return {
+        id: user.id,
+        email: user.email,
+        firstName: userProfile.firstName || '',
+        lastName: userProfile.lastName || '',
+        role: user.role,
+        tenantId: user.tenantId,
+        tenantName: tenantName,
+        status: user.status,
+        emailVerifiedAt: user.emailVerifiedAt,
+        profile: userProfile,
+      };
+    } catch (error) {
+      this.logger.error(
+        `Update profile failed for user ${userId}: ${error.message}`,
       );
       throw error;
     }

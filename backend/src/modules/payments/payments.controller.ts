@@ -11,19 +11,26 @@ import {
   Query,
   ValidationPipe,
   BadRequestException,
+  Logger,
 } from '@nestjs/common';
 import { PaymentsService } from './payments.service';
 import { PaymentAnalyticsService } from './services/payment-analytics.service';
+import { MobileMoneyPaymentService } from './services/mobile-money-payment.service';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Payment, PaymentMethod, PaymentType, PaymentStatus } from '../../entities/payment.entity';
 import { CreatePaymentDto, PaymentMetadata } from './dto/create-payment.dto';
 import { UpdatePaymentStatusDto } from './dto/update-payment-status.dto';
 import { PaymentFilterDto } from './dto/payment-filter.dto';
 import { AdvancePaymentRequestDto } from './dto/advance-payment-request.dto';
+import { InitiateMobileMoneyPaymentDto } from './dto/initiate-mobile-money.dto';
 import {
   ReconciliationRequestDto,
   ReconciliationResponseDto,
 } from './dto/provider-payment.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RateLimitGuard } from './guards/rate-limit.guard';
+import { Public } from '../../common/decorators/public.decorator';
 import {
   ApiTags,
   ApiOperation,
@@ -47,9 +54,14 @@ import {
 @UseGuards(JwtAuthGuard)
 @Controller('payments')
 export class PaymentsController {
+  private readonly logger = new Logger(PaymentsController.name);
+
   constructor(
     private readonly paymentsService: PaymentsService,
     private readonly paymentAnalyticsService: PaymentAnalyticsService,
+    private readonly mobileMoneyPaymentService: MobileMoneyPaymentService,
+    @InjectRepository(Payment)
+    private readonly paymentRepository: Repository<Payment>,
   ) {}
 
   @Post()
@@ -116,6 +128,76 @@ export class PaymentsController {
     } catch (error) {
       throw new BadRequestException(
         `Payment creation failed: ${error.message}`,
+      );
+    }
+  }
+
+  @Post('mobile-money/initiate')
+  @UseGuards(RateLimitGuard)
+  @ApiOperation({
+    summary: 'Initiate Mobile Money payment',
+    description: 'Create and initiate a mobile money payment for a trip',
+  })
+  @ApiBody({
+    type: InitiateMobileMoneyPaymentDto,
+    description: 'Mobile Money payment details',
+  })
+  @ApiCreatedResponse({
+    description: 'Mobile Money payment initiated successfully',
+  })
+  @ApiBadRequestResponse({ description: 'Invalid payment data or missing phone number' })
+  async initiateMobileMoneyPayment(
+    @Body(new ValidationPipe({ transform: true })) dto: InitiateMobileMoneyPaymentDto,
+    @Request() req,
+  ) {
+    try {
+      // Create payment record
+      const createPaymentDto: CreatePaymentDto = {
+        tripId: dto.tripId,
+        amount: dto.amount,
+        currency: dto.currency,
+        paymentMethod: PaymentMethod.DIGITAL_WALLET,
+        paymentType: (dto.paymentType as any) || PaymentType.TRIP_PAYMENT,
+        description: dto.description || 'Mobile Money payment for cargo transportation',
+        referenceNumber: dto.referenceNumber || `MM-${Date.now()}`,
+        metadata: {
+          ...dto.metadata,
+          phoneNumber: dto.phoneNumber,
+          paymentMethod: 'mobile_money',
+        },
+      };
+
+      const payment = await this.paymentsService.createPayment(
+        createPaymentDto,
+        req.user.tenantId,
+        req.user.userId,
+      );
+
+      // Process the payment immediately (initiate mobile money transaction)
+      const processedPayment = await this.paymentsService.processPayment(
+        payment.id,
+        req.user.tenantId,
+      );
+
+      return {
+        success: true,
+        message: 'Mobile Money payment initiated successfully',
+        data: {
+          payment: {
+            id: processedPayment.id,
+            amount: processedPayment.amount,
+            currency: processedPayment.currency,
+            status: processedPayment.status,
+            paymentMethod: processedPayment.paymentMethod,
+            transactionId: processedPayment.transactionId,
+            referenceNumber: processedPayment.referenceNumber,
+          },
+          transactionStatus: processedPayment.status === PaymentStatus.PROCESSING ? 'pending' : processedPayment.status,
+        },
+      };
+    } catch (error) {
+      throw new BadRequestException(
+        `Failed to initiate Mobile Money payment: ${error.message}`,
       );
     }
   }
@@ -1108,6 +1190,127 @@ export class PaymentsController {
     } catch (error) {
       throw new BadRequestException(
         `Payment forecast retrieval failed: ${error.message}`,
+      );
+    }
+  }
+
+  @Post('webhooks/mobile-money')
+  @Public() // Webhooks from external services don't have JWT tokens
+  @ApiOperation({
+    summary: 'Mobile Money Payment webhook callback',
+    description: 'Receive payment callbacks from Mobile Money Payment API',
+  })
+  @ApiBody({
+    description: 'Mobile Money callback payload',
+    schema: {
+      type: 'object',
+      properties: {
+        referenceId: { type: 'string' },
+        status: { type: 'string', enum: ['success', 'failed', 'pending'] },
+        statusCode: { type: 'number' },
+        date: { type: 'string' },
+        amount: { type: 'number' },
+        message: { type: 'string' },
+      },
+    },
+  })
+  @ApiOkResponse({ description: 'Webhook processed successfully' })
+  async handleMobileMoneyWebhook(
+    @Body() payload: any,
+  ) {
+    try {
+      // Process the callback
+      const callbackData = await this.mobileMoneyPaymentService.processCallback(payload);
+
+      // Find payment by referenceId - search in all tenants (webhook doesn't have tenant context)
+      // We'll search by referenceId in metadata or transactionId
+      const allPayments = await this.paymentRepository.find({
+        where: [
+          { transactionId: callbackData.referenceId },
+          { referenceNumber: callbackData.referenceId },
+        ],
+        relations: ['trip'],
+      });
+
+      // Also search in metadata
+      const paymentsWithMetadata = await this.paymentRepository
+        .createQueryBuilder('payment')
+        .where("payment.metadata->>'referenceId' = :referenceId", {
+          referenceId: callbackData.referenceId,
+        })
+        .getMany();
+
+      const payment = allPayments[0] || paymentsWithMetadata[0];
+
+      if (!payment) {
+        this.logger.warn(
+          `Payment not found for Mobile Money reference: ${callbackData.referenceId}`,
+        );
+        return { message: 'Payment not found', received: true };
+      }
+
+      // Update payment status based on callback
+      if (callbackData.status === 'success') {
+        await this.paymentsService.updatePaymentStatus(
+          payment.id,
+          {
+            status: 'completed' as any,
+            transactionId: callbackData.referenceId,
+            gatewayResponse: callbackData.message,
+            processedAt: new Date(),
+          },
+          payment.tenantId,
+        );
+      } else if (callbackData.status === 'failed') {
+        await this.paymentsService.updatePaymentStatus(
+          payment.id,
+          {
+            status: 'failed' as any,
+            failureReason: callbackData.message,
+            processedAt: new Date(),
+          },
+          payment.tenantId,
+        );
+      }
+
+      return {
+        message: 'Webhook processed successfully',
+        referenceId: callbackData.referenceId,
+        status: callbackData.status,
+      };
+    } catch (error) {
+      this.logger.error('Failed to process Mobile Money webhook:', error);
+      return {
+        message: 'Webhook processing failed',
+        error: error.message,
+      };
+    }
+  }
+
+  @Get('transactions/:referenceId/status')
+  @ApiOperation({
+    summary: 'Check Mobile Money transaction status',
+    description: 'Check the status of a Mobile Money payment transaction by reference ID',
+  })
+  @ApiParam({
+    name: 'referenceId',
+    description: 'Transaction reference ID',
+    type: 'string',
+  })
+  @ApiOkResponse({ description: 'Transaction status retrieved successfully' })
+  async checkMobileMoneyTransactionStatus(
+    @Param('referenceId') referenceId: string,
+  ) {
+    try {
+      const status = await this.mobileMoneyPaymentService.checkTransactionStatus(referenceId);
+
+      return {
+        message: 'Transaction status retrieved successfully',
+        transaction: status.transaction || status.savedTransaction,
+      };
+    } catch (error) {
+      throw new BadRequestException(
+        `Failed to check transaction status: ${error.message}`,
       );
     }
   }

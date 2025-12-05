@@ -24,7 +24,9 @@ import {
   FaEnvelope,
   FaBuilding,
   FaStar,
-  FaBars
+  FaBars,
+  FaCreditCard,
+  FaRedo
 } from 'react-icons/fa';
 
 interface Lender {
@@ -360,6 +362,14 @@ const EnhancedLoanRequestsPage: React.FC = () => {
   const [selectedLoanForPayment, setSelectedLoanForPayment] = useState<LoanRequest | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<'momo' | 'card' | null>(null);
   const [processingPayment, setProcessingPayment] = useState(false);
+  const [truckOwnerPhone, setTruckOwnerPhone] = useState<string | null>(null);
+  const [loadingTruckOwnerInfo, setLoadingTruckOwnerInfo] = useState(false);
+  const [showPaymentDetailsModal, setShowPaymentDetailsModal] = useState(false);
+  const [selectedLoanForPaymentDetails, setSelectedLoanForPaymentDetails] = useState<LoanRequest | null>(null);
+  const [loanPayments, setLoanPayments] = useState<any[]>([]);
+  const [loadingPayments, setLoadingPayments] = useState(false);
+  const [editingPaymentId, setEditingPaymentId] = useState<string | null>(null);
+  const [newPaymentStatus, setNewPaymentStatus] = useState<string>('');
   const [requests, setRequests] = useState<LoanRequest[]>([]);
   const [analytics, setAnalytics] = useState<LoanAnalytics | null>(null);
   const [fetching, setFetching] = useState(true);
@@ -585,6 +595,9 @@ const EnhancedLoanRequestsPage: React.FC = () => {
         // Show payment modal
         setSelectedLoanForPayment({ ...approvedLoan, status: 'approved' });
         setShowPaymentModal(true);
+        
+        // Fetch truck owner's phone number automatically
+        fetchTruckOwnerPhoneNumber(approvedLoan);
       }
     } catch (err: any) {
       console.error('Error approving loan:', err);
@@ -609,17 +622,178 @@ const EnhancedLoanRequestsPage: React.FC = () => {
     }
   };
 
+  // Function to fetch truck owner's phone number from payment info
+  const fetchTruckOwnerPhoneNumber = async (loan: LoanRequest) => {
+    if (!loan.trip_id && !loan.cargo_id) return;
+    
+    try {
+      setLoadingTruckOwnerInfo(true);
+      
+      // Get trip details to find the truck owner
+      let tripId = loan.trip_id;
+      if (!tripId && loan.cargo_id) {
+        // Try to get trip from cargo
+        const cargoResponse = await api.get(`/loads-v2/${loan.cargo_id}`);
+        const trip = cargoResponse.data?.trip || cargoResponse.data?.trips?.[0];
+        tripId = trip?.id;
+      }
+      
+      if (tripId) {
+        // Get trip with truck and owner details
+        const tripResponse = await api.get(`/trips/${tripId}`);
+        const trip = tripResponse.data?.data || tripResponse.data;
+        
+        // Get truck owner ID
+        const truckOwnerId = trip?.assignedTruck?.ownerId || trip?.assignedTruck?.owner?.id;
+        
+        if (truckOwnerId) {
+          // Fetch truck owner's profile to get payment info
+          const ownerProfileResponse = await api.get('/users/profile-by-id', {
+            params: { userId: truckOwnerId }
+          });
+          
+          const ownerProfile = ownerProfileResponse.data?.data?.profile || 
+                             ownerProfileResponse.data?.profile ||
+                             ownerProfileResponse.data?.data;
+          
+          // Extract phone number from payment info
+          const phoneNumber = ownerProfile?.preferences?.paymentInfo?.phoneNumber ||
+                            ownerProfile?.phone ||
+                            trip?.assignedTruck?.owner?.phone;
+          
+          if (phoneNumber) {
+            setTruckOwnerPhone(phoneNumber);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching truck owner phone number:', error);
+      // Don't show error to user, just log it
+    } finally {
+      setLoadingTruckOwnerInfo(false);
+    }
+  };
+
+  // Function to fetch payments for a loan
+  const fetchLoanPayments = async (loanId: string) => {
+    try {
+      setLoadingPayments(true);
+      
+      // Get trip ID from loan
+      const loan = requests.find(r => r.id === loanId);
+      if (!loan?.trip_id) {
+        // Try to get trip from cargo
+        if (loan?.cargo_id) {
+          const cargoResponse = await api.get(`/loads-v2/${loan.cargo_id}`);
+          const trip = cargoResponse.data?.trip || cargoResponse.data?.trips?.[0];
+          if (trip?.id) {
+            const paymentsResponse = await api.get('/payments', {
+              params: { tripId: trip.id }
+            });
+            setLoanPayments(paymentsResponse.data?.payments || paymentsResponse.data?.data?.payments || []);
+            setLoadingPayments(false);
+            return;
+          }
+        }
+        setLoanPayments([]);
+        setLoadingPayments(false);
+        return;
+      }
+      
+      // Fetch payments for the trip
+      const paymentsResponse = await api.get('/payments', {
+        params: { tripId: loan.trip_id }
+      });
+      
+      setLoanPayments(paymentsResponse.data?.payments || paymentsResponse.data?.data?.payments || []);
+    } catch (error) {
+      console.error('Error fetching loan payments:', error);
+      setLoanPayments([]);
+    } finally {
+      setLoadingPayments(false);
+    }
+  };
+
+  // Function to update payment status
+  const handleUpdatePaymentStatus = async (paymentId: string, newStatus: string) => {
+    try {
+      const response = await api.patch(`/payments/${paymentId}/status`, {
+        status: newStatus,
+      });
+      
+      if (response.data) {
+        // Refresh payments
+        if (selectedLoanForPaymentDetails) {
+          await fetchLoanPayments(selectedLoanForPaymentDetails.id);
+        }
+        
+        // If status changed to pending, show retry payment option
+        if (newStatus === 'pending' && selectedLoanForPaymentDetails) {
+          // Optionally auto-open payment modal
+          setShowPaymentDetailsModal(false);
+          setSelectedLoanForPayment(selectedLoanForPaymentDetails);
+          setShowPaymentModal(true);
+          fetchTruckOwnerPhoneNumber(selectedLoanForPaymentDetails);
+        }
+        
+        setEditingPaymentId(null);
+        setNewPaymentStatus('');
+        alert('Payment status updated successfully');
+      }
+    } catch (error: any) {
+      console.error('Error updating payment status:', error);
+      alert(error.response?.data?.message || 'Failed to update payment status');
+    }
+  };
+
   // Function to handle payment processing
   const handleProcessPayment = async () => {
     if (!selectedLoanForPayment || !paymentMethod) return;
 
-    // Payment integration not yet implemented
-    alert(`Payment integration is not yet available. Payment via ${paymentMethod === 'momo' ? 'Mobile Money' : 'Card'} will be available soon.`);
-    
-    // Close modal and reset
-    setShowPaymentModal(false);
-    setSelectedLoanForPayment(null);
-    setPaymentMethod(null);
+    if (paymentMethod === 'momo') {
+      try {
+        setProcessingPayment(true);
+        
+        // Use truck owner's phone number (should be pre-filled)
+        if (!truckOwnerPhone) {
+          alert('Truck owner phone number not found. Please ensure the truck owner has added their payment information.');
+          setProcessingPayment(false);
+          return;
+        }
+
+        // Call the disburse-with-payment endpoint
+        const response = await api.post(
+          `/lending/loan-requests/${selectedLoanForPayment.id}/disburse-with-payment`,
+          {
+            paymentMethod: 'mobile_money',
+            truckOwnerPhoneNumber: truckOwnerPhone,
+          }
+        );
+
+        if (response.data?.success) {
+          alert('Mobile Money payment initiated successfully! The truck owner will receive the payment on their phone.');
+          
+          // Refresh loan requests
+          fetchLoanRequests();
+          
+          // Close modal and reset
+          setShowPaymentModal(false);
+          setSelectedLoanForPayment(null);
+          setPaymentMethod(null);
+          setTruckOwnerPhone(null);
+        } else {
+          alert('Failed to initiate payment. Please try again.');
+        }
+      } catch (error: any) {
+        console.error('Payment error:', error);
+        alert(error.response?.data?.message || 'Failed to process payment. Please try again.');
+      } finally {
+        setProcessingPayment(false);
+      }
+    } else {
+      // Card payment - TODO: implement card payment gateway
+      alert(`Card payment integration is not yet available. Please use Mobile Money for now.`);
+    }
   };
 
   // Loading state
@@ -1051,9 +1225,16 @@ const EnhancedLoanRequestsPage: React.FC = () => {
                           <td className="pr-4 pl-2 py-3 text-right relative">
                             <div className="flex items-center gap-2 justify-end">
                               <button
-                                onClick={() => {
-                                  // View details action
-                                  setOpenActionRow(null);
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  try {
+                                    // View details action - could show a modal with loan details
+                                    console.log('View details for loan:', request.id);
+                                    alert(`Loan Details:\n\nBorrower: ${request.borrower_name}\nAmount: RWF ${request.requested_amount.toLocaleString()}\nStatus: ${request.status}\nCreated: ${new Date(request.created_at).toLocaleDateString()}`);
+                                  } catch (error) {
+                                    console.error('Error viewing details:', error);
+                                  }
                                 }}
                                 className="p-1.5 rounded-lg hover:bg-blue-100 text-blue-600 hover:text-blue-700 transition"
                                 title="View Details"
@@ -1063,12 +1244,19 @@ const EnhancedLoanRequestsPage: React.FC = () => {
                               {request.status === 'pending' && (
                                 <>
                                   <button
-                                    onClick={() => {
-                                      handleApproveLoan(
-                                        request.id,
-                                        request.requested_amount,
-                                        request.interest_rate || 10
-                                      );
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      try {
+                                        handleApproveLoan(
+                                          request.id,
+                                          request.requested_amount,
+                                          request.interest_rate || 10
+                                        );
+                                      } catch (error) {
+                                        console.error('Error approving loan:', error);
+                                        alert('Error approving loan. Please try again.');
+                                      }
                                     }}
                                     className="p-1.5 rounded-lg hover:bg-green-100 text-green-600 hover:text-green-700 transition"
                                     title="Accept"
@@ -1076,10 +1264,17 @@ const EnhancedLoanRequestsPage: React.FC = () => {
                                     <FaCheck className="w-4 h-4" />
                                   </button>
                                   <button
-                                    onClick={() => {
-                                      const reason = prompt('Enter rejection reason:') || 'Application did not meet criteria';
-                                      if (reason) {
-                                        handleRejectLoan(request.id, reason);
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      try {
+                                        const reason = prompt('Enter rejection reason:') || 'Application did not meet criteria';
+                                        if (reason) {
+                                          handleRejectLoan(request.id, reason);
+                                        }
+                                      } catch (error) {
+                                        console.error('Error rejecting loan:', error);
+                                        alert('Error rejecting loan. Please try again.');
                                       }
                                     }}
                                     className="p-1.5 rounded-lg hover:bg-red-100 text-red-600 hover:text-red-700 transition"
@@ -1088,6 +1283,26 @@ const EnhancedLoanRequestsPage: React.FC = () => {
                                     <FaTimes className="w-4 h-4" />
                                   </button>
                                 </>
+                              )}
+                              {(request.status === 'approved' || request.status === 'disbursed') && (
+                                <button
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    try {
+                                      setSelectedLoanForPaymentDetails(request);
+                                      fetchLoanPayments(request.id);
+                                      setShowPaymentDetailsModal(true);
+                                    } catch (error) {
+                                      console.error('Error opening payment details:', error);
+                                      alert('Error opening payment details. Please try again.');
+                                    }
+                                  }}
+                                  className="p-1.5 rounded-lg hover:bg-blue-100 text-blue-600 hover:text-blue-700 transition"
+                                  title="View/Edit Payment"
+                                >
+                                  <FaCreditCard className="w-4 h-4" />
+                                </button>
                               )}
                             </div>
                           </td>
@@ -1139,6 +1354,31 @@ const EnhancedLoanRequestsPage: React.FC = () => {
                   </p>
                 </div>
                 
+                {loadingTruckOwnerInfo && (
+                  <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                    <p className="text-sm text-blue-700 flex items-center gap-2">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                      Fetching truck owner payment information...
+                    </p>
+                  </div>
+                )}
+                
+                {truckOwnerPhone && (
+                  <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+                    <p className="text-sm text-green-700 font-medium mb-1">Truck Owner Payment Info</p>
+                    <p className="text-xs text-green-600">Phone: {truckOwnerPhone}</p>
+                    <p className="text-xs text-green-600 mt-1">Payment will be sent to this number automatically</p>
+                  </div>
+                )}
+                
+                {!truckOwnerPhone && !loadingTruckOwnerInfo && (
+                  <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <p className="text-sm text-yellow-700">
+                      ⚠️ Truck owner phone number not found. Please ensure the truck owner has added their payment information.
+                    </p>
+                  </div>
+                )}
+
                 <p className="text-sm text-gray-700 mb-4">
                   Select your preferred payment method:
                 </p>
@@ -1161,7 +1401,11 @@ const EnhancedLoanRequestsPage: React.FC = () => {
                     </div>
                     <div className="flex-1 text-left">
                       <h5 className="font-semibold text-gray-900">Mobile Money (Momo)</h5>
-                      <p className="text-xs text-gray-500">Pay via MTN Mobile Money or Airtel Money</p>
+                      <p className="text-xs text-gray-500">
+                        {truckOwnerPhone 
+                          ? `Payment will be sent to: ${truckOwnerPhone}`
+                          : 'Pay via MTN Mobile Money or Airtel Money'}
+                      </p>
                     </div>
                     {paymentMethod === 'momo' && (
                       <FaCheck className="text-blue-600 w-5 h-5" />
@@ -1207,14 +1451,14 @@ const EnhancedLoanRequestsPage: React.FC = () => {
                 </button>
                 <button
                   onClick={handleProcessPayment}
-                  disabled={!paymentMethod}
+                  disabled={!paymentMethod || processingPayment || (paymentMethod === 'momo' && !truckOwnerPhone)}
                   className={`flex-1 px-4 py-2.5 rounded-lg text-white font-medium transition ${
-                    !paymentMethod
+                    !paymentMethod || processingPayment || (paymentMethod === 'momo' && !truckOwnerPhone)
                       ? 'bg-gray-400 cursor-not-allowed'
                       : 'bg-blue-600 hover:bg-blue-700'
                   }`}
                 >
-                  Proceed to Payment
+                  {processingPayment ? 'Processing...' : 'Proceed to Payment'}
                 </button>
               </div>
             </div>
