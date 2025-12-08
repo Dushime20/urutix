@@ -7,6 +7,7 @@ import { Receipt } from '../../entities/receipt.entity';
 import { Invoice, InvoiceItem } from '../financial/entities/invoice.entity';
 import { Load } from '../../entities/load.entity';
 import { User } from '../../entities/user.entity';
+import { Bid } from '../../entities/bid.entity';
 
 import { PaymentsService } from './payments.service';
 import { PaymentsController } from './payments.controller';
@@ -24,13 +25,14 @@ import { InvoiceReceiptService } from './services/invoice-receipt.service';
 import { IdempotencyService } from './services/idempotency.service';
 import { ReconciliationService } from './services/reconciliation.service';
 import { PaymentAnalyticsService } from './services/payment-analytics.service';
+import { PaymentCalculationService } from './services/payment-calculation.service';
 import { RateLimitGuard } from './guards/rate-limit.guard';
 import { HttpModule } from '@nestjs/axios';
 import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Payment, Trip, Receipt, Invoice, InvoiceItem, Load, User]),
+    TypeOrmModule.forFeature([Payment, Trip, Receipt, Invoice, InvoiceItem, Load, User, Bid]),
     EventEmitterModule.forRoot(),
     HttpModule,
     NotificationsModule,
@@ -51,6 +53,7 @@ import { NotificationsModule } from '../notifications/notifications.module';
     IdempotencyService,
     ReconciliationService,
     PaymentAnalyticsService,
+    PaymentCalculationService,
     RateLimitGuard,
   ],
   controllers: [PaymentsController],
@@ -70,6 +73,7 @@ import { NotificationsModule } from '../notifications/notifications.module';
     IdempotencyService,
     ReconciliationService,
     PaymentAnalyticsService,
+    PaymentCalculationService,
     RateLimitGuard,
   ],
 })

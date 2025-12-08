@@ -17,6 +17,7 @@ import { User, UserRole } from '../../entities/user.entity';
 import { UserProfile } from '../../entities/user-profile.entity';
 import { Truck } from '../../entities/truck.entity';
 import { Driver } from '../../entities/driver.entity';
+import { Trip, TripStatus } from '../../entities/trip.entity';
 import { AuctionWatch } from '../../entities/auction-watch.entity';
 import { AuctionView } from '../../entities/auction-view.entity';
 
@@ -27,6 +28,8 @@ export interface CreateBidDto {
   proposedPickupDate?: Date;
   proposedDeliveryDate?: Date;
   bidNotes?: string;
+  advancePaymentPercentage?: number; // Percentage of transportation fee to be paid before trip starts (0-100)
+  requireAdvancePayment?: boolean; // Whether advance payment is required before trip starts. If false, trip can start without advance payment.
   bidDetails?: {
     truckSpecifications?: {
       truckId?: string;
@@ -105,6 +108,8 @@ export class BiddingService {
     private readonly truckRepository: Repository<Truck>,
     @InjectRepository(Driver)
     private readonly driverRepository: Repository<Driver>,
+    @InjectRepository(Trip)
+    private readonly tripRepository: Repository<Trip>,
     @InjectRepository(AuctionWatch)
     private readonly watchRepository: Repository<AuctionWatch>,
     @InjectRepository(AuctionView)
@@ -207,12 +212,34 @@ export class BiddingService {
       }
     }
 
+    // Validate advance payment percentage if provided
+    if (createBidDto.advancePaymentPercentage !== undefined && createBidDto.advancePaymentPercentage !== null) {
+      if (createBidDto.advancePaymentPercentage < 0 || createBidDto.advancePaymentPercentage > 100) {
+        throw new BadRequestException(
+          'Advance payment percentage must be between 0 and 100',
+        );
+      }
+    }
+
+    // If requireAdvancePayment is false, advancePaymentPercentage should be 0 or null
+    if (createBidDto.requireAdvancePayment === false && 
+        createBidDto.advancePaymentPercentage !== undefined && 
+        createBidDto.advancePaymentPercentage !== null &&
+        createBidDto.advancePaymentPercentage > 0) {
+      throw new BadRequestException(
+        'Cannot specify advance payment percentage when advance payment is not required',
+      );
+    }
+
     // Create bid
     const bid = this.bidRepository.create({
       ...createBidDto,
       truckOwnerId,
       status: BidStatus.PENDING,
       bidCurrency: createBidDto.bidCurrency || 'USD',
+      requireAdvancePayment: createBidDto.requireAdvancePayment !== undefined 
+        ? createBidDto.requireAdvancePayment 
+        : true, // Default to true if not specified
     });
 
     // Calculate success probability and risk assessment
@@ -417,6 +444,73 @@ export class BiddingService {
       .andWhere('status = :status', { status: BidStatus.PENDING })
       .andWhere('id != :bidId', { bidId })
       .execute();
+
+    // Automatically create a trip when bid is accepted
+    // Check if trip already exists for this load
+    const existingTrip = await this.tripRepository.findOne({
+      where: { loadId: bid.loadId, tenantId },
+    });
+
+    if (!existingTrip) {
+      try {
+        // Get driver ID - use from bid details or assign a default driver from the truck
+        let finalDriverId = driverId;
+        if (!finalDriverId) {
+          // Try to get the first assigned driver from the truck
+          if (truck.assignedDrivers && Array.isArray(truck.assignedDrivers) && truck.assignedDrivers.length > 0) {
+            finalDriverId = truck.assignedDrivers[0].driverId;
+          } else {
+            // If no driver is specified, we'll need to handle this case
+            // For now, we'll create the trip without a driver and it can be assigned later
+            // Or we could throw an error requiring a driver
+            throw new BadRequestException(
+              'Driver must be specified in bid details or assigned to the truck before accepting the bid',
+            );
+          }
+        }
+
+        // Use load pickup/delivery dates for planned start/end times
+        // If not available, use bid proposed dates or default to reasonable times
+        const plannedStartTime = bid.load.pickupDate || 
+          bid.proposedPickupDate || 
+          new Date(Date.now() + 24 * 60 * 60 * 1000); // Default to tomorrow
+        
+        const plannedEndTime = bid.load.deliveryDate || 
+          bid.proposedDeliveryDate || 
+          new Date(plannedStartTime.getTime() + 7 * 24 * 60 * 60 * 1000); // Default to 7 days after start
+
+        // Use bid amount as agreed price, fallback to load offered price
+        const agreedPrice = bid.bidAmount || bid.load.offeredPrice || bid.load.loadValue;
+
+        // Generate unique trip number
+        const tripNumber = `TRIP-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
+
+        // Create the trip
+        const newTrip = this.tripRepository.create({
+          tenantId,
+          loadId: bid.loadId,
+          truckId: truckId,
+          driverId: finalDriverId,
+          tripNumber,
+          status: TripStatus.PLANNED,
+          agreedPrice,
+          currencyCode: bid.bidCurrency || bid.load.currencyCode || 'RWF',
+          plannedStartTime,
+          plannedEndTime,
+        });
+
+        const savedTrip = await this.tripRepository.save(newTrip);
+        console.log(`Trip ${savedTrip.id} created automatically for accepted bid ${bidId}`);
+      } catch (tripError: any) {
+        // Log error but don't fail bid acceptance
+        // Trip creation is important but shouldn't block the bid acceptance
+        console.error(`Failed to create trip for accepted bid ${bidId}:`, tripError);
+        // You might want to throw here if trip creation is critical
+        // throw new BadRequestException(`Failed to create trip: ${tripError.message}`);
+      }
+    } else {
+      console.log(`Trip ${existingTrip.id} already exists for load ${bid.loadId}`);
+    }
 
     return acceptedBid;
   }

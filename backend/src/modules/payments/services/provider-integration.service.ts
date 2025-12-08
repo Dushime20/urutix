@@ -94,16 +94,18 @@ export class ProviderIntegrationService {
   ): Promise<PaymentProcessingResult> {
     try {
       const phoneNumber = meta.phoneNumber || meta.phone || meta.payerPhone;
-      const referenceId = meta.referenceId || meta.externalId || `PAY-${Date.now()}`;
-      const senderMessage = meta.senderMessage || meta.message || 'Payment for cargo transportation';
-      const callbackUrl = meta.callbackUrl;
+      // Use referenceNumber from meta if available, otherwise generate one
+      const referenceId = meta.referenceNumber || meta.referenceId || meta.externalId || `MM-${Date.now()}`;
+      const senderMessage = meta.description || meta.senderMessage || meta.message || 'Payment for cargo transportation';
+      // Get callback URL from config or meta
+      const callbackUrl = meta.callbackUrl || this.configService.get<string>('MOBILE_MONEY_CALLBACK_URL');
       const transfers = meta.transfers; // Optional: for split payments
 
       if (!phoneNumber) {
         throw new BadRequestException('Phone number is required for Mobile Money payment');
       }
 
-      this.logger.log(`Processing Mobile Money payment: ${amount} ${currency} to ${phoneNumber}`);
+      this.logger.log(`Processing Mobile Money payment: ${amount} ${currency} to ${phoneNumber}, Reference: ${referenceId}`);
 
       const mobileMoneyResponse = await this.mobileMoneyPaymentService.createTransaction(
         amount,
@@ -116,10 +118,14 @@ export class ProviderIntegrationService {
 
       const transaction = mobileMoneyResponse.savedTransaction || mobileMoneyResponse.transaction;
       const status = transaction?.status || 'pending';
+      // Use the externalId from the response, or fall back to the referenceId we sent
+      const transactionId = transaction?.externalId || transaction?.id || referenceId;
+
+      this.logger.log(`Mobile Money transaction created: ${transactionId}, Status: ${status}`);
 
       return {
         success: status === 'success' || status === 'pending', // pending means initiated successfully
-        transactionId: transaction?.externalId || transaction?.id || referenceId,
+        transactionId: transactionId,
         response: JSON.stringify(mobileMoneyResponse),
         processingFee: 0, // Fees are typically deducted from the amount
         error: status === 'failed' ? 'Payment failed' : undefined,

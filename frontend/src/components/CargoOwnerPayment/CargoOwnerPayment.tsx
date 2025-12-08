@@ -65,6 +65,8 @@ const CargoOwnerPayment: React.FC = () => {
   const [lenders, setLenders] = useState<Lender[]>([]);
   const [selectedLender, setSelectedLender] = useState<string | null>(null);
   const [directPaymentMethod, setDirectPaymentMethod] = useState<'momo' | 'card' | null>(null);
+  const [receiverPhoneNumber, setReceiverPhoneNumber] = useState<string>('');
+  const [paymentAmount, setPaymentAmount] = useState<string>('');
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [truckOwnerId, setTruckOwnerId] = useState<string | null>(null);
@@ -134,7 +136,7 @@ const CargoOwnerPayment: React.FC = () => {
         if (truck?.ownerId) {
           setTruckOwnerId(truck.ownerId);
           
-          // Fetch truck owner profile for name
+          // Fetch truck owner profile for name and phone number
           try {
             const ownerResponse = await api.get(`/users/${truck.ownerId}/profile`);
             const owner = ownerResponse.data?.data || ownerResponse.data;
@@ -142,8 +144,27 @@ const CargoOwnerPayment: React.FC = () => {
               ? `${owner.profile.firstName} ${owner.profile.lastName}`
               : owner?.profile?.companyName || owner?.email?.split('@')[0] || 'Truck Owner';
             setTruckOwnerName(ownerName);
+            
+            // Get truck owner's phone number for receiver
+            const ownerPhone = owner?.phone || owner?.profile?.preferences?.paymentInfo?.phoneNumber;
+            if (ownerPhone) {
+              setReceiverPhoneNumber(ownerPhone);
+            }
           } catch (err) {
             setTruckOwnerName('Truck Owner');
+            // Try to get phone from auth profile endpoint
+            try {
+              const profileResponse = await api.get('/auth/profile', {
+                params: { userId: truck.ownerId }
+              });
+              const profile = profileResponse.data?.data?.user || profileResponse.data?.user;
+              const ownerPhone = profile?.phone || profile?.profile?.preferences?.paymentInfo?.phoneNumber;
+              if (ownerPhone) {
+                setReceiverPhoneNumber(ownerPhone);
+              }
+            } catch (profileErr) {
+              console.log('Could not fetch truck owner phone number');
+            }
           }
           return;
         }
@@ -158,7 +179,7 @@ const CargoOwnerPayment: React.FC = () => {
         if (trips.length > 0 && trips[0].truck?.ownerId) {
           setTruckOwnerId(trips[0].truck.ownerId);
           
-          // Fetch truck owner profile for name
+          // Fetch truck owner profile for name and phone number
           try {
             const ownerResponse = await api.get(`/users/${trips[0].truck.ownerId}/profile`);
             const owner = ownerResponse.data?.data || ownerResponse.data;
@@ -166,8 +187,27 @@ const CargoOwnerPayment: React.FC = () => {
               ? `${owner.profile.firstName} ${owner.profile.lastName}`
               : owner?.profile?.companyName || owner?.email?.split('@')[0] || 'Truck Owner';
             setTruckOwnerName(ownerName);
+            
+            // Get truck owner's phone number for receiver
+            const ownerPhone = owner?.phone || owner?.profile?.preferences?.paymentInfo?.phoneNumber;
+            if (ownerPhone) {
+              setReceiverPhoneNumber(ownerPhone);
+            }
           } catch (err) {
             setTruckOwnerName('Truck Owner');
+            // Try to get phone from auth profile endpoint
+            try {
+              const profileResponse = await api.get('/auth/profile', {
+                params: { userId: trips[0].truck.ownerId }
+              });
+              const profile = profileResponse.data?.data?.user || profileResponse.data?.user;
+              const ownerPhone = profile?.phone || profile?.profile?.preferences?.paymentInfo?.phoneNumber;
+              if (ownerPhone) {
+                setReceiverPhoneNumber(ownerPhone);
+              }
+            } catch (profileErr) {
+              console.log('Could not fetch truck owner phone number');
+            }
           }
           return;
         }
@@ -244,6 +284,8 @@ const CargoOwnerPayment: React.FC = () => {
     setPaymentMode(null);
     setSelectedLender(null);
     setDirectPaymentMethod(null);
+    // Initialize payment amount with load's offered price
+    setPaymentAmount(load.offeredPrice ? load.offeredPrice.toString() : '');
     // Fetch truck owner information
     await fetchTruckOwnerInfo(load);
   };
@@ -253,43 +295,73 @@ const CargoOwnerPayment: React.FC = () => {
 
     try {
       if (directPaymentMethod === 'momo') {
-        // Get user's phone number from profile
-        const userProfile = await api.get('/auth/profile').then(res => res.data?.data?.user || res.data?.user);
-        const phoneNumber = userProfile?.phone || userProfile?.profile?.preferences?.paymentInfo?.phoneNumber;
-        
-        if (!phoneNumber) {
-          toast.error('Please add your phone number in your payment information first');
+        // Validate payment amount
+        const amount = paymentAmount ? parseFloat(paymentAmount) : (selectedLoad?.offeredPrice || 0);
+        if (!amount || amount <= 0) {
+          toast.error('Please enter a valid payment amount');
           return;
         }
 
-        // Get trip ID from the load
-        const tripResponse = await api.get(`/trips`, {
-          params: { loadId: selectedLoad.id }
-        });
-        const trips = tripResponse.data?.data || tripResponse.data || [];
-        const trip = trips[0];
-        
-        if (!trip || !trip.id) {
-          toast.error('Trip not found for this cargo');
+        // Validate receiver phone number
+        if (!receiverPhoneNumber || receiverPhoneNumber.trim() === '') {
+          toast.error('Please enter the receiver phone number to proceed with payment');
           return;
         }
 
-        // Initiate mobile money payment
+        // Try to get trip ID from the load (optional - trip may not exist yet)
+        let tripId: string | undefined;
+        try {
+          const tripResponse = await api.get(`/trips`, {
+            params: { 
+              search: selectedLoad.id,
+              limit: 10 
+            }
+          });
+          const trips = tripResponse.data?.data || tripResponse.data?.trips || tripResponse.data || [];
+          // Try to find trip with matching loadId
+          const trip = Array.isArray(trips) 
+            ? trips.find((t: any) => t.loadId === selectedLoad.id || t.load?.id === selectedLoad.id)
+            : null;
+          
+          if (trip?.id) {
+            tripId = trip.id;
+          }
+        } catch (err) {
+          console.log('Could not find trip for load, proceeding without trip ID');
+        }
+
+        // Use the entered receiver phone number (should be pre-filled with truck owner's phone if available)
+        const finalReceiverPhone = receiverPhoneNumber.trim();
+
+        // Send mobile money payment using the new endpoint
         toast.loading('Initiating Mobile Money payment...');
-        const response = await api.post('/payments/mobile-money/initiate', {
-          tripId: trip.id,
-          amount: selectedLoad.offeredPrice,
-          currency: 'RWF',
-          phoneNumber: phoneNumber,
-          description: `Payment for cargo: ${selectedLoad.title || selectedLoad.description}`,
-          paymentType: 'trip_payment',
-        });
+        const paymentPayload: any = {
+          receiverPhoneNumber: finalReceiverPhone,
+          amount: amount,
+          currency: selectedLoad?.currencyCode || selectedLoad?.currency || 'RWF',
+          message: `Payment for cargo: ${selectedLoad.title || selectedLoad.description}`,
+          metadata: {
+            isLenderPayment: false,
+            cargoOwnerId: user?.id,
+            loadId: selectedLoad.id,
+          },
+        };
+        
+        // Only include tripId if it exists
+        if (tripId) {
+          paymentPayload.tripId = tripId;
+        }
+        
+        const response = await api.post('/payments/mobile-money/send', paymentPayload);
 
         toast.dismiss();
         if (response.data?.success) {
-          toast.success('Mobile Money payment initiated! Please complete the payment on your phone.');
+          toast.success(response.data.message || 'Mobile Money payment initiated! A confirmation popup has been sent to the API account. Once confirmed, the payment will be sent to the receiver.');
           setShowPaymentModal(false);
           setSelectedLoad(null);
+          setReceiverPhoneNumber('');
+          setPaymentAmount('');
+          setDirectPaymentMethod(null);
           fetchLoadsReadyForPayment();
         } else {
           toast.error('Failed to initiate payment');
@@ -447,7 +519,12 @@ const CargoOwnerPayment: React.FC = () => {
               <div className="flex items-center justify-between">
                 <h3 className="text-xl font-bold text-gray-900">Payment for Cargo</h3>
                 <button
-                  onClick={() => setShowPaymentModal(false)}
+                  onClick={() => {
+                    setShowPaymentModal(false);
+                    setReceiverPhoneNumber('');
+                    setDirectPaymentMethod(null);
+                    setPaymentMode(null);
+                  }}
                   className="text-gray-400 hover:text-gray-600"
                 >
                   ×
@@ -547,6 +624,71 @@ const CargoOwnerPayment: React.FC = () => {
                     </div>
                   </button>
 
+                  {/* Payment Amount and Receiver Phone Number Input for Mobile Money */}
+                  {directPaymentMethod === 'momo' && (
+                    <div className="mt-4 space-y-4">
+                      {/* Payment Amount */}
+                      <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          Payment Amount <span className="text-red-500">*</span>
+                        </label>
+                        <p className="text-xs text-gray-500 mb-3">
+                          Enter the amount you want to pay. Default amount is pre-filled from the cargo transportation fee.
+                        </p>
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 font-medium">
+                            {selectedLoad?.currencyCode || selectedLoad?.currency || 'RWF'}
+                          </span>
+                          <input
+                            type="number"
+                            min="0.01"
+                            step="0.01"
+                            value={paymentAmount || (selectedLoad?.offeredPrice || 0).toString()}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              setPaymentAmount(value);
+                            }}
+                            onBlur={(e) => {
+                              // If empty, reset to default
+                              if (!e.target.value || parseFloat(e.target.value) <= 0) {
+                                setPaymentAmount((selectedLoad?.offeredPrice || 0).toString());
+                              }
+                            }}
+                            placeholder="Enter payment amount"
+                            className="w-full pl-20 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          />
+                        </div>
+                        {selectedLoad?.offeredPrice && (
+                          <p className="text-xs text-gray-500 mt-2">
+                            Transportation fee: <span className="font-semibold">{selectedLoad.currencyCode || selectedLoad.currency || 'RWF'} {selectedLoad.offeredPrice.toLocaleString()}</span>
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Receiver Phone Number */}
+                      <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          Receiver Phone Number <span className="text-red-500">*</span>
+                        </label>
+                        <p className="text-xs text-gray-500 mb-3">
+                          Enter the phone number where the money will be sent. A confirmation popup will be sent to the API account phone to authorize the payment.
+                        </p>
+                        <input
+                          type="tel"
+                          value={receiverPhoneNumber}
+                          onChange={(e) => setReceiverPhoneNumber(e.target.value)}
+                          placeholder="e.g., 0783544364 or 250783544364"
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        />
+                        {receiverPhoneNumber && (
+                          <p className="text-xs text-gray-500 mt-2">
+                            Money will be sent to: <span className="font-semibold">{receiverPhoneNumber}</span>
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
                   <button
                     onClick={() => setDirectPaymentMethod('card')}
                     className={`w-full p-4 border-2 rounded-lg transition-all text-left ${
@@ -567,7 +709,12 @@ const CargoOwnerPayment: React.FC = () => {
                   {directPaymentMethod && (
                     <button
                       onClick={handleDirectPayment}
-                      className="w-full mt-6 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold"
+                      disabled={directPaymentMethod === 'momo' && !receiverPhoneNumber.trim()}
+                      className={`w-full mt-6 px-4 py-3 rounded-lg transition-colors font-semibold ${
+                        directPaymentMethod === 'momo' && !receiverPhoneNumber.trim()
+                          ? 'bg-gray-400 cursor-not-allowed text-white'
+                          : 'bg-blue-600 text-white hover:bg-blue-700'
+                      }`}
                     >
                       Proceed to Payment
                     </button>

@@ -145,6 +145,8 @@ export const financialAPI = {
 
 // Payments API
 export const paymentsAPI = {
+  getAdvancePaymentCalculation: (tripId: string) => 
+    api.get(`/payments/trip/${tripId}/advance-payment-calculation`),
   getAll: (params?: any) => api.get('/payments', { params }),
   getById: (id: string) => api.get(`/payments/${id}`),
   create: (data: any) => api.post('/payments', data),

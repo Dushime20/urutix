@@ -15,7 +15,7 @@ import {
   NotificationChannel,
 } from '../../entities/notification.entity';
 import {
-  CreateNotificationDto,
+  CreateNotificationRequestDto,
   UpdateNotificationDto,
   NotificationFilterDto,
   NotificationSearchDto,
@@ -40,7 +40,7 @@ export class NotificationService {
    * Create a new notification
    */
   async createNotification(
-    createNotificationDto: CreateNotificationDto,
+    createNotificationDto: CreateNotificationRequestDto,
   ): Promise<Notification> {
     // Create notification
     const notification = this.notificationRepository.create({

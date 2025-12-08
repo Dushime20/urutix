@@ -62,6 +62,9 @@ import {
 } from '../../entities/price-suggestion.entity';
 import { Location } from '../../entities/location.entity';
 import { User } from '../../entities/user.entity';
+import { Bid, BidStatus } from '../../entities/bid.entity';
+import { Payment, PaymentType, PaymentStatus } from '../../entities/payment.entity';
+import { Trip } from '../../entities/trip.entity';
 import { CreateLoadDto } from './dto/create-load.dto';
 import { UpdateLoadDto } from './dto/update-load.dto';
 import { LoadsQueryDto } from './dto/loads-query.dto';
@@ -172,6 +175,12 @@ export class LoadsService {
     private readonly locationRepository: Repository<Location>,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    @InjectRepository(Bid)
+    private readonly bidRepository: Repository<Bid>,
+    @InjectRepository(Payment)
+    private readonly paymentRepository: Repository<Payment>,
+    @InjectRepository(Trip)
+    private readonly tripRepository: Repository<Trip>,
     private readonly dataSource: DataSource,
     private readonly locationEnrichmentService: OSMLocationEnrichmentService,
     @Optional() private readonly matchingService?: MatchingService, // Optional - MatchingService from MatchingModule
@@ -1035,6 +1044,72 @@ export class LoadsService {
     if (!load.canStart()) {
       throw new BadRequestException(
         'Load cannot be started. Please ensure carrier and truck are assigned.',
+      );
+    }
+
+    // Check if advance payment is required before starting the trip
+    try {
+      const acceptedBid = await this.bidRepository.findOne({
+        where: {
+          loadId: loadId,
+          status: BidStatus.ACCEPTED,
+        },
+        order: { updatedAt: 'DESC' },
+      });
+
+      // If bid requires advance payment, check if it has been made
+      if (acceptedBid?.requireAdvancePayment === true) {
+        // Find the trip for this load
+        const trip = await this.tripRepository.findOne({
+          where: { loadId: loadId, tenantId },
+        });
+
+        if (trip) {
+          // Check if advance payment exists and is completed/processing
+          const advancePayment = await this.paymentRepository.findOne({
+            where: {
+              tripId: trip.id,
+              tenantId,
+              paymentType: PaymentType.ADVANCE,
+              status: PaymentStatus.COMPLETED,
+            },
+          });
+
+          if (!advancePayment) {
+            // Check if there's a pending advance payment
+            const pendingAdvancePayment = await this.paymentRepository.findOne({
+              where: {
+                tripId: trip.id,
+                tenantId,
+                paymentType: PaymentType.ADVANCE,
+                status: PaymentStatus.PENDING,
+              },
+            });
+
+            if (!pendingAdvancePayment) {
+              throw new BadRequestException(
+                'Advance payment is required before starting this trip. Please complete the advance payment first.',
+              );
+            } else {
+              this.logger.warn(
+                `Load ${loadId} starting with pending advance payment. Payment status: ${pendingAdvancePayment.status}`,
+              );
+            }
+          }
+        }
+      } else {
+        this.logger.log(
+          `Load ${loadId} starting without advance payment requirement (truck owner opted out of advance payment)`,
+        );
+      }
+    } catch (error) {
+      // If error is already a BadRequestException, rethrow it
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      // Otherwise, log warning but allow trip to start (in case bid doesn't exist or other issues)
+      this.logger.warn(
+        `Could not verify advance payment requirement for load ${loadId}: ${error.message}`,
       );
     }
 

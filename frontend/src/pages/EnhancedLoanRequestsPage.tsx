@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { lendingApi } from '../services/lending/lendingApi';
 import { useAuth } from '../contexts/AuthContext';
-import api from '../services/api';
+import api, { paymentsAPI } from '../services/api';
+import { calculateAdvancePayment, formatCurrency as formatCurrencyUtil, formatPercentage } from '../utils/paymentCalculations';
 import {
   FaSearch,
   FaEye,
@@ -384,9 +385,33 @@ const EnhancedLoanRequestsPage: React.FC = () => {
   const [groupByLender, setGroupByLender] = useState(false);
   const [groupByStatus, setGroupByStatus] = useState(false);
   const [showAnalytics, setShowAnalytics] = useState(true);
+  const [advancePaymentCalculations, setAdvancePaymentCalculations] = useState<Record<string, any>>({});
+  const [loadingCalculations, setLoadingCalculations] = useState<Record<string, boolean>>({});
 
   // Get lender ID from authentication context
   const lenderId = user?.role === 'LENDER' ? user.id : "89fa1340-429e-448f-a19d-0e987679d7cd"; // Fallback to seeded lender ID
+
+  // Fetch advance payment calculation for a loan request
+  const fetchAdvancePaymentCalculation = async (tripId: string, loanRequestId: string) => {
+    if (!tripId || advancePaymentCalculations[loanRequestId] || loadingCalculations[loanRequestId]) {
+      return;
+    }
+
+    setLoadingCalculations(prev => ({ ...prev, [loanRequestId]: true }));
+    try {
+      const response = await paymentsAPI.getAdvancePaymentCalculation(tripId);
+      if (response.data?.success && response.data?.data) {
+        setAdvancePaymentCalculations(prev => ({
+          ...prev,
+          [loanRequestId]: response.data.data,
+        }));
+      }
+    } catch (error) {
+      console.warn(`Could not fetch advance payment calculation for trip ${tripId}:`, error);
+    } finally {
+      setLoadingCalculations(prev => ({ ...prev, [loanRequestId]: false }));
+    }
+  };
 
   // Authentication checks
   if (!user) {
@@ -560,6 +585,15 @@ const EnhancedLoanRequestsPage: React.FC = () => {
 
         setRequests(transformedRequests);
         setAnalytics(transformedAnalytics);
+
+        // Fetch advance payment calculations for all requests with trip_id
+        transformedRequests.forEach((req) => {
+          if (req.trip_id) {
+            fetchAdvancePaymentCalculation(req.trip_id, req.id).catch(() => {
+              // Silently fail - calculation is optional
+            });
+          }
+        });
 
       } catch (err: any) {
         console.error('Error fetching loan requests:', err);
@@ -1175,6 +1209,35 @@ const EnhancedLoanRequestsPage: React.FC = () => {
                                   RWF {(request.monthly_payment / 1000).toFixed(0)}K/month
                                 </p>
                               )}
+                              {/* Advance Payment Calculation */}
+                              {advancePaymentCalculations[request.id] && (() => {
+                                const calc = advancePaymentCalculations[request.id];
+                                return (
+                                  <div className="mt-2 pt-2 border-t border-gray-200">
+                                    <p className="text-xs font-medium text-gray-700 mb-1">Advance Payment Info:</p>
+                                    {calc.requireAdvancePayment ? (
+                                      <>
+                                        <p className="text-xs text-green-700 font-semibold">
+                                          Advance: {formatCurrencyUtil(calc.advanceAmount, calc.currency)}
+                                        </p>
+                                        <p className="text-xs text-gray-600">
+                                          ({formatPercentage(calc.advancePaymentPercentage)} of {formatCurrencyUtil(calc.transportationFee, calc.currency)})
+                                        </p>
+                                        <p className="text-xs text-gray-500">
+                                          Final: {formatCurrencyUtil(calc.finalAmount, calc.currency)}
+                                        </p>
+                                      </>
+                                    ) : (
+                                      <p className="text-xs text-gray-600">
+                                        No advance required. Full payment after delivery.
+                                      </p>
+                                    )}
+                                  </div>
+                                );
+                              })()}
+                              {loadingCalculations[request.id] && (
+                                <p className="text-xs text-gray-400 italic">Loading payment info...</p>
+                              )}
                             </div>
                           </td>
                           <td className="px-2 py-3 align-middle">
@@ -1344,13 +1407,25 @@ const EnhancedLoanRequestsPage: React.FC = () => {
               </div>
               
               <div className="mb-6">
-                <div className="bg-gray-50 rounded-lg p-4 mb-4">
-                  <p className="text-sm text-gray-600 mb-1">Loan Amount</p>
-                  <p className="text-2xl font-bold text-gray-900">
-                    RWF {(selectedLoanForPayment.requested_amount / 1000).toFixed(0)}K
+                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-5 mb-4 border-2 border-blue-200">
+                  <p className="text-sm font-medium text-gray-700 mb-2">Disbursement Amount</p>
+                  <p className="text-3xl font-bold text-gray-900 mb-1">
+                    RWF {selectedLoanForPayment.requested_amount.toLocaleString()}
                   </p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    Interest Rate: {selectedLoanForPayment.interest_rate}%
+                  <div className="flex items-center gap-4 mt-3 pt-3 border-t border-blue-200">
+                    <div>
+                      <p className="text-xs text-gray-500">Interest Rate</p>
+                      <p className="text-sm font-semibold text-gray-700">{selectedLoanForPayment.interest_rate}%</p>
+                    </div>
+                    {selectedLoanForPayment.approved_amount && selectedLoanForPayment.approved_amount !== selectedLoanForPayment.requested_amount && (
+                      <div>
+                        <p className="text-xs text-gray-500">Requested Amount</p>
+                        <p className="text-sm font-semibold text-gray-700">RWF {selectedLoanForPayment.approved_amount.toLocaleString()}</p>
+                      </div>
+                    )}
+                  </div>
+                  <p className="text-xs text-blue-700 mt-3 font-medium">
+                    💰 This amount will be sent to the truck owner via Mobile Money
                   </p>
                 </div>
                 

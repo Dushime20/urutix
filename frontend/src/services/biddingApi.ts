@@ -7,6 +7,8 @@ export interface BidData {
   proposedPickupDate?: string;
   proposedDeliveryDate?: string;
   bidNotes?: string;
+  advancePaymentPercentage?: number; // Percentage of transportation fee to be paid before trip starts (0-100)
+  requireAdvancePayment?: boolean; // Whether advance payment is required before trip starts
   bidDetails?: {
     truckSpecifications?: {
       truckId?: string;

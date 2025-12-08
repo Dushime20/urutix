@@ -13,6 +13,7 @@ export interface MobileMoneyConfig {
   apiKey: string;
   callbackUrl: string;
   currency: string;
+  accountPhoneNumber?: string; // The phone number associated with the API account (sender/payer)
 }
 
 export interface MobileMoneyTransfer {
@@ -82,6 +83,7 @@ export class MobileMoneyPaymentService {
     const apiKey = this.configService.get<string>('MOBILE_MONEY_API_KEY');
     const callbackUrl = this.configService.get<string>('MOBILE_MONEY_CALLBACK_URL') || '';
     const currency = this.configService.get<string>('MOBILE_MONEY_CURRENCY') || 'RWF';
+    const accountPhoneNumber = this.configService.get<string>('MOBILE_MONEY_ACCOUNT_PHONE');
 
     if (!apiKey) {
       throw new BadRequestException(
@@ -94,6 +96,7 @@ export class MobileMoneyPaymentService {
       apiKey,
       callbackUrl,
       currency,
+      accountPhoneNumber,
     };
   }
 

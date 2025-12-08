@@ -37,10 +37,13 @@ Add these to your `.env` file in the backend:
 ```env
 # Mobile Money Payment Configuration
 MOBILE_MONEY_API_URL=https://api.payment.ishema.rw
-MOBILE_MONEY_API_KEY=YOUR_API_KEY_HERE
-MOBILE_MONEY_CALLBACK_URL=https://yourdomain.com/api/payments/webhooks/mobile-money
+MOBILE_MONEY_API_KEY=wT48JRMwtUMPCRDQLBIJ
+MOBILE_MONEY_CALLBACK_URL=http://localhost:3000/api/payments/webhooks/mobile-money
 MOBILE_MONEY_CURRENCY=RWF
+MOBILE_MONEY_ACCOUNT_PHONE=250783544364
 ```
+
+**Note:** Replace `MOBILE_MONEY_ACCOUNT_PHONE` with the actual phone number associated with your API account (the one that will receive payment confirmation popups).
 
 ### Step 2: Get Your API Key
 

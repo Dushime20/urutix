@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import { biddingAPI, biddingHelpers } from '../services/biddingApi';
 import { fleetApi } from '../services/fleetApi';
-import { FaSearch, FaGavel, FaDollarSign, FaClock, FaTruck, FaPlus, FaStar, FaRegStar, FaMapMarkerAlt } from 'react-icons/fa';
+import { FaSearch, FaGavel, FaDollarSign, FaClock, FaTruck, FaPlus, FaStar, FaRegStar, FaMapMarkerAlt, FaTimes } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 
 const TruckBidsPage: React.FC = () => {
@@ -19,6 +19,10 @@ const TruckBidsPage: React.FC = () => {
 	const [bidNotes, setBidNotes] = useState('');
 	const [proposedPickupDate, setProposedPickupDate] = useState('');
 	const [proposedDeliveryDate, setProposedDeliveryDate] = useState('');
+	const [advancePaymentPercentage, setAdvancePaymentPercentage] = useState<string>('');
+	const [quickAdvancePaymentPercentage, setQuickAdvancePaymentPercentage] = useState<string>('');
+	const [requireAdvancePayment, setRequireAdvancePayment] = useState<boolean>(true);
+	const [quickRequireAdvancePayment, setQuickRequireAdvancePayment] = useState<boolean>(true);
 	const [trucks, setTrucks] = useState<any[]>([]);
   const [drivers, setDrivers] = useState<any[]>([]);
 	const [selectedTruckId, setSelectedTruckId] = useState<string>('');
@@ -293,6 +297,8 @@ const TruckBidsPage: React.FC = () => {
 			? auction.currentBid - (auction?.minimumBidIncrement || 1)
 			: (auction?.reservePrice || 100) - 1;
 		setQuickBidAmount(String(defaultAmount));
+		setQuickAdvancePaymentPercentage(''); // Reset to empty, user can set their preferred percentage
+		setQuickRequireAdvancePayment(true); // Default to requiring advance payment
 		setShowQuickBidModal(true);
 	};
 
@@ -303,12 +309,27 @@ const TruckBidsPage: React.FC = () => {
 			toast.error('Enter a valid bid amount');
 			return;
 		}
+		// Validate advance payment percentage if provided
+		const advancePercentage = quickAdvancePaymentPercentage ? Number(quickAdvancePaymentPercentage) : undefined;
+		if (advancePercentage !== undefined && (advancePercentage < 0 || advancePercentage > 100)) {
+			toast.error('Advance payment percentage must be between 0 and 100');
+			return;
+		}
+
+		// If advance payment is not required, percentage should be 0 or undefined
+		if (!quickRequireAdvancePayment && advancePercentage !== undefined && advancePercentage > 0) {
+			toast.error('Cannot specify advance payment percentage when advance payment is not required');
+			return;
+		}
+
 		try {
 			await biddingAPI.submitBid({
 				loadId: selectedAuction.loadId,
 				bidAmount: amountNum,
 				bidCurrency: 'USD',
 				bidNotes: 'Quick bid from Truck Owner',
+				advancePaymentPercentage: quickRequireAdvancePayment ? advancePercentage : undefined,
+				requireAdvancePayment: quickRequireAdvancePayment,
 				bidDetails: {
 					truckSpecifications: {},
 				},
@@ -317,6 +338,8 @@ const TruckBidsPage: React.FC = () => {
 			setShowQuickBidModal(false);
 			setSelectedAuction(null);
 			setQuickBidAmount('');
+			setQuickAdvancePaymentPercentage('');
+			setQuickRequireAdvancePayment(true);
 			// Refresh auctions to show updated bid information
 			await loadAuctions();
 		} catch (e: any) {
@@ -336,6 +359,8 @@ const TruckBidsPage: React.FC = () => {
 		setBidNotes('');
 		setProposedPickupDate('');
 		setProposedDeliveryDate('');
+		setAdvancePaymentPercentage(''); // Reset to empty, user can set their preferred percentage
+		setRequireAdvancePayment(true); // Default to requiring advance payment
 		setSelectedTruckId('');
 		setSelectedDriverId('');
 		try {
@@ -359,6 +384,19 @@ const TruckBidsPage: React.FC = () => {
 			toast.error('Enter a valid bid amount');
 			return;
 		}
+		// Validate advance payment percentage if provided
+		const advancePercentage = advancePaymentPercentage ? Number(advancePaymentPercentage) : undefined;
+		if (advancePercentage !== undefined && (advancePercentage < 0 || advancePercentage > 100)) {
+			toast.error('Advance payment percentage must be between 0 and 100');
+			return;
+		}
+
+		// If advance payment is not required, percentage should be 0 or undefined
+		if (!requireAdvancePayment && advancePercentage !== undefined && advancePercentage > 0) {
+			toast.error('Cannot specify advance payment percentage when advance payment is not required');
+			return;
+		}
+
 		try {
 			await biddingAPI.submitBid({
 				loadId: selectedAuction.loadId,
@@ -367,6 +405,8 @@ const TruckBidsPage: React.FC = () => {
 				proposedPickupDate: proposedPickupDate || undefined,
 				proposedDeliveryDate: proposedDeliveryDate || undefined,
 				bidNotes: bidNotes || undefined,
+				advancePaymentPercentage: requireAdvancePayment ? advancePercentage : undefined,
+				requireAdvancePayment: requireAdvancePayment,
 				bidDetails: {
 					truckSpecifications: selectedTruckId ? { truckId: selectedTruckId } : {},
 					driverInfo: selectedDriverId ? { driverId: selectedDriverId } : undefined,
@@ -590,6 +630,49 @@ const TruckBidsPage: React.FC = () => {
 									)}
 								</div>
 							</div>
+							<div>
+								<label className="flex items-center gap-2 mb-2">
+									<input 
+										type="checkbox" 
+										checked={quickRequireAdvancePayment}
+										onChange={(e) => {
+											setQuickRequireAdvancePayment(e.target.checked);
+											if (!e.target.checked) {
+												setQuickAdvancePaymentPercentage(''); // Clear percentage if not required
+											}
+										}}
+										className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
+									/>
+									<span className="text-sm font-medium text-gray-700">
+										Require advance payment before trip starts
+									</span>
+								</label>
+								{quickRequireAdvancePayment && (
+									<div className="mt-2">
+										<label className="block text-sm font-medium text-gray-700 mb-1">
+											Advance Payment Percentage (Optional)
+										</label>
+										<input 
+											type="number" 
+											min="0" 
+											max="100" 
+											step="0.1"
+											value={quickAdvancePaymentPercentage} 
+											onChange={(e) => setQuickAdvancePaymentPercentage(e.target.value)} 
+											className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" 
+											placeholder="e.g., 70 (for 70% advance payment)"
+										/>
+										<div className="text-xs text-gray-500 mt-1">
+											Percentage of transportation fee to be paid before trip starts (0-100). Leave empty to use system default.
+										</div>
+									</div>
+								)}
+								{!quickRequireAdvancePayment && (
+									<div className="text-xs text-gray-500 mt-1">
+										Trip can start without advance payment. Payment will be processed after trip completion.
+									</div>
+								)}
+							</div>
 						</div>
 						<div className="p-6 border-t flex items-center justify-end gap-2">
 							<button 
@@ -614,56 +697,214 @@ const TruckBidsPage: React.FC = () => {
 			)}
 
 			{showBidModal && selectedAuction && (
-				<div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-					<div className="bg-white rounded-lg shadow-xl w-full max-w-xl mx-4">
-						<div className="p-6 border-b">
-							<div className="text-lg font-semibold text-gray-900">Place Bid</div>
-							<div className="text-sm text-gray-600 mt-1">{selectedAuction?.load?.origin} → {selectedAuction?.load?.destination}</div>
+				<div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+					<div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+						<div className="p-6 border-b bg-gradient-to-r from-primary-50 to-blue-50">
+							<div className="flex items-center justify-between">
+								<div>
+									<div className="text-xl font-bold text-gray-900 flex items-center gap-2">
+										<FaGavel className="text-primary-600" />
+										Place Your Bid
+									</div>
+									<div className="text-sm text-gray-600 mt-1.5">
+										{selectedAuction?.load?.title || 'Untitled Load'}
+									</div>
+									{selectedAuction?.load && (
+										<div className="text-xs text-gray-500 mt-1 flex items-center gap-2">
+											<FaMapMarkerAlt className="text-primary-500" />
+											<span>{getLocationName(selectedAuction.load, 'PICKUP')} → {getLocationName(selectedAuction.load, 'DELIVERY')}</span>
+										</div>
+									)}
+								</div>
+								<button
+									onClick={() => setShowBidModal(false)}
+									className="text-gray-400 hover:text-gray-600 transition-colors p-2 hover:bg-white rounded-lg"
+								>
+									<FaTimes className="w-5 h-5" />
+								</button>
+							</div>
 						</div>
-						<div className="p-6 space-y-4">
-							<div>
-								<label className="block text-sm font-medium text-gray-700 mb-1">Bid Amount (USD)</label>
-								<input value={bidAmount} onChange={(e) => setBidAmount(e.target.value)} type="number" min="1" className="w-full px-3 py-2 border border-gray-300 rounded-lg" />
-								<div className="text-xs text-gray-500 mt-1">Current: {selectedAuction.currentBid ? biddingHelpers.formatCurrency(selectedAuction.currentBid) : '—'} • Min increment: {selectedAuction.minimumBidIncrement || 0}</div>
+						<div className="p-6 space-y-5">
+							{/* Bid Amount */}
+							<div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+								<label className="block text-sm font-semibold text-gray-900 mb-2">
+									Bid Amount (USD) <span className="text-red-500">*</span>
+								</label>
+								<input 
+									value={bidAmount} 
+									onChange={(e) => setBidAmount(e.target.value)} 
+									type="number" 
+									min="0.01" 
+									step="0.01"
+									className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-lg font-semibold" 
+									placeholder="Enter your bid amount"
+								/>
+								<div className="flex items-center gap-4 mt-2 text-xs">
+									{selectedAuction.currentBid && (
+										<span className="text-gray-600">
+											Current: <span className="font-semibold text-gray-900">{biddingHelpers.formatCurrency(selectedAuction.currentBid)}</span>
+										</span>
+									)}
+									{selectedAuction.minimumBidIncrement && (
+										<span className="text-gray-600">
+											Min increment: <span className="font-semibold text-gray-900">{biddingHelpers.formatCurrency(selectedAuction.minimumBidIncrement)}</span>
+										</span>
+									)}
+								</div>
 							</div>
-							<div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+
+							{/* Advance Payment Section */}
+							<div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+								<label className="flex items-center gap-3 mb-3 cursor-pointer">
+									<input 
+										type="checkbox" 
+										checked={requireAdvancePayment}
+										onChange={(e) => {
+											setRequireAdvancePayment(e.target.checked);
+											if (!e.target.checked) {
+												setAdvancePaymentPercentage(''); // Clear percentage if not required
+											}
+										}}
+										className="w-5 h-5 text-primary-600 border-gray-300 rounded focus:ring-primary-500 cursor-pointer"
+									/>
+									<div>
+										<span className="text-sm font-semibold text-gray-900">
+											Require advance payment before trip starts
+										</span>
+										<p className="text-xs text-gray-600 mt-0.5">
+											Enable this to require payment before the trip begins
+										</p>
+									</div>
+								</label>
+								
+								{requireAdvancePayment && (
+									<div className="mt-4 pl-8 border-l-2 border-primary-200">
+										<label className="block text-sm font-medium text-gray-700 mb-2">
+											Advance Payment Percentage <span className="text-gray-500 font-normal">(Optional)</span>
+										</label>
+										<div className="relative">
+											<input 
+												type="number" 
+												min="0" 
+												max="100" 
+												step="0.1"
+												value={advancePaymentPercentage} 
+												onChange={(e) => setAdvancePaymentPercentage(e.target.value)} 
+												className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 pr-12" 
+												placeholder="e.g., 70"
+											/>
+											<span className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500 font-medium">%</span>
+										</div>
+										<div className="text-xs text-gray-500 mt-2 flex items-start gap-1">
+											<span className="text-blue-600">ℹ️</span>
+											<span>Percentage of transportation fee to be paid before trip starts (0-100). Leave empty to use system default (70%).</span>
+										</div>
+									</div>
+								)}
+								
+								{!requireAdvancePayment && (
+									<div className="mt-3 pl-8">
+										<div className="text-xs text-amber-700 bg-amber-50 p-2 rounded border border-amber-200">
+											<span className="font-medium">Note:</span> Trip can start without advance payment. Payment will be processed after trip completion.
+										</div>
+									</div>
+								)}
+							</div>
+							{/* Dates Section */}
+							<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 								<div>
-									<label className="block text-sm font-medium text-gray-700 mb-1">Proposed Pickup</label>
-									<input type="datetime-local" value={proposedPickupDate} onChange={(e) => setProposedPickupDate(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg" />
+									<label className="block text-sm font-medium text-gray-700 mb-2">
+										Proposed Pickup Date & Time
+									</label>
+									<input 
+										type="datetime-local" 
+										value={proposedPickupDate} 
+										onChange={(e) => setProposedPickupDate(e.target.value)} 
+										className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500" 
+									/>
 								</div>
 								<div>
-									<label className="block text-sm font-medium text-gray-700 mb-1">Proposed Delivery</label>
-									<input type="datetime-local" value={proposedDeliveryDate} onChange={(e) => setProposedDeliveryDate(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg" />
+									<label className="block text-sm font-medium text-gray-700 mb-2">
+										Proposed Delivery Date & Time
+									</label>
+									<input 
+										type="datetime-local" 
+										value={proposedDeliveryDate} 
+										onChange={(e) => setProposedDeliveryDate(e.target.value)} 
+										className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500" 
+									/>
 								</div>
 							</div>
-							<div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+
+							{/* Truck and Driver Selection */}
+							<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 								<div>
-									<label className="block text-sm font-medium text-gray-700 mb-1">Select Truck (optional)</label>
-									<select value={selectedTruckId} onChange={(e) => setSelectedTruckId(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg">
-										<option value="">— None —</option>
+									<label className="block text-sm font-medium text-gray-700 mb-2">
+										Select Truck <span className="text-gray-500 font-normal">(Optional)</span>
+									</label>
+									<select 
+										value={selectedTruckId} 
+										onChange={(e) => setSelectedTruckId(e.target.value)} 
+										className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white"
+									>
+										<option value="">— Select Truck —</option>
 										{trucks.map((t) => (
-											<option key={t.id} value={t.id}>{t.plateNumber || t.name || t.id.slice(0,8)} • {t.make} {t.model}</option>
+											<option key={t.id} value={t.id}>
+												{t.plateNumber || t.name || t.id.slice(0,8)} • {t.make} {t.model}
+											</option>
 										))}
 									</select>
 								</div>
 								<div>
-									<label className="block text-sm font-medium text-gray-700 mb-1">Select Driver (optional)</label>
-									<select value={selectedDriverId} onChange={(e) => setSelectedDriverId(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg">
-										<option value="">— None —</option>
+									<label className="block text-sm font-medium text-gray-700 mb-2">
+										Select Driver <span className="text-gray-500 font-normal">(Optional)</span>
+									</label>
+									<select 
+										value={selectedDriverId} 
+										onChange={(e) => setSelectedDriverId(e.target.value)} 
+										className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white"
+									>
+										<option value="">— Select Driver —</option>
 										{drivers.map((d) => (
-											<option key={d.id} value={d.id}>{d.firstName} {d.lastName} • {d.licenseNumber}</option>
+											<option key={d.id} value={d.id}>
+												{d.firstName} {d.lastName} • {d.licenseNumber}
+											</option>
 										))}
 									</select>
 								</div>
 							</div>
+
+							{/* Notes Section */}
 							<div>
-								<label className="block text-sm font-medium text-gray-700 mb-1">Notes (optional)</label>
-								<textarea value={bidNotes} onChange={(e) => setBidNotes(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg" rows={3} placeholder="Add any details about your offer, equipment, timing, etc." />
+								<label className="block text-sm font-medium text-gray-700 mb-2">
+									Additional Notes <span className="text-gray-500 font-normal">(Optional)</span>
+								</label>
+								<textarea 
+									value={bidNotes} 
+									onChange={(e) => setBidNotes(e.target.value)} 
+									className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 resize-none" 
+									rows={4} 
+									placeholder="Add any details about your offer, equipment, timing, special requirements, etc."
+								/>
+								<div className="text-xs text-gray-500 mt-1">
+									Provide any additional information that might help the cargo owner make a decision.
+								</div>
 							</div>
 						</div>
-						<div className="p-6 border-t flex items-center justify-end gap-2">
-							<button onClick={() => setShowBidModal(false)} className="px-3 py-2 rounded bg-gray-100 text-gray-700 hover:bg-gray-200">Cancel</button>
-							<button onClick={placeBid} className="px-3 py-2 rounded bg-primary-600 text-white hover:bg-primary-700">Submit Bid</button>
+						<div className="p-6 border-t bg-gray-50 flex items-center justify-between gap-3">
+							<button 
+								onClick={() => setShowBidModal(false)} 
+								className="px-5 py-2.5 rounded-lg bg-white border border-gray-300 text-gray-700 font-medium hover:bg-gray-50 transition-colors"
+							>
+								Cancel
+							</button>
+							<button 
+								onClick={placeBid} 
+								disabled={!bidAmount || Number(bidAmount) <= 0}
+								className="px-6 py-2.5 rounded-lg bg-primary-600 text-white font-semibold hover:bg-primary-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors shadow-sm"
+							>
+								Submit Bid
+							</button>
 						</div>
 					</div>
 				</div>

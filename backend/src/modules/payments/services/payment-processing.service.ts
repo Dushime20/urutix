@@ -13,6 +13,8 @@ import {
   PaymentType,
   PaymentMethod,
 } from '../../../entities/payment.entity';
+import { Bid, BidStatus } from '../../../entities/bid.entity';
+import { Trip } from '../../../entities/trip.entity';
 import { Tenant } from '../../../entities/tenant.entity';
 import { ProviderIntegrationService } from './provider-integration.service';
 import { EscrowService } from './escrow.service';
@@ -49,6 +51,10 @@ export class PaymentProcessingService {
   constructor(
     @InjectRepository(Payment)
     private readonly paymentRepository: Repository<Payment>,
+    @InjectRepository(Bid)
+    private readonly bidRepository: Repository<Bid>,
+    @InjectRepository(Trip)
+    private readonly tripRepository: Repository<Trip>,
     private readonly providerIntegrationService: ProviderIntegrationService,
     private readonly escrowService: EscrowService,
     private readonly auditService: AuditService,
@@ -140,6 +146,33 @@ export class PaymentProcessingService {
         );
       }
 
+      // Look up accepted bid for this trip's load to get advance payment percentage
+      let advancePaymentPercentage: number | undefined;
+      try {
+        const trip = await this.tripRepository.findOne({
+          where: { id: payment.tripId },
+        });
+        if (trip) {
+          const acceptedBid = await this.bidRepository.findOne({
+            where: {
+              loadId: trip.loadId,
+              status: BidStatus.ACCEPTED,
+            },
+            order: { updatedAt: 'DESC' }, // Get the most recently accepted bid
+          });
+          if (acceptedBid?.advancePaymentPercentage !== undefined && acceptedBid.advancePaymentPercentage !== null) {
+            advancePaymentPercentage = acceptedBid.advancePaymentPercentage;
+            this.logger.log(
+              `Using advance payment percentage ${advancePaymentPercentage}% from bid ${acceptedBid.id} for payment ${payment.id}`,
+            );
+          }
+        }
+      } catch (error) {
+        this.logger.warn(
+          `Could not find accepted bid for trip ${payment.tripId}, using default advance payment percentage`,
+        );
+      }
+
       // Create escrow payments
       const escrowPayments = await this.escrowService.createEscrowPayments(
         {
@@ -156,6 +189,7 @@ export class PaymentProcessingService {
         payment.amount,
         payment.tenantId,
         payment.payerId,
+        advancePaymentPercentage,
       );
 
       // Update transaction states

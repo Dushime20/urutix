@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { FaEye, FaEdit, FaTrash, FaCheck, FaTimes, FaHistory, FaEnvelope, FaPhone } from 'react-icons/fa';
+import { FaEye, FaEdit, FaTrash, FaCheck, FaTimes, FaHistory, FaEnvelope, FaPhone, FaDollarSign, FaPercentage } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import { biddingAPI, biddingHelpers } from '../../services/biddingApi';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
+import { calculateAdvancePayment, formatCurrency as formatCurrencyUtil, formatPercentage } from '../../utils/paymentCalculations';
 
 interface Bid {
   id: string;
@@ -14,6 +15,8 @@ interface Bid {
   proposedDeliveryDate?: string;
   bidNotes?: string;
   successProbability?: number;
+  advancePaymentPercentage?: number | null;
+  requireAdvancePayment?: boolean;
   createdAt: string;
   load: {
     title: string;
@@ -456,6 +459,96 @@ const BidHistory: React.FC<BidHistoryProps> = ({ userRole }) => {
                     <div className="mt-1">{getStatusBadge(selectedBid.status)}</div>
                   </div>
                 </div>
+
+                {/* Advance Payment Calculation - Show for cargo owners when bid is accepted */}
+                {userRole === 'CARGO_OWNER' && selectedBid.status === 'ACCEPTED' && (
+                  <div className="border-t pt-4 mt-4">
+                    <h5 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                      <FaDollarSign className="h-4 w-4 text-green-600" />
+                      Payment Breakdown
+                    </h5>
+                    {(() => {
+                      const paymentCalc = calculateAdvancePayment(
+                        selectedBid.bidAmount,
+                        selectedBid.advancePaymentPercentage,
+                        selectedBid.requireAdvancePayment !== false, // Default to true if not specified
+                        selectedBid.bidCurrency
+                      );
+                      
+                      return (
+                        <div className="space-y-3 bg-blue-50 p-4 rounded-lg border border-blue-200">
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <label className="block text-xs font-medium text-gray-700 mb-1">
+                                Total Transportation Fee
+                              </label>
+                              <p className="text-lg font-bold text-gray-900">
+                                {formatCurrencyUtil(paymentCalc.transportationFee, paymentCalc.currency)}
+                              </p>
+                            </div>
+                            {paymentCalc.requireAdvancePayment && (
+                              <div>
+                                <label className="block text-xs font-medium text-gray-700 mb-1 flex items-center gap-1">
+                                  <FaPercentage className="h-3 w-3" />
+                                  Advance Payment Percentage
+                                </label>
+                                <p className="text-lg font-semibold text-blue-700">
+                                  {formatPercentage(paymentCalc.advancePaymentPercentage)}
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                          
+                          {paymentCalc.requireAdvancePayment ? (
+                            <>
+                              <div className="border-t border-blue-200 pt-3 mt-3">
+                                <div className="grid grid-cols-2 gap-4">
+                                  <div className="bg-white p-3 rounded border border-green-200">
+                                    <label className="block text-xs font-medium text-green-700 mb-1">
+                                      Advance Payment (Before Trip)
+                                    </label>
+                                    <p className="text-xl font-bold text-green-700">
+                                      {formatCurrencyUtil(paymentCalc.advanceAmount, paymentCalc.currency)}
+                                    </p>
+                                    <p className="text-xs text-gray-500 mt-1">
+                                      {formatPercentage(paymentCalc.advancePaymentPercentage)} of total
+                                    </p>
+                                  </div>
+                                  <div className="bg-white p-3 rounded border border-gray-200">
+                                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                                      Final Payment (After Delivery)
+                                    </label>
+                                    <p className="text-xl font-bold text-gray-700">
+                                      {formatCurrencyUtil(paymentCalc.finalAmount, paymentCalc.currency)}
+                                    </p>
+                                    <p className="text-xs text-gray-500 mt-1">
+                                      {formatPercentage(100 - paymentCalc.advancePaymentPercentage)} of total
+                                    </p>
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="bg-yellow-50 border border-yellow-200 rounded p-2 mt-2">
+                                <p className="text-xs text-yellow-800">
+                                  <strong>Note:</strong> You will need to pay {formatCurrencyUtil(paymentCalc.advanceAmount, paymentCalc.currency)} as advance payment before the trip starts. 
+                                  The remaining {formatCurrencyUtil(paymentCalc.finalAmount, paymentCalc.currency)} will be paid after successful delivery.
+                                </p>
+                              </div>
+                            </>
+                          ) : (
+                            <div className="bg-white p-3 rounded border border-gray-200">
+                              <label className="block text-xs font-medium text-gray-700 mb-1">
+                                Payment Schedule
+                              </label>
+                              <p className="text-sm text-gray-900">
+                                No advance payment required. Full payment of {formatCurrencyUtil(paymentCalc.transportationFee, paymentCalc.currency)} will be processed after trip completion.
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
+                  </div>
+                )}
 
                 {selectedBid.proposedPickupDate && (
                   <div>

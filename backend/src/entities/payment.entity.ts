@@ -56,8 +56,8 @@ export class Payment {
   @Column('uuid')
   tenantId: string;
 
-  @Column('uuid')
-  tripId: string;
+  @Column('uuid', { nullable: true })
+  tripId?: string;
 
   @Column('uuid')
   payerId: string;

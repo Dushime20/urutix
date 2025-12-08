@@ -124,17 +124,24 @@ export class EscrowService {
   /**
    * Split payment into advance (70%) and final (30%) amounts
    */
-  async splitAdvanceFinal(totalAmount: number): Promise<EscrowSplit> {
+  async splitAdvanceFinal(
+    totalAmount: number,
+    advancePaymentPercentage?: number,
+  ): Promise<EscrowSplit> {
     if (totalAmount <= 0) {
       throw new BadRequestException('Total amount must be greater than 0');
     }
 
-    // Calculate split with proper rounding
-    const advancePercentage = 0.7;
-    const finalPercentage = 0.3;
+    // Use provided percentage or default to 70%
+    // If percentage is provided, convert from 0-100 scale to 0-1 scale
+    const advancePercentageDecimal =
+      advancePaymentPercentage !== undefined && advancePaymentPercentage !== null
+        ? advancePaymentPercentage / 100
+        : 0.7;
+    const finalPercentage = 1 - advancePercentageDecimal;
 
     // Round to 2 decimal places to avoid floating point issues
-    const advance = Math.round(totalAmount * advancePercentage * 100) / 100;
+    const advance = Math.round(totalAmount * advancePercentageDecimal * 100) / 100;
     const final = Math.round((totalAmount - advance) * 100) / 100;
 
     // Validate split adds up to total
@@ -156,8 +163,16 @@ export class EscrowService {
     totalAmount: number,
     tenantId: string,
     payerId: string,
+    advancePaymentPercentage?: number,
   ): Promise<{ advance: Payment; final: Payment }> {
-    const split = await this.splitAdvanceFinal(totalAmount);
+    const split = await this.splitAdvanceFinal(totalAmount, advancePaymentPercentage);
+    
+    // Calculate the actual percentage used (convert back to 0-100 scale for metadata)
+    const actualAdvancePercentage =
+      advancePaymentPercentage !== undefined && advancePaymentPercentage !== null
+        ? advancePaymentPercentage
+        : 70;
+    const actualFinalPercentage = 100 - actualAdvancePercentage;
 
     // Create advance payment
     const advancePayment = this.paymentRepository.create({
@@ -171,7 +186,8 @@ export class EscrowService {
         ...basePaymentData.metadata,
         escrowSplit: 'advance',
         originalAmount: totalAmount,
-        splitPercentage: 0.7,
+        splitPercentage: actualAdvancePercentage / 100, // Store as decimal (0-1)
+        advancePaymentPercentage: actualAdvancePercentage, // Store as percentage (0-100)
       },
     });
 
@@ -187,7 +203,8 @@ export class EscrowService {
         ...basePaymentData.metadata,
         escrowSplit: 'final',
         originalAmount: totalAmount,
-        splitPercentage: 0.3,
+        splitPercentage: actualFinalPercentage / 100, // Store as decimal (0-1)
+        advancePaymentPercentage: actualAdvancePercentage, // Store as percentage (0-100) for reference
         escrowHeldAt: new Date().toISOString(),
       },
     });

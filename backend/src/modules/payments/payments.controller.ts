@@ -13,8 +13,10 @@ import {
   BadRequestException,
   Logger,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { PaymentsService } from './payments.service';
 import { PaymentAnalyticsService } from './services/payment-analytics.service';
+import { PaymentCalculationService } from './services/payment-calculation.service';
 import { MobileMoneyPaymentService } from './services/mobile-money-payment.service';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -24,6 +26,7 @@ import { UpdatePaymentStatusDto } from './dto/update-payment-status.dto';
 import { PaymentFilterDto } from './dto/payment-filter.dto';
 import { AdvancePaymentRequestDto } from './dto/advance-payment-request.dto';
 import { InitiateMobileMoneyPaymentDto } from './dto/initiate-mobile-money.dto';
+import { SendMobileMoneyPaymentDto } from './dto/send-mobile-money-payment.dto';
 import {
   ReconciliationRequestDto,
   ReconciliationResponseDto,
@@ -59,7 +62,9 @@ export class PaymentsController {
   constructor(
     private readonly paymentsService: PaymentsService,
     private readonly paymentAnalyticsService: PaymentAnalyticsService,
+    private readonly paymentCalculationService: PaymentCalculationService,
     private readonly mobileMoneyPaymentService: MobileMoneyPaymentService,
+    private readonly configService: ConfigService,
     @InjectRepository(Payment)
     private readonly paymentRepository: Repository<Payment>,
   ) {}
@@ -151,6 +156,9 @@ export class PaymentsController {
     @Request() req,
   ) {
     try {
+      // Generate a unique reference number for this payment
+      const referenceNumber = dto.referenceNumber || `MM-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
       // Create payment record
       const createPaymentDto: CreatePaymentDto = {
         tripId: dto.tripId,
@@ -159,11 +167,12 @@ export class PaymentsController {
         paymentMethod: PaymentMethod.DIGITAL_WALLET,
         paymentType: (dto.paymentType as any) || PaymentType.TRIP_PAYMENT,
         description: dto.description || 'Mobile Money payment for cargo transportation',
-        referenceNumber: dto.referenceNumber || `MM-${Date.now()}`,
+        referenceNumber: referenceNumber,
         metadata: {
           ...dto.metadata,
           phoneNumber: dto.phoneNumber,
           paymentMethod: 'mobile_money',
+          referenceId: referenceNumber, // Store referenceId in metadata for webhook matching
         },
       };
 
@@ -198,6 +207,187 @@ export class PaymentsController {
     } catch (error) {
       throw new BadRequestException(
         `Failed to initiate Mobile Money payment: ${error.message}`,
+      );
+    }
+  }
+
+  @Post('mobile-money/send')
+  @UseGuards(RateLimitGuard)
+  @ApiOperation({
+    summary: 'Send Mobile Money payment',
+    description: 'Send a mobile money payment. A confirmation popup will be sent to the API account phone number to enter PIN/password. Once confirmed, the money will be transferred to the receiver phone number.',
+  })
+  @ApiBody({
+    type: SendMobileMoneyPaymentDto,
+    description: 'Mobile Money payment details with receiver phone number (where money will be sent)',
+  })
+  @ApiCreatedResponse({
+    description: 'Mobile Money payment initiated successfully. Confirmation popup has been sent to API account.',
+    schema: {
+      example: {
+        success: true,
+        message: 'Mobile Money payment initiated successfully. A confirmation popup has been sent to the API account. Once confirmed, the payment will be sent to the receiver.',
+        data: {
+          payment: {
+            id: '550e8400-e29b-41d4-a716-446655440000',
+            amount: 50000,
+            currency: 'RWF',
+            status: 'processing',
+            paymentMethod: 'digital_wallet',
+            transactionId: 'TXN_123456789',
+            referenceNumber: 'MM-1705312200000-abc123',
+          },
+          payerPhoneNumber: '250783544364',
+          receiverPhoneNumber: '250788888888',
+          transactionStatus: 'pending',
+          message: 'A mobile money popup has been sent to the API account phone. Once the PIN is entered and confirmed, the payment will be sent to the receiver.',
+        },
+      },
+    },
+  })
+  @ApiBadRequestResponse({ description: 'Invalid payment data or missing receiver phone number' })
+  async sendMobileMoneyPayment(
+    @Body(new ValidationPipe({ transform: true })) dto: SendMobileMoneyPaymentDto,
+    @Request() req,
+  ) {
+    try {
+      // Get the API account phone number (the sender/payer that will get the popup)
+      const apiAccountPhone = this.configService.get<string>('MOBILE_MONEY_ACCOUNT_PHONE');
+      
+      if (!apiAccountPhone) {
+        throw new BadRequestException(
+          'Mobile Money API account phone number is not configured. Please set MOBILE_MONEY_ACCOUNT_PHONE in your environment variables.',
+        );
+      }
+
+      this.logger.log(
+        `Sending Mobile Money payment: ${dto.amount} ${dto.currency} from API account ${apiAccountPhone} to receiver ${dto.receiverPhoneNumber} by user ${req.user.userId}`,
+      );
+
+      // Generate a unique reference number for this payment
+      const referenceNumber = dto.referenceNumber || `MM-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+      // Prepare payment message
+      const paymentMessage = dto.message || 
+        (dto.metadata?.isLenderPayment 
+          ? `Loan disbursement payment of ${dto.amount} ${dto.currency}`
+          : `Payment of ${dto.amount} ${dto.currency} for cargo transportation services`);
+
+      // Create payment record first
+      // Only include tripId if it's a valid non-empty string
+      const validTripId = dto.tripId && dto.tripId.trim() !== '' ? dto.tripId : undefined;
+      const createPaymentDto: CreatePaymentDto = {
+        tripId: validTripId,
+        amount: dto.amount,
+        currency: dto.currency || 'RWF',
+        paymentMethod: PaymentMethod.DIGITAL_WALLET,
+        paymentType: validTripId ? PaymentType.TRIP_PAYMENT : PaymentType.SERVICE_FEE,
+        description: paymentMessage,
+        referenceNumber: referenceNumber,
+        metadata: {
+          ...dto.metadata,
+          phoneNumber: apiAccountPhone, // API account phone number (sender/payer)
+          receiverPhoneNumber: dto.receiverPhoneNumber, // User-provided receiver
+          paymentMethod: 'mobile_money',
+          referenceId: referenceNumber,
+          senderId: req.user.userId,
+          senderType: dto.metadata?.isLenderPayment ? 'lender' : 'cargo_owner',
+        },
+      };
+
+      const payment = await this.paymentsService.createPayment(
+        createPaymentDto,
+        req.user.tenantId,
+        req.user.userId,
+      );
+
+      // Create transfer to send 100% to the receiver
+      const transfers = [{
+        percentage: 100,
+        phoneNumber: dto.receiverPhoneNumber,
+        receiverMessage: paymentMessage,
+      }];
+
+      // Send the mobile money payment via API
+      // The API account phone number will get the popup to confirm payment
+      // Once confirmed, money will be transferred to the receiver
+      try {
+        const mobileMoneyResponse = await this.mobileMoneyPaymentService.createTransaction(
+          dto.amount,
+          apiAccountPhone, // API account phone number - this will get the popup to enter PIN
+          referenceNumber,
+          paymentMessage,
+          transfers, // Money will be transferred to the receiver
+          this.configService.get<string>('MOBILE_MONEY_CALLBACK_URL'),
+        );
+
+        const transaction = mobileMoneyResponse.savedTransaction || mobileMoneyResponse.transaction;
+        const transactionId = transaction?.externalId || transaction?.id || referenceNumber;
+
+        // Update payment with transaction ID
+        const updatedPayment = await this.paymentsService.updatePaymentStatus(
+          payment.id,
+          {
+            status: PaymentStatus.PROCESSING,
+            transactionId: transactionId,
+            gatewayResponse: 'Mobile money popup sent to payer. Waiting for PIN confirmation.',
+          },
+          req.user.tenantId,
+        );
+
+        // Store transaction details in metadata
+        if (updatedPayment.metadata) {
+          updatedPayment.metadata.externalId = transactionId;
+          updatedPayment.metadata.referenceId = referenceNumber;
+          updatedPayment.metadata.payerPhoneNumber = apiAccountPhone;
+          updatedPayment.metadata.receiverPhoneNumber = dto.receiverPhoneNumber;
+          await this.paymentRepository.save(updatedPayment);
+        }
+
+        this.logger.log(
+          `Mobile Money payment initiated successfully. Transaction ID: ${transactionId}, Reference: ${referenceNumber}. Popup sent to API account: ${apiAccountPhone}, Receiver: ${dto.receiverPhoneNumber}`,
+        );
+
+        return {
+          success: true,
+          message: 'Mobile Money payment initiated successfully. A confirmation popup has been sent to the API account. Once confirmed, the payment will be sent to the receiver.',
+          data: {
+            payment: {
+              id: updatedPayment.id,
+              amount: updatedPayment.amount,
+              currency: updatedPayment.currency,
+              status: updatedPayment.status,
+              paymentMethod: updatedPayment.paymentMethod,
+              transactionId: updatedPayment.transactionId,
+              referenceNumber: updatedPayment.referenceNumber,
+            },
+            payerPhoneNumber: apiAccountPhone,
+            receiverPhoneNumber: dto.receiverPhoneNumber,
+            transactionStatus: transaction?.status || 'pending',
+            transactionId: transactionId,
+            message: 'A mobile money popup has been sent to the API account phone. Once the PIN is entered and confirmed, the payment will be sent to the receiver.',
+          },
+        };
+      } catch (apiError: any) {
+        // If API call fails, update payment status to failed
+        await this.paymentsService.updatePaymentStatus(
+          payment.id,
+          {
+            status: PaymentStatus.FAILED,
+            failureReason: apiError.message || 'Failed to send mobile money popup',
+            gatewayResponse: apiError.response?.data?.message || 'API call failed',
+          },
+          req.user.tenantId,
+        );
+
+        throw new BadRequestException(
+          `Failed to initiate Mobile Money payment: ${apiError.message || 'Payment API error'}`,
+        );
+      }
+    } catch (error) {
+      this.logger.error('Failed to send Mobile Money payment:', error);
+      throw new BadRequestException(
+        `Failed to send Mobile Money payment: ${error.message}`,
       );
     }
   }
@@ -1223,7 +1413,7 @@ export class PaymentsController {
       const callbackData = await this.mobileMoneyPaymentService.processCallback(payload);
 
       // Find payment by referenceId - search in all tenants (webhook doesn't have tenant context)
-      // We'll search by referenceId in metadata or transactionId
+      // We'll search by referenceId in transactionId, referenceNumber, or metadata
       const allPayments = await this.paymentRepository.find({
         where: [
           { transactionId: callbackData.referenceId },
@@ -1232,12 +1422,15 @@ export class PaymentsController {
         relations: ['trip'],
       });
 
-      // Also search in metadata
+      // Also search in metadata for referenceId or externalId
       const paymentsWithMetadata = await this.paymentRepository
         .createQueryBuilder('payment')
-        .where("payment.metadata->>'referenceId' = :referenceId", {
-          referenceId: callbackData.referenceId,
-        })
+        .where(
+          "(payment.metadata->>'referenceId' = :referenceId OR payment.metadata->>'externalId' = :referenceId)",
+          {
+            referenceId: callbackData.referenceId,
+          },
+        )
         .getMany();
 
       const payment = allPayments[0] || paymentsWithMetadata[0];
@@ -1251,22 +1444,38 @@ export class PaymentsController {
 
       // Update payment status based on callback
       if (callbackData.status === 'success') {
+        // Update payment status to completed
         await this.paymentsService.updatePaymentStatus(
           payment.id,
           {
-            status: 'completed' as any,
-            transactionId: callbackData.referenceId,
-            gatewayResponse: callbackData.message,
+            status: PaymentStatus.COMPLETED,
+            transactionId: payment.transactionId || callbackData.referenceId,
+            gatewayResponse: callbackData.message || 'Mobile Money payment confirmed',
             processedAt: new Date(),
           },
           payment.tenantId,
         );
+
+        // Generate invoice and receipt if payment is from lender
+        try {
+          const updatedPayment = await this.paymentsService.findOnePayment(
+            payment.id,
+            payment.tenantId,
+          );
+          // Check if this is a lender payment and generate invoice/receipt
+          if (updatedPayment.metadata?.isLenderPayment) {
+            // This will be handled by the invoice receipt service if needed
+            this.logger.log(`Lender payment completed: ${payment.id}`);
+          }
+        } catch (error) {
+          this.logger.warn('Failed to process payment completion:', error);
+        }
       } else if (callbackData.status === 'failed') {
         await this.paymentsService.updatePaymentStatus(
           payment.id,
           {
-            status: 'failed' as any,
-            failureReason: callbackData.message,
+            status: PaymentStatus.FAILED,
+            failureReason: callbackData.message || 'Mobile Money payment failed',
             processedAt: new Date(),
           },
           payment.tenantId,
@@ -1311,6 +1520,61 @@ export class PaymentsController {
     } catch (error) {
       throw new BadRequestException(
         `Failed to check transaction status: ${error.message}`,
+      );
+    }
+  }
+
+  @Get('trip/:tripId/advance-payment-calculation')
+  @ApiOperation({
+    summary: 'Calculate advance payment amounts for a trip',
+    description:
+      'Calculate advance and final payment amounts based on transportation fee and bid preferences',
+  })
+  @ApiParam({
+    name: 'tripId',
+    description: 'Trip ID to calculate advance payment for',
+    type: 'string',
+  })
+  @ApiOkResponse({
+    description: 'Advance payment calculation retrieved successfully',
+    schema: {
+      example: {
+        transportationFee: 1000,
+        advancePaymentPercentage: 70,
+        advanceAmount: 700,
+        finalAmount: 300,
+        requireAdvancePayment: true,
+        currency: 'USD',
+      },
+    },
+  })
+  @ApiNotFoundResponse({ description: 'Trip not found or no accepted bid found' })
+  async getAdvancePaymentCalculation(
+    @Param('tripId', ParseUUIDPipe) tripId: string,
+  ) {
+    try {
+      const calculation =
+        await this.paymentCalculationService.calculateAdvancePaymentForTrip(
+          tripId,
+        );
+
+      if (!calculation) {
+        throw new BadRequestException(
+          'Could not calculate advance payment. Trip or accepted bid not found.',
+        );
+      }
+
+      return {
+        success: true,
+        data: calculation,
+      };
+    } catch (error) {
+      this.logger.error(
+        `Failed to calculate advance payment for trip ${tripId}:`,
+        error,
+      );
+      throw new BadRequestException(
+        `Failed to calculate advance payment: ${error.message}`,
       );
     }
   }

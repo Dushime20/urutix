@@ -11,6 +11,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between } from 'typeorm';
 import { Payment } from '../../entities/payment.entity';
 import { Trip } from '../../entities/trip.entity';
+import { Bid, BidStatus } from '../../entities/bid.entity';
 import { CreatePaymentDto } from './dto/create-payment.dto';
 import { AdvancePaymentRequestDto } from './dto/advance-payment-request.dto';
 import {
@@ -21,6 +22,18 @@ import {
 import { PaymentProvider } from './types/payment.types';
 import { UpdatePaymentStatusDto } from './dto/update-payment-status.dto';
 import { PaymentFilterDto } from './dto/payment-filter.dto';
+import { PaymentProcessingService } from './services/payment-processing.service';
+import { EscrowService } from './services/escrow.service';
+import { AuditService } from './services/audit.service';
+import { FraudDetectionService } from './services/fraud-detection.service';
+import { WebhookService } from './services/webhook.service';
+import { MicroLendingService } from './services/micro-lending.service';
+import { TenantPaymentConfigService } from './services/tenant-payment-config.service';
+import { TransactionStateService } from './services/transaction-state.service';
+import { ProviderIntegrationService } from './services/provider-integration.service';
+import { IdempotencyService } from './services/idempotency.service';
+import { ReconciliationService } from './services/reconciliation.service';
+import { InvoiceReceiptService } from './services/invoice-receipt.service';
 
 @Injectable()
 export class PaymentsService {
@@ -49,19 +62,21 @@ export class PaymentsService {
     private readonly paymentRepository: Repository<Payment>,
     @InjectRepository(Trip)
     private readonly tripRepository: Repository<Trip>,
+    @InjectRepository(Bid)
+    private readonly bidRepository: Repository<Bid>,
     // New modular services
-    private readonly paymentProcessingService: import('./services/payment-processing.service').PaymentProcessingService,
-    private readonly escrowService: import('./services/escrow.service').EscrowService,
-    private readonly auditService: import('./services/audit.service').AuditService,
-    private readonly fraudDetectionService: import('./services/fraud-detection.service').FraudDetectionService,
-    private readonly webhookService: import('./services/webhook.service').WebhookService,
-    private readonly microLendingService: import('./services/micro-lending.service').MicroLendingService,
-    private readonly tenantPaymentConfigService: import('./services/tenant-payment-config.service').TenantPaymentConfigService,
-    private readonly transactionStateService: import('./services/transaction-state.service').TransactionStateService,
-    private readonly providerIntegrationService: import('./services/provider-integration.service').ProviderIntegrationService,
-    private readonly idempotencyService: import('./services/idempotency.service').IdempotencyService,
-    private readonly reconciliationService: import('./services/reconciliation.service').ReconciliationService,
-    private readonly invoiceReceiptService?: import('./services/invoice-receipt.service').InvoiceReceiptService,
+    private readonly paymentProcessingService: PaymentProcessingService,
+    private readonly escrowService: EscrowService,
+    private readonly auditService: AuditService,
+    private readonly fraudDetectionService: FraudDetectionService,
+    private readonly webhookService: WebhookService,
+    private readonly microLendingService: MicroLendingService,
+    private readonly tenantPaymentConfigService: TenantPaymentConfigService,
+    private readonly transactionStateService: TransactionStateService,
+    private readonly providerIntegrationService: ProviderIntegrationService,
+    private readonly idempotencyService: IdempotencyService,
+    private readonly reconciliationService: ReconciliationService,
+    private readonly invoiceReceiptService?: InvoiceReceiptService,
   ) {}
 
   async createPayment(
@@ -69,22 +84,25 @@ export class PaymentsService {
     tenantId: string,
     userId: string,
   ): Promise<Payment> {
-    // Verify trip exists and user has permission
-    const trip = await this.tripRepository.findOne({
-      where: { id: createPaymentDto.tripId, tenantId },
-      relations: ['load'],
-    });
-    if (!trip) throw new NotFoundException('Trip not found');
-    if (trip.load.cargoOwnerId !== userId)
-      throw new ForbiddenException(
-        'You can only create payments for your own trips',
-      );
-    // Check if payment already exists for this trip
-    const existingPayment = await this.paymentRepository.findOne({
-      where: { tripId: createPaymentDto.tripId, tenantId },
-    });
-    if (existingPayment)
-      throw new ConflictException('Payment already exists for this trip');
+    // Verify trip exists and user has permission (only if tripId is provided and valid)
+    let trip = null;
+    if (createPaymentDto.tripId && typeof createPaymentDto.tripId === 'string' && createPaymentDto.tripId.trim() !== '') {
+      trip = await this.tripRepository.findOne({
+        where: { id: createPaymentDto.tripId, tenantId },
+        relations: ['load'],
+      });
+      if (!trip) throw new NotFoundException('Trip not found');
+      if (trip.load.cargoOwnerId !== userId)
+        throw new ForbiddenException(
+          'You can only create payments for your own trips',
+        );
+      // Check if payment already exists for this trip
+      const existingPayment = await this.paymentRepository.findOne({
+        where: { tripId: createPaymentDto.tripId, tenantId },
+      });
+      if (existingPayment)
+        throw new ConflictException('Payment already exists for this trip');
+    }
 
     // Idempotency check
     if (createPaymentDto.idempotencyKey) {
@@ -94,20 +112,61 @@ export class PaymentsService {
       );
     }
 
-    // Escrow split (70/30) if required
+    // Look up accepted bid for this trip's load to get advance payment preferences (only if trip exists)
+    let advancePaymentPercentage: number | undefined;
+    let requireAdvancePayment: boolean = true; // Default to requiring advance payment
+    if (trip && trip.loadId) {
+      try {
+        const acceptedBid = await this.bidRepository.findOne({
+          where: {
+            loadId: trip.loadId,
+            status: BidStatus.ACCEPTED,
+          },
+          order: { updatedAt: 'DESC' }, // Get the most recently accepted bid
+        });
+        if (acceptedBid) {
+          requireAdvancePayment = acceptedBid.requireAdvancePayment !== undefined 
+            ? acceptedBid.requireAdvancePayment 
+            : true; // Default to true if not specified
+          if (acceptedBid.advancePaymentPercentage !== undefined && acceptedBid.advancePaymentPercentage !== null) {
+            advancePaymentPercentage = acceptedBid.advancePaymentPercentage;
+            this.logger.log(
+              `Using advance payment percentage ${advancePaymentPercentage}% from bid ${acceptedBid.id}`,
+            );
+          }
+          this.logger.log(
+            `Bid ${acceptedBid.id} requireAdvancePayment: ${requireAdvancePayment}`,
+          );
+        }
+      } catch (error) {
+        this.logger.warn(
+          `Could not find accepted bid for load ${trip?.loadId}, using default advance payment settings`,
+        );
+      }
+    }
+
+    // Escrow split (using bid percentage or default 70/30) if required and advance payment is enabled
     let advance = createPaymentDto.amount,
       final = 0;
-    if (createPaymentDto.paymentType === PaymentType.ADVANCE) {
+    if (createPaymentDto.paymentType === PaymentType.ADVANCE && requireAdvancePayment) {
       const split = await this.escrowService.splitAdvanceFinal(
         createPaymentDto.amount,
+        advancePaymentPercentage,
       );
       advance = split.advance;
       final = split.final;
+    } else if (createPaymentDto.paymentType === PaymentType.ADVANCE && !requireAdvancePayment) {
+      // If advance payment is not required, don't split - just create a single payment
+      this.logger.log(
+        `Advance payment not required for this trip. Creating single payment without split.`,
+      );
+      advance = createPaymentDto.amount;
+      final = 0;
     }
 
     // Create advance payment
-    const payment = this.paymentRepository.create({
-      ...createPaymentDto,
+    // Only include tripId if it's provided
+    const paymentData: any = {
       amount: advance,
       tenantId,
       payerId: userId,
@@ -119,21 +178,48 @@ export class PaymentsService {
         : {},
       idempotencyKey: createPaymentDto.idempotencyKey,
       paymentType: PaymentType.ADVANCE,
-    });
-    const savedPayment = await this.paymentRepository.save(payment);
+      currency: createPaymentDto.currency,
+      paymentMethod: createPaymentDto.paymentMethod,
+      description: createPaymentDto.description,
+      referenceNumber: createPaymentDto.referenceNumber,
+    };
+    
+    // Only include tripId if it's provided and valid
+    if (createPaymentDto.tripId && typeof createPaymentDto.tripId === 'string' && createPaymentDto.tripId.trim() !== '') {
+      paymentData.tripId = createPaymentDto.tripId;
+    }
+    
+    const payment = this.paymentRepository.create(paymentData);
+    const savedPaymentResult = await this.paymentRepository.save(payment);
+    // Handle case where save might return array (shouldn't happen, but TypeScript thinks it might)
+    const savedPayment = Array.isArray(savedPaymentResult) ? savedPaymentResult[0] : savedPaymentResult;
     await this.auditService.log('CREATE_PAYMENT', savedPayment);
     // Optionally create final payment record (not paid yet)
     if (final > 0) {
-      const finalPayment = this.paymentRepository.create({
-        ...createPaymentDto,
+      const finalPaymentData: any = {
         amount: final,
         paymentType: PaymentType.FINAL,
         tenantId,
         payerId: userId,
         status: PaymentStatus.ESCROW,
-        metadata: createPaymentDto.metadata || {},
+        currency: createPaymentDto.currency,
+        paymentMethod: createPaymentDto.paymentMethod,
+        description: createPaymentDto.description,
+        referenceNumber: createPaymentDto.referenceNumber,
+        metadata: createPaymentDto.metadata
+          ? typeof createPaymentDto.metadata === 'string'
+            ? JSON.parse(createPaymentDto.metadata)
+            : createPaymentDto.metadata
+          : {},
         idempotencyKey: createPaymentDto.idempotencyKey,
-      });
+      };
+      
+      // Only include tripId if it's provided and valid
+      if (createPaymentDto.tripId && typeof createPaymentDto.tripId === 'string' && createPaymentDto.tripId.trim() !== '') {
+        finalPaymentData.tripId = createPaymentDto.tripId;
+      }
+      
+      const finalPayment = this.paymentRepository.create(finalPaymentData);
       await this.paymentRepository.save(finalPayment);
     }
     return savedPayment;
@@ -300,12 +386,19 @@ export class PaymentsService {
         });
 
       if (processingResult.success) {
+        // For mobile money payments, status should be PROCESSING initially
+        // Payment will be marked as COMPLETED when webhook callback is received
+        const isMobileMoney = provider === PaymentProvider.MOBILE_MONEY;
+        const finalStatus = isMobileMoney ? PaymentStatus.PROCESSING : PaymentStatus.COMPLETED;
+
         // Update payment with processing results
         const updateData: UpdatePaymentStatusDto = {
-          status: PaymentStatus.COMPLETED,
+          status: finalStatus,
           transactionId: processingResult.transactionId,
-          gatewayResponse: 'Payment processed successfully',
-          processedAt: new Date(),
+          gatewayResponse: isMobileMoney 
+            ? 'Mobile Money payment initiated. Waiting for confirmation.' 
+            : 'Payment processed successfully',
+          processedAt: isMobileMoney ? undefined : new Date(),
           processingFee: processingResult.processingFee,
         };
 
@@ -314,19 +407,33 @@ export class PaymentsService {
           updateData,
           tenantId,
         );
+
+        // Store reference ID in metadata for webhook matching (for mobile money)
+        if (isMobileMoney && processingResult.transactionId) {
+          updated.metadata = {
+            ...(updated.metadata || {}),
+            referenceId: processingResult.transactionId,
+            externalId: processingResult.transactionId,
+          };
+          await this.paymentRepository.save(updated);
+        }
+
         await this.auditService.log('PROCESS_PAYMENT', updated, {
           provider: payment.paymentMethod,
           transactionId: processingResult.transactionId,
+          status: finalStatus,
         });
 
-        // Generate invoice and receipt if payment is from lender
-        try {
-          if (this.invoiceReceiptService) {
-            await this.invoiceReceiptService.handlePaymentCompletion(updated);
+        // Generate invoice and receipt only if payment is completed (not for pending mobile money)
+        if (!isMobileMoney) {
+          try {
+            if (this.invoiceReceiptService) {
+              await this.invoiceReceiptService.handlePaymentCompletion(updated);
+            }
+          } catch (error) {
+            // Log but don't fail payment processing
+            this.logger.warn('Failed to generate invoice/receipt:', error);
           }
-        } catch (error) {
-          // Log but don't fail payment processing
-          this.logger.warn('Failed to generate invoice/receipt:', error);
         }
 
         return updated;
