@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { lendingApi } from '../services/lending/lendingApi';
 import { useAuth } from '../contexts/AuthContext';
+import api, { paymentsAPI } from '../services/api';
+import { calculateAdvancePayment, formatCurrency as formatCurrencyUtil, formatPercentage } from '../utils/paymentCalculations';
 import {
   FaSearch,
   FaEye,
@@ -23,7 +25,9 @@ import {
   FaEnvelope,
   FaBuilding,
   FaStar,
-  FaBars
+  FaBars,
+  FaCreditCard,
+  FaRedo
 } from 'react-icons/fa';
 
 interface Lender {
@@ -355,6 +359,18 @@ const getRiskScoreColor = (score: number) => {
 
 const EnhancedLoanRequestsPage: React.FC = () => {
   const { user, accessToken } = useAuth();
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [selectedLoanForPayment, setSelectedLoanForPayment] = useState<LoanRequest | null>(null);
+  const [paymentMethod, setPaymentMethod] = useState<'momo' | 'card' | null>(null);
+  const [processingPayment, setProcessingPayment] = useState(false);
+  const [truckOwnerPhone, setTruckOwnerPhone] = useState<string | null>(null);
+  const [loadingTruckOwnerInfo, setLoadingTruckOwnerInfo] = useState(false);
+  const [showPaymentDetailsModal, setShowPaymentDetailsModal] = useState(false);
+  const [selectedLoanForPaymentDetails, setSelectedLoanForPaymentDetails] = useState<LoanRequest | null>(null);
+  const [loanPayments, setLoanPayments] = useState<any[]>([]);
+  const [loadingPayments, setLoadingPayments] = useState(false);
+  const [editingPaymentId, setEditingPaymentId] = useState<string | null>(null);
+  const [newPaymentStatus, setNewPaymentStatus] = useState<string>('');
   const [requests, setRequests] = useState<LoanRequest[]>([]);
   const [analytics, setAnalytics] = useState<LoanAnalytics | null>(null);
   const [fetching, setFetching] = useState(true);
@@ -369,9 +385,33 @@ const EnhancedLoanRequestsPage: React.FC = () => {
   const [groupByLender, setGroupByLender] = useState(false);
   const [groupByStatus, setGroupByStatus] = useState(false);
   const [showAnalytics, setShowAnalytics] = useState(true);
+  const [advancePaymentCalculations, setAdvancePaymentCalculations] = useState<Record<string, any>>({});
+  const [loadingCalculations, setLoadingCalculations] = useState<Record<string, boolean>>({});
 
   // Get lender ID from authentication context
   const lenderId = user?.role === 'LENDER' ? user.id : "89fa1340-429e-448f-a19d-0e987679d7cd"; // Fallback to seeded lender ID
+
+  // Fetch advance payment calculation for a loan request
+  const fetchAdvancePaymentCalculation = async (tripId: string, loanRequestId: string) => {
+    if (!tripId || advancePaymentCalculations[loanRequestId] || loadingCalculations[loanRequestId]) {
+      return;
+    }
+
+    setLoadingCalculations(prev => ({ ...prev, [loanRequestId]: true }));
+    try {
+      const response = await paymentsAPI.getAdvancePaymentCalculation(tripId);
+      if (response.data?.success && response.data?.data) {
+        setAdvancePaymentCalculations(prev => ({
+          ...prev,
+          [loanRequestId]: response.data.data,
+        }));
+      }
+    } catch (error) {
+      console.warn(`Could not fetch advance payment calculation for trip ${tripId}:`, error);
+    } finally {
+      setLoadingCalculations(prev => ({ ...prev, [loanRequestId]: false }));
+    }
+  };
 
   // Authentication checks
   if (!user) {
@@ -399,86 +439,167 @@ const EnhancedLoanRequestsPage: React.FC = () => {
       try {
         console.log('EnhancedLoanRequestsPage: Loading loan requests for lender:', lenderId);
         
+        // First, get the Lender entity ID from the User ID
+        let actualLenderId = lenderId;
+        try {
+          // Try to get lender ID from the backend endpoint
+          const response = await api.get('/lending/my-lender-id');
+          if (response.data?.lenderId) {
+            actualLenderId = response.data.lenderId;
+            console.log('EnhancedLoanRequestsPage: Found lender entity ID:', actualLenderId);
+          }
+        } catch (err: any) {
+          console.warn('Could not fetch lender ID from endpoint, trying fallback:', err);
+          // Fallback: Try to get lender by user email
+          try {
+            const tenantLenders = await lendingApi.getTenantLenders();
+            const lender = Array.isArray(tenantLenders) 
+              ? tenantLenders.find((l: any) => l.contact_email === user?.email || l.id === lenderId)
+              : null;
+            if (lender) {
+              actualLenderId = lender.id;
+              console.log('EnhancedLoanRequestsPage: Found lender entity ID via fallback:', actualLenderId);
+            }
+          } catch (fallbackErr) {
+            console.warn('Could not fetch tenant lenders, using user ID:', fallbackErr);
+          }
+        }
+        
         // Fetch loan requests and analytics from real APIs
-        const [requestsData, analyticsData] = await Promise.all([
+        const [requestsResponse, analyticsData] = await Promise.all([
           lendingApi.getLenderLoanRequests(
-            lenderId, 
+            actualLenderId, 
             statusFilter !== 'all' ? statusFilter : undefined,
             1, // page
             100 // limit
           ),
-          lendingApi.getLenderAnalytics(lenderId, '12months')
+          lendingApi.getLenderAnalytics(actualLenderId, '12months').catch((err) => {
+            console.warn('Could not fetch analytics, will calculate from loan requests:', err);
+            return null;
+          })
         ]);
 
-        // Transform API data to match component interface
-        const transformedRequests: LoanRequest[] = requestsData.map((req: any) => ({
-          id: req.id,
-          cargo_id: req.cargo_id || req.cargoId,
-          tenant_id: req.tenant_id || req.tenantId,
-          trip_id: req.trip_id || req.tripId,
-          requested_amount: req.requested_amount || req.requestedAmount || 0,
-          status: req.status || 'pending',
-          priority: req.priority || 'medium',
-          created_at: req.created_at || req.createdAt,
-          due_date: req.due_date || req.dueDate,
-          borrower_name: req.borrower?.name || `${req.borrower?.firstName || ''} ${req.borrower?.lastName || ''}`.trim() || 'Unknown Borrower',
-          borrower_email: req.borrower?.email || '',
-          borrower_phone: req.borrower?.phone || '',
-          borrower_company: req.borrower?.companyName || req.borrower?.company,
-          cargo_type: req.cargo?.type || req.cargoType || 'General Cargo',
-          cargo_weight: req.cargo?.weight || req.cargoWeight || 0,
-          cargo_value: req.cargo?.value || req.cargoValue || 0,
-          pickup_location: req.cargo?.pickupLocation || req.pickupLocation || '',
-          delivery_location: req.cargo?.deliveryLocation || req.deliveryLocation || '',
-          distance: req.cargo?.distance || req.distance || 0,
-          estimated_duration: req.cargo?.estimatedDuration || req.estimatedDuration || 0,
-          risk_score: req.risk_score || req.riskScore || 50,
-          credit_score: req.borrower?.creditScore || req.creditScore || 600,
-          interest_rate: req.interest_rate || req.interestRate || 10,
-          collateral_type: req.collateral_type || req.collateralType,
-          collateral_value: req.collateral_value || req.collateralValue,
-          purpose: req.purpose || 'Cargo financing',
-          lender_id: req.lender_id || req.lenderId,
-          lender: req.lender,
-          processing_fee: req.processing_fee || req.processingFee || 0,
-          total_amount: req.total_amount || req.totalAmount || 0,
-          monthly_payment: req.monthly_payment || req.monthlyPayment,
-          loan_term_months: req.loan_term_months || req.loanTermMonths || 12
-        }));
+        // Extract data array from response (response might be { data: [...], total, page, ... } or just array)
+        const requestsData = Array.isArray(requestsResponse) 
+          ? requestsResponse 
+          : (requestsResponse?.data || requestsResponse || []);
 
-        // Transform analytics data
+        console.log('EnhancedLoanRequestsPage: Received loan requests:', requestsData.length);
+
+        // Fetch cargo details for each loan request to populate borrower and cargo info
+        const transformedRequests: LoanRequest[] = await Promise.all(
+          requestsData.map(async (req: any) => {
+            let cargoData = null;
+            let borrowerData = null;
+            
+            // Fetch cargo/load details if cargo_id is available
+            if (req.cargo_id) {
+              try {
+                const cargoResponse = await api.get(`/loads-v2/${req.cargo_id}`);
+                if (cargoResponse.data) {
+                  cargoData = cargoResponse.data;
+                  // Extract borrower (cargo owner) info from cargo
+                  if (cargoData.cargoOwner) {
+                    borrowerData = {
+                      name: cargoData.cargoOwner.profile?.firstName && cargoData.cargoOwner.profile?.lastName
+                        ? `${cargoData.cargoOwner.profile.firstName} ${cargoData.cargoOwner.profile.lastName}`
+                        : cargoData.cargoOwner.companyName || cargoData.cargoOwner.email || 'Unknown',
+                      email: cargoData.cargoOwner.email,
+                      phone: cargoData.cargoOwner.phone || cargoData.cargoOwner.profile?.phone,
+                      companyName: cargoData.cargoOwner.companyName || cargoData.cargoOwner.profile?.companyName
+                    };
+                  }
+                }
+              } catch (err) {
+                console.warn(`Could not fetch cargo ${req.cargo_id}:`, err);
+              }
+            }
+            
+            // Extract location info from cargo (handle gracefully if cargo data is not available)
+            const pickupLoc = cargoData?.locations?.find((l: any) => l.type === 'PICKUP') || cargoData?.origin;
+            const deliveryLoc = cargoData?.locations?.find((l: any) => l.type === 'DELIVERY') || cargoData?.destination;
+            
+            // Format location strings safely
+            const formatLocation = (loc: any) => {
+              if (!loc) return '';
+              if (typeof loc === 'string') return loc;
+              if (loc.address) return loc.address;
+              if (loc.city) return loc.city;
+              if (loc.name) return loc.name;
+              return '';
+            };
+            
+            return {
+              id: req.id,
+              cargo_id: req.cargo_id || req.cargoId,
+              tenant_id: req.tenant_id || req.tenantId,
+              trip_id: req.trip_id || req.tripId,
+              requested_amount: req.requested_amount || req.requestedAmount || 0,
+              status: req.status || 'pending',
+              priority: req.priority || 'medium',
+              created_at: req.created_at || req.createdAt,
+              due_date: req.due_date || req.dueDate,
+              borrower_name: borrowerData?.name || req.borrower?.name || `${req.borrower?.firstName || ''} ${req.borrower?.lastName || ''}`.trim() || 'Unknown Borrower',
+              borrower_email: borrowerData?.email || req.borrower?.email || '',
+              borrower_phone: borrowerData?.phone || req.borrower?.phone || '',
+              borrower_company: borrowerData?.companyName || req.borrower?.companyName || req.borrower?.company,
+              cargo_type: cargoData?.cargoType || req.cargo?.type || req.cargoType || 'General Cargo',
+              cargo_weight: cargoData?.weight || req.cargo?.weight || req.cargoWeight || 0,
+              cargo_value: cargoData?.loadValue || req.cargo?.value || req.cargoValue || 0,
+              pickup_location: formatLocation(pickupLoc) || req.cargo?.pickupLocation || req.pickupLocation || 'Not Available',
+              delivery_location: formatLocation(deliveryLoc) || req.cargo?.deliveryLocation || req.deliveryLocation || 'Not Available',
+              distance: cargoData?.distance || req.cargo?.distance || req.distance || 0,
+              estimated_duration: cargoData?.estimatedDuration || req.cargo?.estimatedDuration || req.estimatedDuration || 0,
+              risk_score: req.risk_score || req.riskScore || 50,
+              credit_score: req.borrower?.creditScore || req.creditScore || 600,
+              interest_rate: req.interest_rate || req.interestRate || 10,
+              collateral_type: req.collateral_type || req.collateralType,
+              collateral_value: req.collateral_value || req.collateralValue,
+              purpose: req.purpose || 'Cargo financing',
+              lender_id: req.lender_id || req.lenderId,
+              lender: req.lender ? {
+                ...req.lender,
+                type: req.lender.type || undefined, // Ensure type is defined or undefined, not null
+              } : undefined,
+              processing_fee: req.processing_fee || req.processingFee || 0,
+              total_amount: req.total_amount || req.totalAmount || 0,
+              monthly_payment: req.monthly_payment || req.monthlyPayment,
+              loan_term_months: req.loan_term_months || req.loanTermMonths || 12
+            };
+          })
+        );
+
+        // Transform analytics data (handle null analyticsData)
         const transformedAnalytics: LoanAnalytics = {
-          totalRequests: analyticsData.totalLoanRequests || transformedRequests.length,
+          totalRequests: analyticsData?.totalLoanRequests || transformedRequests.length,
           pendingRequests: transformedRequests.filter(r => r.status === 'pending').length,
           approvedRequests: transformedRequests.filter(r => r.status === 'approved').length,
           rejectedRequests: transformedRequests.filter(r => r.status === 'rejected').length,
           totalAmountRequested: transformedRequests.reduce((sum, r) => sum + r.requested_amount, 0),
           totalAmountApproved: transformedRequests.filter(r => r.status === 'approved').reduce((sum, r) => sum + r.requested_amount, 0),
-          averageAmount: analyticsData.averageLoanAmount || 0,
-          averageRiskScore: analyticsData.averageRiskScore || 50,
-          approvalRate: analyticsData.approvalRate || 0,
-          monthlyGrowth: analyticsData.monthlyGrowthRate || 0
+          averageAmount: analyticsData?.averageLoanAmount || (transformedRequests.length > 0 ? transformedRequests.reduce((sum, r) => sum + r.requested_amount, 0) / transformedRequests.length : 0),
+          averageRiskScore: analyticsData?.averageRiskScore || 50,
+          approvalRate: analyticsData?.approvalRate || (transformedRequests.length > 0 ? (transformedRequests.filter(r => r.status === 'approved').length / transformedRequests.length) * 100 : 0),
+          monthlyGrowth: analyticsData?.monthlyGrowthRate || 0
         };
 
         setRequests(transformedRequests);
         setAnalytics(transformedAnalytics);
 
+        // Fetch advance payment calculations for all requests with trip_id
+        transformedRequests.forEach((req) => {
+          if (req.trip_id) {
+            fetchAdvancePaymentCalculation(req.trip_id, req.id).catch(() => {
+              // Silently fail - calculation is optional
+            });
+          }
+        });
+
       } catch (err: any) {
         console.error('Error fetching loan requests:', err);
         setError(err.message || 'Failed to load loan requests');
-        
-        // Fallback to mock data if API fails
-        try {
-          const [mockRequestsData, mockAnalyticsData] = await Promise.all([
-            mockFetchLoanRequests(),
-            mockFetchAnalytics()
-          ]);
-          setRequests(mockRequestsData);
-          setAnalytics(mockAnalyticsData);
-        } catch {
-          setRequests([]);
-          setAnalytics(null);
-        }
+        setRequests([]);
+        setAnalytics(null);
       } finally {
         setFetching(false);
       }
@@ -490,17 +611,33 @@ const EnhancedLoanRequestsPage: React.FC = () => {
   // Function to handle loan approval
   const handleApproveLoan = async (loanId: string, approvedAmount: number, interestRate: number) => {
     try {
-      await lendingApi.approveLoanRequest(loanId, {
+      const response = await lendingApi.approveLoanRequest(loanId, {
         approved_amount: approvedAmount,
         interest_rate: interestRate
       });
       
-      // Refresh the data
-      setRequests(prev => prev.map(req => 
-        req.id === loanId 
-          ? { ...req, status: 'approved' as const }
-          : req
-      ));
+      // Find the approved loan request
+      const approvedLoan = requests.find(req => req.id === loanId);
+      if (approvedLoan) {
+        // Update the loan status
+        setRequests(prev => prev.map(req => 
+          req.id === loanId 
+            ? { ...req, status: 'approved' as const }
+            : req
+        ));
+        
+        // Show payment modal
+        setSelectedLoanForPayment({ ...approvedLoan, status: 'approved' });
+        setShowPaymentModal(true);
+        
+        // Fetch truck owner's phone number automatically
+        fetchTruckOwnerPhoneNumber(approvedLoan);
+        
+        // Fetch advance payment calculation if trip_id exists
+        if (approvedLoan.trip_id) {
+          fetchAdvancePaymentCalculation(approvedLoan.trip_id, approvedLoan.id);
+        }
+      }
     } catch (err: any) {
       console.error('Error approving loan:', err);
       alert('Failed to approve loan: ' + (err.message || 'Unknown error'));
@@ -521,6 +658,185 @@ const EnhancedLoanRequestsPage: React.FC = () => {
     } catch (err: any) {
       console.error('Error rejecting loan:', err);
       alert('Failed to reject loan: ' + (err.message || 'Unknown error'));
+    }
+  };
+
+  // Function to fetch truck owner's phone number from payment info
+  const fetchTruckOwnerPhoneNumber = async (loan: LoanRequest) => {
+    if (!loan.trip_id && !loan.cargo_id) return;
+    
+    try {
+      setLoadingTruckOwnerInfo(true);
+      
+      // Get trip details to find the truck owner
+      let tripId = loan.trip_id;
+      if (!tripId && loan.cargo_id) {
+        // Try to get trip from cargo
+        const cargoResponse = await api.get(`/loads-v2/${loan.cargo_id}`);
+        const trip = cargoResponse.data?.trip || cargoResponse.data?.trips?.[0];
+        tripId = trip?.id;
+      }
+      
+      if (tripId) {
+        // Get trip with truck and owner details
+        const tripResponse = await api.get(`/trips/${tripId}`);
+        const trip = tripResponse.data?.data || tripResponse.data;
+        
+        // Get truck owner ID
+        const truckOwnerId = trip?.assignedTruck?.ownerId || trip?.assignedTruck?.owner?.id;
+        
+        if (truckOwnerId) {
+          // Fetch truck owner's profile to get payment info
+          const ownerProfileResponse = await api.get('/users/profile-by-id', {
+            params: { userId: truckOwnerId }
+          });
+          
+          const ownerProfile = ownerProfileResponse.data?.data?.profile || 
+                             ownerProfileResponse.data?.profile ||
+                             ownerProfileResponse.data?.data;
+          
+          // Extract phone number from payment info
+          const phoneNumber = ownerProfile?.preferences?.paymentInfo?.phoneNumber ||
+                            ownerProfile?.phone ||
+                            trip?.assignedTruck?.owner?.phone;
+          
+          if (phoneNumber) {
+            setTruckOwnerPhone(phoneNumber);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching truck owner phone number:', error);
+      // Don't show error to user, just log it
+    } finally {
+      setLoadingTruckOwnerInfo(false);
+    }
+  };
+
+  // Function to fetch payments for a loan
+  const fetchLoanPayments = async (loanId: string) => {
+    try {
+      setLoadingPayments(true);
+      
+      // Get trip ID from loan
+      const loan = requests.find(r => r.id === loanId);
+      if (!loan?.trip_id) {
+        // Try to get trip from cargo
+        if (loan?.cargo_id) {
+          const cargoResponse = await api.get(`/loads-v2/${loan.cargo_id}`);
+          const trip = cargoResponse.data?.trip || cargoResponse.data?.trips?.[0];
+          if (trip?.id) {
+            const paymentsResponse = await api.get('/payments', {
+              params: { tripId: trip.id }
+            });
+            setLoanPayments(paymentsResponse.data?.payments || paymentsResponse.data?.data?.payments || []);
+            setLoadingPayments(false);
+            return;
+          }
+        }
+        setLoanPayments([]);
+        setLoadingPayments(false);
+        return;
+      }
+      
+      // Fetch payments for the trip
+      const paymentsResponse = await api.get('/payments', {
+        params: { tripId: loan.trip_id }
+      });
+      
+      setLoanPayments(paymentsResponse.data?.payments || paymentsResponse.data?.data?.payments || []);
+    } catch (error) {
+      console.error('Error fetching loan payments:', error);
+      setLoanPayments([]);
+    } finally {
+      setLoadingPayments(false);
+    }
+  };
+
+  // Function to update payment status
+  const handleUpdatePaymentStatus = async (paymentId: string, newStatus: string) => {
+    try {
+      const response = await api.patch(`/payments/${paymentId}/status`, {
+        status: newStatus,
+      });
+      
+      if (response.data) {
+        // Refresh payments
+        if (selectedLoanForPaymentDetails) {
+          await fetchLoanPayments(selectedLoanForPaymentDetails.id);
+        }
+        
+        // If status changed to pending, show retry payment option
+        if (newStatus === 'pending' && selectedLoanForPaymentDetails) {
+          // Optionally auto-open payment modal
+          setShowPaymentDetailsModal(false);
+          setSelectedLoanForPayment(selectedLoanForPaymentDetails);
+          setShowPaymentModal(true);
+          fetchTruckOwnerPhoneNumber(selectedLoanForPaymentDetails);
+          
+          // Fetch advance payment calculation if trip_id exists
+          if (selectedLoanForPaymentDetails.trip_id) {
+            fetchAdvancePaymentCalculation(selectedLoanForPaymentDetails.trip_id, selectedLoanForPaymentDetails.id);
+          }
+        }
+        
+        setEditingPaymentId(null);
+        setNewPaymentStatus('');
+        alert('Payment status updated successfully');
+      }
+    } catch (error: any) {
+      console.error('Error updating payment status:', error);
+      alert(error.response?.data?.message || 'Failed to update payment status');
+    }
+  };
+
+  // Function to handle payment processing
+  const handleProcessPayment = async () => {
+    if (!selectedLoanForPayment || !paymentMethod) return;
+
+    if (paymentMethod === 'momo') {
+      try {
+        setProcessingPayment(true);
+        
+        // Use truck owner's phone number (should be pre-filled)
+        if (!truckOwnerPhone) {
+          alert('Truck owner phone number not found. Please ensure the truck owner has added their payment information.');
+          setProcessingPayment(false);
+          return;
+        }
+
+        // Call the disburse-with-payment endpoint
+        const response = await api.post(
+          `/lending/loan-requests/${selectedLoanForPayment.id}/disburse-with-payment`,
+          {
+            paymentMethod: 'mobile_money',
+            truckOwnerPhoneNumber: truckOwnerPhone,
+          }
+        );
+
+        if (response.data?.success) {
+          alert('Mobile Money payment initiated successfully! The truck owner will receive the payment on their phone.');
+          
+          // Refresh loan requests
+          fetchLoanRequests();
+          
+          // Close modal and reset
+          setShowPaymentModal(false);
+          setSelectedLoanForPayment(null);
+          setPaymentMethod(null);
+          setTruckOwnerPhone(null);
+        } else {
+          alert('Failed to initiate payment. Please try again.');
+        }
+      } catch (error: any) {
+        console.error('Payment error:', error);
+        alert(error.response?.data?.message || 'Failed to process payment. Please try again.');
+      } finally {
+        setProcessingPayment(false);
+      }
+    } else {
+      // Card payment - TODO: implement card payment gateway
+      alert(`Card payment integration is not yet available. Please use Mobile Money for now.`);
     }
   };
 
@@ -863,7 +1179,6 @@ const EnhancedLoanRequestsPage: React.FC = () => {
                             {sortBy !== 'risk_score' && <span className="opacity-0 group-hover:opacity-60 transition">⇅</span>}
                           </div>
                         </th>
-                        <th className="px-2 py-2.5 font-semibold text-left">Lender</th>
                         <th className="pr-4 pl-2 py-2.5 font-semibold text-right">Actions</th>
                       </tr>
                     </thead>
@@ -903,6 +1218,35 @@ const EnhancedLoanRequestsPage: React.FC = () => {
                                 <p className="text-xs text-blue-600">
                                   RWF {(request.monthly_payment / 1000).toFixed(0)}K/month
                                 </p>
+                              )}
+                              {/* Advance Payment Calculation */}
+                              {advancePaymentCalculations[request.id] && (() => {
+                                const calc = advancePaymentCalculations[request.id];
+                                return (
+                                  <div className="mt-2 pt-2 border-t border-gray-200">
+                                    <p className="text-xs font-medium text-gray-700 mb-1">Advance Payment Info:</p>
+                                    {calc.requireAdvancePayment ? (
+                                      <>
+                                        <p className="text-xs text-green-700 font-semibold">
+                                          Advance: {formatCurrencyUtil(calc.advanceAmount, calc.currency)}
+                                        </p>
+                                        <p className="text-xs text-gray-600">
+                                          ({formatPercentage(calc.advancePaymentPercentage)} of {formatCurrencyUtil(calc.transportationFee, calc.currency)})
+                                        </p>
+                                        <p className="text-xs text-gray-500">
+                                          Final: {formatCurrencyUtil(calc.finalAmount, calc.currency)}
+                                        </p>
+                                      </>
+                                    ) : (
+                                      <p className="text-xs text-gray-600">
+                                        No advance required. Full payment after delivery.
+                                      </p>
+                                    )}
+                                  </div>
+                                );
+                              })()}
+                              {loadingCalculations[request.id] && (
+                                <p className="text-xs text-gray-400 italic">Loading payment info...</p>
                               )}
                             </div>
                           </td>
@@ -951,88 +1295,89 @@ const EnhancedLoanRequestsPage: React.FC = () => {
                               )}
                             </div>
                           </td>
-                          <td className="px-2 py-3 align-middle">
-                            {request.lender ? (
-                              <div className="space-y-1">
-                                <p className="font-medium text-gray-900 text-xs">{request.lender.name}</p>
-                                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                                  request.lender.type === 'bank' ? 'bg-blue-100 text-blue-700' :
-                                  request.lender.type === 'microfinance' ? 'bg-green-100 text-green-700' :
-                                  request.lender.type === 'cooperative' ? 'bg-purple-100 text-purple-700' : 'bg-orange-100 text-orange-700'
-                                }`}>
-                                  {request.lender.type.charAt(0).toUpperCase() + request.lender.type.slice(1)}
-                                </span>
-                              </div>
-                            ) : (
-                              <span className="text-gray-400 text-xs">Unassigned</span>
-                            )}
-                          </td>
                           <td className="pr-4 pl-2 py-3 text-right relative">
-                            <div className="inline-flex items-center gap-1">
+                            <div className="flex items-center gap-2 justify-end">
                               <button
-                                onClick={() => setOpenActionRow(r => r === request.id ? null : request.id)}
-                                className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition"
-                                title="More Actions"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  try {
+                                    // View details action - could show a modal with loan details
+                                    console.log('View details for loan:', request.id);
+                                    alert(`Loan Details:\n\nBorrower: ${request.borrower_name}\nAmount: RWF ${request.requested_amount.toLocaleString()}\nStatus: ${request.status}\nCreated: ${new Date(request.created_at).toLocaleDateString()}`);
+                                  } catch (error) {
+                                    console.error('Error viewing details:', error);
+                                  }
+                                }}
+                                className="p-1.5 rounded-lg hover:bg-blue-100 text-blue-600 hover:text-blue-700 transition"
+                                title="View Details"
                               >
-                                <FaEllipsisH className="w-3 h-3" />
+                                <FaEye className="w-4 h-4" />
                               </button>
-                            </div>
-                            {openActionRow === request.id && (
-                              <div className="absolute right-4 mt-2 w-44 bg-white rounded-lg shadow-lg border border-gray-100 z-10 py-1 text-xs">
-                                <button
-                                  onClick={() => { setOpenActionRow(null); }}
-                                  className="w-full text-left px-2.5 py-1.5 hover:bg-gray-50 text-gray-700 flex items-center gap-1.5"
-                                >
-                                  <FaEye className="text-blue-500 w-3 h-3" /> View Details
-                                </button>
-                                <button
-                                  onClick={() => { setOpenActionRow(null); }}
-                                  className="w-full text-left px-2.5 py-1.5 hover:bg-gray-50 text-gray-700 flex items-center gap-1.5"
-                                >
-                                  <FaEdit className="text-green-500 w-3 h-3" /> Edit Request
-                                </button>
-                                <button
-                                  onClick={() => { setOpenActionRow(null); }}
-                                  className="w-full text-left px-2.5 py-1.5 hover:bg-gray-50 text-gray-700 flex items-center gap-1.5"
-                                >
-                                  <FaHistory className="text-purple-500 w-3 h-3" /> View History
-                                </button>
-                                <div className="border-t border-gray-100 my-1"></div>
-                                {request.status === 'pending' && (
-                                  <>
-                                    <button
-                                      onClick={() => { 
-                                        setOpenActionRow(null);
-                                        // Simple approval with default terms for now
-                                        // In a real app, you'd show a modal to collect these details
+                              {request.status === 'pending' && (
+                                <>
+                                  <button
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      try {
                                         handleApproveLoan(
-                                          request.id, 
-                                          request.requested_amount, 
+                                          request.id,
+                                          request.requested_amount,
                                           request.interest_rate || 10
                                         );
-                                      }}
-                                      className="w-full text-left px-2.5 py-1.5 hover:bg-green-50 text-green-600 flex items-center gap-1.5"
-                                    >
-                                      <FaCheck className="text-green-500 w-3 h-3" /> Approve
-                                    </button>
-                                    <button
-                                      onClick={() => { 
-                                        setOpenActionRow(null);
-                                        // Simple rejection with default reason for now
-                                        // In a real app, you'd show a modal to collect rejection reason
+                                      } catch (error) {
+                                        console.error('Error approving loan:', error);
+                                        alert('Error approving loan. Please try again.');
+                                      }
+                                    }}
+                                    className="p-1.5 rounded-lg hover:bg-green-100 text-green-600 hover:text-green-700 transition"
+                                    title="Accept"
+                                  >
+                                    <FaCheck className="w-4 h-4" />
+                                  </button>
+                                  <button
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      try {
                                         const reason = prompt('Enter rejection reason:') || 'Application did not meet criteria';
                                         if (reason) {
                                           handleRejectLoan(request.id, reason);
                                         }
-                                      }}
-                                      className="w-full text-left px-2.5 py-1.5 hover:bg-red-50 text-red-600 flex items-center gap-1.5"
-                                    >
-                                      <FaTimes className="text-red-500 w-3 h-3" /> Reject
-                                    </button>
-                                  </>
-                                )}
-                              </div>
-                            )}
+                                      } catch (error) {
+                                        console.error('Error rejecting loan:', error);
+                                        alert('Error rejecting loan. Please try again.');
+                                      }
+                                    }}
+                                    className="p-1.5 rounded-lg hover:bg-red-100 text-red-600 hover:text-red-700 transition"
+                                    title="Reject"
+                                  >
+                                    <FaTimes className="w-4 h-4" />
+                                  </button>
+                                </>
+                              )}
+                              {(request.status === 'approved' || request.status === 'disbursed') && (
+                                <button
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    try {
+                                      setSelectedLoanForPaymentDetails(request);
+                                      fetchLoanPayments(request.id);
+                                      setShowPaymentDetailsModal(true);
+                                    } catch (error) {
+                                      console.error('Error opening payment details:', error);
+                                      alert('Error opening payment details. Please try again.');
+                                    }
+                                  }}
+                                  className="p-1.5 rounded-lg hover:bg-blue-100 text-blue-600 hover:text-blue-700 transition"
+                                  title="View/Edit Payment"
+                                >
+                                  <FaCreditCard className="w-4 h-4" />
+                                </button>
+                              )}
+                            </div>
                           </td>
                         </tr>
                       ))}
@@ -1051,6 +1396,217 @@ const EnhancedLoanRequestsPage: React.FC = () => {
           </div>
         </div>
       </div>
+      
+      {/* Payment Modal */}
+      {showPaymentModal && selectedLoanForPayment && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-900">Complete Payment</h3>
+                <button
+                  onClick={() => {
+                    setShowPaymentModal(false);
+                    setSelectedLoanForPayment(null);
+                    setPaymentMethod(null);
+                  }}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <FaTimes className="w-5 h-5" />
+                </button>
+              </div>
+              
+              <div className="mb-6">
+                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-5 mb-4 border-2 border-blue-200">
+                  <p className="text-sm font-medium text-gray-700 mb-2">Disbursement Amount</p>
+                  <p className="text-3xl font-bold text-gray-900 mb-1">
+                    RWF {selectedLoanForPayment.requested_amount.toLocaleString()}
+                  </p>
+                  <div className="flex items-center gap-4 mt-3 pt-3 border-t border-blue-200">
+                    <div>
+                      <p className="text-xs text-gray-500">Interest Rate</p>
+                      <p className="text-sm font-semibold text-gray-700">{selectedLoanForPayment.interest_rate}%</p>
+                    </div>
+                    {selectedLoanForPayment.approved_amount && selectedLoanForPayment.approved_amount !== selectedLoanForPayment.requested_amount && (
+                      <div>
+                        <p className="text-xs text-gray-500">Requested Amount</p>
+                        <p className="text-sm font-semibold text-gray-700">RWF {selectedLoanForPayment.approved_amount.toLocaleString()}</p>
+                      </div>
+                    )}
+                  </div>
+                  <p className="text-xs text-blue-700 mt-3 font-medium">
+                    💰 This amount will be sent to the truck owner via Mobile Money
+                  </p>
+                </div>
+                
+                {/* Advance Payment Calculation Display */}
+                {loadingCalculations[selectedLoanForPayment.id] ? (
+                  <div className="mb-4 p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                    <p className="text-sm text-gray-600 flex items-center gap-2">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                      Loading payment breakdown...
+                    </p>
+                  </div>
+                ) : advancePaymentCalculations[selectedLoanForPayment.id] ? (
+                  <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+                    <div className="flex items-start gap-2">
+                      <FaDollarSign className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
+                      <div className="flex-1">
+                        <h4 className="font-semibold text-gray-900 text-sm mb-2">Payment Breakdown</h4>
+                        {(() => {
+                          const calc = advancePaymentCalculations[selectedLoanForPayment.id];
+                          return calc.requireAdvancePayment ? (
+                            <div className="space-y-1.5 text-xs">
+                              <div className="flex justify-between">
+                                <span className="text-gray-600">Total Transportation Fee:</span>
+                                <span className="font-semibold text-gray-900">
+                                  {formatCurrencyUtil(calc.transportationFee, calc.currency || 'RWF')}
+                                </span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-gray-600">Advance Payment ({formatPercentage(calc.advancePaymentPercentage)}):</span>
+                                <span className="font-semibold text-green-700">
+                                  {formatCurrencyUtil(calc.advanceAmount, calc.currency || 'RWF')}
+                                </span>
+                              </div>
+                              <div className="flex justify-between pt-1 border-t border-green-200">
+                                <span className="text-gray-600">Final Payment:</span>
+                                <span className="font-semibold text-gray-700">
+                                  {formatCurrencyUtil(calc.finalAmount, calc.currency || 'RWF')}
+                                </span>
+                              </div>
+                              <p className="text-green-700 font-medium mt-2 pt-1 border-t border-green-200">
+                                💡 You are paying the advance amount: {formatCurrencyUtil(calc.advanceAmount, calc.currency || 'RWF')}
+                              </p>
+                            </div>
+                          ) : (
+                            <div className="text-xs text-gray-600">
+                              <p>No advance payment required. Full payment of {formatCurrencyUtil(calc.transportationFee, calc.currency || 'RWF')} will be due upon completion.</p>
+                            </div>
+                          );
+                        })()}
+                      </div>
+                    </div>
+                  </div>
+                ) : selectedLoanForPayment.trip_id ? (
+                  <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <p className="text-xs text-yellow-700">
+                      ⚠️ Payment breakdown not available. The truck owner may not have specified advance payment requirements.
+                    </p>
+                  </div>
+                ) : null}
+                
+                {loadingTruckOwnerInfo && (
+                  <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                    <p className="text-sm text-blue-700 flex items-center gap-2">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                      Fetching truck owner payment information...
+                    </p>
+                  </div>
+                )}
+                
+                {truckOwnerPhone && (
+                  <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+                    <p className="text-sm text-green-700 font-medium mb-1">Truck Owner Payment Info</p>
+                    <p className="text-xs text-green-600">Phone: {truckOwnerPhone}</p>
+                    <p className="text-xs text-green-600 mt-1">Payment will be sent to this number automatically</p>
+                  </div>
+                )}
+                
+                {!truckOwnerPhone && !loadingTruckOwnerInfo && (
+                  <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <p className="text-sm text-yellow-700">
+                      ⚠️ Truck owner phone number not found. Please ensure the truck owner has added their payment information.
+                    </p>
+                  </div>
+                )}
+
+                <p className="text-sm text-gray-700 mb-4">
+                  Select your preferred payment method:
+                </p>
+                
+                <div className="space-y-3">
+                  <button
+                    onClick={() => setPaymentMethod('momo')}
+                    className={`w-full p-4 border-2 rounded-lg transition flex items-center gap-3 ${
+                      paymentMethod === 'momo'
+                        ? 'border-blue-600 bg-blue-50'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                      paymentMethod === 'momo' ? 'bg-blue-600' : 'bg-gray-100'
+                    }`}>
+                      <FaMoneyBillWave className={`w-5 h-5 ${
+                        paymentMethod === 'momo' ? 'text-white' : 'text-gray-600'
+                      }`} />
+                    </div>
+                    <div className="flex-1 text-left">
+                      <h5 className="font-semibold text-gray-900">Mobile Money (Momo)</h5>
+                      <p className="text-xs text-gray-500">
+                        {truckOwnerPhone 
+                          ? `Payment will be sent to: ${truckOwnerPhone}`
+                          : 'Pay via MTN Mobile Money or Airtel Money'}
+                      </p>
+                    </div>
+                    {paymentMethod === 'momo' && (
+                      <FaCheck className="text-blue-600 w-5 h-5" />
+                    )}
+                  </button>
+                  
+                  <button
+                    onClick={() => setPaymentMethod('card')}
+                    className={`w-full p-4 border-2 rounded-lg transition flex items-center gap-3 ${
+                      paymentMethod === 'card'
+                        ? 'border-blue-600 bg-blue-50'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                      paymentMethod === 'card' ? 'bg-blue-600' : 'bg-gray-100'
+                    }`}>
+                      <FaDollarSign className={`w-5 h-5 ${
+                        paymentMethod === 'card' ? 'text-white' : 'text-gray-600'
+                      }`} />
+                    </div>
+                    <div className="flex-1 text-left">
+                      <h5 className="font-semibold text-gray-900">Card Payment</h5>
+                      <p className="text-xs text-gray-500">Pay with Visa, Mastercard, or other cards</p>
+                    </div>
+                    {paymentMethod === 'card' && (
+                      <FaCheck className="text-blue-600 w-5 h-5" />
+                    )}
+                  </button>
+                </div>
+              </div>
+              
+              <div className="flex gap-3">
+                <button
+                  onClick={() => {
+                    setShowPaymentModal(false);
+                    setSelectedLoanForPayment(null);
+                    setPaymentMethod(null);
+                  }}
+                  className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleProcessPayment}
+                  disabled={!paymentMethod || processingPayment || (paymentMethod === 'momo' && !truckOwnerPhone)}
+                  className={`flex-1 px-4 py-2.5 rounded-lg text-white font-medium transition ${
+                    !paymentMethod || processingPayment || (paymentMethod === 'momo' && !truckOwnerPhone)
+                      ? 'bg-gray-400 cursor-not-allowed'
+                      : 'bg-blue-600 hover:bg-blue-700'
+                  }`}
+                >
+                  {processingPayment ? 'Processing...' : 'Proceed to Payment'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -281,6 +281,15 @@ export const lendingApi = {
     return response.data;
   },
 
+  disburseWithPayment: async (loanId: string, paymentData: {
+    paymentMethod: string;
+    phoneNumber?: string;
+    truckOwnerPhoneNumber?: string;
+  }) => {
+    const response = await api.post(`/lending/loan-requests/${loanId}/disburse-with-payment`, paymentData);
+    return response.data;
+  },
+
   // Analytics
   getLenderAnalytics: async (lenderId: string, period: string = '30d') => {
     const response = await api.get(`/lending/lenders/${lenderId}/analytics`, {

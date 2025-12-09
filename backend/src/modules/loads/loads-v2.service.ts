@@ -27,6 +27,9 @@ import {
 import { User } from '../../entities/user.entity';
 import { Location } from '../../entities/location.entity';
 import { Truck } from '../../entities/truck.entity';
+import { Driver } from '../../entities/driver.entity';
+import { LoanRequest } from '../../entities/LoanRequest';
+import { Lender } from '../../entities/Lender';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { LoadValidationV2Service } from './services/load-validation-v2.service';
 
@@ -43,6 +46,12 @@ export class LoadsV2Service {
     private readonly userRepository: Repository<User>,
     @InjectRepository(Truck)
     private readonly truckRepository: Repository<Truck>,
+    @InjectRepository(Driver)
+    private readonly driverRepository: Repository<Driver>,
+    @InjectRepository(LoanRequest)
+    private readonly loanRequestRepository: Repository<LoanRequest>,
+    @InjectRepository(Lender)
+    private readonly lenderRepository: Repository<Lender>,
     private readonly eventEmitter: EventEmitter2,
     private readonly loadValidationService: LoadValidationV2Service,
   ) {}
@@ -414,13 +423,22 @@ export class LoadsV2Service {
    */
   async findOne(id: string, user: User): Promise<LoadResponseV2Dto> {
     try {
+      this.logger.log(`Finding load ${id} for user ${user?.id} with role ${user?.role}`);
       const load = await this.findLoadEntity(id, user);
-      return this.mapToResponseDto(load);
+      const response = this.mapToResponseDto(load);
+      this.logger.log(`Successfully found and mapped load ${id}`);
+      return response;
     } catch (error) {
       this.logger.error(
-        `Failed to find load ${id}: ${error.message}`,
+        `Failed to find load ${id} for user ${user?.id}: ${error.message}`,
         error.stack,
       );
+      
+      // If it's already an HttpException, re-throw it
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      
       throw new HttpException(
         error.message || 'Failed to retrieve load',
         error.status || HttpStatus.INTERNAL_SERVER_ERROR,
@@ -438,7 +456,27 @@ export class LoadsV2Service {
   ): Promise<LoadResponseV2Dto> {
     try {
       const load = await this.findLoadEntity(id, user);
-      this.validateUpdatePermissions(load, user);
+      
+      // Check if this is a metadata-only update (for drivers to update inspection status)
+      // Filter out undefined/null values to get only the fields that are actually being updated
+      const updateKeys = Object.keys(updateLoadDto).filter(
+        key => updateLoadDto[key] !== undefined && updateLoadDto[key] !== null
+      );
+      
+      // Check if metadata is the only field being updated (or if it's a driver trying to update metadata)
+      const hasMetadata = updateLoadDto.metadata !== undefined && updateLoadDto.metadata !== null;
+      const isMetadataOnlyUpdate = 
+        hasMetadata && 
+        (updateKeys.length === 1 || 
+         (updateKeys.length > 1 && updateKeys.every(key => key === 'metadata' || updateLoadDto[key] === undefined || updateLoadDto[key] === null)));
+      
+      this.logger.debug(
+        `Update request - User: ${user.id}, Role: ${user.role}, Load: ${id}, ` +
+        `UpdateKeys: ${updateKeys.join(', ')}, HasMetadata: ${hasMetadata}, IsMetadataOnly: ${isMetadataOnlyUpdate}, ` +
+        `AssignedTruckId: ${load.assignedTruckId}`
+      );
+      
+      await this.validateUpdatePermissions(load, user, isMetadataOnlyUpdate, updateLoadDto);
 
       // Validate status transitions
       if (updateLoadDto.status) {
@@ -461,6 +499,14 @@ export class LoadsV2Service {
         ...updateLoadDto,
         updatedAt: new Date(),
       };
+
+      // Handle metadata updates - merge with existing metadata
+      if (updateLoadDto.metadata) {
+        updateData.metadata = {
+          ...(load.metadata || {}),
+          ...updateLoadDto.metadata,
+        };
+      }
 
       // Map V2 enums to entity enums if present
       if (updateLoadDto.cargoType) {
@@ -509,7 +555,7 @@ export class LoadsV2Service {
   async publishLoad(id: string, user: User): Promise<LoadResponseV2Dto> {
     try {
       const load = await this.findLoadEntity(id, user);
-      this.validateUpdatePermissions(load, user);
+      await this.validateUpdatePermissions(load, user);
       this.validateLoadForPublishing(load);
 
       await this.loadRepository.update(id, {
@@ -550,7 +596,7 @@ export class LoadsV2Service {
   async unpublishLoad(id: string, user: User): Promise<LoadResponseV2Dto> {
     try {
       const load = await this.findLoadEntity(id, user);
-      this.validateUpdatePermissions(load, user);
+      await this.validateUpdatePermissions(load, user);
 
       await this.loadRepository.update(id, {
         status: LoadStatus.DRAFT,
@@ -591,7 +637,7 @@ export class LoadsV2Service {
   ): Promise<LoadResponseV2Dto> {
     try {
       const load = await this.findLoadEntity(loadId, user);
-      this.validateUpdatePermissions(load, user);
+      await this.validateUpdatePermissions(load, user);
 
       await this.loadRepository.update(loadId, {
         assignedTruckId: truckId,
@@ -631,7 +677,7 @@ export class LoadsV2Service {
   async unassignTruck(loadId: string, user: User): Promise<LoadResponseV2Dto> {
     try {
       const load = await this.findLoadEntity(loadId, user);
-      this.validateUpdatePermissions(load, user);
+      await this.validateUpdatePermissions(load, user);
 
       const truckId = load.assignedTruckId;
 
@@ -678,7 +724,7 @@ export class LoadsV2Service {
   ): Promise<LoadResponseV2Dto> {
     try {
       const load = await this.findLoadEntity(loadId, user);
-      this.validateViewPermissions(load, user);
+      await this.validateViewPermissions(load, user);
 
       if (rating < 1 || rating > 5) {
         throw new HttpException(
@@ -813,7 +859,7 @@ export class LoadsV2Service {
   async remove(id: string, user: User): Promise<void> {
     try {
       const load = await this.findLoadEntity(id, user);
-      this.validateUpdatePermissions(load, user);
+      await this.validateUpdatePermissions(load, user);
 
       await this.loadRepository.update(id, {
         deletedAt: new Date(),
@@ -916,17 +962,58 @@ export class LoadsV2Service {
   // Private helper methods
 
   private async findLoadEntity(id: string, user: User): Promise<Load> {
-    const load = await this.loadRepository.findOne({
-      where: { id, deletedAt: IsNull() },
-      relations: ['pickupLocation', 'deliveryLocation'],
-    });
+    try {
+      // Try to load with profile first
+      let load = await this.loadRepository.findOne({
+        where: { id, deletedAt: IsNull() },
+        relations: ['cargoOwner', 'cargoOwner.profile'],
+      });
 
-    if (!load) {
-      throw new HttpException('Load not found', HttpStatus.NOT_FOUND);
+      // If not found or relation fails, try without profile
+      if (!load) {
+        load = await this.loadRepository.findOne({
+          where: { id, deletedAt: IsNull() },
+          relations: ['cargoOwner'],
+        });
+      }
+
+      if (!load) {
+        throw new HttpException('Load not found', HttpStatus.NOT_FOUND);
+      }
+
+      await this.validateViewPermissions(load, user);
+      return load;
+    } catch (error) {
+      // If it's a relation error, try loading without profile
+      if (
+        error.message?.includes('profile') ||
+        error.message?.includes('Property') ||
+        error.message?.includes('relation')
+      ) {
+        this.logger.warn(
+          `Failed to load profile relation for load ${id}, trying without profile: ${error.message}`,
+        );
+        try {
+          const load = await this.loadRepository.findOne({
+            where: { id, deletedAt: IsNull() },
+            relations: ['cargoOwner'],
+          });
+
+          if (!load) {
+            throw new HttpException('Load not found', HttpStatus.NOT_FOUND);
+          }
+
+          await this.validateViewPermissions(load, user);
+          return load;
+        } catch (retryError) {
+          this.logger.error(
+            `Failed to load load ${id} even without profile: ${retryError.message}`,
+          );
+          throw retryError;
+        }
+      }
+      throw error;
     }
-
-    this.validateViewPermissions(load, user);
-    return load;
   }
 
   private validateUserPermissions(user: User, action: string): void {
@@ -941,7 +1028,7 @@ export class LoadsV2Service {
     }
   }
 
-  private validateViewPermissions(load: Load, user: User): void {
+  private async validateViewPermissions(load: Load, user: User): Promise<void> {
     // Allow viewing if user is cargo owner, admin, or if load is published
     if (user.role === 'SUPER_ADMIN' || user.role === 'AGENT') {
       return;
@@ -955,12 +1042,100 @@ export class LoadsV2Service {
       return;
     }
 
+    // Allow drivers to view loads assigned to their truck (all statuses: ASSIGNED, IN_TRANSIT, DELIVERED, etc.)
+    // Drivers can only access loads assigned to their truck via the driver API, so we trust they have access
+    if (user.role === 'DRIVER' && load.assignedTruckId) {
+      return;
+    }
+
+    // Allow LENDERs to view loads that have loan requests assigned to them
+    if (user.role === 'LENDER') {
+      // First, find the Lender entity for this user
+      const lender = await this.lenderRepository.findOne({
+        where: { contact_email: user.email },
+      });
+
+      if (lender) {
+        // Check if there's a loan request for this load with this lender
+        const loanRequest = await this.loanRequestRepository.findOne({
+          where: {
+            cargo_id: load.id,
+            lender_id: lender.id,
+          },
+        });
+
+        if (loanRequest) {
+          this.logger.debug(`Lender ${lender.id} has loan request for load ${load.id}, allowing access`);
+          return;
+        }
+      }
+    }
+
     throw new HttpException('Access denied', HttpStatus.FORBIDDEN);
   }
 
-  private validateUpdatePermissions(load: Load, user: User): void {
+  private async validateUpdatePermissions(load: Load, user: User, isMetadataOnly: boolean = false, updateLoadDto?: UpdateLoadV2Dto): Promise<void> {
+    this.logger.debug(
+      `validateUpdatePermissions - UserId: ${user.id}, Role: ${user.role}, ` +
+      `LoadId: ${load.id}, CargoOwnerId: ${load.cargoOwnerId}, ` +
+      `IsMetadataOnly: ${isMetadataOnly}, AssignedTruckId: ${load.assignedTruckId}`
+    );
+
     if (user.role === 'SUPER_ADMIN' || user.role === 'AGENT') {
       return;
+    }
+
+    // Allow drivers to update metadata (inspection status) for loads assigned to their truck
+    // Also allow if driver is updating and metadata is present (even if other fields might be in DTO)
+    if (user.role === 'DRIVER' && load.assignedTruckId && (isMetadataOnly || updateLoadDto?.metadata)) {
+      this.logger.debug(
+        `Checking driver permissions - UserId: ${user.id}, LoadId: ${load.id}, AssignedTruckId: ${load.assignedTruckId}`
+      );
+      
+      // Verify the driver is assigned to the truck
+      const driver = await this.driverRepository.findOne({
+        where: { userId: user.id, tenantId: user.tenantId },
+      });
+
+      if (!driver) {
+        this.logger.warn(`Driver not found for userId: ${user.id}`);
+        throw new HttpException(
+          'Driver not found',
+          HttpStatus.FORBIDDEN,
+        );
+      }
+
+      this.logger.debug(
+        `Driver found - DriverId: ${driver.id}, CurrentTruckId: ${driver.currentTruckId}`
+      );
+
+      if (driver.currentTruckId === load.assignedTruckId) {
+        this.logger.debug('Driver has matching currentTruckId, allowing update');
+        return;
+      }
+
+      // Also check if driver is in the truck's assignedDrivers array
+      const truck = await this.truckRepository.findOne({
+        where: { id: load.assignedTruckId, tenantId: load.tenantId },
+      });
+
+      if (truck && Array.isArray(truck.assignedDrivers)) {
+        const isDriverAssigned = truck.assignedDrivers.some(
+          (d: any) => d.driverId === driver.id,
+        );
+        if (isDriverAssigned) {
+          this.logger.debug('Driver found in truck assignedDrivers array, allowing update');
+          return;
+        }
+      }
+
+      this.logger.warn(
+        `Driver ${driver.id} is not assigned to truck ${load.assignedTruckId} for load ${load.id}`
+      );
+      throw new HttpException(
+        'You can only update inspection status for loads assigned to your truck',
+        HttpStatus.FORBIDDEN,
+      );
     }
 
     if (load.cargoOwnerId !== user.id) {
@@ -1023,8 +1198,10 @@ export class LoadsV2Service {
     filters: Record<string, unknown>,
   ): void {
     if (filters.status && typeof filters.status === 'string') {
+      // Map LoadStatusV2 to LoadStatus entity enum
+      const entityStatus = this.mapLoadStatusV2ToEntity(filters.status as LoadStatusV2);
       queryBuilder.andWhere('load.status = :status', {
-        status: filters.status,
+        status: entityStatus,
       });
     }
 
@@ -1106,7 +1283,7 @@ export class LoadsV2Service {
   }
 
   private mapToResponseDto(load: Load): LoadResponseV2Dto {
-    return {
+    const response: any = {
       id: load.id,
       tenantId: load.tenantId,
       cargoOwnerId: load.cargoOwnerId,
@@ -1172,7 +1349,36 @@ export class LoadsV2Service {
       requiresPreShipmentInspection: load.requiresPreShipmentInspection,
       requiresDeliveryInspection: load.requiresDeliveryInspection,
       requiresPhotographicDocumentation: load.requiresPhotographicDocumentation,
+      metadata: load.metadata || {},
     };
+
+    // Include cargoOwner if it's loaded (for frontend to display shipper info)
+    if (load.cargoOwner) {
+      try {
+        response.cargoOwner = {
+          id: load.cargoOwner.id,
+          email: load.cargoOwner.email || null,
+          phone: load.cargoOwner.phone || null,
+          companyName: (load.cargoOwner as any)?.companyName || null,
+          profile: load.cargoOwner.profile ? {
+            firstName: load.cargoOwner.profile.firstName || null,
+            lastName: load.cargoOwner.profile.lastName || null,
+          } : null,
+        };
+      } catch (profileError) {
+        this.logger.warn(`Error mapping cargoOwner profile for load ${load.id}: ${profileError.message}`);
+        // Include basic cargoOwner info even if profile fails
+        response.cargoOwner = {
+          id: load.cargoOwner.id,
+          email: load.cargoOwner.email || null,
+          phone: load.cargoOwner.phone || null,
+          companyName: null,
+          profile: null,
+        };
+      }
+    }
+
+    return response as LoadResponseV2Dto;
   }
 
   // Enum mapping methods
@@ -1232,6 +1438,7 @@ export class LoadsV2Service {
       [LoadStatusV2.CREATED]: LoadStatus.CREATED,
       [LoadStatusV2.PUBLISHED]: LoadStatus.PUBLISHED,
       [LoadStatusV2.ASSIGNED]: LoadStatus.ASSIGNED,
+      [LoadStatusV2.LOADED]: LoadStatus.LOADED,
       [LoadStatusV2.IN_TRANSIT]: LoadStatus.IN_TRANSIT,
       [LoadStatusV2.DELIVERED]: LoadStatus.DELIVERED,
       [LoadStatusV2.CANCELLED]: LoadStatus.CANCELLED,
@@ -1245,6 +1452,7 @@ export class LoadsV2Service {
       [LoadStatus.CREATED]: LoadStatusV2.CREATED,
       [LoadStatus.PUBLISHED]: LoadStatusV2.PUBLISHED,
       [LoadStatus.ASSIGNED]: LoadStatusV2.ASSIGNED,
+      [LoadStatus.LOADED]: LoadStatusV2.LOADED,
       [LoadStatus.IN_TRANSIT]: LoadStatusV2.IN_TRANSIT,
       [LoadStatus.DELIVERED]: LoadStatusV2.DELIVERED,
       [LoadStatus.CANCELLED]: LoadStatusV2.CANCELLED,

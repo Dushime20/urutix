@@ -837,6 +837,72 @@ export class DriverService {
   }
 
   /**
+   * Accept and load cargo (driver accepts the assigned load)
+   * Accepts either driverId or userId
+   */
+  async acceptAndLoad(
+    driverIdOrUserId: string,
+    loadId: string,
+    tenantId: string,
+  ): Promise<void> {
+    try {
+      // First try to find driver by ID
+      let driver = await this.driverRepository.findOne({
+        where: { id: driverIdOrUserId, tenantId },
+      });
+
+      // If not found by ID, try to find by userId
+      if (!driver) {
+        driver = await this.driverRepository.findOne({
+          where: { userId: driverIdOrUserId, tenantId },
+        });
+      }
+
+      if (!driver) {
+        throw new NotFoundException(
+          `Driver not found with ID or userId: ${driverIdOrUserId}`,
+        );
+      }
+
+      if (!driver.currentTruckId) {
+        throw new BadRequestException('Driver is not assigned to any truck');
+      }
+
+      // Find the load and verify it's assigned to this driver's truck
+      const load = await this.loadRepository.findOne({
+        where: {
+          id: loadId,
+          assignedTruckId: driver.currentTruckId,
+          tenantId,
+        },
+      });
+
+      if (!load) {
+        throw new NotFoundException('Load not found or not assigned to your truck');
+      }
+
+      if (load.status !== LoadStatus.ASSIGNED) {
+        throw new BadRequestException(`Cannot accept load. Current status: ${load.status}`);
+      }
+
+      // Update load status to LOADED
+      await this.loadRepository.update(loadId, {
+        status: LoadStatus.LOADED,
+        updatedAt: new Date(),
+      });
+
+      this.logger.log(
+        `Driver ${driver.id} (userId: ${driver.userId}) accepted and loaded cargo ${loadId}`,
+      );
+    } catch (error) {
+      this.logger.error(
+        `Failed to accept and load cargo for driver ${driverIdOrUserId}: ${error.message}`,
+      );
+      throw error;
+    }
+  }
+
+  /**
    * Mark loads as checked/loaded and proceed with journey
    */
   async proceedWithJourney(

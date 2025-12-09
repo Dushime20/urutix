@@ -623,6 +623,15 @@ class DriverApiService {
     return response.data;
   }
 
+  async getLoadById(loadId: string): Promise<any> {
+    const response = await api.get(`/loads-v2/${loadId}`);
+    return response.data;
+  }
+
+  async acceptAndLoad(driverId: string, loadId: string): Promise<void> {
+    await api.post(`/drivers/${driverId}/accept-and-load`, { loadId });
+  }
+
   async proceedWithJourney(driverId: string, loadIds: string[]): Promise<void> {
     await api.post(`/drivers/${driverId}/proceed-journey`, { loadIds });
   }

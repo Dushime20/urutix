@@ -7,7 +7,9 @@ import {
   HttpStatus,
   UseGuards,
   Get,
+  Patch,
   HttpException,
+  UnauthorizedException,
   Logger,
   Req,
 } from '@nestjs/common';
@@ -48,6 +50,7 @@ import {
   ChangePasswordResponseDto,
 } from './dto/change-password.dto';
 import { VerifyEmailDto, VerifyEmailResponseDto } from './dto/verify-email.dto';
+import { UpdateProfileDto } from './dto/update-profile.dto';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { EnhancedRateLimitGuard } from './enhanced-rate-limit.guard';
 import { ApiResponseDto } from '../../common/dto/api-response.dto';
@@ -247,20 +250,30 @@ export class EnhancedAuthController {
   ): Promise<RefreshTokenResponseDto> {
     try {
       const clientIp = this.getClientIp(req);
-      this.logger.log(`Token refresh attempt from IP: ${clientIp}`);
+      this.logger.debug(`Token refresh attempt from IP: ${clientIp}`);
 
       const result = await this.authService.refreshToken(
         refreshTokenDto,
         clientIp,
       );
 
-      this.logger.log(`Token refreshed successfully from IP: ${clientIp}`);
+      this.logger.debug(`Token refreshed successfully from IP: ${clientIp}`);
       return result;
     } catch (error) {
       const clientIp = this.getClientIp(req);
-      this.logger.error(
-        `Token refresh failed from IP: ${clientIp}: ${error.message}`,
-      );
+      // Only log as error if it's not an expected UnauthorizedException
+      if (error instanceof UnauthorizedException) {
+        // Expected invalid token scenarios - log at debug level to reduce noise
+        this.logger.debug(
+          `Token refresh failed (expected) from IP: ${clientIp}: ${error.message}`,
+        );
+      } else {
+        // Unexpected errors - log at error level
+        this.logger.error(
+          `Token refresh failed (unexpected) from IP: ${clientIp}: ${error.message}`,
+          error.stack,
+        );
+      }
       throw error;
     }
   }
@@ -764,6 +777,74 @@ export class EnhancedAuthController {
       const clientIp = this.getClientIp(req);
       this.logger.error(
         `Profile retrieval failed for user ${req?.user?.userId} from IP: ${clientIp}: ${error.message}`,
+      );
+      throw error;
+    }
+  }
+
+  @Patch('profile')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Update user profile',
+    description: 'Update current user profile information including preferences and payment info',
+  })
+  @ApiBody({
+    type: UpdateProfileDto,
+    description: 'Profile update data',
+  })
+  @ApiOkResponse({
+    description: 'Profile updated successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean', example: true },
+        message: { type: 'string', example: 'Profile updated successfully' },
+        data: { type: 'object' },
+        statusCode: { type: 'number', example: 200 },
+      },
+    },
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Unauthorized',
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean', example: false },
+        message: { type: 'string', example: 'Unauthorized' },
+        statusCode: { type: 'number', example: 401 },
+      },
+    },
+  })
+  async updateProfile(
+    @Req() req: Request,
+    @Body() updateProfileDto: UpdateProfileDto,
+  ): Promise<ApiResponseDto> {
+    try {
+      const clientIp = this.getClientIp(req);
+      this.logger.log(
+        `Profile update request for user ${req?.user?.userId} from IP: ${clientIp}`,
+      );
+
+      const user = await this.authService.updateProfile(
+        req?.user?.userId,
+        updateProfileDto,
+      );
+
+      this.logger.log(
+        `Profile updated successfully for user ${req?.user?.userId} from IP: ${clientIp}`,
+      );
+      return {
+        success: true,
+        message: 'Profile updated successfully',
+        data: { user },
+        statusCode: 200,
+        timestamp: new Date().toISOString(),
+      };
+    } catch (error) {
+      const clientIp = this.getClientIp(req);
+      this.logger.error(
+        `Profile update failed for user ${req?.user?.userId} from IP: ${clientIp}: ${error.message}`,
       );
       throw error;
     }

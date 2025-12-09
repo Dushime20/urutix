@@ -26,7 +26,7 @@ import { UserRole } from '../auth/enums/user-role.enum';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { NotificationService } from './notification.service';
 import {
-  CreateNotificationDto,
+  CreateNotificationRequestDto,
   UpdateNotificationDto,
   NotificationFilterDto,
   NotificationSearchDto,
@@ -71,10 +71,10 @@ export class NotificationController {
   })
   @ApiBody({
     description: 'Notification creation data',
-    type: CreateNotificationDto,
+    type: CreateNotificationRequestDto,
   })
   async createNotification(
-    @Body() createNotificationDto: CreateNotificationDto,
+    @Body() createNotificationDto: CreateNotificationRequestDto,
     @CurrentUser() user: any,
   ): Promise<Notification> {
     // Ensure tenant ID is set from user context

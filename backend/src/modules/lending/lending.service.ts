@@ -4,7 +4,10 @@ import {
   NotFoundException,
   Logger,
   ConflictException,
+  Inject,
+  forwardRef,
 } from '@nestjs/common';
+import { ModuleRef } from '@nestjs/core';
 import {
   InsufficientCreditException,
   LoanLimitExceededException,
@@ -53,6 +56,7 @@ import {
 import { User, UserRole, UserStatus } from '../../entities/user.entity';
 import { UserProfile } from '../../entities/user-profile.entity';
 import { PasswordResetToken } from '../../entities/password-reset-token.entity';
+import { Trip } from '../../entities/trip.entity';
 import { EmailService } from '../auth/email.service';
 import * as crypto from 'crypto';
 import * as bcrypt from 'bcryptjs';
@@ -100,6 +104,9 @@ export class LendingService {
     private emailService: EmailService,
 
     private dataSource: DataSource,
+
+    @Inject(forwardRef(() => ModuleRef))
+    private moduleRef: ModuleRef,
   ) {}
 
   // Credit and Risk Management
@@ -451,17 +458,41 @@ export class LendingService {
 
   async createLoanRequestForLoadedCargo(
     cargoId: string,
-    tripId: string,
+    tripId: string | undefined,
     tenantId: string,
     createdBy: string,
+    lenderId?: string,
   ): Promise<LoanRequest> {
     this.logger.log(`Creating loan request for loaded cargo: ${cargoId}`);
+
+    // If trip_id is not provided, try to find it from the load
+    let actualTripId = tripId;
+    if (!actualTripId) {
+      try {
+        const trip = await this.dataSource
+          .getRepository(Trip)
+          .findOne({
+            where: { loadId: cargoId, tenantId },
+            order: { createdAt: 'DESC' },
+          });
+        if (trip) {
+          actualTripId = trip.id;
+        } else {
+          // If no trip exists, use cargoId as trip_id (for compatibility)
+          actualTripId = cargoId;
+        }
+      } catch (error) {
+        // If Trip entity is not available, use cargoId as trip_id
+        this.logger.warn(`Could not find trip for load ${cargoId}, using cargoId as trip_id: ${error.message}`);
+        actualTripId = cargoId;
+      }
+    }
 
     // Generate idempotency key based on cargo and trip
     const idempotencyKey = this.generateCargoLoanIdempotencyKey(
       tenantId,
       cargoId,
-      tripId,
+      actualTripId,
     );
 
     // Check for existing loan request for this cargo/trip
@@ -479,11 +510,64 @@ export class LendingService {
     // Calculate loan amount (this could be enhanced with more sophisticated logic)
     const requestedAmount = await this.calculateLoanAmountForCargo(cargoId);
 
+    // Resolve lender_id before creating the loan request
+    let resolvedLenderId: string | undefined = undefined;
+    
+    if (lenderId) {
+      // Check if lenderId is a User ID (from users with LENDER role) or a Lender entity ID
+      // First try to find as Lender entity ID
+      let lender = await this.lenderRepository.findOne({
+        where: { id: lenderId },
+      });
+      
+      // If not found, try to find Lender by user email or other identifier
+      if (!lender) {
+        const user = await this.userRepository.findOne({
+          where: { id: lenderId, role: UserRole.LENDER },
+          relations: ['profile'],
+        });
+        
+        if (user) {
+          // Try to find Lender by contact_email matching user email
+          lender = await this.lenderRepository.findOne({
+            where: { contact_email: user.email },
+          });
+          
+          // If still not found, create a Lender entity for this user
+          if (!lender) {
+            this.logger.log(`Creating Lender entity for user ${lenderId} (${user.email})`);
+            lender = this.lenderRepository.create({
+              name: user.profile?.companyName || 
+                    (user.profile?.firstName && user.profile?.lastName 
+                      ? `${user.profile.firstName} ${user.profile.lastName}` 
+                      : user.email) || 'Unknown Lender',
+              contact_email: user.email,
+              status: LenderStatus.ACTIVE,
+              tenant_id: tenantId,
+              api_key_hash: '', // Required field, will be set later if needed
+            });
+            lender = await this.lenderRepository.save(lender);
+            this.logger.log(`Created Lender entity ${lender.id} for user ${lenderId}`);
+          }
+        }
+      }
+      
+      if (lender) {
+        // Validate lender and use its ID
+        await this.validateLenderAvailability(lender.id);
+        resolvedLenderId = lender.id;
+        this.logger.log(`Resolved lender_id ${resolvedLenderId} for loan request`);
+      } else {
+        throw new NotFoundException(`Lender not found with ID: ${lenderId}`);
+      }
+    }
+
     const loanRequest = this.loanRequestRepository.create({
       tenant_id: tenantId,
       cargo_id: cargoId,
-      trip_id: tripId,
+      trip_id: actualTripId,
       requested_amount: requestedAmount,
+      lender_id: resolvedLenderId, // Only set if we have a valid Lender entity ID
       idempotency_key: idempotencyKey,
       created_by: createdBy,
       status: LoanRequestStatus.PENDING,
@@ -491,16 +575,19 @@ export class LendingService {
         auto_created: true,
         trigger: 'cargo_loaded',
         created_at: new Date().toISOString(),
+        selected_lender: lenderId || null, // Store original ID (could be User ID) in metadata
       },
     });
 
     const savedLoan = await this.loanRequestRepository.save(loanRequest);
     this.logger.log(
-      `Created loan request for cargo ${cargoId}: ${savedLoan.id}`,
+      `Created loan request for cargo ${cargoId}: ${savedLoan.id}${resolvedLenderId ? ` with lender ${resolvedLenderId}` : ''}`,
     );
 
-    // Attempt to process with available lenders
-    await this.processLoanRequest(savedLoan.id);
+    // If no lender was specified, attempt to process with available lenders
+    if (!resolvedLenderId) {
+      await this.processLoanRequest(savedLoan.id);
+    }
 
     return savedLoan;
   }
@@ -737,6 +824,169 @@ export class LendingService {
       }
 
       return savedDisbursement;
+    });
+  }
+
+  async disburseWithPayment(
+    loanId: string,
+    paymentDto: { paymentMethod: string; phoneNumber?: string; truckOwnerPhoneNumber?: string },
+    lenderUserId: string,
+    tenantId: string,
+  ): Promise<any> {
+    return await this.dataSource.transaction(async (manager) => {
+      const loan = await manager.findOne(LoanRequest, {
+        where: { id: loanId },
+        relations: ['lender'],
+      } as any);
+
+      if (!loan) {
+        throw new NotFoundException('Loan request not found');
+      }
+
+      if (loan.status !== LoanRequestStatus.APPROVED) {
+        throw new BadRequestException(
+          'Loan must be approved before disbursement',
+        );
+      }
+
+      // Get trip from loan
+      const trip = await manager.findOne('Trip', {
+        where: { id: loan.trip_id },
+        relations: ['load', 'load.assignedTruck'],
+      } as any);
+
+      if (!trip) {
+        throw new NotFoundException('Trip not found for this loan');
+      }
+
+      // Get truck owner phone number - try multiple sources
+      let truckOwnerPhone = paymentDto.truckOwnerPhoneNumber;
+      
+      if (!truckOwnerPhone && trip.load?.assignedTruckId) {
+        // Get truck details
+        const truck = await manager.findOne('Truck', {
+          where: { id: trip.load.assignedTruckId },
+          relations: ['owner', 'owner.profile'],
+        } as any);
+        
+        if (truck?.owner) {
+          // Try to get phone from profile preferences
+          truckOwnerPhone = truck.owner.profile?.preferences?.paymentInfo?.phoneNumber ||
+                           truck.owner.phone ||
+                           truck.owner.profile?.phone;
+          
+          // If still not found, fetch full user profile
+          if (!truckOwnerPhone) {
+            const ownerUser = await manager.findOne('User', {
+              where: { id: truck.owner.id },
+              relations: ['profile'],
+            } as any);
+            
+            truckOwnerPhone = ownerUser?.profile?.preferences?.paymentInfo?.phoneNumber ||
+                             ownerUser?.phone;
+          }
+        }
+      }
+
+      if (!truckOwnerPhone && paymentDto.paymentMethod === 'mobile_money') {
+        throw new BadRequestException(
+          'Truck owner phone number is required for mobile money payment. ' +
+          'Please ensure the truck owner has added their payment information in their profile.'
+        );
+      }
+
+      // Create disbursement
+      const disbursement = manager.create(LoanDisbursement, {
+        loan_request_id: loanId,
+        beneficiaries: loan.requested_split,
+        status: DisbursementStatus.INITIATED,
+        attempts: 1,
+      });
+
+      const savedDisbursement = await manager.save(LoanDisbursement, disbursement);
+
+      // Process payment via mobile money if requested
+      if (paymentDto.paymentMethod === 'mobile_money' && truckOwnerPhone) {
+        try {
+          // Use ModuleRef to get PaymentsService dynamically to avoid circular dependency
+          if (this.moduleRef) {
+            const paymentsService = this.moduleRef.get('PaymentsService', { strict: false });
+            
+            if (paymentsService) {
+              const { PaymentMethod, PaymentType } = await import('../../entities/payment.entity');
+              
+              const createPaymentDto = {
+                tripId: trip.id,
+                amount: loan.approved_amount || loan.requested_amount,
+                currency: 'RWF',
+                paymentMethod: PaymentMethod.DIGITAL_WALLET,
+                paymentType: PaymentType.TRIP_PAYMENT,
+                description: `Loan disbursement payment for loan ${loan.id}`,
+                referenceNumber: `LOAN-${loan.id}-DISB-${Date.now()}`,
+                metadata: {
+                  lenderId: loan.lender_id,
+                  lenderName: loan.lender?.name,
+                  financedAmount: loan.approved_amount || loan.requested_amount,
+                  isLenderPayment: true,
+                  phoneNumber: truckOwnerPhone,
+                  loanId: loan.id,
+                  disbursementId: savedDisbursement.id,
+                },
+              };
+
+              const payment = await paymentsService.createPayment(
+                createPaymentDto,
+                tenantId,
+                lenderUserId,
+              );
+
+              // Process the payment
+              const processedPayment = await paymentsService.processPayment(
+                payment.id,
+                tenantId,
+              );
+
+              if (processedPayment.status === 'completed' || processedPayment.status === 'processing') {
+                disbursement.status = DisbursementStatus.DISBURSED;
+                disbursement.disbursement_date = new Date();
+                disbursement.external_txn_ref = processedPayment.transactionId || `DISB-${Date.now()}`;
+                loan.status = LoanRequestStatus.DISBURSED;
+                await manager.save(LoanDisbursement, disbursement);
+                await manager.save(LoanRequest, loan);
+              } else {
+                throw new BadRequestException('Payment processing failed');
+              }
+
+              return {
+                success: true,
+                disbursement: savedDisbursement,
+                payment: {
+                  id: processedPayment.id,
+                  status: processedPayment.status,
+                  transactionId: processedPayment.transactionId,
+                },
+              };
+            } else {
+              throw new BadRequestException('PaymentsService not available');
+            }
+          } else {
+            throw new BadRequestException('ModuleRef not available');
+          }
+        } catch (error) {
+          this.logger.error(`Mobile money payment failed for disbursement: ${error.message}`);
+          throw new BadRequestException(`Payment processing failed: ${error.message}`);
+        }
+      }
+
+      // Fallback to regular disbursement
+      await this.processDisbursementToBeneficiaries(savedDisbursement);
+      loan.status = LoanRequestStatus.DISBURSED;
+      await manager.save(LoanRequest, loan);
+
+      return {
+        success: true,
+        disbursement: savedDisbursement,
+      };
     });
   }
 
@@ -1066,6 +1316,12 @@ export class LendingService {
     });
   }
 
+  async getLenderByUserEmail(email: string): Promise<Lender | null> {
+    return await this.lenderRepository.findOne({
+      where: { contact_email: email },
+    });
+  }
+
   async getLenderById(lenderId: string): Promise<Lender> {
     const lender = await this.lenderRepository.findOne({
       where: { id: lenderId },
@@ -1259,12 +1515,65 @@ export class LendingService {
     page: number = 1,
     limit: number = 10,
   ) {
+    // First, try to find if lenderId is a Lender entity ID
+    let actualLenderId = lenderId;
+    let lender = await this.lenderRepository.findOne({
+      where: { id: lenderId },
+    });
+
+    // If not found, try to find by user email (lenderId might be a User ID)
+    if (!lender) {
+      const user = await this.userRepository.findOne({
+        where: { id: lenderId, role: UserRole.LENDER },
+        relations: ['profile'],
+      });
+
+      if (user) {
+        // Find lender by contact_email matching user email
+        lender = await this.lenderRepository.findOne({
+          where: { contact_email: user.email },
+        });
+
+        if (lender) {
+          actualLenderId = lender.id;
+          this.logger.log(`Resolved lender ID from user ${lenderId} to lender entity ${actualLenderId}`);
+        } else {
+          // If no lender entity found, try to find loan requests by user ID in metadata
+          this.logger.log(`No lender entity found for user ${lenderId}, searching loan requests by metadata`);
+          const queryBuilder = this.loanRequestRepository
+            .createQueryBuilder('loan')
+            .leftJoinAndSelect('loan.lender', 'lender')
+            .leftJoinAndSelect('loan.disbursements', 'disbursements')
+            .leftJoinAndSelect('loan.repayments', 'repayments')
+            .where('loan.metadata->>\'selected_lender\' = :userId', { userId: lenderId })
+            .orderBy('loan.created_at', 'DESC')
+            .skip((page - 1) * limit)
+            .take(limit);
+
+          if (status) {
+            queryBuilder.andWhere('loan.status = :status', { status });
+          }
+
+          const [loans, total] = await queryBuilder.getManyAndCount();
+
+          return {
+            data: loans,
+            total,
+            page,
+            limit,
+            totalPages: Math.ceil(total / limit),
+          };
+        }
+      }
+    }
+
+    // Query by lender entity ID
     const queryBuilder = this.loanRequestRepository
       .createQueryBuilder('loan')
       .leftJoinAndSelect('loan.lender', 'lender')
       .leftJoinAndSelect('loan.disbursements', 'disbursements')
       .leftJoinAndSelect('loan.repayments', 'repayments')
-      .where('loan.lender_id = :lenderId', { lenderId })
+      .where('loan.lender_id = :lenderId', { lenderId: actualLenderId })
       .orderBy('loan.created_at', 'DESC')
       .skip((page - 1) * limit)
       .take(limit);
@@ -1274,6 +1583,8 @@ export class LendingService {
     }
 
     const [loans, total] = await queryBuilder.getManyAndCount();
+
+    this.logger.log(`Found ${total} loan requests for lender ${actualLenderId}`);
 
     return {
       data: loans,

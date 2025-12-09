@@ -10,6 +10,9 @@ import { AuditEvent } from '../../entities/audit-event.entity';
 import { PriceSuggestion } from '../../entities/price-suggestion.entity';
 import { Location } from '../../entities/location.entity';
 import { User } from '../../entities/user.entity';
+import { Bid } from '../../entities/bid.entity';
+import { Payment } from '../../entities/payment.entity';
+import { Trip } from '../../entities/trip.entity';
 import { LocationsModule } from '../locations/locations.module';
 import { MatchingModule } from '../matching/matching.module';
 import { EnhancedAuthModule } from '../auth/enhanced-auth.module';
@@ -27,6 +30,9 @@ import { TenantGuard } from '../auth/tenant.guard';
       PriceSuggestion,
       Location,
       User,
+      Bid,
+      Payment,
+      Trip,
     ]),
     LocationsModule,
     MatchingModule,

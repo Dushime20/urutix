@@ -6,6 +6,7 @@ import { Notification } from '../../entities/notification.entity';
 import { NotificationTemplate } from './entities/notification-template.entity';
 import { NotificationPreference } from './entities/notification-preference.entity';
 import { NotificationsController } from './notifications.controller';
+import { NotificationsService } from './notifications.service';
 import { NotificationService } from './services/notification.service';
 import { EmailService } from './services/email.service';
 import { SmsService } from './services/sms.service';
@@ -26,6 +27,7 @@ import { TemplateService } from './services/template.service';
   ],
   controllers: [NotificationsController],
   providers: [
+    NotificationsService,
     NotificationService,
     EmailService,
     SmsService,
@@ -35,6 +37,7 @@ import { TemplateService } from './services/template.service';
     TemplateService,
   ],
   exports: [
+    NotificationsService,
     NotificationService,
     EmailService,
     SmsService,

@@ -118,6 +118,12 @@ export class Bid {
   @Column('uuid', { nullable: true })
   parentBidId?: string; // For counter-offers
 
+  @Column('decimal', { precision: 5, scale: 2, nullable: true })
+  advancePaymentPercentage?: number; // Percentage of transportation fee to be paid before trip starts (0-100)
+
+  @Column({ default: true })
+  requireAdvancePayment: boolean; // Whether advance payment is required before trip starts. If false, trip can start without advance payment.
+
   @Column('timestamp with time zone', { nullable: true })
   expiresAt?: Date;
 

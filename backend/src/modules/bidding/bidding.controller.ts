@@ -132,6 +132,16 @@ export class BiddingController {
           type: 'string',
           description: 'Additional notes for the bid',
         },
+        advancePaymentPercentage: {
+          type: 'number',
+          description: 'Percentage of transportation fee to be paid before trip starts (0-100). Optional, defaults to system default if not provided.',
+          minimum: 0,
+          maximum: 100,
+        },
+        requireAdvancePayment: {
+          type: 'boolean',
+          description: 'Whether advance payment is required before trip starts. If false, trip can start without advance payment. Defaults to true.',
+        },
         bidDetails: {
           type: 'object',
           properties: {

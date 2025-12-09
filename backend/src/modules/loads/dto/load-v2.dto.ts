@@ -29,6 +29,7 @@ export enum CargoTypeV2 {
 }
 
 export enum LoadStatusV2 {
+  LOADED = 'LOADED',
   DRAFT = 'DRAFT',
   CREATED = 'CREATED',
   PUBLISHED = 'PUBLISHED',
@@ -529,6 +530,11 @@ export class UpdateLoadV2Dto {
   @IsOptional()
   @IsBoolean()
   isTimeCritical?: boolean;
+
+  @ApiPropertyOptional({ description: 'Metadata for additional properties' })
+  @IsOptional()
+  @IsObject()
+  metadata?: Record<string, any>;
 }
 
 // Load Query DTO for filtering and searching

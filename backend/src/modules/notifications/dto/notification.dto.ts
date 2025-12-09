@@ -47,7 +47,7 @@ export class WorkflowCommentDto {
   commentedAt: Date;
 }
 
-export class CreateNotificationDto {
+export class CreateNotificationRequestDto {
   @IsUUID()
   recipientId: string;
 

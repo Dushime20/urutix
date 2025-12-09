@@ -7,6 +7,7 @@ import { User } from '../../entities/user.entity';
 import { UserProfile } from '../../entities/user-profile.entity';
 import { Truck } from '../../entities/truck.entity';
 import { Driver } from '../../entities/driver.entity';
+import { Trip } from '../../entities/trip.entity';
 import { AuctionWatch } from '../../entities/auction-watch.entity';
 import { AuctionView } from '../../entities/auction-view.entity';
 import { BiddingService } from './bidding.service';
@@ -22,6 +23,7 @@ import { BiddingController } from './bidding.controller';
       UserProfile,
       Truck,
       Driver,
+      Trip,
       AuctionWatch,
       AuctionView,
     ]),

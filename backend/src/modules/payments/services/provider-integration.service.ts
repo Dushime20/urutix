@@ -3,12 +3,15 @@ import {
   Logger,
   BadRequestException,
   ConflictException,
+  Inject,
+  forwardRef,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 import { PaymentProvider } from '../types/payment.types';
 import { Payment } from '../../../entities/payment.entity';
+import { MobileMoneyPaymentService } from './mobile-money-payment.service';
 
 export interface PaymentProcessingResult {
   success: boolean;
@@ -34,6 +37,8 @@ export class ProviderIntegrationService {
   constructor(
     private readonly configService: ConfigService,
     private readonly httpService: HttpService,
+    @Inject(forwardRef(() => MobileMoneyPaymentService))
+    private readonly mobileMoneyPaymentService?: MobileMoneyPaymentService,
   ) {}
 
   async processPayment(
@@ -44,10 +49,16 @@ export class ProviderIntegrationService {
     meta: any = {},
   ): Promise<PaymentProcessingResult> {
     try {
-      const providerConfig = this.getProviderConfig(provider);
-
       // Validate inputs
       this.validatePaymentRequest(amount, currency, paymentType);
+
+      // Use Mobile Money Payment service if provider is MOBILE_MONEY and service is configured
+      if (provider === PaymentProvider.MOBILE_MONEY && this.mobileMoneyPaymentService) {
+        return await this.processMobileMoneyPayment(amount, currency, paymentType, meta);
+      }
+
+      // Fallback to generic payment processing
+      const providerConfig = this.getProviderConfig(provider);
 
       // Prepare payment payload
       const payload = this.buildPaymentPayload(
@@ -71,6 +82,66 @@ export class ProviderIntegrationService {
       return this.handlePaymentError(error);
     }
   }
+
+  /**
+   * Process payment using Mobile Money Payment service
+   */
+  private async processMobileMoneyPayment(
+    amount: number,
+    currency: string,
+    paymentType: string,
+    meta: any,
+  ): Promise<PaymentProcessingResult> {
+    try {
+      const phoneNumber = meta.phoneNumber || meta.phone || meta.payerPhone;
+      // Use referenceNumber from meta if available, otherwise generate one
+      const referenceId = meta.referenceNumber || meta.referenceId || meta.externalId || `MM-${Date.now()}`;
+      const senderMessage = meta.description || meta.senderMessage || meta.message || 'Payment for cargo transportation';
+      // Get callback URL from config or meta
+      const callbackUrl = meta.callbackUrl || this.configService.get<string>('MOBILE_MONEY_CALLBACK_URL');
+      const transfers = meta.transfers; // Optional: for split payments
+
+      if (!phoneNumber) {
+        throw new BadRequestException('Phone number is required for Mobile Money payment');
+      }
+
+      this.logger.log(`Processing Mobile Money payment: ${amount} ${currency} to ${phoneNumber}, Reference: ${referenceId}`);
+
+      const mobileMoneyResponse = await this.mobileMoneyPaymentService.createTransaction(
+        amount,
+        phoneNumber,
+        referenceId,
+        senderMessage,
+        transfers,
+        callbackUrl,
+      );
+
+      const transaction = mobileMoneyResponse.savedTransaction || mobileMoneyResponse.transaction;
+      const status = transaction?.status || 'pending';
+      // Use the externalId from the response, or fall back to the referenceId we sent
+      const transactionId = transaction?.externalId || transaction?.id || referenceId;
+
+      this.logger.log(`Mobile Money transaction created: ${transactionId}, Status: ${status}`);
+
+      return {
+        success: status === 'success' || status === 'pending', // pending means initiated successfully
+        transactionId: transactionId,
+        response: JSON.stringify(mobileMoneyResponse),
+        processingFee: 0, // Fees are typically deducted from the amount
+        error: status === 'failed' ? 'Payment failed' : undefined,
+        errorCode: status === 'failed' ? 'MOBILE_MONEY_PAYMENT_FAILED' : undefined,
+      };
+    } catch (error: any) {
+      this.logger.error('Mobile Money payment processing failed:', error);
+      return {
+        success: false,
+        response: JSON.stringify(error.response?.data || error),
+        error: error.message || 'Mobile Money payment failed',
+        errorCode: error.response?.status === 401 ? 'MOBILE_MONEY_AUTH_ERROR' : 'MOBILE_MONEY_PAYMENT_ERROR',
+      };
+    }
+  }
+
 
   private validatePaymentRequest(
     amount: number,
