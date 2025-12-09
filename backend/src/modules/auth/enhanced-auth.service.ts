@@ -441,9 +441,18 @@ export class EnhancedAuthService {
       const { refreshToken } = refreshTokenDto;
 
       // Verify refresh token
-      const payload = await this.jwtService.verifyAsync(refreshToken, {
-        secret: this.configService.get('JWT_REFRESH_SECRET'),
-      });
+      let payload: any;
+      try {
+        payload = await this.jwtService.verifyAsync(refreshToken, {
+          secret: this.configService.get('JWT_REFRESH_SECRET'),
+        });
+      } catch (jwtError) {
+        // JWT verification failed (invalid/expired token) - this is expected behavior
+        this.logger.debug(
+          `Invalid or expired refresh token from IP: ${clientIp}`,
+        );
+        throw new UnauthorizedException('Invalid refresh token');
+      }
 
       // Check if refresh token exists and is not revoked
       const tokenRecord = await this.refreshTokenRepository.findOne({
@@ -451,13 +460,13 @@ export class EnhancedAuthService {
       });
 
       if (!tokenRecord || tokenRecord.revoked) {
-        this.logger.warn(`Invalid refresh token attempt from IP: ${clientIp}`);
+        this.logger.debug(`Invalid refresh token attempt from IP: ${clientIp}`);
         throw new UnauthorizedException('Invalid refresh token');
       }
 
       // Check if token has expired
       if (tokenRecord.expiresAt < new Date()) {
-        this.logger.warn(`Expired refresh token attempt from IP: ${clientIp}`);
+        this.logger.debug(`Expired refresh token attempt from IP: ${clientIp}`);
         throw new UnauthorizedException('Refresh token has expired');
       }
 
@@ -467,6 +476,9 @@ export class EnhancedAuthService {
       });
 
       if (!user) {
+        this.logger.warn(
+          `User not found for refresh token from IP: ${clientIp}`,
+        );
         throw new UnauthorizedException('User not found');
       }
 
@@ -493,9 +505,19 @@ export class EnhancedAuthService {
         expiresIn: tokens.expiresIn,
       };
     } catch (error) {
-      this.logger.error(
-        `Token refresh failed from IP: ${clientIp}: ${error.message}`,
-      );
+      // Only log as error if it's not an expected UnauthorizedException
+      if (error instanceof UnauthorizedException) {
+        // Expected invalid token scenarios - log at debug level to reduce noise
+        this.logger.debug(
+          `Token refresh failed (expected) from IP: ${clientIp}: ${error.message}`,
+        );
+      } else {
+        // Unexpected errors - log at error level
+        this.logger.error(
+          `Token refresh failed (unexpected) from IP: ${clientIp}: ${error.message}`,
+          error.stack,
+        );
+      }
       throw error;
     }
   }

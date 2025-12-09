@@ -632,6 +632,11 @@ const EnhancedLoanRequestsPage: React.FC = () => {
         
         // Fetch truck owner's phone number automatically
         fetchTruckOwnerPhoneNumber(approvedLoan);
+        
+        // Fetch advance payment calculation if trip_id exists
+        if (approvedLoan.trip_id) {
+          fetchAdvancePaymentCalculation(approvedLoan.trip_id, approvedLoan.id);
+        }
       }
     } catch (err: any) {
       console.error('Error approving loan:', err);
@@ -768,6 +773,11 @@ const EnhancedLoanRequestsPage: React.FC = () => {
           setSelectedLoanForPayment(selectedLoanForPaymentDetails);
           setShowPaymentModal(true);
           fetchTruckOwnerPhoneNumber(selectedLoanForPaymentDetails);
+          
+          // Fetch advance payment calculation if trip_id exists
+          if (selectedLoanForPaymentDetails.trip_id) {
+            fetchAdvancePaymentCalculation(selectedLoanForPaymentDetails.trip_id, selectedLoanForPaymentDetails.id);
+          }
         }
         
         setEditingPaymentId(null);
@@ -1428,6 +1438,63 @@ const EnhancedLoanRequestsPage: React.FC = () => {
                     💰 This amount will be sent to the truck owner via Mobile Money
                   </p>
                 </div>
+                
+                {/* Advance Payment Calculation Display */}
+                {loadingCalculations[selectedLoanForPayment.id] ? (
+                  <div className="mb-4 p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                    <p className="text-sm text-gray-600 flex items-center gap-2">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                      Loading payment breakdown...
+                    </p>
+                  </div>
+                ) : advancePaymentCalculations[selectedLoanForPayment.id] ? (
+                  <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+                    <div className="flex items-start gap-2">
+                      <FaDollarSign className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
+                      <div className="flex-1">
+                        <h4 className="font-semibold text-gray-900 text-sm mb-2">Payment Breakdown</h4>
+                        {(() => {
+                          const calc = advancePaymentCalculations[selectedLoanForPayment.id];
+                          return calc.requireAdvancePayment ? (
+                            <div className="space-y-1.5 text-xs">
+                              <div className="flex justify-between">
+                                <span className="text-gray-600">Total Transportation Fee:</span>
+                                <span className="font-semibold text-gray-900">
+                                  {formatCurrencyUtil(calc.transportationFee, calc.currency || 'RWF')}
+                                </span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-gray-600">Advance Payment ({formatPercentage(calc.advancePaymentPercentage)}):</span>
+                                <span className="font-semibold text-green-700">
+                                  {formatCurrencyUtil(calc.advanceAmount, calc.currency || 'RWF')}
+                                </span>
+                              </div>
+                              <div className="flex justify-between pt-1 border-t border-green-200">
+                                <span className="text-gray-600">Final Payment:</span>
+                                <span className="font-semibold text-gray-700">
+                                  {formatCurrencyUtil(calc.finalAmount, calc.currency || 'RWF')}
+                                </span>
+                              </div>
+                              <p className="text-green-700 font-medium mt-2 pt-1 border-t border-green-200">
+                                💡 You are paying the advance amount: {formatCurrencyUtil(calc.advanceAmount, calc.currency || 'RWF')}
+                              </p>
+                            </div>
+                          ) : (
+                            <div className="text-xs text-gray-600">
+                              <p>No advance payment required. Full payment of {formatCurrencyUtil(calc.transportationFee, calc.currency || 'RWF')} will be due upon completion.</p>
+                            </div>
+                          );
+                        })()}
+                      </div>
+                    </div>
+                  </div>
+                ) : selectedLoanForPayment.trip_id ? (
+                  <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <p className="text-xs text-yellow-700">
+                      ⚠️ Payment breakdown not available. The truck owner may not have specified advance payment requirements.
+                    </p>
+                  </div>
+                ) : null}
                 
                 {loadingTruckOwnerInfo && (
                   <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">

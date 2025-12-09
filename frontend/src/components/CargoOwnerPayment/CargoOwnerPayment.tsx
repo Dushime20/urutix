@@ -11,13 +11,20 @@ import {
   Search,
   Filter,
   ArrowRight,
-  User
+  User,
+  Info
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import api from '../../services/api';
+import { paymentsAPI } from '../../services/api';
 import { loanRequestService } from '../../services/loanRequestService';
 import toast from 'react-hot-toast';
 import FinancialInformation from './FinancialInformation';
+import { 
+  AdvancePaymentCalculation, 
+  formatCurrency, 
+  formatPercentage 
+} from '../../utils/paymentCalculations';
 
 interface Load {
   id: string;
@@ -71,6 +78,9 @@ const CargoOwnerPayment: React.FC = () => {
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [truckOwnerId, setTruckOwnerId] = useState<string | null>(null);
   const [truckOwnerName, setTruckOwnerName] = useState<string>('');
+  const [advancePaymentCalculation, setAdvancePaymentCalculation] = useState<AdvancePaymentCalculation | null>(null);
+  const [loadingAdvanceCalculation, setLoadingAdvanceCalculation] = useState(false);
+  const [tripId, setTripId] = useState<string | null>(null);
 
   // Fetch loads with status LOADED
   useEffect(() => {
@@ -177,11 +187,19 @@ const CargoOwnerPayment: React.FC = () => {
         });
         const trips = tripsResponse.data?.data || tripsResponse.data || [];
         if (trips.length > 0 && trips[0].truck?.ownerId) {
-          setTruckOwnerId(trips[0].truck.ownerId);
+          const trip = trips[0];
+          setTruckOwnerId(trip.truck.ownerId);
+          
+          // Set trip ID for advance payment calculation
+          if (trip.id) {
+            setTripId(trip.id);
+            // Fetch advance payment calculation
+            await fetchAdvancePaymentCalculation(trip.id, load);
+          }
           
           // Fetch truck owner profile for name and phone number
           try {
-            const ownerResponse = await api.get(`/users/${trips[0].truck.ownerId}/profile`);
+            const ownerResponse = await api.get(`/users/${trip.truck.ownerId}/profile`);
             const owner = ownerResponse.data?.data || ownerResponse.data;
             const ownerName = owner?.profile?.firstName && owner?.profile?.lastName
               ? `${owner.profile.firstName} ${owner.profile.lastName}`
@@ -198,7 +216,7 @@ const CargoOwnerPayment: React.FC = () => {
             // Try to get phone from auth profile endpoint
             try {
               const profileResponse = await api.get('/auth/profile', {
-                params: { userId: trips[0].truck.ownerId }
+                params: { userId: trip.truck.ownerId }
               });
               const profile = profileResponse.data?.data?.user || profileResponse.data?.user;
               const ownerPhone = profile?.phone || profile?.profile?.preferences?.paymentInfo?.phoneNumber;
@@ -213,15 +231,53 @@ const CargoOwnerPayment: React.FC = () => {
         }
       } catch (err) {
         console.warn('Could not fetch trip for truck owner:', err);
+        setTripId(null);
+        setAdvancePaymentCalculation(null);
       }
       
       // Reset if no truck owner found
       setTruckOwnerId(null);
       setTruckOwnerName('');
+      setTripId(null);
+      setAdvancePaymentCalculation(null);
     } catch (error: any) {
       console.error('Error fetching truck owner info:', error);
       setTruckOwnerId(null);
       setTruckOwnerName('');
+      setTripId(null);
+      setAdvancePaymentCalculation(null);
+    }
+  };
+
+  // Fetch advance payment calculation for a trip
+  const fetchAdvancePaymentCalculation = async (tripIdParam: string, load: Load) => {
+    try {
+      setLoadingAdvanceCalculation(true);
+      const response = await paymentsAPI.getAdvancePaymentCalculation(tripIdParam);
+      
+      if (response.data?.success && response.data?.data) {
+        const calculation = response.data.data;
+        setAdvancePaymentCalculation(calculation);
+        
+        // Pre-fill payment amount with advance amount if advance payment is required
+        if (calculation.requireAdvancePayment && calculation.advanceAmount > 0) {
+          setPaymentAmount(calculation.advanceAmount.toString());
+        } else {
+          // Otherwise, use the full transportation fee
+          setPaymentAmount(load.offeredPrice ? load.offeredPrice.toString() : '');
+        }
+      } else {
+        setAdvancePaymentCalculation(null);
+        // Fallback to full amount
+        setPaymentAmount(load.offeredPrice ? load.offeredPrice.toString() : '');
+      }
+    } catch (error: any) {
+      console.warn('Could not fetch advance payment calculation:', error);
+      setAdvancePaymentCalculation(null);
+      // Fallback to full amount
+      setPaymentAmount(load.offeredPrice ? load.offeredPrice.toString() : '');
+    } finally {
+      setLoadingAdvanceCalculation(false);
     }
   };
 
@@ -284,9 +340,11 @@ const CargoOwnerPayment: React.FC = () => {
     setPaymentMode(null);
     setSelectedLender(null);
     setDirectPaymentMethod(null);
-    // Initialize payment amount with load's offered price
+    setAdvancePaymentCalculation(null);
+    setTripId(null);
+    // Initialize payment amount with load's offered price (will be updated by fetchTruckOwnerInfo if advance payment exists)
     setPaymentAmount(load.offeredPrice ? load.offeredPrice.toString() : '');
-    // Fetch truck owner information
+    // Fetch truck owner information and advance payment calculation
     await fetchTruckOwnerInfo(load);
   };
 
@@ -308,27 +366,8 @@ const CargoOwnerPayment: React.FC = () => {
           return;
         }
 
-        // Try to get trip ID from the load (optional - trip may not exist yet)
-        let tripId: string | undefined;
-        try {
-          const tripResponse = await api.get(`/trips`, {
-            params: { 
-              search: selectedLoad.id,
-              limit: 10 
-            }
-          });
-          const trips = tripResponse.data?.data || tripResponse.data?.trips || tripResponse.data || [];
-          // Try to find trip with matching loadId
-          const trip = Array.isArray(trips) 
-            ? trips.find((t: any) => t.loadId === selectedLoad.id || t.load?.id === selectedLoad.id)
-            : null;
-          
-          if (trip?.id) {
-            tripId = trip.id;
-          }
-        } catch (err) {
-          console.log('Could not find trip for load, proceeding without trip ID');
-        }
+        // Use the tripId we already fetched (if available)
+        const tripIdToUse = tripId || undefined;
 
         // Use the entered receiver phone number (should be pre-filled with truck owner's phone if available)
         const finalReceiverPhone = receiverPhoneNumber.trim();
@@ -534,6 +573,52 @@ const CargoOwnerPayment: React.FC = () => {
               <p className="text-lg font-semibold text-gray-900 mt-2">
                 Transportation Amount: {selectedLoad.currencyCode || selectedLoad.currency || 'USD'} {selectedLoad.offeredPrice?.toLocaleString() || '0'}
               </p>
+              
+              {/* Advance Payment Calculation Display */}
+              {loadingAdvanceCalculation ? (
+                <div className="mt-3 flex items-center gap-2 text-sm text-gray-600">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                  <span>Loading payment breakdown...</span>
+                </div>
+              ) : advancePaymentCalculation ? (
+                <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <div className="flex items-start gap-2">
+                    <Info className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                    <div className="flex-1">
+                      <h4 className="font-semibold text-gray-900 text-sm mb-2">Payment Breakdown</h4>
+                      {advancePaymentCalculation.requireAdvancePayment ? (
+                        <div className="space-y-1.5 text-xs">
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Total Transportation Fee:</span>
+                            <span className="font-semibold text-gray-900">
+                              {formatCurrency(advancePaymentCalculation.transportationFee, advancePaymentCalculation.currency || selectedLoad.currencyCode || 'USD')}
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Advance Payment ({formatPercentage(advancePaymentCalculation.advancePaymentPercentage)}):</span>
+                            <span className="font-semibold text-blue-700">
+                              {formatCurrency(advancePaymentCalculation.advanceAmount, advancePaymentCalculation.currency || selectedLoad.currencyCode || 'USD')}
+                            </span>
+                          </div>
+                          <div className="flex justify-between pt-1 border-t border-blue-200">
+                            <span className="text-gray-600">Final Payment:</span>
+                            <span className="font-semibold text-gray-700">
+                              {formatCurrency(advancePaymentCalculation.finalAmount, advancePaymentCalculation.currency || selectedLoad.currencyCode || 'USD')}
+                            </span>
+                          </div>
+                          <p className="text-blue-700 font-medium mt-2 pt-1 border-t border-blue-200">
+                            💰 Pay Now: {formatCurrency(advancePaymentCalculation.advanceAmount, advancePaymentCalculation.currency || selectedLoad.currencyCode || 'USD')}
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="text-xs text-gray-600">
+                          <p>No advance payment required. Full payment of {formatCurrency(advancePaymentCalculation.transportationFee, advancePaymentCalculation.currency || selectedLoad.currencyCode || 'USD')} will be due upon completion.</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ) : null}
             </div>
 
             <div className="p-6">
@@ -633,7 +718,9 @@ const CargoOwnerPayment: React.FC = () => {
                           Payment Amount <span className="text-red-500">*</span>
                         </label>
                         <p className="text-xs text-gray-500 mb-3">
-                          Enter the amount you want to pay. Default amount is pre-filled from the cargo transportation fee.
+                          {advancePaymentCalculation?.requireAdvancePayment 
+                            ? `Enter the advance payment amount. Recommended: ${formatCurrency(advancePaymentCalculation.advanceAmount, advancePaymentCalculation.currency || selectedLoad?.currencyCode || 'USD')} (${formatPercentage(advancePaymentCalculation.advancePaymentPercentage)} of total).`
+                            : 'Enter the amount you want to pay. Default amount is pre-filled from the cargo transportation fee.'}
                         </p>
                         <div className="relative">
                           <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 font-medium">
@@ -643,26 +730,36 @@ const CargoOwnerPayment: React.FC = () => {
                             type="number"
                             min="0.01"
                             step="0.01"
-                            value={paymentAmount || (selectedLoad?.offeredPrice || 0).toString()}
+                            value={paymentAmount || (advancePaymentCalculation?.advanceAmount || selectedLoad?.offeredPrice || 0).toString()}
                             onChange={(e) => {
                               const value = e.target.value;
                               setPaymentAmount(value);
                             }}
                             onBlur={(e) => {
-                              // If empty, reset to default
+                              // If empty, reset to default (advance amount if available, otherwise full amount)
                               if (!e.target.value || parseFloat(e.target.value) <= 0) {
-                                setPaymentAmount((selectedLoad?.offeredPrice || 0).toString());
+                                const defaultAmount = advancePaymentCalculation?.requireAdvancePayment 
+                                  ? advancePaymentCalculation.advanceAmount 
+                                  : (selectedLoad?.offeredPrice || 0);
+                                setPaymentAmount(defaultAmount.toString());
                               }
                             }}
                             placeholder="Enter payment amount"
                             className="w-full pl-20 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                           />
                         </div>
-                        {selectedLoad?.offeredPrice && (
-                          <p className="text-xs text-gray-500 mt-2">
-                            Transportation fee: <span className="font-semibold">{selectedLoad.currencyCode || selectedLoad.currency || 'RWF'} {selectedLoad.offeredPrice.toLocaleString()}</span>
-                          </p>
-                        )}
+                        <div className="mt-2 space-y-1">
+                          {advancePaymentCalculation?.requireAdvancePayment && (
+                            <p className="text-xs text-blue-700 font-medium">
+                              💡 Advance Payment: {formatCurrency(advancePaymentCalculation.advanceAmount, advancePaymentCalculation.currency || selectedLoad?.currencyCode || 'USD')}
+                            </p>
+                          )}
+                          {selectedLoad?.offeredPrice && (
+                            <p className="text-xs text-gray-500">
+                              Total transportation fee: <span className="font-semibold">{selectedLoad.currencyCode || selectedLoad.currency || 'RWF'} {selectedLoad.offeredPrice.toLocaleString()}</span>
+                            </p>
+                          )}
+                        </div>
                       </div>
 
                       {/* Receiver Phone Number */}

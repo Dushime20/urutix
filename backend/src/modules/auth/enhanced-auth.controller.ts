@@ -9,6 +9,7 @@ import {
   Get,
   Patch,
   HttpException,
+  UnauthorizedException,
   Logger,
   Req,
 } from '@nestjs/common';
@@ -249,20 +250,30 @@ export class EnhancedAuthController {
   ): Promise<RefreshTokenResponseDto> {
     try {
       const clientIp = this.getClientIp(req);
-      this.logger.log(`Token refresh attempt from IP: ${clientIp}`);
+      this.logger.debug(`Token refresh attempt from IP: ${clientIp}`);
 
       const result = await this.authService.refreshToken(
         refreshTokenDto,
         clientIp,
       );
 
-      this.logger.log(`Token refreshed successfully from IP: ${clientIp}`);
+      this.logger.debug(`Token refreshed successfully from IP: ${clientIp}`);
       return result;
     } catch (error) {
       const clientIp = this.getClientIp(req);
-      this.logger.error(
-        `Token refresh failed from IP: ${clientIp}: ${error.message}`,
-      );
+      // Only log as error if it's not an expected UnauthorizedException
+      if (error instanceof UnauthorizedException) {
+        // Expected invalid token scenarios - log at debug level to reduce noise
+        this.logger.debug(
+          `Token refresh failed (expected) from IP: ${clientIp}: ${error.message}`,
+        );
+      } else {
+        // Unexpected errors - log at error level
+        this.logger.error(
+          `Token refresh failed (unexpected) from IP: ${clientIp}: ${error.message}`,
+          error.stack,
+        );
+      }
       throw error;
     }
   }
