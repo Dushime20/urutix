@@ -20,8 +20,8 @@ import { paymentsAPI } from '../../services/api';
 import { loanRequestService } from '../../services/loanRequestService';
 import toast from 'react-hot-toast';
 import FinancialInformation from './FinancialInformation';
+import type { AdvancePaymentCalculation } from '../../utils/paymentCalculations';
 import { 
-  AdvancePaymentCalculation, 
   formatCurrency, 
   formatPercentage 
 } from '../../utils/paymentCalculations';
@@ -256,12 +256,22 @@ const CargoOwnerPayment: React.FC = () => {
       const response = await paymentsAPI.getAdvancePaymentCalculation(tripIdParam);
       
       if (response.data?.success && response.data?.data) {
+        // Ensure all numeric values are properly converted
         const calculation = response.data.data;
-        setAdvancePaymentCalculation(calculation);
+        const normalizedCalculation = {
+          ...calculation,
+          transportationFee: Number(calculation.transportationFee) || 0,
+          advancePaymentPercentage: Number(calculation.advancePaymentPercentage) || 0,
+          advanceAmount: Number(calculation.advanceAmount) || 0,
+          finalAmount: Number(calculation.finalAmount) || 0,
+          requireAdvancePayment: Boolean(calculation.requireAdvancePayment),
+          currency: calculation.currency || 'USD',
+        };
+        setAdvancePaymentCalculation(normalizedCalculation);
         
         // Pre-fill payment amount with advance amount if advance payment is required
-        if (calculation.requireAdvancePayment && calculation.advanceAmount > 0) {
-          setPaymentAmount(calculation.advanceAmount.toString());
+        if (normalizedCalculation.requireAdvancePayment && normalizedCalculation.advanceAmount > 0) {
+          setPaymentAmount(normalizedCalculation.advanceAmount.toString());
         } else {
           // Otherwise, use the full transportation fee
           setPaymentAmount(load.offeredPrice ? load.offeredPrice.toString() : '');

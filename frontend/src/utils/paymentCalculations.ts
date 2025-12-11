@@ -2,14 +2,14 @@
  * Payment calculation utilities for advance payments
  */
 
-export interface AdvancePaymentCalculation {
+export type AdvancePaymentCalculation = {
   transportationFee: number;
   advancePaymentPercentage: number;
   advanceAmount: number;
   finalAmount: number;
   requireAdvancePayment: boolean;
   currency?: string;
-}
+};
 
 /**
  * Calculate advance payment amounts based on transportation fee and percentage
@@ -82,7 +82,20 @@ export function formatCurrency(amount: number, currency: string = 'USD'): string
 /**
  * Format percentage
  */
-export function formatPercentage(percentage: number): string {
-  return `${percentage.toFixed(1)}%`;
+export function formatPercentage(percentage: number | null | undefined | string): string {
+  // Handle null, undefined, or non-numeric values
+  if (percentage === null || percentage === undefined) {
+    return '0.0%';
+  }
+  
+  // Convert string to number if needed
+  const numPercentage = typeof percentage === 'string' ? parseFloat(percentage) : percentage;
+  
+  // Check if it's a valid number
+  if (isNaN(numPercentage) || !isFinite(numPercentage)) {
+    return '0.0%';
+  }
+  
+  return `${numPercentage.toFixed(1)}%`;
 }
 

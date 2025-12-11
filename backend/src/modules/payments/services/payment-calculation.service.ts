@@ -27,15 +27,22 @@ export class PaymentCalculationService {
   /**
    * Calculate advance payment amounts based on transportation fee and bid preferences
    * @param tripId - Trip ID to get transportation fee and bid information
+   * @param tenantId - Optional tenant ID for multi-tenant filtering
    * @returns Calculation result with advance and final amounts
    */
   async calculateAdvancePaymentForTrip(
     tripId: string,
+    tenantId?: string,
   ): Promise<AdvancePaymentCalculation | null> {
     try {
       // Get trip to find transportation fee
+      const whereClause: any = { id: tripId };
+      if (tenantId) {
+        whereClause.tenantId = tenantId;
+      }
+      
       const trip = await this.tripRepository.findOne({
-        where: { id: tripId },
+        where: whereClause,
       });
 
       if (!trip) {

@@ -64,7 +64,8 @@ import { Location } from '../../entities/location.entity';
 import { User } from '../../entities/user.entity';
 import { Bid, BidStatus } from '../../entities/bid.entity';
 import { Payment, PaymentType, PaymentStatus } from '../../entities/payment.entity';
-import { Trip } from '../../entities/trip.entity';
+import { Trip, TripStatus } from '../../entities/trip.entity';
+import { Truck, VehicleStatus } from '../../entities/truck.entity';
 import { CreateLoadDto } from './dto/create-load.dto';
 import { UpdateLoadDto } from './dto/update-load.dto';
 import { LoadsQueryDto } from './dto/loads-query.dto';
@@ -181,6 +182,8 @@ export class LoadsService {
     private readonly paymentRepository: Repository<Payment>,
     @InjectRepository(Trip)
     private readonly tripRepository: Repository<Trip>,
+    @InjectRepository(Truck)
+    private readonly truckRepository: Repository<Truck>,
     private readonly dataSource: DataSource,
     private readonly locationEnrichmentService: OSMLocationEnrichmentService,
     @Optional() private readonly matchingService?: MatchingService, // Optional - MatchingService from MatchingModule
@@ -1201,7 +1204,87 @@ export class LoadsService {
       ],
     });
 
+    // Update trip status to COMPLETED and truck status to AVAILABLE
+    await this.handleLoadDeliveryCompletion(loadId, tenantId);
+
     return savedLoad;
+  }
+
+  /**
+   * Handle load delivery completion: Update trip status to COMPLETED and truck status to AVAILABLE
+   */
+  private async handleLoadDeliveryCompletion(
+    loadId: string,
+    tenantId: string,
+  ): Promise<void> {
+    try {
+      this.logger.log(
+        `Handling load delivery completion for load ${loadId}`,
+      );
+
+      // Find the trip associated with this load
+      const trip = await this.tripRepository.findOne({
+        where: { loadId, tenantId },
+        relations: ['truck'],
+      });
+
+      if (!trip) {
+        this.logger.warn(`Trip not found for load ${loadId}`);
+        return;
+      }
+
+      // Update trip status to COMPLETED
+      if (trip.status !== TripStatus.COMPLETED) {
+        trip.status = TripStatus.COMPLETED;
+        trip.actualEndTime = new Date();
+        trip.completedAt = new Date();
+        await this.tripRepository.save(trip);
+
+        this.logger.log(
+          `Trip ${trip.id} status updated to COMPLETED`,
+        );
+      }
+
+      // Update truck status to AVAILABLE and clear currentTripId
+      if (trip.truckId) {
+        const truck = await this.truckRepository.findOne({
+          where: { id: trip.truckId, tenantId },
+        });
+
+        if (truck) {
+          truck.status = VehicleStatus.AVAILABLE;
+          truck.currentTripId = null;
+          truck.estimatedAvailableTime = null;
+          await this.truckRepository.save(truck);
+
+          this.logger.log(
+            `Truck ${truck.id} status updated to AVAILABLE and cleared from trip ${trip.id}`,
+          );
+        } else {
+          this.logger.warn(
+            `Truck ${trip.truckId} not found for trip ${trip.id}`,
+          );
+        }
+      }
+
+      // Create audit event
+      await this.createAuditEvent({
+        loadId: loadId,
+        entityType: AuditEntityType.LOAD,
+        entityId: loadId,
+        action: AuditAction.DELIVER,
+        actorId: null, // System action
+        description: 'Trip completed and truck made available',
+        before: { tripStatus: trip.status, truckStatus: trip.truck?.status },
+        after: { tripStatus: TripStatus.COMPLETED, truckStatus: VehicleStatus.AVAILABLE },
+      });
+    } catch (error) {
+      this.logger.error(
+        `Error handling load delivery completion for load ${loadId}:`,
+        error,
+      );
+      // Don't throw - load is already saved, this is a side effect
+    }
   }
 
   /**

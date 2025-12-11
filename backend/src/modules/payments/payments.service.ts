@@ -10,8 +10,9 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between } from 'typeorm';
 import { Payment } from '../../entities/payment.entity';
-import { Trip } from '../../entities/trip.entity';
+import { Trip, TripStatus } from '../../entities/trip.entity';
 import { Bid, BidStatus } from '../../entities/bid.entity';
+import { Truck, VehicleStatus } from '../../entities/truck.entity';
 import { CreatePaymentDto } from './dto/create-payment.dto';
 import { AdvancePaymentRequestDto } from './dto/advance-payment-request.dto';
 import {
@@ -64,6 +65,8 @@ export class PaymentsService {
     private readonly tripRepository: Repository<Trip>,
     @InjectRepository(Bid)
     private readonly bidRepository: Repository<Bid>,
+    @InjectRepository(Truck)
+    private readonly truckRepository: Repository<Truck>,
     // New modular services
     private readonly paymentProcessingService: PaymentProcessingService,
     private readonly escrowService: EscrowService,
@@ -92,16 +95,27 @@ export class PaymentsService {
         relations: ['load'],
       });
       if (!trip) throw new NotFoundException('Trip not found');
-      if (trip.load.cargoOwnerId !== userId)
+      
+      // Check if this is a lender payment (from metadata)
+      const isLenderPayment = createPaymentDto.metadata && 
+        (typeof createPaymentDto.metadata === 'object' && createPaymentDto.metadata !== null) &&
+        (createPaymentDto.metadata as any).isLenderPayment === true;
+      
+      // Only check cargo owner permission if it's not a lender payment
+      if (!isLenderPayment && trip.load.cargoOwnerId !== userId) {
         throw new ForbiddenException(
           'You can only create payments for your own trips',
         );
-      // Check if payment already exists for this trip
-      const existingPayment = await this.paymentRepository.findOne({
-        where: { tripId: createPaymentDto.tripId, tenantId },
-      });
-      if (existingPayment)
-        throw new ConflictException('Payment already exists for this trip');
+      }
+      
+      // Check if payment already exists for this trip (only for non-lender payments to avoid blocking retries)
+      if (!isLenderPayment) {
+        const existingPayment = await this.paymentRepository.findOne({
+          where: { tripId: createPaymentDto.tripId, tenantId },
+        });
+        if (existingPayment)
+          throw new ConflictException('Payment already exists for this trip');
+      }
     }
 
     // Idempotency check
@@ -348,7 +362,108 @@ export class PaymentsService {
         updatePaymentStatusDto.failureReason || 'Payment processing failed';
     }
 
-    return this.paymentRepository.save(payment);
+    const savedPayment = await this.paymentRepository.save(payment);
+
+    // Handle advance payment completion: Update trip and truck status
+    if (
+      updatePaymentStatusDto.status === PaymentStatus.COMPLETED &&
+      payment.paymentType === PaymentType.ADVANCE &&
+      payment.tripId
+    ) {
+      await this.handleAdvancePaymentCompletion(payment.tripId, tenantId);
+    }
+
+    return savedPayment;
+  }
+
+  /**
+   * Handle advance payment completion: Update trip status to IN_PROGRESS and truck status to IN_TRANSIT
+   */
+  private async handleAdvancePaymentCompletion(
+    tripId: string,
+    tenantId: string,
+  ): Promise<void> {
+    try {
+      this.logger.log(
+        `Handling advance payment completion for trip ${tripId}`,
+      );
+
+      // Find the trip
+      const trip = await this.tripRepository.findOne({
+        where: { id: tripId, tenantId },
+        relations: ['truck'],
+      });
+
+      if (!trip) {
+        this.logger.warn(`Trip ${tripId} not found for advance payment completion`);
+        return;
+      }
+
+      // Only update if trip is still in PLANNED status
+      if (trip.status !== TripStatus.PLANNED) {
+        this.logger.log(
+          `Trip ${tripId} is already in status ${trip.status}, skipping status update`,
+        );
+        return;
+      }
+
+      // Find the advance payment that triggered this
+      const advancePayment = await this.paymentRepository.findOne({
+        where: {
+          tripId,
+          tenantId,
+          paymentType: PaymentType.ADVANCE,
+          status: PaymentStatus.COMPLETED,
+        },
+        order: { processedAt: 'DESC' },
+      });
+
+      // Update trip status to IN_PROGRESS
+      trip.status = TripStatus.IN_PROGRESS;
+      trip.actualStartTime = new Date();
+      await this.tripRepository.save(trip);
+
+      this.logger.log(
+        `Trip ${tripId} status updated to IN_PROGRESS`,
+      );
+
+      // Update truck status to IN_TRANSIT and set currentTripId
+      if (trip.truckId) {
+        const truck = await this.truckRepository.findOne({
+          where: { id: trip.truckId, tenantId },
+        });
+
+        if (truck) {
+          truck.status = VehicleStatus.IN_TRANSIT;
+          truck.currentTripId = tripId;
+          truck.estimatedAvailableTime = trip.plannedEndTime || trip.estimatedEndTime;
+          await this.truckRepository.save(truck);
+
+          this.logger.log(
+            `Truck ${truck.id} status updated to IN_TRANSIT and assigned to trip ${tripId}`,
+          );
+        } else {
+          this.logger.warn(
+            `Truck ${trip.truckId} not found for trip ${tripId}`,
+          );
+        }
+      }
+
+      // Log audit event if payment is found
+      if (advancePayment) {
+        await this.auditService.log('ADVANCE_PAYMENT_COMPLETED', advancePayment, {
+          tripId,
+          truckId: trip.truckId,
+          description: 'Trip started, truck in transit',
+        });
+      }
+    } catch (error) {
+      this.logger.error(
+        `Error handling advance payment completion for trip ${tripId}:`,
+        error,
+      );
+      // Don't throw - payment is already saved, this is a side effect
+    }
   }
 
   async processPayment(id: string, tenantId: string): Promise<Payment> {

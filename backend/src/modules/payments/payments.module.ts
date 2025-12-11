@@ -8,6 +8,7 @@ import { Invoice, InvoiceItem } from '../financial/entities/invoice.entity';
 import { Load } from '../../entities/load.entity';
 import { User } from '../../entities/user.entity';
 import { Bid } from '../../entities/bid.entity';
+import { Truck } from '../../entities/truck.entity';
 
 import { PaymentsService } from './payments.service';
 import { PaymentsController } from './payments.controller';
@@ -32,7 +33,7 @@ import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Payment, Trip, Receipt, Invoice, InvoiceItem, Load, User, Bid]),
+    TypeOrmModule.forFeature([Payment, Trip, Receipt, Invoice, InvoiceItem, Load, User, Bid, Truck]),
     EventEmitterModule.forRoot(),
     HttpModule,
     NotificationsModule,

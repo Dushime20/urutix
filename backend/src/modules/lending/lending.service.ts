@@ -798,9 +798,19 @@ export class LendingService {
         );
       }
 
+      // Provide default beneficiaries if requested_split is null
+      const beneficiaries = loan.requested_split && Array.isArray(loan.requested_split) && loan.requested_split.length > 0
+        ? loan.requested_split
+        : [{
+            recipientId: loan.cargo_id || null,
+            recipientType: 'cargo_owner',
+            amount: loan.approved_amount || loan.requested_amount,
+            percentage: 100,
+          }];
+
       const disbursement = manager.create(LoanDisbursement, {
         loan_request_id: loanId,
-        beneficiaries: loan.requested_split,
+        beneficiaries: beneficiaries,
         status: DisbursementStatus.INITIATED,
         attempts: 1,
       });
@@ -852,7 +862,7 @@ export class LendingService {
       // Get trip from loan
       const trip = await manager.findOne('Trip', {
         where: { id: loan.trip_id },
-        relations: ['load', 'load.assignedTruck'],
+        relations: ['load'],
       } as any);
 
       if (!trip) {
@@ -862,10 +872,13 @@ export class LendingService {
       // Get truck owner phone number - try multiple sources
       let truckOwnerPhone = paymentDto.truckOwnerPhoneNumber;
       
-      if (!truckOwnerPhone && trip.load?.assignedTruckId) {
+      // Get assignedTruckId from trip or load
+      const assignedTruckId = trip.truckId || trip.load?.assignedTruckId;
+      
+      if (!truckOwnerPhone && assignedTruckId) {
         // Get truck details
         const truck = await manager.findOne('Truck', {
-          where: { id: trip.load.assignedTruckId },
+          where: { id: assignedTruckId },
           relations: ['owner', 'owner.profile'],
         } as any);
         
@@ -896,9 +909,21 @@ export class LendingService {
       }
 
       // Create disbursement
+      // Provide default beneficiaries if requested_split is null
+      // For lender payments, the beneficiary is the truck owner (who receives the payment)
+      const beneficiaries = loan.requested_split && Array.isArray(loan.requested_split) && loan.requested_split.length > 0
+        ? loan.requested_split
+        : [{
+            recipientId: trip.truckId || trip.load?.assignedTruckId || null,
+            recipientType: 'truck_owner',
+            amount: loan.approved_amount || loan.requested_amount,
+            percentage: 100,
+            phoneNumber: truckOwnerPhone || null,
+          }];
+      
       const disbursement = manager.create(LoanDisbursement, {
         loan_request_id: loanId,
-        beneficiaries: loan.requested_split,
+        beneficiaries: beneficiaries,
         status: DisbursementStatus.INITIATED,
         attempts: 1,
       });
@@ -908,16 +933,32 @@ export class LendingService {
       // Process payment via mobile money if requested
       if (paymentDto.paymentMethod === 'mobile_money' && truckOwnerPhone) {
         try {
-          // Use ModuleRef to get PaymentsService dynamically to avoid circular dependency
+          // Dynamically import PaymentsService to avoid circular dependency
+          const PaymentsServiceModule = await import('../payments/payments.service');
+          const PaymentsServiceClass = PaymentsServiceModule.PaymentsService;
+          
+          // Get PaymentsService from the current module context
+          // Since PaymentsModule is imported in LendingModule, it should be available
           if (this.moduleRef) {
-            const paymentsService = this.moduleRef.get('PaymentsService', { strict: false });
+            const paymentsService = this.moduleRef.get(PaymentsServiceClass, { strict: false });
             
             if (paymentsService) {
               const { PaymentMethod, PaymentType } = await import('../../entities/payment.entity');
               
+              // Validate trip exists
+              if (!trip || !trip.id) {
+                throw new BadRequestException('Trip not found or invalid for this loan');
+              }
+
+              // Validate amount
+              const paymentAmount = loan.approved_amount || loan.requested_amount;
+              if (!paymentAmount || paymentAmount <= 0) {
+                throw new BadRequestException('Invalid loan amount for payment');
+              }
+              
               const createPaymentDto = {
                 tripId: trip.id,
-                amount: loan.approved_amount || loan.requested_amount,
+                amount: paymentAmount,
                 currency: 'RWF',
                 paymentMethod: PaymentMethod.DIGITAL_WALLET,
                 paymentType: PaymentType.TRIP_PAYMENT,
@@ -926,7 +967,7 @@ export class LendingService {
                 metadata: {
                   lenderId: loan.lender_id,
                   lenderName: loan.lender?.name,
-                  financedAmount: loan.approved_amount || loan.requested_amount,
+                  financedAmount: paymentAmount,
                   isLenderPayment: true,
                   phoneNumber: truckOwnerPhone,
                   loanId: loan.id,
@@ -934,17 +975,23 @@ export class LendingService {
                 },
               };
 
+              this.logger.log(`Creating payment for loan ${loan.id}, amount: ${paymentAmount}, tripId: ${trip.id}`);
+              
               const payment = await paymentsService.createPayment(
                 createPaymentDto,
                 tenantId,
                 lenderUserId,
               );
 
+              this.logger.log(`Payment created successfully: ${payment.id}, processing payment...`);
+
               // Process the payment
               const processedPayment = await paymentsService.processPayment(
                 payment.id,
                 tenantId,
               );
+
+              this.logger.log(`Payment processed, status: ${processedPayment.status}`);
 
               if (processedPayment.status === 'completed' || processedPayment.status === 'processing') {
                 disbursement.status = DisbursementStatus.DISBURSED;
@@ -954,7 +1001,7 @@ export class LendingService {
                 await manager.save(LoanDisbursement, disbursement);
                 await manager.save(LoanRequest, loan);
               } else {
-                throw new BadRequestException('Payment processing failed');
+                throw new BadRequestException(`Payment processing failed with status: ${processedPayment.status}`);
               }
 
               return {
@@ -967,14 +1014,20 @@ export class LendingService {
                 },
               };
             } else {
+              this.logger.error('PaymentsService not available from ModuleRef');
               throw new BadRequestException('PaymentsService not available');
             }
           } else {
+            this.logger.error('ModuleRef not available');
             throw new BadRequestException('ModuleRef not available');
           }
-        } catch (error) {
-          this.logger.error(`Mobile money payment failed for disbursement: ${error.message}`);
-          throw new BadRequestException(`Payment processing failed: ${error.message}`);
+        } catch (error: any) {
+          this.logger.error(`Mobile money payment failed for disbursement: ${error.message}`, error.stack);
+          // Re-throw with more context
+          if (error instanceof BadRequestException || error instanceof NotFoundException) {
+            throw error;
+          }
+          throw new BadRequestException(`Payment processing failed: ${error.message || 'Unknown error'}`);
         }
       }
 
@@ -3264,7 +3317,8 @@ export class LendingService {
 
     // Adjust for credit score
     if (avgCreditScore > 0) {
-      riskScore -= (avgCreditScore - 600) / 10; // Better credit scores reduce risk
+      const creditAdjustment = (avgCreditScore - 600) / 10;
+      riskScore -= creditAdjustment; // Better credit scores reduce risk
     }
 
     // Ensure score is within bounds

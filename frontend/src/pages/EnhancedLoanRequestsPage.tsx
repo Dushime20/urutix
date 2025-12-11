@@ -401,9 +401,19 @@ const EnhancedLoanRequestsPage: React.FC = () => {
     try {
       const response = await paymentsAPI.getAdvancePaymentCalculation(tripId);
       if (response.data?.success && response.data?.data) {
+        // Ensure all numeric values are properly converted
+        const calculation = response.data.data;
         setAdvancePaymentCalculations(prev => ({
           ...prev,
-          [loanRequestId]: response.data.data,
+          [loanRequestId]: {
+            ...calculation,
+            transportationFee: Number(calculation.transportationFee) || 0,
+            advancePaymentPercentage: Number(calculation.advancePaymentPercentage) || 0,
+            advanceAmount: Number(calculation.advanceAmount) || 0,
+            finalAmount: Number(calculation.finalAmount) || 0,
+            requireAdvancePayment: Boolean(calculation.requireAdvancePayment),
+            currency: calculation.currency || 'USD',
+          },
         }));
       }
     } catch (error) {
@@ -798,27 +808,58 @@ const EnhancedLoanRequestsPage: React.FC = () => {
       try {
         setProcessingPayment(true);
         
-        // Use truck owner's phone number (should be pre-filled)
-        if (!truckOwnerPhone) {
-          alert('Truck owner phone number not found. Please ensure the truck owner has added their payment information.');
+        // Validate phone number is provided
+        if (!truckOwnerPhone || truckOwnerPhone.trim() === '') {
+          alert('Please enter the truck owner\'s phone number to proceed with Mobile Money payment.');
           setProcessingPayment(false);
           return;
         }
 
-        // Call the disburse-with-payment endpoint
-        const response = await api.post(
-          `/lending/loan-requests/${selectedLoanForPayment.id}/disburse-with-payment`,
-          {
-            paymentMethod: 'mobile_money',
-            truckOwnerPhoneNumber: truckOwnerPhone,
-          }
-        );
+        // Get payment amount (use approved amount or requested amount)
+        const paymentAmount = selectedLoanForPayment.approved_amount || selectedLoanForPayment.requested_amount;
+        
+        if (!paymentAmount || paymentAmount <= 0) {
+          alert('Invalid payment amount. Please check the loan details.');
+          setProcessingPayment(false);
+          return;
+        }
+
+        // Use the mobile-money/send endpoint (same as cargo owner payments)
+        const response = await api.post('/payments/mobile-money/send', {
+          receiverPhoneNumber: truckOwnerPhone.trim(),
+          amount: paymentAmount,
+          currency: 'RWF',
+          tripId: selectedLoanForPayment.trip_id || undefined,
+          message: `Loan disbursement payment for loan ${selectedLoanForPayment.id}`,
+          metadata: {
+            isLenderPayment: true,
+            lenderId: selectedLoanForPayment.lender_id,
+            lenderName: user?.name || 'Lender',
+            loanId: selectedLoanForPayment.id,
+            financedAmount: paymentAmount,
+          },
+        });
 
         if (response.data?.success) {
-          alert('Mobile Money payment initiated successfully! The truck owner will receive the payment on their phone.');
+          alert('Mobile Money payment initiated successfully! A confirmation popup will be sent to your phone. Please confirm the payment to complete the transaction.');
           
-          // Refresh loan requests
-          fetchLoanRequests();
+          // Update loan status to disbursed after successful payment initiation
+          // Note: The actual disbursement will be completed when payment is confirmed
+          try {
+            await api.post(
+              `/lending/loan-requests/${selectedLoanForPayment.id}/disburse-with-payment`,
+              {
+                paymentMethod: 'mobile_money',
+                truckOwnerPhoneNumber: truckOwnerPhone.trim(),
+              }
+            );
+          } catch (disburseError: any) {
+            console.warn('Payment sent but disbursement update failed:', disburseError);
+            // Payment was sent successfully, so we'll still show success
+          }
+          
+          // Refresh loan requests to get updated status
+          await fetchLoanRequests();
           
           // Close modal and reset
           setShowPaymentModal(false);
@@ -827,10 +868,14 @@ const EnhancedLoanRequestsPage: React.FC = () => {
           setTruckOwnerPhone(null);
         } else {
           alert('Failed to initiate payment. Please try again.');
+          // Don't close modal on failure - allow retry
         }
       } catch (error: any) {
         console.error('Payment error:', error);
-        alert(error.response?.data?.message || 'Failed to process payment. Please try again.');
+        const errorMessage = error.response?.data?.message || error.response?.data?.error || 'Failed to process payment. Please try again.';
+        alert(errorMessage);
+        // Don't close modal on error - allow retry
+        // Status remains "approved" so lender can retry
       } finally {
         setProcessingPayment(false);
       }
@@ -1357,7 +1402,35 @@ const EnhancedLoanRequestsPage: React.FC = () => {
                                   </button>
                                 </>
                               )}
-                              {(request.status === 'approved' || request.status === 'disbursed') && (
+                              {request.status === 'approved' && (
+                                <button
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    try {
+                                      // Open payment modal for approved loans (not yet disbursed)
+                                      setSelectedLoanForPayment(request);
+                                      setShowPaymentModal(true);
+                                      
+                                      // Fetch truck owner's phone number automatically
+                                      fetchTruckOwnerPhoneNumber(request);
+                                      
+                                      // Fetch advance payment calculation if trip_id exists
+                                      if (request.trip_id) {
+                                        fetchAdvancePaymentCalculation(request.trip_id, request.id);
+                                      }
+                                    } catch (error) {
+                                      console.error('Error opening payment modal:', error);
+                                      alert('Error opening payment modal. Please try again.');
+                                    }
+                                  }}
+                                  className="p-1.5 rounded-lg hover:bg-green-100 text-green-600 hover:text-green-700 transition"
+                                  title="Pay / Retry Payment"
+                                >
+                                  <FaMoneyBillWave className="w-4 h-4" />
+                                </button>
+                              )}
+                              {request.status === 'disbursed' && (
                                 <button
                                   onClick={(e) => {
                                     e.preventDefault();
@@ -1372,7 +1445,7 @@ const EnhancedLoanRequestsPage: React.FC = () => {
                                     }
                                   }}
                                   className="p-1.5 rounded-lg hover:bg-blue-100 text-blue-600 hover:text-blue-700 transition"
-                                  title="View/Edit Payment"
+                                  title="View Payment Details"
                                 >
                                   <FaCreditCard className="w-4 h-4" />
                                 </button>
@@ -1505,19 +1578,11 @@ const EnhancedLoanRequestsPage: React.FC = () => {
                   </div>
                 )}
                 
-                {truckOwnerPhone && (
+                {truckOwnerPhone && !loadingTruckOwnerInfo && (
                   <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
                     <p className="text-sm text-green-700 font-medium mb-1">Truck Owner Payment Info</p>
                     <p className="text-xs text-green-600">Phone: {truckOwnerPhone}</p>
-                    <p className="text-xs text-green-600 mt-1">Payment will be sent to this number automatically</p>
-                  </div>
-                )}
-                
-                {!truckOwnerPhone && !loadingTruckOwnerInfo && (
-                  <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                    <p className="text-sm text-yellow-700">
-                      ⚠️ Truck owner phone number not found. Please ensure the truck owner has added their payment information.
-                    </p>
+                    <p className="text-xs text-green-600 mt-1">This number will be pre-filled below. You can change it if needed.</p>
                   </div>
                 )}
 
@@ -1544,15 +1609,31 @@ const EnhancedLoanRequestsPage: React.FC = () => {
                     <div className="flex-1 text-left">
                       <h5 className="font-semibold text-gray-900">Mobile Money (Momo)</h5>
                       <p className="text-xs text-gray-500">
-                        {truckOwnerPhone 
-                          ? `Payment will be sent to: ${truckOwnerPhone}`
-                          : 'Pay via MTN Mobile Money or Airtel Money'}
+                        Pay via MTN Mobile Money or Airtel Money
                       </p>
                     </div>
                     {paymentMethod === 'momo' && (
                       <FaCheck className="text-blue-600 w-5 h-5" />
                     )}
                   </button>
+                  
+                  {paymentMethod === 'momo' && (
+                    <div className="mt-3 p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Truck Owner Phone Number
+                      </label>
+                      <input
+                        type="tel"
+                        value={truckOwnerPhone || ''}
+                        onChange={(e) => setTruckOwnerPhone(e.target.value)}
+                        placeholder="Enter phone number (e.g., 0781234567)"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">
+                        Enter the truck owner's mobile money phone number
+                      </p>
+                    </div>
+                  )}
                   
                   <button
                     onClick={() => setPaymentMethod('card')}
@@ -1593,9 +1674,9 @@ const EnhancedLoanRequestsPage: React.FC = () => {
                 </button>
                 <button
                   onClick={handleProcessPayment}
-                  disabled={!paymentMethod || processingPayment || (paymentMethod === 'momo' && !truckOwnerPhone)}
+                  disabled={!paymentMethod || processingPayment || (paymentMethod === 'momo' && (!truckOwnerPhone || truckOwnerPhone.trim() === ''))}
                   className={`flex-1 px-4 py-2.5 rounded-lg text-white font-medium transition ${
-                    !paymentMethod || processingPayment || (paymentMethod === 'momo' && !truckOwnerPhone)
+                    !paymentMethod || processingPayment || (paymentMethod === 'momo' && (!truckOwnerPhone || truckOwnerPhone.trim() === ''))
                       ? 'bg-gray-400 cursor-not-allowed'
                       : 'bg-blue-600 hover:bg-blue-700'
                   }`}

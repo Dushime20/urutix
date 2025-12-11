@@ -13,6 +13,7 @@ import { User } from '../../entities/user.entity';
 import { Bid } from '../../entities/bid.entity';
 import { Payment } from '../../entities/payment.entity';
 import { Trip } from '../../entities/trip.entity';
+import { Truck } from '../../entities/truck.entity';
 import { LocationsModule } from '../locations/locations.module';
 import { MatchingModule } from '../matching/matching.module';
 import { EnhancedAuthModule } from '../auth/enhanced-auth.module';
@@ -33,6 +34,7 @@ import { TenantGuard } from '../auth/tenant.guard';
       Bid,
       Payment,
       Trip,
+      Truck,
     ]),
     LocationsModule,
     MatchingModule,

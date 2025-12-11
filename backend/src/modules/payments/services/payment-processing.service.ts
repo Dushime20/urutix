@@ -79,10 +79,20 @@ export class PaymentProcessingService {
       // Validate request
       this.validatePaymentRequest(request);
 
-      // Get tenant-specific configuration
-      const tenantConfig = await this.tenantPaymentConfigService.getConfig(
-        request.tenant,
-      );
+      // Get tenant-specific configuration (with fallback if not implemented)
+      let tenantConfig: any = {};
+      try {
+        tenantConfig = await this.tenantPaymentConfigService.getConfig(
+          request.tenant,
+        );
+      } catch (error: any) {
+        if (error.message === 'Not implemented') {
+          this.logger.warn('Tenant payment config not implemented, using defaults');
+          tenantConfig = {}; // Use empty config as default
+        } else {
+          throw error; // Re-throw if it's a different error
+        }
+      }
 
       // Check fraud detection
       const isFraudulent = await this.runFraudChecks({
