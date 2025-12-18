@@ -58,6 +58,21 @@ interface Lender {
   companyName?: string;
   availableCredit?: number;
   interestRate?: number;
+  metadata?: {
+    integrationType?: string;
+  };
+}
+
+interface LoanOfficer {
+  id: string;
+  name: string;
+  email?: string;
+  phone?: string;
+  status?: string;
+  specialization?: string;
+  maxLoanAmount?: number;
+  minLoanAmount?: number;
+  available?: boolean;
 }
 
 type PaymentMode = 'direct' | 'loan';
@@ -71,6 +86,10 @@ const CargoOwnerPayment: React.FC = () => {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [lenders, setLenders] = useState<Lender[]>([]);
   const [selectedLender, setSelectedLender] = useState<string | null>(null);
+  const [selectedLenderData, setSelectedLenderData] = useState<Lender | null>(null);
+  const [loanOfficers, setLoanOfficers] = useState<LoanOfficer[]>([]);
+  const [selectedLoanOfficer, setSelectedLoanOfficer] = useState<string | null>(null);
+  const [loadingLoanOfficers, setLoadingLoanOfficers] = useState(false);
   const [directPaymentMethod, setDirectPaymentMethod] = useState<'momo' | 'card' | null>(null);
   const [receiverPhoneNumber, setReceiverPhoneNumber] = useState<string>('');
   const [paymentAmount, setPaymentAmount] = useState<string>('');
@@ -81,6 +100,7 @@ const CargoOwnerPayment: React.FC = () => {
   const [advancePaymentCalculation, setAdvancePaymentCalculation] = useState<AdvancePaymentCalculation | null>(null);
   const [loadingAdvanceCalculation, setLoadingAdvanceCalculation] = useState(false);
   const [tripId, setTripId] = useState<string | null>(null);
+  const [lenderType, setLenderType] = useState<'internal' | 'external'>('internal');
 
   // Fetch loads with status LOADED
   useEffect(() => {
@@ -93,6 +113,59 @@ const CargoOwnerPayment: React.FC = () => {
       fetchLenders();
     }
   }, [paymentMode, user?.tenantId]);
+
+  // Handle loan officer selection (if selected item is already a loan officer, no need to fetch)
+  useEffect(() => {
+    console.log('[useEffect] Loan officer selection effect triggered', {
+      selectedLender,
+      hasSelectedLenderData: !!selectedLenderData,
+      lendersCount: lenders.length,
+    });
+    
+    if (selectedLender) {
+      const selectedItem = lenders.find(l => l.id === selectedLender);
+      const isLoanOfficer = selectedItem?.metadata?.isLoanOfficer === true;
+      
+      console.log('[useEffect] Selected item:', {
+        id: selectedItem?.id,
+        name: selectedItem?.name,
+        isLoanOfficer,
+        metadata: selectedItem?.metadata,
+      });
+      
+      if (isLoanOfficer) {
+        // If it's already a loan officer, no need to fetch more
+        console.log('[useEffect] Selected item is already a loan officer, skipping fetch');
+        setLoanOfficers([]);
+        setSelectedLoanOfficer(null);
+      } else if (selectedLenderData) {
+        // Regular lender - check if it uses external system
+        const usesExternalSystem = 
+          selectedLenderData.metadata?.integrationType === 'uruti_lending_platform' ||
+          selectedLenderData.metadata?.integrationType === 'external_lending_system';
+        
+        console.log('[useEffect] Checking external system:', {
+          usesExternalSystem,
+          integrationType: selectedLenderData.metadata?.integrationType,
+        });
+        
+        if (usesExternalSystem) {
+          console.log('[useEffect] Fetching loan officers for external system lender');
+          fetchLoanOfficers(selectedLender);
+        } else {
+          console.log('[useEffect] Lender does not use external system, clearing loan officers');
+          setLoanOfficers([]);
+          setSelectedLoanOfficer(null);
+        }
+      } else {
+        console.warn('[useEffect] selectedLender is set but selectedLenderData is null');
+      }
+    } else {
+      console.log('[useEffect] No lender selected, clearing loan officers');
+      setLoanOfficers([]);
+      setSelectedLoanOfficer(null);
+    }
+  }, [selectedLender, selectedLenderData, lenders]);
 
   const fetchLoadsReadyForPayment = async () => {
     if (!user?.id) return;
@@ -300,21 +373,34 @@ const CargoOwnerPayment: React.FC = () => {
       let lendersList: Lender[] = [];
       
       try {
+        console.log('[fetchLenders] Fetching lenders from /lending/tenant/lenders');
         const response = await api.get('/lending/tenant/lenders');
         const lendersData = response.data?.data || response.data || [];
+        console.log('[fetchLenders] Received lenders data:', lendersData);
+        
         lendersList = Array.isArray(lendersData) 
-          ? lendersData.map((l: any) => ({
-              id: l.id,
-              firstName: l.first_name || l.firstName,
-              lastName: l.last_name || l.lastName,
-              name: l.name || l.contact_email || 'Unknown Lender',
-              email: l.contact_email || l.email,
-              phone: l.contact_phone || l.phone,
-              companyName: l.name,
-              availableCredit: l.available_credit || 0,
-              interestRate: l.interest_rate || 0,
-            }))
+          ? lendersData.map((l: any) => {
+              const isLoanOfficer = l.metadata?.isLoanOfficer === true;
+              console.log(`[fetchLenders] Processing ${isLoanOfficer ? 'loan officer' : 'lender'}:`, l.name || l.id);
+              
+              return {
+                id: l.id,
+                firstName: l.first_name || l.firstName,
+                lastName: l.last_name || l.lastName,
+                name: l.name || l.contact_email || 'Unknown Lender',
+                email: l.contact_email || l.email,
+                phone: l.contact_phone || l.phone,
+                companyName: l.name,
+                availableCredit: l.available_credit || 0,
+                interestRate: l.interest_rate || 0,
+                metadata: l.metadata || {},
+              };
+            })
           : [];
+        
+        console.log(`[fetchLenders] Processed ${lendersList.length} lenders/loan officers`);
+        const loanOfficersCount = lendersList.filter(l => l.metadata?.isLoanOfficer).length;
+        console.log(`[fetchLenders] Found ${loanOfficersCount} loan officers in the list`);
       } catch (lenderError: any) {
         // Fallback: Fetch users with LENDER role and try to find corresponding Lender entities
         console.warn('Could not fetch from /lending/tenant/lenders, trying users endpoint:', lenderError);
@@ -333,14 +419,63 @@ const CargoOwnerPayment: React.FC = () => {
               companyName: u.profile?.companyName,
               availableCredit: u.availableCredit || 0,
               interestRate: u.interestRate || 0,
+              metadata: {},
             }))
           : [];
       }
       
+      console.log(`[fetchLenders] Setting ${lendersList.length} lenders/loan officers`);
       setLenders(lendersList);
     } catch (error: any) {
       console.error('Error fetching lenders:', error);
+      console.error('Error details:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+      });
       toast.error('Failed to load available lenders');
+    }
+  };
+
+  const fetchLoanOfficers = async (lenderId: string) => {
+    setLoadingLoanOfficers(true);
+    setSelectedLoanOfficer(null);
+    
+    try {
+      console.log(`[fetchLoanOfficers] Fetching loan officers for lender: ${lenderId}`);
+      const response = await api.get(`/lending/external/loan-officers/${lenderId}`);
+      console.log(`[fetchLoanOfficers] Response:`, response.data);
+      
+      const officersData = response.data?.loanOfficers || response.data || [];
+      
+      if (Array.isArray(officersData)) {
+        console.log(`[fetchLoanOfficers] Found ${officersData.length} loan officers`);
+        setLoanOfficers(officersData);
+        if (officersData.length === 0) {
+          console.warn(`[fetchLoanOfficers] No loan officers returned for lender ${lenderId}`);
+          toast.info('No loan officers available for this lender');
+        }
+      } else {
+        console.warn(`[fetchLoanOfficers] Invalid response format:`, officersData);
+        setLoanOfficers([]);
+      }
+    } catch (error: any) {
+      console.error('[fetchLoanOfficers] Error fetching loan officers:', error);
+      console.error('[fetchLoanOfficers] Error details:', {
+        message: error.message,
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+      });
+      
+      if (error.response?.status === 404) {
+        toast.warning('Loan officers endpoint not implemented in external system yet');
+      } else {
+        toast.error('Failed to load loan officers. Check console for details.');
+      }
+      setLoanOfficers([]);
+    } finally {
+      setLoadingLoanOfficers(false);
     }
   };
 
@@ -349,6 +484,9 @@ const CargoOwnerPayment: React.FC = () => {
     setShowPaymentModal(true);
     setPaymentMode(null);
     setSelectedLender(null);
+    setSelectedLenderData(null);
+    setSelectedLoanOfficer(null);
+    setLoanOfficers([]);
     setDirectPaymentMethod(null);
     setAdvancePaymentCalculation(null);
     setTripId(null);
@@ -438,16 +576,60 @@ const CargoOwnerPayment: React.FC = () => {
     }
 
     try {
-      // Create loan request with selected lender
-      // trip_id is optional - backend will find it from the load if not provided
-      await loanRequestService.createLoanRequestForCargo(selectedLoad.id, {
-        lender_id: selectedLender, // Pass the selected lender ID
-        // trip_id is optional - backend will find it from the load
-      });
+      // Check if selected "lender" is actually a loan officer
+      const selectedItem = lenders.find(l => l.id === selectedLender);
+      const isLoanOfficer = selectedItem?.metadata?.isLoanOfficer === true;
+      
+      let requestData: any = {};
+
+      if (isLoanOfficer) {
+        // If it's a loan officer, use the parent lender ID and include officer ID
+        const parentLenderId = selectedItem?.metadata?.parentLenderId;
+        const loanOfficerId = selectedItem?.metadata?.loanOfficerId;
+        
+        if (!parentLenderId) {
+          toast.error('Invalid loan officer configuration');
+          return;
+        }
+
+        requestData = {
+          lender_id: parentLenderId,
+          metadata: {
+            loanOfficerId: loanOfficerId,
+          },
+        };
+      } else {
+        // Regular lender - check if it uses external system and requires loan officer
+        const usesExternalSystem = 
+          selectedLenderData?.metadata?.integrationType === 'uruti_lending_platform' ||
+          selectedLenderData?.metadata?.integrationType === 'external_lending_system';
+        
+        if (usesExternalSystem && loanOfficers.length > 0 && !selectedLoanOfficer) {
+          toast.error('Please select a loan officer');
+          return;
+        }
+
+        requestData = {
+          lender_id: selectedLender,
+        };
+
+        // Include loan officer ID in metadata if selected
+        if (selectedLoanOfficer) {
+          requestData.metadata = {
+            loanOfficerId: selectedLoanOfficer,
+          };
+        }
+      }
+
+      await loanRequestService.createLoanRequestForCargo(selectedLoad.id, requestData);
 
       toast.success('Loan request submitted successfully! The lender will review your request in their portal.');
       setShowPaymentModal(false);
       setSelectedLoad(null);
+      setSelectedLender(null);
+      setSelectedLenderData(null);
+      setSelectedLoanOfficer(null);
+      setLoanOfficers([]);
       fetchLoadsReadyForPayment();
     } catch (error: any) {
       console.error('Loan request error:', error);
@@ -830,7 +1012,12 @@ const CargoOwnerPayment: React.FC = () => {
               ) : (
                 <div className="space-y-4">
                   <button
-                    onClick={() => setPaymentMode(null)}
+                    onClick={() => {
+                      setPaymentMode(null);
+                      setLenderType('internal');
+                      setSelectedLender(null);
+                      setSelectedLenderData(null);
+                    }}
                     className="text-blue-600 hover:text-blue-700 flex items-center gap-2 mb-4"
                   >
                     ← Back
@@ -838,52 +1025,267 @@ const CargoOwnerPayment: React.FC = () => {
                   
                   <h4 className="font-semibold text-gray-900 mb-4">Select a Lender</h4>
                   
-                  {lenders.length === 0 ? (
-                    <div className="text-center py-8">
-                      <AlertCircle className="w-12 h-12 text-gray-400 mx-auto mb-2" />
-                      <p className="text-gray-600">No lenders available in your tenant</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-3 max-h-64 overflow-y-auto">
-                      {lenders.map((lender) => (
+                  {/* Lender Type Selection Tabs */}
+                  {(() => {
+                    const usesExternalSystem = (lender: Lender) =>
+                      lender.metadata?.integrationType === 'uruti_lending_platform' ||
+                      lender.metadata?.integrationType === 'external_lending_system' ||
+                      lender.metadata?.isExternalSystemLender === true;
+                    
+                    const isLoanOfficer = (lender: Lender) =>
+                      lender.metadata?.isLoanOfficer === true;
+                    
+                    const internalLendersCount = lenders.filter(
+                      (l) => !usesExternalSystem(l) && !isLoanOfficer(l)
+                    ).length;
+                    
+                    // External lending system shows loan officers
+                    const externalLendersCount = lenders.filter(
+                      (l) => isLoanOfficer(l)
+                    ).length;
+                    
+                    return (
+                      <div className="flex gap-2 mb-4 border-b border-gray-200">
                         <button
-                          key={lender.id}
-                          onClick={() => setSelectedLender(lender.id)}
-                          className={`w-full p-4 border-2 rounded-lg transition-all text-left ${
-                            selectedLender === lender.id
-                              ? 'border-green-500 bg-green-50'
-                              : 'border-gray-200 hover:border-green-300'
+                          onClick={() => {
+                            setLenderType('internal');
+                            setSelectedLender(null);
+                            setSelectedLenderData(null);
+                            setLoanOfficers([]);
+                            setSelectedLoanOfficer(null);
+                          }}
+                          className={`px-4 py-2 font-medium transition-colors border-b-2 ${
+                            lenderType === 'internal'
+                              ? 'border-blue-600 text-blue-600'
+                              : 'border-transparent text-gray-500 hover:text-gray-700'
                           }`}
                         >
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <h5 className="font-semibold text-gray-900">
-                                {lender.firstName && lender.lastName
-                                  ? `${lender.firstName} ${lender.lastName}`
-                                  : lender.companyName || lender.name}
-                              </h5>
-                              {lender.email && (
-                                <p className="text-sm text-gray-600 mt-1">{lender.email}</p>
-                              )}
-                              {lender.interestRate && (
-                                <p className="text-xs text-gray-500 mt-1">
-                                  Interest Rate: {lender.interestRate}%
-                                </p>
-                              )}
-                            </div>
-                            {selectedLender === lender.id && (
-                              <CheckCircle className="w-6 h-6 text-green-600" />
-                            )}
-                          </div>
+                          Internal Lenders
+                          {internalLendersCount > 0 && (
+                            <span className={`ml-2 px-2 py-0.5 rounded-full text-xs ${
+                              lenderType === 'internal'
+                                ? 'bg-blue-100 text-blue-700'
+                                : 'bg-gray-100 text-gray-600'
+                            }`}>
+                              {internalLendersCount}
+                            </span>
+                          )}
                         </button>
-                      ))}
+                        <button
+                          onClick={() => {
+                            setLenderType('external');
+                            setSelectedLender(null);
+                            setSelectedLenderData(null);
+                            setLoanOfficers([]);
+                            setSelectedLoanOfficer(null);
+                          }}
+                          className={`px-4 py-2 font-medium transition-colors border-b-2 ${
+                            lenderType === 'external'
+                              ? 'border-blue-600 text-blue-600'
+                              : 'border-transparent text-gray-500 hover:text-gray-700'
+                          }`}
+                        >
+                          External Lending System
+                          {externalLendersCount > 0 && (
+                            <span className={`ml-2 px-2 py-0.5 rounded-full text-xs ${
+                              lenderType === 'external'
+                                ? 'bg-blue-100 text-blue-700'
+                                : 'bg-gray-100 text-gray-600'
+                            }`}>
+                              {externalLendersCount}
+                            </span>
+                          )}
+                        </button>
+                      </div>
+                    );
+                  })()}
+                  
+                  {/* Filter lenders based on selected type */}
+                  {(() => {
+                    const usesExternalSystem = (lender: Lender) =>
+                      lender.metadata?.integrationType === 'uruti_lending_platform' ||
+                      lender.metadata?.integrationType === 'external_lending_system' ||
+                      lender.metadata?.isExternalSystemLender === true;
+                    
+                    const isLoanOfficer = (lender: Lender) =>
+                      lender.metadata?.isLoanOfficer === true;
+                    
+                    const filteredLenders = lenders.filter((lender) => {
+                      if (lenderType === 'internal') {
+                        // Show only internal lenders (not external system, not loan officers)
+                        return !usesExternalSystem(lender) && !isLoanOfficer(lender);
+                      } else {
+                        // Show loan officers from external system (these ARE the external lenders)
+                        // Loan officers are what cargo owners should select from external system
+                        return isLoanOfficer(lender);
+                      }
+                    });
+                    
+                    return filteredLenders.length === 0 ? (
+                      <div className="text-center py-8">
+                        <AlertCircle className="w-12 h-12 text-gray-400 mx-auto mb-2" />
+                        <p className="text-gray-600 font-medium mb-2">
+                          {lenderType === 'internal'
+                            ? 'No internal lenders available in your tenant'
+                            : 'No loan officers available from external lending system'}
+                        </p>
+                        {lenderType === 'external' && (
+                          <div className="text-sm text-gray-500 space-y-1 mt-4">
+                            <p>This might mean:</p>
+                            <ul className="list-disc list-inside text-left max-w-md mx-auto space-y-1">
+                              <li>External system hasn't implemented the loan officers endpoint</li>
+                              <li>No loan officers exist in the external system</li>
+                              <li>Lender is not configured for external system integration</li>
+                              <li>API key is invalid or missing</li>
+                            </ul>
+                            <p className="mt-3 text-xs">Check backend logs for detailed error messages.</p>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="space-y-3 max-h-64 overflow-y-auto">
+                        {filteredLenders.map((lender) => {
+                          const usesExternalSystem = 
+                            lender.metadata?.integrationType === 'uruti_lending_platform' ||
+                            lender.metadata?.integrationType === 'external_lending_system' ||
+                            lender.metadata?.isExternalSystemLender === true;
+                          const isLoanOfficer = lender.metadata?.isLoanOfficer === true;
+                          
+                          return (
+                            <button
+                              key={lender.id}
+                              onClick={() => {
+                                setSelectedLender(lender.id);
+                                setSelectedLenderData(lender);
+                              }}
+                              className={`w-full p-4 border-2 rounded-lg transition-all text-left ${
+                                selectedLender === lender.id
+                                  ? 'border-green-500 bg-green-50'
+                                  : 'border-gray-200 hover:border-green-300'
+                              }`}
+                            >
+                              <div className="flex items-center justify-between">
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <h5 className="font-semibold text-gray-900">
+                                      {lender.firstName && lender.lastName
+                                        ? `${lender.firstName} ${lender.lastName}`
+                                        : lender.companyName || lender.name}
+                                    </h5>
+                                    {isLoanOfficer && (
+                                      <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded">
+                                        Loan Officer
+                                      </span>
+                                    )}
+                                    {usesExternalSystem && !isLoanOfficer && (
+                                      <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">
+                                        External System
+                                      </span>
+                                    )}
+                                  </div>
+                                  {isLoanOfficer && lender.metadata?.parentLenderName && (
+                                    <p className="text-xs text-gray-500 mt-1">
+                                      From: {lender.metadata.parentLenderName}
+                                    </p>
+                                  )}
+                                  {lender.email && (
+                                    <p className="text-sm text-gray-600 mt-1">{lender.email}</p>
+                                  )}
+                                  {lender.metadata?.specialization && (
+                                    <p className="text-xs text-gray-500 mt-1">
+                                      {lender.metadata.specialization}
+                                    </p>
+                                  )}
+                                  {lender.interestRate && !isLoanOfficer && (
+                                    <p className="text-xs text-gray-500 mt-1">
+                                      Interest Rate: {lender.interestRate}%
+                                    </p>
+                                  )}
+                                </div>
+                                {selectedLender === lender.id && (
+                                  <CheckCircle className="w-6 h-6 text-green-600" />
+                                )}
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    );
+                  })()}
+
+                  {/* Loan Officers Selection - No longer needed since loan officers are displayed directly in External tab */}
+                  {false && selectedLender && 
+                   selectedLenderData && 
+                   !selectedLenderData.metadata?.isLoanOfficer &&
+                   (selectedLenderData.metadata?.integrationType === 'uruti_lending_platform' ||
+                    selectedLenderData.metadata?.integrationType === 'external_lending_system') && (
+                    <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                      <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                        <User className="w-5 h-5 text-blue-600" />
+                        Select Loan Officer
+                        <span className="ml-2 text-xs text-gray-500 font-normal">(Required)</span>
+                      </h4>
+                      {loadingLoanOfficers ? (
+                        <div className="flex items-center justify-center py-4">
+                          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                          <span className="ml-2 text-sm text-gray-600">Loading loan officers...</span>
+                        </div>
+                      ) : loanOfficers.length > 0 ? (
+                        <div className="space-y-2 max-h-48 overflow-y-auto">
+                          {loanOfficers.map((officer) => (
+                            <button
+                              key={officer.id}
+                              onClick={() => setSelectedLoanOfficer(officer.id)}
+                              className={`w-full p-3 border-2 rounded-lg transition-all text-left ${
+                                selectedLoanOfficer === officer.id
+                                  ? 'border-blue-500 bg-blue-100'
+                                  : 'border-gray-200 hover:border-blue-300 bg-white'
+                              }`}
+                            >
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <h5 className="font-medium text-gray-900">{officer.name}</h5>
+                                  {officer.email && (
+                                    <p className="text-xs text-gray-600 mt-1">{officer.email}</p>
+                                  )}
+                                  {officer.specialization && (
+                                    <p className="text-xs text-gray-500 mt-1">
+                                      {officer.specialization}
+                                    </p>
+                                  )}
+                                </div>
+                                {selectedLoanOfficer === officer.id && (
+                                  <CheckCircle className="w-5 h-5 text-blue-600" />
+                                )}
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="py-4 text-center">
+                          <p className="text-sm text-gray-600 mb-2">
+                            No loan officers available for this lender.
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            This might mean the external system hasn't implemented the loan officers endpoint yet.
+                          </p>
+                          <p className="text-xs text-gray-500 mt-1">
+                            Check browser console for details.
+                          </p>
+                        </div>
+                      )}
                     </div>
                   )}
 
                   {selectedLender && (
                     <button
                       onClick={handleLoanRequest}
-                      className="w-full mt-6 px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold"
+                      disabled={loanOfficers.length > 0 && !selectedLoanOfficer && !selectedLenderData?.metadata?.isLoanOfficer}
+                      className={`w-full mt-6 px-4 py-3 rounded-lg transition-colors font-semibold ${
+                        loanOfficers.length > 0 && !selectedLoanOfficer && !selectedLenderData?.metadata?.isLoanOfficer
+                          ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
+                          : 'bg-green-600 text-white hover:bg-green-700'
+                      }`}
                     >
                       Submit Loan Request
                     </button>

@@ -9,7 +9,7 @@ import { join } from 'path';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
-  const port = process.env.PORT || 3000;
+  const port = process.env.PORT || 3002;
 
   // Serve static files from uploads directory (must be before global prefix)
   const uploadsPath = join(process.cwd(), 'uploads');

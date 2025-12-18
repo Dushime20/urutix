@@ -358,7 +358,9 @@ const FleetOwnerLayout: React.FC = () => {
                     <FaUser className="w-4 h-4 text-white" />
                   </div>
                   <span className="text-sm font-medium text-gray-700">
-                    {user ? `${user.firstName} ${user.lastName}` : 'User'}
+                    {(user?.firstName || user?.lastName) 
+                      ? `${user.firstName || ''} ${user.lastName || ''}`.trim()
+                      : ''}
                   </span>
                 </button>
 

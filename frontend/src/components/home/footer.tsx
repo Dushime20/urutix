@@ -19,7 +19,7 @@ export function Footer() {
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary">
                 <Truck className="h-6 w-6 text-primary-foreground" />
               </div>
-              <span className="text-xl font-bold text-white">FleetSync</span>
+              <span className="text-xl font-bold text-white">UrutiX</span>
             </div>
             <p className="text-sm text-gray-300 leading-relaxed">
               <TranslatedText text="The unified logistics platform for global fleet and cargo management." />
@@ -46,7 +46,7 @@ export function Footer() {
 
         <div className="mt-12 pt-8 border-t border-gray-400 flex flex-col sm:flex-row justify-between items-center gap-4">
           <p className="text-sm text-gray-300">
-            <TranslatedText text="© 2025 FleetSync. All rights reserved." />
+            <TranslatedText text="© 2025 UrutiX. All rights reserved." />
           </p>
           <div className="flex gap-6">
             <Link to="#" className="text-sm text-gray-300 hover:text-white transition-colors">

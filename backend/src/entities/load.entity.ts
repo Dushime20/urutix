@@ -203,6 +203,9 @@ export class Load {
   @Column('uuid')
   cargoOwnerId: string;
 
+  @Column('uuid', { nullable: true })
+  receiverId?: string; // Receiver assigned to this cargo
+
   @Column({ nullable: true })
   reference?: string; // Client reference number
 
@@ -502,6 +505,10 @@ export class Load {
   @ManyToOne('User', 'loads')
   @JoinColumn({ name: 'cargoOwnerId' })
   cargoOwner: User;
+
+  @ManyToOne('User', 'assignedCargos')
+  @JoinColumn({ name: 'receiverId' })
+  receiver?: User;
 
   @OneToMany('Trip', 'load')
   trips: Trip[];

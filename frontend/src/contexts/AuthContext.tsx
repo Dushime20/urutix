@@ -6,6 +6,25 @@ import { identifyUser, resetUser, captureEvent } from '../utils/posthog';
 import { authAPI } from '../services/api';
 import { getApiBaseUrl } from '../config/environment';
 
+// Debug helper
+const debugUserData = (userData: any, source: string) => {
+  console.log(`🔍 User data from ${source}:`, {
+    id: userData?.id,
+    email: userData?.email,
+    firstName: userData?.firstName,
+    lastName: userData?.lastName,
+    firstNameType: typeof userData?.firstName,
+    lastNameType: typeof userData?.lastName,
+    firstNameValue: userData?.firstName === '' ? 'EMPTY_STRING' : userData?.firstName,
+    lastNameValue: userData?.lastName === '' ? 'EMPTY_STRING' : userData?.lastName,
+    role: userData?.role,
+    hasProfile: !!userData?.profile,
+    profileFirstName: userData?.profile?.firstName,
+    profileLastName: userData?.profile?.lastName,
+  });
+  console.log(`🔍 Full user object from ${source}:`, JSON.stringify(userData, null, 2));
+};
+
 interface User {
   id: string;
   email: string;
@@ -121,7 +140,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       console.log('Attempting to refresh access token...');
       
       // Use the same base URL configuration as the API service
-      const baseURL = getApiBaseUrl() || 'http://localhost:3000/api';
+      const baseURL = getApiBaseUrl() || 'http://localhost:3002/api';
       const response = await axios.post(`${baseURL}/auth/refresh`, {
         refreshToken,
       }, {
@@ -263,8 +282,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
           console.log('Auth response:', response.data);
           if (response.data.success && response.data.data?.user) {
             const userData = response.data.data.user;
+            debugUserData(userData, 'getProfile');
             persistUser(userData);
-            console.log('User set successfully:', userData);
+            console.log('GetProfile: User set successfully');
+            console.log('GetProfile: User firstName:', userData?.firstName);
+            console.log('GetProfile: User lastName:', userData?.lastName);
+            console.log('GetProfile: Full user object:', JSON.stringify(userData, null, 2));
             
             // Identify user in PostHog
             identifyUser(userData);
@@ -316,6 +339,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
       console.log('🔐 Login Debug:');
       console.log('Access token received:', !!newAccessToken);
       console.log('Token preview:', newAccessToken ? `${newAccessToken.substring(0, 20)}...` : 'No token');
+      
+      // Debug user data from login
+      debugUserData(userData, 'login');
       
       // Set tokens first
       localStorage.setItem('accessToken', newAccessToken);

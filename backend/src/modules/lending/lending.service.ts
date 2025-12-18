@@ -58,6 +58,7 @@ import { UserProfile } from '../../entities/user-profile.entity';
 import { PasswordResetToken } from '../../entities/password-reset-token.entity';
 import { Trip } from '../../entities/trip.entity';
 import { EmailService } from '../auth/email.service';
+import { UrutiLendingIntegrationService } from './services/uruti-lending-integration.service';
 import * as crypto from 'crypto';
 import * as bcrypt from 'bcryptjs';
 import axios from 'axios';
@@ -107,6 +108,8 @@ export class LendingService {
 
     @Inject(forwardRef(() => ModuleRef))
     private moduleRef: ModuleRef,
+
+    private urutiLendingIntegration: UrutiLendingIntegrationService,
   ) {}
 
   // Credit and Risk Management
@@ -692,6 +695,55 @@ export class LendingService {
       return;
     }
 
+    // Check if this is a Uruti Lending Platform integration
+    // We can detect this by checking if the callback_url contains the Uruti Lending Platform domain
+    // or by checking metadata for integration type
+    const isUrutiLendingPlatform =
+      lender.metadata?.integrationType === 'uruti_lending_platform' ||
+      lender.callback_url.includes('urutilending.com') ||
+      lender.callback_url.includes('localhost:3000');
+
+    if (isUrutiLendingPlatform && lender.outbound_api_key_encrypted) {
+      // Use Uruti Lending Platform integration
+      try {
+        this.logger.log(
+          `Sending loan request to Uruti Lending Platform for lender ${lender.id}`,
+        );
+        const applicationResponse =
+          await this.urutiLendingIntegration.createLoanApplication(
+            loan,
+            lender.id,
+          );
+
+        // Update loan with external reference if provided
+        if (applicationResponse.loanNumber) {
+          loan.external_loan_ref = applicationResponse.loanNumber;
+          await this.loanRequestRepository.save(loan);
+        }
+
+        // If application is already approved, update status
+        if (applicationResponse.status === 'Approved') {
+          await this.approveLoanRequest(loan.id, {
+            status: 'approved',
+            approved_amount:
+              applicationResponse.approvedAmount || loan.requested_amount,
+            external_loan_ref: applicationResponse.loanNumber,
+          });
+        }
+
+        this.logger.log(
+          `Successfully sent loan request to Uruti Lending Platform: ${applicationResponse.applicationId}`,
+        );
+        return;
+      } catch (error) {
+        this.logger.error(
+          `Failed to send loan request to Uruti Lending Platform: ${error.message}`,
+        );
+        throw error;
+      }
+    }
+
+    // Fallback to legacy integration method
     const payload = {
       platform_loan_id: loan.id,
       tenant_id: loan.tenant_id,
@@ -1360,8 +1412,11 @@ export class LendingService {
 
   // ==== ADDITIONAL SERVICE METHODS ====
 
-  async getAllLenders(tenantId?: string): Promise<Lender[]> {
-    const whereCondition = tenantId ? { tenant_id: tenantId } : {};
+  async getAllLenders(tenantId?: string, status?: string): Promise<Lender[]> {
+    const whereCondition: any = tenantId ? { tenant_id: tenantId } : {};
+    if (status) {
+      whereCondition.status = status;
+    }
     return await this.lenderRepository.find({
       where: whereCondition,
       relations: ['policies'],

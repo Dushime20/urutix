@@ -153,6 +153,9 @@ const Auth = () => {
           case 'CARGO_OWNER':
             navigate('/dashboard'); // Redirect to main dashboard with analytics
             break;
+          case 'CARGO_RECEIVER':
+            navigate('/dashboard'); // Redirect to cargo owner dashboard with receiver view
+            break;
           case 'TRUCK_OWNER':
             navigate('/dashboard/fleet');
             break;

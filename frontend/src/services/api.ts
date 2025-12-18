@@ -7,7 +7,7 @@ const baseURL = getApiBaseUrl();
 
 // Create axios instance
 const api = axios.create({
-  baseURL: baseURL ?? 'http://localhost:3000/api',
+  baseURL: baseURL ?? 'http://localhost:3002/api',
   headers: { 'Content-Type': 'application/json' },
 });
 
@@ -73,6 +73,8 @@ export const authAPI = {
     api.post('/auth/tenant/setup-password', data),
   setupLenderPassword: (data: { token: string; password: string; confirmPassword: string }) =>
     api.post('/auth/lender/setup-password', data),
+  setupReceiverPassword: (data: { token: string; password: string; confirmPassword: string }) =>
+    api.post('/auth/receiver/setup-password', data),
 };
 
 // Trips API

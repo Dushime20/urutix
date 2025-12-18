@@ -22,7 +22,7 @@ export function CTA() {
               <TranslatedText text="logistics operations?" />
             </h2>
             <p className="text-lg text-primary-foreground/90 max-w-2xl mx-auto mb-8">
-              <TranslatedText text="Join thousands of companies using FleetSync to streamline their fleet and cargo management across the globe." />
+              <TranslatedText text="Join thousands of companies using UrutiX to streamline their fleet and cargo management across the globe." />
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button size="lg" className="bg-primary-600 hover:bg-background/90 text-white px-8">

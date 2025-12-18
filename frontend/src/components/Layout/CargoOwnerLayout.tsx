@@ -14,6 +14,28 @@ const CargoOwnerLayout: React.FC = () => {
   const navigate = useNavigate();
   const userMenuRef = useRef<HTMLDivElement>(null);
 
+  // Debug: Log user data to see what we have
+  useEffect(() => {
+    if (user) {
+      console.log('🔍 CargoOwnerLayout - User data:', {
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        hasFirstName: !!user.firstName,
+        hasLastName: !!user.lastName,
+        firstNameType: typeof user.firstName,
+        lastNameType: typeof user.lastName,
+        firstNameLength: user.firstName?.length,
+        lastNameLength: user.lastName?.length,
+        firstNameValue: user.firstName === '' ? 'EMPTY_STRING' : user.firstName,
+        lastNameValue: user.lastName === '' ? 'EMPTY_STRING' : user.lastName,
+      });
+      console.log('🔍 CargoOwnerLayout - Full user object:', JSON.stringify(user, null, 2));
+    } else {
+      console.log('⚠️ CargoOwnerLayout - No user object');
+    }
+  }, [user]);
+
   // Redirect to auth if not logged in
   useEffect(() => {
     if (!isLoading && !user) {
@@ -78,7 +100,8 @@ const CargoOwnerLayout: React.FC = () => {
         {/* Sidebar */}
         <CargoOwnerSidebar 
           isCollapsed={sidebarCollapsed} 
-          onToggle={toggleSidebar} 
+          onToggle={toggleSidebar}
+          userRole={user?.role}
         />
 
         {/* Main Content */}
@@ -116,9 +139,17 @@ const CargoOwnerLayout: React.FC = () => {
                   <div className="flex items-center space-x-2">
                     <div className="text-right">
                       <div className="text-xs font-medium text-gray-900">
-                        {user?.firstName} {user?.lastName}
+                        {(() => {
+                          const firstName = user?.firstName || '';
+                          const lastName = user?.lastName || '';
+                          const fullName = `${firstName} ${lastName}`.trim();
+                          if (fullName) {
+                            return fullName;
+                          }
+                          // Fallback to email username if names not available
+                          return user?.email ? user.email.split('@')[0] : 'User';
+                        })()}
                       </div>
-                      <div className="text-[10px] text-gray-500">Cargo Owner</div>
                     </div>
                     <button 
                       onClick={() => setShowUserMenu(!showUserMenu)}

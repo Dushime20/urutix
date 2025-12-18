@@ -121,9 +121,12 @@ const LenderLayout: React.FC = () => {
                 >
                   <div className="hidden md:block text-right">
                     <p className="text-sm font-medium">
-                      {user.profile?.firstName} {user.profile?.lastName}
+                      {(user.profile?.firstName || user.profile?.lastName)
+                        ? `${user.profile.firstName || ''} ${user.profile.lastName || ''}`.trim()
+                        : (user?.firstName || user?.lastName)
+                        ? `${user.firstName || ''} ${user.lastName || ''}`.trim()
+                        : ''}
                     </p>
-                    <p className="text-xs text-gray-500 capitalize">{user.role}</p>
                   </div>
                   <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
                     <FaUser className="w-4 h-4 text-white" />

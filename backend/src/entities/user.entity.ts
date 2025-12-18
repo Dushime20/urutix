@@ -8,6 +8,7 @@ import {
   OneToOne,
   OneToMany,
   ManyToOne,
+  JoinColumn,
   Index,
 } from 'typeorm';
 import { UserProfile } from './user-profile.entity';
@@ -23,6 +24,7 @@ export enum UserRole {
   ADMIN = 'ADMIN',
   TENANT_ADMIN = 'TENANT_ADMIN',
   CARGO_OWNER = 'CARGO_OWNER',
+  CARGO_RECEIVER = 'CARGO_RECEIVER',
   TRUCK_OWNER = 'TRUCK_OWNER',
   DRIVER = 'DRIVER',
   AGENT = 'AGENT',
@@ -109,6 +111,19 @@ export class User {
 
   @OneToMany('Load', 'cargoOwner')
   loads: Load[];
+
+  @OneToMany(() => Load, (load) => load.receiver)
+  assignedCargos: Load[];
+
+  @Column('uuid', { nullable: true })
+  createdByCargoOwnerId?: string; // For receivers: ID of cargo owner who created them
+
+  @ManyToOne(() => User, (user) => user.createdReceivers, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'createdByCargoOwnerId' })
+  createdByCargoOwner?: User;
+
+  @OneToMany(() => User, (user) => user.createdByCargoOwner)
+  createdReceivers: User[];
 
   @OneToMany('Bid', 'truckOwner')
   bids: Bid[];

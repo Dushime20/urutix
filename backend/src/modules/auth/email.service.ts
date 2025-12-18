@@ -597,6 +597,136 @@ This link will expire in 7 days.
     `;
   }
 
+  async sendReceiverInvitationEmail(
+    email: string,
+    firstName: string,
+    lastName: string,
+    cargoOwnerEmail: string,
+    token: string,
+  ): Promise<void> {
+    this.logger.log('========== RECEIVER INVITATION EMAIL SERVICE CALLED ==========');
+    this.logger.log(`Attempting to send receiver invitation email to: ${email}`);
+    
+    const frontendUrl = this.configService.get('FRONTEND_URL') || 'http://localhost:3001';
+    const baseUrl = frontendUrl.replace(/\/$/, '');
+    const setupUrl = `${baseUrl}/receiver/setup-password?token=${token}`;
+    
+    this.logger.log(`📧 Receiver password setup URL: ${setupUrl}`);
+    const fromAddress =
+      this.configService.get<string>('SMTP_FROM') ||
+      this.configService.get<string>('EMAIL_FROM_ADDRESS') ||
+      this.configService.get<string>('SMTP_USER') ||
+      'noreply@urutix.com';
+
+    if (this.transporter) {
+      this.logger.log('✅ SMTP transporter is configured, attempting to send email...');
+      try {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+          throw new Error(`Invalid email format: ${email}`);
+        }
+
+        const htmlContent = this.getReceiverInvitationEmailTemplate(
+          firstName,
+          lastName,
+          cargoOwnerEmail,
+          setupUrl,
+        );
+        
+        const plainTextContent = `
+Welcome to UrutiX, ${firstName}!
+
+You have been invited by ${cargoOwnerEmail} to become a cargo receiver on UrutiX. To get started, please set up your password by clicking the link below:
+
+${setupUrl}
+
+After setting your password, you'll be able to log in and access your receiver account to view and manage assigned cargo.
+
+If you didn't expect this email, please contact ${cargoOwnerEmail} or ignore this message.
+
+This link will expire in 7 days.
+        `.trim();
+
+        const mailOptions = {
+          from: fromAddress,
+          to: email.trim().toLowerCase(),
+          subject: `Set up your UrutiX Receiver Account Password`,
+          text: plainTextContent,
+          html: htmlContent,
+        };
+        
+        this.logger.log('📧 Mail options:', JSON.stringify({
+          from: mailOptions.from,
+          to: mailOptions.to,
+          subject: mailOptions.subject,
+        }, null, 2));
+        
+        this.logger.log('📧 Attempting to send email via SMTP...');
+        const result = await this.transporter.sendMail(mailOptions);
+        
+        this.logger.log('📧 Email send result:', JSON.stringify({
+          messageId: result.messageId,
+          accepted: result.accepted,
+          rejected: result.rejected || [],
+          response: result.response,
+        }, null, 2));
+        
+        if (result.accepted && result.accepted.length > 0) {
+          this.logger.log(`✅ Receiver invitation email sent successfully to ${email}`);
+          this.logger.log(`✅ Message ID: ${result.messageId}`);
+        } else if (result.rejected && result.rejected.length > 0) {
+          this.logger.error(`❌ Email was rejected by server`);
+          this.logger.error(`❌ Rejected recipients:`, result.rejected);
+          throw new Error(`Email was rejected: ${result.rejected.join(', ')}`);
+        } else {
+          this.logger.warn(`⚠️ Email sent but no acceptance/rejection info available`);
+        }
+      } catch (error: any) {
+        this.logger.error(`❌ Failed to send receiver invitation email to ${email}`);
+        this.logger.error(`❌ Error: ${error.message}`);
+        throw error;
+      }
+    } else {
+      this.logger.error('❌ SMTP transporter is not configured. Email will not be sent.');
+    }
+    this.logger.log('========== RECEIVER INVITATION EMAIL SERVICE CALL END ==========');
+  }
+
+  private getReceiverInvitationEmailTemplate(
+    firstName: string,
+    lastName: string,
+    cargoOwnerEmail: string,
+    setupUrl: string,
+  ): string {
+    return `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9fafb;">
+        <div style="background-color: white; border-radius: 8px; padding: 30px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+          <h2 style="color: #1f2937; margin-bottom: 20px;">Welcome to UrutiX, ${firstName}!</h2>
+          <p style="color: #4b5563; line-height: 1.6; margin-bottom: 15px;">
+            You have been invited by <strong>${cargoOwnerEmail}</strong> to become a cargo receiver on UrutiX.
+          </p>
+          <p style="color: #4b5563; line-height: 1.6; margin-bottom: 20px;">
+            To get started, please set up your password by clicking the button below:
+          </p>
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${setupUrl}" style="display: inline-block; padding: 14px 28px; background-color: #3b82f6; color: white; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 16px;">
+              Set Up Password
+            </a>
+          </div>
+          <p style="color: #4b5563; line-height: 1.6; margin-bottom: 15px;">
+            After setting your password, you'll be able to log in and access your receiver account to view and manage assigned cargo.
+          </p>
+          <p style="color: #6b7280; font-size: 14px; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+            If you didn't expect this email, please contact ${cargoOwnerEmail} or ignore this message.
+          </p>
+          <p style="color: #6b7280; font-size: 12px; margin-top: 10px;">
+            This link will expire in 7 days.
+          </p>
+        </div>
+      </div>
+    `;
+  }
+
   private getLenderPasswordSetupEmailTemplate(
     lenderName: string,
     setupUrl: string,

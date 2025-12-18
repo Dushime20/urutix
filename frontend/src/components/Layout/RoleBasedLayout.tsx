@@ -130,10 +130,9 @@ const RoleBasedLayout: React.FC = () => {
                     <FaUser className="w-4 h-4 text-white" />
                   </div>
                   <span className="text-sm font-medium text-gray-700">
-                    {user.firstName} {user.lastName}
-                  </span>
-                  <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
-                    {user.role.replace('_', ' ')}
+                    {(user.firstName || user.lastName) 
+                      ? `${user.firstName || ''} ${user.lastName || ''}`.trim()
+                      : ''}
                   </span>
                 </button>
 

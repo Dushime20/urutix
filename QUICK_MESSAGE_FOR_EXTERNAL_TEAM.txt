@@ -1,0 +1,64 @@
+URGENT: Loan Officers Endpoint Required
+
+We cannot see loan officers from your system in UrutiX. This is blocking cargo owners from selecting loan officers.
+
+REQUIRED ENDPOINT:
+GET /api/integration/loan-officers
+
+Authentication: X-API-Key header with the API key we provided
+
+Response Format (choose one):
+
+Option 1:
+{
+  "loanOfficers": [
+    {
+      "id": "officer-123",
+      "name": "John Doe",
+      "email": "john@lending.com",
+      "status": "active"
+    }
+  ]
+}
+
+Option 2 (we accept this too):
+[
+  {
+    "id": "officer-123",
+    "name": "John Doe",
+    "email": "john@lending.com",
+    "status": "active"
+  }
+]
+
+REQUIRED FIELDS:
+- id (string)
+- name (string)
+- email (string)
+- status (string: "active", "inactive", or "busy")
+
+OPTIONAL FIELDS:
+- phone
+- specialization
+- maxLoanAmount
+- minLoanAmount
+
+ALSO REQUIRED:
+Your POST /api/integration/applications endpoint MUST accept "loanOfficerId" field and assign the application to that loan officer.
+
+CURRENT STATUS:
+- Your endpoint returns 404 (not implemented)
+- We have code ready to use it
+- We have API keys configured
+
+WHAT HAPPENS WHEN YOU IMPLEMENT:
+1. UrutiX calls your endpoint
+2. Cargo owners see loan officers in dropdown
+3. They select a loan officer
+4. Loan request is sent with loanOfficerId
+5. Loan officer sees it in their portal
+
+Please implement ASAP - this is blocking the integration.
+
+For full technical details, see: LENDING_SYSTEM_API_SPECIFICATION.md
+

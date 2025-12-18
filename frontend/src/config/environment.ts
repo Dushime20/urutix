@@ -8,7 +8,7 @@ export const config = {
   
   // API Configuration
   api: {
-    baseUrl: import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api',
+    baseUrl: import.meta.env.VITE_API_BASE_URL || 'http://localhost:3002/api',
   },
   
   // App Configuration

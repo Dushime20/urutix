@@ -99,9 +99,10 @@ const DriverLayout: React.FC = () => {
                 <div className="flex items-center space-x-3">
                   <div className="text-right">
                     <div className="text-sm font-medium text-gray-900">
-                      {user?.firstName} {user?.lastName}
+                      {(user?.firstName || user?.lastName) 
+                        ? `${user.firstName || ''} ${user.lastName || ''}`.trim()
+                        : ''}
                     </div>
-                    <div className="text-xs text-gray-500">Driver</div>
                   </div>
                   <button 
                     onClick={() => setShowUserMenu(!showUserMenu)}

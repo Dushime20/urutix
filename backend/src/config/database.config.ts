@@ -35,6 +35,7 @@ import { AuctionWatch } from '../entities/auction-watch.entity';
 import { SafetyIncident } from '../entities/safety-incident.entity';
 import { SafetyInspection } from '../entities/safety-inspection.entity';
 import { SafetyTraining } from '../entities/safety-training.entity';
+import { CargoInspection } from '../entities/cargo-inspection.entity';
 
 // Financial entities
 import {
@@ -121,6 +122,8 @@ export const databaseConfig: TypeOrmModuleOptions = {
     SafetyIncident,
     SafetyInspection,
     SafetyTraining,
+    // Receiver entities
+    CargoInspection,
   ],
   synchronize: false,
   autoLoadEntities: false,

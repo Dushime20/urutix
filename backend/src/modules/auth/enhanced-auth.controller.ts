@@ -703,6 +703,48 @@ export class EnhancedAuthController {
     }
   }
 
+  @Post('receiver/setup-password')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(EnhancedRateLimitGuard)
+  @ApiOperation({
+    summary: 'Setup receiver password',
+    description: 'Set initial password for receiver account using setup token',
+  })
+  @ApiBody({
+    type: SetupDriverPasswordDto,
+    description: 'Password setup data',
+  })
+  @ApiOkResponse({
+    description: 'Password set successfully',
+    type: SetupDriverPasswordResponseDto,
+  })
+  @ApiBadRequestResponse({
+    description: 'Invalid token or validation error',
+  })
+  async setupReceiverPassword(
+    @Body() setupPasswordDto: SetupDriverPasswordDto,
+    @Req() req: Request,
+  ): Promise<SetupDriverPasswordResponseDto> {
+    try {
+      const clientIp = this.getClientIp(req);
+      this.logger.log(`Receiver password setup attempt from IP: ${clientIp}`);
+
+      const result = await this.authService.setupReceiverPassword(
+        setupPasswordDto,
+        clientIp,
+      );
+
+      this.logger.log(`Receiver password setup completed from IP: ${clientIp}`);
+      return result;
+    } catch (error) {
+      const clientIp = this.getClientIp(req);
+      this.logger.error(
+        `Receiver password setup failed from IP: ${clientIp}: ${error.message}`,
+      );
+      throw error;
+    }
+  }
+
   @Get('profile')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth('JWT-auth')

@@ -46,7 +46,7 @@ export const TripTracker: React.FC<{ tripId: string }> = ({ tripId }) => {
   useEffect(() => {
     const token = localStorage.getItem('jwtToken');
     if (!token) return;
-    const socket: Socket = io('http://localhost:3000/tracking', {
+    const socket: Socket = io('http://localhost:3002/tracking', {
       auth: { token },
       transports: ['websocket'],
     });

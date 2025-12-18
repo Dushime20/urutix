@@ -45,7 +45,7 @@ export function Header() {
           <span className={`text-xl font-bold transition-colors ${
             isScrolled ? "text-foreground" : "text-white"
           }`}>
-            FleetSync
+            UrutiX
           </span>
         </div>
 

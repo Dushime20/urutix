@@ -10,7 +10,7 @@ import {
   InternalServerErrorException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, ILike } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { User, UserStatus, UserRole } from '../../entities/user.entity';
@@ -92,11 +92,14 @@ export class EnhancedAuthService {
       tenantId: tenant,
     } = registerDto;
 
+    // Normalize email: trim whitespace and convert to lowercase
+    const normalizedEmail = email?.trim().toLowerCase() || email;
+
     try {
       console.log('registerDto', registerDto);
-
+      
       this.logger.log(
-        `Registration attempt for email: ${registerDto.email} from IP: ${clientIp}`,
+        `Registration attempt for email: ${normalizedEmail} (original: ${email}) from IP: ${clientIp}`,
       );
 
       // Validate password strength
@@ -105,14 +108,14 @@ export class EnhancedAuthService {
       // Check if user already exists within the same tenant
       const existingUser = await this.userRepository.findOne({
         where: {
-          email,
+          email: normalizedEmail,
           tenantId: tenant || '00000000-0000-0000-0000-000000000001',
         },
       });
 
       if (existingUser) {
         this.logger.warn(
-          `Registration failed - email already exists: ${email}`,
+          `Registration failed - email already exists: ${normalizedEmail}`,
         );
         throw new ConflictException(
           'User with this email already exists in this tenant',
@@ -125,9 +128,9 @@ export class EnhancedAuthService {
       // Resolve tenant ID
       const tenantId = await this.resolveTenantId(registerDto);
 
-      // Create user
+      // Create user with normalized email
       const user = this.userRepository.create({
-        email,
+        email: normalizedEmail,
         passwordHash: hashedPassword,
         status: UserStatus.PENDING_VERIFICATION,
         tenantId,
@@ -184,7 +187,7 @@ export class EnhancedAuthService {
       };
     } catch (error) {
       this.logger.error(
-        `Registration failed for ${registerDto.email}: ${error.message}`,
+        `Registration failed for ${normalizedEmail}: ${error.message}`,
       );
       throw error;
     }
@@ -195,17 +198,39 @@ export class EnhancedAuthService {
     password: string,
     clientIp?: string,
   ): Promise<User | null> {
+    // Normalize email: trim whitespace and convert to lowercase
+    const normalizedEmail = email?.trim().toLowerCase() || email;
+    
     try {
-      this.logger.debug(`Validating user: ${email}`);
+      this.logger.debug(`Validating user: ${normalizedEmail} (original: ${email})`);
       
-      const user = await this.userRepository.findOne({
-        where: { email },
+      // Try exact match first with normalized email
+      let user = await this.userRepository.findOne({
+        where: { email: normalizedEmail },
         relations: ['profile'],
       });
 
+      // If not found, try case-insensitive search (for existing users with different casing)
+      if (!user) {
+        this.logger.debug(`Exact match not found, trying case-insensitive search for: ${normalizedEmail}`);
+        user = await this.userRepository.findOne({
+          where: { email: ILike(normalizedEmail) },
+          relations: ['profile'],
+        });
+        
+        // If found with case-insensitive search, log a warning and update the email to normalized version
+        if (user) {
+          this.logger.warn(
+            `User found with case-insensitive match. Updating email from "${user.email}" to "${normalizedEmail}" for consistency.`
+          );
+          user.email = normalizedEmail;
+          await this.userRepository.save(user);
+        }
+      }
+
       if (!user) {
         this.logger.warn(
-          `Login attempt with non-existent email: ${email} from IP: ${clientIp}`,
+          `Login attempt with non-existent email: ${normalizedEmail} from IP: ${clientIp}`,
         );
         return null;
       }
@@ -214,7 +239,7 @@ export class EnhancedAuthService {
 
       // Check if password hash exists
       if (!user.passwordHash) {
-        this.logger.error(`User ${email} has no password hash`);
+        this.logger.error(`User ${normalizedEmail} has no password hash`);
         return null;
       }
 
@@ -229,7 +254,7 @@ export class EnhancedAuthService {
           user.role === UserRole.TENANT_ADMIN ? 'tenant admin' : 
           'lender';
         this.logger.warn(
-          `Login attempt for ${roleName} with pending verification: ${email} from IP: ${clientIp}. ${roleName} needs to set password first via email link.`,
+          `Login attempt for ${roleName} with pending verification: ${normalizedEmail} from IP: ${clientIp}. ${roleName} needs to set password first via email link.`,
         );
         const accountType = 
           user.role === UserRole.DRIVER ? 'driver' : 
@@ -246,7 +271,7 @@ export class EnhancedAuthService {
           (user.lockedUntil.getTime() - Date.now()) / 60000,
         );
         this.logger.warn(
-          `Login attempt for locked account: ${email} from IP: ${clientIp}. Locked for ${minutesRemaining} more minutes.`,
+          `Login attempt for locked account: ${normalizedEmail} from IP: ${clientIp}. Locked for ${minutesRemaining} more minutes.`,
         );
         throw new UnauthorizedException(
           `Account is locked. Please try again in ${minutesRemaining} minutes.`,
@@ -268,7 +293,7 @@ export class EnhancedAuthService {
           clientIp,
         });
 
-        this.logger.log(`Successful login: ${email} from IP: ${clientIp}`);
+        this.logger.log(`Successful login: ${normalizedEmail} from IP: ${clientIp}`);
         return user;
       } else {
         // Increment failed login attempts
@@ -278,7 +303,7 @@ export class EnhancedAuthService {
         if (user.loginAttempts >= 5) {
           user.lockedUntil = new Date(Date.now() + 30 * 60 * 1000); // 30 minutes
           this.logger.warn(
-            `Account locked for 30 minutes: ${email} from IP: ${clientIp}`,
+            `Account locked for 30 minutes: ${normalizedEmail} from IP: ${clientIp}`,
           );
         }
 
@@ -291,11 +316,12 @@ export class EnhancedAuthService {
           reason: 'Invalid password',
         });
 
-        this.logger.warn(`Failed login attempt: ${email} from IP: ${clientIp} (attempt ${user.loginAttempts})`);
+        this.logger.warn(`Failed login attempt: ${normalizedEmail} from IP: ${clientIp} (attempt ${user.loginAttempts})`);
+        this.logger.debug(`Password comparison failed for user ${normalizedEmail}. Password hash exists: ${!!user.passwordHash}`);
         return null;
       }
     } catch (error) {
-      this.logger.error(`Error validating user ${email}: ${error.message}`, error.stack);
+      this.logger.error(`Error validating user ${normalizedEmail}: ${error.message}`, error.stack);
       // Check if it's a database connection error
       if (error.message?.includes('ECONNREFUSED') || error.message?.includes('connection')) {
         this.logger.error('Database connection error during user validation');
@@ -309,20 +335,33 @@ export class EnhancedAuthService {
     loginDto: LoginDto,
     clientIp?: string,
   ): Promise<LoginResponseDto> {
+    // Normalize email: trim whitespace and convert to lowercase
+    const normalizedEmail = loginDto.email?.trim().toLowerCase() || loginDto.email;
+    
     try {
       this.logger.log(
-        `Login attempt for email: ${loginDto.email} from IP: ${clientIp}`,
+        `Login attempt for email: ${normalizedEmail} (original: ${loginDto.email}) from IP: ${clientIp}`,
       );
-
+      
       // First check if user exists to provide better error messages
       let userExists = false;
       let existingUser: User | null = null;
       
       try {
+        // Try exact match first
         existingUser = await this.userRepository.findOne({
-          where: { email: loginDto.email },
+          where: { email: normalizedEmail },
           relations: ['profile'],
         });
+        
+        // If not found, try case-insensitive search
+        if (!existingUser) {
+          existingUser = await this.userRepository.findOne({
+            where: { email: ILike(normalizedEmail) },
+            relations: ['profile'],
+          });
+        }
+        
         userExists = !!existingUser;
       } catch (dbError) {
         this.logger.error(`Database error checking user existence: ${dbError.message}`);
@@ -335,7 +374,7 @@ export class EnhancedAuthService {
       }
 
       const user = await this.validateUser(
-        loginDto.email,
+        normalizedEmail,
         loginDto.password,
         clientIp,
       );
@@ -413,6 +452,57 @@ export class EnhancedAuthService {
         rememberMe: loginDto.rememberMe,
       });
 
+      // Ensure profile is loaded - reload if missing or if firstName/lastName are empty
+      let profile = user.profile;
+      if (!profile || !profile.firstName || !profile.lastName) {
+        this.logger.warn(`User ${user.id} profile missing or incomplete, attempting to load...`);
+        const userWithProfile = await this.userRepository.findOne({
+          where: { id: user.id },
+          relations: ['profile'],
+        });
+        if (userWithProfile?.profile) {
+          profile = userWithProfile.profile;
+          user.profile = profile;
+        } else {
+          // Try direct query to user_profiles table
+          const directProfile = await this.userProfileRepository.findOne({
+            where: { userId: user.id },
+          });
+          if (directProfile) {
+            profile = directProfile;
+            user.profile = profile;
+          } else {
+            // Profile doesn't exist - create a default one
+            this.logger.warn(`User ${user.id} has no profile, creating default profile...`);
+            const newProfile = this.userProfileRepository.create({
+              userId: user.id,
+              tenantId: user.tenantId,
+              firstName: user.email.split('@')[0] || 'User',
+              lastName: '',
+            });
+            profile = await this.userProfileRepository.save(newProfile);
+            user.profile = profile;
+          }
+        }
+      }
+
+      // Log profile data for debugging
+      this.logger.debug(`Login - User profile data:`, {
+        userId: user.id,
+        email: user.email,
+        hasProfile: !!profile,
+        firstName: profile?.firstName,
+        lastName: profile?.lastName,
+        profileId: profile?.id,
+      });
+
+      const firstName = profile?.firstName || '';
+      const lastName = profile?.lastName || '';
+
+      if (!firstName && !lastName) {
+        this.logger.error(`User ${user.id} has no firstName or lastName in profile!`);
+      }
+
       return {
         accessToken: tokens.accessToken,
         refreshToken: tokens.refreshToken,
@@ -420,15 +510,15 @@ export class EnhancedAuthService {
         user: {
           id: user.id,
           email: user.email,
-          firstName: user.profile?.firstName || '',
-          lastName: user.profile?.lastName || '',
+          firstName,
+          lastName,
           role: user.role,
           tenantId: user.tenantId,
           tenantName: tenantName,
         },
       };
     } catch (error) {
-      this.logger.error(`Login failed for ${loginDto.email}: ${error.message}`);
+      this.logger.error(`Login failed for ${normalizedEmail}: ${error.message}`);
       throw error;
     }
   }
@@ -932,6 +1022,75 @@ export class EnhancedAuthService {
     }
   }
 
+  async setupReceiverPassword(
+    setupPasswordDto: SetupDriverPasswordDto,
+    clientIp?: string,
+  ): Promise<SetupDriverPasswordResponseDto> {
+    try {
+      const { token, password, confirmPassword } = setupPasswordDto;
+
+      // Validate password strength
+      this.validatePasswordStrength(password);
+
+      if (password !== confirmPassword) {
+        throw new BadRequestException('Passwords do not match');
+      }
+
+      // Find and validate setup token
+      const setupTokenRecord = await this.passwordResetTokenRepository.findOne({
+        where: { token, used: false },
+      });
+
+      if (!setupTokenRecord) {
+        throw new BadRequestException('Invalid or expired setup token');
+      }
+
+      if (setupTokenRecord.expiresAt < new Date()) {
+        throw new BadRequestException('Setup token has expired');
+      }
+
+      // Find user
+      const user = await this.userRepository.findOne({
+        where: { email: setupTokenRecord.email },
+      });
+
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
+
+      // Verify user is a receiver
+      if (user.role !== UserRole.CARGO_RECEIVER) {
+        throw new BadRequestException('This token is only valid for receiver accounts');
+      }
+
+      // Update password and activate account
+      const hashedPassword = await bcrypt.hash(password, 14);
+      user.passwordHash = hashedPassword;
+      user.status = UserStatus.ACTIVE; // Activate the account
+      user.loginAttempts = 0;
+      user.lockedUntil = undefined;
+      await this.userRepository.save(user);
+
+      // Mark token as used
+      setupTokenRecord.used = true;
+      await this.passwordResetTokenRepository.save(setupTokenRecord);
+
+      // Log password setup
+      await this.logAuditEvent('RECEIVER_PASSWORD_SETUP_COMPLETED', user.id, {
+        email: user.email,
+        clientIp,
+      });
+
+      this.logger.log(
+        `Receiver password setup completed for: ${user.email} from IP: ${clientIp}`,
+      );
+      return { message: 'Password set successfully. You can now log in.' };
+    } catch (error) {
+      this.logger.error(`Receiver password setup failed: ${error.message}`);
+      throw error;
+    }
+  }
+
   async changePassword(
     userId: string,
     changePasswordDto: ChangePasswordDto,
@@ -1072,17 +1231,68 @@ export class EnhancedAuthService {
         }
       }
 
+      // Ensure profile is loaded - reload if missing or if firstName/lastName are empty
+      let profile = user.profile;
+      if (!profile || !profile.firstName || !profile.lastName) {
+        this.logger.warn(`User ${user.id} profile missing or incomplete in getProfile, attempting to load...`);
+        const userWithProfile = await this.userRepository.findOne({
+          where: { id: user.id },
+          relations: ['profile'],
+        });
+        if (userWithProfile?.profile) {
+          profile = userWithProfile.profile;
+          user.profile = profile;
+        } else {
+          // Try direct query to user_profiles table
+          const directProfile = await this.userProfileRepository.findOne({
+            where: { userId: user.id },
+          });
+          if (directProfile) {
+            profile = directProfile;
+            user.profile = profile;
+          } else {
+            // Profile doesn't exist - create a default one
+            this.logger.warn(`User ${user.id} has no profile, creating default profile...`);
+            const newProfile = this.userProfileRepository.create({
+              userId: user.id,
+              tenantId: user.tenantId,
+              firstName: user.email.split('@')[0] || 'User',
+              lastName: '',
+            });
+            profile = await this.userProfileRepository.save(newProfile);
+            user.profile = profile;
+          }
+        }
+      }
+
+      // Log profile data for debugging
+      this.logger.debug(`GetProfile - User profile data:`, {
+        userId: user.id,
+        email: user.email,
+        hasProfile: !!profile,
+        firstName: profile?.firstName,
+        lastName: profile?.lastName,
+        profileId: profile?.id,
+      });
+
+      const firstName = profile?.firstName || '';
+      const lastName = profile?.lastName || '';
+
+      if (!firstName && !lastName) {
+        this.logger.error(`User ${user.id} has no firstName or lastName in profile!`);
+      }
+
       return {
         id: user.id,
         email: user.email,
-        firstName: user.profile?.firstName || '',
-        lastName: user.profile?.lastName || '',
+        firstName,
+        lastName,
         role: user.role,
         tenantId: user.tenantId,
         tenantName: tenantName,
         status: user.status,
         emailVerifiedAt: user.emailVerifiedAt,
-        profile: user.profile,
+        profile: profile,
       };
     } catch (error) {
       this.logger.error(

@@ -32,6 +32,7 @@ import Home from './pages/Home';
 import DriverPasswordSetup from './pages/DriverPasswordSetup';
 import TenantPasswordSetup from './pages/TenantPasswordSetup';
 import LenderPasswordSetup from './pages/LenderPasswordSetup';
+import ReceiverPasswordSetup from './pages/ReceiverPasswordSetup';
 
 // Lazy load all page components to reduce initial bundle size
 const CargoList = lazy(() => import('./pages/dashboard/cargos/list'));
@@ -87,6 +88,8 @@ const EnhancedLoanRequestsPage = lazy(() => import('./pages/EnhancedLoanRequests
 const UnifiedFinancialManagement = lazy(() => import('./pages/dashboard/financial'));
 const UnifiedDocumentManagement = lazy(() => import('./pages/dashboard/documents'));
 const InvoiceViewer = lazy(() => import('./components/CargoOwner/InvoiceViewer'));
+const ReceiverCargosPage = lazy(() => import('./pages/cargo-owner/ReceiverCargosPage'));
+const CargoInspectionPage = lazy(() => import('./pages/cargo-owner/CargoInspectionPage'));
 const ReceiptViewer = lazy(() => import('./components/Lender/ReceiptViewer'));
 const DocumentsPage = lazy(() => import('./pages/DocumentsPage'));
 const UnifiedNotificationManagement = lazy(() => import('./pages/dashboard/notifications'));
@@ -94,6 +97,7 @@ const UnifiedReputationManagement = lazy(() => import('./pages/dashboard/reputat
 const UnifiedAccountManagement = lazy(() => import('./pages/dashboard/account'));
 const UnifiedAnalyticsManagement = lazy(() => import('./pages/dashboard/analytics'));
 const UnifiedTrackingManagement = lazy(() => import('./pages/dashboard/tracking'));
+const ReceiversPage = lazy(() => import('./pages/cargo-owner/ReceiversPage'));
 const ActiveLoansPage = lazy(() => import('./pages/ActiveLoansPage'));
 const DisbursementsPage = lazy(() => import('./pages/DisbursementsPage'));
 const RepaymentsPage = lazy(() => import('./pages/RepaymentsPage'));
@@ -146,6 +150,7 @@ function App() {
               <Route path="/driver/setup-password" element={<DriverPasswordSetup />} />
               <Route path="/tenant/setup-password" element={<TenantPasswordSetup />} />
               <Route path="/lender/setup-password" element={<LenderPasswordSetup />} />
+              <Route path="/receiver/setup-password" element={<ReceiverPasswordSetup />} />
             
             {/* Cargo Owner Routes */}
             <Route path="/dashboard" element={<CargoOwnerLayout />}>
@@ -154,6 +159,8 @@ function App() {
               <Route path="cargos/create" element={<CargoList />} />
               <Route path="cargos/list" element={<CargoList />} />
               <Route path="cargos/active" element={<CargoList />} />
+              <Route path="cargos/my-cargos" element={<ReceiverCargosPage />} />
+              <Route path="cargos/:cargoId/inspect" element={<CargoInspectionPage />} />
               <Route path="cargos/enhanced-demo" element={<EnhancedCargoDemo />} />
               <Route path="cargos/enhanced-demo/:cargoId" element={<EnhancedCargoDemo />} />
               <Route path="bidding" element={<CargoList />} />
@@ -177,6 +184,7 @@ function App() {
               <Route path="ratings" element={<UnifiedReputationManagement />} />
               <Route path="rewards" element={<UnifiedReputationManagement />} />
               <Route path="scoring" element={<UnifiedReputationManagement />} />
+              <Route path="receivers" element={<ReceiversPage />} />
               
               {/* Enhanced Transaction Flow Routes */}
               <Route path="transaction-flow" element={<TransactionFlow />} />
@@ -224,6 +232,7 @@ function App() {
               <Route path="ratings" element={<UnifiedReputationManagement />} />
               <Route path="rewards" element={<UnifiedReputationManagement />} />
               <Route path="scoring" element={<UnifiedReputationManagement />} />
+              <Route path="receivers" element={<ReceiversPage />} />
               
               {/* Enhanced Transaction Flow Routes */}
               <Route path="transaction-flow" element={<TransactionFlow />} />

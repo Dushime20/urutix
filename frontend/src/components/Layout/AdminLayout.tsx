@@ -107,10 +107,9 @@ const AdminLayoutContent: React.FC = () => {
                 <div className="flex items-center gap-2">
                   <div className="text-right hidden sm:block">
                     <div className="text-xs font-medium text-gray-900">
-                      {user?.firstName} {user?.lastName}
-                    </div>
-                    <div className="text-[10px] text-gray-500">
-                      {user?.role === 'SUPER_ADMIN' ? 'Super Admin' : 'Admin'}
+                      {(user?.firstName || user?.lastName) 
+                        ? `${user.firstName || ''} ${user.lastName || ''}`.trim()
+                        : ''}
                     </div>
                   </div>
                   <button 

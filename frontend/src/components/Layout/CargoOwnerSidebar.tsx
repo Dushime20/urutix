@@ -11,7 +11,8 @@ import {
   FaMapMarkedAlt,
   FaQuestionCircle,
   FaStar,
-  FaUser
+  FaUser,
+  FaUserPlus
 } from 'react-icons/fa';
 import urutixLogo from '../../assets/urutix.png';
 import { TranslatedText } from '../translated-text';
@@ -19,6 +20,7 @@ import { TranslatedText } from '../translated-text';
 interface CargoOwnerSidebarProps {
   isCollapsed: boolean;
   onToggle: () => void;
+  userRole?: string;
 }
 
 type NavigationSection = {
@@ -31,63 +33,82 @@ type NavigationSection = {
   }>;
 };
 
-const CargoOwnerSidebar: React.FC<CargoOwnerSidebarProps> = ({ isCollapsed, onToggle }) => {
+const CargoOwnerSidebar: React.FC<CargoOwnerSidebarProps> = ({ isCollapsed, onToggle, userRole }) => {
+  const isReceiver = userRole === 'CARGO_RECEIVER';
+  
   const navigationItems: NavigationSection[] = [
     {
-      section: 'Cargo Management',
+      section: isReceiver ? 'My Cargos' : 'Cargo Management',
       items: [
         {
           name: 'Dashboard',
-          path: '/cargo-owner',
+          path: '/dashboard',
           icon: FaBox,
           end: true,
         },
-        {
+        ...(isReceiver ? [] : [{
           name: 'Cargo Management',
-          path: '/cargo-owner/cargos/list',
+          path: '/dashboard/cargos/list',
           icon: FaList
-        }
+        }]),
+        ...(isReceiver ? [{
+          name: 'My Assigned Cargos',
+          path: '/dashboard/cargos/my-cargos',
+          icon: FaList
+        }] : [])
       ]
     },
-    {
-      items: [
-        {
-          name: 'Analytics & Reports',
-          path: '/cargo-owner/analytics',
-          icon: FaChartBar
-        },
-        {
-          name: 'Maps & Tracking',
-          path: '/cargo-owner/tracking',
-          icon: FaMapMarkedAlt
-        },
-        {
-          name: 'Financial Management',
-          path: '/cargo-owner/payments',
-          icon: FaCreditCard
-        },
-        {
-          name: 'Invoices',
-          path: '/cargo-owner/invoices',
-          icon: FaFileInvoice
-        },
-        {
-          name: 'Document Management',
-          path: '/cargo-owner/documents',
-          icon: FaFileAlt
-        },
-        {
-          name: 'Notifications',
-          path: '/cargo-owner/notification-center',
-          icon: FaBell
-        },
-        {
-          name: 'Reputation & Rewards',
-          path: '/cargo-owner/ratings',
-          icon: FaStar
-        }
-      ]
-    },
+    ...(isReceiver ? [] : [
+      {
+        items: [
+          {
+            name: 'Analytics & Reports',
+            path: '/dashboard/analytics',
+            icon: FaChartBar
+          },
+          {
+            name: 'Maps & Tracking',
+            path: '/dashboard/tracking',
+            icon: FaMapMarkedAlt
+          },
+          {
+            name: 'Financial Management',
+            path: '/dashboard/payments',
+            icon: FaCreditCard
+          },
+          {
+            name: 'Invoices',
+            path: '/dashboard/invoices',
+            icon: FaFileInvoice
+          },
+          {
+            name: 'Document Management',
+            path: '/dashboard/documents',
+            icon: FaFileAlt
+          },
+          {
+            name: 'Notifications',
+            path: '/dashboard/notification-center',
+            icon: FaBell
+          },
+          {
+            name: 'Reputation & Rewards',
+            path: '/dashboard/ratings',
+            icon: FaStar
+          }
+        ]
+      },
+      {
+        section: 'Receiver Management',
+        items: [
+          {
+            name: 'Receivers',
+            path: '/dashboard/receivers',
+            icon: FaUserPlus
+          }
+        ]
+      }
+    ]),
     {
       section: 'Account & Settings',
       items: [
@@ -124,7 +145,7 @@ const CargoOwnerSidebar: React.FC<CargoOwnerSidebarProps> = ({ isCollapsed, onTo
                   <TranslatedText text="Dashboard" />
                 </span>
                 <span className="block text-sm font-bold text-gray-900">
-                  <TranslatedText text="Cargo Owner" />
+                  <TranslatedText text={isReceiver ? "Cargo Receiver" : "Cargo Owner"} />
                 </span>
               </div>
             </div>

@@ -425,7 +425,7 @@ export class DocumentApiService {
 
   // Get document file URL for viewing (uses API endpoint)
   getDocumentViewUrl(documentId: string): string {
-    const baseUrl = api.defaults.baseURL || 'http://localhost:3000/api';
+    const baseUrl = api.defaults.baseURL || 'http://localhost:3002/api';
     return `${baseUrl}/documents/serve/${documentId}`;
   }
 

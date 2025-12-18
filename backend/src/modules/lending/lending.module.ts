@@ -9,6 +9,9 @@ import { RiskAssessmentService } from './services/risk-assessment.service';
 import { AutoLoanGeneratorService } from './services/auto-loan-generator.service';
 import { LenderAnalyticsService } from './services/lender-analytics.service';
 import { RepaymentProcessorService } from './services/repayment-processor.service';
+import { UrutiLendingIntegrationService } from './services/uruti-lending-integration.service';
+import { UrutiLendingWebhookController } from './controllers/uruti-lending-webhook.controller';
+import { UrutiLendingAdminController } from './controllers/uruti-lending-admin.controller';
 import { LendingExceptionFilter } from './filters/lending-exception.filter';
 import { Lender } from '../../entities/Lender';
 import { LenderPolicy } from '../../entities/LenderPolicy';
@@ -52,13 +55,18 @@ import { PaymentsModule } from '../payments/payments.module';
     ScheduleModule.forRoot(),
     EventEmitterModule.forRoot(),
   ],
-  controllers: [LendingController],
+  controllers: [
+    LendingController,
+    UrutiLendingWebhookController,
+    UrutiLendingAdminController,
+  ],
   providers: [
     LendingService,
     RiskAssessmentService,
     AutoLoanGeneratorService,
     LenderAnalyticsService,
     RepaymentProcessorService,
+    UrutiLendingIntegrationService,
     {
       provide: APP_FILTER,
       useClass: LendingExceptionFilter,
@@ -70,6 +78,7 @@ import { PaymentsModule } from '../payments/payments.module';
     AutoLoanGeneratorService,
     LenderAnalyticsService,
     RepaymentProcessorService,
+    UrutiLendingIntegrationService,
   ],
 })
 export class LendingModule {}
