@@ -93,7 +93,7 @@ export const CertificationsStep: React.FC<CertificationsStepProps> = ({
               {category.icon}
               <h4 className="text-md font-medium text-gray-900">{category.title}</h4>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {category.certifications.map(({ key, label, description }) => (
                 <div key={key} className="border border-gray-200 rounded-lg p-3 hover:border-gray-300 transition-colors">
                   <label className="flex items-start space-x-3 cursor-pointer">
@@ -123,7 +123,7 @@ export const CertificationsStep: React.FC<CertificationsStepProps> = ({
             Insurance & Coverage Limits
           </label>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="block text-xs text-gray-600 mb-1">Max Insurance Coverage ($)</label>
             <input

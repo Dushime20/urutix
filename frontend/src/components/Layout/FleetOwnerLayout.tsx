@@ -11,7 +11,13 @@ import logoUrutiX from '../../assets/logo-urutix.svg';
 import { LanguageSwitcher } from '@/components/language-switcher';
 
 const FleetOwnerLayout: React.FC = () => {
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  // Sidebar open by default on desktop, closed on mobile
+  const [sidebarOpen, setSidebarOpen] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return window.innerWidth >= 1024; // lg breakpoint
+    }
+    return false;
+  });
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -137,6 +143,29 @@ const FleetOwnerLayout: React.FC = () => {
     }
   };
 
+  // Handle window resize to maintain correct sidebar state
+  useEffect(() => {
+    const handleResize = () => {
+      const isDesktop = window.innerWidth >= 1024;
+      if (isDesktop && !sidebarOpen) {
+        setSidebarOpen(true);
+      } else if (!isDesktop && sidebarOpen) {
+        setSidebarOpen(false);
+      }
+    };
+    
+    const throttledResize = () => {
+      let timeoutId: NodeJS.Timeout;
+      return () => {
+        clearTimeout(timeoutId);
+        timeoutId = setTimeout(handleResize, 150);
+      };
+    };
+    
+    window.addEventListener('resize', throttledResize());
+    return () => window.removeEventListener('resize', throttledResize());
+  }, [sidebarOpen]);
+
   // Close user menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -167,12 +196,16 @@ const FleetOwnerLayout: React.FC = () => {
   }
 
   const toggleSidebar = () => {
-    setSidebarCollapsed(!sidebarCollapsed);
+    setSidebarOpen(!sidebarOpen);
   };
 
-  const handleLogout = () => {
+  const handleLogout = (e?: React.MouseEvent) => {
+    e?.preventDefault();
+    e?.stopPropagation();
+    setShowUserMenu(false);
     logout();
-    navigate('/auth');
+    // Force hard navigation to ensure logout works
+    window.location.href = '/auth';
   };
 
   const handleOnboardingComplete = () => {
@@ -195,17 +228,45 @@ const FleetOwnerLayout: React.FC = () => {
         style={{objectPosition: 'center'}} 
       />
       
+      {/* Overlay - only on mobile */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+      
       {/* Sidebar */}
-      <FleetOwnerSidebar 
-        isCollapsed={sidebarCollapsed} 
-        onToggle={toggleSidebar} 
-      />
+      <div
+        className={`sidebar-container fixed inset-y-0 left-0 z-50 transform transition-transform duration-300 ease-in-out ${
+          sidebarOpen 
+            ? 'translate-x-0' 
+            : '-translate-x-full'
+        } lg:relative lg:translate-x-0 ${sidebarOpen ? 'lg:w-64' : 'lg:w-0'} overflow-hidden`}
+      >
+        <FleetOwnerSidebar 
+          isCollapsed={!sidebarOpen} 
+          onToggle={toggleSidebar}
+          onClose={() => setSidebarOpen(false)}
+        />
+      </div>
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden relative z-10">
         {/* Header */}
-        <header className="bg-white border-b border-gray-200 px-6 py-3">
-          <div className="flex items-center justify-end">
+        <header className="bg-white border-b border-gray-200 px-2 sm:px-4 lg:px-6 py-3 relative z-10">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center space-x-2 sm:space-x-4 flex-1 min-w-0">
+              {/* Menu Toggle Button */}
+              <button
+                onClick={toggleSidebar}
+                className="menu-toggle-button p-2 rounded-lg hover:bg-gray-100 transition-colors flex-shrink-0 relative z-20"
+                aria-label="Toggle sidebar"
+              >
+                <FaBars className="w-5 h-5 text-gray-600" />
+              </button>
+            </div>
+            <div className="flex items-center space-x-2 sm:space-x-4 flex-shrink-0">
             {/* User Menu */}
             <div className="flex items-center space-x-4">
               {/* Language Switcher */}
@@ -389,7 +450,7 @@ const FleetOwnerLayout: React.FC = () => {
                     </button>
                     <hr className="my-2" />
                     <button
-                      onClick={handleLogout}
+                      onClick={(e) => handleLogout(e)}
                       className="flex items-center space-x-2 w-full px-4 py-2 text-left hover:bg-gray-50 text-red-600"
                     >
                       <FaSignOutAlt className="w-4 h-4" />
@@ -399,6 +460,7 @@ const FleetOwnerLayout: React.FC = () => {
                 )}
               </div>
             </div>
+          </div>
           </div>
         </header>
 

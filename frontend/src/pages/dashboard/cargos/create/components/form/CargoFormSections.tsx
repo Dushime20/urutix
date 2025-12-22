@@ -47,8 +47,8 @@ const CargoFormSections: React.FC<CargoFormSectionsProps> = ({
           Dimensions & Packaging
         </h3>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <div className="space-y-1.5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="space-y-1.5 min-w-0">
             <Label htmlFor="length" className="text-xs">Length (m)</Label>
             <Input
               type="number"
@@ -59,11 +59,11 @@ const CargoFormSections: React.FC<CargoFormSectionsProps> = ({
               min="0"
               step="0.01"
               placeholder="Enter length"
-              className="text-sm"
+              className="text-sm w-full"
             />
           </div>
 
-          <div className="space-y-1.5">
+          <div className="space-y-1.5 min-w-0">
             <Label htmlFor="width" className="text-xs">Width (m)</Label>
             <Input
               type="number"
@@ -74,11 +74,11 @@ const CargoFormSections: React.FC<CargoFormSectionsProps> = ({
               min="0"
               step="0.01"
               placeholder="Enter width"
-              className="text-sm"
+              className="text-sm w-full"
             />
           </div>
 
-          <div className="space-y-1.5">
+          <div className="space-y-1.5 min-w-0">
             <Label htmlFor="height" className="text-xs">Height (m)</Label>
             <Input
               type="number"
@@ -89,11 +89,11 @@ const CargoFormSections: React.FC<CargoFormSectionsProps> = ({
               min="0"
               step="0.01"
               placeholder="Enter height"
-              className="text-sm"
+              className="text-sm w-full"
             />
           </div>
 
-          <div className="space-y-1.5">
+          <div className="space-y-1.5 min-w-0">
             <Label htmlFor="stackableHeight" className="text-xs">Stackable Height (m)</Label>
             <Input
               type="number"
@@ -104,11 +104,11 @@ const CargoFormSections: React.FC<CargoFormSectionsProps> = ({
               min="0"
               step="0.01"
               placeholder="Enter stackable height"
-              className="text-sm"
+              className="text-sm w-full"
             />
           </div>
 
-          <div className="space-y-1.5">
+          <div className="space-y-1.5 min-w-0">
             <Label htmlFor="packagingType" className="text-xs">Packaging Type</Label>
             <Select
               name="packagingType"
@@ -120,7 +120,7 @@ const CargoFormSections: React.FC<CargoFormSectionsProps> = ({
                 handleChange(event);
               }}
             >
-              <SelectTrigger className="text-sm">
+              <SelectTrigger className="text-sm w-full">
                 <SelectValue placeholder="Select packaging type" />
               </SelectTrigger>
               <SelectContent>
@@ -133,7 +133,7 @@ const CargoFormSections: React.FC<CargoFormSectionsProps> = ({
             </Select>
           </div>
 
-          <div className="space-y-1.5">
+          <div className="space-y-1.5 min-w-0">
             <Label htmlFor="numberOfPieces" className="text-xs">Number of Pieces</Label>
             <Input
               type="number"
@@ -143,11 +143,11 @@ const CargoFormSections: React.FC<CargoFormSectionsProps> = ({
               onChange={handleNumberChange}
               min="0"
               placeholder="Enter number of pieces"
-              className="text-sm"
+              className="text-sm w-full"
             />
           </div>
 
-          <div className="space-y-1.5">
+          <div className="space-y-1.5 min-w-0">
             <Label htmlFor="numberOfPallets" className="text-xs">Number of Pallets</Label>
             <Input
               type="number"
@@ -157,7 +157,7 @@ const CargoFormSections: React.FC<CargoFormSectionsProps> = ({
               onChange={handleNumberChange}
               min="0"
               placeholder="Enter number of pallets"
-              className="text-sm"
+              className="text-sm w-full"
             />
           </div>
         </div>
@@ -185,8 +185,8 @@ const CargoFormSections: React.FC<CargoFormSectionsProps> = ({
           Environmental Requirements
         </h3>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <div className="space-y-1.5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="space-y-1.5 min-w-0">
             <Label htmlFor="temperatureMin" className="text-xs">Minimum Temperature (°C)</Label>
             <Input
               type="number"
@@ -196,11 +196,11 @@ const CargoFormSections: React.FC<CargoFormSectionsProps> = ({
               onChange={handleNumberChange}
               step="0.1"
               placeholder="Enter minimum temperature"
-              className="text-sm"
+              className="text-sm w-full"
             />
           </div>
 
-          <div className="space-y-1.5">
+          <div className="space-y-1.5 min-w-0">
             <Label htmlFor="temperatureMax" className="text-xs">Maximum Temperature (°C)</Label>
             <Input
               type="number"
@@ -210,11 +210,11 @@ const CargoFormSections: React.FC<CargoFormSectionsProps> = ({
               onChange={handleNumberChange}
               step="0.1"
               placeholder="Enter maximum temperature"
-              className="text-sm"
+              className="text-sm w-full"
             />
           </div>
 
-          <div className="space-y-1.5">
+          <div className="space-y-1.5 min-w-0">
             <Label htmlFor="hazmatClass" className="text-xs">Hazmat Class</Label>
             <Input
               type="text"
@@ -223,11 +223,11 @@ const CargoFormSections: React.FC<CargoFormSectionsProps> = ({
               value={formData.hazmatClass || ""}
               onChange={handleChange}
               placeholder="Enter UN hazmat class"
-              className="text-sm"
+              className="text-sm w-full"
             />
           </div>
 
-          <div className="space-y-1.5">
+          <div className="space-y-1.5 min-w-0">
             <Label htmlFor="hazmatNumber" className="text-xs">Hazmat Number</Label>
             <Input
               type="text"
@@ -236,7 +236,7 @@ const CargoFormSections: React.FC<CargoFormSectionsProps> = ({
               value={formData.hazmatNumber || ""}
               onChange={handleChange}
               placeholder="Enter UN hazmat number"
-              className="text-sm"
+              className="text-sm w-full"
             />
           </div>
         </div>
@@ -266,8 +266,8 @@ const CargoFormSections: React.FC<CargoFormSectionsProps> = ({
           Loading & Unloading Requirements
         </h3>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <div className="space-y-1.5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="space-y-1.5 min-w-0">
             <Label htmlFor="loadingTimeEstimate" className="text-xs">
               Loading Time Estimate (hours)
             </Label>
@@ -280,11 +280,11 @@ const CargoFormSections: React.FC<CargoFormSectionsProps> = ({
               min="0"
               step="0.5"
               placeholder="Enter loading time estimate"
-              className="text-sm"
+              className="text-sm w-full"
             />
           </div>
 
-          <div className="space-y-1.5">
+          <div className="space-y-1.5 min-w-0">
             <Label htmlFor="unloadingTimeEstimate" className="text-xs">
               Unloading Time Estimate (hours)
             </Label>
@@ -297,7 +297,7 @@ const CargoFormSections: React.FC<CargoFormSectionsProps> = ({
               min="0"
               step="0.5"
               placeholder="Enter unloading time estimate"
-              className="text-sm"
+              className="text-sm w-full"
             />
           </div>
         </div>
@@ -341,31 +341,31 @@ const CargoFormSections: React.FC<CargoFormSectionsProps> = ({
           </div>
         </div>
 
-        <div className="space-y-1.5">
-          <Label htmlFor="loadingInstructions" className="text-xs">Loading Instructions</Label>
-          <Textarea
-            id="loadingInstructions"
-            name="loadingInstructions"
-            value={formData.loadingInstructions || ""}
-            onChange={handleChange}
-            rows={3}
-            placeholder="Enter specific loading instructions"
-            className="text-sm"
-          />
-        </div>
+          <div className="space-y-1.5 min-w-0">
+            <Label htmlFor="loadingInstructions" className="text-xs">Loading Instructions</Label>
+            <Textarea
+              id="loadingInstructions"
+              name="loadingInstructions"
+              value={formData.loadingInstructions || ""}
+              onChange={handleChange}
+              rows={3}
+              placeholder="Enter specific loading instructions"
+              className="text-sm w-full min-w-0"
+            />
+          </div>
 
-        <div className="space-y-1.5">
-          <Label htmlFor="unloadingInstructions" className="text-xs">Unloading Instructions</Label>
-          <Textarea
-            id="unloadingInstructions"
-            name="unloadingInstructions"
-            value={formData.unloadingInstructions || ""}
-            onChange={handleChange}
-            rows={3}
-            placeholder="Enter specific unloading instructions"
-            className="text-sm"
-          />
-        </div>
+          <div className="space-y-1.5 min-w-0">
+            <Label htmlFor="unloadingInstructions" className="text-xs">Unloading Instructions</Label>
+            <Textarea
+              id="unloadingInstructions"
+              name="unloadingInstructions"
+              value={formData.unloadingInstructions || ""}
+              onChange={handleChange}
+              rows={3}
+              placeholder="Enter specific unloading instructions"
+              className="text-sm w-full min-w-0"
+            />
+          </div>
       </div>
     );
   }
@@ -379,8 +379,8 @@ const CargoFormSections: React.FC<CargoFormSectionsProps> = ({
           Security & Insurance Requirements
         </h3>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <div className="space-y-1.5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="space-y-1.5 min-w-0">
             <Label htmlFor="insuranceValue" className="text-xs">Insurance Value ($)</Label>
             <Input
               type="number"
@@ -391,7 +391,7 @@ const CargoFormSections: React.FC<CargoFormSectionsProps> = ({
               min="0"
               step="0.01"
               placeholder="Enter insurance value"
-              className="text-sm"
+              className="text-sm w-full"
             />
           </div>
         </div>
@@ -424,7 +424,7 @@ const CargoFormSections: React.FC<CargoFormSectionsProps> = ({
           </div>
         </div>
 
-        <div className="space-y-1.5">
+        <div className="space-y-1.5 min-w-0">
           <Label htmlFor="emergencyContactInfo" className="text-xs">
             Emergency Contact Information
           </Label>
@@ -435,7 +435,7 @@ const CargoFormSections: React.FC<CargoFormSectionsProps> = ({
             onChange={handleChange}
             rows={3}
             placeholder="Enter emergency contact information"
-            className="text-sm"
+            className="text-sm w-full min-w-0"
           />
         </div>
       </div>
@@ -451,8 +451,8 @@ const CargoFormSections: React.FC<CargoFormSectionsProps> = ({
           Route & Access Requirements
         </h3>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <div className="space-y-1.5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="space-y-1.5 min-w-0">
             <Label htmlFor="maxClearanceHeight" className="text-xs">
               Maximum Clearance Height (m)
             </Label>
@@ -465,7 +465,7 @@ const CargoFormSections: React.FC<CargoFormSectionsProps> = ({
               min="0"
               step="0.01"
               placeholder="Enter maximum clearance height"
-              className="text-sm"
+              className="text-sm w-full"
             />
           </div>
         </div>
@@ -510,8 +510,8 @@ const CargoFormSections: React.FC<CargoFormSectionsProps> = ({
           Urgency & Timing
         </h3>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <div className="space-y-1.5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="space-y-1.5 min-w-0">
             <Label htmlFor="urgencyLevel" className="text-xs">Urgency Level</Label>
             <Select
               name="urgencyLevel"
@@ -523,7 +523,7 @@ const CargoFormSections: React.FC<CargoFormSectionsProps> = ({
                 handleChange(event);
               }}
             >
-              <SelectTrigger className="text-sm">
+              <SelectTrigger className="text-sm w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -536,7 +536,7 @@ const CargoFormSections: React.FC<CargoFormSectionsProps> = ({
             </Select>
           </div>
 
-          <div className="space-y-1.5">
+          <div className="space-y-1.5 min-w-0">
             <Label htmlFor="maxTransitTime" className="text-xs">Maximum Transit Time (hours)</Label>
             <Input
               type="number"
@@ -547,7 +547,7 @@ const CargoFormSections: React.FC<CargoFormSectionsProps> = ({
               min="0"
               step="0.5"
               placeholder="Enter maximum transit time"
-              className="text-sm"
+              className="text-sm w-full"
             />
           </div>
         </div>
@@ -616,7 +616,7 @@ const CargoFormSections: React.FC<CargoFormSectionsProps> = ({
           </div>
         </div>
 
-        <div className="space-y-1.5">
+        <div className="space-y-1.5 min-w-0">
           <Label htmlFor="specialHandlingInstructions" className="text-xs">
             Special Handling Instructions
           </Label>
@@ -627,7 +627,7 @@ const CargoFormSections: React.FC<CargoFormSectionsProps> = ({
             onChange={handleChange}
             rows={3}
             placeholder="Enter special handling instructions"
-            className="text-sm"
+            className="text-sm w-full min-w-0"
           />
         </div>
       </div>

@@ -70,7 +70,7 @@ export const CargoCapabilitiesStep: React.FC<CargoCapabilitiesStepProps> = ({
             <label className="block text-xs font-medium text-gray-600 mb-1.5">
             Supported Cargo Types
             </label>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
             {cargoTypes.map((type) => (
               <label key={type} className="flex items-center space-x-1.5">
                 <input
@@ -90,7 +90,7 @@ export const CargoCapabilitiesStep: React.FC<CargoCapabilitiesStepProps> = ({
           <label className="block text-xs font-medium text-gray-600 mb-1.5">
             Special Handling Capabilities
             </label>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
             {[
               'maxFragileHandling',
               'maxHazardousHandling',
@@ -167,7 +167,7 @@ export const CargoCapabilitiesStep: React.FC<CargoCapabilitiesStepProps> = ({
               Dimensional Capacities
             </label>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
             {[
               { field: 'maxLengthCapacity', label: 'Max Length (m)', icon: '📏' },
               { field: 'maxWidthCapacity', label: 'Max Width (m)', icon: '📐' },
@@ -199,7 +199,7 @@ export const CargoCapabilitiesStep: React.FC<CargoCapabilitiesStepProps> = ({
               Weight Capacities
             </label>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {[
               { field: 'maxVolumeCapacity', label: 'Max Volume (m³)', icon: '📦' },
               { field: 'maxWeightPerAxle', label: 'Max Weight/Axle (kg)', icon: '⚖️' },

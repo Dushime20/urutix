@@ -58,21 +58,21 @@ const CargoDetailsTabs = ({
   return (
     <div className="border-b">
       <div className="grid md:grid-cols-[1fr_auto] gap-2">
-        <div className="-mb-px overflow-x-auto flex-1">
-          <nav className="flex space-x-1">
+        <div className="-mb-px flex-1 sm:overflow-x-auto sm:scrollbar-hide sm:scroll-smooth">
+          <nav className="flex flex-wrap sm:flex-nowrap gap-1 sm:gap-1">
             {tabs.map((tab) => (
               <Button
                 key={tab.id}
                 variant="ghost"
                 onClick={() => onTabChange(tab.id)}
-                className={`flex items-center space-x-2 py-4 px-4 border-b-2 font-medium text-sm transition-all duration-200 rounded-none ${
+                className={`flex items-center justify-center space-x-1 sm:space-x-2 py-2.5 sm:py-3 md:py-4 px-2 sm:px-4 border-b-2 font-medium text-xs sm:text-sm transition-all duration-200 rounded-none whitespace-nowrap flex-1 sm:flex-initial min-w-0 ${
                   activeTab === tab.id
                     ? "border-primary-500 text-primary-600 bg-primary-50/50"
                     : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 hover:bg-gray-50"
                 }`}
               >
-                <tab.icon className="w-4 h-4" />
-                <span>{tab.label}</span>
+                <tab.icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
+                <span className="truncate text-[11px] sm:text-sm">{tab.label}</span>
               </Button>
             ))}
           </nav>

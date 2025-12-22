@@ -2,10 +2,11 @@ import { CheckCircle } from "lucide-react"
 import { TranslatedText } from "@/components/translated-text"
 
 const regions = [
-  { name: "North America", countries: ["USA", "Canada", "Mexico"] },
-  { name: "Europe", countries: ["UK", "Germany", "France", "Netherlands"] },
-  { name: "Asia Pacific", countries: ["China", "Japan", "Singapore", "Australia"] },
-  { name: "Middle East", countries: ["UAE", "Saudi Arabia", "Qatar"] },
+  { name: "Africa", countries: ["Rwanda", "Kenya", "Tanzania"] },
+  { name: "North America", countries: ["USA", "Canada"] },
+  { name: "Europe", countries: ["UK", "Germany"] },
+  { name: "Asia Pacific", countries: ["China", "Singapore"] },
+  { name: "Middle East", countries: ["UAE", "Saudi Arabia"] },
 ]
 
 export function GlobalCoverage() {

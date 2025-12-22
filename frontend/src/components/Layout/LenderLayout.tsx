@@ -6,7 +6,22 @@ import { useAuth } from '../../contexts/AuthContext';
 import { LanguageSwitcher } from '@/components/language-switcher';
 
 const LenderLayout: React.FC = () => {
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  // Sidebar open by default on desktop, closed on mobile
+  const [sidebarOpen, setSidebarOpen] = useState(() => {
+    if (typeof window !== 'undefined') {
+      // Desktop: show sidebar by default, Mobile: hide sidebar by default
+      return window.innerWidth >= 1024; // lg breakpoint (1024px)
+    }
+    // SSR fallback: hide by default
+    return false;
+  });
+  
+  // Ensure sidebar is hidden on mobile on mount
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+      setSidebarOpen(false);
+    }
+  }, []);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const { user, isLoading, logout } = useAuth();
   const navigate = useNavigate();
@@ -56,52 +71,87 @@ const LenderLayout: React.FC = () => {
 
   console.log('LenderLayout: Rendering layout for user:', user.email);
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = (e?: React.MouseEvent) => {
+    e?.preventDefault();
+    e?.stopPropagation();
     setShowUserMenu(false);
-    navigate('/auth');
+    logout();
+    // Force hard navigation to ensure logout works
+    window.location.href = '/auth';
   };
 
   const toggleSidebar = () => {
-    setSidebarCollapsed(!sidebarCollapsed);
+    setSidebarOpen(!sidebarOpen);
   };
 
+  // Close sidebar when clicking outside on mobile
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (window.innerWidth < 1024 && sidebarOpen) {
+        const target = event.target as HTMLElement;
+        if (!target.closest('.sidebar-container') && !target.closest('.menu-toggle-button')) {
+          setSidebarOpen(false);
+        }
+      }
+    };
+
+    if (sidebarOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+      };
+    }
+  }, [sidebarOpen]);
+
   return (
-    <div className="flex h-screen bg-gray-50 overflow-hidden">
+    <div className="flex h-screen bg-gray-50 overflow-hidden relative">
+      {/* Overlay - only on mobile */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
-      <div className={`transition-all duration-300 flex-shrink-0 ${sidebarCollapsed ? 'w-16' : 'w-64'}`}>
-        <LenderSidebar isCollapsed={sidebarCollapsed} onToggle={toggleSidebar} />
+      <div
+        className={`sidebar-container fixed inset-y-0 left-0 z-50 transform transition-transform duration-300 ease-in-out ${
+          sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
+      >
+        <LenderSidebar isCollapsed={false} onToggle={toggleSidebar} onClose={() => setSidebarOpen(false)} />
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className={`flex-1 flex flex-col overflow-hidden w-full transition-all duration-300 ${
+        sidebarOpen ? 'lg:ml-64' : ''
+      }`}>
         {/* Top Bar */}
-        <header className="bg-white shadow-sm border-b border-gray-200">
-          <div className="flex items-center justify-between px-6 py-4">
+        <header className="bg-white shadow-sm border-b border-gray-200 relative z-10">
+          <div className="flex items-center justify-between px-2 sm:px-4 lg:px-6 py-3 sm:py-4 gap-2">
             {/* Left side */}
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2 sm:space-x-4 flex-1 min-w-0">
               <button
                 onClick={toggleSidebar}
-                className="text-gray-500 hover:text-gray-700 focus:outline-none focus:text-gray-700"
+                className="menu-toggle-button text-gray-500 hover:text-gray-700 focus:outline-none focus:text-gray-700 flex-shrink-0 relative z-20"
+                aria-label="Toggle sidebar"
               >
                 <FaBars className="w-5 h-5" />
               </button>
               
               {/* Search Bar */}
-              <div className="hidden md:block">
-                <div className="relative">
-                  <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                  <input
-                    type="text"
-                    placeholder="Search loans, borrowers..."
-                    className="pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 w-80"
-                  />
-                </div>
+              <div className="relative flex-1 min-w-0 max-w-xs sm:max-w-sm md:max-w-md lg:max-w-lg">
+                <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <input
+                  type="text"
+                  placeholder="Search loans, borrowers..."
+                  className="w-full pl-10 pr-4 py-2 text-sm sm:text-base border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                />
               </div>
             </div>
 
             {/* Right side */}
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2 sm:space-x-4 flex-shrink-0">
               {/* Language Switcher */}
               <LanguageSwitcher variant="default" />
               
@@ -164,7 +214,7 @@ const LenderLayout: React.FC = () => {
                     </button>
                     <hr className="my-1" />
                     <button
-                      onClick={handleLogout}
+                      onClick={(e) => handleLogout(e)}
                       className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
                     >
                       <FaSignOutAlt className="inline w-4 h-4 mr-2" />

@@ -75,6 +75,12 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState<Partial<FleetFormData>>({});
   const [loading, setLoading] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return window.innerWidth >= 1024; // lg breakpoint
+    }
+    return false;
+  });
   
   // Driver creation mode: 'new' or 'existing'
   const [driverCreationMode, setDriverCreationMode] = useState<'new' | 'existing'>('new');
@@ -93,8 +99,25 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
       setSelectedExistingDriver(null);
       setExistingDriverSearch('');
       setCurrentStep(1);
+      if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+        setSidebarOpen(false); // Close sidebar on mobile when dialog closes
+      }
     }
   }, [isOpen]);
+
+  // Handle window resize for sidebar
+  useEffect(() => {
+    const handleResize = () => {
+      const isDesktop = window.innerWidth >= 1024;
+      if (isDesktop && !sidebarOpen) {
+        setSidebarOpen(true);
+      } else if (!isDesktop && sidebarOpen) {
+        setSidebarOpen(false);
+      }
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [sidebarOpen]);
 
   // Fetch all available drivers for selection (when adding existing driver)
   const { data: allAvailableDrivers = [] } = useQuery({
@@ -1103,12 +1126,17 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="w-full max-w-5xl max-h-[90vh] overflow-hidden p-0 flex flex-col">
+    <Dialog open={isOpen} onOpenChange={(open) => {
+      if (!open) onClose();
+      if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+        setSidebarOpen(false); // Close sidebar on mobile when dialog closes
+      }
+    }}>
+      <DialogContent className="w-full max-w-[95vw] sm:max-w-5xl max-h-[90vh] overflow-hidden p-0 flex flex-col">
         {/* Header */}
-        <DialogHeader className="flex-shrink-0 flex justify-between p-4 border-b border-gray-200">
-          <div>
-            <DialogTitle className="text-lg font-semibold text-gray-900">
+        <DialogHeader className="flex-shrink-0 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 p-3 sm:p-4 border-b border-gray-200">
+          <div className="flex-1 min-w-0">
+            <DialogTitle className="text-base sm:text-lg font-semibold text-gray-900">
               {mode === 'create' 
                 ? `Create ${activeTab === 'drivers' ? 'Driver' : 'Truck'}` 
                 : `Edit ${activeTab === 'drivers' ? 'Driver' : 'Truck'}`
@@ -1118,6 +1146,17 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
               Enter detailed {activeTab === 'drivers' ? 'driver' : 'truck'} information
             </DialogDescription>
           </div>
+          {/* Mobile Sidebar Toggle */}
+          {!(activeTab === 'drivers' && mode === 'create' && driverCreationMode === 'existing') && (
+            <button
+              type="button"
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className="lg:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors"
+              aria-label="Toggle navigation"
+            >
+              <FaCog className="w-5 h-5 text-gray-600" />
+            </button>
+          )}
         </DialogHeader>
 
         {/* Driver Mode Selection (only for create driver mode) */}
@@ -1162,11 +1201,19 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
         )}
 
         {/* Main Content Area with Sidebar */}
-        <div className="flex flex-1 overflow-hidden min-h-0">
+        <div className="flex flex-col lg:flex-row flex-1 overflow-hidden min-h-0">
+          {/* Overlay - only on mobile */}
+          {sidebarOpen && (
+            <div
+              className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
+              onClick={() => setSidebarOpen(false)}
+            />
+          )}
+
           {/* Vertical Sidebar Navigation */}
           {!(activeTab === 'drivers' && mode === 'create' && driverCreationMode === 'existing') && (
-          <div className="w-56 bg-gray-50 border-r border-gray-200 overflow-y-auto flex-shrink-0">
-            <nav className="p-3 space-y-1">
+          <div className={`${sidebarOpen ? 'block' : 'hidden'} lg:block w-full lg:w-56 bg-gray-50 border-r border-gray-200 overflow-y-auto flex-shrink-0 lg:relative fixed inset-y-0 left-0 z-50 lg:z-auto`}>
+            <nav className="p-2 sm:p-3 space-y-1">
               {steps.map((step) => {
                 const isActive = currentStep === step.id;
                 const isCompleted = isStepComplete(step.id);
@@ -1176,8 +1223,11 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
                   <button
                     key={step.id}
                     type="button"
-                    onClick={() => setCurrentStep(step.id)}
-                    className={`w-full flex items-center space-x-2 px-3 py-2 rounded-md text-left transition-colors ${
+                    onClick={() => {
+                      setCurrentStep(step.id);
+                      setSidebarOpen(false); // Close sidebar on mobile after selection
+                    }}
+                    className={`w-full flex items-center space-x-2 px-2 sm:px-3 py-2 rounded-md text-left transition-colors ${
                       isActive
                         ? "bg-gray-100 text-gray-900 border border-gray-300"
                         : "text-gray-600 hover:bg-gray-50"
@@ -1198,7 +1248,7 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
                       </div>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className={`text-xs font-medium ${
+                      <p className={`text-xs font-medium truncate ${
                         isActive ? 'text-gray-900' : 'text-gray-600'
                       }`}>
                         {step.title}
@@ -1225,12 +1275,12 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
 
           {/* Form Content - Responsive */}
           <div className="flex-1 overflow-y-auto min-h-0">
-            <div className="p-4">
+            <div className="p-3 sm:p-4">
               <form 
                 onSubmit={handleSubmit} 
                 id="fleet-form-stepper"
               >
-                <div ref={stepContentRef} className="max-w-3xl mx-auto">
+                <div ref={stepContentRef} className="max-w-3xl mx-auto w-full min-w-0">
                   {/* Existing Driver Selection UI */}
                   {activeTab === 'drivers' && mode === 'create' && driverCreationMode === 'existing' ? (
                     <div className="space-y-4">
@@ -1322,12 +1372,12 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
         </div>
 
         {/* Footer - Responsive */}
-        <DialogFooter className="flex-shrink-0 bg-gray-50 px-4 py-3 border-t border-gray-200 flex justify-between items-center">
+        <DialogFooter className="flex-shrink-0 bg-gray-50 px-3 sm:px-4 py-3 border-t border-gray-200 flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3">
           <button
             type="button"
             onClick={prevStep}
             disabled={currentStep === 1}
-                className={`flex items-center px-3 py-1.5 rounded-md border text-xs ${
+                className={`flex items-center justify-center px-3 py-2 rounded-md border text-xs sm:text-sm ${
               currentStep === 1
                 ? 'border-gray-300 text-gray-400 cursor-not-allowed'
                 : 'border-gray-300 text-gray-700 hover:bg-gray-100'
@@ -1337,11 +1387,11 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
             <span>Previous</span>
           </button>
 
-          <div className="flex space-x-2">
+          <div className="flex flex-wrap gap-2 w-full sm:w-auto">
             <button
               type="button"
               onClick={onClose}
-              className="px-3 py-1.5 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-100 text-xs"
+              className="flex-1 sm:flex-initial px-3 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-100 text-xs sm:text-sm"
             >
               Cancel
             </button>
@@ -1354,7 +1404,7 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
                   e.preventDefault();
                   handleSubmit(e);
                 }}
-                className="flex items-center px-3 py-1.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-xs"
+                className="flex-1 sm:flex-initial flex items-center justify-center px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-xs sm:text-sm"
               >
                 {loading ? (
                   <>
@@ -1372,7 +1422,7 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
               <button
                 type="button"
                 onClick={nextStep}
-                className="flex items-center px-3 py-1.5 bg-gray-700 text-white rounded-md hover:bg-gray-800 text-xs"
+                className="flex-1 sm:flex-initial flex items-center justify-center px-3 py-2 bg-gray-700 text-white rounded-md hover:bg-gray-800 text-xs sm:text-sm"
               >
                 <span>Next</span>
                 <FaArrowRight className="w-3 h-3 ml-1.5" />
@@ -1411,7 +1461,7 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
                   console.log('🚀 Triggering form submission...');
                   handleManualSubmit();
                 }}
-                className="flex items-center px-3 py-1.5 bg-gray-700 text-white rounded-md hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed text-xs"
+                className="flex-1 sm:flex-initial flex items-center justify-center px-3 py-2 bg-gray-700 text-white rounded-md hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed text-xs sm:text-sm"
               >
                 {loading ? (
                   <span>Submitting...</span>

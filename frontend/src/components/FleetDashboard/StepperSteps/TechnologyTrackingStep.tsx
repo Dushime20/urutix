@@ -24,7 +24,7 @@ const TechnologyTrackingStep: React.FC<TechnologyTrackingStepProps> = ({
           GPS & Tracking Systems
         </h4>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           <div className="flex items-center">
             <input
               type="checkbox"
@@ -125,7 +125,7 @@ const TechnologyTrackingStep: React.FC<TechnologyTrackingStepProps> = ({
           Safety Cameras & Monitoring
         </h4>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           <div className="flex items-center">
             <input
               type="checkbox"
@@ -174,7 +174,7 @@ const TechnologyTrackingStep: React.FC<TechnologyTrackingStepProps> = ({
           Advanced Safety Systems
         </h4>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           <div className="flex items-center">
             <input
               type="checkbox"
@@ -233,7 +233,7 @@ const TechnologyTrackingStep: React.FC<TechnologyTrackingStepProps> = ({
       <div className="space-y-4">
         <h4 className="text-base font-medium text-gray-800">Vehicle Monitoring</h4>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           <div className="flex items-center">
             <input
               type="checkbox"
@@ -292,7 +292,7 @@ const TechnologyTrackingStep: React.FC<TechnologyTrackingStepProps> = ({
       <div className="space-y-4">
         <h4 className="text-base font-medium text-gray-800">Driver Monitoring</h4>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           <div className="flex items-center">
             <input
               type="checkbox"
@@ -351,7 +351,7 @@ const TechnologyTrackingStep: React.FC<TechnologyTrackingStepProps> = ({
       <div className="space-y-4">
         <h4 className="text-base font-medium text-gray-800">Cargo Monitoring</h4>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           <div className="flex items-center">
             <input
               type="checkbox"

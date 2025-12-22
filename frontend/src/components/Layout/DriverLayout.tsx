@@ -51,9 +51,13 @@ const DriverLayout: React.FC = () => {
     setSidebarCollapsed(!sidebarCollapsed);
   };
 
-  const handleLogout = () => {
+  const handleLogout = (e?: React.MouseEvent) => {
+    e?.preventDefault();
+    e?.stopPropagation();
+    setShowUserMenu(false);
     logout();
-    navigate('/auth');
+    // Force hard navigation to ensure logout works
+    window.location.href = '/auth';
   };
 
   return (
@@ -137,7 +141,7 @@ const DriverLayout: React.FC = () => {
                     </button>
                     <hr className="my-1" />
                     <button
-                      onClick={handleLogout}
+                      onClick={(e) => handleLogout(e)}
                       className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-gray-100 flex items-center space-x-2"
                     >
                       <FaSignOutAlt className="w-4 h-4" />

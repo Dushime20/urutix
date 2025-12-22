@@ -434,7 +434,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     
     // Call logout endpoint to revoke refresh token
     if (refreshToken) {
-      const baseURL = getApiBaseUrl() || 'http://localhost:3000/api';
+      const baseURL = getApiBaseUrl() || 'http://localhost:3002/api';
       axios.post(`${baseURL}/auth/logout`, { refreshToken }).catch(console.error);
     }
 

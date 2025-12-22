@@ -12,7 +12,8 @@ import {
   FaQuestionCircle,
   FaStar,
   FaUser,
-  FaUserPlus
+  FaUserPlus,
+  FaTimes
 } from 'react-icons/fa';
 import urutixLogo from '../../assets/urutix.png';
 import { TranslatedText } from '../translated-text';
@@ -21,6 +22,7 @@ interface CargoOwnerSidebarProps {
   isCollapsed: boolean;
   onToggle: () => void;
   userRole?: string;
+  onClose?: () => void;
 }
 
 type NavigationSection = {
@@ -33,7 +35,7 @@ type NavigationSection = {
   }>;
 };
 
-const CargoOwnerSidebar: React.FC<CargoOwnerSidebarProps> = ({ isCollapsed, onToggle, userRole }) => {
+const CargoOwnerSidebar: React.FC<CargoOwnerSidebarProps> = ({ isCollapsed, onToggle, userRole, onClose }) => {
   const isReceiver = userRole === 'CARGO_RECEIVER';
   
   const navigationItems: NavigationSection[] = [
@@ -130,7 +132,7 @@ const CargoOwnerSidebar: React.FC<CargoOwnerSidebarProps> = ({ isCollapsed, onTo
     <div
       className={`relative border-r border-gray-200/60 bg-gradient-to-b from-white via-white to-gray-100 shadow-sm transition-all duration-300 ${
       isCollapsed ? 'w-16' : 'w-64'
-    } h-full flex flex-col`}
+    } h-full flex flex-col lg:shadow-none`}
     >
       {/* Header */}
       <div className="border-b border-gray-200/70 bg-white/80 p-3 backdrop-blur">
@@ -150,14 +152,18 @@ const CargoOwnerSidebar: React.FC<CargoOwnerSidebarProps> = ({ isCollapsed, onTo
               </div>
             </div>
           )}
-          <button
-            onClick={onToggle}
-            className="rounded-md p-1.5 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-800"
-          >
-            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
-          </button>
+          <div className="flex items-center gap-2">
+            {/* Close button - visible on mobile, hidden on desktop */}
+            {onClose && (
+              <button
+                onClick={onClose}
+                className="lg:hidden rounded-md p-1.5 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-800"
+                aria-label="Close sidebar"
+              >
+                <FaTimes className="h-4 w-4" />
+              </button>
+            )}
+          </div>
         </div>
       </div>
 

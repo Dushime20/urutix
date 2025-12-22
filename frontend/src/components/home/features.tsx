@@ -46,9 +46,6 @@ export function Features() {
               <TranslatedText text="global logistics" />
             </span>
           </h2>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            <TranslatedText text="A complete suite of tools designed for modern fleet and cargo operations." />
-          </p>
         </div>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">

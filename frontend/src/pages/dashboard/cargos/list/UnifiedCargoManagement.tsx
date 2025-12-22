@@ -443,7 +443,7 @@ const UnifiedCargoManagement = () => {
 
         {/* Navigation Tabs */}
         <div className="bg-white rounded-lg border border-gray-200 mb-4">
-          <nav className="flex space-x-1 p-1">
+          <nav className="flex flex-wrap sm:flex-nowrap gap-1.5 sm:gap-1 sm:space-x-1 p-1.5 sm:p-1 sm:overflow-x-auto sm:scrollbar-hide sm:scroll-smooth">
             {tabs.map((tab) => {
               const Icon = tab.icon;
               const isActive = activeTab === tab.id;
@@ -452,21 +452,33 @@ const UnifiedCargoManagement = () => {
                   key={tab.id}
                   onClick={() => handleTabChange(tab.id)}
                   className={cn(
-                    "px-4 py-2.5 rounded-md text-sm font-medium flex items-center gap-2 transition-all relative",
+                    "group px-2.5 sm:px-3 md:px-4 py-2 sm:py-2.5 rounded-md text-xs sm:text-sm font-medium flex items-center justify-center sm:justify-start gap-1.5 sm:gap-2 transition-all relative whitespace-nowrap flex-1 sm:flex-initial min-w-0",
                     isActive
                       ? "bg-gray-100 text-gray-900 border border-gray-300"
                       : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
                   )}
+                  title={tab.label}
                 >
                   <Icon className={cn(
-                    "w-4 h-4",
+                    "w-4 h-4 sm:w-4 sm:h-4 flex-shrink-0",
                     isActive ? "text-gray-700" : "text-gray-500"
                   )} />
-                  <span>{tab.label}</span>
+                  <span className="hidden sm:inline truncate">{tab.label}</span>
+                  {/* Mobile tooltip - shows on hover/touch */}
+                  <span className="sm:hidden absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-gray-900 text-white text-xs font-medium rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 pointer-events-none z-50 whitespace-nowrap">
+                    {tab.label}
+                    {tab.count !== undefined && (
+                      <span className="ml-1.5 px-1.5 py-0.5 bg-white/20 text-white text-[10px] font-semibold rounded-full">
+                        {tab.count}
+                      </span>
+                    )}
+                    {/* Tooltip arrow */}
+                    <span className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-gray-900"></span>
+                  </span>
                   {tab.count !== undefined && (
                     <span
                       className={cn(
-                        "ml-1 px-2 py-0.5 text-xs font-semibold rounded-full",
+                        "hidden sm:inline ml-1 px-1.5 sm:px-2 py-0.5 text-[10px] sm:text-xs font-semibold rounded-full flex-shrink-0",
                         isActive
                           ? "bg-gray-200 text-gray-700"
                           : "bg-gray-100 text-gray-600"
@@ -575,7 +587,7 @@ const UnifiedCargoManagement = () => {
                     )}
                   </div>
                 ) : (
-                  <div className="space-y-3">
+                  <div className="space-y-3 w-full overflow-hidden">
                     {filteredLoads.map((load: any) => (
                       <LoadItem
                         key={load.id}

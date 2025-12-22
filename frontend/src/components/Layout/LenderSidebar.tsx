@@ -20,16 +20,18 @@ import {
   FaCalculator,
   FaCreditCard,
   FaQuestionCircle,
-  FaReceipt
+  FaReceipt,
+  FaTimes
 } from 'react-icons/fa';
 import { TranslatedText } from '../translated-text';
 
 interface LenderSidebarProps {
   isCollapsed: boolean;
   onToggle: () => void;
+  onClose?: () => void;
 }
 
-const LenderSidebar: React.FC<LenderSidebarProps> = ({ isCollapsed, onToggle }) => {
+const LenderSidebar: React.FC<LenderSidebarProps> = ({ isCollapsed, onToggle, onClose }) => {
   const location = useLocation();
 
   const navigationItems = [
@@ -171,22 +173,34 @@ const LenderSidebar: React.FC<LenderSidebarProps> = ({ isCollapsed, onToggle }) 
   };
 
   return (
-    <div className={`bg-white shadow-lg h-full flex flex-col transition-all duration-300 ${isCollapsed ? 'w-16' : 'w-64'}`}>
+    <div className={`bg-white shadow-lg h-full flex flex-col transition-all duration-300 ${isCollapsed ? 'w-16' : 'w-64'} lg:shadow-none`}>
       {/* Logo and Title */}
       <div className="p-4 border-b border-gray-200 flex-shrink-0">
-        <div className="flex items-center space-x-3">
-          <div className="flex-shrink-0">
-            <FaBuilding className="w-8 h-8 text-primary-600" />
-          </div>
-          {!isCollapsed && (
-            <div>
-              <h2 className="text-lg font-bold text-gray-800">
-                <TranslatedText text="Lender Portal" />
-              </h2>
-              <p className="text-xs text-gray-500">
-                <TranslatedText text="Lending Management" />
-              </p>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <div className="flex-shrink-0">
+              <FaBuilding className="w-8 h-8 text-primary-600" />
             </div>
+            {!isCollapsed && (
+              <div>
+                <h2 className="text-lg font-bold text-gray-800">
+                  <TranslatedText text="Lender Portal" />
+                </h2>
+                <p className="text-xs text-gray-500">
+                  <TranslatedText text="Lending Management" />
+                </p>
+              </div>
+            )}
+          </div>
+          {/* Close button - visible on mobile, hidden on desktop */}
+          {onClose && (
+            <button
+              onClick={onClose}
+              className="lg:hidden p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+              aria-label="Close sidebar"
+            >
+              <FaTimes className="w-5 h-5 text-gray-600" />
+            </button>
           )}
         </div>
       </div>

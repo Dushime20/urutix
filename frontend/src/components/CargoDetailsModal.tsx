@@ -400,7 +400,7 @@ const CargoDetailsModal = ({ isOpen, onClose, cargoId }: CargoDetailsModalProps)
             <div className="p-6 space-y-6">
               {/* Tabs */}
               <div className="border-b border-gray-200">
-                <nav className="-mb-px flex space-x-8">
+                <nav className="-mb-px flex flex-wrap sm:flex-nowrap gap-1 sm:gap-2 md:gap-4 lg:gap-8 sm:overflow-x-auto sm:scrollbar-hide sm:scroll-smooth">
                   {[
                     { id: 'overview', label: 'Overview', icon: Package },
                     { id: 'tracking', label: 'Tracking', icon: Navigation },
@@ -411,14 +411,14 @@ const CargoDetailsModal = ({ isOpen, onClose, cargoId }: CargoDetailsModalProps)
                     <button
                       key={tab.id}
                       onClick={() => setActiveTab(tab.id as any)}
-                      className={`flex items-center space-x-2 py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                      className={`flex items-center justify-center space-x-1 sm:space-x-2 py-2.5 sm:py-3 md:py-4 px-2 sm:px-1 border-b-2 font-medium text-xs sm:text-sm transition-colors whitespace-nowrap flex-1 sm:flex-initial min-w-0 ${
                         activeTab === tab.id
                           ? 'border-blue-500 text-blue-600'
                           : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                       }`}
                     >
-                      <tab.icon className="w-4 h-4" />
-                      <span>{tab.label}</span>
+                      <tab.icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
+                      <span className="truncate text-[11px] sm:text-sm">{tab.label}</span>
                     </button>
                   ))}
                 </nav>

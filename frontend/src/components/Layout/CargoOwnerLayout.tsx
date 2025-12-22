@@ -8,7 +8,22 @@ import logoUrutiX from '../../assets/logo-urutix.svg';
 import { LanguageSwitcher } from '@/components/language-switcher';
 
 const CargoOwnerLayout: React.FC = () => {
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  // Sidebar open by default on desktop, closed on mobile
+  const [sidebarOpen, setSidebarOpen] = useState(() => {
+    if (typeof window !== 'undefined') {
+      // Desktop: show sidebar by default, Mobile: hide sidebar by default
+      return window.innerWidth >= 1024; // lg breakpoint (1024px)
+    }
+    // SSR fallback: hide by default
+    return false;
+  });
+  
+  // Ensure sidebar is hidden on mobile on mount
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+      setSidebarOpen(false);
+    }
+  }, []);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const { user, isLoading, logout } = useAuth();
   const navigate = useNavigate();
@@ -57,6 +72,25 @@ const CargoOwnerLayout: React.FC = () => {
     };
   }, []);
 
+  // Close sidebar when clicking outside on mobile
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (window.innerWidth < 1024 && sidebarOpen) {
+        const target = event.target as HTMLElement;
+        if (!target.closest('.sidebar-container') && !target.closest('.menu-toggle-button')) {
+          setSidebarOpen(false);
+        }
+      }
+    };
+
+    if (sidebarOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+      };
+    }
+  }, [sidebarOpen]);
+
   // Show loading while checking authentication
   if (isLoading) {
     return (
@@ -72,20 +106,24 @@ const CargoOwnerLayout: React.FC = () => {
   }
 
   const toggleSidebar = () => {
-    setSidebarCollapsed(!sidebarCollapsed);
+    setSidebarOpen(!sidebarOpen);
   };
 
-  const handleLogout = () => {
+  const handleLogout = (e?: React.MouseEvent) => {
+    e?.preventDefault();
+    e?.stopPropagation();
+    setShowUserMenu(false);
     logout();
-    navigate('/auth');
+    // Force hard navigation to ensure logout works
+    window.location.href = '/auth';
   };
 
   return (
     <CargoOwnerLayoutProvider
       value={{
-        sidebarCollapsed,
+        sidebarCollapsed: !sidebarOpen,
         toggleSidebar,
-        setSidebarCollapsed,
+        setSidebarCollapsed: (collapsed: boolean) => setSidebarOpen(!collapsed),
       }}
     >
       <div className="flex h-screen bg-gray-50 relative">
@@ -97,32 +135,58 @@ const CargoOwnerLayout: React.FC = () => {
           style={{objectPosition: 'center'}} 
         />
         
+        {/* Overlay - only on mobile */}
+        {sidebarOpen && (
+          <div
+            className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
+            onClick={() => setSidebarOpen(false)}
+          />
+        )}
+
         {/* Sidebar */}
-        <CargoOwnerSidebar 
-          isCollapsed={sidebarCollapsed} 
-          onToggle={toggleSidebar}
-          userRole={user?.role}
-        />
+        <div
+          className={`sidebar-container fixed inset-y-0 left-0 z-50 transform transition-transform duration-300 ease-in-out ${
+            sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+          }`}
+        >
+          <CargoOwnerSidebar 
+            isCollapsed={false} 
+            onToggle={toggleSidebar}
+            userRole={user?.role}
+            onClose={() => setSidebarOpen(false)}
+          />
+        </div>
 
         {/* Main Content */}
-        <div className="flex-1 flex flex-col overflow-hidden relative z-10">
+        <div className={`flex-1 flex flex-col overflow-hidden relative z-10 w-full transition-all duration-300 ${
+          sidebarOpen ? 'lg:ml-64' : ''
+        }`}>
           {/* Header */}
-          <header className="bg-white border-b border-gray-200 px-4 py-2.5">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
+          <header className="bg-white border-b border-gray-200 px-2 sm:px-4 py-2.5 relative z-10">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center space-x-2 sm:space-x-3 flex-1 min-w-0">
+                {/* Menu Toggle Button */}
+                <button
+                  onClick={toggleSidebar}
+                  className="menu-toggle-button p-2 rounded-lg hover:bg-gray-100 transition-colors flex-shrink-0 relative z-20"
+                  aria-label="Toggle sidebar"
+                >
+                  <FaBars className="w-5 h-5 text-gray-600" />
+                </button>
+                
                 {/* Search Bar */}
-                <div className="relative">
+                <div className="relative flex-1 min-w-0 max-w-xs sm:max-w-sm md:max-w-md lg:max-w-lg">
                   <FaSearch className="absolute left-2.5 top-1/2 transform -translate-y-1/2 text-gray-400 w-3.5 h-3.5" />
                   <input
                     type="text"
                     placeholder="Search cargo, shipments..."
-                    className="pl-9 pr-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent w-56"
+                    className="w-full pl-9 pr-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                   />
                 </div>
               </div>
 
               {/* Right Side Header */}
-              <div className="flex items-center space-x-3">
+              <div className="flex items-center space-x-2 sm:space-x-3 flex-shrink-0">
                 {/* Language Switcher */}
                 <LanguageSwitcher variant="default" />
                 
@@ -136,8 +200,8 @@ const CargoOwnerLayout: React.FC = () => {
 
                 {/* User Menu */}
                 <div className="relative" ref={userMenuRef}>
-                  <div className="flex items-center space-x-2">
-                    <div className="text-right">
+                  <div className="flex items-center space-x-1 sm:space-x-2">
+                    <div className="text-right hidden sm:block">
                       <div className="text-xs font-medium text-gray-900">
                         {(() => {
                           const firstName = user?.firstName || '';
@@ -154,6 +218,7 @@ const CargoOwnerLayout: React.FC = () => {
                     <button 
                       onClick={() => setShowUserMenu(!showUserMenu)}
                       className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+                      aria-label="User menu"
                     >
                       <FaUser className="w-4 h-4 text-gray-600" />
                     </button>
@@ -184,7 +249,7 @@ const CargoOwnerLayout: React.FC = () => {
                       </button>
                       <hr className="my-1" />
                       <button
-                        onClick={handleLogout}
+                        onClick={(e) => handleLogout(e)}
                         className="w-full px-3 py-1.5 text-left text-xs text-red-600 hover:bg-gray-100 flex items-center space-x-2"
                       >
                         <FaSignOutAlt className="w-3.5 h-3.5" />

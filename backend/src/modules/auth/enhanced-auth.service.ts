@@ -236,6 +236,18 @@ export class EnhancedAuthService {
       }
 
       this.logger.debug(`User found: ${user.id}, status: ${user.status}, email verified: ${!!user.emailVerifiedAt}`);
+      
+      // Enhanced diagnostic logging
+      this.logger.debug(`Login diagnostic for ${normalizedEmail}:`, {
+        userId: user.id,
+        email: user.email,
+        status: user.status,
+        role: user.role,
+        hasPasswordHash: !!user.passwordHash,
+        lockedUntil: user.lockedUntil,
+        loginAttempts: user.loginAttempts,
+        emailVerified: !!user.emailVerifiedAt,
+      });
 
       // Check if password hash exists
       if (!user.passwordHash) {
@@ -1597,6 +1609,116 @@ export class EnhancedAuthService {
       throw new BadRequestException(
         'Password must contain at least one special character',
       );
+    }
+  }
+
+  /**
+   * Diagnostic method to check user account status and identify login issues
+   */
+  async diagnoseUserAccount(email: string): Promise<{
+    found: boolean;
+    issues: string[];
+    accountInfo?: {
+      id: string;
+      email: string;
+      status: string;
+      role: string;
+      hasPasswordHash: boolean;
+      isLocked: boolean;
+      lockedUntil?: Date;
+      loginAttempts: number;
+      emailVerified: boolean;
+      canLogin: boolean;
+    };
+  }> {
+    const normalizedEmail = email?.trim().toLowerCase() || email;
+    const issues: string[] = [];
+
+    try {
+      // Find user
+      let user = await this.userRepository.findOne({
+        where: { email: normalizedEmail },
+      });
+
+      if (!user) {
+        user = await this.userRepository.findOne({
+          where: { email: ILike(normalizedEmail) },
+        });
+      }
+
+      if (!user) {
+        return {
+          found: false,
+          issues: ['User account not found in database'],
+        };
+      }
+
+      const accountInfo = {
+        id: user.id,
+        email: user.email,
+        status: user.status,
+        role: user.role,
+        hasPasswordHash: !!user.passwordHash,
+        isLocked: !!(user.lockedUntil && user.lockedUntil > new Date()),
+        lockedUntil: user.lockedUntil,
+        loginAttempts: user.loginAttempts,
+        emailVerified: !!user.emailVerifiedAt,
+        canLogin: false,
+      };
+
+      // Check issues
+      if (!user.passwordHash) {
+        issues.push('❌ No password hash - User needs to set password');
+      }
+
+      if (user.status !== UserStatus.ACTIVE && user.status !== UserStatus.PENDING_VERIFICATION) {
+        issues.push(`❌ Account status is ${user.status} - Must be ACTIVE or PENDING_VERIFICATION`);
+      }
+
+      if (
+        (user.role === UserRole.DRIVER || user.role === UserRole.TENANT_ADMIN || user.role === UserRole.LENDER) &&
+        user.status === UserStatus.PENDING_VERIFICATION
+      ) {
+        issues.push('❌ Account pending verification - Must set password via email link first');
+      }
+
+      if (accountInfo.isLocked) {
+        const minutesRemaining = Math.ceil(
+          (user.lockedUntil!.getTime() - Date.now()) / 60000,
+        );
+        issues.push(`❌ Account is locked - Try again in ${minutesRemaining} minutes`);
+      }
+
+      if (!user.emailVerifiedAt && user.status === UserStatus.PENDING_VERIFICATION) {
+        issues.push('⚠️ Email not verified - May need to verify email first');
+      }
+
+      // Determine if user can login
+      const isPendingVerificationBlocked =
+        (user.role === UserRole.DRIVER || user.role === UserRole.TENANT_ADMIN || user.role === UserRole.LENDER) &&
+        user.status === UserStatus.PENDING_VERIFICATION;
+
+      accountInfo.canLogin =
+        !!user.passwordHash &&
+        (user.status === UserStatus.ACTIVE || user.status === UserStatus.PENDING_VERIFICATION) &&
+        !isPendingVerificationBlocked &&
+        !accountInfo.isLocked;
+
+      if (accountInfo.canLogin && issues.length === 0) {
+        issues.push('✅ Account appears to be in good standing - Password may be incorrect');
+      }
+
+      return {
+        found: true,
+        issues,
+        accountInfo,
+      };
+    } catch (error) {
+      this.logger.error(`Error diagnosing user account: ${error.message}`);
+      return {
+        found: false,
+        issues: [`Error checking account: ${error.message}`],
+      };
     }
   }
 

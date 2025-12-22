@@ -102,7 +102,7 @@ export const CostStructureStep: React.FC<CostStructureStepProps> = ({
               {category.icon}
               <h4 className="text-md font-medium text-gray-900">{category.title}</h4>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {category.fields.map(({ key, label, placeholder, description }) => (
                 <div key={key}>
                   <label className="block text-xs text-gray-600 mb-1">{label}</label>
@@ -125,7 +125,7 @@ export const CostStructureStep: React.FC<CostStructureStepProps> = ({
       {/* Cost Summary */}
       <div className="bg-gray-50 rounded-lg p-4">
         <h4 className="text-sm font-medium text-gray-900 mb-3">Cost Structure Summary</h4>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
           <div>
             <span className="text-gray-600">Base Rate:</span>
             <span className="ml-2 font-medium">${formData.costStructure?.baseRate || 0}/hour</span>

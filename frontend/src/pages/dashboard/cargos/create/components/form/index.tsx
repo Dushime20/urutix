@@ -614,32 +614,46 @@ const EnhancedCargoForm: React.FC<EnhancedCargoFormProps> = ({
     // eslint-disable-next-line
   }, [formData, pickupLocation, deliveryLocation]);
 
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="w-full max-w-6xl max-h-[90vh] overflow-hidden p-0">
+      <DialogContent className="w-full max-w-[95vw] sm:max-w-6xl max-h-[90vh] overflow-hidden p-0">
         {/* Header */}
-        <DialogHeader className="flex justify-between p-4 border-b border-gray-200">
-          <div>
-            <DialogTitle className="text-lg font-bold text-gray-900">
+        <DialogHeader className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 p-3 sm:p-4 border-b border-gray-200">
+          <div className="flex-1 min-w-0">
+            <DialogTitle className="text-base sm:text-lg font-bold text-gray-900">
               {mode === "create" ? "Create Cargo" : "Edit Cargo"}
             </DialogTitle>
             <DialogDescription className="text-xs text-gray-600 mt-0.5">
               Enter detailed cargo information for optimal matching
             </DialogDescription>
           </div>
+          {/* Mobile Sidebar Toggle */}
+          <button
+            type="button"
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className="lg:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors"
+            aria-label="Toggle navigation"
+          >
+            <FaCogs className="w-5 h-5 text-gray-600" />
+          </button>
         </DialogHeader>
 
-        <div className="flex h-[calc(90vh-120px)]">
+        <div className="flex flex-col lg:flex-row h-[calc(90vh-120px)] min-h-0">
           {/* Sidebar Navigation */}
-          <div className="w-56 bg-gray-50 border-r border-gray-200 overflow-y-auto sticky top-0">
-            <nav className="p-3 space-y-1.5">
+          <div className={`${sidebarOpen ? 'block' : 'hidden'} lg:block w-full lg:w-56 bg-gray-50 border-r border-gray-200 overflow-y-auto lg:sticky lg:top-0 flex-shrink-0`}>
+            <nav className="p-2 sm:p-3 space-y-1.5">
               {sections.map((section) => {
                 const Icon = section.icon;
                 return (
                   <button
                     key={section.id}
-                    onClick={() => setActiveSection(section.id)}
-                    className={`w-full flex items-center space-x-2 px-3 py-2 rounded-lg text-left transition-colors ${
+                    onClick={() => {
+                      setActiveSection(section.id);
+                      setSidebarOpen(false); // Close sidebar on mobile after selection
+                    }}
+                    className={`w-full flex items-center space-x-2 px-2 sm:px-3 py-2 rounded-lg text-left transition-colors ${
                       activeSection === section.id
                         ? "bg-primary-100 text-primary-700 border border-primary-200"
                         : "text-gray-600 hover:bg-gray-100"
@@ -650,15 +664,15 @@ const EnhancedCargoForm: React.FC<EnhancedCargoFormProps> = ({
                         : "Section incomplete"
                     }
                   >
-                    <Icon className="w-3.5 h-3.5" />
-                    <span className="text-xs font-medium">{section.label}</span>
+                    <Icon className="w-3.5 h-3.5 flex-shrink-0" />
+                    <span className="text-xs font-medium truncate">{section.label}</span>
                     {completedSections[section.id] ? (
-                      <span className="ml-auto text-green-500 text-xs" title="Complete">
+                      <span className="ml-auto text-green-500 text-xs flex-shrink-0" title="Complete">
                         &#10003;
                       </span>
                     ) : (
                       <span
-                        className="ml-auto text-gray-300 text-xs"
+                        className="ml-auto text-gray-300 text-xs flex-shrink-0"
                         title="Incomplete"
                       >
                         &#9675;
@@ -671,7 +685,7 @@ const EnhancedCargoForm: React.FC<EnhancedCargoFormProps> = ({
           </div>
 
           {/* Form Content */}
-          <div className="flex-1 overflow-y-auto p-4" id="cargo-form-content">
+          <div className="flex-1 overflow-y-auto p-3 sm:p-4 min-w-0" id="cargo-form-content">
             <form onSubmit={handleSubmit} className="space-y-4">
               {error && (
                 <div className="bg-red-50 border border-red-200 rounded-lg p-3">
@@ -687,8 +701,8 @@ const EnhancedCargoForm: React.FC<EnhancedCargoFormProps> = ({
                     Basic Information
                   </h3>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="min-w-0">
                       <Label
                         htmlFor="title"
                         className="block text-xs font-medium text-gray-700 mb-1"
@@ -703,11 +717,11 @@ const EnhancedCargoForm: React.FC<EnhancedCargoFormProps> = ({
                         onChange={handleChange}
                         required
                         placeholder="Enter cargo title"
-                        className="text-sm"
+                        className="text-sm w-full"
                       />
                     </div>
 
-                    <div>
+                    <div className="min-w-0">
                       <Label
                         htmlFor="cargoType"
                         className="block text-xs font-medium text-gray-700 mb-1"
@@ -723,7 +737,7 @@ const EnhancedCargoForm: React.FC<EnhancedCargoFormProps> = ({
                           } as any)
                         }
                       >
-                        <SelectTrigger className="text-sm">
+                        <SelectTrigger className="text-sm w-full">
                           <SelectValue placeholder="Select cargo type" />
                         </SelectTrigger>
                         <SelectContent>
@@ -736,7 +750,7 @@ const EnhancedCargoForm: React.FC<EnhancedCargoFormProps> = ({
                       </Select>
                     </div>
 
-                    <div>
+                    <div className="min-w-0">
                       <Label
                         htmlFor="weight"
                         className="block text-xs font-medium text-gray-700 mb-1"
@@ -753,11 +767,11 @@ const EnhancedCargoForm: React.FC<EnhancedCargoFormProps> = ({
                         min="0"
                         step="0.01"
                         placeholder="Enter weight in kg"
-                        className="text-sm"
+                        className="text-sm w-full"
                       />
                     </div>
 
-                    <div>
+                    <div className="min-w-0">
                       <Label
                         htmlFor="volume"
                         className="block text-xs font-medium text-gray-700 mb-1"
@@ -773,11 +787,11 @@ const EnhancedCargoForm: React.FC<EnhancedCargoFormProps> = ({
                         min="0"
                         step="0.01"
                         placeholder="Enter volume in m³"
-                        className="text-sm"
+                        className="text-sm w-full"
                       />
                     </div>
 
-                    <div>
+                    <div className="min-w-0">
                       <Label
                         htmlFor="loadValue"
                         className="block text-xs font-medium text-gray-700 mb-1"
@@ -794,11 +808,11 @@ const EnhancedCargoForm: React.FC<EnhancedCargoFormProps> = ({
                         min="0"
                         step="0.01"
                         placeholder="Enter load value"
-                        className="text-sm"
+                        className="text-sm w-full"
                       />
                     </div>
 
-                    <div>
+                    <div className="min-w-0">
                       <Label
                         htmlFor="offeredPrice"
                         className="block text-xs font-medium text-gray-700 mb-1"
@@ -814,12 +828,12 @@ const EnhancedCargoForm: React.FC<EnhancedCargoFormProps> = ({
                         min="0"
                         step="0.01"
                         placeholder="Enter offered price"
-                        className="text-sm"
+                        className="text-sm w-full"
                       />
                     </div>
                   </div>
 
-                  <div>
+                  <div className="min-w-0">
                     <Label
                       htmlFor="description"
                       className="block text-xs font-medium text-gray-700 mb-1"
@@ -832,12 +846,12 @@ const EnhancedCargoForm: React.FC<EnhancedCargoFormProps> = ({
                       value={formData.description || ""}
                       onChange={handleChange}
                       rows={3}
-                      className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                      className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 min-w-0"
                       placeholder="Enter cargo description"
                     />
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                     <label className="flex items-center space-x-2">
                       <input
                         type="checkbox"
@@ -894,7 +908,7 @@ const EnhancedCargoForm: React.FC<EnhancedCargoFormProps> = ({
                       <FaMapMarkerAlt className="inline w-3.5 h-3.5 mr-1.5" />
                       Locations *
                     </label>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
                       <LocationItem
                         type="pickup"
                         location={pickupLocation}
@@ -910,7 +924,7 @@ const EnhancedCargoForm: React.FC<EnhancedCargoFormProps> = ({
                     </div>
 
                     {/* Map */}
-                    <div className="h-64 rounded-lg overflow-hidden border border-gray-300">
+                    <div className="h-48 sm:h-64 rounded-lg overflow-hidden border border-gray-300 w-full">
                       <MapContainer
                         center={[0, 0]}
                         zoom={2}
@@ -962,13 +976,13 @@ const EnhancedCargoForm: React.FC<EnhancedCargoFormProps> = ({
                   </div>
 
                   {/* Dates */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                    <div className="min-w-0">
                       <Label
                         htmlFor="pickupDate"
-                        className="block text-sm font-medium text-gray-700 mb-2"
+                        className="block text-xs sm:text-sm font-medium text-gray-700 mb-2"
                       >
-                        <FaCalendar className="inline w-4 h-4 mr-2" />
+                        <FaCalendar className="inline w-3.5 h-3.5 sm:w-4 sm:h-4 mr-2" />
                         Pickup Date *
                       </Label>
                       <Input
@@ -978,15 +992,16 @@ const EnhancedCargoForm: React.FC<EnhancedCargoFormProps> = ({
                         value={formData.pickupDate}
                         onChange={handleChange}
                         required
+                        className="w-full text-sm"
                       />
                     </div>
 
-                    <div>
+                    <div className="min-w-0">
                       <Label
                         htmlFor="deliveryDate"
-                        className="block text-sm font-medium text-gray-700 mb-2"
+                        className="block text-xs sm:text-sm font-medium text-gray-700 mb-2"
                       >
-                        <FaCalendar className="inline w-4 h-4 mr-2" />
+                        <FaCalendar className="inline w-3.5 h-3.5 sm:w-4 sm:h-4 mr-2" />
                         Delivery Date *
                       </Label>
                       <Input
@@ -996,6 +1011,7 @@ const EnhancedCargoForm: React.FC<EnhancedCargoFormProps> = ({
                         value={formData.deliveryDate}
                         onChange={handleChange}
                         required
+                        className="w-full text-sm"
                       />
                     </div>
                   </div>
@@ -1011,8 +1027,8 @@ const EnhancedCargoForm: React.FC<EnhancedCargoFormProps> = ({
               />
 
               {/* Stepper Navigation & Form Actions */}
-              <DialogFooter className="flex flex-col md:flex-row items-center justify-between space-y-3 md:space-y-0 md:space-x-3 pt-4 border-t border-gray-200">
-                <div className="flex space-x-2">
+              <DialogFooter className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-4 border-t border-gray-200">
+                <div className="flex gap-2 w-full sm:w-auto">
                   <button
                     type="button"
                     onClick={() => {
@@ -1024,7 +1040,7 @@ const EnhancedCargoForm: React.FC<EnhancedCargoFormProps> = ({
                     disabled={
                       sections.findIndex((s) => s.id === activeSection) === 0
                     }
-                    className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                    className="flex-1 sm:flex-initial px-3 py-2 text-xs sm:text-sm border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 disabled:opacity-50 transition-colors"
                   >
                     Back
                   </button>
@@ -1041,22 +1057,23 @@ const EnhancedCargoForm: React.FC<EnhancedCargoFormProps> = ({
                       sections.findIndex((s) => s.id === activeSection) ===
                         sections.length - 1 || !completedSections[activeSection]
                     }
-                    className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                    className="flex-1 sm:flex-initial px-3 py-2 text-xs sm:text-sm border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 disabled:opacity-50 transition-colors"
                   >
                     Next
                   </button>
                 </div>
-                <div className="flex items-center space-x-2">
+                <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
                   {/* Draft Save Button */}
                   {onSaveDraft && (
                     <button
                       type="button"
                       onClick={handleSaveDraft}
                       disabled={loading}
-                      className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors flex items-center"
+                      className="flex-1 sm:flex-initial px-3 py-2 text-xs sm:text-sm border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors flex items-center justify-center"
                     >
                       <FaSave className="w-3.5 h-3.5 mr-1.5" />
-                      Save Draft
+                      <span className="hidden sm:inline">Save Draft</span>
+                      <span className="sm:hidden">Draft</span>
                     </button>
                   )}
 
@@ -1076,24 +1093,24 @@ const EnhancedCargoForm: React.FC<EnhancedCargoFormProps> = ({
                       e.stopPropagation();
                       onClose();
                     }}
-                    className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+                    className="flex-1 sm:flex-initial px-3 py-2 text-xs sm:text-sm border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={loading}
-                    className="px-3 py-1.5 text-sm bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 transition-colors flex items-center"
+                    className="flex-1 sm:flex-initial px-3 py-2 text-xs sm:text-sm bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 transition-colors flex items-center justify-center"
                   >
                     {loading ? (
                       <>
                         <div className="animate-spin rounded-full h-3.5 w-3.5 border-b-2 border-white mr-1.5"></div>
-                        Saving...
+                        <span>Saving...</span>
                       </>
                     ) : (
                       <>
                         <FaSave className="w-3.5 h-3.5 mr-1.5" />
-                        {mode === "create" ? "Create Cargo" : "Update Cargo"}
+                        <span>{mode === "create" ? "Create" : "Update"}</span>
                       </>
                     )}
                   </button>

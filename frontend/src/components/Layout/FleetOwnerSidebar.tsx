@@ -23,7 +23,8 @@ import {
   FaShieldAlt,
   FaDollarSign,
   FaGavel,
-  FaWarehouse
+  FaWarehouse,
+  FaTimes
 } from 'react-icons/fa';
 import sidebarBack from '../../assets/sidebar-back.svg';
 import urutixLogo from '../../assets/urutix.png';
@@ -32,9 +33,10 @@ import { TranslatedText } from '../translated-text';
 interface FleetOwnerSidebarProps {
   isCollapsed: boolean;
   onToggle: () => void;
+  onClose?: () => void;
 }
 
-const FleetOwnerSidebar: React.FC<FleetOwnerSidebarProps> = ({ isCollapsed, onToggle }) => {
+const FleetOwnerSidebar: React.FC<FleetOwnerSidebarProps> = ({ isCollapsed, onToggle, onClose }) => {
   const location = useLocation();
 
   const navigationItems = [
@@ -148,30 +150,32 @@ const FleetOwnerSidebar: React.FC<FleetOwnerSidebarProps> = ({ isCollapsed, onTo
       <div className="relative z-10 flex flex-col h-full">
       {/* Header */}
       <div className="border-b border-gray-200/70 bg-white/90 p-4 backdrop-blur-sm">
-        <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
           {!isCollapsed && (
-            <div className="flex items-center space-x-2">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-600/10 text-primary-600">
+            <div className="flex items-center space-x-2 flex-1 min-w-0">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-600/10 text-primary-600 flex-shrink-0">
                 <FaTruck className="text-lg" />
               </div>
-              <div>
+              <div className="min-w-0">
                 <span className="block text-xs font-semibold uppercase tracking-wider text-gray-400">
                   <TranslatedText text="Dashboard" />
                 </span>
-                <span className="block text-base font-bold text-gray-900">
+                <span className="block text-base font-bold text-gray-900 truncate">
                   <TranslatedText text="Fleet Owner" />
                 </span>
               </div>
             </div>
           )}
-          <button
-            onClick={onToggle}
-            className="rounded-md p-2 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-800"
-          >
-            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
-          </button>
+          {/* Close button for mobile only */}
+          {onClose && (
+            <button
+              onClick={onClose}
+              className="lg:hidden rounded-md p-2 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-800 flex-shrink-0"
+              aria-label="Close sidebar"
+            >
+              <FaTimes className="h-5 w-5" />
+            </button>
+          )}
         </div>
       </div>
 

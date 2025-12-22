@@ -959,4 +959,54 @@ export class EnhancedAuthController {
 
     return remoteAddress;
   }
+
+  @Post('diagnose')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Diagnose login issues for a user account',
+    description: 'Check user account status and identify why login might be failing',
+  })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        email: { type: 'string', example: 'user@example.com' },
+      },
+      required: ['email'],
+    },
+  })
+  @ApiOkResponse({
+    description: 'Account diagnosis completed',
+    schema: {
+      type: 'object',
+      properties: {
+        found: { type: 'boolean' },
+        issues: { type: 'array', items: { type: 'string' } },
+        accountInfo: {
+          type: 'object',
+          properties: {
+            id: { type: 'string' },
+            email: { type: 'string' },
+            status: { type: 'string' },
+            role: { type: 'string' },
+            hasPasswordHash: { type: 'boolean' },
+            isLocked: { type: 'boolean' },
+            lockedUntil: { type: 'string', format: 'date-time', nullable: true },
+            loginAttempts: { type: 'number' },
+            emailVerified: { type: 'boolean' },
+            canLogin: { type: 'boolean' },
+          },
+        },
+      },
+    },
+  })
+  async diagnoseAccount(@Body() body: { email: string }) {
+    try {
+      const result = await this.authService.diagnoseUserAccount(body.email);
+      return result;
+    } catch (error) {
+      this.logger.error(`Diagnosis failed: ${error.message}`);
+      throw error;
+    }
+  }
 }

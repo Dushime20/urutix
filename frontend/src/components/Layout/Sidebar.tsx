@@ -1,4 +1,4 @@
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { 
   Home, 
   Truck, 
@@ -13,14 +13,26 @@ import {
   FileText,
   Calendar,
   Users,
-  Shield
+  Shield,
+  X
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import sidebarBack from '../../assets/sidebar-back.svg';
 import { TranslatedText } from '../translated-text';
 
-const Sidebar = () => {
+interface SidebarProps {
+  onClose?: () => void;
+}
+
+const Sidebar = ({ onClose }: SidebarProps) => {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    // Force hard navigation to ensure logout works
+    window.location.href = '/auth';
+  };
 
   // Debug logging
   console.log('Sidebar: Current user:', user);
@@ -101,7 +113,7 @@ const Sidebar = () => {
 
   return (
     <div 
-      className="w-64 bg-white shadow-lg relative overflow-hidden"
+      className="w-64 h-full bg-white shadow-lg relative overflow-hidden lg:shadow-none"
       style={{
         backgroundImage: `url(${sidebarBack})`,
         backgroundSize: 'cover',
@@ -113,14 +125,25 @@ const Sidebar = () => {
       <div className="absolute inset-0 bg-white/80 backdrop-blur-sm z-0" />
       
       <div className="flex flex-col h-full relative z-10">
-        {/* Logo */}
-        <div className="p-4 border-b border-gray-200">
+        {/* Logo and Close Button */}
+        <div className="p-4 border-b border-gray-200 flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center">
               <Truck className="w-5 h-5 text-white" />
             </div>
             <span className="text-xl font-bold text-gray-900">UrutiX</span>
           </div>
+          {/* Close button - visible on mobile, hidden on desktop (desktop uses menu button to toggle) */}
+          {onClose && (
+            <button
+              onClick={onClose}
+              className="lg:hidden p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+              aria-label="Close sidebar"
+            >
+              <X className="w-5 h-5 text-gray-600" />
+            </button>
+          )}
+        </div>
           {/* Show user role */}
           {user && (
             <div className="mt-2 text-sm text-gray-500">
@@ -163,7 +186,7 @@ const Sidebar = () => {
           </NavLink>
           
           <button
-            onClick={logout}
+            onClick={handleLogout}
             className="flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors w-full"
           >
             <LogOut className="w-5 h-5" />

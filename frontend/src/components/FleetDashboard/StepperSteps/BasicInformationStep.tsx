@@ -17,7 +17,7 @@ const BasicInformationStep: React.FC<BasicInformationStepProps> = ({
         <h3 className="text-sm font-semibold text-gray-900">Basic Truck Information</h3>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {/* Vehicle Identification */}
         <div className="space-y-3">
           <h4 className="text-xs font-medium text-gray-700 flex items-center mb-2">
@@ -33,7 +33,7 @@ const BasicInformationStep: React.FC<BasicInformationStepProps> = ({
               type="text"
               value={formData.plateNumber || ''}
               onChange={(e) => handleInputChange('plateNumber', e.target.value)}
-              className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-500 focus:border-gray-500"
+              className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-500 focus:border-gray-500 min-w-0"
               required
               maxLength={20}
               placeholder="Enter plate number"
@@ -90,7 +90,7 @@ const BasicInformationStep: React.FC<BasicInformationStepProps> = ({
               type="text"
               value={formData.registrationNumber || ''}
               onChange={(e) => handleInputChange('registrationNumber', e.target.value)}
-              className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-500 focus:border-gray-500"
+              className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-500 focus:border-gray-500 min-w-0"
               required
               maxLength={50}
               placeholder="Enter registration number"
@@ -102,7 +102,7 @@ const BasicInformationStep: React.FC<BasicInformationStepProps> = ({
         <div className="space-y-3">
           <h4 className="text-xs font-medium text-gray-700 mb-2">Vehicle Details</h4>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1">
                 Make *
@@ -111,7 +111,7 @@ const BasicInformationStep: React.FC<BasicInformationStepProps> = ({
                 type="text"
                 value={formData.make || ''}
                 onChange={(e) => handleInputChange('make', e.target.value)}
-                className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-500 focus:border-gray-500"
+                className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-500 focus:border-gray-500 min-w-0"
                 required
                 placeholder="e.g., Volvo"
               />
@@ -125,7 +125,7 @@ const BasicInformationStep: React.FC<BasicInformationStepProps> = ({
                 type="text"
                 value={formData.model || ''}
                 onChange={(e) => handleInputChange('model', e.target.value)}
-                className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-500 focus:border-gray-500"
+                className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-500 focus:border-gray-500 min-w-0"
                 required
                 placeholder="e.g., FH16"
               />
@@ -168,7 +168,7 @@ const BasicInformationStep: React.FC<BasicInformationStepProps> = ({
                 type="text"
                 value={formData.color || ''}
                 onChange={(e) => handleInputChange('color', e.target.value)}
-                className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-500 focus:border-gray-500"
+                className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-500 focus:border-gray-500 min-w-0"
                 placeholder="e.g., White"
               />
             </div>
@@ -183,7 +183,7 @@ const BasicInformationStep: React.FC<BasicInformationStepProps> = ({
           Insurance & Registration
         </h4>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label className="block text-xs font-medium text-gray-600 mb-1">
               Insurance Policy Number *
@@ -192,7 +192,7 @@ const BasicInformationStep: React.FC<BasicInformationStepProps> = ({
               type="text"
               value={formData.insurancePolicy || ''}
               onChange={(e) => handleInputChange('insurancePolicy', e.target.value)}
-              className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-500 focus:border-gray-500"
+              className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-500 focus:border-gray-500 min-w-0"
               required
               maxLength={50}
               placeholder="Enter insurance policy number"
@@ -207,7 +207,7 @@ const BasicInformationStep: React.FC<BasicInformationStepProps> = ({
               type="date"
               value={formData.insuranceExpiry || ''}
               onChange={(e) => handleInputChange('insuranceExpiry', e.target.value)}
-              className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-500 focus:border-gray-500"
+              className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-500 focus:border-gray-500 min-w-0"
               required
             />
           </div>
@@ -220,7 +220,7 @@ const BasicInformationStep: React.FC<BasicInformationStepProps> = ({
               type="date"
               value={formData.registrationExpiry || ''}
               onChange={(e) => handleInputChange('registrationExpiry', e.target.value)}
-              className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-500 focus:border-gray-500"
+              className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-500 focus:border-gray-500 min-w-0"
               required
             />
           </div>
@@ -233,7 +233,7 @@ const BasicInformationStep: React.FC<BasicInformationStepProps> = ({
               type="date"
               value={formData.roadworthyCertExpiry || ''}
               onChange={(e) => handleInputChange('roadworthyCertExpiry', e.target.value)}
-              className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-500 focus:border-gray-500"
+              className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-500 focus:border-gray-500 min-w-0"
             />
           </div>
         </div>

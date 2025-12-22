@@ -24,7 +24,7 @@ const DriverInformationStep: React.FC<DriverInformationStepProps> = ({
           Personal Information
         </h4>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               First Name *
@@ -54,7 +54,7 @@ const DriverInformationStep: React.FC<DriverInformationStepProps> = ({
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Date of Birth *
@@ -91,7 +91,7 @@ const DriverInformationStep: React.FC<DriverInformationStepProps> = ({
           License Information
         </h4>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               License Number *
@@ -147,7 +147,7 @@ const DriverInformationStep: React.FC<DriverInformationStepProps> = ({
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               License Issue Date *
@@ -208,7 +208,7 @@ const DriverInformationStep: React.FC<DriverInformationStepProps> = ({
           Contact Information
         </h4>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Phone Number *
@@ -242,7 +242,7 @@ const DriverInformationStep: React.FC<DriverInformationStepProps> = ({
       {/* Employment */}
       <div className="space-y-4">
         <h4 className="text-lg font-medium text-gray-800">Employment</h4>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Employment Type *</label>
             <select
@@ -322,7 +322,7 @@ const DriverInformationStep: React.FC<DriverInformationStepProps> = ({
       <div className="space-y-4">
         <h4 className="text-lg font-medium text-gray-800">Emergency Contact</h4>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Emergency Contact Name

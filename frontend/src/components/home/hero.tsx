@@ -10,11 +10,11 @@ export function Hero() {
       <div 
         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
         style={{
-          backgroundImage: "url('/busniess.jpg')",
+          backgroundImage: "url('/logistics.jpg')",
         }}
       >
-        {/* Overlay for better text readability */}
-        {/* <div className="absolute inset-0 bg-background/50 backdrop-blur-sm" /> */}
+        {/* Dark overlay for better text readability */}
+        <div className="absolute inset-0 bg-black/60" />
       </div>
 
       {/* Content */}
@@ -23,18 +23,18 @@ export function Hero() {
        
 
           {/* Heading */}
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-gray-200">
-            <span className="text-primary">
+          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-white drop-shadow-lg">
+            <span className="text-primary-400 drop-shadow-md">
               <TranslatedText text="Unified" />
             </span>
             <br />
-            <span className="text-balance">
+            <span className="text-balance text-white drop-shadow-md">
               <TranslatedText text="Logistics And Finance Platform" />
             </span>
           </h1>
 
           {/* Description */}
-          <p className="text-lg sm:text-xl text-gray-50 max-w-2xl leading-relaxed">
+          <p className="text-lg sm:text-xl text-white/95 max-w-2xl leading-relaxed drop-shadow-md">
             <TranslatedText text="Unlock unequaled business performance with real-time insights, automation, an expanding marketplace, and digital payments. Join the logistics revolution." />
           </p>
 
@@ -59,8 +59,8 @@ export function Hero() {
             </Button>
           </div>
              {/* Badge */}
-             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 text-sm text-white">
-            <span className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
+             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/20 backdrop-blur-sm border border-white/30 text-sm text-white drop-shadow-md">
+            <span className="h-2 w-2 rounded-full bg-green-400 animate-pulse" />
             <TranslatedText text="Live tracking across 150+ countries" />
           </div>
         </div>

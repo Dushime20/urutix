@@ -171,18 +171,48 @@ const UnifiedFleetManagement: React.FC = () => {
     <div className="space-y-6">
       {/* Header */}
       <div className="mb-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1>Truck Management</h1>
-            <p className="text-sm text-gray-600">Manage your trucks, view active trips, and add new vehicles</p>
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex-1 min-w-0">
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Truck Management</h1>
+            <p className="text-xs sm:text-sm text-gray-600 mt-0.5">Manage your trucks, view active trips, and add new vehicles</p>
           </div>
-          <button
-            onClick={handleCreateTruck}
-            className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors flex items-center gap-2 shadow-lg"
-          >
-            <FaPlus className="w-4 h-4" />
-            Add New Truck
-          </button>
+          <div className="relative group flex-shrink-0">
+            <button
+              onClick={handleCreateTruck}
+              className="relative w-10 h-10 sm:w-auto sm:h-auto sm:px-4 sm:py-2 bg-gradient-to-r from-primary-600 to-primary-700 text-white rounded-full sm:rounded-lg hover:from-primary-700 hover:to-primary-800 transition-all duration-200 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl active:scale-95"
+              aria-label="Add New Truck"
+            >
+              <FaPlus className="w-5 h-5 sm:w-4 sm:h-4" />
+              <span className="hidden sm:inline font-medium">Add New Truck</span>
+            </button>
+            {/* Tooltip for mobile */}
+            <div className="absolute bottom-full right-0 mb-2 hidden group-hover:block sm:hidden z-50">
+              <div className="bg-gray-900 text-white text-xs px-3 py-2 rounded-lg shadow-xl whitespace-nowrap">
+                <div className="flex items-center gap-2">
+                  <FaPlus className="w-3 h-3" />
+                  <span>Add New Truck</span>
+                </div>
+                <div className="absolute top-full right-4 w-0 h-0 border-x-4 border-x-transparent border-t-4 border-t-gray-900"></div>
+              </div>
+            </div>
+            {/* Enhanced tooltip for desktop hover */}
+            <div className="absolute bottom-full right-0 mb-2 hidden sm:group-hover:block z-50 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+              <div className="bg-gray-900 text-white text-sm px-4 py-3 rounded-lg shadow-xl max-w-xs">
+                <div className="flex items-start gap-3">
+                  <div className="flex-shrink-0 w-8 h-8 bg-primary-500 rounded-full flex items-center justify-center">
+                    <FaPlus className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <p className="font-semibold mb-1">Add New Truck</p>
+                    <p className="text-xs text-gray-300 leading-relaxed">
+                      Register a new vehicle to your fleet. Fill in truck details, specifications, and equipment information.
+                    </p>
+                  </div>
+                </div>
+                <div className="absolute top-full right-6 w-0 h-0 border-x-4 border-x-transparent border-t-4 border-t-gray-900"></div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 

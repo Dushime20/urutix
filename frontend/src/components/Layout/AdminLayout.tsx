@@ -36,10 +36,13 @@ const AdminLayoutContent: React.FC = () => {
     };
   }, []);
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = (e?: React.MouseEvent) => {
+    e?.preventDefault();
+    e?.stopPropagation();
     setShowUserMenu(false);
-    navigate('/auth', { replace: true });
+    logout();
+    // Force hard navigation to ensure logout works
+    window.location.href = '/auth';
   };
 
   if (isLoading) {
@@ -145,7 +148,7 @@ const AdminLayoutContent: React.FC = () => {
                     </button>
                     <hr className="my-1" />
                     <button
-                      onClick={handleLogout}
+                      onClick={(e) => handleLogout(e)}
                       className="w-full px-3 py-1.5 text-left text-xs text-red-600 hover:bg-gray-100 flex items-center gap-1.5"
                     >
                       <FaSignOutAlt className="w-3 h-3" />

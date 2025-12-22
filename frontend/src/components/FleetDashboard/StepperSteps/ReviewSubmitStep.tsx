@@ -37,7 +37,7 @@ const ReviewSubmitStep: React.FC<ReviewSubmitStepProps> = ({ formData, activeTab
           <span className="ml-2">{title}</span>
         </h4>
         <div className="bg-gray-50 rounded-lg p-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {fields.map((field) => {
               const value = getValueFromPath(data, field);
               if (value === undefined || value === null || value === '') return null;

@@ -84,7 +84,7 @@ export const RouteCapabilitiesStep: React.FC<RouteCapabilitiesStepProps> = ({
               {category.icon}
               <h4 className="text-md font-medium text-gray-900">{category.title}</h4>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {category.capabilities.map(({ key, label, description }) => (
                 <div key={key} className="border border-gray-200 rounded-lg p-3 hover:border-gray-300 transition-colors">
                   <label className="flex items-start space-x-3 cursor-pointer">
@@ -114,7 +114,7 @@ export const RouteCapabilitiesStep: React.FC<RouteCapabilitiesStepProps> = ({
             Distance & Time Limits
           </label>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <div>
             <label className="block text-xs text-gray-600 mb-1">Max Distance (km)</label>
             <input
@@ -154,7 +154,7 @@ export const RouteCapabilitiesStep: React.FC<RouteCapabilitiesStepProps> = ({
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Route Restrictions
           </label>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="flex items-center space-x-2">
                 <input

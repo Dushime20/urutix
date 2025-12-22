@@ -57,8 +57,9 @@ export default defineConfig({
     chunkSizeWarningLimit: 1000
   },
   server: {
-    port: 5713,
-    strictPort: true,
+    port: 5173,
+    host: '127.0.0.1', // Use IPv4 to avoid permission issues
+    strictPort: false, // Allow Vite to find another port if 5173 is unavailable
     proxy: {
       '/api': {
         target: 'http://localhost:3002',
@@ -68,9 +69,9 @@ export default defineConfig({
     },
   },
   preview: {
-    port: 5713,
+    port: 5173,
     host: '0.0.0.0',
-    strictPort: true,
+    strictPort: false, // Allow fallback port
     allowedHosts: ['urutix.com', 'www.urutix.com', '161.97.148.53'],
   },
 })

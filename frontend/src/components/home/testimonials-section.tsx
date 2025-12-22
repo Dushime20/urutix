@@ -35,9 +35,6 @@ export function TestimonialsSection() {
           <h2 className="text-3xl sm:text-4xl font-bold text-foreground mb-4">
             <TranslatedText text="Trusted by Industry" /> <span className="text-primary"><TranslatedText text="Leaders" /></span>
           </h2>
-          <p className="text-muted-foreground max-w-2xl mx-auto">
-            <TranslatedText text="See why thousands of logistics companies around the world choose FleetCore for their fleet management needs." />
-          </p>
         </div>
 
         <div className="grid md:grid-cols-3 gap-6">

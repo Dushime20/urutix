@@ -56,7 +56,7 @@ export const LoadingEquipmentStep: React.FC<LoadingEquipmentStepProps> = ({
           <label className="block text-sm font-medium text-gray-700 mb-3">
             Available Equipment
           </label>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {equipmentOptions.map(({ key, label, icon, description }) => (
               <div key={key} className="border border-gray-200 rounded-lg p-4 hover:border-gray-300 transition-colors">
                 <label className="flex items-start space-x-3 cursor-pointer">
@@ -87,7 +87,7 @@ export const LoadingEquipmentStep: React.FC<LoadingEquipmentStepProps> = ({
               Loading/Unloading Time Estimates
             </label>
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs text-gray-600 mb-1">Max Loading Time (minutes)</label>
               <input
