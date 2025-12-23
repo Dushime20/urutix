@@ -58,7 +58,7 @@ export default defineConfig({
   },
   server: {
     port: 5173,
-    host: '127.0.0.1', // Use IPv4 to avoid permission issues
+    host: 'localhost', // Use localhost instead of 127.0.0.1 to match CORS
     strictPort: false, // Allow Vite to find another port if 5173 is unavailable
     proxy: {
       '/api': {

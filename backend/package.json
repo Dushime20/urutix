@@ -27,6 +27,7 @@
     "create:cargo-inspections-table": "ts-node src/scripts/create-cargo-inspections-table.ts",
     "create:truck-owner": "ts-node src/scripts/create-truck-owner.ts",
     "verify:truck-owner": "ts-node src/scripts/verify-truck-owner.ts",
+    "fix:login": "ts-node src/scripts/fix-login-issue.ts",
     "fix:truck-owner": "node src/database/seeds/fix-truck-owner-user.js",
     "seed:all": "node src/database/seeds/seed-all-data.js",
     "seed:complete": "node src/database/seeds/seed-complete-system.js",

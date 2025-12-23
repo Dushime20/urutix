@@ -265,7 +265,7 @@ export class FleetController {
   @ApiResponse({ status: 404, description: 'Truck not found' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async findOneTruck(@Param('id', ParseUUIDPipe) id: string, @Request() req) {
-    const truck = await this.fleetService.findOneTruck(id, req.user.tenantId);
+    const truck = await this.fleetService.findOneTruck(id, req.user.tenantId, req.user.userId);
     return {
       message: 'Truck retrieved successfully',
       truck,
@@ -2262,7 +2262,7 @@ export class FleetController {
   })
   @ApiResponse({ status: 404, description: 'Driver not found' })
   async findOneDriver(@Param('id', ParseUUIDPipe) id: string, @Request() req) {
-    const driver = await this.fleetService.findOneDriver(id, req.user.tenantId);
+    const driver = await this.fleetService.findOneDriver(id, req.user.tenantId, req.user.userId);
     return {
       message: 'Driver retrieved successfully',
       driver,

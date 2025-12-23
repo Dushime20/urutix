@@ -301,7 +301,7 @@ export class FleetService {
     filters?: any,
   ): Promise<Truck[]> {
     try {
-      console.log(`🔍 Fleet Service - Finding trucks for tenant: ${tenantId}`);
+      console.log(`🔍 Fleet Service - Finding trucks for tenant: ${tenantId}, userId: ${userId}`);
       console.log(`🔍 Fleet Service - TenantId value: "${tenantId}"`);
       console.log(`🔍 Fleet Service - TenantId type: ${typeof tenantId}`);
       
@@ -314,6 +314,13 @@ export class FleetService {
         .andWhere('truck.deletedAt IS NULL')
         .setParameter('tenantId', tenantId)
         .setParameter('isActive', true);
+      
+      // Apply user filter - only show trucks owned by this user
+      // This ensures multi-tenancy: each user only sees their own trucks
+      if (userId) {
+        queryBuilder.andWhere('truck.ownerId = :userId', { userId });
+        console.log(`🔍 Fleet Service - Filtering by ownerId: ${userId}`);
+      }
       
       // Apply filters
       if (filters?.status) {
@@ -359,12 +366,13 @@ export class FleetService {
       
       console.log(`🔍 Fleet Service - Raw query result: ${trucks.length} trucks`);
       console.log(`🔍 Fleet Service - Trucks IDs:`, trucks.map(t => t.id));
-      console.log(`✅ Fleet Service - Found ${trucks.length} trucks for tenant ${tenantId}`);
+      console.log(`✅ Fleet Service - Found ${trucks.length} trucks for tenant ${tenantId}${userId ? ` and user ${userId}` : ''}`);
       
       if (trucks.length === 0) {
-        console.warn(`⚠️ No trucks found for tenant ${tenantId}`);
+        console.warn(`⚠️ No trucks found for tenant ${tenantId}${userId ? ` and user ${userId}` : ''}`);
         console.warn(`⚠️ This might indicate:`);
         console.warn(`   - Tenant ID mismatch`);
+        console.warn(`   - User ID mismatch (if filtering by user)`);
         console.warn(`   - All trucks are soft-deleted`);
         console.warn(`   - All trucks have isActive = false`);
       }
@@ -378,7 +386,7 @@ export class FleetService {
     }
   }
 
-  async findOneTruck(id: string, tenantId: string): Promise<Truck> {
+  async findOneTruck(id: string, tenantId: string, userId?: string): Promise<Truck> {
     const truck = await this.truckRepository.findOne({
       where: { id, tenantId },
       relations: ['owner'],
@@ -386,6 +394,11 @@ export class FleetService {
 
     if (!truck) {
       throw new NotFoundException('Truck not found');
+    }
+
+    // Enforce multi-tenancy: if userId is provided, ensure the truck belongs to this user
+    if (userId && truck.ownerId !== userId) {
+      throw new ForbiddenException('You can only access your own trucks');
     }
 
     return truck;
@@ -397,8 +410,9 @@ export class FleetService {
     tenantId: string,
     userId: string,
   ): Promise<Truck> {
-    const truck = await this.findOneTruck(id, tenantId);
+    const truck = await this.findOneTruck(id, tenantId, userId);
 
+    // Additional ownership check (redundant but explicit)
     if (truck.ownerId !== userId) {
       throw new ForbiddenException('You can only update your own trucks');
     }
@@ -1055,13 +1069,18 @@ export class FleetService {
     return driversWithExperience;
   }
 
-  async findOneDriver(id: string, tenantId: string): Promise<Driver> {
+  async findOneDriver(id: string, tenantId: string, userId?: string): Promise<Driver> {
     const driver = await this.driverRepository.findOne({
       where: { id, tenantId },
     });
 
     if (!driver) {
       throw new NotFoundException('Driver not found');
+    }
+
+    // Enforce multi-tenancy: if userId is provided, ensure the driver belongs to this user
+    if (userId && driver.employerId !== userId) {
+      throw new ForbiddenException('You can only access your own drivers');
     }
 
     // Add experience as a computed property
@@ -1077,8 +1096,9 @@ export class FleetService {
     tenantId: string,
     userId: string,
   ): Promise<Driver> {
-    const driver = await this.findOneDriver(id, tenantId);
+    const driver = await this.findOneDriver(id, tenantId, userId);
 
+    // Additional ownership check (redundant but explicit)
     if (driver.employerId !== userId) {
       throw new ForbiddenException('You can only update your own drivers');
     }
@@ -1092,8 +1112,9 @@ export class FleetService {
     tenantId: string,
     userId: string,
   ): Promise<void> {
-    const driver = await this.findOneDriver(id, tenantId);
+    const driver = await this.findOneDriver(id, tenantId, userId);
 
+    // Additional ownership check (redundant but explicit)
     if (driver.employerId !== userId) {
       throw new ForbiddenException('You can only delete your own drivers');
     }
@@ -1128,9 +1149,9 @@ export class FleetService {
         );
       }
 
-      // Find truck and driver
-      const truck = await this.findOneTruck(truckId, tenantId);
-      const driver = await this.findOneDriver(driverId, tenantId);
+      // Find truck and driver (with ownership checks)
+      const truck = await this.findOneTruck(truckId, tenantId, userId);
+      const driver = await this.findOneDriver(driverId, tenantId, userId);
 
       console.log('✅ Found truck and driver:', {
         truckPlate: truck.plateNumber,

@@ -25,8 +25,11 @@ async function bootstrap() {
     ? process.env.ALLOWED_ORIGINS.split(',').map((o) => o.trim())
     : [
         'http://localhost:5173',
+        'http://127.0.0.1:5173', // Allow 127.0.0.1 (Vite default)
         `http://localhost:${port}`,
+        `http://127.0.0.1:${port}`,
         'http://localhost:5713',
+        'http://127.0.0.1:5713',
       ];
 
   // Enable CORS for HTTP requests

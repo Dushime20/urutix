@@ -28,7 +28,7 @@ export const config = {
   // WebSocket Configuration
   websocket: {
     enabled: import.meta.env.VITE_ENABLE_WEBSOCKET !== 'false', // Default: true
-    url: import.meta.env.VITE_WEBSOCKET_URL || 'ws://localhost:3001',
+    url: import.meta.env.VITE_WEBSOCKET_URL || 'ws://localhost:3002',
   },
 };
 
