@@ -195,13 +195,14 @@ function App() {
               <Route path="routes" element={<UnifiedTrackingManagement />} />
               <Route path="profile" element={<UnifiedAccountManagement />} />
               <Route path="settings" element={<UnifiedAccountManagement />} />
-              <Route path="payments" element={<UnifiedFinancialManagement />} />
-              <Route path="loan-requests" element={<UnifiedFinancialManagement />} />
-              <Route path="documents" element={<UnifiedDocumentManagement />} />
-              <Route path="documents/:entityType" element={<UnifiedDocumentManagement />} />
-              <Route path="notification-center" element={<UnifiedNotificationManagement />} />
-              <Route path="notifications" element={<UnifiedNotificationManagement />} />
-              <Route path="support" element={<CargoHelpSupport />} />
+            <Route path="payments" element={<UnifiedFinancialManagement />} />
+            <Route path="loan-requests" element={<UnifiedFinancialManagement />} />
+            <Route path="invoices" element={<InvoiceViewer />} />
+            <Route path="documents" element={<UnifiedDocumentManagement />} />
+            <Route path="documents/:entityType" element={<UnifiedDocumentManagement />} />
+            <Route path="notification-center" element={<UnifiedNotificationManagement />} />
+            <Route path="notifications" element={<UnifiedNotificationManagement />} />
+            <Route path="support" element={<CargoHelpSupport />} />
               <Route path="ratings" element={<UnifiedReputationManagement />} />
               <Route path="rewards" element={<UnifiedReputationManagement />} />
               <Route path="scoring" element={<UnifiedReputationManagement />} />

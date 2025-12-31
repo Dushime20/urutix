@@ -29,6 +29,10 @@ const CargoOwnerLayout: React.FC = () => {
   const { user, isLoading, logout } = useAuth();
   const navigate = useNavigate();
   const userMenuRef = useRef<HTMLDivElement>(null);
+  const sidebarRef = useRef<HTMLDivElement>(null);
+  const menuToggleRef = useRef<HTMLButtonElement>(null);
+  const touchStartX = useRef<number>(0);
+  const touchStartY = useRef<number>(0);
 
   // Debug: Log user data to see what we have
   useEffect(() => {
@@ -120,6 +124,122 @@ const CargoOwnerLayout: React.FC = () => {
     }
   }, [sidebarOpen]);
 
+  // Swipe-to-close gesture for mobile
+  useEffect(() => {
+    if (!sidebarOpen || window.innerWidth >= 1024) return;
+
+    const sidebar = sidebarRef.current;
+    if (!sidebar) return;
+
+    const handleTouchStart = (e: TouchEvent) => {
+      touchStartX.current = e.touches[0].clientX;
+      touchStartY.current = e.touches[0].clientY;
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (!sidebarOpen) return;
+      
+      const touchCurrentX = e.touches[0].clientX;
+      const touchCurrentY = e.touches[0].clientY;
+      const diffX = touchStartX.current - touchCurrentX;
+      const diffY = touchStartY.current - touchCurrentY;
+
+      // Only handle horizontal swipes (ignore vertical scrolling)
+      if (Math.abs(diffX) > Math.abs(diffY) && diffX > 10) {
+        // Swiping left - provide visual feedback
+        const swipePercentage = Math.min(diffX / 280, 1); // 280px is sidebar width
+        sidebar.style.transform = `translateX(${-swipePercentage * 100}%)`;
+        e.preventDefault();
+      }
+    };
+
+    const handleTouchEnd = (e: TouchEvent) => {
+      if (!sidebarOpen) return;
+
+      const touchEndX = e.changedTouches[0].clientX;
+      const diffX = touchStartX.current - touchEndX;
+      const diffY = Math.abs(touchStartY.current - e.changedTouches[0].clientY);
+
+      // Reset transform
+      sidebar.style.transform = '';
+
+      // Close if swiped left more than 50px and horizontal movement > vertical
+      if (diffX > 50 && Math.abs(diffX) > diffY) {
+        setSidebarOpen(false);
+      }
+    };
+
+    sidebar.addEventListener('touchstart', handleTouchStart, { passive: true });
+    sidebar.addEventListener('touchmove', handleTouchMove, { passive: false });
+    sidebar.addEventListener('touchend', handleTouchEnd, { passive: true });
+
+    return () => {
+      sidebar.removeEventListener('touchstart', handleTouchStart);
+      sidebar.removeEventListener('touchmove', handleTouchMove);
+      sidebar.removeEventListener('touchend', handleTouchEnd);
+      sidebar.style.transform = '';
+    };
+  }, [sidebarOpen]);
+
+  // Keyboard support: Escape key to close sidebar on mobile
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && sidebarOpen && window.innerWidth < 1024) {
+        setSidebarOpen(false);
+        // Return focus to menu toggle button
+        menuToggleRef.current?.focus();
+      }
+    };
+
+    if (sidebarOpen) {
+      document.addEventListener('keydown', handleKeyDown);
+      return () => {
+        document.removeEventListener('keydown', handleKeyDown);
+      };
+    }
+  }, [sidebarOpen]);
+
+  // Focus trap: Keep focus inside sidebar when open on mobile
+  useEffect(() => {
+    if (!sidebarOpen || window.innerWidth >= 1024) return;
+
+    const sidebar = sidebarRef.current;
+    if (!sidebar) return;
+
+    // Get all focusable elements in sidebar
+    const focusableElements = sidebar.querySelectorAll(
+      'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])'
+    );
+    const firstElement = focusableElements[0] as HTMLElement;
+    const lastElement = focusableElements[focusableElements.length - 1] as HTMLElement;
+
+    const handleTabKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Tab') return;
+
+      if (e.shiftKey) {
+        // Shift + Tab
+        if (document.activeElement === firstElement) {
+          e.preventDefault();
+          lastElement?.focus();
+        }
+      } else {
+        // Tab
+        if (document.activeElement === lastElement) {
+          e.preventDefault();
+          firstElement?.focus();
+        }
+      }
+    };
+
+    // Focus first element when sidebar opens
+    firstElement?.focus();
+
+    sidebar.addEventListener('keydown', handleTabKey);
+    return () => {
+      sidebar.removeEventListener('keydown', handleTabKey);
+    };
+  }, [sidebarOpen]);
+
   // Show loading while checking authentication
   if (isLoading) {
     return (
@@ -199,16 +319,22 @@ const CargoOwnerLayout: React.FC = () => {
         {/* Overlay - only on mobile */}
         {sidebarOpen && (
           <div
-            className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
+            className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden transition-opacity duration-300"
             onClick={() => setSidebarOpen(false)}
+            aria-hidden="true"
           />
         )}
 
         {/* Sidebar */}
         <div
-          className={`sidebar-container fixed inset-y-0 left-0 z-50 transform transition-transform duration-300 ease-in-out ${
+          ref={sidebarRef}
+          id="main-sidebar"
+          className={`sidebar-container fixed inset-y-0 left-0 z-50 transform transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] will-change-transform ${
             sidebarOpen ? 'translate-x-0' : '-translate-x-full'
           }`}
+          role="navigation"
+          aria-label="Main navigation"
+          aria-hidden={!sidebarOpen}
         >
           <CargoOwnerSidebar 
             isCollapsed={false} 
@@ -233,9 +359,12 @@ const CargoOwnerLayout: React.FC = () => {
               <div className="flex items-center space-x-2 sm:space-x-3 flex-1 min-w-0">
                 {/* Menu Toggle Button */}
                 <button
+                  ref={menuToggleRef}
                   onClick={toggleSidebar}
-                  className="menu-toggle-button p-2 rounded-lg hover:bg-gray-100 transition-colors flex-shrink-0 relative z-20"
-                  aria-label="Toggle sidebar"
+                  className="menu-toggle-button p-2 rounded-lg hover:bg-gray-100 active:bg-gray-200 transition-colors flex-shrink-0 relative z-20 touch-manipulation"
+                  aria-label={sidebarOpen ? "Close sidebar" : "Open sidebar"}
+                  aria-expanded={sidebarOpen}
+                  aria-controls="main-sidebar"
                 >
                   <FaBars className="w-5 h-5 text-gray-600" />
                 </button>

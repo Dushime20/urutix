@@ -197,20 +197,29 @@ export const CargoTable: React.FC<CargoTableProps> = ({
 
   if (view === 'grid') {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
         {cargos.map((cargo, index) => (
           <div
             key={cargo.id}
             ref={index === cargos.length - 1 ? lastCargoRef : null}
-            className="bg-white rounded-lg shadow-md p-4 hover:shadow-lg transition-shadow cursor-pointer flex flex-col h-full"
+            className="bg-white rounded-lg shadow-md p-3 sm:p-4 hover:shadow-lg transition-shadow cursor-pointer flex flex-col h-full min-w-0"
             onClick={() => onRowClick(cargo)}
           >
-            <div className="flex items-start justify-between mb-3">
-              <div className="flex items-center space-x-2">
-                <FaBox className="text-primary-600" />
-                <span className="font-semibold text-gray-900">#{cargo.id}</span>
+            <div className="flex items-start justify-between mb-3 gap-2">
+              <div className="flex items-center space-x-2 min-w-0 flex-1">
+                <FaBox className="text-primary-600 flex-shrink-0" />
+                <div className="min-w-0 flex-1">
+                  {/* Cargo Title */}
+                  {cargo.title && (
+                    <h3 className="font-semibold text-gray-900 text-sm sm:text-base truncate mb-0.5" title={cargo.title}>
+                      {cargo.title}
+                    </h3>
+                  )}
+                  {/* Cargo ID */}
+                  <span className="text-xs text-gray-500 truncate block">#{cargo.id.slice(0, 8)}...</span>
+                </div>
               </div>
-              <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(cargo.status)}`}>
+              <span className={`px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap flex-shrink-0 ${getStatusColor(cargo.status)}`}>
                 {cargo.status}
               </span>
             </div>
@@ -218,9 +227,9 @@ export const CargoTable: React.FC<CargoTableProps> = ({
             <div className="flex-grow flex flex-col">
               <div className="space-y-2">
                 {(cargo.pickupLocation || cargo.deliveryLocation) && (
-                  <div className="flex items-center space-x-2 text-sm text-gray-600">
-                    <FaMapMarkerAlt className="text-gray-400" />
-                    <span>
+                  <div className="flex items-start space-x-2 text-sm text-gray-600">
+                    <FaMapMarkerAlt className="text-gray-400 flex-shrink-0 mt-0.5" />
+                    <span className="break-words line-clamp-2">
                       {getPickupLocation(cargo)} → {getDeliveryLocation(cargo)}
                     </span>
                   </div>
@@ -234,12 +243,12 @@ export const CargoTable: React.FC<CargoTableProps> = ({
                 )}
                 
                 {(hasValue(cargo.loadValue) || hasValue(cargo.weight)) && (
-                  <div className="text-sm">
+                  <div className="text-sm flex flex-wrap gap-2">
                     {hasValue(cargo.loadValue) && (
-                      <span className="font-medium text-gray-900">${cargo.loadValue}</span>
+                      <span className="font-medium text-gray-900 whitespace-nowrap">${cargo.loadValue}</span>
                     )}
                     {hasValue(cargo.weight) && (
-                      <span className={`text-gray-500 ${hasValue(cargo.loadValue) ? 'ml-2' : ''}`}>
+                      <span className="text-gray-500 whitespace-nowrap">
                         {hasValue(cargo.loadValue) ? '• ' : ''}{cargo.weight}kg
                       </span>
                     )}
@@ -260,20 +269,20 @@ export const CargoTable: React.FC<CargoTableProps> = ({
               </div>
               
               {/* Spacer to push buttons to middle */}
-              <div className="flex-grow flex items-center justify-end">
+              <div className="flex-grow flex items-center justify-end mt-3">
                 {/* Action Buttons - Centered vertically in the middle */}
-                <div className="flex items-center justify-end space-x-2">
+                <div className="flex items-center justify-end gap-2 flex-wrap">
               {onEditCargo && (
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     onEditCargo(cargo);
                   }}
-                  className="p-1 text-blue-600 hover:text-blue-800 transition-colors"
+                  className="p-2 sm:p-1 min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center text-blue-600 hover:text-blue-800 active:bg-blue-50 transition-colors touch-manipulation rounded"
                   title="Edit"
                   aria-label="Edit"
                 >
-                  <FaEdit className="w-4 h-4" />
+                  <FaEdit className="w-4 h-4 sm:w-4 sm:h-4" />
                 </button>
               )}
               {onDeleteCargo && (
@@ -282,11 +291,11 @@ export const CargoTable: React.FC<CargoTableProps> = ({
                     e.stopPropagation();
                     onDeleteCargo(cargo.id);
                   }}
-                  className="p-1 text-red-600 hover:text-red-800 transition-colors"
+                  className="p-2 sm:p-1 min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center text-red-600 hover:text-red-800 active:bg-red-50 transition-colors touch-manipulation rounded"
                   title="Delete"
                   aria-label="Delete"
                 >
-                  <FaTrash className="w-4 h-4" />
+                  <FaTrash className="w-4 h-4 sm:w-4 sm:h-4" />
                 </button>
               )}
               {onPublishCargo && cargo.status === 'DRAFT' && (
@@ -295,11 +304,11 @@ export const CargoTable: React.FC<CargoTableProps> = ({
                     e.stopPropagation();
                     onPublishCargo(cargo.id);
                   }}
-                  className="p-1 text-green-600 hover:text-green-800 transition-colors"
+                  className="p-2 sm:p-1 min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center text-green-600 hover:text-green-800 active:bg-green-50 transition-colors touch-manipulation rounded"
                   title="Publish"
                   aria-label="Publish"
                 >
-                  <FaEye className="w-4 h-4" />
+                  <FaEye className="w-4 h-4 sm:w-4 sm:h-4" />
                 </button>
               )}
               {onAssignBroker && (
@@ -309,11 +318,11 @@ export const CargoTable: React.FC<CargoTableProps> = ({
                     console.log('Assign Broker clicked for cargo:', cargo.id);
                     onAssignBroker(cargo);
                   }}
-                  className="p-1.5 text-purple-600 hover:text-purple-800 hover:bg-purple-50 rounded transition-colors border border-purple-200 flex items-center gap-1"
+                  className="p-2 sm:p-1.5 min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 text-purple-600 hover:text-purple-800 hover:bg-purple-50 active:bg-purple-100 rounded transition-colors border border-purple-200 flex items-center gap-1 touch-manipulation"
                   title="Assign Broker"
                   aria-label="Assign Broker"
                 >
-                  <FaUserTie className="w-4 h-4" />
+                  <FaUserTie className="w-4 h-4 flex-shrink-0" />
                   <span className="text-xs font-medium hidden sm:inline">Broker</span>
                 </button>
               )}
@@ -327,29 +336,29 @@ export const CargoTable: React.FC<CargoTableProps> = ({
   }
 
   return (
-    <div className="bg-white rounded-lg shadow overflow-hidden">
+    <div className="bg-white rounded-lg shadow overflow-hidden overflow-x-auto">
       <table className="min-w-full divide-y divide-gray-200">
         <thead className="bg-gray-50">
           <tr>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              <TranslatedText text="Cargo ID" />
+            <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <TranslatedText text="Cargo" />
             </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
               <TranslatedText text="Route" />
             </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
               <TranslatedText text="Status" />
             </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
               <TranslatedText text="Price" />
             </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">
               <TranslatedText text="Created" />
             </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">
               <TranslatedText text="Broker" />
             </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
               <TranslatedText text="Actions" />
             </th>
           </tr>
@@ -362,14 +371,23 @@ export const CargoTable: React.FC<CargoTableProps> = ({
               className="hover:bg-gray-50 cursor-pointer"
               onClick={() => onRowClick(cargo)}
             >
-              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                #{cargo.id}
+              <td className="px-3 sm:px-6 py-4 text-sm font-medium text-gray-900 min-w-0">
+                <div className="min-w-0">
+                  {/* Cargo Title */}
+                  {cargo.title && (
+                    <div className="font-semibold text-gray-900 truncate mb-0.5" title={cargo.title}>
+                      {cargo.title}
+                    </div>
+                  )}
+                  {/* Cargo ID */}
+                  <div className="text-xs text-gray-500 truncate">#{cargo.id.slice(0, 8)}...</div>
+                </div>
               </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+              <td className="px-3 sm:px-6 py-4 text-sm text-gray-900 min-w-0">
                 {(cargo.pickupLocation || cargo.deliveryLocation) ? (
-                  <div className="flex items-center space-x-2">
-                    <FaMapMarkerAlt className="text-gray-400" />
-                    <span>
+                  <div className="flex items-start space-x-2 min-w-0">
+                    <FaMapMarkerAlt className="text-gray-400 flex-shrink-0 mt-0.5" />
+                    <span className="break-words line-clamp-2 min-w-0">
                       {getPickupLocation(cargo)} → {getDeliveryLocation(cargo)}
                     </span>
                   </div>
@@ -379,18 +397,18 @@ export const CargoTable: React.FC<CargoTableProps> = ({
                   </span>
                 )}
               </td>
-              <td className="px-6 py-4 whitespace-nowrap">
+              <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
                 <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(cargo.status)}`}>
                   {cargo.status}
                 </span>
               </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+              <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                 {hasValue(cargo.loadValue) ? `$${cargo.loadValue}` : '-'}
               </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+              <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500 hidden sm:table-cell">
                 {hasValue(cargo.pickupDate) ? new Date(cargo.pickupDate).toLocaleDateString() : '-'}
               </td>
-              <td className="px-6 py-4 whitespace-nowrap">
+              <td className="px-3 sm:px-6 py-4 whitespace-nowrap hidden md:table-cell">
                 {(cargo.brokerId || cargo.broker) ? (
                   <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-purple-50 border border-purple-200 rounded-md">
                     <FaUserTie className="w-3.5 h-3.5 text-purple-600" />
@@ -402,17 +420,18 @@ export const CargoTable: React.FC<CargoTableProps> = ({
                   <span className="text-gray-400 text-xs">-</span>
                 )}
               </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                <div className="flex space-x-2">
+              <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm font-medium">
+                <div className="flex flex-wrap gap-2">
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
                       onRowClick(cargo);
                     }}
-                    className="text-blue-600 hover:text-blue-900"
+                    className="p-2 sm:p-1 min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center text-blue-600 hover:text-blue-900 active:bg-blue-50 transition-colors touch-manipulation rounded"
                     title="View"
+                    aria-label="View"
                   >
-                    <FaEye />
+                    <FaEye className="w-4 h-4" />
                   </button>
                   {onEditCargo && (
                     <button
@@ -420,10 +439,11 @@ export const CargoTable: React.FC<CargoTableProps> = ({
                         e.stopPropagation();
                         onEditCargo(cargo);
                       }}
-                      className="text-green-600 hover:text-green-900"
+                      className="p-2 sm:p-1 min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center text-green-600 hover:text-green-900 active:bg-green-50 transition-colors touch-manipulation rounded"
                       title="Edit"
+                      aria-label="Edit"
                     >
-                      <FaEdit />
+                      <FaEdit className="w-4 h-4" />
                     </button>
                   )}
                   {onDeleteCargo && (
@@ -432,10 +452,11 @@ export const CargoTable: React.FC<CargoTableProps> = ({
                         e.stopPropagation();
                         onDeleteCargo(cargo.id);
                       }}
-                      className="text-red-600 hover:text-red-900"
+                      className="p-2 sm:p-1 min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center text-red-600 hover:text-red-900 active:bg-red-50 transition-colors touch-manipulation rounded"
                       title="Delete"
+                      aria-label="Delete"
                     >
-                      <FaTrash />
+                      <FaTrash className="w-4 h-4" />
                     </button>
                   )}
                   {onPublishCargo && cargo.status === 'DRAFT' && (
@@ -444,10 +465,11 @@ export const CargoTable: React.FC<CargoTableProps> = ({
                         e.stopPropagation();
                         onPublishCargo(cargo.id);
                       }}
-                      className="text-purple-600 hover:text-purple-900"
+                      className="p-2 sm:p-1 min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center text-purple-600 hover:text-purple-900 active:bg-purple-50 transition-colors touch-manipulation rounded"
                       title="Publish"
+                      aria-label="Publish"
                     >
-                      <FaEye />
+                      <FaEye className="w-4 h-4" />
                     </button>
                   )}
                   {onAssignBroker && (
@@ -457,10 +479,11 @@ export const CargoTable: React.FC<CargoTableProps> = ({
                         console.log('Assign Broker clicked for cargo:', cargo.id);
                         onAssignBroker(cargo);
                       }}
-                      className="text-indigo-600 hover:text-indigo-900 hover:bg-indigo-50 px-2 py-1 rounded border border-indigo-200"
+                      className="p-2 sm:p-1 min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center text-indigo-600 hover:text-indigo-900 hover:bg-indigo-50 active:bg-indigo-100 px-2 py-1 rounded border border-indigo-200 transition-colors touch-manipulation"
                       title="Assign Broker"
+                      aria-label="Assign Broker"
                     >
-                      <FaUserTie />
+                      <FaUserTie className="w-4 h-4" />
                     </button>
                   )}
                 </div>

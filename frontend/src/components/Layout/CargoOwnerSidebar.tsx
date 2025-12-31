@@ -157,10 +157,10 @@ const CargoOwnerSidebar: React.FC<CargoOwnerSidebarProps> = ({ isCollapsed, onTo
             {onClose && (
               <button
                 onClick={onClose}
-                className="lg:hidden rounded-md p-1.5 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-800"
+                className="lg:hidden rounded-md p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center text-gray-500 transition-colors hover:bg-gray-100 active:bg-gray-200 hover:text-gray-800 touch-manipulation"
                 aria-label="Close sidebar"
               >
-                <FaTimes className="h-4 w-4" />
+                <FaTimes className="h-5 w-5" />
               </button>
             )}
           </div>
@@ -184,11 +184,12 @@ const CargoOwnerSidebar: React.FC<CargoOwnerSidebarProps> = ({ isCollapsed, onTo
                     key={itemIndex}
                     to={item.path}
                     end={item?.end}
+                    onClick={onClose} // Close sidebar on mobile when navigating
                     className={({ isActive }) =>
-                      `group relative flex items-center ${isCollapsed ? 'justify-center p-1.5' : 'gap-2 px-2.5 py-1.5'} rounded-lg text-xs font-semibold transition-all duration-200 ${
+                      `group relative flex items-center ${isCollapsed ? 'justify-center p-1.5' : 'gap-2 px-2.5 py-2 sm:py-1.5'} rounded-lg text-xs font-semibold transition-all duration-200 touch-manipulation min-h-[44px] ${
                         isActive
                           ? 'bg-primary-600 text-white shadow-md shadow-primary-500/30'
-                          : 'text-gray-600 hover:bg-primary-50/80 hover:text-primary-700'
+                          : 'text-gray-600 hover:bg-primary-50/80 hover:text-primary-700 active:bg-primary-100'
                       }`
                     }
                     title={isCollapsed ? item.name : undefined}
