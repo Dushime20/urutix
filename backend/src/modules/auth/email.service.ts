@@ -791,4 +791,135 @@ This link will expire in 7 days.
       </div>
     `;
   }
+
+  async sendBrokerLoadAssignmentEmail(
+    recipientEmail: string,
+    brokerName: string,
+    loadTitle: string,
+    loadId: string,
+    commissionRate: number,
+    commissionAmount: number,
+  ): Promise<void> {
+    const fromAddress =
+      this.configService.get<string>('SMTP_FROM') ||
+      this.configService.get<string>('EMAIL_FROM_ADDRESS') ||
+      this.configService.get<string>('SMTP_USER') ||
+      'noreply@urutix.com';
+
+    const subject = `New Load Assignment: ${loadTitle}`;
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <h2>New Load Assignment</h2>
+        <p>Dear ${brokerName},</p>
+        <p>You have been assigned to a new load: <strong>${loadTitle}</strong> (ID: ${loadId}).</p>
+        <p>Your commission rate for this load is <strong>${commissionRate}%</strong>, amounting to <strong>${commissionAmount}</strong>.</p>
+        <p>You can view the load details and manage your commissions in your dashboard.</p>
+        <p>Thank you for your excellent work!</p>
+        <p>The UrutiX Team</p>
+      </div>
+    `;
+
+    if (this.transporter) {
+      try {
+        await this.transporter.sendMail({
+          from: fromAddress,
+          to: recipientEmail,
+          subject,
+          html,
+        });
+        this.logger.log(`Broker load assignment email sent to ${recipientEmail}`);
+      } catch (error) {
+        this.logger.error(`Failed to send broker load assignment email: ${error.message}`);
+        throw error;
+      }
+    } else {
+      this.logger.warn(`SMTP not configured. Email would be sent to ${recipientEmail}`);
+    }
+  }
+
+  async sendCommissionStatusUpdateEmail(
+    recipientEmail: string,
+    brokerName: string,
+    loadTitle: string,
+    commissionAmount: number,
+    status: string,
+  ): Promise<void> {
+    const fromAddress =
+      this.configService.get<string>('SMTP_FROM') ||
+      this.configService.get<string>('EMAIL_FROM_ADDRESS') ||
+      this.configService.get<string>('SMTP_USER') ||
+      'noreply@urutix.com';
+
+    const subject = `Commission Update for Load: ${loadTitle} - Status: ${status}`;
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <h2>Commission Status Update</h2>
+        <p>Dear ${brokerName},</p>
+        <p>The status of your commission for load <strong>${loadTitle}</strong> (Amount: ${commissionAmount}) has been updated to <strong>${status}</strong>.</p>
+        <p>Please check your dashboard for more details.</p>
+        <p>The UrutiX Team</p>
+      </div>
+    `;
+
+    if (this.transporter) {
+      try {
+        await this.transporter.sendMail({
+          from: fromAddress,
+          to: recipientEmail,
+          subject,
+          html,
+        });
+        this.logger.log(`Commission status update email sent to ${recipientEmail}`);
+      } catch (error) {
+        this.logger.error(`Failed to send commission status update email: ${error.message}`);
+        throw error;
+      }
+    } else {
+      this.logger.warn(`SMTP not configured. Email would be sent to ${recipientEmail}`);
+    }
+  }
+
+  async sendCommissionPayoutRequestEmail(
+    recipientEmail: string,
+    brokerName: string,
+    totalAmount: number,
+    payoutMethod: string,
+    accountDetails: string,
+  ): Promise<void> {
+    const fromAddress =
+      this.configService.get<string>('SMTP_FROM') ||
+      this.configService.get<string>('EMAIL_FROM_ADDRESS') ||
+      this.configService.get<string>('SMTP_USER') ||
+      'noreply@urutix.com';
+
+    const subject = `Commission Payout Request Submitted`;
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <h2>Payout Request Submitted</h2>
+        <p>Dear ${brokerName},</p>
+        <p>Your request for a commission payout totaling <strong>${totalAmount}</strong> has been successfully submitted.</p>
+        <p>Payout Method: ${payoutMethod}</p>
+        <p>Account Details: ${accountDetails}</p>
+        <p>We will process your request shortly. You will receive another notification once the payout is approved and processed.</p>
+        <p>The UrutiX Team</p>
+      </div>
+    `;
+
+    if (this.transporter) {
+      try {
+        await this.transporter.sendMail({
+          from: fromAddress,
+          to: recipientEmail,
+          subject,
+          html,
+        });
+        this.logger.log(`Commission payout request email sent to ${recipientEmail}`);
+      } catch (error) {
+        this.logger.error(`Failed to send commission payout request email: ${error.message}`);
+        throw error;
+      }
+    } else {
+      this.logger.warn(`SMTP not configured. Email would be sent to ${recipientEmail}`);
+    }
+  }
 }

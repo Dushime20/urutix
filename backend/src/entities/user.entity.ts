@@ -18,6 +18,7 @@ import { Tenant } from './tenant.entity';
 import { Bid } from './bid.entity';
 import { AuctionView } from './auction-view.entity';
 import { AuctionWatch } from './auction-watch.entity';
+import { BrokerCommission } from './broker-commission.entity';
 
 export enum UserRole {
   SUPER_ADMIN = 'SUPER_ADMIN',
@@ -29,6 +30,7 @@ export enum UserRole {
   DRIVER = 'DRIVER',
   AGENT = 'AGENT',
   LENDER = 'LENDER',
+  BROKER = 'BROKER',
 }
 
 export enum UserStatus {
@@ -130,6 +132,26 @@ export class User {
 
   @OneToMany('Truck', 'owner')
   trucks: Truck[];
+
+  // Broker relationships
+  @Column('uuid', { nullable: true })
+  brokerTenantId?: string; // ID of tenant this broker works for
+
+  @Column('decimal', { precision: 10, scale: 2, nullable: true, default: 0 })
+  totalCommissionEarned?: number;
+
+  @Column('decimal', { precision: 5, scale: 2, nullable: true })
+  defaultCommissionRate?: number; // Default commission percentage (e.g., 5.00 for 5%)
+
+  @ManyToOne(() => Tenant, (tenant) => tenant.brokers, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'brokerTenantId' })
+  brokerTenant?: Tenant;
+
+  @OneToMany(() => Load, (load) => load.broker)
+  brokerLoads?: Load[];
+
+  @OneToMany(() => BrokerCommission, (commission) => commission.broker)
+  brokerCommissions?: BrokerCommission[];
 
   // Auction tracking relationships
   @OneToMany(() => AuctionView, (view) => view.viewer)

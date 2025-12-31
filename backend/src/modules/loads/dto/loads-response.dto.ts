@@ -255,6 +255,41 @@ export class LoadResponseDto {
   };
 
   @ApiProperty({
+    description: 'Broker information',
+    required: false,
+  })
+  broker?: {
+    id: string;
+    email: string;
+    profile?: {
+      firstName?: string;
+      lastName?: string;
+      companyName?: string;
+    };
+  };
+
+  @ApiProperty({
+    description: 'Broker ID',
+    required: false,
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
+  brokerId?: string;
+
+  @ApiProperty({
+    description: 'Broker commission rate (percentage)',
+    required: false,
+    example: 5.0,
+  })
+  brokerCommissionRate?: number;
+
+  @ApiProperty({
+    description: 'Broker commission amount',
+    required: false,
+    example: 1250.0,
+  })
+  brokerCommissionAmount?: number;
+
+  @ApiProperty({
     description: 'Pickup location information',
     required: false,
   })

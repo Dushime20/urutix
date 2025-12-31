@@ -52,28 +52,6 @@ const RoleBasedLayout: React.FC = () => {
     };
   }, []);
 
-  // Show loading while checking authentication
-  if (isLoading) {
-    console.log('RoleBasedLayout: Showing loading spinner');
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary-600"></div>
-      </div>
-    );
-  }
-
-  // Don't render if not authenticated
-  if (!user) {
-    console.log('RoleBasedLayout: No user, returning null');
-    return null;
-  }
-
-  console.log('RoleBasedLayout: Rendering with user:', user);
-
-  const toggleSidebar = () => {
-    setSidebarOpen(!sidebarOpen);
-  };
-
   // Close sidebar when clicking outside on mobile
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -128,13 +106,56 @@ const RoleBasedLayout: React.FC = () => {
     };
   }, [sidebarOpen]);
 
-  const handleLogout = (e?: React.MouseEvent) => {
-    e?.preventDefault();
-    e?.stopPropagation();
+  // Show loading while checking authentication
+  if (isLoading) {
+    console.log('RoleBasedLayout: Showing loading spinner');
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary-600"></div>
+      </div>
+    );
+  }
+
+  // Don't render if not authenticated
+  if (!user) {
+    console.log('RoleBasedLayout: No user, returning null');
+    return null;
+  }
+
+  console.log('RoleBasedLayout: Rendering with user:', user);
+
+  const toggleSidebar = () => {
+    setSidebarOpen(!sidebarOpen);
+  };
+
+  const handleLogout = async (e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     setShowUserMenu(false);
-    logout();
-    // Force hard navigation to ensure logout works
-    window.location.href = '/auth';
+    
+    try {
+      console.log('🔄 Starting logout process...');
+      
+      // Direct logout approach - clear tokens immediately
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
+      
+      // Call logout function if available
+      if (logout && typeof logout === 'function') {
+        logout();
+      }
+      
+      // Force immediate redirect
+      setTimeout(() => {
+        window.location.href = '/auth';
+      }, 100);
+    } catch (error) {
+      console.error('❌ Logout error:', error);
+      // Even if logout fails, redirect to auth page
+      window.location.href = '/auth';
+    }
   };
 
   // Get search placeholder based on user role
@@ -146,6 +167,8 @@ const RoleBasedLayout: React.FC = () => {
         return 'Search cargo, shipments...';
       case 'TRUCK_OWNER':
         return 'Search fleet, trucks, drivers...';
+      case 'BROKER':
+        return 'Search loads, commissions...';
       case 'ADMIN':
       case 'SUPER_ADMIN':
         return 'Search users, tenants...';
@@ -248,8 +271,31 @@ const RoleBasedLayout: React.FC = () => {
                     </button>
                     <hr className="my-2" />
                     <button
-                      onClick={(e) => handleLogout(e)}
-                      className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center space-x-2"
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setShowUserMenu(false);
+                        
+                        // Direct logout approach
+                        try {
+                          localStorage.removeItem('accessToken');
+                          localStorage.removeItem('refreshToken');
+                          
+                          if (logout && typeof logout === 'function') {
+                            logout();
+                          }
+                          
+                          setTimeout(() => {
+                            window.location.href = '/auth';
+                          }, 100);
+                        } catch (error) {
+                          console.error('Logout error:', error);
+                          window.location.href = '/auth';
+                        }
+                      }}
+                      className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center space-x-2 cursor-pointer"
+                      style={{ pointerEvents: 'auto' }}
                     >
                       <FaSignOutAlt className="w-4 h-4" />
                       <span>Logout</span>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { FaEye, FaEdit, FaTrash, FaMapMarkerAlt, FaCalendar, FaBox } from 'react-icons/fa';
+import { FaEye, FaEdit, FaTrash, FaMapMarkerAlt, FaCalendar, FaBox, FaUserTie } from 'react-icons/fa';
 import { TranslatedText } from '../translated-text';
 // import type { Cargo } from '../../types/cargo';
 
@@ -30,6 +30,16 @@ interface Cargo {
   status: string;
   createdAt: string;
   updatedAt: string;
+  broker?: {
+    id: string;
+    email: string;
+    profile?: {
+      firstName?: string;
+      lastName?: string;
+      companyName?: string;
+    };
+  };
+  brokerId?: string;
   // Enhanced fields
   length?: number;
   width?: number;
@@ -97,6 +107,7 @@ interface CargoTableProps {
   onEditCargo?: (cargo: Cargo) => void;
   onDeleteCargo?: (cargoId: string) => void;
   onPublishCargo?: (cargoId: string) => void;
+  onAssignBroker?: (cargo: Cargo) => void;
 }
 
 export const CargoTable: React.FC<CargoTableProps> = ({
@@ -107,6 +118,7 @@ export const CargoTable: React.FC<CargoTableProps> = ({
   onEditCargo,
   onDeleteCargo,
   onPublishCargo,
+  onAssignBroker,
   // onBulkAction, // TODO: Implement bulk actions
 }) => {
   // Helper function to check if a value is valid (not 0, not empty, not null, not undefined)
@@ -132,6 +144,40 @@ export const CargoTable: React.FC<CargoTableProps> = ({
       return cargo.deliveryLocation.address;
     }
     return cargo.deliveryLocation?.name || 'Delivery'; // Will be translated in display
+  };
+
+  // Helper function to get broker display name
+  const getBrokerName = (cargo: Cargo): string | null => {
+    // Debug: Log broker data for troubleshooting
+    if (cargo.brokerId || cargo.broker) {
+      console.log('Broker data for cargo:', cargo.id, {
+        brokerId: cargo.brokerId,
+        broker: cargo.broker,
+        hasBroker: !!cargo.broker,
+        hasProfile: !!cargo.broker?.profile,
+      });
+    }
+    
+    // First check if we have a full broker object
+    if (cargo.broker) {
+      const profile = cargo.broker.profile;
+      if (profile?.companyName) {
+        return profile.companyName;
+      }
+      if (profile?.firstName || profile?.lastName) {
+        return `${profile.firstName || ''} ${profile.lastName || ''}`.trim();
+      }
+      if (cargo.broker.email && cargo.broker.email !== 'Broker Assigned') {
+        return cargo.broker.email;
+      }
+    }
+    
+    // Fallback: if we only have brokerId, show a generic message
+    if (cargo.brokerId) {
+      return 'Broker Assigned';
+    }
+    
+    return null;
   };
 
   const getStatusColor = (status: string) => {
@@ -199,6 +245,18 @@ export const CargoTable: React.FC<CargoTableProps> = ({
                     )}
                   </div>
                 )}
+
+                {/* Broker Card */}
+                {(cargo.brokerId || cargo.broker) && (
+                  <div className="mt-2">
+                    <div className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-purple-50 border border-purple-200 rounded-md">
+                      <FaUserTie className="w-3.5 h-3.5 text-purple-600" />
+                      <span className="text-xs font-medium text-purple-700">
+                        {getBrokerName(cargo) || 'Broker Assigned'}
+                      </span>
+                    </div>
+                  </div>
+                )}
               </div>
               
               {/* Spacer to push buttons to middle */}
@@ -244,6 +302,21 @@ export const CargoTable: React.FC<CargoTableProps> = ({
                   <FaEye className="w-4 h-4" />
                 </button>
               )}
+              {onAssignBroker && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    console.log('Assign Broker clicked for cargo:', cargo.id);
+                    onAssignBroker(cargo);
+                  }}
+                  className="p-1.5 text-purple-600 hover:text-purple-800 hover:bg-purple-50 rounded transition-colors border border-purple-200 flex items-center gap-1"
+                  title="Assign Broker"
+                  aria-label="Assign Broker"
+                >
+                  <FaUserTie className="w-4 h-4" />
+                  <span className="text-xs font-medium hidden sm:inline">Broker</span>
+                </button>
+              )}
                 </div>
               </div>
             </div>
@@ -272,6 +345,9 @@ export const CargoTable: React.FC<CargoTableProps> = ({
             </th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
               <TranslatedText text="Created" />
+            </th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <TranslatedText text="Broker" />
             </th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
               <TranslatedText text="Actions" />
@@ -313,6 +389,18 @@ export const CargoTable: React.FC<CargoTableProps> = ({
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                 {hasValue(cargo.pickupDate) ? new Date(cargo.pickupDate).toLocaleDateString() : '-'}
+              </td>
+              <td className="px-6 py-4 whitespace-nowrap">
+                {(cargo.brokerId || cargo.broker) ? (
+                  <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-purple-50 border border-purple-200 rounded-md">
+                    <FaUserTie className="w-3.5 h-3.5 text-purple-600" />
+                    <span className="text-xs font-medium text-purple-700">
+                      {getBrokerName(cargo) || 'Broker Assigned'}
+                    </span>
+                  </div>
+                ) : (
+                  <span className="text-gray-400 text-xs">-</span>
+                )}
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                 <div className="flex space-x-2">
@@ -360,6 +448,19 @@ export const CargoTable: React.FC<CargoTableProps> = ({
                       title="Publish"
                     >
                       <FaEye />
+                    </button>
+                  )}
+                  {onAssignBroker && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        console.log('Assign Broker clicked for cargo:', cargo.id);
+                        onAssignBroker(cargo);
+                      }}
+                      className="text-indigo-600 hover:text-indigo-900 hover:bg-indigo-50 px-2 py-1 rounded border border-indigo-200"
+                      title="Assign Broker"
+                    >
+                      <FaUserTie />
                     </button>
                   )}
                 </div>

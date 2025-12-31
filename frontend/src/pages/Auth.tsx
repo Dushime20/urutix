@@ -172,6 +172,9 @@ const Auth = () => {
           case 'LENDER':
             navigate('/lender');
             break;
+          case 'BROKER':
+            navigate('/dashboard/broker');
+            break;
           default:
             navigate('/dashboard');
             break;

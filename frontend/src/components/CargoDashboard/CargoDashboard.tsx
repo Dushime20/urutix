@@ -15,6 +15,8 @@ import { CargoTable } from "./CargoTable";
 import { ErrorBoundary } from "../ErrorBoundary";
 import EnhancedCargoForm from "../../pages/dashboard/cargos/create/components/form";
 import { useConfirmDialog } from "../../hooks/useConfirmDialog";
+import { AssignBrokerModal } from "./AssignBrokerModal";
+import { useCargoOwnerLayout } from "../../contexts/CargoOwnerLayoutContext";
 
 import "leaflet/dist/leaflet.css";
 import {
@@ -142,6 +144,16 @@ interface Cargo {
     type: string;
     locationData?: any;
   }>;
+  broker?: {
+    id: string;
+    email: string;
+    profile?: {
+      firstName?: string;
+      lastName?: string;
+      companyName?: string;
+    };
+  };
+  brokerId?: string;
 }
 
 interface CargoFilters {
@@ -179,6 +191,17 @@ const cargoIcon = new Icon({
 
 export const CargoDashboard: React.FC = () => {
   const { confirm, DialogComponent } = useConfirmDialog();
+  const layoutContext = useCargoOwnerLayout();
+  const setHideHeader = layoutContext?.setHideHeader;
+  
+  // Debug: Log context availability
+  useEffect(() => {
+    console.log('🔍 CargoDashboard - Layout context:', {
+      hasContext: !!layoutContext,
+      hasSetHideHeader: typeof setHideHeader === 'function',
+      hideHeader: layoutContext?.hideHeader
+    });
+  }, [layoutContext, setHideHeader]);
   const [cargos, setCargos] = useState<Cargo[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -194,6 +217,36 @@ export const CargoDashboard: React.FC = () => {
   const [showForm, setShowForm] = useState(false);
   const [formMode, setFormMode] = useState<"create" | "edit">("create");
   const [editingCargo, setEditingCargo] = useState<Cargo | null>(null);
+  
+  // Broker assignment state
+  const [showAssignBrokerModal, setShowAssignBrokerModal] = useState(false);
+  const [selectedLoadForBroker, setSelectedLoadForBroker] = useState<Cargo | null>(null);
+
+  // Hide header when any modal is open
+  useEffect(() => {
+    const hasModalOpen = !!(selectedCargo || showAssignBrokerModal || showForm || selectedLoadForBroker);
+    console.log('🔍 Modal state check:', {
+      selectedCargo: !!selectedCargo,
+      showAssignBrokerModal,
+      showForm,
+      selectedLoadForBroker: !!selectedLoadForBroker,
+      hasModalOpen,
+      setHideHeaderAvailable: typeof setHideHeader === 'function'
+    });
+    
+    if (typeof setHideHeader === 'function') {
+      setHideHeader(hasModalOpen);
+    } else {
+      console.warn('⚠️ setHideHeader is not available in context');
+    }
+    
+    // Cleanup: show header when component unmounts
+    return () => {
+      if (typeof setHideHeader === 'function') {
+        setHideHeader(false);
+      }
+    };
+  }, [selectedCargo, showAssignBrokerModal, showForm, selectedLoadForBroker, setHideHeader]);
 
   // Fetch cargos with filters, search, and pagination
 
@@ -605,6 +658,18 @@ export const CargoDashboard: React.FC = () => {
     );
   }, []);
 
+  const handleAssignBroker = useCallback((cargo: Cargo) => {
+    console.log('handleAssignBroker called with cargo:', cargo);
+    setSelectedLoadForBroker(cargo);
+    setShowAssignBrokerModal(true);
+    console.log('Modal state updated - showAssignBrokerModal:', true);
+  }, []);
+
+  const handleBrokerAssignmentSuccess = useCallback(() => {
+    // Refresh cargos after successful broker assignment
+    loadCargos(true);
+  }, [loadCargos]);
+
   // Accessibility: focus management for modal
   useEffect(() => {
     if (selectedCargo) {
@@ -720,12 +785,29 @@ export const CargoDashboard: React.FC = () => {
             onEditCargo={handleEditCargo}
             onDeleteCargo={handleDeleteCargo}
             onPublishCargo={handlePublishCargo}
+            onAssignBroker={handleAssignBroker}
           />
         )}
         <CargoModal
           cargo={selectedCargo}
           onClose={() => setSelectedCargo(null)}
         />
+
+        {/* Assign Broker Modal */}
+        {selectedLoadForBroker && (
+          <AssignBrokerModal
+            isOpen={showAssignBrokerModal}
+            onClose={() => {
+              setShowAssignBrokerModal(false);
+              setSelectedLoadForBroker(null);
+            }}
+            loadId={selectedLoadForBroker.id}
+            loadTitle={selectedLoadForBroker.title}
+            loadValue={selectedLoadForBroker.loadValue}
+            currentBrokerId={(selectedLoadForBroker as any).brokerId}
+            onSuccess={handleBrokerAssignmentSuccess}
+          />
+        )}
 
         {/* CRUD Form */}
         <EnhancedCargoForm

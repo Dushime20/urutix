@@ -116,6 +116,18 @@ export interface Cargo {
       companyName: string;
     };
   };
+  broker?: {
+    id: string;
+    email: string;
+    profile?: {
+      firstName?: string;
+      lastName?: string;
+      companyName?: string;
+    };
+  };
+  brokerId?: string;
+  brokerCommissionRate?: number;
+  brokerCommissionAmount?: number;
   pickupLocation?: {
     id: string;
     name: string;

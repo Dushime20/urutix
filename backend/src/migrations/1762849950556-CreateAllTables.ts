@@ -3,6 +3,49 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
 export class CreateAllTables1762849950556 implements MigrationInterface {
   name = 'CreateAllTables1762849950556';
 
+  // Helper function to create type only if it doesn't exist
+  private async createTypeIfNotExists(
+    queryRunner: QueryRunner,
+    typeName: string,
+    enumValues: string,
+  ): Promise<void> {
+    await queryRunner.query(`
+      DO $$
+      BEGIN
+        IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = '${typeName}') THEN
+          CREATE TYPE "public"."${typeName}" AS ENUM(${enumValues});
+        END IF;
+      END $$;
+    `);
+  }
+
+  // Helper function to create index only if column exists
+  private async createIndexIfColumnExists(
+    queryRunner: QueryRunner,
+    tableName: string,
+    columnName: string,
+    indexName: string,
+    indexDefinition: string,
+  ): Promise<void> {
+    await queryRunner.query(`
+      DO $$
+      BEGIN
+        IF EXISTS (
+          SELECT 1 FROM information_schema.columns 
+          WHERE table_name = '${tableName}' 
+          AND column_name = '${columnName}'
+        ) THEN
+          IF NOT EXISTS (
+            SELECT 1 FROM pg_indexes 
+            WHERE indexname = '${indexName}'
+          ) THEN
+            ${indexDefinition};
+          END IF;
+        END IF;
+      END $$;
+    `);
+  }
+
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(
       `DROP INDEX "public"."IDX_rate_limits_tenant_endpoint_createdAt"`,
@@ -12,13 +55,30 @@ export class CreateAllTables1762849950556 implements MigrationInterface {
     );
 
     await queryRunner.query(`CREATE EXTENSION IF NOT EXISTS "uuid-ossp"`);
-    await queryRunner.query(`CREATE EXTENSION IF NOT EXISTS "postgis"`);
+    
+    // Try to create PostGIS extension, but continue if it's not available
+    // Use a DO block to handle errors without aborting the transaction
+    await queryRunner.query(`
+      DO $$
+      BEGIN
+        CREATE EXTENSION IF NOT EXISTS "postgis";
+        RAISE NOTICE 'PostGIS extension created successfully';
+      EXCEPTION WHEN OTHERS THEN
+        RAISE NOTICE 'PostGIS extension not available: %', SQLERRM;
+      END $$;
+    `);
 
+    // Create type only if it doesn't exist
+    await queryRunner.query(`
+      DO $$
+      BEGIN
+        IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'user_profiles_kycstatus_enum') THEN
+          CREATE TYPE "public"."user_profiles_kycstatus_enum" AS ENUM('PENDING', 'UNDER_REVIEW', 'VERIFIED', 'REJECTED');
+        END IF;
+      END $$;
+    `);
     await queryRunner.query(
-      `CREATE TYPE "public"."user_profiles_kycstatus_enum" AS ENUM('PENDING', 'UNDER_REVIEW', 'VERIFIED', 'REJECTED')`,
-    );
-    await queryRunner.query(
-      `CREATE TABLE "user_profiles" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "userId" uuid NOT NULL, "tenantId" uuid NOT NULL, "firstName" character varying NOT NULL, "lastName" character varying NOT NULL, "companyName" character varying, "taxId" character varying, "businessLicense" character varying, "address" character varying, "cityId" integer, "postalCode" character varying, "countryCode" character varying, "avatarUrl" character varying, "deleted_at" TIMESTAMP, "bio" character varying, "websiteUrl" character varying, "insuranceInfo" jsonb NOT NULL DEFAULT '{}', "bankAccountInfo" jsonb NOT NULL DEFAULT '{}', "preferences" jsonb NOT NULL DEFAULT '{}', "kycStatus" "public"."user_profiles_kycstatus_enum" NOT NULL DEFAULT 'PENDING', "kycDocuments" text NOT NULL DEFAULT '[]', "kycVerifiedAt" TIMESTAMP, "rating" numeric(3,2) NOT NULL DEFAULT '0', "totalTrips" integer NOT NULL DEFAULT '0', "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), "user_id" uuid, CONSTRAINT "REL_6ca9503d77ae39b4b5a6cc3ba8" UNIQUE ("user_id"), CONSTRAINT "PK_1ec6662219f4605723f1e41b6cb" PRIMARY KEY ("id"))`,
+      `CREATE TABLE IF NOT EXISTS "user_profiles" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "userId" uuid NOT NULL, "tenantId" uuid NOT NULL, "firstName" character varying NOT NULL, "lastName" character varying NOT NULL, "companyName" character varying, "taxId" character varying, "businessLicense" character varying, "address" character varying, "cityId" integer, "postalCode" character varying, "countryCode" character varying, "avatarUrl" character varying, "deleted_at" TIMESTAMP, "bio" character varying, "websiteUrl" character varying, "insuranceInfo" jsonb NOT NULL DEFAULT '{}', "bankAccountInfo" jsonb NOT NULL DEFAULT '{}', "preferences" jsonb NOT NULL DEFAULT '{}', "kycStatus" "public"."user_profiles_kycstatus_enum" NOT NULL DEFAULT 'PENDING', "kycDocuments" text NOT NULL DEFAULT '[]', "kycVerifiedAt" TIMESTAMP, "rating" numeric(3,2) NOT NULL DEFAULT '0', "totalTrips" integer NOT NULL DEFAULT '0', "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), "user_id" uuid, CONSTRAINT "REL_6ca9503d77ae39b4b5a6cc3ba8" UNIQUE ("user_id"), CONSTRAINT "PK_1ec6662219f4605723f1e41b6cb" PRIMARY KEY ("id"))`,
     );
     await queryRunner.query(
       `CREATE INDEX IF NOT EXISTS "IDX_207051f533bf9ed05dc96c1f3e" ON "user_profiles" ("tenantId") `,
@@ -26,14 +86,18 @@ export class CreateAllTables1762849950556 implements MigrationInterface {
     await queryRunner.query(
       `CREATE UNIQUE INDEX IF NOT EXISTS "IDX_8481388d6325e752cd4d7e26c6" ON "user_profiles" ("userId") `,
     );
-    await queryRunner.query(
-      `CREATE TYPE "public"."tenants_type_enum" AS ENUM('ENTERPRISE', 'SMALL_BUSINESS', 'INDIVIDUAL', 'PARTNER')`,
+    await this.createTypeIfNotExists(
+      queryRunner,
+      'tenants_type_enum',
+      `'ENTERPRISE', 'SMALL_BUSINESS', 'INDIVIDUAL', 'PARTNER'`,
+    );
+    await this.createTypeIfNotExists(
+      queryRunner,
+      'tenants_status_enum',
+      `'ACTIVE', 'SUSPENDED', 'PENDING_ACTIVATION', 'DEACTIVATED'`,
     );
     await queryRunner.query(
-      `CREATE TYPE "public"."tenants_status_enum" AS ENUM('ACTIVE', 'SUSPENDED', 'PENDING_ACTIVATION', 'DEACTIVATED')`,
-    );
-    await queryRunner.query(
-      `CREATE TABLE "tenants" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "name" character varying NOT NULL, "subdomain" character varying, "domain" character varying, "type" "public"."tenants_type_enum" NOT NULL DEFAULT 'SMALL_BUSINESS', "status" "public"."tenants_status_enum" NOT NULL DEFAULT 'PENDING_ACTIVATION', "description" character varying, "logoUrl" character varying, "websiteUrl" character varying, "contactEmail" character varying, "contactPhone" character varying, "address" character varying, "city" character varying, "state" character varying, "country" character varying, "postalCode" character varying, "taxId" character varying, "businessLicense" character varying, "settings" jsonb NOT NULL DEFAULT '{}', "features" jsonb NOT NULL DEFAULT '{}', "billingInfo" jsonb NOT NULL DEFAULT '{}', "maxUsers" integer, "maxTrucks" integer, "maxDrivers" integer, "maxLoadsPerMonth" integer, "subscriptionPlan" character varying, "subscriptionExpiresAt" TIMESTAMP, "trialEndsAt" TIMESTAMP, "isActive" boolean NOT NULL DEFAULT false, "activatedAt" TIMESTAMP, "suspendedAt" TIMESTAMP, "suspendedReason" character varying, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), "deleted_at" TIMESTAMP, CONSTRAINT "PK_53be67a04681c66b87ee27c9321" PRIMARY KEY ("id"))`,
+      `CREATE TABLE IF NOT EXISTS "tenants" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "name" character varying NOT NULL, "subdomain" character varying, "domain" character varying, "type" "public"."tenants_type_enum" NOT NULL DEFAULT 'SMALL_BUSINESS', "status" "public"."tenants_status_enum" NOT NULL DEFAULT 'PENDING_ACTIVATION', "description" character varying, "logoUrl" character varying, "websiteUrl" character varying, "contactEmail" character varying, "contactPhone" character varying, "address" character varying, "city" character varying, "state" character varying, "country" character varying, "postalCode" character varying, "taxId" character varying, "businessLicense" character varying, "settings" jsonb NOT NULL DEFAULT '{}', "features" jsonb NOT NULL DEFAULT '{}', "billingInfo" jsonb NOT NULL DEFAULT '{}', "maxUsers" integer, "maxTrucks" integer, "maxDrivers" integer, "maxLoadsPerMonth" integer, "subscriptionPlan" character varying, "subscriptionExpiresAt" TIMESTAMP, "trialEndsAt" TIMESTAMP, "isActive" boolean NOT NULL DEFAULT false, "activatedAt" TIMESTAMP, "suspendedAt" TIMESTAMP, "suspendedReason" character varying, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), "deleted_at" TIMESTAMP, CONSTRAINT "PK_53be67a04681c66b87ee27c9321" PRIMARY KEY ("id"))`,
     );
     await queryRunner.query(
       `CREATE INDEX IF NOT EXISTS "IDX_c59559e7872bc9726adef4669f" ON "tenants" ("status") `,
@@ -41,32 +105,48 @@ export class CreateAllTables1762849950556 implements MigrationInterface {
     await queryRunner.query(
       `CREATE UNIQUE INDEX IF NOT EXISTS "IDX_d488a84526d22ad2b799829b7d" ON "tenants" ("subdomain") WHERE deleted_at IS NULL`,
     );
-    await queryRunner.query(
-      `CREATE TYPE "public"."loads_loadtype_enum" AS ENUM('FTL', 'LTL', 'REEFER', 'FLATBED', 'TANKER', 'INTERMODAL', 'OTHER')`,
+    await this.createTypeIfNotExists(
+      queryRunner,
+      'loads_loadtype_enum',
+      `'FTL', 'LTL', 'REEFER', 'FLATBED', 'TANKER', 'INTERMODAL', 'OTHER'`,
+    );
+    await this.createTypeIfNotExists(
+      queryRunner,
+      'loads_equipmenttype_enum',
+      `'DRY_VAN', 'REEFER', 'FLATBED', 'TANKER', 'CONTAINER', 'OTHER'`,
+    );
+    await this.createTypeIfNotExists(
+      queryRunner,
+      'loads_cargotype_enum',
+      `'GENERAL', 'FRAGILE', 'HAZARDOUS', 'REFRIGERATED', 'LIQUID', 'OVERSIZED', 'VALUABLE'`,
+    );
+    await this.createTypeIfNotExists(
+      queryRunner,
+      'loads_visibility_enum',
+      `'public', 'private'`,
+    );
+    await this.createTypeIfNotExists(
+      queryRunner,
+      'loads_status_enum',
+      `'DRAFT', 'CREATED', 'PUBLISHED', 'PENDING_CONFIRMATION', 'ASSIGNED', 'IN_TRANSIT', 'DELIVERED', 'CLOSED', 'CANCELLED', 'COMPLETED'`,
+    );
+    await this.createTypeIfNotExists(
+      queryRunner,
+      'loads_paymentterms_enum',
+      `'Prepaid', 'OnDelivery', 'Net15', 'Net30', 'Net45', 'Net60'`,
+    );
+    await this.createTypeIfNotExists(
+      queryRunner,
+      'loads_urgencylevel_enum',
+      `'LOW', 'NORMAL', 'HIGH', 'CRITICAL'`,
+    );
+    await this.createTypeIfNotExists(
+      queryRunner,
+      'loads_packagingtype_enum',
+      `'Palletized', 'Loose', 'Containerized', 'Crate', 'Drum', 'Other'`,
     );
     await queryRunner.query(
-      `CREATE TYPE "public"."loads_equipmenttype_enum" AS ENUM('DRY_VAN', 'REEFER', 'FLATBED', 'TANKER', 'CONTAINER', 'OTHER')`,
-    );
-    await queryRunner.query(
-      `CREATE TYPE "public"."loads_cargotype_enum" AS ENUM('GENERAL', 'FRAGILE', 'HAZARDOUS', 'REFRIGERATED', 'LIQUID', 'OVERSIZED', 'VALUABLE')`,
-    );
-    await queryRunner.query(
-      `CREATE TYPE "public"."loads_visibility_enum" AS ENUM('public', 'private')`,
-    );
-    await queryRunner.query(
-      `CREATE TYPE "public"."loads_status_enum" AS ENUM('DRAFT', 'CREATED', 'PUBLISHED', 'PENDING_CONFIRMATION', 'ASSIGNED', 'IN_TRANSIT', 'DELIVERED', 'CLOSED', 'CANCELLED', 'COMPLETED')`,
-    );
-    await queryRunner.query(
-      `CREATE TYPE "public"."loads_paymentterms_enum" AS ENUM('Prepaid', 'OnDelivery', 'Net15', 'Net30', 'Net45', 'Net60')`,
-    );
-    await queryRunner.query(
-      `CREATE TYPE "public"."loads_urgencylevel_enum" AS ENUM('LOW', 'NORMAL', 'HIGH', 'CRITICAL')`,
-    );
-    await queryRunner.query(
-      `CREATE TYPE "public"."loads_packagingtype_enum" AS ENUM('Palletized', 'Loose', 'Containerized', 'Crate', 'Drum', 'Other')`,
-    );
-    await queryRunner.query(
-      `CREATE TABLE "loads" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "tenantId" uuid NOT NULL, "cargoOwnerId" uuid NOT NULL, "reference" character varying, "title" character varying NOT NULL, "description" text, "weight" numeric(10,2) NOT NULL, "volume" numeric(10,2), "loadType" "public"."loads_loadtype_enum" NOT NULL DEFAULT 'FTL', "equipmentType" "public"."loads_equipmenttype_enum" NOT NULL DEFAULT 'DRY_VAN', "cargoType" "public"."loads_cargotype_enum" NOT NULL DEFAULT 'GENERAL', "visibility" "public"."loads_visibility_enum" NOT NULL DEFAULT 'public', "unitsRequired" integer NOT NULL DEFAULT '1', "locations" jsonb NOT NULL DEFAULT '[]', "origin" jsonb, "destination" jsonb, "pickupWindow" jsonb, "deliveryWindow" jsonb, "pickupDate" TIMESTAMP WITH TIME ZONE, "deliveryDate" TIMESTAMP WITH TIME ZONE, "status" "public"."loads_status_enum" NOT NULL DEFAULT 'DRAFT', "loadValue" numeric(15,2) NOT NULL, "offeredPrice" numeric(15,2), "currencyCode" character varying(3) NOT NULL DEFAULT 'USD', "pricing" jsonb, "paymentTerms" "public"."loads_paymentterms_enum" NOT NULL DEFAULT 'Net30', "invitedCarriers" text, "isFragile" boolean NOT NULL DEFAULT false, "isHazardous" boolean NOT NULL DEFAULT false, "requiresRefrigeration" boolean NOT NULL DEFAULT false, "contactInfo" jsonb NOT NULL DEFAULT '{}', "autoMatchEnabled" boolean NOT NULL DEFAULT true, "matchingCriteria" jsonb NOT NULL DEFAULT '{}', "publishedAt" TIMESTAMP, "assignedTruckId" uuid, "assignedCarrierId" uuid, "rating" numeric(3,2) NOT NULL DEFAULT '0', "viewCount" integer NOT NULL DEFAULT '0', "length" numeric(8,2), "width" numeric(8,2), "height" numeric(8,2), "stackableHeight" numeric(8,2), "isStackable" boolean NOT NULL DEFAULT false, "temperatureMin" numeric(5,2), "temperatureMax" numeric(5,2), "requiresHumidityControl" boolean NOT NULL DEFAULT false, "requiresForklift" boolean NOT NULL DEFAULT false, "requiresCrane" boolean NOT NULL DEFAULT false, "requiresLoadingDock" boolean NOT NULL DEFAULT false, "loadingTimeEstimate" numeric(5,2), "unloadingTimeEstimate" numeric(5,2), "hazmatClass" character varying(50), "hazmatNumber" character varying(20), "urgencyLevel" "public"."loads_urgencylevel_enum" NOT NULL DEFAULT 'NORMAL', "isTimeCritical" boolean NOT NULL DEFAULT false, "maxTransitTime" numeric(5,2), "packagingType" "public"."loads_packagingtype_enum" NOT NULL DEFAULT 'Palletized', "numberOfPieces" integer NOT NULL DEFAULT '0', "numberOfPallets" integer NOT NULL DEFAULT '0', "requiresGpsMonitoring" boolean NOT NULL DEFAULT false, "requiresTemperatureMonitoring" boolean NOT NULL DEFAULT false, "insuranceValue" numeric(15,2), "requiresLowClearanceRoute" boolean NOT NULL DEFAULT false, "maxClearanceHeight" numeric(5,2), "requiresEscortVehicle" boolean NOT NULL DEFAULT false, "specialHandlingInstructions" text, "loadingInstructions" text, "unloadingInstructions" text, "emergencyContactInfo" text, "truckRequirements" jsonb NOT NULL DEFAULT '{}', "carrierPreferences" jsonb NOT NULL DEFAULT '{}', "costPreferences" jsonb NOT NULL DEFAULT '{}', "requiresPreShipmentInspection" boolean NOT NULL DEFAULT false, "requiresDeliveryInspection" boolean NOT NULL DEFAULT false, "requiresPhotographicDocumentation" boolean NOT NULL DEFAULT false, "metadata" jsonb NOT NULL DEFAULT '{}', "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), "deleted_at" TIMESTAMP, CONSTRAINT "PK_c90caf6ef671c1a292bc4b4bc1b" PRIMARY KEY ("id"))`,
+      `CREATE TABLE IF NOT EXISTS "loads" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "tenantId" uuid NOT NULL, "cargoOwnerId" uuid NOT NULL, "reference" character varying, "title" character varying NOT NULL, "description" text, "weight" numeric(10,2) NOT NULL, "volume" numeric(10,2), "loadType" "public"."loads_loadtype_enum" NOT NULL DEFAULT 'FTL', "equipmentType" "public"."loads_equipmenttype_enum" NOT NULL DEFAULT 'DRY_VAN', "cargoType" "public"."loads_cargotype_enum" NOT NULL DEFAULT 'GENERAL', "visibility" "public"."loads_visibility_enum" NOT NULL DEFAULT 'public', "unitsRequired" integer NOT NULL DEFAULT '1', "locations" jsonb NOT NULL DEFAULT '[]', "origin" jsonb, "destination" jsonb, "pickupWindow" jsonb, "deliveryWindow" jsonb, "pickupDate" TIMESTAMP WITH TIME ZONE, "deliveryDate" TIMESTAMP WITH TIME ZONE, "status" "public"."loads_status_enum" NOT NULL DEFAULT 'DRAFT', "loadValue" numeric(15,2) NOT NULL, "offeredPrice" numeric(15,2), "currencyCode" character varying(3) NOT NULL DEFAULT 'USD', "pricing" jsonb, "paymentTerms" "public"."loads_paymentterms_enum" NOT NULL DEFAULT 'Net30', "invitedCarriers" text, "isFragile" boolean NOT NULL DEFAULT false, "isHazardous" boolean NOT NULL DEFAULT false, "requiresRefrigeration" boolean NOT NULL DEFAULT false, "contactInfo" jsonb NOT NULL DEFAULT '{}', "autoMatchEnabled" boolean NOT NULL DEFAULT true, "matchingCriteria" jsonb NOT NULL DEFAULT '{}', "publishedAt" TIMESTAMP, "assignedTruckId" uuid, "assignedCarrierId" uuid, "rating" numeric(3,2) NOT NULL DEFAULT '0', "viewCount" integer NOT NULL DEFAULT '0', "length" numeric(8,2), "width" numeric(8,2), "height" numeric(8,2), "stackableHeight" numeric(8,2), "isStackable" boolean NOT NULL DEFAULT false, "temperatureMin" numeric(5,2), "temperatureMax" numeric(5,2), "requiresHumidityControl" boolean NOT NULL DEFAULT false, "requiresForklift" boolean NOT NULL DEFAULT false, "requiresCrane" boolean NOT NULL DEFAULT false, "requiresLoadingDock" boolean NOT NULL DEFAULT false, "loadingTimeEstimate" numeric(5,2), "unloadingTimeEstimate" numeric(5,2), "hazmatClass" character varying(50), "hazmatNumber" character varying(20), "urgencyLevel" "public"."loads_urgencylevel_enum" NOT NULL DEFAULT 'NORMAL', "isTimeCritical" boolean NOT NULL DEFAULT false, "maxTransitTime" numeric(5,2), "packagingType" "public"."loads_packagingtype_enum" NOT NULL DEFAULT 'Palletized', "numberOfPieces" integer NOT NULL DEFAULT '0', "numberOfPallets" integer NOT NULL DEFAULT '0', "requiresGpsMonitoring" boolean NOT NULL DEFAULT false, "requiresTemperatureMonitoring" boolean NOT NULL DEFAULT false, "insuranceValue" numeric(15,2), "requiresLowClearanceRoute" boolean NOT NULL DEFAULT false, "maxClearanceHeight" numeric(5,2), "requiresEscortVehicle" boolean NOT NULL DEFAULT false, "specialHandlingInstructions" text, "loadingInstructions" text, "unloadingInstructions" text, "emergencyContactInfo" text, "truckRequirements" jsonb NOT NULL DEFAULT '{}', "carrierPreferences" jsonb NOT NULL DEFAULT '{}', "costPreferences" jsonb NOT NULL DEFAULT '{}', "requiresPreShipmentInspection" boolean NOT NULL DEFAULT false, "requiresDeliveryInspection" boolean NOT NULL DEFAULT false, "requiresPhotographicDocumentation" boolean NOT NULL DEFAULT false, "metadata" jsonb NOT NULL DEFAULT '{}', "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), "deleted_at" TIMESTAMP, CONSTRAINT "PK_c90caf6ef671c1a292bc4b4bc1b" PRIMARY KEY ("id"))`,
     );
     await queryRunner.query(
       `CREATE INDEX IF NOT EXISTS "IDX_6c205ed8f1c0bde5f883078a8f" ON "loads" ("tenantId") `,
@@ -77,17 +157,33 @@ export class CreateAllTables1762849950556 implements MigrationInterface {
     await queryRunner.query(
       `CREATE INDEX IF NOT EXISTS "IDX_bb60606ade409eb486e4b5ec67" ON "loads" ("status") `,
     );
-    await queryRunner.query(
-      `CREATE INDEX IF NOT EXISTS "IDX_2147d38f116dcc1d8b49dbfb81" ON "loads" ("equipmentType") `,
+    await this.createIndexIfColumnExists(
+      queryRunner,
+      'loads',
+      'equipmentType',
+      'IDX_2147d38f116dcc1d8b49dbfb81',
+      `CREATE INDEX "IDX_2147d38f116dcc1d8b49dbfb81" ON "loads" ("equipmentType")`,
     );
-    await queryRunner.query(
-      `CREATE INDEX IF NOT EXISTS "IDX_a53c7fe240b4a67cce9053625e" ON "loads" ("loadType") `,
+    await this.createIndexIfColumnExists(
+      queryRunner,
+      'loads',
+      'loadType',
+      'IDX_a53c7fe240b4a67cce9053625e',
+      `CREATE INDEX "IDX_a53c7fe240b4a67cce9053625e" ON "loads" ("loadType")`,
     );
-    await queryRunner.query(
-      `CREATE INDEX IF NOT EXISTS "IDX_18c0c8ba52eb33c51ecc2a3eaf" ON "loads" ("visibility") `,
+    await this.createIndexIfColumnExists(
+      queryRunner,
+      'loads',
+      'visibility',
+      'IDX_18c0c8ba52eb33c51ecc2a3eaf',
+      `CREATE INDEX "IDX_18c0c8ba52eb33c51ecc2a3eaf" ON "loads" ("visibility")`,
     );
-    await queryRunner.query(
-      `CREATE INDEX IF NOT EXISTS "IDX_5636b0881461b62c4784c63c2d" ON "loads" ("reference") `,
+    await this.createIndexIfColumnExists(
+      queryRunner,
+      'loads',
+      'reference',
+      'IDX_5636b0881461b62c4784c63c2d',
+      `CREATE INDEX "IDX_5636b0881461b62c4784c63c2d" ON "loads" ("reference")`,
     );
     await queryRunner.query(
       `CREATE INDEX IF NOT EXISTS "IDX_4bf0030a3bc50c87ee9d62150a" ON "loads" ("cargoOwnerId") `,
@@ -95,11 +191,13 @@ export class CreateAllTables1762849950556 implements MigrationInterface {
     await queryRunner.query(
       `CREATE INDEX IF NOT EXISTS "IDX_61c9fa9c7fa4eddb9dbad3d09d" ON "loads" ("tenantId", "status") `,
     );
-    await queryRunner.query(
-      `CREATE TYPE "public"."bids_status_enum" AS ENUM('PENDING', 'ACCEPTED', 'REJECTED', 'WITHDRAWN', 'EXPIRED')`,
+    await this.createTypeIfNotExists(
+      queryRunner,
+      'bids_status_enum',
+      `'PENDING', 'ACCEPTED', 'REJECTED', 'WITHDRAWN', 'EXPIRED'`,
     );
     await queryRunner.query(
-      `CREATE TABLE "bids" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "loadId" uuid NOT NULL, "truckOwnerId" uuid NOT NULL, "bidAmount" numeric(15,2) NOT NULL, "bidCurrency" character varying(3) NOT NULL DEFAULT 'USD', "proposedPickupDate" TIMESTAMP WITH TIME ZONE, "proposedDeliveryDate" TIMESTAMP WITH TIME ZONE, "status" "public"."bids_status_enum" NOT NULL DEFAULT 'PENDING', "bidNotes" text, "bidDetails" jsonb NOT NULL DEFAULT '{}', "successProbability" numeric(5,2), "riskAssessment" jsonb NOT NULL DEFAULT '{}', "marketContext" jsonb NOT NULL DEFAULT '{}', "isAutoBid" boolean NOT NULL DEFAULT false, "isCounterOffer" boolean NOT NULL DEFAULT false, "parentBidId" uuid, "expiresAt" TIMESTAMP WITH TIME ZONE, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), "deleted_at" TIMESTAMP, CONSTRAINT "PK_7950d066d322aab3a488ac39fe5" PRIMARY KEY ("id"))`,
+      `CREATE TABLE IF NOT EXISTS "bids" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "loadId" uuid NOT NULL, "truckOwnerId" uuid NOT NULL, "bidAmount" numeric(15,2) NOT NULL, "bidCurrency" character varying(3) NOT NULL DEFAULT 'USD', "proposedPickupDate" TIMESTAMP WITH TIME ZONE, "proposedDeliveryDate" TIMESTAMP WITH TIME ZONE, "status" "public"."bids_status_enum" NOT NULL DEFAULT 'PENDING', "bidNotes" text, "bidDetails" jsonb NOT NULL DEFAULT '{}', "successProbability" numeric(5,2), "riskAssessment" jsonb NOT NULL DEFAULT '{}', "marketContext" jsonb NOT NULL DEFAULT '{}', "isAutoBid" boolean NOT NULL DEFAULT false, "isCounterOffer" boolean NOT NULL DEFAULT false, "parentBidId" uuid, "expiresAt" TIMESTAMP WITH TIME ZONE, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), "deleted_at" TIMESTAMP, CONSTRAINT "PK_7950d066d322aab3a488ac39fe5" PRIMARY KEY ("id"))`,
     );
     await queryRunner.query(
       `CREATE INDEX IF NOT EXISTS "IDX_d03cf356cf1520672d4488244b" ON "bids" ("loadId") `,
@@ -120,7 +218,7 @@ export class CreateAllTables1762849950556 implements MigrationInterface {
       `CREATE INDEX IF NOT EXISTS "IDX_87d008de75691af12328192894" ON "bids" ("loadId", "truckOwnerId") `,
     );
     await queryRunner.query(
-      `CREATE TABLE "auction_watches" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "auctionId" uuid NOT NULL, "watcherId" uuid NOT NULL, "tenantId" uuid NOT NULL, "isActive" boolean NOT NULL DEFAULT true, "notificationPreferences" jsonb NOT NULL DEFAULT '{"email":true,"push":true,"sms":false}', "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), "deleted_at" TIMESTAMP, CONSTRAINT "PK_fb5486c2c9378395a86bcbf9de5" PRIMARY KEY ("id"))`,
+      `CREATE TABLE IF NOT EXISTS "auction_watches" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "auctionId" uuid NOT NULL, "watcherId" uuid NOT NULL, "tenantId" uuid NOT NULL, "isActive" boolean NOT NULL DEFAULT true, "notificationPreferences" jsonb NOT NULL DEFAULT '{"email":true,"push":true,"sms":false}', "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), "deleted_at" TIMESTAMP, CONSTRAINT "PK_fb5486c2c9378395a86bcbf9de5" PRIMARY KEY ("id"))`,
     );
     await queryRunner.query(
       `CREATE UNIQUE INDEX IF NOT EXISTS "IDX_e7bddc41671772b45a3d803db9" ON "auction_watches" ("auctionId", "watcherId") `,
@@ -137,14 +235,18 @@ export class CreateAllTables1762849950556 implements MigrationInterface {
     await queryRunner.query(
       `CREATE INDEX IF NOT EXISTS "IDX_d3760adc87d5ee1caf1c68ca97" ON "auction_watches" ("auctionId") `,
     );
-    await queryRunner.query(
-      `CREATE TYPE "public"."auctions_auctiontype_enum" AS ENUM('REVERSE', 'FORWARD', 'DUTCH', 'SEALED')`,
+    await this.createTypeIfNotExists(
+      queryRunner,
+      'auctions_auctiontype_enum',
+      `'REVERSE', 'FORWARD', 'DUTCH', 'SEALED'`,
+    );
+    await this.createTypeIfNotExists(
+      queryRunner,
+      'auctions_status_enum',
+      `'SCHEDULED', 'ACTIVE', 'CLOSED', 'CANCELLED', 'PAUSED'`,
     );
     await queryRunner.query(
-      `CREATE TYPE "public"."auctions_status_enum" AS ENUM('SCHEDULED', 'ACTIVE', 'CLOSED', 'CANCELLED', 'PAUSED')`,
-    );
-    await queryRunner.query(
-      `CREATE TABLE "auctions" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "loadId" uuid NOT NULL, "auctionType" "public"."auctions_auctiontype_enum" NOT NULL DEFAULT 'REVERSE', "status" "public"."auctions_status_enum" NOT NULL DEFAULT 'SCHEDULED', "auctionStart" TIMESTAMP WITH TIME ZONE NOT NULL, "auctionEnd" TIMESTAMP WITH TIME ZONE NOT NULL, "reservePrice" numeric(15,2), "minimumBidIncrement" numeric(15,2), "maximumBidAmount" numeric(15,2), "totalBids" integer NOT NULL DEFAULT '0', "uniqueBidders" integer NOT NULL DEFAULT '0', "currentHighestBid" numeric(15,2), "winningBidId" uuid, "winningBidderId" uuid, "awardedAt" TIMESTAMP WITH TIME ZONE, "auctionRules" jsonb NOT NULL DEFAULT '{}', "notificationSettings" jsonb NOT NULL DEFAULT '{}', "analytics" jsonb NOT NULL DEFAULT '{}', "cancellationReason" text, "cancelledBy" uuid, "cancelledAt" TIMESTAMP WITH TIME ZONE, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), "deleted_at" TIMESTAMP, CONSTRAINT "REL_0e1f240cbe7467e649e0a22f97" UNIQUE ("loadId"), CONSTRAINT "REL_f56f0d097f1fb02c07d6bdc368" UNIQUE ("winningBidId"), CONSTRAINT "PK_87d2b34d4829f0519a5c5570368" PRIMARY KEY ("id"))`,
+      `CREATE TABLE IF NOT EXISTS "auctions" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "loadId" uuid NOT NULL, "auctionType" "public"."auctions_auctiontype_enum" NOT NULL DEFAULT 'REVERSE', "status" "public"."auctions_status_enum" NOT NULL DEFAULT 'SCHEDULED', "auctionStart" TIMESTAMP WITH TIME ZONE NOT NULL, "auctionEnd" TIMESTAMP WITH TIME ZONE NOT NULL, "reservePrice" numeric(15,2), "minimumBidIncrement" numeric(15,2), "maximumBidAmount" numeric(15,2), "totalBids" integer NOT NULL DEFAULT '0', "uniqueBidders" integer NOT NULL DEFAULT '0', "currentHighestBid" numeric(15,2), "winningBidId" uuid, "winningBidderId" uuid, "awardedAt" TIMESTAMP WITH TIME ZONE, "auctionRules" jsonb NOT NULL DEFAULT '{}', "notificationSettings" jsonb NOT NULL DEFAULT '{}', "analytics" jsonb NOT NULL DEFAULT '{}', "cancellationReason" text, "cancelledBy" uuid, "cancelledAt" TIMESTAMP WITH TIME ZONE, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), "deleted_at" TIMESTAMP, CONSTRAINT "REL_0e1f240cbe7467e649e0a22f97" UNIQUE ("loadId"), CONSTRAINT "REL_f56f0d097f1fb02c07d6bdc368" UNIQUE ("winningBidId"), CONSTRAINT "PK_87d2b34d4829f0519a5c5570368" PRIMARY KEY ("id"))`,
     );
     await queryRunner.query(
       `CREATE INDEX IF NOT EXISTS "IDX_0e1f240cbe7467e649e0a22f97" ON "auctions" ("loadId") `,
@@ -165,7 +267,7 @@ export class CreateAllTables1762849950556 implements MigrationInterface {
       `CREATE INDEX IF NOT EXISTS "IDX_0e1f240cbe7467e649e0a22f97" ON "auctions" ("loadId") `,
     );
     await queryRunner.query(
-      `CREATE TABLE "auction_views" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "auctionId" uuid NOT NULL, "viewerId" uuid NOT NULL, "tenantId" uuid NOT NULL, "viewedAt" TIMESTAMP NOT NULL DEFAULT now(), "ipAddress" character varying(45), "userAgent" text, "referrer" text, "sessionId" character varying(255), "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_11cf1335814dc1c0628d5ab7325" PRIMARY KEY ("id"))`,
+      `CREATE TABLE IF NOT EXISTS "auction_views" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "auctionId" uuid NOT NULL, "viewerId" uuid NOT NULL, "tenantId" uuid NOT NULL, "viewedAt" TIMESTAMP NOT NULL DEFAULT now(), "ipAddress" character varying(45), "userAgent" text, "referrer" text, "sessionId" character varying(255), "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_11cf1335814dc1c0628d5ab7325" PRIMARY KEY ("id"))`,
     );
     await queryRunner.query(
       `CREATE UNIQUE INDEX IF NOT EXISTS "IDX_a81d93c5706529dad43990e4a3" ON "auction_views" ("auctionId", "viewerId") `,
@@ -182,14 +284,18 @@ export class CreateAllTables1762849950556 implements MigrationInterface {
     await queryRunner.query(
       `CREATE INDEX IF NOT EXISTS "IDX_2fd049894571ed29326f6d1e66" ON "auction_views" ("auctionId") `,
     );
-    await queryRunner.query(
-      `CREATE TYPE "public"."users_role_enum" AS ENUM('SUPER_ADMIN', 'ADMIN', 'TENANT_ADMIN', 'CARGO_OWNER', 'TRUCK_OWNER', 'DRIVER', 'AGENT', 'LENDER')`,
+    await this.createTypeIfNotExists(
+      queryRunner,
+      'users_role_enum',
+      `'SUPER_ADMIN', 'ADMIN', 'TENANT_ADMIN', 'CARGO_OWNER', 'TRUCK_OWNER', 'DRIVER', 'AGENT', 'LENDER'`,
+    );
+    await this.createTypeIfNotExists(
+      queryRunner,
+      'users_status_enum',
+      `'PENDING_VERIFICATION', 'ACTIVE', 'SUSPENDED', 'DEACTIVATED'`,
     );
     await queryRunner.query(
-      `CREATE TYPE "public"."users_status_enum" AS ENUM('PENDING_VERIFICATION', 'ACTIVE', 'SUSPENDED', 'DEACTIVATED')`,
-    );
-    await queryRunner.query(
-      `CREATE TABLE "users" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "tenantId" uuid NOT NULL, "email" character varying NOT NULL, "phone" character varying, "passwordHash" character varying NOT NULL, "emailVerifiedAt" TIMESTAMP, "phoneVerifiedAt" TIMESTAMP, "twoFactorEnabled" boolean NOT NULL DEFAULT false, "twoFactorSecret" character varying, "role" "public"."users_role_enum" NOT NULL DEFAULT 'CARGO_OWNER', "status" "public"."users_status_enum" NOT NULL DEFAULT 'PENDING_VERIFICATION', "lastLoginAt" TIMESTAMP, "loginAttempts" integer NOT NULL DEFAULT '0', "lockedUntil" TIMESTAMP, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), "deleted_at" TIMESTAMP, CONSTRAINT "UQ_97672ac88f789774dd47f7c8be3" UNIQUE ("email"), CONSTRAINT "PK_a3ffb1c0c8416b9fc6f907b7433" PRIMARY KEY ("id"))`,
+      `CREATE TABLE IF NOT EXISTS "users" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "tenantId" uuid NOT NULL, "email" character varying NOT NULL, "phone" character varying, "passwordHash" character varying NOT NULL, "emailVerifiedAt" TIMESTAMP, "phoneVerifiedAt" TIMESTAMP, "twoFactorEnabled" boolean NOT NULL DEFAULT false, "twoFactorSecret" character varying, "role" "public"."users_role_enum" NOT NULL DEFAULT 'CARGO_OWNER', "status" "public"."users_status_enum" NOT NULL DEFAULT 'PENDING_VERIFICATION', "lastLoginAt" TIMESTAMP, "loginAttempts" integer NOT NULL DEFAULT '0', "lockedUntil" TIMESTAMP, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), "deleted_at" TIMESTAMP, CONSTRAINT "UQ_97672ac88f789774dd47f7c8be3" UNIQUE ("email"), CONSTRAINT "PK_a3ffb1c0c8416b9fc6f907b7433" PRIMARY KEY ("id"))`,
     );
     await queryRunner.query(
       `CREATE INDEX IF NOT EXISTS "IDX_c58f7e88c286e5e3478960a998" ON "users" ("tenantId") `,
@@ -200,47 +306,67 @@ export class CreateAllTables1762849950556 implements MigrationInterface {
     await queryRunner.query(
       `CREATE UNIQUE INDEX IF NOT EXISTS "IDX_019a1bfe83abbfab615a3c3ef9" ON "users" ("tenantId", "email") WHERE deleted_at IS NULL`,
     );
-    await queryRunner.query(
-      `CREATE TYPE "public"."user_scores_category_enum" AS ENUM('financial_health', 'transaction_history', 'payment_behavior', 'cargo_quality', 'communication_score', 'reliability_score', 'overall_credit_score')`,
+    await this.createTypeIfNotExists(
+      queryRunner,
+      'user_scores_category_enum',
+      `'financial_health', 'transaction_history', 'payment_behavior', 'cargo_quality', 'communication_score', 'reliability_score', 'overall_credit_score'`,
+    );
+    await this.createTypeIfNotExists(
+      queryRunner,
+      'user_scores_algorithm_enum',
+      `'financial_analysis', 'behavioral_pattern', 'risk_assessment', 'comprehensive'`,
     );
     await queryRunner.query(
-      `CREATE TYPE "public"."user_scores_algorithm_enum" AS ENUM('financial_analysis', 'behavioral_pattern', 'risk_assessment', 'comprehensive')`,
+      `CREATE TABLE IF NOT EXISTS "user_scores" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "userId" character varying NOT NULL, "category" "public"."user_scores_category_enum" NOT NULL, "score" numeric(5,2) NOT NULL, "normalizedScore" numeric(5,2) NOT NULL, "algorithm" "public"."user_scores_algorithm_enum" NOT NULL, "factors" jsonb NOT NULL, "metadata" jsonb, "explanation" text, "isActive" boolean NOT NULL DEFAULT false, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_caf56c8fd1af4eeddd1aee555ae" PRIMARY KEY ("id"))`,
+    );
+    await this.createTypeIfNotExists(
+      queryRunner,
+      'user_ratings_ratingtype_enum',
+      `'transporter', 'financing_community', 'platform'`,
+    );
+    await this.createTypeIfNotExists(
+      queryRunner,
+      'user_ratings_category_enum',
+      `'reliability', 'payment_punctuality', 'communication', 'cargo_condition', 'professionalism', 'overall'`,
     );
     await queryRunner.query(
-      `CREATE TABLE "user_scores" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "userId" character varying NOT NULL, "category" "public"."user_scores_category_enum" NOT NULL, "score" numeric(5,2) NOT NULL, "normalizedScore" numeric(5,2) NOT NULL, "algorithm" "public"."user_scores_algorithm_enum" NOT NULL, "factors" jsonb NOT NULL, "metadata" jsonb, "explanation" text, "isActive" boolean NOT NULL DEFAULT false, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_caf56c8fd1af4eeddd1aee555ae" PRIMARY KEY ("id"))`,
+      `CREATE TABLE IF NOT EXISTS "user_ratings" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "ratedUserId" character varying NOT NULL, "raterUserId" character varying NOT NULL, "ratingType" "public"."user_ratings_ratingtype_enum" NOT NULL, "category" "public"."user_ratings_category_enum" NOT NULL, "rating" numeric(3,2) NOT NULL, "comment" text, "metadata" jsonb, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_9de3e405c7a1a3a8ce4c0715993" PRIMARY KEY ("id"))`,
+    );
+    await this.createTypeIfNotExists(
+      queryRunner,
+      'user_rewards_type_enum',
+      `'transaction_bonus', 'volume_bonus', 'loyalty_points', 'cashback', 'discount', 'premium_features'`,
+    );
+    await this.createTypeIfNotExists(
+      queryRunner,
+      'user_rewards_status_enum',
+      `'pending', 'active', 'redeemed', 'expired'`,
     );
     await queryRunner.query(
-      `CREATE TYPE "public"."user_ratings_ratingtype_enum" AS ENUM('transporter', 'financing_community', 'platform')`,
+      `CREATE TABLE IF NOT EXISTS "user_rewards" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "userId" character varying NOT NULL, "type" "public"."user_rewards_type_enum" NOT NULL, "amount" numeric(10,2) NOT NULL, "currency" character varying(3) NOT NULL DEFAULT 'KES', "description" text NOT NULL, "status" "public"."user_rewards_status_enum" NOT NULL DEFAULT 'pending', "validFrom" date, "validUntil" date, "criteria" jsonb, "metadata" jsonb, "redeemedAt" date, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_86078010f64a891601beef7c54f" PRIMARY KEY ("id"))`,
+    );
+    await this.createTypeIfNotExists(
+      queryRunner,
+      'trucks_fueltype_enum',
+      `'DIESEL', 'GASOLINE', 'ELECTRIC', 'HYBRID', 'CNG', 'LNG'`,
+    );
+    await this.createTypeIfNotExists(
+      queryRunner,
+      'trucks_trucktype_enum',
+      `'FLATBED', 'BOX_TRUCK', 'TANKER', 'REFRIGERATED', 'CONTAINER', 'CAR_CARRIER', 'HEAVY_HAUL', 'LOWBED', 'STEP_DECK', 'POWER_ONLY', 'CURTAIN_SIDE', 'VAN', 'PLATFORM', 'BULK', 'DUMP', 'CEMENT_MIXER', 'CRANE', 'FIRE_TRUCK', 'AMBULANCE', 'TOW_TRUCK', 'GARBAGE', 'MILITARY', 'SPECIALIZED'`,
+    );
+    await this.createTypeIfNotExists(
+      queryRunner,
+      'trucks_trailertype_enum',
+      `'FLATBED', 'DRY_VAN', 'REFRIGERATED', 'TANKER', 'BULK', 'CONTAINER', 'CAR_CARRIER', 'HEAVY_HAUL', 'LOWBED', 'STEP_DECK', 'POWER_ONLY', 'CURTAIN_SIDE', 'PLATFORM', 'DUMP', 'CEMENT_MIXER', 'CRANE', 'SPECIALIZED'`,
+    );
+    await this.createTypeIfNotExists(
+      queryRunner,
+      'trucks_status_enum',
+      `'AVAILABLE', 'IN_TRANSIT', 'MAINTENANCE', 'OUT_OF_SERVICE'`,
     );
     await queryRunner.query(
-      `CREATE TYPE "public"."user_ratings_category_enum" AS ENUM('reliability', 'payment_punctuality', 'communication', 'cargo_condition', 'professionalism', 'overall')`,
-    );
-    await queryRunner.query(
-      `CREATE TABLE "user_ratings" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "ratedUserId" character varying NOT NULL, "raterUserId" character varying NOT NULL, "ratingType" "public"."user_ratings_ratingtype_enum" NOT NULL, "category" "public"."user_ratings_category_enum" NOT NULL, "rating" numeric(3,2) NOT NULL, "comment" text, "metadata" jsonb, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_9de3e405c7a1a3a8ce4c0715993" PRIMARY KEY ("id"))`,
-    );
-    await queryRunner.query(
-      `CREATE TYPE "public"."user_rewards_type_enum" AS ENUM('transaction_bonus', 'volume_bonus', 'loyalty_points', 'cashback', 'discount', 'premium_features')`,
-    );
-    await queryRunner.query(
-      `CREATE TYPE "public"."user_rewards_status_enum" AS ENUM('pending', 'active', 'redeemed', 'expired')`,
-    );
-    await queryRunner.query(
-      `CREATE TABLE "user_rewards" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "userId" character varying NOT NULL, "type" "public"."user_rewards_type_enum" NOT NULL, "amount" numeric(10,2) NOT NULL, "currency" character varying(3) NOT NULL DEFAULT 'KES', "description" text NOT NULL, "status" "public"."user_rewards_status_enum" NOT NULL DEFAULT 'pending', "validFrom" date, "validUntil" date, "criteria" jsonb, "metadata" jsonb, "redeemedAt" date, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_86078010f64a891601beef7c54f" PRIMARY KEY ("id"))`,
-    );
-    await queryRunner.query(
-      `CREATE TYPE "public"."trucks_fueltype_enum" AS ENUM('DIESEL', 'GASOLINE', 'ELECTRIC', 'HYBRID', 'CNG', 'LNG')`,
-    );
-    await queryRunner.query(
-      `CREATE TYPE "public"."trucks_trucktype_enum" AS ENUM('FLATBED', 'BOX_TRUCK', 'TANKER', 'REFRIGERATED', 'CONTAINER', 'CAR_CARRIER', 'HEAVY_HAUL', 'LOWBED', 'STEP_DECK', 'POWER_ONLY', 'CURTAIN_SIDE', 'VAN', 'PLATFORM', 'BULK', 'DUMP', 'CEMENT_MIXER', 'CRANE', 'FIRE_TRUCK', 'AMBULANCE', 'TOW_TRUCK', 'GARBAGE', 'MILITARY', 'SPECIALIZED')`,
-    );
-    await queryRunner.query(
-      `CREATE TYPE "public"."trucks_trailertype_enum" AS ENUM('FLATBED', 'DRY_VAN', 'REFRIGERATED', 'TANKER', 'BULK', 'CONTAINER', 'CAR_CARRIER', 'HEAVY_HAUL', 'LOWBED', 'STEP_DECK', 'POWER_ONLY', 'CURTAIN_SIDE', 'PLATFORM', 'DUMP', 'CEMENT_MIXER', 'CRANE', 'SPECIALIZED')`,
-    );
-    await queryRunner.query(
-      `CREATE TYPE "public"."trucks_status_enum" AS ENUM('AVAILABLE', 'IN_TRANSIT', 'MAINTENANCE', 'OUT_OF_SERVICE')`,
-    );
-    await queryRunner.query(
-      `CREATE TABLE "trucks" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "tenantId" uuid NOT NULL, "ownerId" uuid NOT NULL, "plateNumber" character varying(20) NOT NULL, "vin" character varying(17) NOT NULL, "make" character varying(100) NOT NULL, "model" character varying(100) NOT NULL, "year" integer NOT NULL, "color" character varying(50), "fuelType" "public"."trucks_fueltype_enum" NOT NULL DEFAULT 'DIESEL', "capacityWeight" numeric(10,2) NOT NULL, "capacityVolume" numeric(10,2) NOT NULL, "maxLength" numeric(8,2), "maxWidth" numeric(8,2), "maxHeight" numeric(8,2), "truckType" "public"."trucks_trucktype_enum" NOT NULL DEFAULT 'FLATBED', "trailerType" "public"."trucks_trailertype_enum", "hasSideRails" boolean NOT NULL DEFAULT false, "hasTarps" boolean NOT NULL DEFAULT false, "hasStraps" boolean NOT NULL DEFAULT false, "hasChains" boolean NOT NULL DEFAULT false, "hasWinch" boolean NOT NULL DEFAULT false, "hasRam" boolean NOT NULL DEFAULT false, "hasTailLift" boolean NOT NULL DEFAULT false, "hasSideLift" boolean NOT NULL DEFAULT false, "hasRollerBed" boolean NOT NULL DEFAULT false, "hasDropDeck" boolean NOT NULL DEFAULT false, "hasExtendable" boolean NOT NULL DEFAULT false, "hasLowbed" boolean NOT NULL DEFAULT false, "hasStepDeck" boolean NOT NULL DEFAULT false, "hasPowerOnly" boolean NOT NULL DEFAULT false, "hasContainerChassis" boolean NOT NULL DEFAULT false, "hasTanker" boolean NOT NULL DEFAULT false, "hasBulk" boolean NOT NULL DEFAULT false, "hasRefrigerated" boolean NOT NULL DEFAULT false, "hasHeated" boolean NOT NULL DEFAULT false, "hasVentilated" boolean NOT NULL DEFAULT false, "hasCurtainSide" boolean NOT NULL DEFAULT false, "hasBox" boolean NOT NULL DEFAULT false, "hasVan" boolean NOT NULL DEFAULT false, "hasPlatform" boolean NOT NULL DEFAULT false, "hasCarCarrier" boolean NOT NULL DEFAULT false, "hasHeavyHaul" boolean NOT NULL DEFAULT false, "hasOversized" boolean NOT NULL DEFAULT false, "hasHazmat" boolean NOT NULL DEFAULT false, "hasDangerousGoods" boolean NOT NULL DEFAULT false, "hasFoodGrade" boolean NOT NULL DEFAULT false, "hasPharmaceutical" boolean NOT NULL DEFAULT false, "hasLiquid" boolean NOT NULL DEFAULT false, "hasDryBulk" boolean NOT NULL DEFAULT false, "hasGas" boolean NOT NULL DEFAULT false, "hasChemical" boolean NOT NULL DEFAULT false, "hasWaste" boolean NOT NULL DEFAULT false, "hasReefer" boolean NOT NULL DEFAULT false, "hasFrozen" boolean NOT NULL DEFAULT false, "hasChilled" boolean NOT NULL DEFAULT false, "hasAmbient" boolean NOT NULL DEFAULT false, "hasControlledAtmosphere" boolean NOT NULL DEFAULT false, "hasHumidityControl" boolean NOT NULL DEFAULT false, "hasTemperatureMonitoring" boolean NOT NULL DEFAULT false, "hasGPS" boolean NOT NULL DEFAULT false, "hasTracking" boolean NOT NULL DEFAULT false, "hasTelematics" boolean NOT NULL DEFAULT false, "hasELD" boolean NOT NULL DEFAULT false, "hasDashCam" boolean NOT NULL DEFAULT false, "hasSafetyCameras" boolean NOT NULL DEFAULT false, "hasCollisionAvoidance" boolean NOT NULL DEFAULT false, "hasLaneDeparture" boolean NOT NULL DEFAULT false, "hasAdaptiveCruise" boolean NOT NULL DEFAULT false, "hasBlindSpot" boolean NOT NULL DEFAULT false, "hasBackupCamera" boolean NOT NULL DEFAULT false, "hasTirePressureMonitoring" boolean NOT NULL DEFAULT false, "hasEngineMonitoring" boolean NOT NULL DEFAULT false, "hasFuelMonitoring" boolean NOT NULL DEFAULT false, "hasMaintenanceAlerts" boolean NOT NULL DEFAULT false, "hasDriverMonitoring" boolean NOT NULL DEFAULT false, "hasFatigueMonitoring" boolean NOT NULL DEFAULT false, "hasSpeedMonitoring" boolean NOT NULL DEFAULT false, "hasIdleMonitoring" boolean NOT NULL DEFAULT false, "hasRouteOptimization" boolean NOT NULL DEFAULT false, "hasRealTimeTracking" boolean NOT NULL DEFAULT false, "hasGeofencing" boolean NOT NULL DEFAULT false, "hasTemperatureAlerts" boolean NOT NULL DEFAULT false, "hasHumidityAlerts" boolean NOT NULL DEFAULT false, "hasShockMonitoring" boolean NOT NULL DEFAULT false, "hasTiltMonitoring" boolean NOT NULL DEFAULT false, "hasDoorMonitoring" boolean NOT NULL DEFAULT false, "hasCargoMonitoring" boolean NOT NULL DEFAULT false, "hasWeightMonitoring" boolean NOT NULL DEFAULT false, "hasVolumeMonitoring" boolean NOT NULL DEFAULT false, "hasPressureMonitoring" boolean NOT NULL DEFAULT false, "hasFlowMonitoring" boolean NOT NULL DEFAULT false, "hasLevelMonitoring" boolean NOT NULL DEFAULT false, "hasQualityMonitoring" boolean NOT NULL DEFAULT false, "hasContaminationMonitoring" boolean NOT NULL DEFAULT false, "hasLeakDetection" boolean NOT NULL DEFAULT false, "hasOverfillProtection" boolean NOT NULL DEFAULT false, "hasEmergencyShutdown" boolean NOT NULL DEFAULT false, "hasFireSuppression" boolean NOT NULL DEFAULT false, "hasExplosionProof" boolean NOT NULL DEFAULT false, "hasCorrosionResistant" boolean NOT NULL DEFAULT false, "hasStainlessSteel" boolean NOT NULL DEFAULT false, "hasAluminum" boolean NOT NULL DEFAULT false, "hasCarbonSteel" boolean NOT NULL DEFAULT false, "hasFiberglass" boolean NOT NULL DEFAULT false, "hasPlastic" boolean NOT NULL DEFAULT false, "hasComposite" boolean NOT NULL DEFAULT false, "hasInsulated" boolean NOT NULL DEFAULT false, "cargoCapabilities" jsonb NOT NULL DEFAULT '{}', "loadingCapabilities" jsonb NOT NULL DEFAULT '{}', "securityFeatures" jsonb NOT NULL DEFAULT '{}', "certifications" jsonb NOT NULL DEFAULT '{}', "routeCapabilities" jsonb NOT NULL DEFAULT '{}', "costStructure" jsonb NOT NULL DEFAULT '{}', "status" "public"."trucks_status_enum" NOT NULL DEFAULT 'AVAILABLE', "currentLocation" geometry(Point,4326), "locationUpdatedAt" TIMESTAMP, "registrationNumber" character varying(50) NOT NULL, "registrationExpiry" date NOT NULL, "insurancePolicy" character varying(50) NOT NULL, "insuranceExpiry" date NOT NULL, "roadworthyCertExpiry" date, "hasRefrigeration" boolean NOT NULL DEFAULT false, "hasLiftGate" boolean NOT NULL DEFAULT false, "hasGps" boolean NOT NULL DEFAULT false, "hasHazmatPermit" boolean NOT NULL DEFAULT false, "equipmentList" jsonb NOT NULL DEFAULT '[]', "lastMaintenanceDate" date, "nextMaintenanceDate" date, "mileage" integer NOT NULL DEFAULT '0', "maintenanceAlerts" jsonb NOT NULL DEFAULT '[]', "assignedDrivers" jsonb NOT NULL DEFAULT '[]', "assignedRoutes" jsonb NOT NULL DEFAULT '[]', "totalTrips" integer NOT NULL DEFAULT '0', "totalRevenue" numeric(15,2) NOT NULL DEFAULT '0', "fuelEfficiency" numeric(8,2), "averageRating" numeric(3,2) NOT NULL DEFAULT '0', "currentDriverId" uuid, "currentTripId" uuid, "estimatedAvailableTime" TIMESTAMP, "isActive" boolean NOT NULL DEFAULT true, "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), "deleted_at" TIMESTAMP, CONSTRAINT "UQ_9f46d9e4e1c02f40880e9afbebc" UNIQUE ("vin"), CONSTRAINT "PK_6a134fb7caa4fb476d8a6e035f9" PRIMARY KEY ("id"))`,
+      `CREATE TABLE IF NOT EXISTS "trucks" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "tenantId" uuid NOT NULL, "ownerId" uuid NOT NULL, "plateNumber" character varying(20) NOT NULL, "vin" character varying(17) NOT NULL, "make" character varying(100) NOT NULL, "model" character varying(100) NOT NULL, "year" integer NOT NULL, "color" character varying(50), "fuelType" "public"."trucks_fueltype_enum" NOT NULL DEFAULT 'DIESEL', "capacityWeight" numeric(10,2) NOT NULL, "capacityVolume" numeric(10,2) NOT NULL, "maxLength" numeric(8,2), "maxWidth" numeric(8,2), "maxHeight" numeric(8,2), "truckType" "public"."trucks_trucktype_enum" NOT NULL DEFAULT 'FLATBED', "trailerType" "public"."trucks_trailertype_enum", "hasSideRails" boolean NOT NULL DEFAULT false, "hasTarps" boolean NOT NULL DEFAULT false, "hasStraps" boolean NOT NULL DEFAULT false, "hasChains" boolean NOT NULL DEFAULT false, "hasWinch" boolean NOT NULL DEFAULT false, "hasRam" boolean NOT NULL DEFAULT false, "hasTailLift" boolean NOT NULL DEFAULT false, "hasSideLift" boolean NOT NULL DEFAULT false, "hasRollerBed" boolean NOT NULL DEFAULT false, "hasDropDeck" boolean NOT NULL DEFAULT false, "hasExtendable" boolean NOT NULL DEFAULT false, "hasLowbed" boolean NOT NULL DEFAULT false, "hasStepDeck" boolean NOT NULL DEFAULT false, "hasPowerOnly" boolean NOT NULL DEFAULT false, "hasContainerChassis" boolean NOT NULL DEFAULT false, "hasTanker" boolean NOT NULL DEFAULT false, "hasBulk" boolean NOT NULL DEFAULT false, "hasRefrigerated" boolean NOT NULL DEFAULT false, "hasHeated" boolean NOT NULL DEFAULT false, "hasVentilated" boolean NOT NULL DEFAULT false, "hasCurtainSide" boolean NOT NULL DEFAULT false, "hasBox" boolean NOT NULL DEFAULT false, "hasVan" boolean NOT NULL DEFAULT false, "hasPlatform" boolean NOT NULL DEFAULT false, "hasCarCarrier" boolean NOT NULL DEFAULT false, "hasHeavyHaul" boolean NOT NULL DEFAULT false, "hasOversized" boolean NOT NULL DEFAULT false, "hasHazmat" boolean NOT NULL DEFAULT false, "hasDangerousGoods" boolean NOT NULL DEFAULT false, "hasFoodGrade" boolean NOT NULL DEFAULT false, "hasPharmaceutical" boolean NOT NULL DEFAULT false, "hasLiquid" boolean NOT NULL DEFAULT false, "hasDryBulk" boolean NOT NULL DEFAULT false, "hasGas" boolean NOT NULL DEFAULT false, "hasChemical" boolean NOT NULL DEFAULT false, "hasWaste" boolean NOT NULL DEFAULT false, "hasReefer" boolean NOT NULL DEFAULT false, "hasFrozen" boolean NOT NULL DEFAULT false, "hasChilled" boolean NOT NULL DEFAULT false, "hasAmbient" boolean NOT NULL DEFAULT false, "hasControlledAtmosphere" boolean NOT NULL DEFAULT false, "hasHumidityControl" boolean NOT NULL DEFAULT false, "hasTemperatureMonitoring" boolean NOT NULL DEFAULT false, "hasGPS" boolean NOT NULL DEFAULT false, "hasTracking" boolean NOT NULL DEFAULT false, "hasTelematics" boolean NOT NULL DEFAULT false, "hasELD" boolean NOT NULL DEFAULT false, "hasDashCam" boolean NOT NULL DEFAULT false, "hasSafetyCameras" boolean NOT NULL DEFAULT false, "hasCollisionAvoidance" boolean NOT NULL DEFAULT false, "hasLaneDeparture" boolean NOT NULL DEFAULT false, "hasAdaptiveCruise" boolean NOT NULL DEFAULT false, "hasBlindSpot" boolean NOT NULL DEFAULT false, "hasBackupCamera" boolean NOT NULL DEFAULT false, "hasTirePressureMonitoring" boolean NOT NULL DEFAULT false, "hasEngineMonitoring" boolean NOT NULL DEFAULT false, "hasFuelMonitoring" boolean NOT NULL DEFAULT false, "hasMaintenanceAlerts" boolean NOT NULL DEFAULT false, "hasDriverMonitoring" boolean NOT NULL DEFAULT false, "hasFatigueMonitoring" boolean NOT NULL DEFAULT false, "hasSpeedMonitoring" boolean NOT NULL DEFAULT false, "hasIdleMonitoring" boolean NOT NULL DEFAULT false, "hasRouteOptimization" boolean NOT NULL DEFAULT false, "hasRealTimeTracking" boolean NOT NULL DEFAULT false, "hasGeofencing" boolean NOT NULL DEFAULT false, "hasTemperatureAlerts" boolean NOT NULL DEFAULT false, "hasHumidityAlerts" boolean NOT NULL DEFAULT false, "hasShockMonitoring" boolean NOT NULL DEFAULT false, "hasTiltMonitoring" boolean NOT NULL DEFAULT false, "hasDoorMonitoring" boolean NOT NULL DEFAULT false, "hasCargoMonitoring" boolean NOT NULL DEFAULT false, "hasWeightMonitoring" boolean NOT NULL DEFAULT false, "hasVolumeMonitoring" boolean NOT NULL DEFAULT false, "hasPressureMonitoring" boolean NOT NULL DEFAULT false, "hasFlowMonitoring" boolean NOT NULL DEFAULT false, "hasLevelMonitoring" boolean NOT NULL DEFAULT false, "hasQualityMonitoring" boolean NOT NULL DEFAULT false, "hasContaminationMonitoring" boolean NOT NULL DEFAULT false, "hasLeakDetection" boolean NOT NULL DEFAULT false, "hasOverfillProtection" boolean NOT NULL DEFAULT false, "hasEmergencyShutdown" boolean NOT NULL DEFAULT false, "hasFireSuppression" boolean NOT NULL DEFAULT false, "hasExplosionProof" boolean NOT NULL DEFAULT false, "hasCorrosionResistant" boolean NOT NULL DEFAULT false, "hasStainlessSteel" boolean NOT NULL DEFAULT false, "hasAluminum" boolean NOT NULL DEFAULT false, "hasCarbonSteel" boolean NOT NULL DEFAULT false, "hasFiberglass" boolean NOT NULL DEFAULT false, "hasPlastic" boolean NOT NULL DEFAULT false, "hasComposite" boolean NOT NULL DEFAULT false, "hasInsulated" boolean NOT NULL DEFAULT false, "cargoCapabilities" jsonb NOT NULL DEFAULT '{}', "loadingCapabilities" jsonb NOT NULL DEFAULT '{}', "securityFeatures" jsonb NOT NULL DEFAULT '{}', "certifications" jsonb NOT NULL DEFAULT '{}', "routeCapabilities" jsonb NOT NULL DEFAULT '{}', "costStructure" jsonb NOT NULL DEFAULT '{}', "status" "public"."trucks_status_enum" NOT NULL DEFAULT 'AVAILABLE', "currentLocation" geometry(Point,4326), "locationUpdatedAt" TIMESTAMP, "registrationNumber" character varying(50) NOT NULL, "registrationExpiry" date NOT NULL, "insurancePolicy" character varying(50) NOT NULL, "insuranceExpiry" date NOT NULL, "roadworthyCertExpiry" date, "hasRefrigeration" boolean NOT NULL DEFAULT false, "hasLiftGate" boolean NOT NULL DEFAULT false, "hasGps" boolean NOT NULL DEFAULT false, "hasHazmatPermit" boolean NOT NULL DEFAULT false, "equipmentList" jsonb NOT NULL DEFAULT '[]', "lastMaintenanceDate" date, "nextMaintenanceDate" date, "mileage" integer NOT NULL DEFAULT '0', "maintenanceAlerts" jsonb NOT NULL DEFAULT '[]', "assignedDrivers" jsonb NOT NULL DEFAULT '[]', "assignedRoutes" jsonb NOT NULL DEFAULT '[]', "totalTrips" integer NOT NULL DEFAULT '0', "totalRevenue" numeric(15,2) NOT NULL DEFAULT '0', "fuelEfficiency" numeric(8,2), "averageRating" numeric(3,2) NOT NULL DEFAULT '0', "currentDriverId" uuid, "currentTripId" uuid, "estimatedAvailableTime" TIMESTAMP, "isActive" boolean NOT NULL DEFAULT true, "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), "deleted_at" TIMESTAMP, CONSTRAINT "UQ_9f46d9e4e1c02f40880e9afbebc" UNIQUE ("vin"), CONSTRAINT "PK_6a134fb7caa4fb476d8a6e035f9" PRIMARY KEY ("id"))`,
     );
     await queryRunner.query(
       `CREATE INDEX IF NOT EXISTS "IDX_b85b6cfda27dd5fafdbb41c66f" ON "trucks" ("status") `,
@@ -252,7 +378,7 @@ export class CreateAllTables1762849950556 implements MigrationInterface {
       `CREATE UNIQUE INDEX IF NOT EXISTS "IDX_0ab497cdb0d3e2da3b58f5f704" ON "trucks" ("tenantId", "plateNumber") WHERE deleted_at IS NULL`,
     );
     await queryRunner.query(
-      `CREATE TABLE "locations" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "tenantId" uuid NOT NULL, "name" character varying NOT NULL, "address" text NOT NULL, "cityId" integer, "postalCode" character varying, "city" character varying, "state" character varying, "country" character varying, "region" character varying, "district" character varying, "neighborhood" character varying, "landmark" character varying, "locationCategory" character varying, "locationSubCategory" character varying, "businessHours" character varying, "timezone" character varying, "accessType" character varying, "parkingAvailable" boolean, "securityLevel" character varying, "loadingDockCount" integer, "maxTruckHeight" integer, "maxTruckWeight" integer, "specialInstructions" character varying, "coordinates" geometry(Point,4326), "locationType" character varying NOT NULL DEFAULT 'GENERAL', "contactInfo" jsonb NOT NULL DEFAULT '{}', "operatingHours" jsonb NOT NULL DEFAULT '{}', "facilities" jsonb NOT NULL DEFAULT '{}', "accessInstructions" character varying, "isActive" boolean NOT NULL DEFAULT true, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), "deleted_at" TIMESTAMP, CONSTRAINT "PK_7cc1c9e3853b94816c094825e74" PRIMARY KEY ("id"))`,
+      `CREATE TABLE IF NOT EXISTS "locations" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "tenantId" uuid NOT NULL, "name" character varying NOT NULL, "address" text NOT NULL, "cityId" integer, "postalCode" character varying, "city" character varying, "state" character varying, "country" character varying, "region" character varying, "district" character varying, "neighborhood" character varying, "landmark" character varying, "locationCategory" character varying, "locationSubCategory" character varying, "businessHours" character varying, "timezone" character varying, "accessType" character varying, "parkingAvailable" boolean, "securityLevel" character varying, "loadingDockCount" integer, "maxTruckHeight" integer, "maxTruckWeight" integer, "specialInstructions" character varying, "coordinates" geometry(Point,4326), "locationType" character varying NOT NULL DEFAULT 'GENERAL', "contactInfo" jsonb NOT NULL DEFAULT '{}', "operatingHours" jsonb NOT NULL DEFAULT '{}', "facilities" jsonb NOT NULL DEFAULT '{}', "accessInstructions" character varying, "isActive" boolean NOT NULL DEFAULT true, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), "deleted_at" TIMESTAMP, CONSTRAINT "PK_7cc1c9e3853b94816c094825e74" PRIMARY KEY ("id"))`,
     );
     await queryRunner.query(
       `CREATE INDEX IF NOT EXISTS "IDX_8f971e1da13366f71646fc6bbf" ON "locations" ("locationCategory") `,
@@ -270,7 +396,7 @@ export class CreateAllTables1762849950556 implements MigrationInterface {
       `CREATE TYPE "public"."drivers_status_enum" AS ENUM('ACTIVE', 'INACTIVE', 'SUSPENDED', 'ON_LEAVE', 'TERMINATED', 'IN_TRANSIT')`,
     );
     await queryRunner.query(
-      `CREATE TABLE "drivers" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "tenantId" uuid NOT NULL, "userId" uuid NOT NULL, "employerId" uuid NOT NULL, "employeeId" character varying, "firstName" character varying NOT NULL, "lastName" character varying NOT NULL, "email" character varying NOT NULL, "phone" character varying NOT NULL, "dateOfBirth" date NOT NULL, "address" text NOT NULL, "emergencyContact" jsonb NOT NULL DEFAULT '{}', "licenseNumber" character varying(50) NOT NULL, "licenseClasses" jsonb NOT NULL DEFAULT '[]', "licenseIssueDate" date NOT NULL, "licenseExpiry" date NOT NULL, "licenseState" character varying(50) NOT NULL, "licenseCountry" character varying(50) NOT NULL, "endorsements" jsonb NOT NULL DEFAULT '[]', "restrictions" jsonb NOT NULL DEFAULT '[]', "employmentType" "public"."drivers_employmenttype_enum" NOT NULL DEFAULT 'FULL_TIME', "hireDate" date NOT NULL, "terminationDate" date, "status" "public"."drivers_status_enum" NOT NULL DEFAULT 'ACTIVE', "availabilityStatus" character varying NOT NULL DEFAULT 'AVAILABLE', "currentTruckId" uuid, "currentTripId" uuid, "currentLocation" geometry(Point,4326), "locationUpdatedAt" TIMESTAMP, "hoursWorkedThisWeek" numeric(5,2) NOT NULL DEFAULT '0', "hoursWorkedThisMonth" numeric(5,2) NOT NULL DEFAULT '0', "lastBreakTime" TIMESTAMP, "consecutiveDrivingHours" integer NOT NULL DEFAULT '0', "medicalCertExpiry" date, "drugTestDate" date, "backgroundCheckDate" date, "trainingCompletionDate" date, "certifications" jsonb NOT NULL DEFAULT '[]', "rating" numeric(3,2) NOT NULL DEFAULT '0', "totalTrips" integer NOT NULL DEFAULT '0', "totalDistance" numeric(12,2) NOT NULL DEFAULT '0', "safetyScore" numeric(5,2) NOT NULL DEFAULT '100', "onTimeDeliveryRate" numeric(5,2) NOT NULL DEFAULT '0', "hourlyRate" numeric(10,2), "mileageRate" numeric(10,2), "totalEarnings" numeric(15,2) NOT NULL DEFAULT '0', "preferences" jsonb NOT NULL DEFAULT '{}', "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), "deleted_at" TIMESTAMP, CONSTRAINT "UQ_754b3d50a8cc64f7ad5c24f62b4" UNIQUE ("licenseNumber"), CONSTRAINT "PK_92ab3fb69e566d3eb0cae896047" PRIMARY KEY ("id"))`,
+      `CREATE TABLE IF NOT EXISTS "drivers" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "tenantId" uuid NOT NULL, "userId" uuid NOT NULL, "employerId" uuid NOT NULL, "employeeId" character varying, "firstName" character varying NOT NULL, "lastName" character varying NOT NULL, "email" character varying NOT NULL, "phone" character varying NOT NULL, "dateOfBirth" date NOT NULL, "address" text NOT NULL, "emergencyContact" jsonb NOT NULL DEFAULT '{}', "licenseNumber" character varying(50) NOT NULL, "licenseClasses" jsonb NOT NULL DEFAULT '[]', "licenseIssueDate" date NOT NULL, "licenseExpiry" date NOT NULL, "licenseState" character varying(50) NOT NULL, "licenseCountry" character varying(50) NOT NULL, "endorsements" jsonb NOT NULL DEFAULT '[]', "restrictions" jsonb NOT NULL DEFAULT '[]', "employmentType" "public"."drivers_employmenttype_enum" NOT NULL DEFAULT 'FULL_TIME', "hireDate" date NOT NULL, "terminationDate" date, "status" "public"."drivers_status_enum" NOT NULL DEFAULT 'ACTIVE', "availabilityStatus" character varying NOT NULL DEFAULT 'AVAILABLE', "currentTruckId" uuid, "currentTripId" uuid, "currentLocation" geometry(Point,4326), "locationUpdatedAt" TIMESTAMP, "hoursWorkedThisWeek" numeric(5,2) NOT NULL DEFAULT '0', "hoursWorkedThisMonth" numeric(5,2) NOT NULL DEFAULT '0', "lastBreakTime" TIMESTAMP, "consecutiveDrivingHours" integer NOT NULL DEFAULT '0', "medicalCertExpiry" date, "drugTestDate" date, "backgroundCheckDate" date, "trainingCompletionDate" date, "certifications" jsonb NOT NULL DEFAULT '[]', "rating" numeric(3,2) NOT NULL DEFAULT '0', "totalTrips" integer NOT NULL DEFAULT '0', "totalDistance" numeric(12,2) NOT NULL DEFAULT '0', "safetyScore" numeric(5,2) NOT NULL DEFAULT '100', "onTimeDeliveryRate" numeric(5,2) NOT NULL DEFAULT '0', "hourlyRate" numeric(10,2), "mileageRate" numeric(10,2), "totalEarnings" numeric(15,2) NOT NULL DEFAULT '0', "preferences" jsonb NOT NULL DEFAULT '{}', "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), "deleted_at" TIMESTAMP, CONSTRAINT "UQ_754b3d50a8cc64f7ad5c24f62b4" UNIQUE ("licenseNumber"), CONSTRAINT "PK_92ab3fb69e566d3eb0cae896047" PRIMARY KEY ("id"))`,
     );
     await queryRunner.query(
       `CREATE INDEX IF NOT EXISTS "IDX_a335af7dcef374c98a7a81d463" ON "drivers" ("status", "availabilityStatus") `,
@@ -288,7 +414,7 @@ export class CreateAllTables1762849950556 implements MigrationInterface {
       `CREATE TYPE "public"."trips_status_enum" AS ENUM('PLANNED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED', 'DELAYED')`,
     );
     await queryRunner.query(
-      `CREATE TABLE "trips" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "tenantId" uuid NOT NULL, "loadId" uuid NOT NULL, "truckId" uuid NOT NULL, "driverId" uuid NOT NULL, "tripNumber" character varying(50) NOT NULL, "status" "public"."trips_status_enum" NOT NULL DEFAULT 'PLANNED', "plannedStartTime" TIMESTAMP WITH TIME ZONE NOT NULL, "plannedEndTime" TIMESTAMP WITH TIME ZONE NOT NULL, "actualStartTime" TIMESTAMP WITH TIME ZONE, "estimatedEndTime" TIMESTAMP WITH TIME ZONE, "actualEndTime" TIMESTAMP WITH TIME ZONE, "plannedRoute" jsonb, "actualRoute" jsonb, "totalDistance" numeric(10,2), "agreedPrice" numeric(15,2) NOT NULL, "currencyCode" character varying(3) NOT NULL DEFAULT 'USD', "fuelCost" numeric(10,2), "tollsCost" numeric(10,2), "otherExpenses" numeric(10,2), "totalCost" numeric(15,2), "profitMargin" numeric(5,2), "fuelEfficiency" numeric(8,2), "averageSpeed" numeric(8,2), "onTimePerformance" boolean, "eta" TIMESTAMP WITH TIME ZONE, "distance" double precision, "duration" double precision, "currentLocation" geometry(Point,4326), "locationUpdatedAt" TIMESTAMP, "estimatedArrival" TIMESTAMP WITH TIME ZONE, "cargoOwnerRating" numeric(3,2), "cargoOwnerFeedback" character varying, "driverRating" numeric(3,2), "driverFeedback" character varying, "notes" character varying, "issuesReported" jsonb NOT NULL DEFAULT '[]', "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), "completedAt" TIMESTAMP, "deleted_at" TIMESTAMP, "pickupLocationId" uuid, "deliveryLocationId" uuid, CONSTRAINT "UQ_47c934ba14c7f8893184544f865" UNIQUE ("tripNumber"), CONSTRAINT "PK_f71c231dee9c05a9522f9e840f5" PRIMARY KEY ("id"))`,
+      `CREATE TABLE IF NOT EXISTS "trips" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "tenantId" uuid NOT NULL, "loadId" uuid NOT NULL, "truckId" uuid NOT NULL, "driverId" uuid NOT NULL, "tripNumber" character varying(50) NOT NULL, "status" "public"."trips_status_enum" NOT NULL DEFAULT 'PLANNED', "plannedStartTime" TIMESTAMP WITH TIME ZONE NOT NULL, "plannedEndTime" TIMESTAMP WITH TIME ZONE NOT NULL, "actualStartTime" TIMESTAMP WITH TIME ZONE, "estimatedEndTime" TIMESTAMP WITH TIME ZONE, "actualEndTime" TIMESTAMP WITH TIME ZONE, "plannedRoute" jsonb, "actualRoute" jsonb, "totalDistance" numeric(10,2), "agreedPrice" numeric(15,2) NOT NULL, "currencyCode" character varying(3) NOT NULL DEFAULT 'USD', "fuelCost" numeric(10,2), "tollsCost" numeric(10,2), "otherExpenses" numeric(10,2), "totalCost" numeric(15,2), "profitMargin" numeric(5,2), "fuelEfficiency" numeric(8,2), "averageSpeed" numeric(8,2), "onTimePerformance" boolean, "eta" TIMESTAMP WITH TIME ZONE, "distance" double precision, "duration" double precision, "currentLocation" geometry(Point,4326), "locationUpdatedAt" TIMESTAMP, "estimatedArrival" TIMESTAMP WITH TIME ZONE, "cargoOwnerRating" numeric(3,2), "cargoOwnerFeedback" character varying, "driverRating" numeric(3,2), "driverFeedback" character varying, "notes" character varying, "issuesReported" jsonb NOT NULL DEFAULT '[]', "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), "completedAt" TIMESTAMP, "deleted_at" TIMESTAMP, "pickupLocationId" uuid, "deliveryLocationId" uuid, CONSTRAINT "UQ_47c934ba14c7f8893184544f865" UNIQUE ("tripNumber"), CONSTRAINT "PK_f71c231dee9c05a9522f9e840f5" PRIMARY KEY ("id"))`,
     );
     await queryRunner.query(
       `CREATE INDEX IF NOT EXISTS "IDX_136c6d2f593525643465ac88a3" ON "trips" ("plannedStartTime") `,
@@ -312,7 +438,7 @@ export class CreateAllTables1762849950556 implements MigrationInterface {
       `CREATE TYPE "public"."tracking_events_geofencetype_enum" AS ENUM('pickup', 'delivery', 'custom', 'restricted')`,
     );
     await queryRunner.query(
-      `CREATE TABLE "tracking_events" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "loadId" uuid NOT NULL, "type" "public"."tracking_events_type_enum" NOT NULL, "latitude" numeric(10,8), "longitude" numeric(11,8), "timestamp" TIMESTAMP WITH TIME ZONE NOT NULL, "speedKph" numeric(5,2), "headingDeg" numeric(5,2), "accuracyM" numeric(5,2), "altitude" numeric(5,2), "altitudeAccuracy" numeric(5,2), "address" text, "city" text, "state" text, "country" text, "postalCode" text, "geofenceId" text, "geofenceType" "public"."tracking_events_geofencetype_enum", "geofenceName" text, "data" jsonb, "description" text, "notes" text, "reportedBy" uuid, "isAutomated" boolean NOT NULL DEFAULT false, "requiresAction" boolean NOT NULL DEFAULT false, "actionTakenAt" TIMESTAMP WITH TIME ZONE, "actionTakenBy" uuid, "actionTaken" text, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), "deleted_at" TIMESTAMP, CONSTRAINT "PK_cc22ae68e05d9ba5a6575a6f429" PRIMARY KEY ("id"))`,
+      `CREATE TABLE IF NOT EXISTS "tracking_events" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "loadId" uuid NOT NULL, "type" "public"."tracking_events_type_enum" NOT NULL, "latitude" numeric(10,8), "longitude" numeric(11,8), "timestamp" TIMESTAMP WITH TIME ZONE NOT NULL, "speedKph" numeric(5,2), "headingDeg" numeric(5,2), "accuracyM" numeric(5,2), "altitude" numeric(5,2), "altitudeAccuracy" numeric(5,2), "address" text, "city" text, "state" text, "country" text, "postalCode" text, "geofenceId" text, "geofenceType" "public"."tracking_events_geofencetype_enum", "geofenceName" text, "data" jsonb, "description" text, "notes" text, "reportedBy" uuid, "isAutomated" boolean NOT NULL DEFAULT false, "requiresAction" boolean NOT NULL DEFAULT false, "actionTakenAt" TIMESTAMP WITH TIME ZONE, "actionTakenBy" uuid, "actionTaken" text, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), "deleted_at" TIMESTAMP, CONSTRAINT "PK_cc22ae68e05d9ba5a6575a6f429" PRIMARY KEY ("id"))`,
     );
     await queryRunner.query(
       `CREATE INDEX IF NOT EXISTS "IDX_a409b6270ed1bfc522ab31d898" ON "tracking_events" ("loadId") `,
@@ -330,7 +456,7 @@ export class CreateAllTables1762849950556 implements MigrationInterface {
       `CREATE INDEX IF NOT EXISTS "IDX_a409b6270ed1bfc522ab31d898" ON "tracking_events" ("loadId") `,
     );
     await queryRunner.query(
-      `CREATE TABLE "route_trucks" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "tenantId" uuid NOT NULL, "routeId" uuid NOT NULL, "truckId" uuid NOT NULL, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "UQ_468d75203232a52d433c4eb12b0" UNIQUE ("tenantId", "routeId", "truckId"), CONSTRAINT "PK_eb8d8d94a28bcfe6d970802e578" PRIMARY KEY ("id"))`,
+      `CREATE TABLE IF NOT EXISTS "route_trucks" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "tenantId" uuid NOT NULL, "routeId" uuid NOT NULL, "truckId" uuid NOT NULL, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "UQ_468d75203232a52d433c4eb12b0" UNIQUE ("tenantId", "routeId", "truckId"), CONSTRAINT "PK_eb8d8d94a28bcfe6d970802e578" PRIMARY KEY ("id"))`,
     );
     await queryRunner.query(
       `CREATE INDEX IF NOT EXISTS "IDX_941d32f73977001a50bf372375" ON "route_trucks" ("tenantId") `,
@@ -351,7 +477,7 @@ export class CreateAllTables1762849950556 implements MigrationInterface {
       `CREATE TYPE "public"."routes_status_enum" AS ENUM('active', 'inactive', 'maintenance')`,
     );
     await queryRunner.query(
-      `CREATE TABLE "routes" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "tenantId" uuid NOT NULL, "name" character varying(100) NOT NULL, "origin" character varying(100) NOT NULL, "destination" character varying(100) NOT NULL, "distance" numeric(10,2) NOT NULL, "estimatedTime" integer NOT NULL, "routeType" "public"."routes_routetype_enum" NOT NULL DEFAULT 'highway', "status" "public"."routes_status_enum" NOT NULL DEFAULT 'active', "assignedTrucks" jsonb NOT NULL DEFAULT '[]', "assignedDrivers" jsonb NOT NULL DEFAULT '[]', "description" character varying, "isActive" boolean NOT NULL DEFAULT true, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), "deleted_at" TIMESTAMP, CONSTRAINT "PK_76100511cdfa1d013c859f01d8b" PRIMARY KEY ("id"))`,
+      `CREATE TABLE IF NOT EXISTS "routes" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "tenantId" uuid NOT NULL, "name" character varying(100) NOT NULL, "origin" character varying(100) NOT NULL, "destination" character varying(100) NOT NULL, "distance" numeric(10,2) NOT NULL, "estimatedTime" integer NOT NULL, "routeType" "public"."routes_routetype_enum" NOT NULL DEFAULT 'highway', "status" "public"."routes_status_enum" NOT NULL DEFAULT 'active', "assignedTrucks" jsonb NOT NULL DEFAULT '[]', "assignedDrivers" jsonb NOT NULL DEFAULT '[]', "description" character varying, "isActive" boolean NOT NULL DEFAULT true, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), "deleted_at" TIMESTAMP, CONSTRAINT "PK_76100511cdfa1d013c859f01d8b" PRIMARY KEY ("id"))`,
     );
     await queryRunner.query(
       `CREATE INDEX IF NOT EXISTS "IDX_93e4f782932b7c0a332ab3d3cf" ON "routes" ("tenantId") `,
@@ -360,7 +486,7 @@ export class CreateAllTables1762849950556 implements MigrationInterface {
       `CREATE UNIQUE INDEX IF NOT EXISTS "IDX_6d53c760355b9723023759f004" ON "routes" ("tenantId", "name") WHERE deleted_at IS NULL`,
     );
     await queryRunner.query(
-      `CREATE TABLE "refresh_tokens" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "userId" uuid NOT NULL, "token" character varying NOT NULL, "expiresAt" TIMESTAMP NOT NULL, "revoked" boolean NOT NULL DEFAULT false, "revokedAt" TIMESTAMP, "revokedBy" character varying, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "UQ_4542dd2f38a61354a040ba9fd57" UNIQUE ("token"), CONSTRAINT "PK_7d8bee0204106019488c4c50ffa" PRIMARY KEY ("id"))`,
+      `CREATE TABLE IF NOT EXISTS "refresh_tokens" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "userId" uuid NOT NULL, "token" character varying NOT NULL, "expiresAt" TIMESTAMP NOT NULL, "revoked" boolean NOT NULL DEFAULT false, "revokedAt" TIMESTAMP, "revokedBy" character varying, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "UQ_4542dd2f38a61354a040ba9fd57" UNIQUE ("token"), CONSTRAINT "PK_7d8bee0204106019488c4c50ffa" PRIMARY KEY ("id"))`,
     );
     await queryRunner.query(
       `CREATE INDEX IF NOT EXISTS "IDX_610102b60fea1455310ccd299d" ON "refresh_tokens" ("userId") `,
@@ -378,7 +504,7 @@ export class CreateAllTables1762849950556 implements MigrationInterface {
       `CREATE TYPE "public"."price_suggestions_status_enum" AS ENUM('draft', 'active', 'expired', 'accepted', 'rejected', 'superseded')`,
     );
     await queryRunner.query(
-      `CREATE TABLE "price_suggestions" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "loadId" uuid NOT NULL, "pricingModel" "public"."price_suggestions_pricingmodel_enum" NOT NULL DEFAULT 'market_rate', "suggestedAmount" numeric(15,2) NOT NULL, "currency" character varying(3) NOT NULL DEFAULT 'USD', "confidence" numeric(3,2) NOT NULL, "confidenceLevel" "public"."price_suggestions_confidencelevel_enum" NOT NULL DEFAULT 'medium', "status" "public"."price_suggestions_status_enum" NOT NULL DEFAULT 'draft', "minAmount" numeric(15,2), "maxAmount" numeric(15,2), "baseRate" numeric(15,2), "fuelSurcharge" numeric(15,2), "accessorials" numeric(15,2), "taxes" numeric(15,2), "insurance" numeric(15,2), "markup" numeric(15,2), "discount" numeric(15,2), "distanceMiles" numeric(10,2), "distanceKm" numeric(10,2), "estimatedHours" numeric(10,2), "tolls" numeric(10,2), "parking" numeric(10,2), "marketDemand" numeric(5,2), "capacityUtilization" numeric(5,2), "fuelPrice" numeric(5,2), "seasonalFactor" numeric(5,2), "competitorLow" numeric(15,2), "competitorHigh" numeric(15,2), "competitorAverage" numeric(15,2), "competitorCount" integer, "weightFactor" numeric(10,2), "volumeFactor" numeric(10,2), "urgencyFactor" numeric(10,2), "specialHandlingFactor" numeric(10,2), "hazmatFactor" numeric(10,2), "temperatureFactor" numeric(10,2), "inputs" jsonb, "calculationSteps" jsonb, "marketData" jsonb, "notes" text, "reasoning" text, "assumptions" text, "limitations" text, "recommendations" text, "validFrom" TIMESTAMP WITH TIME ZONE, "validUntil" TIMESTAMP WITH TIME ZONE, "acceptedAt" TIMESTAMP WITH TIME ZONE, "acceptedBy" uuid, "rejectedAt" TIMESTAMP WITH TIME ZONE, "rejectedBy" uuid, "rejectionReason" text, "metadata" jsonb, "externalReference" text, "externalSystem" text, "isAutomated" boolean NOT NULL DEFAULT false, "automationSource" text, "processingTimeMs" numeric(5,2), "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), "deleted_at" TIMESTAMP, CONSTRAINT "PK_d520dc9638dcf235b80e6f23186" PRIMARY KEY ("id"))`,
+      `CREATE TABLE IF NOT EXISTS "price_suggestions" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "loadId" uuid NOT NULL, "pricingModel" "public"."price_suggestions_pricingmodel_enum" NOT NULL DEFAULT 'market_rate', "suggestedAmount" numeric(15,2) NOT NULL, "currency" character varying(3) NOT NULL DEFAULT 'USD', "confidence" numeric(3,2) NOT NULL, "confidenceLevel" "public"."price_suggestions_confidencelevel_enum" NOT NULL DEFAULT 'medium', "status" "public"."price_suggestions_status_enum" NOT NULL DEFAULT 'draft', "minAmount" numeric(15,2), "maxAmount" numeric(15,2), "baseRate" numeric(15,2), "fuelSurcharge" numeric(15,2), "accessorials" numeric(15,2), "taxes" numeric(15,2), "insurance" numeric(15,2), "markup" numeric(15,2), "discount" numeric(15,2), "distanceMiles" numeric(10,2), "distanceKm" numeric(10,2), "estimatedHours" numeric(10,2), "tolls" numeric(10,2), "parking" numeric(10,2), "marketDemand" numeric(5,2), "capacityUtilization" numeric(5,2), "fuelPrice" numeric(5,2), "seasonalFactor" numeric(5,2), "competitorLow" numeric(15,2), "competitorHigh" numeric(15,2), "competitorAverage" numeric(15,2), "competitorCount" integer, "weightFactor" numeric(10,2), "volumeFactor" numeric(10,2), "urgencyFactor" numeric(10,2), "specialHandlingFactor" numeric(10,2), "hazmatFactor" numeric(10,2), "temperatureFactor" numeric(10,2), "inputs" jsonb, "calculationSteps" jsonb, "marketData" jsonb, "notes" text, "reasoning" text, "assumptions" text, "limitations" text, "recommendations" text, "validFrom" TIMESTAMP WITH TIME ZONE, "validUntil" TIMESTAMP WITH TIME ZONE, "acceptedAt" TIMESTAMP WITH TIME ZONE, "acceptedBy" uuid, "rejectedAt" TIMESTAMP WITH TIME ZONE, "rejectedBy" uuid, "rejectionReason" text, "metadata" jsonb, "externalReference" text, "externalSystem" text, "isAutomated" boolean NOT NULL DEFAULT false, "automationSource" text, "processingTimeMs" numeric(5,2), "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), "deleted_at" TIMESTAMP, CONSTRAINT "PK_d520dc9638dcf235b80e6f23186" PRIMARY KEY ("id"))`,
     );
     await queryRunner.query(
       `CREATE INDEX IF NOT EXISTS "IDX_3cdb9a8e7d235c139d64966279" ON "price_suggestions" ("loadId") `,
@@ -408,7 +534,7 @@ export class CreateAllTables1762849950556 implements MigrationInterface {
       `CREATE TYPE "public"."payments_status_enum" AS ENUM('pending', 'processing', 'completed', 'failed', 'cancelled', 'refunded', 'escrow')`,
     );
     await queryRunner.query(
-      `CREATE TABLE "payments" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "idempotencyKey" character varying, "tenantId" uuid NOT NULL, "tripId" uuid NOT NULL, "payerId" uuid NOT NULL, "amount" numeric(10,2) NOT NULL, "currency" character varying(3) NOT NULL, "paymentMethod" "public"."payments_paymentmethod_enum" NOT NULL, "paymentType" "public"."payments_paymenttype_enum" NOT NULL, "status" "public"."payments_status_enum" NOT NULL DEFAULT 'pending', "description" character varying, "referenceNumber" character varying, "transactionId" character varying, "gatewayResponse" character varying, "failureReason" character varying, "billingAddress" character varying, "notes" character varying, "dueDate" TIMESTAMP, "processedAt" TIMESTAMP, "processingFee" numeric(10,2), "metadata" jsonb NOT NULL DEFAULT '{}', "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), "deleted_at" TIMESTAMP, CONSTRAINT "PK_197ab7af18c93fbb0c9b28b4a59" PRIMARY KEY ("id"))`,
+      `CREATE TABLE IF NOT EXISTS "payments" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "idempotencyKey" character varying, "tenantId" uuid NOT NULL, "tripId" uuid NOT NULL, "payerId" uuid NOT NULL, "amount" numeric(10,2) NOT NULL, "currency" character varying(3) NOT NULL, "paymentMethod" "public"."payments_paymentmethod_enum" NOT NULL, "paymentType" "public"."payments_paymenttype_enum" NOT NULL, "status" "public"."payments_status_enum" NOT NULL DEFAULT 'pending', "description" character varying, "referenceNumber" character varying, "transactionId" character varying, "gatewayResponse" character varying, "failureReason" character varying, "billingAddress" character varying, "notes" character varying, "dueDate" TIMESTAMP, "processedAt" TIMESTAMP, "processingFee" numeric(10,2), "metadata" jsonb NOT NULL DEFAULT '{}', "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), "deleted_at" TIMESTAMP, CONSTRAINT "PK_197ab7af18c93fbb0c9b28b4a59" PRIMARY KEY ("id"))`,
     );
     await queryRunner.query(
       `CREATE INDEX IF NOT EXISTS "IDX_8277a466232344577740a61344" ON "payments" ("createdAt") `,
@@ -423,7 +549,7 @@ export class CreateAllTables1762849950556 implements MigrationInterface {
       `CREATE INDEX IF NOT EXISTS "IDX_9df83c18a025ec22d4f99f80b4" ON "payments" ("tenantId", "tripId") `,
     );
     await queryRunner.query(
-      `CREATE TABLE "password_reset_tokens" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "email" character varying NOT NULL, "token" character varying NOT NULL, "expiresAt" TIMESTAMP NOT NULL, "used" boolean NOT NULL DEFAULT false, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "UQ_ab673f0e63eac966762155508ee" UNIQUE ("token"), CONSTRAINT "PK_d16bebd73e844c48bca50ff8d3d" PRIMARY KEY ("id"))`,
+      `CREATE TABLE IF NOT EXISTS "password_reset_tokens" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "email" character varying NOT NULL, "token" character varying NOT NULL, "expiresAt" TIMESTAMP NOT NULL, "used" boolean NOT NULL DEFAULT false, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "UQ_ab673f0e63eac966762155508ee" UNIQUE ("token"), CONSTRAINT "PK_d16bebd73e844c48bca50ff8d3d" PRIMARY KEY ("id"))`,
     );
     await queryRunner.query(
       `CREATE INDEX IF NOT EXISTS "IDX_2ecfa961f2f3e33fff8e19b6c7" ON "password_reset_tokens" ("email") `,
@@ -447,7 +573,7 @@ export class CreateAllTables1762849950556 implements MigrationInterface {
       `CREATE TYPE "public"."notifications_status_enum" AS ENUM('PENDING', 'SENT', 'DELIVERED', 'READ', 'FAILED', 'CANCELLED')`,
     );
     await queryRunner.query(
-      `CREATE TABLE "notifications" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "tenantId" uuid NOT NULL, "recipientId" uuid NOT NULL, "entityType" "public"."notifications_entitytype_enum" NOT NULL, "entityId" uuid, "notificationType" "public"."notifications_notificationtype_enum" NOT NULL, "category" "public"."notifications_category_enum" NOT NULL, "priority" "public"."notifications_priority_enum" NOT NULL DEFAULT 'NORMAL', "status" "public"."notifications_status_enum" NOT NULL DEFAULT 'PENDING', "title" text NOT NULL, "message" text NOT NULL, "shortMessage" text, "channels" jsonb NOT NULL DEFAULT '[]', "channelData" jsonb NOT NULL DEFAULT '{}', "metadata" jsonb NOT NULL DEFAULT '{}', "tags" jsonb NOT NULL DEFAULT '[]', "scheduledAt" TIMESTAMP, "sentAt" TIMESTAMP, "deliveredAt" TIMESTAMP, "readAt" TIMESTAMP, "expiresAt" TIMESTAMP, "isRead" boolean NOT NULL DEFAULT false, "isArchived" boolean NOT NULL DEFAULT false, "requiresAction" boolean NOT NULL DEFAULT false, "actionUrl" text, "actionText" text, "actionData" jsonb NOT NULL DEFAULT '{}', "attachments" jsonb NOT NULL DEFAULT '[]', "deliveryAttempts" jsonb NOT NULL DEFAULT '{}', "userPreferences" jsonb NOT NULL DEFAULT '{}', "analytics" jsonb NOT NULL DEFAULT '{}', "relatedNotifications" jsonb NOT NULL DEFAULT '[]', "workflowInfo" jsonb NOT NULL DEFAULT '{}', "escalationInfo" jsonb NOT NULL DEFAULT '{}', "complianceInfo" jsonb NOT NULL DEFAULT '{}', "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), "deleted_at" TIMESTAMP, CONSTRAINT "PK_6a72c3c0f683f6462415e653c3a" PRIMARY KEY ("id")); COMMENT ON COLUMN "notifications"."entityType" IS 'Type of entity this notification is related to'; COMMENT ON COLUMN "notifications"."notificationType" IS 'Specific type of notification'; COMMENT ON COLUMN "notifications"."category" IS 'Category of notification for grouping'`,
+      `CREATE TABLE IF NOT EXISTS "notifications" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "tenantId" uuid NOT NULL, "recipientId" uuid NOT NULL, "entityType" "public"."notifications_entitytype_enum" NOT NULL, "entityId" uuid, "notificationType" "public"."notifications_notificationtype_enum" NOT NULL, "category" "public"."notifications_category_enum" NOT NULL, "priority" "public"."notifications_priority_enum" NOT NULL DEFAULT 'NORMAL', "status" "public"."notifications_status_enum" NOT NULL DEFAULT 'PENDING', "title" text NOT NULL, "message" text NOT NULL, "shortMessage" text, "channels" jsonb NOT NULL DEFAULT '[]', "channelData" jsonb NOT NULL DEFAULT '{}', "metadata" jsonb NOT NULL DEFAULT '{}', "tags" jsonb NOT NULL DEFAULT '[]', "scheduledAt" TIMESTAMP, "sentAt" TIMESTAMP, "deliveredAt" TIMESTAMP, "readAt" TIMESTAMP, "expiresAt" TIMESTAMP, "isRead" boolean NOT NULL DEFAULT false, "isArchived" boolean NOT NULL DEFAULT false, "requiresAction" boolean NOT NULL DEFAULT false, "actionUrl" text, "actionText" text, "actionData" jsonb NOT NULL DEFAULT '{}', "attachments" jsonb NOT NULL DEFAULT '[]', "deliveryAttempts" jsonb NOT NULL DEFAULT '{}', "userPreferences" jsonb NOT NULL DEFAULT '{}', "analytics" jsonb NOT NULL DEFAULT '{}', "relatedNotifications" jsonb NOT NULL DEFAULT '[]', "workflowInfo" jsonb NOT NULL DEFAULT '{}', "escalationInfo" jsonb NOT NULL DEFAULT '{}', "complianceInfo" jsonb NOT NULL DEFAULT '{}', "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), "deleted_at" TIMESTAMP, CONSTRAINT "PK_6a72c3c0f683f6462415e653c3a" PRIMARY KEY ("id")); COMMENT ON COLUMN "notifications"."entityType" IS 'Type of entity this notification is related to'; COMMENT ON COLUMN "notifications"."notificationType" IS 'Specific type of notification'; COMMENT ON COLUMN "notifications"."category" IS 'Category of notification for grouping'`,
     );
     await queryRunner.query(
       `CREATE INDEX IF NOT EXISTS "IDX_308682392d14d98044e5b83ce0" ON "notifications" ("createdAt", "priority") `,
@@ -471,7 +597,7 @@ export class CreateAllTables1762849950556 implements MigrationInterface {
       `CREATE INDEX IF NOT EXISTS "IDX_ad5fa6719b3f85494d88af4a40" ON "notifications" ("recipientId", "status") `,
     );
     await queryRunner.query(
-      `CREATE TABLE "load_templates" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "tenantId" uuid NOT NULL, "name" character varying NOT NULL, "description" text, "templateData" jsonb NOT NULL, "createdBy" uuid NOT NULL, "isActive" boolean NOT NULL DEFAULT true, "usageCount" integer NOT NULL DEFAULT '0', "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), "deleted_at" TIMESTAMP, CONSTRAINT "PK_89833bd8dda8e54f607e020c48f" PRIMARY KEY ("id"))`,
+      `CREATE TABLE IF NOT EXISTS "load_templates" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "tenantId" uuid NOT NULL, "name" character varying NOT NULL, "description" text, "templateData" jsonb NOT NULL, "createdBy" uuid NOT NULL, "isActive" boolean NOT NULL DEFAULT true, "usageCount" integer NOT NULL DEFAULT '0', "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), "deleted_at" TIMESTAMP, CONSTRAINT "PK_89833bd8dda8e54f607e020c48f" PRIMARY KEY ("id"))`,
     );
     await queryRunner.query(
       `CREATE INDEX IF NOT EXISTS "IDX_ee4d275174d88815c2c790f3e9" ON "load_templates" ("tenantId") `,
@@ -492,7 +618,7 @@ export class CreateAllTables1762849950556 implements MigrationInterface {
       `CREATE TYPE "public"."insurance_claims_priority_enum" AS ENUM('low', 'medium', 'high', 'urgent')`,
     );
     await queryRunner.query(
-      `CREATE TABLE "insurance_claims" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "claimNumber" character varying NOT NULL, "policyId" uuid NOT NULL, "truckId" uuid NOT NULL, "claimType" "public"."insurance_claims_claimtype_enum" NOT NULL, "description" text NOT NULL, "incidentDate" date NOT NULL, "reportedDate" date NOT NULL, "estimatedAmount" numeric(15,2) NOT NULL, "approvedAmount" numeric(15,2), "paidAmount" numeric(15,2) NOT NULL DEFAULT '0', "status" "public"."insurance_claims_status_enum" NOT NULL DEFAULT 'pending', "priority" "public"."insurance_claims_priority_enum" NOT NULL DEFAULT 'medium', "adjuster" json, "notes" json, "documents" json, "location" json, "witnesses" json, "policeReport" json, "repairEstimates" json, "timeline" json, "settlement" json, "appeal" json, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "UQ_7c69728b0eee8df90aa28cb3aaf" UNIQUE ("claimNumber"), CONSTRAINT "PK_c6f7929fdcec8c17a24034a48d3" PRIMARY KEY ("id"))`,
+      `CREATE TABLE IF NOT EXISTS "insurance_claims" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "claimNumber" character varying NOT NULL, "policyId" uuid NOT NULL, "truckId" uuid NOT NULL, "claimType" "public"."insurance_claims_claimtype_enum" NOT NULL, "description" text NOT NULL, "incidentDate" date NOT NULL, "reportedDate" date NOT NULL, "estimatedAmount" numeric(15,2) NOT NULL, "approvedAmount" numeric(15,2), "paidAmount" numeric(15,2) NOT NULL DEFAULT '0', "status" "public"."insurance_claims_status_enum" NOT NULL DEFAULT 'pending', "priority" "public"."insurance_claims_priority_enum" NOT NULL DEFAULT 'medium', "adjuster" json, "notes" json, "documents" json, "location" json, "witnesses" json, "policeReport" json, "repairEstimates" json, "timeline" json, "settlement" json, "appeal" json, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "UQ_7c69728b0eee8df90aa28cb3aaf" UNIQUE ("claimNumber"), CONSTRAINT "PK_c6f7929fdcec8c17a24034a48d3" PRIMARY KEY ("id"))`,
     );
     await queryRunner.query(
       `CREATE INDEX IF NOT EXISTS "IDX_7c69728b0eee8df90aa28cb3aa" ON "insurance_claims" ("claimNumber") `,
@@ -528,7 +654,7 @@ export class CreateAllTables1762849950556 implements MigrationInterface {
     END IF;
 END$$;`);
     await queryRunner.query(
-      `CREATE TABLE "insurance_policies" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "policyNumber" character varying NOT NULL, "truckId" uuid NOT NULL, "insuranceCompany" character varying NOT NULL, "policyType" "public"."insurance_policies_policytype_enum" NOT NULL, "coverageAmount" numeric(15,2) NOT NULL, "premium" numeric(15,2) NOT NULL, "deductible" numeric(15,2) NOT NULL, "startDate" date NOT NULL, "endDate" date NOT NULL, "status" "public"."insurance_policies_status_enum" NOT NULL DEFAULT 'pending', "coverageTypes" text, "autoRenew" boolean NOT NULL DEFAULT false, "notes" text, "documents" json, "agent" json, "paymentMethod" "public"."insurance_policies_paymentmethod_enum" NOT NULL DEFAULT 'monthly', "lastPaymentDate" date, "nextPaymentDate" date, "claimsCount" integer NOT NULL DEFAULT '0', "totalClaimsAmount" numeric(15,2) NOT NULL DEFAULT '0', "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "UQ_baa50eb26aac0be1b692c080fbf" UNIQUE ("policyNumber"), CONSTRAINT "PK_69af1d3a19277d1a822c9b13bf1" PRIMARY KEY ("id"))`,
+      `CREATE TABLE IF NOT EXISTS "insurance_policies" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "policyNumber" character varying NOT NULL, "truckId" uuid NOT NULL, "insuranceCompany" character varying NOT NULL, "policyType" "public"."insurance_policies_policytype_enum" NOT NULL, "coverageAmount" numeric(15,2) NOT NULL, "premium" numeric(15,2) NOT NULL, "deductible" numeric(15,2) NOT NULL, "startDate" date NOT NULL, "endDate" date NOT NULL, "status" "public"."insurance_policies_status_enum" NOT NULL DEFAULT 'pending', "coverageTypes" text, "autoRenew" boolean NOT NULL DEFAULT false, "notes" text, "documents" json, "agent" json, "paymentMethod" "public"."insurance_policies_paymentmethod_enum" NOT NULL DEFAULT 'monthly', "lastPaymentDate" date, "nextPaymentDate" date, "claimsCount" integer NOT NULL DEFAULT '0', "totalClaimsAmount" numeric(15,2) NOT NULL DEFAULT '0', "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "UQ_baa50eb26aac0be1b692c080fbf" UNIQUE ("policyNumber"), CONSTRAINT "PK_69af1d3a19277d1a822c9b13bf1" PRIMARY KEY ("id"))`,
     );
     await queryRunner.query(
       `CREATE INDEX IF NOT EXISTS "IDX_baa50eb26aac0be1b692c080fb" ON "insurance_policies" ("policyNumber") `,
@@ -552,7 +678,7 @@ END$$;`);
       `CREATE TYPE "public"."insurance_renewals_status_enum" AS ENUM('pending', 'urgent', 'completed', 'expired', 'cancelled')`,
     );
     await queryRunner.query(
-      `CREATE TABLE "insurance_renewals" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "renewalNumber" character varying NOT NULL, "policyId" uuid NOT NULL, "truckId" uuid NOT NULL, "currentPolicyEndDate" date NOT NULL, "renewalDate" date NOT NULL, "status" "public"."insurance_renewals_status_enum" NOT NULL DEFAULT 'pending', "currentPremium" numeric(15,2) NOT NULL, "estimatedPremium" numeric(15,2), "finalPremium" numeric(15,2), "autoRenew" boolean NOT NULL DEFAULT false, "coverageChanges" json, "renewalTerms" json NOT NULL, "agent" json, "customerResponse" json, "documents" json, "reminders" json, "timeline" json, "notes" json, "riskAssessment" json, "competitorQuotes" json, "finalDecision" json, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "UQ_6e2b6bf8bb5605165c05fc9a719" UNIQUE ("renewalNumber"), CONSTRAINT "PK_f10727c57b6bff9ab8d6eefb0ac" PRIMARY KEY ("id"))`,
+      `CREATE TABLE IF NOT EXISTS "insurance_renewals" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "renewalNumber" character varying NOT NULL, "policyId" uuid NOT NULL, "truckId" uuid NOT NULL, "currentPolicyEndDate" date NOT NULL, "renewalDate" date NOT NULL, "status" "public"."insurance_renewals_status_enum" NOT NULL DEFAULT 'pending', "currentPremium" numeric(15,2) NOT NULL, "estimatedPremium" numeric(15,2), "finalPremium" numeric(15,2), "autoRenew" boolean NOT NULL DEFAULT false, "coverageChanges" json, "renewalTerms" json NOT NULL, "agent" json, "customerResponse" json, "documents" json, "reminders" json, "timeline" json, "notes" json, "riskAssessment" json, "competitorQuotes" json, "finalDecision" json, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "UQ_6e2b6bf8bb5605165c05fc9a719" UNIQUE ("renewalNumber"), CONSTRAINT "PK_f10727c57b6bff9ab8d6eefb0ac" PRIMARY KEY ("id"))`,
     );
     await queryRunner.query(
       `CREATE INDEX IF NOT EXISTS "IDX_6e2b6bf8bb5605165c05fc9a71" ON "insurance_renewals" ("renewalNumber") `,
@@ -573,7 +699,7 @@ END$$;`);
       `CREATE INDEX IF NOT EXISTS "IDX_54c3d5907c87c8b44f4f962600" ON "insurance_renewals" ("status") `,
     );
     await queryRunner.query(
-      `CREATE TABLE "email_verification_tokens" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "email" character varying NOT NULL, "token" character varying NOT NULL, "expiresAt" TIMESTAMP NOT NULL, "used" boolean NOT NULL DEFAULT false, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "UQ_3d1613f95c6a564a3b588d161ae" UNIQUE ("token"), CONSTRAINT "PK_417a095bbed21c2369a6a01ab9a" PRIMARY KEY ("id"))`,
+      `CREATE TABLE IF NOT EXISTS "email_verification_tokens" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "email" character varying NOT NULL, "token" character varying NOT NULL, "expiresAt" TIMESTAMP NOT NULL, "used" boolean NOT NULL DEFAULT false, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "UQ_3d1613f95c6a564a3b588d161ae" UNIQUE ("token"), CONSTRAINT "PK_417a095bbed21c2369a6a01ab9a" PRIMARY KEY ("id"))`,
     );
     await queryRunner.query(
       `CREATE INDEX IF NOT EXISTS "IDX_973ceb9e119e69f5b42fbfa44a" ON "email_verification_tokens" ("email") `,
@@ -585,7 +711,7 @@ END$$;`);
       `CREATE TYPE "public"."disputes_status_enum" AS ENUM('OPEN', 'RESOLVED', 'ESCALATED', 'REJECTED')`,
     );
     await queryRunner.query(
-      `CREATE TABLE "disputes" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "tenantId" uuid NOT NULL, "tripId" uuid NOT NULL, "raisedById" uuid NOT NULL, "status" "public"."disputes_status_enum" NOT NULL DEFAULT 'OPEN', "reason" text NOT NULL, "resolution" text, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), "deleted_at" TIMESTAMP, CONSTRAINT "PK_3c97580d01c1a4b0b345c42a107" PRIMARY KEY ("id"))`,
+      `CREATE TABLE IF NOT EXISTS "disputes" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "tenantId" uuid NOT NULL, "tripId" uuid NOT NULL, "raisedById" uuid NOT NULL, "status" "public"."disputes_status_enum" NOT NULL DEFAULT 'OPEN', "reason" text NOT NULL, "resolution" text, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), "deleted_at" TIMESTAMP, CONSTRAINT "PK_3c97580d01c1a4b0b345c42a107" PRIMARY KEY ("id"))`,
     );
     await queryRunner.query(
       `CREATE INDEX IF NOT EXISTS "IDX_f591a79141f5e603d8e6b10db1" ON "disputes" ("tripId") `,
@@ -609,7 +735,7 @@ END$$;`);
       `CREATE TYPE "public"."documents_priority_enum" AS ENUM('LOW', 'NORMAL', 'HIGH', 'URGENT')`,
     );
     await queryRunner.query(
-      `CREATE TABLE "documents" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "tenantId" uuid NOT NULL, "entityType" "public"."documents_entitytype_enum" NOT NULL, "entityId" uuid NOT NULL, "documentType" "public"."documents_documenttype_enum" NOT NULL, "category" "public"."documents_category_enum" NOT NULL, "status" "public"."documents_status_enum" NOT NULL DEFAULT 'PENDING', "priority" "public"."documents_priority_enum" NOT NULL DEFAULT 'NORMAL', "documentNumber" character varying, "title" text NOT NULL, "description" text NOT NULL, "fileName" text NOT NULL, "originalFileName" text NOT NULL, "fileUrl" text NOT NULL, "thumbnailUrl" text NOT NULL, "fileSize" integer NOT NULL, "mimeType" character varying NOT NULL, "fileExtension" character varying, "issueDate" date, "expiryDate" date, "isExpired" boolean NOT NULL DEFAULT false, "requiresRenewal" boolean NOT NULL DEFAULT false, "renewalReminderDays" integer NOT NULL DEFAULT '30', "metadata" jsonb NOT NULL DEFAULT '{}', "tags" jsonb NOT NULL DEFAULT '[]', "uploadedBy" uuid NOT NULL, "verifiedBy" uuid, "verifiedAt" TIMESTAMP, "verificationNotes" text, "verificationData" jsonb NOT NULL DEFAULT '{}', "versions" jsonb NOT NULL DEFAULT '[]', "currentVersion" integer NOT NULL DEFAULT '1', "accessControl" jsonb NOT NULL DEFAULT '[]', "auditTrail" jsonb NOT NULL DEFAULT '[]', "isPublic" boolean NOT NULL DEFAULT false, "isConfidential" boolean NOT NULL DEFAULT false, "encryptionKey" character varying, "ocrData" jsonb NOT NULL DEFAULT '{}', "digitalSignature" jsonb NOT NULL DEFAULT '{}', "complianceInfo" jsonb NOT NULL DEFAULT '{}', "workflowInfo" jsonb NOT NULL DEFAULT '{}', "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), "deleted_at" TIMESTAMP, CONSTRAINT "PK_ac51aa5181ee2036f5ca482857c" PRIMARY KEY ("id")); COMMENT ON COLUMN "documents"."entityType" IS 'Type of entity this document belongs to'; COMMENT ON COLUMN "documents"."documentType" IS 'Specific type of document'; COMMENT ON COLUMN "documents"."category" IS 'Category of document for grouping'`,
+      `CREATE TABLE IF NOT EXISTS "documents" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "tenantId" uuid NOT NULL, "entityType" "public"."documents_entitytype_enum" NOT NULL, "entityId" uuid NOT NULL, "documentType" "public"."documents_documenttype_enum" NOT NULL, "category" "public"."documents_category_enum" NOT NULL, "status" "public"."documents_status_enum" NOT NULL DEFAULT 'PENDING', "priority" "public"."documents_priority_enum" NOT NULL DEFAULT 'NORMAL', "documentNumber" character varying, "title" text NOT NULL, "description" text NOT NULL, "fileName" text NOT NULL, "originalFileName" text NOT NULL, "fileUrl" text NOT NULL, "thumbnailUrl" text NOT NULL, "fileSize" integer NOT NULL, "mimeType" character varying NOT NULL, "fileExtension" character varying, "issueDate" date, "expiryDate" date, "isExpired" boolean NOT NULL DEFAULT false, "requiresRenewal" boolean NOT NULL DEFAULT false, "renewalReminderDays" integer NOT NULL DEFAULT '30', "metadata" jsonb NOT NULL DEFAULT '{}', "tags" jsonb NOT NULL DEFAULT '[]', "uploadedBy" uuid NOT NULL, "verifiedBy" uuid, "verifiedAt" TIMESTAMP, "verificationNotes" text, "verificationData" jsonb NOT NULL DEFAULT '{}', "versions" jsonb NOT NULL DEFAULT '[]', "currentVersion" integer NOT NULL DEFAULT '1', "accessControl" jsonb NOT NULL DEFAULT '[]', "auditTrail" jsonb NOT NULL DEFAULT '[]', "isPublic" boolean NOT NULL DEFAULT false, "isConfidential" boolean NOT NULL DEFAULT false, "encryptionKey" character varying, "ocrData" jsonb NOT NULL DEFAULT '{}', "digitalSignature" jsonb NOT NULL DEFAULT '{}', "complianceInfo" jsonb NOT NULL DEFAULT '{}', "workflowInfo" jsonb NOT NULL DEFAULT '{}', "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), "deleted_at" TIMESTAMP, CONSTRAINT "PK_ac51aa5181ee2036f5ca482857c" PRIMARY KEY ("id")); COMMENT ON COLUMN "documents"."entityType" IS 'Type of entity this document belongs to'; COMMENT ON COLUMN "documents"."documentType" IS 'Specific type of document'; COMMENT ON COLUMN "documents"."category" IS 'Category of document for grouping'`,
     );
     await queryRunner.query(
       `CREATE INDEX IF NOT EXISTS "IDX_6010dc81933f1fdba08e89f76a" ON "documents" ("uploadedBy", "createdAt") `,
@@ -633,7 +759,7 @@ END$$;`);
       `CREATE TYPE "public"."audit_logs_action_enum" AS ENUM('CREATE', 'UPDATE', 'DELETE', 'LOGIN', 'LOGOUT', 'PAYMENT', 'DISPUTE', 'OTHER')`,
     );
     await queryRunner.query(
-      `CREATE TABLE "audit_logs" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "tenantId" uuid NOT NULL, "userId" uuid NOT NULL, "action" "public"."audit_logs_action_enum" NOT NULL DEFAULT 'OTHER', "description" text NOT NULL, "metadata" jsonb NOT NULL DEFAULT '{}', "createdAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_1bb179d048bbc581caa3b013439" PRIMARY KEY ("id"))`,
+      `CREATE TABLE IF NOT EXISTS "audit_logs" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "tenantId" uuid NOT NULL, "userId" uuid NOT NULL, "action" "public"."audit_logs_action_enum" NOT NULL DEFAULT 'OTHER', "description" text NOT NULL, "metadata" jsonb NOT NULL DEFAULT '{}', "createdAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_1bb179d048bbc581caa3b013439" PRIMARY KEY ("id"))`,
     );
     await queryRunner.query(
       `CREATE INDEX IF NOT EXISTS "IDX_c69efb19bf127c97e6740ad530" ON "audit_logs" ("createdAt") `,
@@ -651,7 +777,7 @@ END$$;`);
       `CREATE TYPE "public"."audit_events_action_enum" AS ENUM('create', 'update', 'delete', 'publish', 'assign', 'start', 'deliver', 'cancel', 'repost', 'status_change', 'document_upload', 'document_delete', 'location_update', 'pricing_update', 'alert_create', 'alert_update', 'tracking_update', 'bulk_operation')`,
     );
     await queryRunner.query(
-      `CREATE TABLE "audit_events" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "loadId" uuid NOT NULL, "entityType" "public"."audit_events_entitytype_enum" NOT NULL DEFAULT 'load', "entityId" uuid, "action" "public"."audit_events_action_enum" NOT NULL, "actorId" uuid NOT NULL, "actorName" text, "actorEmail" text, "actorRole" text, "description" text, "reason" text, "before" jsonb, "after" jsonb, "changes" jsonb, "metadata" jsonb, "ipAddress" text, "userAgent" text, "sessionId" text, "requestId" text, "externalReference" text, "externalSystem" text, "isAutomated" boolean NOT NULL DEFAULT false, "automationSource" text, "relatedEntities" jsonb, "notes" text, "tags" text, "isSensitive" boolean NOT NULL DEFAULT false, "requiresReview" boolean NOT NULL DEFAULT false, "reviewedBy" uuid, "reviewedAt" TIMESTAMP WITH TIME ZONE, "reviewNotes" text, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), "deleted_at" TIMESTAMP, CONSTRAINT "PK_910f64d901a5c3e9878f0d4a407" PRIMARY KEY ("id"))`,
+      `CREATE TABLE IF NOT EXISTS "audit_events" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "loadId" uuid NOT NULL, "entityType" "public"."audit_events_entitytype_enum" NOT NULL DEFAULT 'load', "entityId" uuid, "action" "public"."audit_events_action_enum" NOT NULL, "actorId" uuid NOT NULL, "actorName" text, "actorEmail" text, "actorRole" text, "description" text, "reason" text, "before" jsonb, "after" jsonb, "changes" jsonb, "metadata" jsonb, "ipAddress" text, "userAgent" text, "sessionId" text, "requestId" text, "externalReference" text, "externalSystem" text, "isAutomated" boolean NOT NULL DEFAULT false, "automationSource" text, "relatedEntities" jsonb, "notes" text, "tags" text, "isSensitive" boolean NOT NULL DEFAULT false, "requiresReview" boolean NOT NULL DEFAULT false, "reviewedBy" uuid, "reviewedAt" TIMESTAMP WITH TIME ZONE, "reviewNotes" text, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), "deleted_at" TIMESTAMP, CONSTRAINT "PK_910f64d901a5c3e9878f0d4a407" PRIMARY KEY ("id"))`,
     );
     await queryRunner.query(
       `CREATE INDEX IF NOT EXISTS "IDX_fe948a2ef9575a943c46a916f5" ON "audit_events" ("loadId") `,
@@ -687,7 +813,7 @@ END$$;`);
       `CREATE TYPE "public"."alerts_status_enum" AS ENUM('open', 'acknowledged', 'in_progress', 'resolved', 'closed')`,
     );
     await queryRunner.query(
-      `CREATE TABLE "alerts" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "loadId" uuid NOT NULL, "type" "public"."alerts_type_enum" NOT NULL, "description" text NOT NULL, "severity" "public"."alerts_severity_enum" NOT NULL DEFAULT 'Medium', "status" "public"."alerts_status_enum" NOT NULL DEFAULT 'open', "occurredAt" TIMESTAMP WITH TIME ZONE NOT NULL, "acknowledgedAt" TIMESTAMP WITH TIME ZONE, "acknowledgedBy" uuid, "resolvedAt" TIMESTAMP WITH TIME ZONE, "resolvedBy" uuid, "closedAt" TIMESTAMP WITH TIME ZONE, "closedBy" uuid, "resolutionNotes" text, "actionTaken" text, "metadata" jsonb, "location" jsonb, "estimatedDelayHours" numeric(5,2), "estimatedResolutionTime" text, "contactPerson" text, "contactPhone" text, "contactEmail" text, "requiresImmediateAction" boolean NOT NULL DEFAULT false, "isEscalated" boolean NOT NULL DEFAULT false, "escalatedAt" TIMESTAMP WITH TIME ZONE, "escalatedTo" uuid, "escalationReason" text, "attachments" jsonb, "externalReference" text, "externalSystem" text, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), "deleted_at" TIMESTAMP, CONSTRAINT "PK_60f895662df096bfcdfab7f4b96" PRIMARY KEY ("id"))`,
+      `CREATE TABLE IF NOT EXISTS "alerts" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "loadId" uuid NOT NULL, "type" "public"."alerts_type_enum" NOT NULL, "description" text NOT NULL, "severity" "public"."alerts_severity_enum" NOT NULL DEFAULT 'Medium', "status" "public"."alerts_status_enum" NOT NULL DEFAULT 'open', "occurredAt" TIMESTAMP WITH TIME ZONE NOT NULL, "acknowledgedAt" TIMESTAMP WITH TIME ZONE, "acknowledgedBy" uuid, "resolvedAt" TIMESTAMP WITH TIME ZONE, "resolvedBy" uuid, "closedAt" TIMESTAMP WITH TIME ZONE, "closedBy" uuid, "resolutionNotes" text, "actionTaken" text, "metadata" jsonb, "location" jsonb, "estimatedDelayHours" numeric(5,2), "estimatedResolutionTime" text, "contactPerson" text, "contactPhone" text, "contactEmail" text, "requiresImmediateAction" boolean NOT NULL DEFAULT false, "isEscalated" boolean NOT NULL DEFAULT false, "escalatedAt" TIMESTAMP WITH TIME ZONE, "escalatedTo" uuid, "escalationReason" text, "attachments" jsonb, "externalReference" text, "externalSystem" text, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), "deleted_at" TIMESTAMP, CONSTRAINT "PK_60f895662df096bfcdfab7f4b96" PRIMARY KEY ("id"))`,
     );
     await queryRunner.query(
       `CREATE INDEX IF NOT EXISTS "IDX_143edd01c2f285d77e22f36a31" ON "alerts" ("loadId") `,
@@ -714,10 +840,10 @@ END$$;`);
       `CREATE TYPE "public"."loan_requests_status_enum" AS ENUM('pending', 'approved', 'rejected', 'disbursed', 'repaid', 'failed', 'defaulted')`,
     );
     await queryRunner.query(
-      `CREATE TABLE "loan_requests" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "tenant_id" uuid NOT NULL, "cargo_id" uuid NOT NULL, "trip_id" uuid NOT NULL, "lender_id" uuid, "requested_amount" numeric(15,2) NOT NULL, "approved_amount" numeric(15,2), "status" "public"."loan_requests_status_enum" NOT NULL DEFAULT 'pending', "idempotency_key" character varying(255) NOT NULL, "interest_amount" numeric(15,2), "due_date" date, "created_by" uuid NOT NULL, "borrower_id" uuid, "external_loan_ref" character varying(255), "rejection_reason" text, "requested_split" json, "metadata" json, "created_at" TIMESTAMP NOT NULL DEFAULT now(), "updated_at" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "UQ_5f2d8564e7eb4d695c072376958" UNIQUE ("idempotency_key"), CONSTRAINT "PK_52d5943f8adea74332d5d53ec6a" PRIMARY KEY ("id"))`,
+      `CREATE TABLE IF NOT EXISTS "loan_requests" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "tenant_id" uuid NOT NULL, "cargo_id" uuid NOT NULL, "trip_id" uuid NOT NULL, "lender_id" uuid, "requested_amount" numeric(15,2) NOT NULL, "approved_amount" numeric(15,2), "status" "public"."loan_requests_status_enum" NOT NULL DEFAULT 'pending', "idempotency_key" character varying(255) NOT NULL, "interest_amount" numeric(15,2), "due_date" date, "created_by" uuid NOT NULL, "borrower_id" uuid, "external_loan_ref" character varying(255), "rejection_reason" text, "requested_split" json, "metadata" json, "created_at" TIMESTAMP NOT NULL DEFAULT now(), "updated_at" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "UQ_5f2d8564e7eb4d695c072376958" UNIQUE ("idempotency_key"), CONSTRAINT "PK_52d5943f8adea74332d5d53ec6a" PRIMARY KEY ("id"))`,
     );
     await queryRunner.query(
-      `CREATE TABLE "loan_repayments" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "loan_request_id" uuid NOT NULL, "amount" numeric(15,2) NOT NULL, "interest_paid" numeric(15,2) NOT NULL, "principal_paid" numeric(15,2) NOT NULL, "repayment_date" TIMESTAMP NOT NULL, "external_txn_ref" character varying(255), "metadata" json, "created_at" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "UQ_4de4c026e1722acfd6d25a1e153" UNIQUE ("external_txn_ref"), CONSTRAINT "PK_a37968e2dcfb72f910f5480cc16" PRIMARY KEY ("id"))`,
+      `CREATE TABLE IF NOT EXISTS "loan_repayments" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "loan_request_id" uuid NOT NULL, "amount" numeric(15,2) NOT NULL, "interest_paid" numeric(15,2) NOT NULL, "principal_paid" numeric(15,2) NOT NULL, "repayment_date" TIMESTAMP NOT NULL, "external_txn_ref" character varying(255), "metadata" json, "created_at" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "UQ_4de4c026e1722acfd6d25a1e153" UNIQUE ("external_txn_ref"), CONSTRAINT "PK_a37968e2dcfb72f910f5480cc16" PRIMARY KEY ("id"))`,
     );
     await queryRunner.query(
       `CREATE TYPE "public"."loan_disbursements_status_enum" AS ENUM('initiated', 'success', 'failed', 'pending', 'approved', 'disbursed', 'rejected', 'on_hold')`,
@@ -729,13 +855,13 @@ END$$;`);
       `CREATE TYPE "public"."loan_disbursements_disbursement_method_enum" AS ENUM('bank_transfer', 'check', 'escrow', 'digital_wallet')`,
     );
     await queryRunner.query(
-      `CREATE TABLE "loan_disbursements" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "loan_request_id" uuid NOT NULL, "disbursement_date" TIMESTAMP, "beneficiaries" json NOT NULL, "status" "public"."loan_disbursements_status_enum" NOT NULL DEFAULT 'initiated', "external_txn_ref" character varying(255), "attempts" integer NOT NULL DEFAULT '0', "failure_reason" text, "next_retry_at" TIMESTAMP, "amount" numeric(15,2), "priority" "public"."loan_disbursements_priority_enum" NOT NULL DEFAULT 'medium', "documents" jsonb, "risk_score" numeric(3,1), "credit_score" integer, "collateral_value" numeric(15,2), "disbursement_method" "public"."loan_disbursements_disbursement_method_enum" NOT NULL DEFAULT 'bank_transfer', "notes" text, "purpose" character varying(500), "interest_rate" numeric(5,2), "term_months" integer, "created_at" TIMESTAMP NOT NULL DEFAULT now(), "updated_at" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_9165b079d61baa9724c985f6723" PRIMARY KEY ("id"))`,
+      `CREATE TABLE IF NOT EXISTS "loan_disbursements" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "loan_request_id" uuid NOT NULL, "disbursement_date" TIMESTAMP, "beneficiaries" json NOT NULL, "status" "public"."loan_disbursements_status_enum" NOT NULL DEFAULT 'initiated', "external_txn_ref" character varying(255), "attempts" integer NOT NULL DEFAULT '0', "failure_reason" text, "next_retry_at" TIMESTAMP, "amount" numeric(15,2), "priority" "public"."loan_disbursements_priority_enum" NOT NULL DEFAULT 'medium', "documents" jsonb, "risk_score" numeric(3,1), "credit_score" integer, "collateral_value" numeric(15,2), "disbursement_method" "public"."loan_disbursements_disbursement_method_enum" NOT NULL DEFAULT 'bank_transfer', "notes" text, "purpose" character varying(500), "interest_rate" numeric(5,2), "term_months" integer, "created_at" TIMESTAMP NOT NULL DEFAULT now(), "updated_at" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_9165b079d61baa9724c985f6723" PRIMARY KEY ("id"))`,
     );
     await queryRunner.query(
       `CREATE TYPE "public"."lenders_status_enum" AS ENUM('active', 'paused', 'suspended')`,
     );
     await queryRunner.query(
-      `CREATE TABLE "lenders" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "name" character varying(255) NOT NULL, "api_key_hash" character varying(500) NOT NULL, "callback_url" character varying(500), "outbound_api_key_encrypted" character varying(1000), "webhook_secret_encrypted" character varying(1000), "contact_email" character varying(255) NOT NULL, "status" "public"."lenders_status_enum" NOT NULL DEFAULT 'active', "metadata" jsonb, "created_at" TIMESTAMP NOT NULL DEFAULT now(), "updated_at" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_dec2ebd30bfaed645ddcb20229f" PRIMARY KEY ("id"))`,
+      `CREATE TABLE IF NOT EXISTS "lenders" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "name" character varying(255) NOT NULL, "api_key_hash" character varying(500) NOT NULL, "callback_url" character varying(500), "outbound_api_key_encrypted" character varying(1000), "webhook_secret_encrypted" character varying(1000), "contact_email" character varying(255) NOT NULL, "status" "public"."lenders_status_enum" NOT NULL DEFAULT 'active', "metadata" jsonb, "created_at" TIMESTAMP NOT NULL DEFAULT now(), "updated_at" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_dec2ebd30bfaed645ddcb20229f" PRIMARY KEY ("id"))`,
     );
     await queryRunner.query(
       `CREATE TYPE "public"."lender_permissions_category_enum" AS ENUM('loans', 'borrowers', 'analytics', 'settings', 'compliance', 'financial')`,
@@ -744,25 +870,25 @@ END$$;`);
       `CREATE TYPE "public"."lender_permissions_level_enum" AS ENUM('read', 'write', 'admin')`,
     );
     await queryRunner.query(
-      `CREATE TABLE "lender_permissions" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "name" character varying(100) NOT NULL, "description" text, "category" "public"."lender_permissions_category_enum" NOT NULL, "level" "public"."lender_permissions_level_enum" NOT NULL, "created_at" TIMESTAMP NOT NULL DEFAULT now(), "updated_at" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_131b00b78e946b5f87d385cadb3" PRIMARY KEY ("id"))`,
+      `CREATE TABLE IF NOT EXISTS "lender_permissions" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "name" character varying(100) NOT NULL, "description" text, "category" "public"."lender_permissions_category_enum" NOT NULL, "level" "public"."lender_permissions_level_enum" NOT NULL, "created_at" TIMESTAMP NOT NULL DEFAULT now(), "updated_at" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_131b00b78e946b5f87d385cadb3" PRIMARY KEY ("id"))`,
     );
     await queryRunner.query(
-      `CREATE TABLE "lender_roles" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "name" character varying(100) NOT NULL, "description" text, "level" integer NOT NULL DEFAULT '1', "is_custom" boolean NOT NULL DEFAULT true, "created_at" TIMESTAMP NOT NULL DEFAULT now(), "updated_at" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_d4cf15e96ddeef469b699677803" PRIMARY KEY ("id"))`,
+      `CREATE TABLE IF NOT EXISTS "lender_roles" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "name" character varying(100) NOT NULL, "description" text, "level" integer NOT NULL DEFAULT '1', "is_custom" boolean NOT NULL DEFAULT true, "created_at" TIMESTAMP NOT NULL DEFAULT now(), "updated_at" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_d4cf15e96ddeef469b699677803" PRIMARY KEY ("id"))`,
     );
     await queryRunner.query(
       `CREATE TYPE "public"."lender_users_status_enum" AS ENUM('active', 'inactive', 'pending', 'suspended')`,
     );
     await queryRunner.query(
-      `CREATE TABLE "lender_users" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "first_name" character varying(100) NOT NULL, "last_name" character varying(100) NOT NULL, "email" character varying(255) NOT NULL, "phone" character varying(20), "password_hash" character varying(255) NOT NULL, "lender_id" uuid NOT NULL, "role_id" uuid NOT NULL, "status" "public"."lender_users_status_enum" NOT NULL DEFAULT 'pending', "department" character varying(100), "avatar" character varying(500), "created_by" character varying(255) NOT NULL, "last_login" TIMESTAMP, "created_at" TIMESTAMP NOT NULL DEFAULT now(), "updated_at" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "UQ_a3d8ef2c048340ec8452f926463" UNIQUE ("email"), CONSTRAINT "PK_0f9a636a7e5548d25866703dfb9" PRIMARY KEY ("id"))`,
+      `CREATE TABLE IF NOT EXISTS "lender_users" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "first_name" character varying(100) NOT NULL, "last_name" character varying(100) NOT NULL, "email" character varying(255) NOT NULL, "phone" character varying(20), "password_hash" character varying(255) NOT NULL, "lender_id" uuid NOT NULL, "role_id" uuid NOT NULL, "status" "public"."lender_users_status_enum" NOT NULL DEFAULT 'pending', "department" character varying(100), "avatar" character varying(500), "created_by" character varying(255) NOT NULL, "last_login" TIMESTAMP, "created_at" TIMESTAMP NOT NULL DEFAULT now(), "updated_at" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "UQ_a3d8ef2c048340ec8452f926463" UNIQUE ("email"), CONSTRAINT "PK_0f9a636a7e5548d25866703dfb9" PRIMARY KEY ("id"))`,
     );
     await queryRunner.query(
-      `CREATE TABLE "lender_policies" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "lender_id" uuid NOT NULL, "interest_rate" numeric(5,4) NOT NULL, "repayment_term_days" integer NOT NULL, "max_advance_per_trip" numeric(15,2) NOT NULL, "max_exposure" numeric(15,2) NOT NULL, "advance_percentage" numeric(5,4) NOT NULL DEFAULT '0.7', "created_at" TIMESTAMP NOT NULL DEFAULT now(), "updated_at" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_832872e4152c496a12d35ca547f" PRIMARY KEY ("id"))`,
+      `CREATE TABLE IF NOT EXISTS "lender_policies" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "lender_id" uuid NOT NULL, "interest_rate" numeric(5,4) NOT NULL, "repayment_term_days" integer NOT NULL, "max_advance_per_trip" numeric(15,2) NOT NULL, "max_exposure" numeric(15,2) NOT NULL, "advance_percentage" numeric(5,4) NOT NULL DEFAULT '0.7', "created_at" TIMESTAMP NOT NULL DEFAULT now(), "updated_at" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_832872e4152c496a12d35ca547f" PRIMARY KEY ("id"))`,
     );
     await queryRunner.query(
-      `CREATE TABLE "borrowers" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "tenant_id" uuid NOT NULL, "company_name" character varying(255) NOT NULL, "contact_name" character varying(255), "email" character varying(255), "phone" character varying(20), "business_type" character varying(100), "registration_number" character varying(100), "address" text, "credit_score" integer, "status" character varying(20) NOT NULL DEFAULT 'active', "created_at" TIMESTAMP NOT NULL DEFAULT now(), "updated_at" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_81e4cddf7ab4dbd5e79a8f84031" PRIMARY KEY ("id"))`,
+      `CREATE TABLE IF NOT EXISTS "borrowers" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "tenant_id" uuid NOT NULL, "company_name" character varying(255) NOT NULL, "contact_name" character varying(255), "email" character varying(255), "phone" character varying(20), "business_type" character varying(100), "registration_number" character varying(100), "address" text, "credit_score" integer, "status" character varying(20) NOT NULL DEFAULT 'active', "created_at" TIMESTAMP NOT NULL DEFAULT now(), "updated_at" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_81e4cddf7ab4dbd5e79a8f84031" PRIMARY KEY ("id"))`,
     );
     await queryRunner.query(
-      `CREATE TABLE "trip_locations" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "tripId" character varying NOT NULL, "driverId" character varying NOT NULL, "latitude" numeric(10,8) NOT NULL, "longitude" numeric(11,8) NOT NULL, "altitude" numeric(5,2), "speed" numeric(5,2), "heading" numeric(5,2), "accuracy" numeric(5,2), "batteryLevel" numeric(5,2), "isMoving" boolean NOT NULL DEFAULT false, "metadata" jsonb, "timestamp" TIMESTAMP NOT NULL, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_f053370498ff61658917241d211" PRIMARY KEY ("id"))`,
+      `CREATE TABLE IF NOT EXISTS "trip_locations" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "tripId" character varying NOT NULL, "driverId" character varying NOT NULL, "latitude" numeric(10,8) NOT NULL, "longitude" numeric(11,8) NOT NULL, "altitude" numeric(5,2), "speed" numeric(5,2), "heading" numeric(5,2), "accuracy" numeric(5,2), "batteryLevel" numeric(5,2), "isMoving" boolean NOT NULL DEFAULT false, "metadata" jsonb, "timestamp" TIMESTAMP NOT NULL, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_f053370498ff61658917241d211" PRIMARY KEY ("id"))`,
     );
     await queryRunner.query(
       `CREATE INDEX IF NOT EXISTS "IDX_66a4fdd8f06d536dc5ef659e8f" ON "trip_locations" ("latitude", "longitude") `,
@@ -780,7 +906,7 @@ END$$;`);
       `CREATE TYPE "public"."trip_events_severity_enum" AS ENUM('INFO', 'WARNING', 'ERROR', 'CRITICAL')`,
     );
     await queryRunner.query(
-      `CREATE TABLE "trip_events" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "tripId" character varying NOT NULL, "driverId" character varying NOT NULL, "type" "public"."trip_events_type_enum" NOT NULL, "severity" "public"."trip_events_severity_enum" NOT NULL DEFAULT 'INFO', "title" character varying NOT NULL, "description" text NOT NULL, "latitude" numeric(10,8), "longitude" numeric(11,8), "speed" numeric(5,2), "data" jsonb, "requiresAcknowledgment" boolean NOT NULL DEFAULT false, "acknowledgedAt" TIMESTAMP, "acknowledgedBy" character varying, "metadata" jsonb, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_df6ea3b2ad6f86f525d796220da" PRIMARY KEY ("id"))`,
+      `CREATE TABLE IF NOT EXISTS "trip_events" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "tripId" character varying NOT NULL, "driverId" character varying NOT NULL, "type" "public"."trip_events_type_enum" NOT NULL, "severity" "public"."trip_events_severity_enum" NOT NULL DEFAULT 'INFO', "title" character varying NOT NULL, "description" text NOT NULL, "latitude" numeric(10,8), "longitude" numeric(11,8), "speed" numeric(5,2), "data" jsonb, "requiresAcknowledgment" boolean NOT NULL DEFAULT false, "acknowledgedAt" TIMESTAMP, "acknowledgedBy" character varying, "metadata" jsonb, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_df6ea3b2ad6f86f525d796220da" PRIMARY KEY ("id"))`,
     );
     await queryRunner.query(
       `CREATE INDEX IF NOT EXISTS "IDX_bd901edc39205134d03cb76535" ON "trip_events" ("type", "severity") `,
@@ -795,7 +921,7 @@ END$$;`);
       `CREATE TYPE "public"."geofences_type_enum" AS ENUM('PICKUP', 'DELIVERY', 'RESTRICTED', 'CUSTOM')`,
     );
     await queryRunner.query(
-      `CREATE TABLE "geofences" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "name" character varying NOT NULL, "description" text, "type" "public"."geofences_type_enum" NOT NULL DEFAULT 'CUSTOM', "latitude" numeric(10,8) NOT NULL, "longitude" numeric(11,8) NOT NULL, "radius" numeric(8,2) NOT NULL, "polygon" jsonb, "isActive" boolean NOT NULL DEFAULT true, "settings" jsonb, "metadata" jsonb, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_1c858c4e20c26a6e5b2a1a10c82" PRIMARY KEY ("id"))`,
+      `CREATE TABLE IF NOT EXISTS "geofences" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "name" character varying NOT NULL, "description" text, "type" "public"."geofences_type_enum" NOT NULL DEFAULT 'CUSTOM', "latitude" numeric(10,8) NOT NULL, "longitude" numeric(11,8) NOT NULL, "radius" numeric(8,2) NOT NULL, "polygon" jsonb, "isActive" boolean NOT NULL DEFAULT true, "settings" jsonb, "metadata" jsonb, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_1c858c4e20c26a6e5b2a1a10c82" PRIMARY KEY ("id"))`,
     );
     await queryRunner.query(
       `CREATE INDEX IF NOT EXISTS "IDX_41f05d0ab196734c957a5f94c5" ON "geofences" ("latitude", "longitude") `,
@@ -813,7 +939,7 @@ END$$;`);
       `CREATE TYPE "public"."driver_alerts_status_enum" AS ENUM('ACTIVE', 'ACKNOWLEDGED', 'RESOLVED', 'DISMISSED')`,
     );
     await queryRunner.query(
-      `CREATE TABLE "driver_alerts" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "driverId" character varying NOT NULL, "tripId" character varying, "type" "public"."driver_alerts_type_enum" NOT NULL, "severity" "public"."driver_alerts_severity_enum" NOT NULL DEFAULT 'MEDIUM', "status" "public"."driver_alerts_status_enum" NOT NULL DEFAULT 'ACTIVE', "title" character varying NOT NULL, "message" text NOT NULL, "latitude" numeric(10,8), "longitude" numeric(11,8), "speed" numeric(5,2), "data" jsonb, "acknowledgedAt" TIMESTAMP, "acknowledgedBy" character varying, "resolvedAt" TIMESTAMP, "resolvedBy" character varying, "metadata" jsonb, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_28b35bf619e38d94c3f53c495c3" PRIMARY KEY ("id"))`,
+      `CREATE TABLE IF NOT EXISTS "driver_alerts" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "driverId" character varying NOT NULL, "tripId" character varying, "type" "public"."driver_alerts_type_enum" NOT NULL, "severity" "public"."driver_alerts_severity_enum" NOT NULL DEFAULT 'MEDIUM', "status" "public"."driver_alerts_status_enum" NOT NULL DEFAULT 'ACTIVE', "title" character varying NOT NULL, "message" text NOT NULL, "latitude" numeric(10,8), "longitude" numeric(11,8), "speed" numeric(5,2), "data" jsonb, "acknowledgedAt" TIMESTAMP, "acknowledgedBy" character varying, "resolvedAt" TIMESTAMP, "resolvedBy" character varying, "metadata" jsonb, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_28b35bf619e38d94c3f53c495c3" PRIMARY KEY ("id"))`,
     );
     await queryRunner.query(
       `CREATE INDEX IF NOT EXISTS "IDX_9fb62928ec18d06acd906abe59" ON "driver_alerts" ("createdAt") `,
@@ -831,7 +957,7 @@ END$$;`);
       `CREATE TYPE "public"."pricing_predictions_status_enum" AS ENUM('pending', 'processed', 'failed', 'validated', 'rejected')`,
     );
     await queryRunner.query(
-      `CREATE TABLE "pricing_predictions" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "tenantId" uuid NOT NULL, "modelId" uuid NOT NULL, "tripId" uuid, "loadId" uuid, "truckId" uuid, "driverId" uuid, "status" "public"."pricing_predictions_status_enum" NOT NULL DEFAULT 'pending', "distance" numeric(10,2) NOT NULL, "weight" numeric(10,2) NOT NULL, "volume" numeric(10,2) NOT NULL, "originLocation" character varying(255) NOT NULL, "destinationLocation" character varying(255) NOT NULL, "routeComplexity" jsonb NOT NULL, "marketConditions" jsonb NOT NULL, "truckAvailability" jsonb NOT NULL, "driverMetrics" jsonb NOT NULL, "environmentalFactors" jsonb NOT NULL, "temporalFeatures" jsonb NOT NULL, "cargoFeatures" jsonb NOT NULL, "predictedPrice" numeric(12,2) NOT NULL, "actualPrice" numeric(12,2), "predictionAccuracy" numeric(10,2), "predictionError" numeric(10,2), "confidenceInterval" numeric(12,2) NOT NULL, "featureContributions" jsonb NOT NULL, "shapValues" jsonb NOT NULL, "limeExplanation" jsonb NOT NULL, "inferenceTime" numeric(10,4) NOT NULL, "modelVersion" jsonb NOT NULL, "isAccepted" boolean NOT NULL DEFAULT false, "isRejected" boolean NOT NULL DEFAULT false, "rejectionReason" character varying(255), "acceptedPrice" numeric(12,2), "acceptedAt" TIMESTAMP, "acceptedBy" character varying(255), "abTestGroup" character varying(50), "isABTest" boolean NOT NULL DEFAULT false, "biasMetrics" jsonb, "isAnomaly" boolean NOT NULL DEFAULT false, "anomalyScore" numeric(10,4), "driftMetrics" jsonb, "metadata" jsonb, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), "predictedAt" TIMESTAMP, "validatedAt" TIMESTAMP, CONSTRAINT "PK_08c32e60bd43778416f424e5701" PRIMARY KEY ("id"))`,
+      `CREATE TABLE IF NOT EXISTS "pricing_predictions" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "tenantId" uuid NOT NULL, "modelId" uuid NOT NULL, "tripId" uuid, "loadId" uuid, "truckId" uuid, "driverId" uuid, "status" "public"."pricing_predictions_status_enum" NOT NULL DEFAULT 'pending', "distance" numeric(10,2) NOT NULL, "weight" numeric(10,2) NOT NULL, "volume" numeric(10,2) NOT NULL, "originLocation" character varying(255) NOT NULL, "destinationLocation" character varying(255) NOT NULL, "routeComplexity" jsonb NOT NULL, "marketConditions" jsonb NOT NULL, "truckAvailability" jsonb NOT NULL, "driverMetrics" jsonb NOT NULL, "environmentalFactors" jsonb NOT NULL, "temporalFeatures" jsonb NOT NULL, "cargoFeatures" jsonb NOT NULL, "predictedPrice" numeric(12,2) NOT NULL, "actualPrice" numeric(12,2), "predictionAccuracy" numeric(10,2), "predictionError" numeric(10,2), "confidenceInterval" numeric(12,2) NOT NULL, "featureContributions" jsonb NOT NULL, "shapValues" jsonb NOT NULL, "limeExplanation" jsonb NOT NULL, "inferenceTime" numeric(10,4) NOT NULL, "modelVersion" jsonb NOT NULL, "isAccepted" boolean NOT NULL DEFAULT false, "isRejected" boolean NOT NULL DEFAULT false, "rejectionReason" character varying(255), "acceptedPrice" numeric(12,2), "acceptedAt" TIMESTAMP, "acceptedBy" character varying(255), "abTestGroup" character varying(50), "isABTest" boolean NOT NULL DEFAULT false, "biasMetrics" jsonb, "isAnomaly" boolean NOT NULL DEFAULT false, "anomalyScore" numeric(10,4), "driftMetrics" jsonb, "metadata" jsonb, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), "predictedAt" TIMESTAMP, "validatedAt" TIMESTAMP, CONSTRAINT "PK_08c32e60bd43778416f424e5701" PRIMARY KEY ("id"))`,
     );
     await queryRunner.query(
       `CREATE INDEX IF NOT EXISTS "IDX_33d10083cddf802f824f537e86" ON "pricing_predictions" ("predictedAt") `,
@@ -858,7 +984,7 @@ END$$;`);
       `CREATE TYPE "public"."pricing_models_status_enum" AS ENUM('training', 'active', 'inactive', 'deprecated', 'failed')`,
     );
     await queryRunner.query(
-      `CREATE TABLE "pricing_models" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "tenantId" uuid NOT NULL, "name" character varying(255) NOT NULL, "description" character varying(255) NOT NULL, "modelType" "public"."pricing_models_modeltype_enum" NOT NULL DEFAULT 'gradient_boosting', "version" "public"."pricing_models_version_enum" NOT NULL DEFAULT 'v1.0', "status" "public"."pricing_models_status_enum" NOT NULL DEFAULT 'inactive', "modelPath" character varying(255), "hyperparameters" jsonb, "featureConfig" jsonb, "performanceMetrics" jsonb, "trainingMetrics" jsonb, "biasMetrics" jsonb, "explainabilityMetrics" jsonb, "aBTestConfig" jsonb, "monitoringConfig" jsonb, "lastTrainingDate" TIMESTAMP, "lastInferenceDate" TIMESTAMP, "nextRetrainingDate" TIMESTAMP, "totalInferences" integer NOT NULL DEFAULT '0', "averageInferenceTime" numeric(10,2) NOT NULL DEFAULT '0', "averagePredictionAccuracy" numeric(10,2) NOT NULL DEFAULT '0', "metadata" jsonb, "createdBy" character varying(255), "updatedBy" character varying(255), "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_2d5c719fee2b6e2f857a67fc6b4" PRIMARY KEY ("id"))`,
+      `CREATE TABLE IF NOT EXISTS "pricing_models" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "tenantId" uuid NOT NULL, "name" character varying(255) NOT NULL, "description" character varying(255) NOT NULL, "modelType" "public"."pricing_models_modeltype_enum" NOT NULL DEFAULT 'gradient_boosting', "version" "public"."pricing_models_version_enum" NOT NULL DEFAULT 'v1.0', "status" "public"."pricing_models_status_enum" NOT NULL DEFAULT 'inactive', "modelPath" character varying(255), "hyperparameters" jsonb, "featureConfig" jsonb, "performanceMetrics" jsonb, "trainingMetrics" jsonb, "biasMetrics" jsonb, "explainabilityMetrics" jsonb, "aBTestConfig" jsonb, "monitoringConfig" jsonb, "lastTrainingDate" TIMESTAMP, "lastInferenceDate" TIMESTAMP, "nextRetrainingDate" TIMESTAMP, "totalInferences" integer NOT NULL DEFAULT '0', "averageInferenceTime" numeric(10,2) NOT NULL DEFAULT '0', "averagePredictionAccuracy" numeric(10,2) NOT NULL DEFAULT '0', "metadata" jsonb, "createdBy" character varying(255), "updatedBy" character varying(255), "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_2d5c719fee2b6e2f857a67fc6b4" PRIMARY KEY ("id"))`,
     );
     await queryRunner.query(
       `CREATE INDEX IF NOT EXISTS "IDX_a5a95c2eb289dbb91ed5399bb9" ON "pricing_models" ("createdAt") `,
@@ -879,7 +1005,7 @@ END$$;`);
       `CREATE TYPE "public"."pricing_features_featuresource_enum" AS ENUM('trip_data', 'market_data', 'weather_data', 'traffic_data', 'fuel_data', 'driver_data', 'truck_data', 'external_api', 'computed')`,
     );
     await queryRunner.query(
-      `CREATE TABLE "pricing_features" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "tenantId" uuid NOT NULL, "featureName" character varying(255) NOT NULL, "description" character varying(500) NOT NULL, "featureType" "public"."pricing_features_featuretype_enum" NOT NULL DEFAULT 'numerical', "featureSource" "public"."pricing_features_featuresource_enum" NOT NULL DEFAULT 'computed', "dataType" character varying(255) NOT NULL, "isActive" boolean NOT NULL DEFAULT true, "isRequired" boolean NOT NULL DEFAULT false, "importance" integer NOT NULL DEFAULT '0', "correlationWithTarget" numeric(10,4), "statistics" jsonb, "preprocessing" jsonb, "validation" jsonb, "driftMetrics" jsonb, "biasMetrics" jsonb, "featureEngineering" jsonb, "qualityMetrics" jsonb, "metadata" jsonb, "createdBy" character varying(255), "updatedBy" character varying(255), "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_0a2bc88284be8bf2a98145aacbf" PRIMARY KEY ("id"))`,
+      `CREATE TABLE IF NOT EXISTS "pricing_features" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "tenantId" uuid NOT NULL, "featureName" character varying(255) NOT NULL, "description" character varying(500) NOT NULL, "featureType" "public"."pricing_features_featuretype_enum" NOT NULL DEFAULT 'numerical', "featureSource" "public"."pricing_features_featuresource_enum" NOT NULL DEFAULT 'computed', "dataType" character varying(255) NOT NULL, "isActive" boolean NOT NULL DEFAULT true, "isRequired" boolean NOT NULL DEFAULT false, "importance" integer NOT NULL DEFAULT '0', "correlationWithTarget" numeric(10,4), "statistics" jsonb, "preprocessing" jsonb, "validation" jsonb, "driftMetrics" jsonb, "biasMetrics" jsonb, "featureEngineering" jsonb, "qualityMetrics" jsonb, "metadata" jsonb, "createdBy" character varying(255), "updatedBy" character varying(255), "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_0a2bc88284be8bf2a98145aacbf" PRIMARY KEY ("id"))`,
     );
     await queryRunner.query(
       `CREATE INDEX IF NOT EXISTS "IDX_be0cae5943aeb3a2aaa4344ef1" ON "pricing_features" ("isActive") `,
@@ -900,7 +1026,7 @@ END$$;`);
       `CREATE TYPE "public"."notification_templates_category_enum" AS ENUM('trip_status', 'payment', 'safety', 'performance', 'maintenance', 'system', 'marketing')`,
     );
     await queryRunner.query(
-      `CREATE TABLE "notification_templates" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "tenantId" uuid NOT NULL, "name" character varying(255) NOT NULL, "slug" character varying(255) NOT NULL, "type" "public"."notification_templates_type_enum" NOT NULL DEFAULT 'email', "category" "public"."notification_templates_category_enum" NOT NULL DEFAULT 'system', "language" character varying(10) NOT NULL DEFAULT 'en', "subject" character varying(255), "content" text NOT NULL, "htmlContent" text, "plainTextContent" text, "variables" jsonb, "defaultValues" jsonb, "branding" jsonb, "metadata" jsonb, "isActive" boolean NOT NULL DEFAULT true, "isDefault" boolean NOT NULL DEFAULT false, "version" integer NOT NULL DEFAULT '0', "createdBy" character varying(255), "updatedBy" character varying(255), "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_76f0fc48b8d057d2ae7f3a2848a" PRIMARY KEY ("id"))`,
+      `CREATE TABLE IF NOT EXISTS "notification_templates" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "tenantId" uuid NOT NULL, "name" character varying(255) NOT NULL, "slug" character varying(255) NOT NULL, "type" "public"."notification_templates_type_enum" NOT NULL DEFAULT 'email', "category" "public"."notification_templates_category_enum" NOT NULL DEFAULT 'system', "language" character varying(10) NOT NULL DEFAULT 'en', "subject" character varying(255), "content" text NOT NULL, "htmlContent" text, "plainTextContent" text, "variables" jsonb, "defaultValues" jsonb, "branding" jsonb, "metadata" jsonb, "isActive" boolean NOT NULL DEFAULT true, "isDefault" boolean NOT NULL DEFAULT false, "version" integer NOT NULL DEFAULT '0', "createdBy" character varying(255), "updatedBy" character varying(255), "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_76f0fc48b8d057d2ae7f3a2848a" PRIMARY KEY ("id"))`,
     );
     await queryRunner.query(
       `CREATE INDEX IF NOT EXISTS "IDX_4ec35888951e02b2898f54fd26" ON "notification_templates" ("isActive", "category") `,
@@ -921,7 +1047,7 @@ END$$;`);
       `CREATE TYPE "public"."notification_preferences_channel_enum" AS ENUM('email', 'sms', 'push', 'in_app')`,
     );
     await queryRunner.query(
-      `CREATE TABLE "notification_preferences" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "tenantId" uuid NOT NULL, "userId" uuid NOT NULL, "category" "public"."notification_preferences_category_enum" NOT NULL DEFAULT 'system', "channel" "public"."notification_preferences_channel_enum" NOT NULL DEFAULT 'email', "isEnabled" boolean NOT NULL DEFAULT true, "emailEnabled" boolean NOT NULL DEFAULT true, "smsEnabled" boolean NOT NULL DEFAULT true, "pushEnabled" boolean NOT NULL DEFAULT true, "inAppEnabled" boolean NOT NULL DEFAULT true, "emailAddress" character varying(255), "phoneNumber" character varying(20), "deviceToken" character varying(255), "language" character varying(10) NOT NULL DEFAULT 'en', "timezone" character varying(10) NOT NULL DEFAULT 'UTC', "quietHours" jsonb, "frequency" jsonb, "priority" jsonb, "metadata" jsonb, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_e94e2b543f2f218ee68e4f4fad2" PRIMARY KEY ("id"))`,
+      `CREATE TABLE IF NOT EXISTS "notification_preferences" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "tenantId" uuid NOT NULL, "userId" uuid NOT NULL, "category" "public"."notification_preferences_category_enum" NOT NULL DEFAULT 'system', "channel" "public"."notification_preferences_channel_enum" NOT NULL DEFAULT 'email', "isEnabled" boolean NOT NULL DEFAULT true, "emailEnabled" boolean NOT NULL DEFAULT true, "smsEnabled" boolean NOT NULL DEFAULT true, "pushEnabled" boolean NOT NULL DEFAULT true, "inAppEnabled" boolean NOT NULL DEFAULT true, "emailAddress" character varying(255), "phoneNumber" character varying(20), "deviceToken" character varying(255), "language" character varying(10) NOT NULL DEFAULT 'en', "timezone" character varying(10) NOT NULL DEFAULT 'UTC', "quietHours" jsonb, "frequency" jsonb, "priority" jsonb, "metadata" jsonb, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_e94e2b543f2f218ee68e4f4fad2" PRIMARY KEY ("id"))`,
     );
     await queryRunner.query(
       `CREATE INDEX IF NOT EXISTS "IDX_8facef03fbe2ee514e7fe7fe14" ON "notification_preferences" ("userId", "channel") `,
@@ -939,7 +1065,7 @@ END$$;`);
       `CREATE TYPE "public"."policy_renewals_renewaltype_enum" AS ENUM('automatic', 'manual', 'upgrade', 'downgrade', 'transfer')`,
     );
     await queryRunner.query(
-      `CREATE TABLE "policy_renewals" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "renewalNumber" character varying(50) NOT NULL, "status" "public"."policy_renewals_status_enum" NOT NULL DEFAULT 'pending', "renewalType" "public"."policy_renewals_renewaltype_enum" NOT NULL DEFAULT 'manual', "currentEndDate" date NOT NULL, "renewalDate" date NOT NULL, "newStartDate" date, "newEndDate" date, "currentPremium" numeric(10,2) NOT NULL, "newPremium" numeric(10,2), "premiumChange" numeric(10,2), "newCoverageAmount" numeric(15,2), "newDeductible" numeric(10,2), "coverageChanges" json, "newCoverageDetails" json, "autoRenew" boolean NOT NULL DEFAULT false, "renewalReason" text, "rejectionReason" text, "notes" text, "documents" json, "reminderSentDate" date, "approvalDate" date, "completionDate" date, "approvedBy" uuid, "policyId" uuid NOT NULL, "tenantId" uuid NOT NULL, "createdBy" uuid NOT NULL, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), "deletedAt" TIMESTAMP, CONSTRAINT "UQ_cd480bbedf6d4b5c314008ff425" UNIQUE ("renewalNumber"), CONSTRAINT "PK_7336e3b1ebee5e7b7617d1ee93a" PRIMARY KEY ("id"))`,
+      `CREATE TABLE IF NOT EXISTS "policy_renewals" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "renewalNumber" character varying(50) NOT NULL, "status" "public"."policy_renewals_status_enum" NOT NULL DEFAULT 'pending', "renewalType" "public"."policy_renewals_renewaltype_enum" NOT NULL DEFAULT 'manual', "currentEndDate" date NOT NULL, "renewalDate" date NOT NULL, "newStartDate" date, "newEndDate" date, "currentPremium" numeric(10,2) NOT NULL, "newPremium" numeric(10,2), "premiumChange" numeric(10,2), "newCoverageAmount" numeric(15,2), "newDeductible" numeric(10,2), "coverageChanges" json, "newCoverageDetails" json, "autoRenew" boolean NOT NULL DEFAULT false, "renewalReason" text, "rejectionReason" text, "notes" text, "documents" json, "reminderSentDate" date, "approvalDate" date, "completionDate" date, "approvedBy" uuid, "policyId" uuid NOT NULL, "tenantId" uuid NOT NULL, "createdBy" uuid NOT NULL, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), "deletedAt" TIMESTAMP, CONSTRAINT "UQ_cd480bbedf6d4b5c314008ff425" UNIQUE ("renewalNumber"), CONSTRAINT "PK_7336e3b1ebee5e7b7617d1ee93a" PRIMARY KEY ("id"))`,
     );
     await queryRunner.query(
       `CREATE INDEX IF NOT EXISTS "IDX_150613de3612941b1e1b921e06" ON "policy_renewals" ("renewalDate") `,
@@ -960,7 +1086,7 @@ END$$;`);
       `CREATE TYPE "public"."financial_payments_status_enum" AS ENUM('pending', 'completed', 'failed', 'refunded')`,
     );
     await queryRunner.query(
-      `CREATE TABLE "financial_payments" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "invoiceId" character varying NOT NULL, "invoiceNumber" character varying NOT NULL, "customerId" character varying NOT NULL, "customerName" character varying NOT NULL, "amount" numeric(10,2) NOT NULL, "paymentDate" TIMESTAMP NOT NULL, "paymentMethod" "public"."financial_payments_paymentmethod_enum" NOT NULL, "referenceNumber" character varying, "status" "public"."financial_payments_status_enum" NOT NULL DEFAULT 'pending', "notes" text, "processingFee" numeric(10,2), "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), "createdBy" uuid NOT NULL, "tenantId" uuid NOT NULL, CONSTRAINT "PK_519cd663ee123fce8d831033338" PRIMARY KEY ("id"))`,
+      `CREATE TABLE IF NOT EXISTS "financial_payments" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "invoiceId" character varying NOT NULL, "invoiceNumber" character varying NOT NULL, "customerId" character varying NOT NULL, "customerName" character varying NOT NULL, "amount" numeric(10,2) NOT NULL, "paymentDate" TIMESTAMP NOT NULL, "paymentMethod" "public"."financial_payments_paymentmethod_enum" NOT NULL, "referenceNumber" character varying, "status" "public"."financial_payments_status_enum" NOT NULL DEFAULT 'pending', "notes" text, "processingFee" numeric(10,2), "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), "createdBy" uuid NOT NULL, "tenantId" uuid NOT NULL, CONSTRAINT "PK_519cd663ee123fce8d831033338" PRIMARY KEY ("id"))`,
     );
     await queryRunner.query(
       `CREATE TYPE "public"."tax_records_type_enum" AS ENUM('ifta', 'fuel_tax', 'income_tax', 'sales_tax')`,
@@ -969,19 +1095,19 @@ END$$;`);
       `CREATE TYPE "public"."tax_records_status_enum" AS ENUM('pending', 'filed', 'paid', 'overdue')`,
     );
     await queryRunner.query(
-      `CREATE TABLE "tax_records" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "type" "public"."tax_records_type_enum" NOT NULL, "period" character varying NOT NULL, "filingDate" TIMESTAMP NOT NULL, "dueDate" TIMESTAMP NOT NULL, "amount" numeric(10,2) NOT NULL, "status" "public"."tax_records_status_enum" NOT NULL DEFAULT 'pending', "jurisdiction" character varying NOT NULL, "referenceNumber" character varying, "notes" text, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), "createdBy" uuid NOT NULL, "tenantId" uuid NOT NULL, CONSTRAINT "PK_db43e50fbb0fd5cc693e5f61eee" PRIMARY KEY ("id"))`,
+      `CREATE TABLE IF NOT EXISTS "tax_records" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "type" "public"."tax_records_type_enum" NOT NULL, "period" character varying NOT NULL, "filingDate" TIMESTAMP NOT NULL, "dueDate" TIMESTAMP NOT NULL, "amount" numeric(10,2) NOT NULL, "status" "public"."tax_records_status_enum" NOT NULL DEFAULT 'pending', "jurisdiction" character varying NOT NULL, "referenceNumber" character varying, "notes" text, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), "createdBy" uuid NOT NULL, "tenantId" uuid NOT NULL, CONSTRAINT "PK_db43e50fbb0fd5cc693e5f61eee" PRIMARY KEY ("id"))`,
     );
     await queryRunner.query(
       `CREATE TYPE "public"."invoices_status_enum" AS ENUM('draft', 'sent', 'paid', 'overdue', 'cancelled')`,
     );
     await queryRunner.query(
-      `CREATE TABLE "invoices" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "invoiceNumber" character varying NOT NULL, "customerId" character varying NOT NULL, "customerName" character varying NOT NULL, "tripId" character varying, "truckId" character varying, "driverId" character varying, "issueDate" TIMESTAMP NOT NULL, "dueDate" TIMESTAMP NOT NULL, "status" "public"."invoices_status_enum" NOT NULL DEFAULT 'draft', "subtotal" numeric(10,2) NOT NULL, "taxAmount" numeric(10,2) NOT NULL, "totalAmount" numeric(10,2) NOT NULL, "currency" character varying NOT NULL DEFAULT 'USD', "notes" text, "paymentTerms" character varying NOT NULL DEFAULT 'Net 30', "paymentMethod" character varying, "paidDate" TIMESTAMP, "lateFees" numeric(10,2), "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), "createdBy" uuid NOT NULL, "tenantId" uuid NOT NULL, CONSTRAINT "UQ_bf8e0f9dd4558ef209ec111782d" UNIQUE ("invoiceNumber"), CONSTRAINT "PK_668cef7c22a427fd822cc1be3ce" PRIMARY KEY ("id"))`,
+      `CREATE TABLE IF NOT EXISTS "invoices" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "invoiceNumber" character varying NOT NULL, "customerId" character varying NOT NULL, "customerName" character varying NOT NULL, "tripId" character varying, "truckId" character varying, "driverId" character varying, "issueDate" TIMESTAMP NOT NULL, "dueDate" TIMESTAMP NOT NULL, "status" "public"."invoices_status_enum" NOT NULL DEFAULT 'draft', "subtotal" numeric(10,2) NOT NULL, "taxAmount" numeric(10,2) NOT NULL, "totalAmount" numeric(10,2) NOT NULL, "currency" character varying NOT NULL DEFAULT 'USD', "notes" text, "paymentTerms" character varying NOT NULL DEFAULT 'Net 30', "paymentMethod" character varying, "paidDate" TIMESTAMP, "lateFees" numeric(10,2), "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), "createdBy" uuid NOT NULL, "tenantId" uuid NOT NULL, CONSTRAINT "UQ_bf8e0f9dd4558ef209ec111782d" UNIQUE ("invoiceNumber"), CONSTRAINT "PK_668cef7c22a427fd822cc1be3ce" PRIMARY KEY ("id"))`,
     );
     await queryRunner.query(
       `CREATE TYPE "public"."invoice_items_type_enum" AS ENUM('freight', 'fuel_surcharge', 'toll', 'detention', 'lumper', 'accessorial')`,
     );
     await queryRunner.query(
-      `CREATE TABLE "invoice_items" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "description" character varying NOT NULL, "quantity" integer NOT NULL, "unitPrice" numeric(10,2) NOT NULL, "totalPrice" numeric(10,2) NOT NULL, "type" "public"."invoice_items_type_enum" NOT NULL, "tripId" character varying, "notes" text, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), "invoiceId" uuid, CONSTRAINT "PK_53b99f9e0e2945e69de1a12b75a" PRIMARY KEY ("id"))`,
+      `CREATE TABLE IF NOT EXISTS "invoice_items" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "description" character varying NOT NULL, "quantity" integer NOT NULL, "unitPrice" numeric(10,2) NOT NULL, "totalPrice" numeric(10,2) NOT NULL, "type" "public"."invoice_items_type_enum" NOT NULL, "tripId" character varying, "notes" text, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), "invoiceId" uuid, CONSTRAINT "PK_53b99f9e0e2945e69de1a12b75a" PRIMARY KEY ("id"))`,
     );
     await queryRunner.query(
       `CREATE TYPE "public"."expenses_type_enum" AS ENUM('fuel', 'maintenance', 'toll', 'driver', 'insurance', 'tax', 'other')`,
@@ -990,7 +1116,7 @@ END$$;`);
       `CREATE TYPE "public"."expenses_status_enum" AS ENUM('pending', 'approved', 'rejected', 'paid')`,
     );
     await queryRunner.query(
-      `CREATE TABLE "expenses" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "type" "public"."expenses_type_enum" NOT NULL, "category" character varying NOT NULL, "amount" numeric(10,2) NOT NULL, "date" TIMESTAMP NOT NULL, "description" character varying NOT NULL, "truckId" character varying, "driverId" character varying, "tripId" character varying, "receipt" character varying, "status" "public"."expenses_status_enum" NOT NULL DEFAULT 'pending', "approvedBy" character varying, "approvedDate" TIMESTAMP, "notes" text, "taxDeductible" boolean NOT NULL DEFAULT true, "allocationCustomerId" character varying, "allocationTripId" character varying, "allocationPercentage" numeric(5,2) NOT NULL DEFAULT '100', "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), "createdBy" uuid NOT NULL, "tenantId" uuid NOT NULL, CONSTRAINT "PK_94c3ceb17e3140abc9282c20610" PRIMARY KEY ("id"))`,
+      `CREATE TABLE IF NOT EXISTS "expenses" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "type" "public"."expenses_type_enum" NOT NULL, "category" character varying NOT NULL, "amount" numeric(10,2) NOT NULL, "date" TIMESTAMP NOT NULL, "description" character varying NOT NULL, "truckId" character varying, "driverId" character varying, "tripId" character varying, "receipt" character varying, "status" "public"."expenses_status_enum" NOT NULL DEFAULT 'pending', "approvedBy" character varying, "approvedDate" TIMESTAMP, "notes" text, "taxDeductible" boolean NOT NULL DEFAULT true, "allocationCustomerId" character varying, "allocationTripId" character varying, "allocationPercentage" numeric(5,2) NOT NULL DEFAULT '100', "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), "createdBy" uuid NOT NULL, "tenantId" uuid NOT NULL, CONSTRAINT "PK_94c3ceb17e3140abc9282c20610" PRIMARY KEY ("id"))`,
     );
     await queryRunner.query(
       `CREATE TYPE "public"."financial_reports_type_enum" AS ENUM('pl_statement', 'cash_flow', 'revenue', 'expense', 'profitability')`,
@@ -999,13 +1125,13 @@ END$$;`);
       `CREATE TYPE "public"."financial_reports_period_enum" AS ENUM('daily', 'weekly', 'monthly', 'quarterly', 'yearly')`,
     );
     await queryRunner.query(
-      `CREATE TABLE "financial_reports" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "type" "public"."financial_reports_type_enum" NOT NULL, "period" "public"."financial_reports_period_enum" NOT NULL, "startDate" TIMESTAMP NOT NULL, "endDate" TIMESTAMP NOT NULL, "data" json NOT NULL, "generatedAt" TIMESTAMP NOT NULL, "generatedBy" character varying NOT NULL, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), "createdBy" uuid NOT NULL, "tenantId" uuid NOT NULL, CONSTRAINT "PK_4dd23f1aa1f11c233bad2937702" PRIMARY KEY ("id"))`,
+      `CREATE TABLE IF NOT EXISTS "financial_reports" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "type" "public"."financial_reports_type_enum" NOT NULL, "period" "public"."financial_reports_period_enum" NOT NULL, "startDate" TIMESTAMP NOT NULL, "endDate" TIMESTAMP NOT NULL, "data" json NOT NULL, "generatedAt" TIMESTAMP NOT NULL, "generatedBy" character varying NOT NULL, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), "createdBy" uuid NOT NULL, "tenantId" uuid NOT NULL, CONSTRAINT "PK_4dd23f1aa1f11c233bad2937702" PRIMARY KEY ("id"))`,
     );
     await queryRunner.query(
-      `CREATE TABLE "budgets" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "year" integer NOT NULL, "month" integer, "category" character varying NOT NULL, "plannedAmount" numeric(10,2) NOT NULL, "actualAmount" numeric(10,2) NOT NULL, "variance" numeric(10,2) NOT NULL, "variancePercentage" numeric(5,2) NOT NULL, "notes" text, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), "createdBy" uuid NOT NULL, "tenantId" uuid NOT NULL, CONSTRAINT "PK_9c8a51748f82387644b773da482" PRIMARY KEY ("id"))`,
+      `CREATE TABLE IF NOT EXISTS "budgets" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "year" integer NOT NULL, "month" integer, "category" character varying NOT NULL, "plannedAmount" numeric(10,2) NOT NULL, "actualAmount" numeric(10,2) NOT NULL, "variance" numeric(10,2) NOT NULL, "variancePercentage" numeric(5,2) NOT NULL, "notes" text, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), "createdBy" uuid NOT NULL, "tenantId" uuid NOT NULL, CONSTRAINT "PK_9c8a51748f82387644b773da482" PRIMARY KEY ("id"))`,
     );
     await queryRunner.query(
-      `CREATE TABLE "lender_role_permissions" ("role_id" uuid NOT NULL, "permission_id" uuid NOT NULL, CONSTRAINT "PK_ff6d1f74bc7c2c32132bf363176" PRIMARY KEY ("role_id", "permission_id"))`,
+      `CREATE TABLE IF NOT EXISTS "lender_role_permissions" ("role_id" uuid NOT NULL, "permission_id" uuid NOT NULL, CONSTRAINT "PK_ff6d1f74bc7c2c32132bf363176" PRIMARY KEY ("role_id", "permission_id"))`,
     );
     await queryRunner.query(
       `CREATE INDEX IF NOT EXISTS "IDX_05f0a14b055bab4011e9b58f09" ON "lender_role_permissions" ("role_id") `,
@@ -1014,7 +1140,7 @@ END$$;`);
       `CREATE INDEX IF NOT EXISTS "IDX_f4803284da86c04ffbab09e0a1" ON "lender_role_permissions" ("permission_id") `,
     );
     await queryRunner.query(
-      `CREATE TABLE "lender_user_permissions" ("user_id" uuid NOT NULL, "permission_id" uuid NOT NULL, CONSTRAINT "PK_efe23dd2442a22b29b8c439121f" PRIMARY KEY ("user_id", "permission_id"))`,
+      `CREATE TABLE IF NOT EXISTS "lender_user_permissions" ("user_id" uuid NOT NULL, "permission_id" uuid NOT NULL, CONSTRAINT "PK_efe23dd2442a22b29b8c439121f" PRIMARY KEY ("user_id", "permission_id"))`,
     );
     await queryRunner.query(
       `CREATE INDEX IF NOT EXISTS "IDX_05f55bf74e2b5ba8b79b6f3b1c" ON "lender_user_permissions" ("user_id") `,

@@ -275,6 +275,7 @@ export class NotificationController {
     UserRole.DRIVER,
     UserRole.AGENT,
     UserRole.LENDER,
+    UserRole.BROKER,
     UserRole.USER,
   )
   @ApiOperation({
@@ -316,6 +317,7 @@ export class NotificationController {
     UserRole.DRIVER,
     UserRole.AGENT,
     UserRole.LENDER,
+    UserRole.BROKER,
     UserRole.USER,
   )
   @ApiOperation({
@@ -419,6 +421,9 @@ export class NotificationController {
     UserRole.SUPER_ADMIN,
     UserRole.TRUCK_OWNER,
     UserRole.DRIVER,
+    UserRole.BROKER,
+    UserRole.CARGO_OWNER,
+    UserRole.LENDER,
   )
   @ApiOperation({
     summary: 'Get notification by ID',
@@ -447,6 +452,9 @@ export class NotificationController {
     UserRole.SUPER_ADMIN,
     UserRole.TRUCK_OWNER,
     UserRole.DRIVER,
+    UserRole.BROKER,
+    UserRole.CARGO_OWNER,
+    UserRole.LENDER,
   )
   @ApiOperation({
     summary: 'Update notification',
@@ -481,6 +489,10 @@ export class NotificationController {
     UserRole.SUPER_ADMIN,
     UserRole.TRUCK_OWNER,
     UserRole.DRIVER,
+    UserRole.BROKER,
+    UserRole.CARGO_OWNER,
+    UserRole.LENDER,
+    UserRole.AGENT,
   )
   @ApiOperation({
     summary: 'Mark notification as read',
@@ -505,6 +517,10 @@ export class NotificationController {
     UserRole.SUPER_ADMIN,
     UserRole.TRUCK_OWNER,
     UserRole.DRIVER,
+    UserRole.BROKER,
+    UserRole.CARGO_OWNER,
+    UserRole.LENDER,
+    UserRole.AGENT,
   )
   @ApiOperation({
     summary: 'Bulk mark notifications as read',

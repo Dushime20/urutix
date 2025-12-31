@@ -27,6 +27,7 @@ import FilterSelect from "@/components/common/FilterSelect";
 import { FaLayerGroup, FaBox } from "react-icons/fa";
 import logoUrutiX from "@/assets/logo-urutix.svg";
 import { useConfirmDialog } from "@/hooks/useConfirmDialog";
+import { AssignBrokerModal } from "@/components/CargoDashboard/AssignBrokerModal";
 
 type TabType = "all" | "active" | "create" | "template" | "bidding";
 
@@ -103,6 +104,10 @@ const UnifiedCargoManagement = () => {
     useState<any>(null);
   const [editingCargo, setEditingCargo] = useState<any>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  
+  // Broker assignment state
+  const [showAssignBrokerModal, setShowAssignBrokerModal] = useState(false);
+  const [selectedLoadForBroker, setSelectedLoadForBroker] = useState<any>(null);
 
   const {
     data: loadsResponse,
@@ -112,21 +117,13 @@ const UnifiedCargoManagement = () => {
   } = useQuery({
     queryKey: ["loads", searchTerm, statusFilter, cargoTypeFilter],
     queryFn: async () => {
-      try {
-        const response = await loadsAPI.getLoadsWithEnrichedLocations();
-        return response;
-      } catch (error) {
-        try {
-          const fallbackResponse = await loadsAPI.getAll({
-            search: searchTerm,
-            status: statusFilter || undefined,
-            cargoType: cargoTypeFilter || undefined,
-          });
-          return fallbackResponse;
-        } catch (fallbackError) {
-          throw fallbackError;
-        }
-      }
+      // Use the regular /loads endpoint which includes broker data
+      const response = await loadsAPI.getAll({
+        search: searchTerm,
+        status: statusFilter || undefined,
+        cargoType: cargoTypeFilter || undefined,
+      });
+      return response;
     },
     retry: 1,
     refetchOnWindowFocus: false,
@@ -263,6 +260,48 @@ const UnifiedCargoManagement = () => {
       const message = backendMessage || error?.message || "Failed to create cargo";
       toast.error(message);
       throw new Error(message);
+    }
+  };
+
+  const handleAssignBroker = (load: any) => {
+    console.log('handleAssignBroker called with load:', load);
+    setSelectedLoadForBroker(load);
+    setShowAssignBrokerModal(true);
+  };
+
+  const handleBrokerAssignmentSuccess = async () => {
+    console.log('🔄 handleBrokerAssignmentSuccess called - refreshing data...');
+    // Refresh loads after successful broker assignment
+    try {
+      await refetch();
+      console.log('✅ Data refreshed successfully');
+      // Force a small delay to ensure UI updates
+      await new Promise(resolve => setTimeout(resolve, 300));
+    } catch (error) {
+      console.error('❌ Error refreshing data:', error);
+    }
+  };
+
+  const handleUnassignBroker = async (load: any) => {
+    const confirmed = await confirm({
+      title: "Unassign Broker",
+      message: `Are you sure you want to unassign the broker from "${load.title || "this cargo"}"?`,
+      confirmText: "Unassign",
+      cancelText: "Cancel",
+      variant: "warning",
+    });
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      const { brokerAPI } = await import('@/services/brokerApi');
+      await brokerAPI.unassignBrokerFromLoad(load.id);
+      toast.success("Broker unassigned successfully");
+      refetch();
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || "Failed to unassign broker");
     }
   };
 
@@ -596,6 +635,8 @@ const UnifiedCargoManagement = () => {
                         handleConfirmLoading={handleConfirmLoading}
                         handleDeleteCargo={handleDeleteCargo}
                         handleEditCargo={handleEditCargo}
+                        handleAssignBroker={handleAssignBroker}
+                        handleUnassignBroker={handleUnassignBroker}
                       />
                     ))}
                   </div>
@@ -691,6 +732,32 @@ const UnifiedCargoManagement = () => {
             handleCloseLoadConfirmation();
             refetch();
           }}
+        />
+      )}
+
+      {/* Assign Broker Modal */}
+      {selectedLoadForBroker && (
+        <AssignBrokerModal
+          key={`broker-modal-${selectedLoadForBroker.id}-${selectedLoadForBroker.brokerId || 'none'}`}
+          isOpen={showAssignBrokerModal}
+          onClose={async () => {
+            // Refresh data when closing to get latest broker assignment
+            await refetch();
+            setShowAssignBrokerModal(false);
+            // Update selectedLoadForBroker with fresh data
+            const freshLoads = loadsData || [];
+            const freshLoad = freshLoads.find((l: any) => l.id === selectedLoadForBroker.id);
+            if (freshLoad) {
+              setSelectedLoadForBroker(freshLoad);
+            } else {
+              setSelectedLoadForBroker(null);
+            }
+          }}
+          loadId={selectedLoadForBroker.id}
+          loadTitle={selectedLoadForBroker.title}
+          loadValue={selectedLoadForBroker.loadValue}
+          currentBrokerId={selectedLoadForBroker.brokerId || selectedLoadForBroker.broker?.id}
+          onSuccess={handleBrokerAssignmentSuccess}
         />
       )}
 

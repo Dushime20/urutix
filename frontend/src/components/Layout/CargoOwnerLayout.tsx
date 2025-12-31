@@ -25,6 +25,7 @@ const CargoOwnerLayout: React.FC = () => {
     }
   }, []);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [hideHeader, setHideHeader] = useState(false);
   const { user, isLoading, logout } = useAuth();
   const navigate = useNavigate();
   const userMenuRef = useRef<HTMLDivElement>(null);
@@ -58,17 +59,45 @@ const CargoOwnerLayout: React.FC = () => {
     }
   }, [isLoading, user, navigate]);
 
+  // Redirect brokers to their own layout
+  useEffect(() => {
+    if (!isLoading && user && user.role === 'BROKER') {
+      navigate('/dashboard/broker', { replace: true });
+    }
+  }, [isLoading, user, navigate]);
+
   // Close user menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
+      const target = event.target as HTMLElement;
+      
+      // Don't close if clicking inside the user menu
+      if (userMenuRef.current && userMenuRef.current.contains(target)) {
+        console.log('🟡 Click INSIDE menu, keeping menu open', target);
+        return; // Don't close menu, let the click handler inside handle it
+      }
+      
+      // Check if click is on logout div specifically
+      if (target.closest('[role="button"][aria-label="Logout"]')) {
+        console.log('🟡 Click detected on logout div, keeping menu open');
+        return; // Don't close menu, let logout div handle it
+      }
+      
+      // Only close if clicking outside
+      if (userMenuRef.current && !userMenuRef.current.contains(target)) {
+        console.log('🟡 Click outside menu, closing...', target);
         setShowUserMenu(false);
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
+    // Use capture phase but with a small delay to allow menu clicks to register first
+    const timeoutId = setTimeout(() => {
+      document.addEventListener('mousedown', handleClickOutside, true);
+    }, 100);
+    
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      clearTimeout(timeoutId);
+      document.removeEventListener('mousedown', handleClickOutside, true);
     };
   }, []);
 
@@ -109,13 +138,43 @@ const CargoOwnerLayout: React.FC = () => {
     setSidebarOpen(!sidebarOpen);
   };
 
-  const handleLogout = (e?: React.MouseEvent) => {
-    e?.preventDefault();
-    e?.stopPropagation();
+  const handleLogout = async (e?: React.MouseEvent) => {
+    console.log('🔄 handleLogout called', { e, user: !!user, logout: !!logout });
+    
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    
     setShowUserMenu(false);
-    logout();
-    // Force hard navigation to ensure logout works
-    window.location.href = '/auth';
+    
+    try {
+      console.log('🔄 Starting logout process...');
+      
+      if (!logout) {
+        console.error('❌ Logout function is not available!');
+        // Force redirect anyway
+        window.location.href = '/auth';
+        return;
+      }
+      
+      // Call logout to clear tokens and user data
+      logout();
+      
+      console.log('✅ Logout function called, waiting before redirect...');
+      
+      // Small delay to ensure logout completes before navigation
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
+      console.log('🔄 Redirecting to auth page...');
+      
+      // Force hard navigation to ensure logout works
+      window.location.href = '/auth';
+    } catch (error) {
+      console.error('❌ Logout error:', error);
+      // Even if logout fails, redirect to auth page
+      window.location.href = '/auth';
+    }
   };
 
   return (
@@ -124,6 +183,8 @@ const CargoOwnerLayout: React.FC = () => {
         sidebarCollapsed: !sidebarOpen,
         toggleSidebar,
         setSidebarCollapsed: (collapsed: boolean) => setSidebarOpen(!collapsed),
+        hideHeader,
+        setHideHeader,
       }}
     >
       <div className="flex h-screen bg-gray-50 relative">
@@ -158,11 +219,16 @@ const CargoOwnerLayout: React.FC = () => {
         </div>
 
         {/* Main Content */}
-        <div className={`flex-1 flex flex-col overflow-hidden relative z-10 w-full transition-all duration-300 ${
+        <div className={`flex-1 flex flex-col overflow-hidden relative z-0 w-full transition-all duration-300 ${
           sidebarOpen ? 'lg:ml-64' : ''
         }`}>
           {/* Header */}
-          <header className="bg-white border-b border-gray-200 px-2 sm:px-4 py-2.5 relative z-10">
+          <header 
+            className={`bg-white border-b border-gray-200 px-2 sm:px-4 py-2.5 sticky top-0 z-[9998] transition-all duration-300 ${
+              hideHeader ? 'hidden' : ''
+            }`}
+            style={{ display: hideHeader ? 'none' : 'block' }}
+          >
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center space-x-2 sm:space-x-3 flex-1 min-w-0">
                 {/* Menu Toggle Button */}
@@ -199,7 +265,7 @@ const CargoOwnerLayout: React.FC = () => {
                 </button>
 
                 {/* User Menu */}
-                <div className="relative" ref={userMenuRef}>
+                <div className="relative z-[9999]" ref={userMenuRef}>
                   <div className="flex items-center space-x-1 sm:space-x-2">
                     <div className="text-right hidden sm:block">
                       <div className="text-xs font-medium text-gray-900">
@@ -216,7 +282,11 @@ const CargoOwnerLayout: React.FC = () => {
                       </div>
                     </div>
                     <button 
-                      onClick={() => setShowUserMenu(!showUserMenu)}
+                      onClick={() => {
+                        console.log('🟡 Profile icon clicked, showUserMenu:', showUserMenu);
+                        setShowUserMenu(!showUserMenu);
+                        console.log('🟡 showUserMenu after toggle:', !showUserMenu);
+                      }}
                       className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
                       aria-label="User menu"
                     >
@@ -226,7 +296,19 @@ const CargoOwnerLayout: React.FC = () => {
 
                   {/* User Dropdown Menu */}
                   {showUserMenu && (
-                    <div className="absolute right-0 mt-2 w-44 bg-white rounded-lg shadow-lg border border-gray-200 py-1.5 z-50">
+                    <div 
+                      className="absolute right-0 mt-2 w-44 bg-white rounded-lg shadow-lg border border-gray-200 py-1.5"
+                      style={{ 
+                        zIndex: 9999,
+                        pointerEvents: 'auto',
+                        position: 'absolute'
+                      }}
+                      ref={(el) => {
+                        if (el) {
+                          console.log('🟢 Dropdown menu rendered!', el);
+                        }
+                      }}
+                    >
                       <button
                         onClick={() => {
                           setShowUserMenu(false);
@@ -249,8 +331,54 @@ const CargoOwnerLayout: React.FC = () => {
                       </button>
                       <hr className="my-1" />
                       <button
-                        onClick={(e) => handleLogout(e)}
-                        className="w-full px-3 py-1.5 text-left text-xs text-red-600 hover:bg-gray-100 flex items-center space-x-2"
+                        type="button"
+                        onClick={(e) => {
+                          console.log('🔴🔴🔴 LOGOUT BUTTON CLICKED!', e, e.target);
+                          e.preventDefault();
+                          e.stopPropagation();
+                          
+                          // Direct logout - immediate action
+                          console.log('🔴 Starting immediate logout...');
+                          
+                          // Clear tokens immediately
+                          localStorage.removeItem('accessToken');
+                          localStorage.removeItem('refreshToken');
+                          
+                          // Call logout function if available
+                          if (logout && typeof logout === 'function') {
+                            try {
+                              logout();
+                            } catch (err) {
+                              console.error('Logout function error:', err);
+                            }
+                          }
+                          
+                          // Force immediate redirect - no delay
+                          console.log('🔴 Redirecting to /auth NOW...');
+                          window.location.href = '/auth';
+                        }}
+                        onMouseDown={(e) => {
+                          console.log('🔴 LOGOUT BUTTON MOUSEDOWN!', e, e.target);
+                          e.preventDefault();
+                          e.stopPropagation();
+                        }}
+                        onMouseEnter={() => {
+                          console.log('🔴 LOGOUT BUTTON MOUSE ENTER!');
+                        }}
+                        className="w-full px-3 py-1.5 text-left text-xs text-red-600 hover:bg-red-50 active:bg-red-100 flex items-center space-x-2 cursor-pointer transition-colors"
+                        style={{ 
+                          pointerEvents: 'auto',
+                          zIndex: 10000,
+                          position: 'relative',
+                          userSelect: 'none',
+                          WebkitUserSelect: 'none',
+                          touchAction: 'manipulation',
+                          background: 'transparent',
+                          border: 'none',
+                          outline: 'none'
+                        }}
+                        aria-label="Logout"
+                        data-testid="logout-button"
                       >
                         <FaSignOutAlt className="w-3.5 h-3.5" />
                         <span>Logout</span>
