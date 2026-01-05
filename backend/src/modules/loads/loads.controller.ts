@@ -783,6 +783,8 @@ export class LoadsController {
   }
 
   @Get()
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.CARGO_OWNER, UserRole.BROKER, UserRole.TENANT_ADMIN, UserRole.ADMIN, UserRole.SUPER_ADMIN)
   @ApiOperation({
     summary: 'Get All Enhanced Cargo Loads',
     description: `
@@ -924,9 +926,24 @@ export class LoadsController {
 
       const result = await this.loadsService.findAll(tenantId, userId, query);
 
+      // The service already transforms the loads, so we can return them directly
+      // But we'll ensure broker data is included by checking if it needs transformation
       return {
         ...result,
-        items: result.items.map((load) => this.transformLoadToResponse(load)),
+        items: result.items.map((load) => {
+          // If broker data is missing but brokerId exists, ensure broker object is created
+          if (!load.broker && load.brokerId) {
+            return {
+              ...load,
+              broker: {
+                id: load.brokerId,
+                email: 'Broker Assigned',
+                profile: undefined,
+              },
+            };
+          }
+          return load;
+        }),
       };
     } catch (error) {
       console.error(`Error in findAll: ${error.message}`, error.stack);
@@ -1945,6 +1962,38 @@ export class LoadsController {
             profile: load.cargoOwner.profile,
           }
         : undefined,
+      broker: (() => {
+        if (!load.broker && !load.brokerId) {
+          return undefined;
+        }
+
+        // Try to get profile from the raw query result
+        const brokerProfile = (load as any).brokerProfile || load.broker?.profile;
+
+        if (load.broker) {
+          return {
+            id: load.broker.id,
+            email: load.broker.email,
+            profile: brokerProfile
+              ? {
+                  firstName: brokerProfile.firstName,
+                  lastName: brokerProfile.lastName,
+                  companyName: brokerProfile.companyName,
+                }
+              : undefined,
+          };
+        }
+
+        // Fallback if only brokerId exists
+        return {
+          id: load.brokerId,
+          email: 'Broker Assigned',
+          profile: undefined,
+        };
+      })(),
+      brokerId: load.brokerId,
+      brokerCommissionRate: load.brokerCommissionRate,
+      brokerCommissionAmount: load.brokerCommissionAmount,
       pickupLocation: (() => {
         try {
         const pickupLoc = load.locations?.find((loc) => loc.type === 'PICKUP');

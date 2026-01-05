@@ -27,6 +27,7 @@ import DriverLayout from './components/Layout/DriverLayout';
 import AdminLayout from './components/Layout/AdminLayout';
 import TenantAdminLayout from './components/Layout/TenantAdminLayout';
 import LenderLayout from './components/Layout/LenderLayout';
+import RoleBasedLayout from './components/Layout/RoleBasedLayout';
 import Auth from './pages/Auth';
 import Home from './pages/Home';
 import DriverPasswordSetup from './pages/DriverPasswordSetup';
@@ -114,6 +115,26 @@ const LenderNotificationsPage = lazy(() => import('./pages/LenderNotificationsPa
 const LenderSupportPage = lazy(() => import('./pages/LenderSupportPage'));
 const LenderTeamManagementPage = lazy(() => import('./pages/LenderTeamManagementPage'));
 
+// Broker Pages
+const BrokerDashboard = lazy(() => import('./pages/broker/BrokerDashboard'));
+const BrokerProfile = lazy(() => import('./pages/broker/BrokerProfile'));
+const CargoDiscovery = lazy(() => import('./pages/broker/CargoDiscovery'));
+const DealFacilitation = lazy(() => import('./pages/broker/DealFacilitation'));
+const CommissionsPage = lazy(() => import('./pages/broker/CommissionsPage'));
+const BrokerLoadsPage = lazy(() => import('./pages/broker/BrokerLoadsPage'));
+const BrokerAnalytics = lazy(() => import('./pages/broker/BrokerAnalytics'));
+const LoadTracking = lazy(() => import('./pages/broker/LoadTracking'));
+const ContractManagement = lazy(() => import('./pages/broker/ContractManagement'));
+const InsuranceVerification = lazy(() => import('./pages/broker/InsuranceVerification'));
+const BrokerDisputeResolution = lazy(() => import('./pages/broker/DisputeResolution'));
+const BrokerEscrowManagement = lazy(() => import('./pages/broker/EscrowManagement'));
+const DocumentManagement = lazy(() => import('./pages/broker/DocumentManagement'));
+const SmartMatching = lazy(() => import('./pages/broker/SmartMatching'));
+const MarketIntelligence = lazy(() => import('./pages/broker/MarketIntelligence'));
+const CreditManagement = lazy(() => import('./pages/broker/CreditManagement'));
+const MultiStopManagement = lazy(() => import('./pages/broker/MultiStopManagement'));
+const PerformanceAnalytics = lazy(() => import('./pages/broker/PerformanceAnalytics'));
+
 // Loading fallback component for lazy-loaded pages
 const PageLoadingFallback = () => (
   <div className="flex items-center justify-center min-h-screen">
@@ -174,13 +195,14 @@ function App() {
               <Route path="routes" element={<UnifiedTrackingManagement />} />
               <Route path="profile" element={<UnifiedAccountManagement />} />
               <Route path="settings" element={<UnifiedAccountManagement />} />
-              <Route path="payments" element={<UnifiedFinancialManagement />} />
-              <Route path="loan-requests" element={<UnifiedFinancialManagement />} />
-              <Route path="documents" element={<UnifiedDocumentManagement />} />
-              <Route path="documents/:entityType" element={<UnifiedDocumentManagement />} />
-              <Route path="notification-center" element={<UnifiedNotificationManagement />} />
-              <Route path="notifications" element={<UnifiedNotificationManagement />} />
-              <Route path="support" element={<CargoHelpSupport />} />
+            <Route path="payments" element={<UnifiedFinancialManagement />} />
+            <Route path="loan-requests" element={<UnifiedFinancialManagement />} />
+            <Route path="invoices" element={<InvoiceViewer />} />
+            <Route path="documents" element={<UnifiedDocumentManagement />} />
+            <Route path="documents/:entityType" element={<UnifiedDocumentManagement />} />
+            <Route path="notification-center" element={<UnifiedNotificationManagement />} />
+            <Route path="notifications" element={<UnifiedNotificationManagement />} />
+            <Route path="support" element={<CargoHelpSupport />} />
               <Route path="ratings" element={<UnifiedReputationManagement />} />
               <Route path="rewards" element={<UnifiedReputationManagement />} />
               <Route path="scoring" element={<UnifiedReputationManagement />} />
@@ -377,6 +399,34 @@ function App() {
               <Route path="financial" element={<UnifiedFinancialManagement />} />
               <Route path="financial-info" element={<UnifiedFinancialManagement />} />
               <Route path="receipts" element={<ReceiptViewer />} />
+            </Route>
+
+            {/* Broker Routes */}
+            <Route path="/dashboard/broker" element={<RoleBasedLayout />}>
+              <Route index element={<BrokerDashboard />} />
+              <Route path="loads" element={<BrokerLoadsPage />} />
+              <Route path="loads/:loadId" element={<LoadTracking />} />
+              <Route path="loads/:loadId/tracking" element={<LoadTracking />} />
+              <Route path="discovery" element={<CargoDiscovery />} />
+              <Route path="deals" element={<DealFacilitation />} />
+              <Route path="commissions" element={<CommissionsPage />} />
+              <Route path="statistics" element={<BrokerAnalytics />} />
+              <Route path="analytics" element={<BrokerAnalytics />} />
+              <Route path="profile" element={<BrokerProfile />} />
+              <Route path="notifications" element={<UnifiedNotificationManagement />} />
+              <Route path="settings" element={<BrokerProfile />} />
+              {/* Critical Features Routes */}
+              <Route path="contracts" element={<ContractManagement />} />
+              <Route path="insurance" element={<InsuranceVerification />} />
+              <Route path="disputes" element={<BrokerDisputeResolution />} />
+              <Route path="escrow" element={<BrokerEscrowManagement />} />
+              <Route path="documents" element={<DocumentManagement />} />
+              {/* Intelligence Features Routes */}
+              <Route path="smart-matching" element={<SmartMatching />} />
+              <Route path="market-intelligence" element={<MarketIntelligence />} />
+              <Route path="credit-management" element={<CreditManagement />} />
+              <Route path="multi-stop" element={<MultiStopManagement />} />
+              <Route path="performance" element={<PerformanceAnalytics />} />
             </Route>
 
             {/* Alias: support /dashboard/admin by redirecting to /admin */}

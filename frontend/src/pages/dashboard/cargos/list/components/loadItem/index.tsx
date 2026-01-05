@@ -14,6 +14,10 @@ import {
   TrendingUp,
   Weight,
   Box,
+  User,
+  UserX,
+  UserCheck,
+  Briefcase,
 } from "lucide-react";
 import {
   getCargoTypeDisplayName,
@@ -37,7 +41,7 @@ import type { Cargo } from "@/types/cargo";
 import SmCard from "./SmCard";
 import moment from "moment";
 import { cn } from "@/utils/cn";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import type { CargoFormSchemaType } from "../../../create/components/form/cargoFormSchema";
 import { encodeUrl } from "@/utils/url";
@@ -49,15 +53,35 @@ export default function LoadItem({
   handleConfirmLoading,
   handleDeleteCargo,
   handleEditCargo,
+  handleAssignBroker,
+  handleUnassignBroker,
 }: {
   load: Cargo;
   handleViewClick: (load: Cargo) => void;
   handleConfirmLoading: (load: Cargo) => void;
   handleDeleteCargo: (load: Cargo) => void;
   handleEditCargo?: (load: Cargo) => void;
+  handleAssignBroker?: (load: Cargo) => void;
+  handleUnassignBroker?: (load: Cargo) => void;
 }) {
   const navigate = useNavigate();
   const [showMobileDetails, setShowMobileDetails] = useState(false);
+
+  // Debug: Log broker data for this load
+  useEffect(() => {
+    console.log(`[LoadItem] Load ${load.id} - Checking for broker:`, {
+      brokerId: load.brokerId,
+      hasBroker: !!load.broker,
+      brokerEmail: load.broker?.email,
+      hasProfile: !!load.broker?.profile,
+      profileFirstName: load.broker?.profile?.firstName,
+      profileLastName: load.broker?.profile?.lastName,
+      profileCompanyName: load.broker?.profile?.companyName,
+      commissionRate: load.brokerCommissionRate,
+      commissionAmount: load.brokerCommissionAmount,
+      willShowBrokerCard: !!(load.brokerId || load.broker),
+    });
+  }, [load]);
 
   const requirements = useMemo(() => {
     return getSpecialRequirements(load);
@@ -307,6 +331,19 @@ export default function LoadItem({
                 content={formatCurrency(load.offeredPrice, load.currencyCode)}
               />
             )}
+
+            {load.brokerId && (
+              <SmCard
+                Icon={Briefcase}
+                title="Broker"
+                content={
+                  load.broker?.profile?.companyName ||
+                  (load.broker?.profile?.firstName && load.broker?.profile?.lastName
+                    ? `${load.broker.profile.firstName} ${load.broker.profile.lastName}`
+                    : load.broker?.email || 'Broker Assigned')
+                }
+              />
+            )}
           </div>
 
               {/* Enhanced Location Information from OSM - Mobile */}
@@ -493,6 +530,24 @@ export default function LoadItem({
                   <Edit className="w-4 h-4" />
                   Edit
                 </button>
+                {handleAssignBroker && !load.broker && (
+                  <button
+                    className="flex-1 px-4 py-2.5 bg-white text-purple-600 border border-purple-300 rounded-lg font-medium text-sm hover:bg-purple-50 transition-colors flex items-center justify-center gap-2"
+                    onClick={() => handleAssignBroker(load)}
+                  >
+                    <User className="w-4 h-4" />
+                    Assign Broker
+                  </button>
+                )}
+                {handleUnassignBroker && load.broker && (
+                  <button
+                    className="flex-1 px-4 py-2.5 bg-white text-orange-600 border border-orange-300 rounded-lg font-medium text-sm hover:bg-orange-50 transition-colors flex items-center justify-center gap-2"
+                    onClick={() => handleUnassignBroker(load)}
+                  >
+                    <UserX className="w-4 h-4" />
+                    Unassign Broker
+                  </button>
+                )}
                 <button
                   className="flex-1 px-4 py-2.5 bg-white text-red-600 border border-red-300 rounded-lg font-medium text-sm hover:bg-red-50 transition-colors flex items-center justify-center gap-2"
                   onClick={() => handleDeleteCargo(load)}
@@ -620,6 +675,19 @@ export default function LoadItem({
                 Icon={TrendingUp}
                 title="Offered"
                 content={formatCurrency(load.offeredPrice, load.currencyCode)}
+              />
+            )}
+
+            {(load.brokerId || load.broker) && (
+              <SmCard
+                Icon={Briefcase}
+                title="Broker"
+                content={
+                  load.broker?.profile?.companyName ||
+                  (load.broker?.profile?.firstName && load.broker?.profile?.lastName
+                    ? `${load.broker.profile.firstName} ${load.broker.profile.lastName}`
+                    : load.broker?.email || 'Broker Assigned')
+                }
               />
             )}
           </div>
@@ -833,6 +901,24 @@ export default function LoadItem({
             >
               <Trash2 className="w-4 h-4" />
             </button>
+            {handleAssignBroker && !load.broker && (
+              <button
+                className="p-3 bg-white text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded-xl transition-all duration-200 shadow-sm hover:shadow-md"
+                title="Assign Broker"
+                onClick={() => handleAssignBroker(load)}
+              >
+                <User className="w-4 h-4" />
+              </button>
+            )}
+            {handleUnassignBroker && load.broker && (
+              <button
+                className="p-3 bg-white text-gray-400 hover:text-orange-600 hover:bg-orange-50 rounded-xl transition-all duration-200 shadow-sm hover:shadow-md"
+                title="Unassign Broker"
+                onClick={() => handleUnassignBroker(load)}
+              >
+                <UserX className="w-4 h-4" />
+              </button>
+            )}
           </div>
         </div>
       </div>

@@ -37,12 +37,30 @@ const AdminLayoutContent: React.FC = () => {
   }, []);
 
   const handleLogout = (e?: React.MouseEvent) => {
-    e?.preventDefault();
-    e?.stopPropagation();
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     setShowUserMenu(false);
-    logout();
-    // Force hard navigation to ensure logout works
-    window.location.href = '/auth';
+    
+    try {
+      // Direct logout approach - clear tokens immediately
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
+      
+      // Call logout function if available
+      if (logout && typeof logout === 'function') {
+        logout();
+      }
+      
+      // Force immediate redirect
+      setTimeout(() => {
+        window.location.href = '/auth';
+      }, 100);
+    } catch (error) {
+      console.error('Logout error:', error);
+      window.location.href = '/auth';
+    }
   };
 
   if (isLoading) {

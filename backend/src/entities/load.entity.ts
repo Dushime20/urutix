@@ -206,6 +206,15 @@ export class Load {
   @Column('uuid', { nullable: true })
   receiverId?: string; // Receiver assigned to this cargo
 
+  @Column('uuid', { nullable: true })
+  brokerId?: string; // Broker who created/manages this load
+
+  @Column('decimal', { precision: 5, scale: 2, nullable: true })
+  brokerCommissionRate?: number; // Commission rate for this specific load (e.g., 5.00 for 5%)
+
+  @Column('decimal', { precision: 15, scale: 2, nullable: true })
+  brokerCommissionAmount?: number; // Calculated commission amount
+
   @Column({ nullable: true })
   reference?: string; // Client reference number
 
@@ -509,6 +518,10 @@ export class Load {
   @ManyToOne('User', 'assignedCargos')
   @JoinColumn({ name: 'receiverId' })
   receiver?: User;
+
+  @ManyToOne(() => User, (user) => user.brokerLoads, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'brokerId' })
+  broker?: User;
 
   @OneToMany('Trip', 'load')
   trips: Trip[];

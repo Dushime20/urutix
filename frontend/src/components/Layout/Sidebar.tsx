@@ -14,7 +14,11 @@ import {
   Calendar,
   Users,
   Shield,
-  X
+  X,
+  DollarSign,
+  TrendingUp,
+  Wallet,
+  AlertCircle
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import sidebarBack from '../../assets/sidebar-back.svg';
@@ -29,9 +33,24 @@ const Sidebar = ({ onClose }: SidebarProps) => {
   const navigate = useNavigate();
 
   const handleLogout = () => {
-    logout();
-    // Force hard navigation to ensure logout works
-    window.location.href = '/auth';
+    try {
+      // Direct logout approach - clear tokens immediately
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
+      
+      // Call logout function if available
+      if (logout && typeof logout === 'function') {
+        logout();
+      }
+      
+      // Force immediate redirect
+      setTimeout(() => {
+        window.location.href = '/auth';
+      }, 100);
+    } catch (error) {
+      console.error('Logout error:', error);
+      window.location.href = '/auth';
+    }
   };
 
   // Debug logging
@@ -100,6 +119,29 @@ const Sidebar = ({ onClose }: SidebarProps) => {
           { path: '/dashboard/notifications', icon: Bell, label: 'Notifications' },
         ];
       
+      case 'BROKER':
+        console.log('Sidebar: Using BROKER navigation');
+        return [
+          { path: '/dashboard/broker', icon: Home, label: 'Dashboard' },
+          { path: '/dashboard/broker/loads', icon: Package, label: 'My Loads' },
+          { path: '/dashboard/broker/discovery', icon: Package, label: 'Cargo Discovery' },
+          { path: '/dashboard/broker/deals', icon: TrendingUp, label: 'Deal Facilitation' },
+          { path: '/dashboard/broker/contracts', icon: FileText, label: 'Contracts' },
+          { path: '/dashboard/broker/insurance', icon: Shield, label: 'Insurance Verification' },
+          { path: '/dashboard/broker/disputes', icon: AlertCircle, label: 'Disputes' },
+          { path: '/dashboard/broker/escrow', icon: Wallet, label: 'Escrow' },
+          { path: '/dashboard/broker/documents', icon: FileText, label: 'Documents' },
+          { path: '/dashboard/broker/smart-matching', icon: TrendingUp, label: 'Smart Matching' },
+          { path: '/dashboard/broker/market-intelligence', icon: BarChart3, label: 'Market Intelligence' },
+          { path: '/dashboard/broker/credit-management', icon: CreditCard, label: 'Credit Management' },
+          { path: '/dashboard/broker/multi-stop', icon: Route, label: 'Multi-Stop' },
+          { path: '/dashboard/broker/performance', icon: BarChart3, label: 'Performance Analytics' },
+          { path: '/dashboard/broker/commissions', icon: DollarSign, label: 'Commissions' },
+          { path: '/dashboard/broker/analytics', icon: BarChart3, label: 'Analytics' },
+          { path: '/dashboard/broker/notifications', icon: Bell, label: 'Notifications' },
+          { path: '/dashboard/broker/profile', icon: Users, label: 'Profile' },
+        ];
+      
       default:
         console.log('Sidebar: Using DEFAULT navigation for role:', user.role);
         return [
@@ -144,16 +186,16 @@ const Sidebar = ({ onClose }: SidebarProps) => {
             </button>
           )}
         </div>
-          {/* Show user role */}
-          {user && (
-            <div className="mt-2 text-sm text-gray-500">
-              {user.firstName} {user.lastName}
-              <span className="ml-2 px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
-                {user.role.replace('_', ' ')}
-              </span>
-            </div>
-          )}
-        </div>
+        
+        {/* Show user role */}
+        {user && (
+          <div className="px-4 pt-2 pb-2 text-sm text-gray-500">
+            {user.firstName} {user.lastName}
+            <span className="ml-2 px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
+              {user.role.replace('_', ' ')}
+            </span>
+          </div>
+        )}
 
         {/* Navigation */}
         <nav className="flex-1 px-4 py-6 space-y-2">

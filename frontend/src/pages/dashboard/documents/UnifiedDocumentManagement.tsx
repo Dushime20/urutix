@@ -10,6 +10,7 @@ import {
 import DocumentsPage from "../../DocumentsPage";
 import { cn } from "../../../utils/cn";
 import logoUrutiX from "../../../assets/logo-urutix.svg";
+import { TranslatedText } from "../../../components/translated-text";
 
 type TabType = "all" | "cargo" | "trip" | "financial";
 

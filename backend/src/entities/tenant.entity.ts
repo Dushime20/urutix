@@ -100,6 +100,14 @@ export class Tenant {
   @Column('jsonb', { default: {} })
   billingInfo: Record<string, any>;
 
+  @Column('jsonb', { default: {} })
+  brokerSettings: {
+    allowBrokers?: boolean;
+    defaultCommissionRate?: number;
+    maxBrokers?: number;
+    brokerPermissions?: string[];
+  };
+
   @Column({ nullable: true })
   maxUsers?: number;
 
@@ -145,4 +153,7 @@ export class Tenant {
   // Relations
   @OneToMany('User', 'tenant')
   users: User[];
+
+  @OneToMany(() => User, (user) => user.brokerTenant)
+  brokers: User[];
 }

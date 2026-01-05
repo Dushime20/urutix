@@ -5,6 +5,8 @@ interface CargoOwnerLayoutContextValue {
   sidebarCollapsed: boolean;
   toggleSidebar: () => void;
   setSidebarCollapsed: (collapsed: boolean) => void;
+  hideHeader: boolean;
+  setHideHeader: (hide: boolean) => void;
 }
 
 const CargoOwnerLayoutContext = createContext<CargoOwnerLayoutContextValue | undefined>(undefined);

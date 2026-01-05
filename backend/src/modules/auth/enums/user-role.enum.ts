@@ -9,5 +9,6 @@ export enum UserRole {
   DRIVER = 'DRIVER',
   AGENT = 'AGENT',
   LENDER = 'LENDER',
+  BROKER = 'BROKER',
   USER = 'USER',
 }

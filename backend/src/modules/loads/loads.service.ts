@@ -62,6 +62,7 @@ import {
 } from '../../entities/price-suggestion.entity';
 import { Location } from '../../entities/location.entity';
 import { User } from '../../entities/user.entity';
+import { UserProfile } from '../../entities/user-profile.entity';
 import { Bid, BidStatus } from '../../entities/bid.entity';
 import { Payment, PaymentType, PaymentStatus } from '../../entities/payment.entity';
 import { Trip, TripStatus } from '../../entities/trip.entity';
@@ -78,6 +79,7 @@ import {
 } from '../locations/osm-location-enrichment.service';
 import { MatchingService } from '../matching/matching.service';
 import { MatchRequestDto } from '../matching/dto/match-request.dto';
+import { BrokersService } from '../brokers/brokers.service';
 
 export interface LoadsQueryOptions {
   page?: number;
@@ -166,6 +168,8 @@ export class LoadsService {
     private readonly documentRepository: Repository<Document>,
     @InjectRepository(TrackingEvent)
     private readonly trackingEventRepository: Repository<TrackingEvent>,
+    @InjectRepository(UserProfile)
+    private readonly userProfileRepository: Repository<UserProfile>,
     @InjectRepository(Alert)
     private readonly alertRepository: Repository<Alert>,
     @InjectRepository(AuditEvent)
@@ -187,6 +191,7 @@ export class LoadsService {
     private readonly dataSource: DataSource,
     private readonly locationEnrichmentService: OSMLocationEnrichmentService,
     @Optional() private readonly matchingService?: MatchingService, // Optional - MatchingService from MatchingModule
+    @Optional() private readonly brokersService?: BrokersService, // Optional - BrokersService from BrokersModule
   ) {}
 
   /**
@@ -377,6 +382,19 @@ export class LoadsService {
         this.logger.warn(
           `Failed to create audit event for load ${savedLoad.id}: ${auditError.message}`,
         );
+      }
+
+      // Calculate broker commission if broker is assigned
+      if (savedLoad.brokerId && this.brokersService) {
+        try {
+          this.logger.log(`Calculating broker commission for load ${savedLoad.id}`);
+          await this.calculateBrokerCommission(savedLoad);
+        } catch (brokerError) {
+          this.logger.warn(
+            `Failed to calculate broker commission for load ${savedLoad.id}: ${brokerError.message}`,
+          );
+          // Don't fail load creation if commission calculation fails
+        }
       }
 
       // Trigger automatic matching if enabled (non-blocking)
@@ -760,6 +778,83 @@ export class LoadsService {
 
       this.logger.log(`Found ${loads.length} loads out of ${total} total`);
 
+      // Load broker profiles and user emails separately and map them
+      const brokerIds = loads
+        .filter((load) => load.brokerId)
+        .map((load) => load.brokerId)
+        .filter((id, index, self) => self.indexOf(id) === index); // unique
+
+      this.logger.debug(`Loading profiles for ${brokerIds.length} unique brokers:`, brokerIds);
+
+      if (brokerIds.length > 0) {
+        // Fetch broker profiles
+        const brokerProfiles = await this.userProfileRepository.find({
+          where: brokerIds.map((userId) => ({ userId })),
+        });
+
+        // Fetch broker user emails
+        const brokerUsers = await this.userRepository.find({
+          where: brokerIds.map((id) => ({ id })),
+          select: ['id', 'email'],
+        });
+
+        this.logger.debug(`Found ${brokerProfiles.length} broker profiles and ${brokerUsers.length} broker users`);
+
+        const profileMap = new Map(
+          brokerProfiles.map((profile) => [profile.userId, profile]),
+        );
+        
+        const userMap = new Map(
+          brokerUsers.map((user) => [user.id, user.email]),
+        );
+
+        // Map profiles and emails to broker objects
+        loads.forEach((load) => {
+          if (load.brokerId) {
+            // If broker relation isn't loaded, create a broker object
+            if (!load.broker) {
+              const brokerEmail = userMap.get(load.brokerId) || 'Broker Assigned';
+              (load as any).broker = {
+                id: load.brokerId,
+                email: brokerEmail,
+              };
+            } else if (!load.broker.email) {
+              // If broker exists but no email, fetch it
+              const brokerEmail = userMap.get(load.brokerId);
+              if (brokerEmail) {
+                load.broker.email = brokerEmail;
+              }
+            }
+            
+            const profile = profileMap.get(load.brokerId);
+            if (profile) {
+              (load.broker as any).profile = profile;
+              this.logger.debug(`Mapped profile to broker ${load.brokerId}:`, {
+                firstName: profile.firstName,
+                lastName: profile.lastName,
+                companyName: profile.companyName,
+              });
+            } else {
+              this.logger.warn(`No profile found for broker ${load.brokerId}`);
+            }
+          }
+        });
+      }
+
+      // Debug: Log broker data for first load
+      if (loads.length > 0 && loads[0].brokerId) {
+        const firstLoad = loads[0];
+        this.logger.debug(`Load ${firstLoad.id} broker data:`, {
+          brokerId: firstLoad.brokerId,
+          hasBroker: !!firstLoad.broker,
+          brokerEmail: firstLoad.broker?.email,
+          hasProfile: !!firstLoad.broker?.profile,
+          profileFirstName: firstLoad.broker?.profile?.firstName,
+          profileLastName: firstLoad.broker?.profile?.lastName,
+          profileCompanyName: firstLoad.broker?.profile?.companyName,
+        });
+      }
+
       // Transform Load entities to LoadResponseDto
       const items = loads.map((load) => this.transformLoadToResponse(load));
 
@@ -788,6 +883,8 @@ export class LoadsService {
       const queryBuilder = this.loadRepository
         .createQueryBuilder('load')
         .leftJoinAndSelect('load.cargoOwner', 'cargoOwner')
+        .leftJoinAndSelect('cargoOwner.profile', 'cargoOwnerProfile')
+        .leftJoinAndSelect('load.broker', 'broker')
         .where('load.id = :id', { id })
         .andWhere('load.tenantId = :tenantId', { tenantId });
 
@@ -797,6 +894,16 @@ export class LoadsService {
       }
 
       const load = await queryBuilder.getOne();
+
+      // Load broker profile separately if broker exists
+      if (load?.broker && load.brokerId) {
+        const brokerProfile = await this.userProfileRepository.findOne({
+          where: { userId: load.brokerId },
+        });
+        if (brokerProfile) {
+          (load.broker as any).profile = brokerProfile;
+        }
+      }
 
       if (!load) {
         throw new NotFoundException(`Load with ID ${id} not found`);
@@ -872,9 +979,30 @@ export class LoadsService {
         );
       }
 
+      // Track if broker-related fields changed
+      // Note: brokerId is not in UpdateLoadDto - broker assignment is done via dedicated endpoint
+      // We only track loadValue changes to recalculate commission if a broker is already assigned
+      const loadValueChanged = updateLoadDto.loadValue !== undefined && updateLoadDto.loadValue !== load.loadValue;
+      const oldBrokerId = load.brokerId;
+
       // Update load
       Object.assign(load, sanitizedUpdate);
       const updatedLoad = await this.loadRepository.save(load);
+
+      // Recalculate broker commission if load value changed and broker is assigned
+      // Note: Broker assignment/unassignment is handled via dedicated endpoints
+      if (this.brokersService && loadValueChanged && updatedLoad.brokerId) {
+        try {
+          // Recalculate commission for the assigned broker when load value changes
+          this.logger.log(`Recalculating broker commission for load ${id} due to load value change`);
+          await this.calculateBrokerCommission(updatedLoad);
+        } catch (brokerError) {
+          this.logger.warn(
+            `Failed to recalculate broker commission for load ${id}: ${brokerError.message}`,
+          );
+          // Don't fail the update if commission recalculation fails
+        }
+      }
 
       this.logger.log(`Updated load ${id} successfully`);
       return updatedLoad;
@@ -2097,6 +2225,8 @@ export class LoadsService {
     const queryBuilder = this.loadRepository
       .createQueryBuilder('load')
       .leftJoinAndSelect('load.cargoOwner', 'cargoOwner')
+      .leftJoinAndSelect('cargoOwner.profile', 'cargoOwnerProfile')
+      .leftJoinAndSelect('load.broker', 'broker')
       .where('load.tenantId = :tenantId', { tenantId });
 
     // Apply user filter
@@ -3685,34 +3815,111 @@ export class LoadsService {
             profile: load.cargoOwner.profile,
           }
         : undefined,
-      pickupLocation: load.pickupLocation
-        ? {
+      broker: (() => {
+        if (!load.broker && !load.brokerId) {
+          return undefined;
+        }
+
+        // Try to get profile from the raw query result
+        // TypeORM might not map it automatically, so we check the raw data
+        const brokerProfile = (load as any).brokerProfile || load.broker?.profile;
+
+        if (load.broker) {
+          return {
+            id: load.broker.id,
+            email: load.broker.email,
+            profile: brokerProfile
+              ? {
+                  firstName: brokerProfile.firstName,
+                  lastName: brokerProfile.lastName,
+                  companyName: brokerProfile.companyName,
+                }
+              : undefined,
+          };
+        }
+
+        // Fallback if only brokerId exists
+        return {
+          id: load.brokerId,
+          email: 'Broker Assigned',
+          profile: undefined,
+        };
+      })(),
+      brokerId: load.brokerId,
+      brokerCommissionRate: load.brokerCommissionRate,
+      brokerCommissionAmount: load.brokerCommissionAmount,
+      pickupLocation: (() => {
+        // Try new format: locations JSONB array
+        if (load.locations && Array.isArray(load.locations)) {
+          const pickupLoc = load.locations.find((loc: any) => loc.type === 'PICKUP');
+          if (pickupLoc && pickupLoc.locationData) {
+            const coords = pickupLoc.locationData.coordinates;
+            return {
+              id: pickupLoc.id || '',
+              name: pickupLoc.locationData.name || '',
+              address: pickupLoc.locationData.address || '',
+              coordinates: {
+                type: 'Point',
+                coordinates: coords && coords.longitude && coords.latitude
+                  ? [coords.longitude, coords.latitude]
+                  : [0, 0],
+              },
+            };
+          }
+        }
+        // Try old format: separate pickupLocation relation
+        if (load.pickupLocation && load.pickupLocation.locationData) {
+          const coords = load.pickupLocation.locationData.coordinates;
+          return {
             id: load.pickupLocation.id,
-            name: load.pickupLocation.locationData.name,
-            address: load.pickupLocation.locationData.address,
+            name: load.pickupLocation.locationData.name || '',
+            address: load.pickupLocation.locationData.address || '',
             coordinates: {
               type: 'Point',
-              coordinates: [
-                load.pickupLocation.locationData.coordinates.longitude,
-                load.pickupLocation.locationData.coordinates.latitude,
-              ],
+              coordinates: coords && coords.longitude && coords.latitude
+                ? [coords.longitude, coords.latitude]
+                : [0, 0],
             },
+          };
+        }
+        return undefined;
+      })(),
+      deliveryLocation: (() => {
+        // Try new format: locations JSONB array
+        if (load.locations && Array.isArray(load.locations)) {
+          const deliveryLoc = load.locations.find((loc: any) => loc.type === 'DELIVERY');
+          if (deliveryLoc && deliveryLoc.locationData) {
+            const coords = deliveryLoc.locationData.coordinates;
+            return {
+              id: deliveryLoc.id || '',
+              name: deliveryLoc.locationData.name || '',
+              address: deliveryLoc.locationData.address || '',
+              coordinates: {
+                type: 'Point',
+                coordinates: coords && coords.longitude && coords.latitude
+                  ? [coords.longitude, coords.latitude]
+                  : [0, 0],
+              },
+            };
           }
-        : undefined,
-      deliveryLocation: load.deliveryLocation
-        ? {
+        }
+        // Try old format: separate deliveryLocation relation
+        if (load.deliveryLocation && load.deliveryLocation.locationData) {
+          const coords = load.deliveryLocation.locationData.coordinates;
+          return {
             id: load.deliveryLocation.id,
-            name: load.deliveryLocation.locationData.name,
-            address: load.deliveryLocation.locationData.address,
+            name: load.deliveryLocation.locationData.name || '',
+            address: load.deliveryLocation.locationData.address || '',
             coordinates: {
               type: 'Point',
-              coordinates: [
-                load.deliveryLocation.locationData.coordinates.longitude,
-                load.deliveryLocation.locationData.coordinates.latitude,
-              ],
+              coordinates: coords && coords.longitude && coords.latitude
+                ? [coords.longitude, coords.latitude]
+                : [0, 0],
             },
-          }
-        : undefined,
+          };
+        }
+        return undefined;
+      })(),
     };
   }
 
@@ -3779,6 +3986,52 @@ export class LoadsService {
     } catch (error) {
       this.logger.error('Error notifying truck owners:', error);
       // Don't fail the publish operation if notifications fail
+    }
+  }
+
+  /**
+   * Calculate and create broker commission record for a load
+   */
+  private async calculateBrokerCommission(load: Load): Promise<void> {
+    if (!this.brokersService || !load.brokerId) {
+      return;
+    }
+
+    try {
+      // Get broker information
+      const broker = await this.userRepository.findOne({
+        where: { id: load.brokerId },
+      });
+
+      if (!broker) {
+        this.logger.warn(`Broker ${load.brokerId} not found for load ${load.id}`);
+        return;
+      }
+
+      // Calculate commission
+      const commissionRate = load.brokerCommissionRate ?? broker.defaultCommissionRate ?? 5.0;
+      const commissionAmount = (load.loadValue * commissionRate) / 100;
+
+      // Update load with commission details if not already set
+      if (!load.brokerCommissionRate || !load.brokerCommissionAmount) {
+        load.brokerCommissionRate = commissionRate;
+        load.brokerCommissionAmount = commissionAmount;
+        await this.loadRepository.save(load);
+      }
+
+      // Create commission record using BrokersService
+      await this.brokersService.createCommissionRecord(
+        load,
+        broker,
+        commissionRate,
+        commissionAmount,
+      );
+    } catch (error) {
+      this.logger.error(
+        `Failed to calculate broker commission for load ${load.id}: ${error.message}`,
+        error.stack,
+      );
+      // Don't throw - commission calculation failure shouldn't break load creation
     }
   }
 }

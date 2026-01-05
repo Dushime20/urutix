@@ -36,6 +36,19 @@ import { SafetyIncident } from '../entities/safety-incident.entity';
 import { SafetyInspection } from '../entities/safety-inspection.entity';
 import { SafetyTraining } from '../entities/safety-training.entity';
 import { CargoInspection } from '../entities/cargo-inspection.entity';
+import { BrokerCommission } from '../entities/broker-commission.entity';
+import { LoadContract } from '../entities/load-contract.entity';
+import { InsuranceVerification } from '../entities/insurance-verification.entity';
+import { BrokerDispute } from '../entities/broker-dispute.entity';
+import { EscrowAccount } from '../entities/escrow-account.entity';
+import { LoadDocument } from '../entities/load-document.entity';
+import {
+  BrokerMatchRecommendation,
+  BrokerMarketIntelligence,
+  BrokerTransporterCredit,
+  BrokerMultiStopLoad,
+  BrokerTransporterPerformance,
+} from '../entities/broker-intelligence.entity';
 
 // Financial entities
 import {
@@ -71,7 +84,7 @@ export const databaseConfig: TypeOrmModuleOptions = {
   host: process.env.DB_HOST || 'localhost',
   port: parseInt(process.env.DB_PORT || '5432', 10),
   username: process.env.DB_USERNAME || 'postgres',
-  password: process.env.DB_PASSWORD || '',
+  password: String(process.env.DB_PASSWORD || ''),
   database: process.env.DB_NAME || 'urutix',
   migrationsRun: false,
   entities: [
@@ -124,6 +137,19 @@ export const databaseConfig: TypeOrmModuleOptions = {
     SafetyTraining,
     // Receiver entities
     CargoInspection,
+    // Broker entities
+    BrokerCommission,
+    LoadContract,
+    InsuranceVerification,
+    BrokerDispute,
+    EscrowAccount,
+    LoadDocument,
+    // Broker Intelligence entities
+    BrokerMatchRecommendation,
+    BrokerMarketIntelligence,
+    BrokerTransporterCredit,
+    BrokerMultiStopLoad,
+    BrokerTransporterPerformance,
   ],
   synchronize: false,
   autoLoadEntities: false,
@@ -147,7 +173,7 @@ export const testDatabaseConfig: TypeOrmModuleOptions = {
   host: process.env.TEST_DB_HOST || 'localhost',
   port: parseInt(process.env.TEST_DB_PORT || '5432', 10),
   username: process.env.TEST_DB_USERNAME || 'postgres',
-  password: process.env.TEST_DB_PASSWORD || '',
+  password: String(process.env.TEST_DB_PASSWORD || ''),
   database: process.env.TEST_DB_NAME || 'urutix_test',
   migrationsRun: false,
   entities: [
@@ -198,6 +224,19 @@ export const testDatabaseConfig: TypeOrmModuleOptions = {
     SafetyIncident,
     SafetyInspection,
     SafetyTraining,
+    // Broker entities
+    BrokerCommission,
+    LoadContract,
+    InsuranceVerification,
+    BrokerDispute,
+    EscrowAccount,
+    LoadDocument,
+    // Broker Intelligence entities
+    BrokerMatchRecommendation,
+    BrokerMarketIntelligence,
+    BrokerTransporterCredit,
+    BrokerMultiStopLoad,
+    BrokerTransporterPerformance,
   ],
   synchronize: true,
   autoLoadEntities: false,

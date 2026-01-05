@@ -28,6 +28,7 @@ import { SafetyModule } from './modules/safety/safety.module';
 import { TripsModule } from './modules/trips/trips.module';
 import { DriverModule } from './modules/drivers/driver.module';
 import { ReceiversModule } from './modules/receivers/receivers.module';
+import { BrokersModule } from './modules/brokers/brokers.module';
 import { databaseConfig } from './config/database.config';
 import { ThrottlerModule } from '@nestjs/throttler';
 
@@ -61,6 +62,7 @@ import { ThrottlerModule } from '@nestjs/throttler';
     TripsModule,
     DriverModule,
     ReceiversModule,
+    BrokersModule,
   ],
   controllers: [AppController],
   providers: [AppService],
