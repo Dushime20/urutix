@@ -27,6 +27,7 @@ import DriverLayout from './components/Layout/DriverLayout';
 import AdminLayout from './components/Layout/AdminLayout';
 import TenantAdminLayout from './components/Layout/TenantAdminLayout';
 import LenderLayout from './components/Layout/LenderLayout';
+import BrokerLayout from './components/Layout/BrokerLayout';
 import RoleBasedLayout from './components/Layout/RoleBasedLayout';
 import Auth from './pages/Auth';
 import Home from './pages/Home';
@@ -122,6 +123,7 @@ const CargoDiscovery = lazy(() => import('./pages/broker/CargoDiscovery'));
 const DealFacilitation = lazy(() => import('./pages/broker/DealFacilitation'));
 const CommissionsPage = lazy(() => import('./pages/broker/CommissionsPage'));
 const BrokerLoadsPage = lazy(() => import('./pages/broker/BrokerLoadsPage'));
+const BrokerLoadDetail = lazy(() => import('./pages/broker/BrokerLoadDetail'));
 const BrokerAnalytics = lazy(() => import('./pages/broker/BrokerAnalytics'));
 const LoadTracking = lazy(() => import('./pages/broker/LoadTracking'));
 const ContractManagement = lazy(() => import('./pages/broker/ContractManagement'));
@@ -196,6 +198,7 @@ function App() {
               <Route path="profile" element={<UnifiedAccountManagement />} />
               <Route path="settings" element={<UnifiedAccountManagement />} />
             <Route path="payments" element={<UnifiedFinancialManagement />} />
+            <Route path="financial" element={<UnifiedFinancialManagement />} />
             <Route path="loan-requests" element={<UnifiedFinancialManagement />} />
             <Route path="invoices" element={<InvoiceViewer />} />
             <Route path="documents" element={<UnifiedDocumentManagement />} />
@@ -402,10 +405,10 @@ function App() {
             </Route>
 
             {/* Broker Routes */}
-            <Route path="/dashboard/broker" element={<RoleBasedLayout />}>
+            <Route path="/dashboard/broker" element={<BrokerLayout />}>
               <Route index element={<BrokerDashboard />} />
               <Route path="loads" element={<BrokerLoadsPage />} />
-              <Route path="loads/:loadId" element={<LoadTracking />} />
+              <Route path="loads/:loadId" element={<BrokerLoadDetail />} />
               <Route path="loads/:loadId/tracking" element={<LoadTracking />} />
               <Route path="discovery" element={<CargoDiscovery />} />
               <Route path="deals" element={<DealFacilitation />} />

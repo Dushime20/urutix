@@ -72,8 +72,8 @@ const UnifiedFinancialManagement = () => {
     } else if (tab === "financial-info") {
       navigate(`${basePath}/financial-info`, { replace: true });
     } else {
-      // For cargo-owner, use /payments; for others, use /financial
-      if (basePath === "/cargo-owner") {
+      // For cargo-owner and dashboard, use /payments; for others (like fleet), use /financial
+      if (basePath === "/cargo-owner" || basePath === "/dashboard") {
         navigate(`${basePath}/payments`, { replace: true });
       } else {
         navigate(`${basePath}/financial`, { replace: true });

@@ -86,19 +86,19 @@ const UnifiedAnalyticsManagement = () => {
         className="pointer-events-none select-none fixed inset-0 w-full h-full object-cover opacity-10 z-0" 
         style={{objectPosition: 'center'}} 
       />
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 relative z-10">
+      <div className="max-w-7xl mx-auto px-2 sm:px-4 md:px-6 lg:px-8 py-3 sm:py-4 md:py-6 relative z-10">
         {/* Header */}
-        <div className="mb-4">
-          <h1 className="text-2xl font-bold text-gray-900">
+        <div className="mb-3 sm:mb-4">
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
             <TranslatedText text="Analytics & Reports" />
           </h1>
-          <p className="text-sm text-gray-600 mt-1">
+          <p className="text-xs sm:text-sm text-gray-600 mt-1">
             <TranslatedText text="Track performance, generate reports, and view history" />
           </p>
         </div>
 
         {/* Navigation Tabs */}
-        <div className="bg-white rounded-lg border border-gray-200 mb-4 overflow-hidden">
+        <div className="bg-white rounded-lg border border-gray-200 mb-3 sm:mb-4 overflow-hidden">
           <nav className="flex space-x-1 p-1 overflow-x-auto scrollbar-hide scroll-smooth">
             {tabs.map((tab) => {
               const Icon = tab.icon;
@@ -108,13 +108,13 @@ const UnifiedAnalyticsManagement = () => {
                   key={tab.id}
                   onClick={() => handleTabChange(tab.id)}
                   className={cn(
-                    "px-3 sm:px-4 py-2.5 rounded-md text-xs sm:text-sm font-medium flex items-center gap-1.5 sm:gap-2 transition-all whitespace-nowrap flex-shrink-0",
+                    "px-2 sm:px-3 md:px-4 py-2 sm:py-2.5 rounded-md text-xs sm:text-sm font-medium flex items-center gap-1 sm:gap-1.5 md:gap-2 transition-all whitespace-nowrap flex-shrink-0 touch-manipulation min-h-[44px] sm:min-h-0",
                     isActive
                       ? "bg-gray-100 text-gray-900 border border-gray-300"
                       : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
                   )}
                 >
-                  <Icon className="w-4 h-4 flex-shrink-0" />
+                  <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
                   <span className="hidden sm:inline"><TranslatedText text={tab.label} /></span>
                   <span className="sm:hidden"><TranslatedText text={tab.label.split(' ')[0]} /></span>
                 </button>
@@ -125,7 +125,7 @@ const UnifiedAnalyticsManagement = () => {
 
         {/* Tab Content */}
         <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
-          <div className="p-4">
+          <div className="p-2 sm:p-3 md:p-4">
             {activeTab === "analytics" && (
               <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500"></div></div>}>
                 <Analytics />

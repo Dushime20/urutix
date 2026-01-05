@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
-import { Plus, Search, Bell, Trash2, CheckCircle, Box, Truck, CreditCard, Settings } from 'lucide-react';
+import { Plus, Search, Bell, Trash2, CheckCircle, Box, Truck, CreditCard, Settings, X } from 'lucide-react';
 import { notificationApi } from '../services/notifications/notificationApi';
 import type { CreateNotificationRequest, Notification } from '../services/notifications/notificationApi';
 import { TranslatedText } from '../components/translated-text';
@@ -176,23 +176,23 @@ const NotificationsPage: React.FC = () => {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3 sm:space-y-4">
       {/* Header */}
-      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-100 px-4 py-3 mb-4">
-        <div className="flex justify-between items-center">
-          <div className="flex items-center gap-2.5">
-            <div className={`p-2 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 ${categoryInfo.color.includes('blue') ? '' : 'from-gray-500 to-gray-600'}`}>
-              <CategoryIcon className="w-4 h-4 text-white" />
+      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-100 px-3 sm:px-4 py-2.5 sm:py-3 mb-3 sm:mb-4">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-2">
+          <div className="flex items-center gap-2 sm:gap-2.5 min-w-0 flex-1">
+            <div className={`p-1.5 sm:p-2 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex-shrink-0 ${categoryInfo.color.includes('blue') ? '' : 'from-gray-500 to-gray-600'}`}>
+              <CategoryIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
             </div>
-            <div>
-              <h1 className="text-lg font-bold text-gray-900">
+            <div className="min-w-0 flex-1">
+              <h1 className="text-base sm:text-lg font-bold text-gray-900 truncate">
                 {filters.category ? (
                   <TranslatedText text={`${categoryInfo.name} Notifications`} />
                 ) : (
                   <TranslatedText text="Notification Center" />
                 )}
               </h1>
-              <p className="text-xs text-gray-600 mt-0.5">
+              <p className="text-xs text-gray-600 mt-0.5 line-clamp-2">
                 {filters.category ? (
                   <TranslatedText text={`Manage all ${categoryInfo.name.toLowerCase()} notifications and alerts`} />
                 ) : (
@@ -201,23 +201,24 @@ const NotificationsPage: React.FC = () => {
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 w-full sm:w-auto flex-shrink-0">
             {unreadCount && (
-              <div className="bg-red-100 text-red-800 px-2.5 py-1 rounded-lg text-xs font-medium border border-red-200">
+              <div className="bg-red-100 text-red-800 px-2 sm:px-2.5 py-1 rounded-lg text-xs font-medium border border-red-200 whitespace-nowrap">
                 {unreadCount.count} <TranslatedText text="unread" />
               </div>
             )}
             {!unreadCount && (
-              <div className="bg-gray-100 text-gray-600 px-2.5 py-1 rounded-lg text-xs font-medium border border-gray-200">
+              <div className="bg-gray-100 text-gray-600 px-2 sm:px-2.5 py-1 rounded-lg text-xs font-medium border border-gray-200 whitespace-nowrap">
                 0 <TranslatedText text="unread" />
               </div>
             )}
             <button
               onClick={() => setShowCreateModal(true)}
-              className="bg-blue-600 text-white px-3 py-1.5 text-sm rounded-lg hover:bg-blue-700 flex items-center gap-1.5 transition-colors"
+              className="bg-blue-600 text-white px-2 sm:px-3 py-1.5 text-xs sm:text-sm rounded-lg hover:bg-blue-700 flex items-center gap-1.5 transition-colors touch-manipulation min-h-[44px] flex-1 sm:flex-initial whitespace-nowrap"
             >
-              <Plus className="w-3.5 h-3.5" />
-              <TranslatedText text="Create" /> {filters.category ? categoryInfo.name : ''} <TranslatedText text="Notification" />
+              <Plus className="w-3.5 h-3.5 flex-shrink-0" />
+              <span className="hidden sm:inline"><TranslatedText text="Create" /> {filters.category ? categoryInfo.name : ''} <TranslatedText text="Notification" /></span>
+              <span className="sm:hidden"><TranslatedText text="Create" /></span>
             </button>
           </div>
         </div>
@@ -229,23 +230,23 @@ const NotificationsPage: React.FC = () => {
       </div>
 
       {/* Filters and Search */}
-      <div className="bg-white p-3 rounded-lg border border-gray-200 space-y-3">
-        <div className="flex flex-col md:flex-row gap-3">
+      <div className="bg-white p-2 sm:p-3 rounded-lg border border-gray-200 space-y-2 sm:space-y-3">
+        <div className="flex flex-col gap-2 sm:gap-3">
           <div className="flex-1">
             <div className="relative">
               <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 text-gray-400 w-3.5 h-3.5" />
               <input
                 type="text"
                 placeholder="Search notifications..."
-                className="w-full pl-9 pr-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full pl-9 pr-3 py-2 sm:py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent touch-manipulation min-h-[44px] sm:min-h-0"
                 value={filters.search}
                 onChange={(e) => handleSearch(e.target.value)}
               />
             </div>
           </div>
-          <div className="flex gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
             <select
-              className="px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="px-2.5 py-2 sm:py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 touch-manipulation min-h-[44px] sm:min-h-0"
               value={filters.category}
               onChange={(e) => handleFilterChange('category', e.target.value)}
             >
@@ -259,7 +260,7 @@ const NotificationsPage: React.FC = () => {
               <option value="COMPLIANCE"><TranslatedText text="Compliance" /></option>
             </select>
             <select
-              className="px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="px-2.5 py-2 sm:py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 touch-manipulation min-h-[44px] sm:min-h-0"
               value={filters.status}
               onChange={(e) => handleFilterChange('status', e.target.value)}
             >
@@ -271,7 +272,7 @@ const NotificationsPage: React.FC = () => {
               <option value="FAILED"><TranslatedText text="Failed" /></option>
             </select>
             <select
-              className="px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="px-2.5 py-2 sm:py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 touch-manipulation min-h-[44px] sm:min-h-0"
               value={filters.priority}
               onChange={(e) => handleFilterChange('priority', e.target.value)}
             >
@@ -288,15 +289,15 @@ const NotificationsPage: React.FC = () => {
 
       {/* Bulk Actions */}
       {selectedNotifications.length > 0 && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-          <div className="flex justify-between items-center">
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-2 sm:p-3">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-0">
             <span className="text-xs text-blue-800 font-medium">
               {selectedNotifications.length} <TranslatedText text="notification(s) selected" />
             </span>
-            <div className="flex gap-2">
+            <div className="flex gap-2 w-full sm:w-auto">
               <button
                 onClick={handleBulkMarkAsRead}
-                className="bg-green-600 text-white px-2.5 py-1 text-xs rounded-lg hover:bg-green-700 flex items-center gap-1.5 transition-colors"
+                className="bg-green-600 text-white px-3 sm:px-2.5 py-2 sm:py-1 text-xs rounded-lg hover:bg-green-700 flex items-center justify-center gap-1.5 transition-colors touch-manipulation min-h-[44px] sm:min-h-0 flex-1 sm:flex-initial"
               >
                 <CheckCircle className="w-3.5 h-3.5" />
                 <TranslatedText text="Mark as Read" />
@@ -306,8 +307,8 @@ const NotificationsPage: React.FC = () => {
         </div>
       )}
 
-      {/* Notifications Table */}
-      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm">
+      {/* Notifications Table - Desktop */}
+      <div className="hidden md:block bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
@@ -429,7 +430,7 @@ const NotificationsPage: React.FC = () => {
                         {!notification.readAt && (
                           <button
                             onClick={() => markAsReadMutation.mutate(notification.id)}
-                            className="text-green-600 hover:text-green-900 transition-colors"
+                            className="text-green-600 hover:text-green-900 transition-colors touch-manipulation min-w-[32px] min-h-[32px] flex items-center justify-center"
                             title="Mark as Read"
                           >
                             <CheckCircle className="w-3.5 h-3.5" />
@@ -437,7 +438,7 @@ const NotificationsPage: React.FC = () => {
                         )}
                         <button
                           onClick={() => deleteMutation.mutate(notification.id)}
-                          className="text-red-600 hover:text-red-900 transition-colors"
+                          className="text-red-600 hover:text-red-900 transition-colors touch-manipulation min-w-[32px] min-h-[32px] flex items-center justify-center"
                           title="Delete"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -452,34 +453,136 @@ const NotificationsPage: React.FC = () => {
         </div>
       </div>
 
+      {/* Notifications Cards - Mobile */}
+      <div className="md:hidden space-y-3">
+        {isLoading ? (
+          <div className="bg-white rounded-lg border border-gray-200 p-4 text-center text-xs text-gray-500">
+            <TranslatedText text="Loading notifications..." />
+          </div>
+        ) : notificationsData?.notifications.length === 0 ? (
+          <div className="bg-white rounded-lg border border-gray-200 p-4 text-center text-xs text-gray-500">
+            <TranslatedText text="No notifications found" />
+          </div>
+        ) : (
+          notificationsData?.notifications.map((notification: Notification) => (
+            <div key={notification.id} className="bg-white rounded-lg border border-gray-200 p-3 shadow-sm">
+              <div className="flex items-start gap-3">
+                <input
+                  type="checkbox"
+                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-4 h-4 mt-1 flex-shrink-0 touch-manipulation"
+                  checked={selectedNotifications.includes(notification.id)}
+                  onChange={(e) => handleNotificationSelect(notification.id, e.target.checked)}
+                />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                      <div className="flex-shrink-0 h-8 w-8 rounded-lg bg-blue-100 flex items-center justify-center">
+                        <Bell className="w-4 h-4 text-blue-600" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="text-sm font-medium text-gray-900 break-words">
+                          {notification.title}
+                        </div>
+                        <div className="text-xs text-gray-400 mt-0.5">
+                          {notificationApi.formatTimestamp(notification.createdAt)}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                      {!notification.readAt && (
+                        <button
+                          onClick={() => markAsReadMutation.mutate(notification.id)}
+                          className="text-green-600 hover:text-green-900 transition-colors touch-manipulation min-w-[36px] min-h-[36px] flex items-center justify-center"
+                          title="Mark as Read"
+                        >
+                          <CheckCircle className="w-4 h-4" />
+                        </button>
+                      )}
+                      <button
+                        onClick={() => deleteMutation.mutate(notification.id)}
+                        className="text-red-600 hover:text-red-900 transition-colors touch-manipulation min-w-[36px] min-h-[36px] flex items-center justify-center"
+                        title="Delete"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                  <div className="text-xs text-gray-600 mb-2 break-words">
+                    {notification.shortMessage || notification.message}
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <div className="flex items-center gap-1">
+                      <span className="text-sm">
+                        {notificationApi.getCategoryIcon(notification.category)}
+                      </span>
+                      <span className="text-xs text-gray-600">{notification.category}</span>
+                    </div>
+                    <span className={`inline-flex px-2 py-0.5 text-xs font-semibold rounded-full ${notificationApi.getNotificationStatusColor(notification.status)}`}>
+                      {notification.status}
+                    </span>
+                    <span className={`inline-flex px-2 py-0.5 text-xs font-semibold rounded-full ${notificationApi.getNotificationPriorityColor(notification.priority)}`}>
+                      {notification.priority}
+                    </span>
+                    {notification.requiresAction && (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 border border-yellow-200">
+                        <TranslatedText text="Action Required" />
+                      </span>
+                    )}
+                    <div className="flex gap-1 ml-auto">
+                      {notification.channels.map((channel: string) => (
+                        <span key={channel} className="text-sm" title={channel}>
+                          {notificationApi.getChannelIcon(channel)}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
       {/* Pagination */}
       {notificationsData && notificationsData.totalPages > 1 && (
         <div className="flex justify-center">
-          <nav className="flex space-x-1.5">
+          <nav className="flex flex-wrap justify-center gap-1.5 sm:gap-1.5">
             <button
               onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
               disabled={currentPage === 1}
-              className="px-2.5 py-1.5 text-xs border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors"
+              className="px-3 sm:px-2.5 py-2 sm:py-1.5 text-xs border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors touch-manipulation min-h-[44px] sm:min-h-0"
             >
               <TranslatedText text="Previous" />
             </button>
-            {Array.from({ length: notificationsData.totalPages }, (_, i) => i + 1).map((page) => (
-              <button
-                key={page}
-                onClick={() => setCurrentPage(page)}
-                className={`px-2.5 py-1.5 text-xs border rounded-lg transition-colors ${
-                  currentPage === page
-                    ? 'bg-blue-600 text-white border-blue-600'
-                    : 'border-gray-300 hover:bg-gray-50'
-                }`}
-              >
-                {page}
-              </button>
-            ))}
+            {Array.from({ length: Math.min(notificationsData.totalPages, 5) }, (_, i) => {
+              let pageNum: number;
+              if (notificationsData.totalPages <= 5) {
+                pageNum = i + 1;
+              } else if (currentPage <= 3) {
+                pageNum = i + 1;
+              } else if (currentPage >= notificationsData.totalPages - 2) {
+                pageNum = notificationsData.totalPages - 4 + i;
+              } else {
+                pageNum = currentPage - 2 + i;
+              }
+              return (
+                <button
+                  key={pageNum}
+                  onClick={() => setCurrentPage(pageNum)}
+                  className={`px-3 sm:px-2.5 py-2 sm:py-1.5 text-xs border rounded-lg transition-colors touch-manipulation min-h-[44px] sm:min-h-0 min-w-[44px] sm:min-w-0 ${
+                    currentPage === pageNum
+                      ? 'bg-blue-600 text-white border-blue-600'
+                      : 'border-gray-300 hover:bg-gray-50'
+                  }`}
+                >
+                  {pageNum}
+                </button>
+              );
+            })}
             <button
               onClick={() => setCurrentPage(prev => Math.min(notificationsData.totalPages, prev + 1))}
               disabled={currentPage === notificationsData.totalPages}
-              className="px-2.5 py-1.5 text-xs border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors"
+              className="px-3 sm:px-2.5 py-2 sm:py-1.5 text-xs border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors touch-manipulation min-h-[44px] sm:min-h-0"
             >
               <TranslatedText text="Next" />
             </button>
@@ -489,60 +592,69 @@ const NotificationsPage: React.FC = () => {
 
       {/* Create Notification Modal */}
       {showCreateModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-4 w-full max-w-md shadow-xl">
-            <h2 className="text-sm font-semibold mb-3">
-              <TranslatedText text="Create Notification" />
-            </h2>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-3 sm:p-4">
+          <div className="bg-white rounded-lg p-3 sm:p-4 w-full max-w-md shadow-xl max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-3">
+              <h2 className="text-base sm:text-lg font-semibold">
+                <TranslatedText text="Create Notification" />
+              </h2>
+              <button
+                onClick={() => setShowCreateModal(false)}
+                className="text-gray-400 hover:text-gray-600 transition-colors touch-manipulation min-w-[32px] min-h-[32px] flex items-center justify-center"
+                aria-label="Close"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
             
             <div className="space-y-3">
               <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">
+                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
                   <TranslatedText text="Title" /> *
                 </label>
                 <input
                   type="text"
                   value={createForm.title || ''}
                   onChange={(e) => setCreateForm(prev => ({ ...prev, title: e.target.value }))}
-                  className="w-full border border-gray-300 rounded-lg p-1.5 text-sm"
+                  className="w-full border border-gray-300 rounded-lg p-2 sm:p-1.5 text-sm touch-manipulation min-h-[44px] sm:min-h-0"
                   placeholder="Notification title"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">
+                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
                   <TranslatedText text="Message" /> *
                 </label>
                 <textarea
                   value={createForm.message || ''}
                   onChange={(e) => setCreateForm(prev => ({ ...prev, message: e.target.value }))}
-                  className="w-full border border-gray-300 rounded-lg p-1.5 text-sm"
+                  className="w-full border border-gray-300 rounded-lg p-2 sm:p-1.5 text-sm resize-none"
                   rows={3}
                   placeholder="Notification message"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">
+                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
                   <TranslatedText text="Recipient ID" /> *
                 </label>
                 <input
                   type="text"
                   value={createForm.recipientId || ''}
                   onChange={(e) => setCreateForm(prev => ({ ...prev, recipientId: e.target.value }))}
-                  className="w-full border border-gray-300 rounded-lg p-1.5 text-sm"
+                  className="w-full border border-gray-300 rounded-lg p-2 sm:p-1.5 text-sm touch-manipulation min-h-[44px] sm:min-h-0"
                   placeholder="UUID of the recipient"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">
+                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
                   <TranslatedText text="Category" />
                 </label>
                 <select
                   value={createForm.category || ''}
                   onChange={(e) => setCreateForm(prev => ({ ...prev, category: e.target.value }))}
-                  className="w-full border border-gray-300 rounded-lg p-1.5 text-sm"
+                  className="w-full border border-gray-300 rounded-lg p-2 sm:p-1.5 text-sm touch-manipulation min-h-[44px] sm:min-h-0"
                 >
                   <option value="SYSTEM"><TranslatedText text="System" /></option>
                   <option value="DRIVER"><TranslatedText text="Driver" /></option>
@@ -555,13 +667,13 @@ const NotificationsPage: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">
+                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
                   <TranslatedText text="Priority" />
                 </label>
                 <select
                   value={createForm.priority || ''}
                   onChange={(e) => setCreateForm(prev => ({ ...prev, priority: e.target.value }))}
-                  className="w-full border border-gray-300 rounded-lg p-1.5 text-sm"
+                  className="w-full border border-gray-300 rounded-lg p-2 sm:p-1.5 text-sm touch-manipulation min-h-[44px] sm:min-h-0"
                 >
                   <option value="LOW"><TranslatedText text="Low" /></option>
                   <option value="NORMAL"><TranslatedText text="Normal" /></option>
@@ -572,36 +684,36 @@ const NotificationsPage: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">
+                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
                   <TranslatedText text="Channels" />
                 </label>
                 <div className="space-y-1.5">
                   {['IN_APP', 'EMAIL', 'SMS', 'PUSH'].map((channel) => (
-                    <label key={channel} className="flex items-center">
+                    <label key={channel} className="flex items-center touch-manipulation min-h-[44px]">
                       <input
                         type="checkbox"
                         checked={createForm.channels?.includes(channel) || false}
                         onChange={() => handleChannelToggle(channel)}
                         className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-4 h-4"
                       />
-                      <span className="ml-2 text-xs text-gray-700">{channel}</span>
+                      <span className="ml-2 text-xs sm:text-sm text-gray-700">{channel}</span>
                     </label>
                   ))}
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">
+                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
                   <TranslatedText text="Requires Action" />
                 </label>
-                <label className="flex items-center">
+                <label className="flex items-center touch-manipulation min-h-[44px]">
                   <input
                     type="checkbox"
                     checked={createForm.requiresAction || false}
                     onChange={(e) => setCreateForm(prev => ({ ...prev, requiresAction: e.target.checked }))}
                     className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-4 h-4"
                   />
-                  <span className="ml-2 text-xs text-gray-700">
+                  <span className="ml-2 text-xs sm:text-sm text-gray-700">
                     <TranslatedText text="User must take action" />
                   </span>
                 </label>
@@ -610,26 +722,26 @@ const NotificationsPage: React.FC = () => {
               {createForm.requiresAction && (
                 <>
                   <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                    <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
                       <TranslatedText text="Action URL" />
                     </label>
                     <input
                       type="text"
                       value={createForm.actionUrl || ''}
                       onChange={(e) => setCreateForm(prev => ({ ...prev, actionUrl: e.target.value }))}
-                      className="w-full border border-gray-300 rounded-lg p-1.5 text-sm"
+                      className="w-full border border-gray-300 rounded-lg p-2 sm:p-1.5 text-sm touch-manipulation min-h-[44px] sm:min-h-0"
                       placeholder="URL for the action"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                    <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
                       <TranslatedText text="Action Text" />
                     </label>
                     <input
                       type="text"
                       value={createForm.actionText || ''}
                       onChange={(e) => setCreateForm(prev => ({ ...prev, actionText: e.target.value }))}
-                      className="w-full border border-gray-300 rounded-lg p-1.5 text-sm"
+                      className="w-full border border-gray-300 rounded-lg p-2 sm:p-1.5 text-sm touch-manipulation min-h-[44px] sm:min-h-0"
                       placeholder="Text for the action button"
                     />
                   </div>
@@ -637,17 +749,17 @@ const NotificationsPage: React.FC = () => {
               )}
             </div>
 
-            <div className="flex justify-end gap-2 mt-4">
+            <div className="flex flex-col sm:flex-row justify-end gap-2 mt-4">
               <button
                 onClick={() => setShowCreateModal(false)}
-                className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                className="px-4 py-2.5 sm:px-3 sm:py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors touch-manipulation min-h-[44px] sm:min-h-0"
               >
                 <TranslatedText text="Cancel" />
               </button>
               <button
                 onClick={handleCreateNotification}
                 disabled={!createForm.title || !createForm.message || !createForm.recipientId || createMutation.isPending}
-                className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="px-4 py-2.5 sm:px-3 sm:py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors touch-manipulation min-h-[44px] sm:min-h-0"
               >
                 {createMutation.isPending ? <TranslatedText text="Creating..." /> : <TranslatedText text="Create" />}
               </button>

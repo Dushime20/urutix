@@ -1,5 +1,4 @@
 export { default as AdminDashboard } from './AdminDashboard';
-export { default as Sidebar } from './Sidebar';
 export { default as Topbar } from './Topbar';
 export { default as KPIWidget } from './KPIWidget';
 export { default as AnalyticsChart } from './AnalyticsChart';

@@ -210,7 +210,7 @@ export default function LoadItem({
                 </div>
                 <button
                   onClick={() => setShowMobileDetails(true)}
-                  className="p-2 text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0"
+                  className="p-2 text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0 touch-manipulation min-w-[44px] min-h-[44px] flex items-center justify-center"
                   title="View Details"
                 >
                   <Eye className="w-5 h-5" />
@@ -223,7 +223,7 @@ export default function LoadItem({
             {/* Back Button */}
             <button
               onClick={() => setShowMobileDetails(false)}
-              className="mb-4 flex items-center gap-2 text-gray-600 hover:text-gray-900 font-medium text-sm transition-colors"
+              className="mb-4 flex items-center gap-2 text-gray-600 hover:text-gray-900 font-medium text-sm transition-colors touch-manipulation min-h-[44px]"
             >
               <ChevronLeft className="w-4 h-4" />
               Back to List
@@ -522,9 +522,9 @@ export default function LoadItem({
               </div>
               
               {/* Action Buttons - Mobile */}
-              <div className="flex gap-2 pt-3 border-t border-gray-200">
+              <div className="flex flex-wrap gap-2 pt-3 border-t border-gray-200">
                 <button
-                  className="flex-1 px-4 py-2.5 bg-white text-gray-700 border border-gray-300 rounded-lg font-medium text-sm hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
+                  className="flex-1 min-w-[120px] px-4 py-2.5 bg-white text-gray-700 border border-gray-300 rounded-lg font-medium text-sm hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 touch-manipulation min-h-[44px]"
                   onClick={() => handleEditClick()}
                 >
                   <Edit className="w-4 h-4" />
@@ -532,24 +532,26 @@ export default function LoadItem({
                 </button>
                 {handleAssignBroker && !load.broker && (
                   <button
-                    className="flex-1 px-4 py-2.5 bg-white text-purple-600 border border-purple-300 rounded-lg font-medium text-sm hover:bg-purple-50 transition-colors flex items-center justify-center gap-2"
+                    className="flex-1 min-w-[120px] px-4 py-2.5 bg-white text-purple-600 border border-purple-300 rounded-lg font-medium text-sm hover:bg-purple-50 transition-colors flex items-center justify-center gap-2 touch-manipulation min-h-[44px]"
                     onClick={() => handleAssignBroker(load)}
                   >
                     <User className="w-4 h-4" />
-                    Assign Broker
+                    <span className="hidden xs:inline">Assign Broker</span>
+                    <span className="xs:hidden">Assign</span>
                   </button>
                 )}
                 {handleUnassignBroker && load.broker && (
                   <button
-                    className="flex-1 px-4 py-2.5 bg-white text-orange-600 border border-orange-300 rounded-lg font-medium text-sm hover:bg-orange-50 transition-colors flex items-center justify-center gap-2"
+                    className="flex-1 min-w-[120px] px-4 py-2.5 bg-white text-orange-600 border border-orange-300 rounded-lg font-medium text-sm hover:bg-orange-50 transition-colors flex items-center justify-center gap-2 touch-manipulation min-h-[44px]"
                     onClick={() => handleUnassignBroker(load)}
                   >
                     <UserX className="w-4 h-4" />
-                    Unassign Broker
+                    <span className="hidden xs:inline">Unassign Broker</span>
+                    <span className="xs:hidden">Unassign</span>
                   </button>
                 )}
                 <button
-                  className="flex-1 px-4 py-2.5 bg-white text-red-600 border border-red-300 rounded-lg font-medium text-sm hover:bg-red-50 transition-colors flex items-center justify-center gap-2"
+                  className="flex-1 min-w-[120px] px-4 py-2.5 bg-white text-red-600 border border-red-300 rounded-lg font-medium text-sm hover:bg-red-50 transition-colors flex items-center justify-center gap-2 touch-manipulation min-h-[44px]"
                   onClick={() => handleDeleteCargo(load)}
                 >
                   <Trash2 className="w-4 h-4" />

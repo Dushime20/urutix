@@ -1,27 +1,47 @@
 import React, { useState, useEffect } from 'react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { brokerAPI, type MatchRecommendation } from '../../services/brokerApi';
-import { Brain, TrendingUp, Package, Route, DollarSign, CheckCircle2, XCircle, Loader2, Sparkles, Zap } from 'lucide-react';
+import { Brain, TrendingUp, Package, Route, DollarSign, CheckCircle2, XCircle, Loader2, Sparkles, Zap, Target, ArrowLeft, Shield, Star } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const SmartMatching: React.FC = () => {
   const { user } = useAuth();
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [recommendations, setRecommendations] = useState<MatchRecommendation[]>([]);
   const [loading, setLoading] = useState(false);
-  const [selectedLoadId, setSelectedLoadId] = useState('');
+  const [selectedLoadId, setSelectedLoadId] = useState(searchParams.get('loadId') || '');
   const [selectedRecommendation, setSelectedRecommendation] = useState<MatchRecommendation | null>(null);
 
-  const handleGenerateRecommendations = async () => {
-    if (!selectedLoadId) {
+  // Auto-load recommendations if loadId is in URL
+  useEffect(() => {
+    const loadId = searchParams.get('loadId');
+    if (loadId) {
+      setSelectedLoadId(loadId);
+      // Auto-generate recommendations
+      setTimeout(() => {
+        handleGenerateRecommendations(loadId);
+      }, 500);
+    }
+  }, [searchParams]);
+
+  const handleGenerateRecommendations = async (loadId?: string) => {
+    const idToUse = loadId || selectedLoadId;
+    if (!idToUse) {
       toast.error('Please enter a Load ID');
       return;
     }
 
     setLoading(true);
     try {
-      const response = await brokerAPI.generateRecommendations(selectedLoadId);
+      const response = await brokerAPI.generateRecommendations(idToUse);
       setRecommendations(response.data || []);
-      toast.success(`Generated ${response.data?.length || 0} recommendations`);
+      if (response.data && response.data.length > 0) {
+        toast.success(`🎯 Found ${response.data.length} perfect matches!`);
+      } else {
+        toast.info('No matches found. Try adjusting the criteria.');
+      }
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Failed to generate recommendations');
     } finally {
@@ -65,76 +85,164 @@ const SmartMatching: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Smart Load Matching</h1>
-          <p className="text-gray-600 mt-1">AI-powered transporter recommendations and route optimization</p>
+      {/* Header with gradient */}
+      <div className="bg-gradient-to-r from-violet-500 via-purple-600 to-indigo-600 rounded-xl shadow-lg p-8 text-white relative overflow-hidden">
+        <div className="relative z-10">
+          <div className="flex items-center justify-between">
+            <div>
+              {searchParams.get('loadId') && (
+                <button
+                  onClick={() => navigate('/dashboard/broker/discovery')}
+                  className="flex items-center gap-2 text-violet-100 hover:text-white mb-3 transition-colors"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  Back to Discovery
+                </button>
+              )}
+              <div className="flex items-center gap-3 mb-2">
+                <div className="bg-white/20 backdrop-blur-sm rounded-xl p-3">
+                  <Brain className="w-8 h-8" />
+                </div>
+                <div>
+                  <h1 className="text-3xl font-bold">🤖 Smart Matching AI</h1>
+                  <p className="text-violet-100 text-lg">
+                    AI-powered transporter recommendations in seconds
+                  </p>
+                </div>
+              </div>
+            </div>
+            {recommendations.length > 0 && (
+              <div className="bg-white/20 backdrop-blur-sm rounded-xl p-6 text-center">
+                <p className="text-sm text-violet-100 mb-1">Matches Found</p>
+                <p className="text-4xl font-bold">{recommendations.length}</p>
+              </div>
+            )}
+          </div>
         </div>
+        <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-32 -mt-32"></div>
+        <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/10 rounded-full -ml-24 -mb-24"></div>
       </div>
 
       {/* Load Selection */}
-      <div className="bg-white rounded-lg shadow-sm p-4">
-        <label className="block text-sm font-medium text-gray-700 mb-2">Load ID</label>
-        <div className="flex space-x-4">
+      <div className="bg-white rounded-xl shadow-sm p-6">
+        <div className="flex items-center gap-3 mb-4">
+          <Target className="w-5 h-5 text-violet-600" />
+          <label className="text-lg font-semibold text-gray-900">Select Load to Match</label>
+        </div>
+        <div className="flex gap-4">
           <input
             type="text"
-            placeholder="Enter Load ID"
+            placeholder="Enter Load ID or select from Discovery page"
             value={selectedLoadId}
             onChange={(e) => setSelectedLoadId(e.target.value)}
-            className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+            className="flex-1 px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition-all"
           />
           <button
-            onClick={handleGenerateRecommendations}
-            disabled={loading}
-            className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 flex items-center space-x-2"
+            onClick={() => handleGenerateRecommendations()}
+            disabled={loading || !selectedLoadId}
+            className="px-8 py-3 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-xl hover:from-violet-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed font-semibold shadow-lg hover:shadow-xl transition-all flex items-center gap-2"
           >
             {loading ? (
               <>
                 <Loader2 className="w-5 h-5 animate-spin" />
-                <span>Generating...</span>
+                <span>Finding Matches...</span>
               </>
             ) : (
               <>
                 <Sparkles className="w-5 h-5" />
-                <span>Generate Recommendations</span>
+                <span>Find Transporters</span>
               </>
             )}
           </button>
         </div>
+        <p className="text-sm text-gray-500 mt-2">
+          💡 Our AI analyzes route optimization, capacity, reliability, and pricing to find the best matches
+        </p>
       </div>
 
       {/* Recommendations List */}
       {loading ? (
-        <div className="flex justify-center items-center py-12">
-          <Loader2 className="w-8 h-8 animate-spin text-primary-600" />
+        <div className="flex flex-col justify-center items-center py-20">
+          <div className="relative">
+            <Loader2 className="w-16 h-16 animate-spin text-violet-600" />
+            <Brain className="w-8 h-8 text-violet-400 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 animate-pulse" />
+          </div>
+          <p className="text-gray-600 mt-6 text-lg">AI is analyzing transporters...</p>
+          <p className="text-gray-500 text-sm mt-2">Finding the perfect matches for your load</p>
         </div>
       ) : recommendations.length === 0 ? (
-        <div className="bg-white rounded-lg shadow-sm p-12 text-center">
-          <Brain className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">No recommendations yet</h3>
-          <p className="text-gray-600">Enter a Load ID and generate AI-powered recommendations</p>
+        <div className="bg-white rounded-xl shadow-sm p-16 text-center">
+          <div className="bg-gradient-to-r from-violet-100 to-purple-100 rounded-full p-6 w-fit mx-auto mb-4">
+            <Brain className="w-16 h-16 text-violet-600" />
+          </div>
+          <h3 className="text-2xl font-bold text-gray-900 mb-2">Ready to find the perfect match?</h3>
+          <p className="text-gray-600 mb-6">
+            Enter a Load ID above and let our AI find the best transporters
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-3xl mx-auto text-left">
+            <div className="p-4 bg-gradient-to-br from-violet-50 to-purple-50 rounded-lg">
+              <Target className="w-6 h-6 text-violet-600 mb-2" />
+              <p className="text-sm font-semibold text-gray-900">95% Match Accuracy</p>
+              <p className="text-xs text-gray-600">AI-powered precision</p>
+            </div>
+            <div className="p-4 bg-gradient-to-br from-emerald-50 to-teal-50 rounded-lg">
+              <Zap className="w-6 h-6 text-emerald-600 mb-2" />
+              <p className="text-sm font-semibold text-gray-900">Instant Results</p>
+              <p className="text-xs text-gray-600">Matches in seconds</p>
+            </div>
+            <div className="p-4 bg-gradient-to-br from-amber-50 to-orange-50 rounded-lg">
+              <Shield className="w-6 h-6 text-amber-600 mb-2" />
+              <p className="text-sm font-semibold text-gray-900">Verified Only</p>
+              <p className="text-xs text-gray-600">Pre-screened transporters</p>
+            </div>
+          </div>
         </div>
       ) : (
-        <div className="space-y-4">
-          {recommendations.map((rec) => (
-            <div key={rec.id} className="bg-white rounded-lg shadow-sm p-6">
-              <div className="flex justify-between items-start">
-                <div className="flex-1">
-                  <div className="flex items-center space-x-3 mb-3">
-                    {getRecommendationTypeIcon(rec.recommendationType)}
-                    <span className="text-sm font-medium text-gray-900">
-                      {rec.recommendationType.replace('_', ' ')}
-                    </span>
-                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${getScoreColor(rec.matchScore)}`}>
-                      Score: {rec.matchScore}%
-                    </span>
-                    <span className="text-xs text-gray-500">
-                      Confidence: {rec.confidenceLevel}%
-                    </span>
-                  </div>
+        <div>
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-bold text-gray-900">🎯 AI Recommendations</h2>
+            <p className="text-sm text-gray-600">
+              Sorted by match quality • <span className="text-violet-600 font-semibold">{recommendations.length} matches</span>
+            </p>
+          </div>
 
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+          <div className="space-y-6">
+            {recommendations.map((rec, index) => (
+              <div key={rec.id} className="bg-white rounded-xl shadow-lg border-2 border-gray-200 hover:border-violet-400 hover:shadow-2xl transition-all overflow-hidden">
+                {/* Card Header with Score */}
+                <div className={`p-4 ${
+                  rec.matchScore >= 80 
+                    ? 'bg-gradient-to-r from-emerald-500 to-teal-600'
+                    : rec.matchScore >= 60
+                    ? 'bg-gradient-to-r from-amber-500 to-orange-600'
+                    : 'bg-gradient-to-r from-rose-500 to-pink-600'
+                } text-white`}>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="bg-white/20 backdrop-blur-sm rounded-lg p-2">
+                        {index === 0 && <Star className="w-5 h-5" />}
+                        {index > 0 && getRecommendationTypeIcon(rec.recommendationType)}
+                      </div>
+                      <div>
+                        <p className="text-sm text-white/80">
+                          {index === 0 ? '⭐ Best Match' : `Match #${index + 1}`} • {rec.recommendationType.replace('_', ' ')}
+                        </p>
+                        <p className="text-lg font-bold">Transporter {rec.id.slice(0, 8)}</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-3xl font-bold">{rec.matchScore}%</p>
+                      <p className="text-xs text-white/80">Match Score</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Card Body */}
+                <div className="p-6">
+                  <div className="flex justify-between items-start">
+                    <div className="flex-1">
+                      {/* Key Metrics */}
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
                     {rec.matchingFactors.distanceScore && (
                       <div>
                         <div className="text-sm text-gray-600">Distance Score</div>
@@ -221,10 +329,12 @@ const SmartMatching: React.FC = () => {
                   >
                     View Details
                   </button>
+                  </div>
                 </div>
               </div>
             </div>
           ))}
+        </div>
         </div>
       )}
 

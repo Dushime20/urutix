@@ -237,14 +237,208 @@ const EnhancedJourneyFlow: React.FC = () => {
     </div>
   );
 
+  const [showComparison, setShowComparison] = useState(false);
+  const [showWizard, setShowWizard] = useState(false);
+
+  // Wizard state
+  const [wizardStep, setWizardStep] = useState(0);
+  const [wizardScores, setWizardScores] = useState({ smart: 0, bid: 0 });
+
+  const renderComparisonModal = () => (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="p-6">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-2xl font-bold text-gray-900">Journey Comparison</h2>
+            <button onClick={() => setShowComparison(false)} className="text-gray-500 hover:text-gray-700">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-0 border rounded-xl overflow-hidden">
+            {/* Header Column */}
+            <div className="bg-gray-50 p-4 border-b md:border-b-0 md:border-r">
+              <div className="h-16 md:block hidden"></div>
+              <div className="space-y-4 font-medium text-gray-700 mt-4">
+                <div className="h-10 flex items-center">Speed</div>
+                <div className="h-10 flex items-center">Cost</div>
+                <div className="h-10 flex items-center">Control</div>
+                <div className="h-10 flex items-center">Effort</div>
+                <div className="h-10 flex items-center">Certainty</div>
+              </div>
+            </div>
+
+            {/* Smart Matching Column */}
+            <div className="p-4 border-b md:border-b-0 md:border-r bg-blue-50/30">
+              <div className="h-16 flex flex-col items-center justify-center mb-4">
+                <FaRocket className="text-blue-600 w-6 h-6 mb-1" />
+                <h3 className="font-bold text-blue-900">Smart Matching</h3>
+              </div>
+              <div className="space-y-4 text-center">
+                <div className="h-10 flex items-center justify-center text-sm"><span className="bg-green-100 text-green-800 px-2 py-1 rounded">Fast (Instant)</span></div>
+                <div className="h-10 flex items-center justify-center text-sm">Market Rate</div>
+                <div className="h-10 flex items-center justify-center text-sm">Automated</div>
+                <div className="h-10 flex items-center justify-center text-sm">Low</div>
+                <div className="h-10 flex items-center justify-center text-sm">High</div>
+              </div>
+              <button 
+                onClick={() => { setShowComparison(false); handleJourneySelection('smart-matching'); }}
+                className="w-full mt-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium"
+              >
+                Select Smart Matching
+              </button>
+            </div>
+
+            {/* Bidding Column */}
+            <div className="p-4 bg-green-50/30">
+              <div className="h-16 flex flex-col items-center justify-center mb-4">
+                <FaGavel className="text-green-600 w-6 h-6 mb-1" />
+                <h3 className="font-bold text-green-900">Publish for Bid</h3>
+              </div>
+              <div className="space-y-4 text-center">
+                <div className="h-10 flex items-center justify-center text-sm">Slower (Days)</div>
+                <div className="h-10 flex items-center justify-center text-sm"><span className="bg-green-100 text-green-800 px-2 py-1 rounded">Potential Savings</span></div>
+                <div className="h-10 flex items-center justify-center text-sm">Manual Selection</div>
+                <div className="h-10 flex items-center justify-center text-sm">Medium</div>
+                <div className="h-10 flex items-center justify-center text-sm">Variable</div>
+              </div>
+              <button 
+                onClick={() => { setShowComparison(false); handleJourneySelection('publish-bid'); }}
+                className="w-full mt-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium"
+              >
+                Select Bidding
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderWizardModal = () => {
+    const questions = [
+      {
+        text: "How urgent is this shipment?",
+        options: [
+          { label: "Critical - Need it moved now", score: { smart: 2, bid: 0 } },
+          { label: "Flexible - Can wait a few days", score: { smart: 0, bid: 2 } }
+        ]
+      },
+      {
+        text: "What is your budget priority?",
+        options: [
+          { label: "Price is everything - I want the lowest possible rate", score: { smart: 0, bid: 2 } },
+          { label: "Reliability - I'll pay market rate for guaranteed service", score: { smart: 2, bid: 0 } }
+        ]
+      },
+      {
+        text: "Do you want to negotiate?",
+        options: [
+          { label: "Yes, I like to haggle", score: { smart: 0, bid: 2 } },
+          { label: "No, just give me a fair price", score: { smart: 2, bid: 0 } }
+        ]
+      }
+    ];
+
+    const currentQuestion = questions[wizardStep];
+    const isFinished = wizardStep >= questions.length;
+
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-xl font-bold text-gray-900">Journey Helper</h2>
+            <button onClick={() => { setShowWizard(false); setWizardStep(0); setWizardScores({ smart: 0, bid: 0 }); }} className="text-gray-500 hover:text-gray-700">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+          </div>
+
+          {!isFinished ? (
+            <div>
+              <div className="mb-6">
+                <div className="text-sm text-gray-500 mb-2">Question {wizardStep + 1} of {questions.length}</div>
+                <h3 className="text-lg font-medium text-gray-900">{currentQuestion.text}</h3>
+              </div>
+              <div className="space-y-3">
+                {currentQuestion.options.map((option, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => {
+                      setWizardScores(prev => ({
+                        smart: prev.smart + option.score.smart,
+                        bid: prev.bid + option.score.bid
+                      }));
+                      setWizardStep(prev => prev + 1);
+                    }}
+                    className="w-full text-left p-4 rounded-lg border hover:border-blue-500 hover:bg-blue-50 transition-colors"
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="text-center">
+              <div className="mb-6">
+                <div className="w-16 h-16 rounded-full bg-indigo-100 flex items-center justify-center mx-auto mb-4">
+                  <FaStar className="w-8 h-8 text-indigo-600" />
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">Recommendation</h3>
+                <p className="text-gray-600">
+                  Based on your answers, we recommend:
+                </p>
+                <div className="mt-4 text-2xl font-bold text-indigo-600">
+                  {wizardScores.smart >= wizardScores.bid ? "Smart Matching" : "Publish for Bid"}
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setShowWizard(false);
+                  handleJourneySelection(wizardScores.smart >= wizardScores.bid ? 'smart-matching' : 'publish-bid');
+                  setWizardStep(0);
+                  setWizardScores({ smart: 0, bid: 0 });
+                }}
+                className="w-full py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium"
+              >
+                Proceed with {wizardScores.smart >= wizardScores.bid ? "Smart Matching" : "Bidding"}
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   const renderJourneySelection = () => (
     <div className="journey-selection">
-      <div className="mb-6">
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Step 2: Choose Your Journey</h2>
-        <p className="text-gray-600">
-          Based on your cargo details, we recommend the best approach for your shipment.
-        </p>
+      {showComparison && renderComparisonModal()}
+      {showWizard && renderWizardModal()}
+      
+      <div className="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Step 2: Choose Your Journey</h2>
+          <p className="text-gray-600">
+            Select the best fulfillment method for your shipment.
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <button 
+            onClick={() => setShowWizard(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-700 rounded-lg hover:bg-indigo-100 font-medium text-sm transition-colors"
+          >
+            <FaStar className="w-4 h-4" />
+            Help Me Choose
+          </button>
+          <button 
+            onClick={() => setShowComparison(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium text-sm transition-colors"
+          >
+            <FaCheck className="w-4 h-4" />
+            Compare
+          </button>
+        </div>
       </div>
+
 
       {error && (
         <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">

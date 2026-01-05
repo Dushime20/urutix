@@ -242,15 +242,15 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
   };
 
   const renderFilters = () => (
-    <div className="bg-white rounded-lg shadow p-6 mb-6">
-      <h6 className="text-lg font-medium text-gray-900 mb-4">Filters</h6>
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+    <div className="bg-white rounded-lg shadow p-3 sm:p-4 md:p-6 mb-4 sm:mb-6">
+      <h6 className="text-base sm:text-lg font-medium text-gray-900 mb-3 sm:mb-4">Filters</h6>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+          <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Status</label>
           <select
             value={filters.status}
             onChange={(e) => setFilters({ ...filters, status: e.target.value })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full px-2.5 sm:px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 touch-manipulation min-h-[44px] sm:min-h-0"
           >
             <option value="all">All Status</option>
             <option value="ACTIVE">Active</option>
@@ -259,11 +259,11 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
           </select>
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Auction Type</label>
+          <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Auction Type</label>
           <select
             value={filters.auctionType}
             onChange={(e) => setFilters({ ...filters, auctionType: e.target.value })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full px-2.5 sm:px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 touch-manipulation min-h-[44px] sm:min-h-0"
           >
             <option value="all">All Types</option>
             <option value="REVERSE">Reverse</option>
@@ -272,36 +272,36 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
             <option value="SEALED">Sealed</option>
           </select>
         </div>
-        <div className="flex items-center">
+        <div className="flex items-center pt-6 sm:pt-0">
           <input
             type="checkbox"
             id="showWatchedOnly"
             checked={filters.showWatchedOnly}
             onChange={(e) => setFilters({ ...filters, showWatchedOnly: e.target.checked })}
-            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded touch-manipulation"
           />
-          <label htmlFor="showWatchedOnly" className="ml-2 block text-sm text-gray-700">
+          <label htmlFor="showWatchedOnly" className="ml-2 block text-xs sm:text-sm text-gray-700">
             Show Watched Only
           </label>
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Min Value</label>
+          <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Min Value</label>
           <input
             type="number"
             placeholder="Min value"
             value={filters.minValue}
             onChange={(e) => setFilters({ ...filters, minValue: e.target.value })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full px-2.5 sm:px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 touch-manipulation min-h-[44px] sm:min-h-0"
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Max Value</label>
+          <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Max Value</label>
           <input
             type="number"
             placeholder="Max value"
             value={filters.maxValue}
             onChange={(e) => setFilters({ ...filters, maxValue: e.target.value })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full px-2.5 sm:px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 touch-manipulation min-h-[44px] sm:min-h-0"
           />
         </div>
       </div>
@@ -310,17 +310,17 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
 
   const renderAuctionCard = (auction: Auction) => (
     <div key={auction.id} className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200">
-      <div className="p-6 border-b border-gray-200">
-        <div className="flex justify-between items-center mb-4">
-          <div className="flex space-x-2">
+      <div className="p-3 sm:p-4 md:p-6 border-b border-gray-200">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 sm:gap-0 mb-3 sm:mb-4">
+          <div className="flex flex-wrap gap-2">
             {getStatusBadge(auction.status)}
             {getAuctionTypeBadge(auction.auctionType)}
           </div>
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-2 flex-shrink-0">
             <button
               onClick={() => handleWatchToggle(auction.id)}
               disabled={watchingAuctions.has(auction.id)}
-              className={`p-2 rounded-full transition-colors duration-200 ${
+              className={`p-2 rounded-full transition-colors duration-200 touch-manipulation min-w-[36px] min-h-[36px] flex items-center justify-center ${
                 watchedAuctions.has(auction.id)
                   ? 'text-red-500 hover:text-red-600'
                   : 'text-gray-400 hover:text-red-500'
@@ -330,69 +330,69 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
               {watchingAuctions.has(auction.id) ? (
                 <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
               ) : watchedAuctions.has(auction.id) ? (
-                <FaHeart />
+                <FaHeart className="w-4 h-4" />
               ) : (
-                <FaRegHeart />
+                <FaRegHeart className="w-4 h-4" />
               )}
             </button>
-            <FaGavel className="text-blue-500" />
+            <FaGavel className="text-blue-500 w-4 h-4" />
           </div>
         </div>
         
-        <div className="flex items-center justify-between mb-2">
-          <h6 className="text-lg font-semibold text-gray-900">{auction.load.title}</h6>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
+          <h6 className="text-base sm:text-lg font-semibold text-gray-900 break-words">{auction.load.title}</h6>
           {watchedAuctions.has(auction.id) && (
-            <span className="text-xs bg-red-100 text-red-800 px-2 py-1 rounded-full flex items-center">
+            <span className="text-xs bg-red-100 text-red-800 px-2 py-1 rounded-full flex items-center w-fit">
               <FaHeart className="w-3 h-3 mr-1" />
               Watched
             </span>
           )}
         </div>
-        <p className="text-gray-600 text-sm mb-4">{auction.load.description}</p>
+        <p className="text-gray-600 text-xs sm:text-sm mb-3 sm:mb-4 line-clamp-2 break-words">{auction.load.description}</p>
         
-        <div className="space-y-2 mb-4">
-          <div className="flex justify-between text-sm">
+        <div className="space-y-1.5 sm:space-y-2 mb-3 sm:mb-4">
+          <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-0 text-xs sm:text-sm">
             <span className="text-gray-500 flex items-center">
-              <FaMapMarkerAlt className="mr-1" />
+              <FaMapMarkerAlt className="mr-1 flex-shrink-0" />
               Pickup
             </span>
-            <span className="text-gray-700">{auction.load.pickupLocation}</span>
+            <span className="text-gray-700 break-words text-right sm:text-left">{auction.load.pickupLocation}</span>
           </div>
-          <div className="flex justify-between text-sm">
+          <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-0 text-xs sm:text-sm">
             <span className="text-gray-500 flex items-center">
-              <FaMapMarkerAlt className="mr-1" />
+              <FaMapMarkerAlt className="mr-1 flex-shrink-0" />
               Delivery
             </span>
-            <span className="text-gray-700">{auction.load.deliveryLocation}</span>
+            <span className="text-gray-700 break-words text-right sm:text-left">{auction.load.deliveryLocation}</span>
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-4 text-center mb-4">
+        <div className="grid grid-cols-3 gap-2 sm:gap-4 text-center mb-3 sm:mb-4">
           <div>
-            <div className="text-sm text-gray-500">Weight</div>
-            <div className="font-semibold text-gray-900">{auction.load.weight} kg</div>
+            <div className="text-xs sm:text-sm text-gray-500">Weight</div>
+            <div className="font-semibold text-gray-900 text-xs sm:text-sm break-words">{auction.load.weight} kg</div>
           </div>
           <div>
-            <div className="text-sm text-gray-500">Value</div>
-            <div className="font-semibold text-gray-900">{formatCurrency(auction.load.loadValue)}</div>
+            <div className="text-xs sm:text-sm text-gray-500">Value</div>
+            <div className="font-semibold text-gray-900 text-xs sm:text-sm break-words">{formatCurrency(auction.load.loadValue)}</div>
           </div>
           <div>
-            <div className="text-sm text-gray-500">Bids</div>
-            <div className="font-semibold text-gray-900">{auction.totalBids}</div>
+            <div className="text-xs sm:text-sm text-gray-500">Bids</div>
+            <div className="font-semibold text-gray-900 text-xs sm:text-sm">{auction.totalBids}</div>
           </div>
         </div>
 
         {auction.currentHighestBid && (
-          <div className="mb-4">
-            <div className="text-sm text-gray-500">Current Highest Bid:</div>
-            <div className="text-lg font-bold text-green-600">{formatCurrency(auction.currentHighestBid)}</div>
+          <div className="mb-3 sm:mb-4">
+            <div className="text-xs sm:text-sm text-gray-500">Current Highest Bid:</div>
+            <div className="text-base sm:text-lg font-bold text-green-600 break-words">{formatCurrency(auction.currentHighestBid)}</div>
           </div>
         )}
 
-        <div className="flex justify-between items-center text-sm text-gray-500">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 sm:gap-0 text-xs sm:text-sm text-gray-500">
           <div className="flex items-center">
-            <FaClock className="mr-1" />
-            <span>Ends {formatDate(auction.auctionEnd)}</span>
+            <FaClock className="mr-1 flex-shrink-0" />
+            <span className="break-words">Ends {formatDate(auction.auctionEnd)}</span>
           </div>
           <div>
             <span>{auction.uniqueBidders} bidders</span>
@@ -400,23 +400,23 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
         </div>
       </div>
       
-      <div className="p-6 bg-gray-50">
-        <div className="flex space-x-2">
+      <div className="p-3 sm:p-4 md:p-6 bg-gray-50">
+        <div className="flex flex-col sm:flex-row gap-2">
           <button
             onClick={() => handleBidClick(auction)}
             disabled={auction.status !== 'ACTIVE' || userRole === 'CARGO_OWNER'}
-            className={`flex-1 px-4 py-2 text-sm font-medium rounded-md transition-colors duration-200 ${
+            className={`flex-1 px-3 sm:px-4 py-2.5 sm:py-2 text-xs sm:text-sm font-medium rounded-md transition-colors duration-200 touch-manipulation min-h-[44px] sm:min-h-0 flex items-center justify-center gap-1.5 ${
               auction.status !== 'ACTIVE' || userRole === 'CARGO_OWNER'
                 ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                 : 'bg-blue-600 text-white hover:bg-blue-700'
             }`}
           >
-            <FaGavel className="mr-1" />
-            {userRole === 'CARGO_OWNER' ? 'View Bids' : 'Place Bid'}
+            <FaGavel className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            <span>{userRole === 'CARGO_OWNER' ? 'View Bids' : 'Place Bid'}</span>
           </button>
-          <button className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors duration-200">
-            <FaEye className="mr-1" />
-            Details
+          <button className="flex-1 px-3 sm:px-4 py-2.5 sm:py-2 text-xs sm:text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors duration-200 touch-manipulation min-h-[44px] sm:min-h-0 flex items-center justify-center gap-1.5">
+            <FaEye className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            <span>Details</span>
           </button>
         </div>
       </div>
@@ -425,9 +425,9 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
 
   if (loading) {
     return (
-      <div className="text-center py-12">
+      <div className="text-center py-8 sm:py-12">
         <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-        <p className="mt-3 text-gray-600">Loading auctions...</p>
+        <p className="mt-3 text-xs sm:text-sm text-gray-600">Loading auctions...</p>
       </div>
     );
   }
@@ -437,32 +437,33 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
       {renderFilters()}
       
       {filters.showWatchedOnly && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-          <div className="flex items-center">
-            <FaHeart className="text-red-500 mr-2" />
-            <h3 className="text-lg font-medium text-red-800">Watched Auctions</h3>
-            <span className="ml-2 text-sm text-red-600">({auctions.length} auctions)</span>
+        <div className="bg-red-50 border border-red-200 rounded-lg p-3 sm:p-4 mb-4 sm:mb-6">
+          <div className="flex items-center flex-wrap gap-2">
+            <FaHeart className="text-red-500 mr-1 flex-shrink-0" />
+            <h3 className="text-base sm:text-lg font-medium text-red-800">Watched Auctions</h3>
+            <span className="text-xs sm:text-sm text-red-600">({auctions.length} auctions)</span>
           </div>
         </div>
       )}
       
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-          <div className="flex">
-            <div className="flex-shrink-0">
-              <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-3 sm:p-4 mb-4 sm:mb-6">
+          <div className="flex items-start sm:items-center">
+            <div className="flex-shrink-0 mt-0.5 sm:mt-0">
+              <svg className="h-4 w-4 sm:h-5 sm:w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
               </svg>
             </div>
-            <div className="ml-3">
-              <h3 className="text-sm font-medium text-red-800">{error}</h3>
+            <div className="ml-2 flex-1 min-w-0">
+              <h3 className="text-xs sm:text-sm font-medium text-red-800 break-words">{error}</h3>
             </div>
-            <div className="ml-auto pl-3">
+            <div className="ml-2 flex-shrink-0">
               <button
                 onClick={() => setError(null)}
-                className="inline-flex text-red-400 hover:text-red-500"
+                className="inline-flex text-red-400 hover:text-red-500 transition-colors touch-manipulation min-w-[32px] min-h-[32px] flex items-center justify-center"
+                aria-label="Dismiss error"
               >
-                <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <svg className="h-4 w-4 sm:h-5 sm:w-5" viewBox="0 0 20 20" fill="currentColor">
                   <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
                 </svg>
               </button>
@@ -472,30 +473,31 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
       )}
 
       {auctions.length === 0 ? (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <div className="flex">
-            <FaGavel className="text-blue-400 mr-2 mt-0.5" />
-            <span className="text-blue-800">No auctions found matching your criteria.</span>
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4">
+          <div className="flex items-center gap-2">
+            <FaGavel className="text-blue-400 flex-shrink-0" />
+            <span className="text-xs sm:text-sm text-blue-800 break-words">No auctions found matching your criteria.</span>
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4 md:gap-6">
           {auctions.map(renderAuctionCard)}
         </div>
       )}
 
       {/* Bid Modal */}
       {showBidModal && selectedAuction && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
-            <div className="mt-3">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-medium text-gray-900">Place Bid</h3>
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 p-3 sm:p-4">
+          <div className="relative top-4 sm:top-10 md:top-20 mx-auto p-3 sm:p-4 md:p-5 border w-full max-w-2xl shadow-lg rounded-md bg-white max-h-[90vh] overflow-y-auto">
+            <div className="mt-0 sm:mt-3">
+              <div className="flex justify-between items-center mb-3 sm:mb-4">
+                <h3 className="text-base sm:text-lg font-medium text-gray-900">Place Bid</h3>
                 <button
                   onClick={() => setShowBidModal(false)}
-                  className="text-gray-400 hover:text-gray-600"
+                  className="text-gray-400 hover:text-gray-600 transition-colors touch-manipulation min-w-[32px] min-h-[32px] flex items-center justify-center"
+                  aria-label="Close"
                 >
-                  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="h-5 w-5 sm:h-6 sm:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </button>

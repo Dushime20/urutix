@@ -116,7 +116,7 @@ const BrokerAnalytics: React.FC = () => {
             <div>
               <p className="text-sm font-medium text-gray-600">Total Commissions</p>
               <p className="text-2xl font-bold text-gray-900 mt-2">
-                ${statistics?.totalCommissions.toLocaleString() || '0.00'}
+                ${(statistics?.totalCommissions ?? 0).toLocaleString()}
               </p>
               <div className="flex items-center mt-2 text-sm text-green-600">
                 <ArrowUp className="w-4 h-4 mr-1" />
@@ -132,7 +132,7 @@ const BrokerAnalytics: React.FC = () => {
             <div>
               <p className="text-sm font-medium text-gray-600">Total Earned</p>
               <p className="text-2xl font-bold text-gray-900 mt-2">
-                ${statistics?.totalEarned.toLocaleString() || '0.00'}
+                ${(statistics?.totalEarned ?? 0).toLocaleString()}
               </p>
               <div className="flex items-center mt-2 text-sm text-green-600">
                 <ArrowUp className="w-4 h-4 mr-1" />
@@ -163,7 +163,7 @@ const BrokerAnalytics: React.FC = () => {
             <div>
               <p className="text-sm font-medium text-gray-600">Avg Commission Rate</p>
               <p className="text-2xl font-bold text-gray-900 mt-2">
-                {statistics?.averageCommissionRate.toFixed(1) || '0.0'}%
+                {(statistics?.averageCommissionRate ?? 0).toFixed(1)}%
               </p>
               <div className="flex items-center mt-2 text-sm text-gray-600">
                 <span>Industry avg: 5.0%</span>

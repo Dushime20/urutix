@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import {
   FaSave,
   FaMapMarkerAlt,
@@ -34,6 +34,7 @@ import CargoFormSections from "./CargoFormSections";
 import TruckSelectionModal from "./TruckSelectionModal";
 import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
 import { Icon } from "leaflet";
+import HelpTooltip from "@/components/common/HelpTooltip";
 
 import "leaflet/dist/leaflet.css";
 import type {
@@ -162,6 +163,9 @@ const EnhancedCargoForm: React.FC<EnhancedCargoFormProps> = ({
   const [draftSaved, setDraftSaved] = useState(false);
   const [photos, setPhotos] = useState<string[]>(uploadedPhotos);
   const [suggestions, setSuggestions] = useState<any>(aiSuggestions);
+  const [isAutoSaving, setIsAutoSaving] = useState(false);
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Apply template data when initialData changes (for editing)
   useEffect(() => {
@@ -614,6 +618,54 @@ const EnhancedCargoForm: React.FC<EnhancedCargoFormProps> = ({
     // eslint-disable-next-line
   }, [formData, pickupLocation, deliveryLocation]);
 
+  // Calculate completion percentage
+  const completionPercentage = useMemo(() => {
+    const completedCount = sections.filter(s => completedSections[s.id]).length;
+    return Math.round((completedCount / sections.length) * 100);
+  }, [completedSections, sections]);
+
+  // Auto-save functionality
+  const handleAutoSave = useCallback(async () => {
+    if (!onSaveDraft || mode === 'edit') return;
+    
+    setIsAutoSaving(true);
+    try {
+      await onSaveDraft({
+        ...formData,
+        pickupLocation,
+        deliveryLocation,
+      });
+      setDraftSaved(true);
+      setLastSaved(new Date());
+      setTimeout(() => setDraftSaved(false), 3000);
+    } catch (error) {
+      console.error('Auto-save failed:', error);
+    } finally {
+      setIsAutoSaving(false);
+    }
+  }, [formData, pickupLocation, deliveryLocation, onSaveDraft, mode]);
+
+  // Debounced auto-save
+  useEffect(() => {
+    if (autoSaveTimeoutRef.current) {
+      clearTimeout(autoSaveTimeoutRef.current);
+    }
+
+    // Only auto-save if there's meaningful data
+    const hasData = formData.title || formData.description || pickupLocation || deliveryLocation;
+    if (hasData && mode === 'create' && onSaveDraft) {
+      autoSaveTimeoutRef.current = setTimeout(() => {
+        handleAutoSave();
+      }, 2000); // Auto-save after 2 seconds of inactivity
+    }
+
+    return () => {
+      if (autoSaveTimeoutRef.current) {
+        clearTimeout(autoSaveTimeoutRef.current);
+      }
+    };
+  }, [formData, pickupLocation, deliveryLocation, handleAutoSave, mode, onSaveDraft]);
+
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
@@ -628,6 +680,36 @@ const EnhancedCargoForm: React.FC<EnhancedCargoFormProps> = ({
             <DialogDescription className="text-xs text-gray-600 mt-0.5">
               Enter detailed cargo information for optimal matching
             </DialogDescription>
+            
+            {/* Progress Indicator */}
+            <div className="mt-3 space-y-1.5">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-gray-600">Form Completion</span>
+                <span className="font-medium text-gray-900">{completionPercentage}%</span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-2">
+                <div 
+                  className="bg-primary-600 h-2 rounded-full transition-all duration-300"
+                  style={{ width: `${completionPercentage}%` }}
+                />
+              </div>
+              <div className="flex items-center justify-between text-xs text-gray-500">
+                {isAutoSaving ? (
+                  <span className="flex items-center gap-1">
+                    <div className="animate-spin rounded-full h-2.5 w-2.5 border-b border-primary-600"></div>
+                    Auto-saving...
+                  </span>
+                ) : draftSaved ? (
+                  <span className="text-green-600 flex items-center gap-1">
+                    <FaCheck className="w-2.5 h-2.5" />
+                    Draft saved
+                  </span>
+                ) : lastSaved ? (
+                  <span>Last saved: {lastSaved.toLocaleTimeString()}</span>
+                ) : null}
+                <span>{sections.filter(s => completedSections[s.id]).length} of {sections.length} sections complete</span>
+              </div>
+            </div>
           </div>
           {/* Mobile Sidebar Toggle */}
           <button
@@ -705,9 +787,13 @@ const EnhancedCargoForm: React.FC<EnhancedCargoFormProps> = ({
                     <div className="min-w-0">
                       <Label
                         htmlFor="title"
-                        className="block text-xs font-medium text-gray-700 mb-1"
+                        className="block text-xs font-medium text-gray-700 mb-1 flex items-center gap-1.5"
                       >
                         Cargo Title *
+                        <HelpTooltip
+                          content="Enter a clear, descriptive title for your cargo. This helps transporters quickly understand what they'll be shipping."
+                          title="Cargo Title"
+                        />
                       </Label>
                       <Input
                         id="title"
@@ -794,9 +880,13 @@ const EnhancedCargoForm: React.FC<EnhancedCargoFormProps> = ({
                     <div className="min-w-0">
                       <Label
                         htmlFor="loadValue"
-                        className="block text-xs font-medium text-gray-700 mb-1"
+                        className="block text-xs font-medium text-gray-700 mb-1 flex items-center gap-1.5"
                       >
                         Load Value ($) *
+                        <HelpTooltip
+                          content="The total declared value of your cargo. This is used for insurance purposes and helps determine appropriate pricing."
+                          title="Load Value"
+                        />
                       </Label>
                       <Input
                         id="loadValue"

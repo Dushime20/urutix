@@ -1,5 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { FaTruck, FaGavel, FaRocket, FaCheck, FaClock, FaDollarSign, FaStar } from 'react-icons/fa';
+import { HelpCircle, BarChart3 } from 'lucide-react';
+import JourneyDecisionHelper from './JourneyDecisionHelper';
+import JourneyComparison from './JourneyComparison';
 
 interface JourneySelectionModalProps {
   isOpen: boolean;
@@ -16,6 +19,9 @@ const JourneySelectionModal: React.FC<JourneySelectionModalProps> = ({
   cargoData,
   loading = false
 }) => {
+  const [showDecisionHelper, setShowDecisionHelper] = useState(false);
+  const [showComparison, setShowComparison] = useState(false);
+
   if (!isOpen) return null;
 
   const getRecommendation = () => {
@@ -31,6 +37,34 @@ const JourneySelectionModal: React.FC<JourneySelectionModalProps> = ({
   };
 
   const recommendation = getRecommendation();
+
+  // Show Decision Helper if requested
+  if (showDecisionHelper) {
+    return (
+      <JourneyDecisionHelper
+        cargoData={cargoData}
+        onRecommendation={(rec) => {
+          setShowDecisionHelper(false);
+          onJourneySelected(rec.journey);
+        }}
+        onClose={() => setShowDecisionHelper(false)}
+      />
+    );
+  }
+
+  // Show Comparison if requested
+  if (showComparison) {
+    return (
+      <JourneyComparison
+        cargoData={cargoData}
+        onSelect={(journey) => {
+          setShowComparison(false);
+          onJourneySelected(journey);
+        }}
+        onClose={() => setShowComparison(false)}
+      />
+    );
+  }
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -157,9 +191,27 @@ const JourneySelectionModal: React.FC<JourneySelectionModalProps> = ({
             </div>
           </div>
 
+          {/* Helper Tools */}
+          <div className="flex flex-col sm:flex-row gap-3 mt-6">
+            <button
+              onClick={() => setShowDecisionHelper(true)}
+              className="flex-1 px-6 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 font-semibold transition-all shadow-lg flex items-center justify-center gap-3 group"
+            >
+              <HelpCircle className="w-5 h-5 group-hover:scale-110 transition-transform" />
+              <span>Need Help Deciding?</span>
+            </button>
+            <button
+              onClick={() => setShowComparison(true)}
+              className="flex-1 px-6 py-4 border-2 border-violet-600 text-violet-600 rounded-xl hover:bg-violet-50 font-semibold transition-all flex items-center justify-center gap-3 group"
+            >
+              <BarChart3 className="w-5 h-5 group-hover:scale-110 transition-transform" />
+              <span>Compare Options</span>
+            </button>
+          </div>
+
           {/* Cargo Summary */}
           {cargoData && (
-            <div className="bg-gray-50 rounded-lg p-4">
+            <div className="bg-gray-50 rounded-lg p-4 mt-6">
               <h3 className="text-lg font-medium text-gray-900 mb-3">Your Cargo Summary</h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                 <div className="flex items-center">

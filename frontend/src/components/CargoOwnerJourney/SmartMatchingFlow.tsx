@@ -51,6 +51,21 @@ const SmartMatchingFlow: React.FC<SmartMatchingFlowProps> = ({ cargoDetails, onC
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showDetails, setShowDetails] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<'list' | 'table' | 'comparison'>('list');
+  const [compareList, setCompareList] = useState<string[]>([]);
+  
+  // Filters
+  const [filters, setFilters] = useState({
+    minScore: 0,
+    maxCost: 0,
+    minRating: 0,
+    truckType: '',
+    hasGPS: false,
+    hasRefrigeration: false,
+    hasHazmat: false,
+  });
+  const [sortBy, setSortBy] = useState<'score' | 'cost' | 'rating' | 'distance'>('score');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
   useEffect(() => {
     findMatches();
@@ -112,6 +127,246 @@ const SmartMatchingFlow: React.FC<SmartMatchingFlowProps> = ({ cargoDetails, onC
     return 'bg-red-100';
   };
 
+  // Filter and sort trucks
+  const filteredTrucks = matchedTrucks
+    .filter(truck => {
+      if (filters.minScore && truck.score < filters.minScore) return false;
+      if (filters.maxCost && truck.estimatedCost > filters.maxCost) return false;
+      if (filters.minRating && truck.driver.rating < filters.minRating) return false;
+      if (filters.truckType && truck.truck.truckType !== filters.truckType) return false;
+      if (filters.hasGPS && !truck.truck.hasGpsTracking) return false;
+      if (filters.hasRefrigeration && !truck.truck.hasRefrigeration) return false;
+      if (filters.hasHazmat && !truck.truck.hasHazmatPermit) return false;
+      return true;
+    })
+    .sort((a, b) => {
+      let comparison = 0;
+      switch (sortBy) {
+        case 'score':
+          comparison = a.score - b.score;
+          break;
+        case 'cost':
+          comparison = a.estimatedCost - b.estimatedCost;
+          break;
+        case 'rating':
+          comparison = a.driver.rating - b.driver.rating;
+          break;
+        case 'distance':
+          comparison = a.distance - b.distance;
+          break;
+      }
+      return sortOrder === 'asc' ? comparison : -comparison;
+    });
+
+  const toggleCompare = (truckId: string) => {
+    setCompareList(prev => {
+      if (prev.includes(truckId)) {
+        return prev.filter(id => id !== truckId);
+      }
+      if (prev.length >= 3) {
+        return prev;
+      }
+      return [...prev, truckId];
+    });
+  };
+
+  const renderFilters = () => (
+    <div className="bg-gray-50 rounded-lg p-4 mb-6">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="font-medium text-gray-900">Filters & Sort</h3>
+        <button 
+          onClick={() => setFilters({ minScore: 0, maxCost: 0, minRating: 0, truckType: '', hasGPS: false, hasRefrigeration: false, hasHazmat: false })}
+          className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+        >
+          Reset
+        </button>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Min Match Score</label>
+          <input 
+            type="number" 
+            min="0" 
+            max="100"
+            value={filters.minScore || ''}
+            onChange={(e) => setFilters(prev => ({ ...prev, minScore: Number(e.target.value) }))}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+            placeholder="0"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Max Cost ($)</label>
+          <input 
+            type="number" 
+            min="0"
+            value={filters.maxCost || ''}
+            onChange={(e) => setFilters(prev => ({ ...prev, maxCost: Number(e.target.value) }))}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+            placeholder="No limit"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Min Rating</label>
+          <select 
+            value={filters.minRating}
+            onChange={(e) => setFilters(prev => ({ ...prev, minRating: Number(e.target.value) }))}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+          >
+            <option value="0">Any</option>
+            <option value="3">3+ ★</option>
+            <option value="4">4+ ★</option>
+            <option value="4.5">4.5+ ★</option>
+          </select>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Sort By</label>
+          <div className="flex gap-2">
+            <select 
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as any)}
+              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm"
+            >
+              <option value="score">Match Score</option>
+              <option value="cost">Cost</option>
+              <option value="rating">Rating</option>
+              <option value="distance">Distance</option>
+            </select>
+            <button 
+              onClick={() => setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')}
+              className="px-3 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-100"
+            >
+              {sortOrder === 'asc' ? '↑' : '↓'}
+            </button>
+          </div>
+        </div>
+      </div>
+      <div className="flex gap-4 mt-4">
+        <label className="flex items-center text-sm">
+          <input 
+            type="checkbox" 
+            checked={filters.hasGPS}
+            onChange={(e) => setFilters(prev => ({ ...prev, hasGPS: e.target.checked }))}
+            className="mr-2"
+          />
+          GPS Tracking
+        </label>
+        <label className="flex items-center text-sm">
+          <input 
+            type="checkbox" 
+            checked={filters.hasRefrigeration}
+            onChange={(e) => setFilters(prev => ({ ...prev, hasRefrigeration: e.target.checked }))}
+            className="mr-2"
+          />
+          Refrigeration
+        </label>
+        <label className="flex items-center text-sm">
+          <input 
+            type="checkbox" 
+            checked={filters.hasHazmat}
+            onChange={(e) => setFilters(prev => ({ ...prev, hasHazmat: e.target.checked }))}
+            className="mr-2"
+          />
+          Hazmat Certified
+        </label>
+      </div>
+    </div>
+  );
+
+  const renderTableView = () => (
+    <div className="overflow-x-auto">
+      <table className="w-full text-sm">
+        <thead className="bg-gray-100 border-b">
+          <tr>
+            <th className="px-4 py-3 text-left font-medium text-gray-700">Owner / Truck</th>
+            <th className="px-4 py-3 text-left font-medium text-gray-700">Match Score</th>
+            <th className="px-4 py-3 text-left font-medium text-gray-700">Cost</th>
+            <th className="px-4 py-3 text-left font-medium text-gray-700">Distance</th>
+            <th className="px-4 py-3 text-left font-medium text-gray-700">Time</th>
+            <th className="px-4 py-3 text-left font-medium text-gray-700">Rating</th>
+            <th className="px-4 py-3 text-left font-medium text-gray-700">Features</th>
+            <th className="px-4 py-3 text-left font-medium text-gray-700">Action</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y">
+          {filteredTrucks.map(truck => (
+            <tr key={truck.id} className={selectedTruck?.id === truck.id ? 'bg-blue-50' : 'hover:bg-gray-50'}>
+              <td className="px-4 py-3">
+                <div className="font-medium text-gray-900">{truck.truckOwner.name}</div>
+                <div className="text-xs text-gray-500">{truck.truck.make} {truck.truck.model}</div>
+              </td>
+              <td className="px-4 py-3">
+                <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getScoreBgColor(truck.score)} ${getScoreColor(truck.score)}`}>
+                  {truck.score}%
+                </span>
+              </td>
+              <td className="px-4 py-3 font-medium">${truck.estimatedCost.toLocaleString()}</td>
+              <td className="px-4 py-3">{truck.distance} mi</td>
+              <td className="px-4 py-3">{truck.estimatedTime}h</td>
+              <td className="px-4 py-3">{truck.driver.rating} ★</td>
+              <td className="px-4 py-3">
+                <div className="flex gap-1">
+                  {truck.truck.hasGpsTracking && <span className="text-xs bg-purple-100 text-purple-700 px-1 rounded">GPS</span>}
+                  {truck.truck.hasRefrigeration && <span className="text-xs bg-blue-100 text-blue-700 px-1 rounded">Fridge</span>}
+                  {truck.truck.hasHazmatPermit && <span className="text-xs bg-orange-100 text-orange-700 px-1 rounded">Hazmat</span>}
+                </div>
+              </td>
+              <td className="px-4 py-3">
+                <button 
+                  onClick={() => handleSelectTruck(truck)}
+                  className="text-blue-600 hover:text-blue-700 font-medium text-sm"
+                >
+                  Select
+                </button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+
+  const renderComparisonView = () => {
+    const compareItems = filteredTrucks.filter(t => compareList.includes(t.id));
+    if (compareItems.length === 0) {
+      return (
+        <div className="text-center py-12">
+          <p className="text-gray-500">Select up to 3 trucks to compare (check boxes in list view)</p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead className="bg-gray-100">
+            <tr>
+              <th className="px-4 py-3 text-left font-medium text-gray-700 w-40">Criteria</th>
+              {compareItems.map(truck => (
+                <th key={truck.id} className="px-4 py-3 text-center font-medium text-gray-700">
+                  <div>{truck.truckOwner.name}</div>
+                  <div className="text-xs text-gray-500 font-normal">{truck.truck.make} {truck.truck.model}</div>
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className="divide-y">
+            <tr><td className="px-4 py-3 font-medium">Match Score</td>{compareItems.map(t => <td key={t.id} className="px-4 py-3 text-center"><span className={`px-2 py-1 rounded-full text-xs font-medium ${getScoreBgColor(t.score)} ${getScoreColor(t.score)}`}>{t.score}%</span></td>)}</tr>
+            <tr><td className="px-4 py-3 font-medium">Cost</td>{compareItems.map(t => <td key={t.id} className="px-4 py-3 text-center font-semibold">${t.estimatedCost.toLocaleString()}</td>)}</tr>
+            <tr><td className="px-4 py-3 font-medium">Distance</td>{compareItems.map(t => <td key={t.id} className="px-4 py-3 text-center">{t.distance} miles</td>)}</tr>
+            <tr><td className="px-4 py-3 font-medium">Est. Time</td>{compareItems.map(t => <td key={t.id} className="px-4 py-3 text-center">{t.estimatedTime} hrs</td>)}</tr>
+            <tr><td className="px-4 py-3 font-medium">Driver Rating</td>{compareItems.map(t => <td key={t.id} className="px-4 py-3 text-center">{t.driver.rating} ★</td>)}</tr>
+            <tr><td className="px-4 py-3 font-medium">Experience</td>{compareItems.map(t => <td key={t.id} className="px-4 py-3 text-center">{t.driver.experience} years</td>)}</tr>
+            <tr><td className="px-4 py-3 font-medium">GPS Tracking</td>{compareItems.map(t => <td key={t.id} className="px-4 py-3 text-center">{t.truck.hasGpsTracking ? <FaCheck className="inline text-green-500" /> : <FaTimes className="inline text-red-500" />}</td>)}</tr>
+            <tr><td className="px-4 py-3 font-medium">Refrigeration</td>{compareItems.map(t => <td key={t.id} className="px-4 py-3 text-center">{t.truck.hasRefrigeration ? <FaCheck className="inline text-green-500" /> : <FaTimes className="inline text-red-500" />}</td>)}</tr>
+            <tr><td className="px-4 py-3 font-medium">Hazmat</td>{compareItems.map(t => <td key={t.id} className="px-4 py-3 text-center">{t.truck.hasHazmatPermit ? <FaCheck className="inline text-green-500" /> : <FaTimes className="inline text-red-500" />}</td>)}</tr>
+            <tr><td className="px-4 py-3 font-medium">Insurance</td>{compareItems.map(t => <td key={t.id} className="px-4 py-3 text-center">${t.truck.insuranceCoverage.toLocaleString()}</td>)}</tr>
+            <tr><td className="px-4 py-3 font-medium"></td>{compareItems.map(t => <td key={t.id} className="px-4 py-3 text-center"><button onClick={() => handleSelectTruck(t)} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium">Select</button></td>)}</tr>
+          </tbody>
+        </table>
+      </div>
+    );
+  };
+
   if (loading) {
     return (
       <div className="text-center py-12">
@@ -169,9 +424,44 @@ const SmartMatchingFlow: React.FC<SmartMatchingFlowProps> = ({ cargoDetails, onC
         </div>
       </div>
 
-      {/* Matched Trucks */}
-      <div className="space-y-4">
-        {matchedTrucks.map((truck) => (
+      {/* View Mode Tabs */}
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex gap-2 bg-gray-100 p-1 rounded-lg">
+          <button 
+            onClick={() => setViewMode('list')}
+            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${viewMode === 'list' ? 'bg-white text-gray-900 shadow' : 'text-gray-600'}`}
+          >
+            List View
+          </button>
+          <button 
+            onClick={() => setViewMode('table')}
+            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${viewMode === 'table' ? 'bg-white text-gray-900 shadow' : 'text-gray-600'}`}
+          >
+            Table View
+          </button>
+          <button 
+            onClick={() => setViewMode('comparison')}
+            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${viewMode === 'comparison' ? 'bg-white text-gray-900 shadow' : 'text-gray-600'}`}
+          >
+            Compare ({compareList.length}/3)
+          </button>
+        </div>
+        <div className="text-sm text-gray-600">
+          Showing {filteredTrucks.length} of {matchedTrucks.length} matches
+        </div>
+      </div>
+
+      {/* Filters */}
+      {renderFilters()}
+
+      {/* Content based on view mode */}
+      {viewMode === 'table' && renderTableView()}
+      {viewMode === 'comparison' && renderComparisonView()}
+
+      {/* Matched Trucks - List View */}
+      {viewMode === 'list' && (
+        <div className="space-y-4">
+          {filteredTrucks.map((truck) => (
           <div
             key={truck.id}
             className={`border rounded-lg p-6 cursor-pointer transition-all ${
@@ -183,12 +473,21 @@ const SmartMatchingFlow: React.FC<SmartMatchingFlowProps> = ({ cargoDetails, onC
           >
             <div className="flex items-start justify-between">
               <div className="flex-1">
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900">
-                      {truck.truckOwner.name}
-                    </h3>
-                    <p className="text-sm text-gray-600">{truck.truck.make} {truck.truck.model} ({truck.truck.truckType})</p>
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <input 
+                      type="checkbox" 
+                      checked={compareList.includes(truck.id)}
+                      onChange={() => toggleCompare(truck.id)}
+                      className="mt-1"
+                      disabled={!compareList.includes(truck.id) && compareList.length >= 3}
+                    />
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900">
+                        {truck.truckOwner.name}
+                      </h3>
+                      <p className="text-sm text-gray-600">{truck.truck.make} {truck.truck.model} ({truck.truck.truckType})</p>
+                    </div>
                   </div>
                   <div className="text-right">
                     <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getScoreBgColor(truck.score)} ${getScoreColor(truck.score)}`}>
@@ -291,6 +590,7 @@ const SmartMatchingFlow: React.FC<SmartMatchingFlowProps> = ({ cargoDetails, onC
           </div>
         ))}
       </div>
+      )}
 
       {/* Action Buttons */}
       <div className="mt-8 flex justify-end space-x-4">

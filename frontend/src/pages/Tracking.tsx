@@ -43,6 +43,15 @@ interface Shipment {
   actualPickup?: string;
   actualDelivery?: string;
   progress: number; // 0-100
+  milestones?: {
+    type: 'PICKUP' | 'IN_TRANSIT' | 'CHECKPOINT' | 'DELIVERY';
+    location: string;
+    timestamp?: string;
+    status: 'COMPLETED' | 'CURRENT' | 'PENDING';
+  }[];
+  etaConfidence?: number; // 0-100
+  delayReason?: string;
+  distanceRemaining?: number;
 }
 
 const Tracking: React.FC = () => {
@@ -54,6 +63,9 @@ const Tracking: React.FC = () => {
   const [wsError, setWsError] = useState<string | null>(null);
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
   const [showUpdateNotification, setShowUpdateNotification] = useState(false);
+  const [showMessaging, setShowMessaging] = useState(false);
+  const [messages, setMessages] = useState<{id: string, sender: 'me' | 'driver', text: string, timestamp: Date}[]>([]);
+  const [messageInput, setMessageInput] = useState('');
   const unsubscribeRefs = useRef<Map<string, () => void>>(new Map());
 
   // Initialize WebSocket connection (only if enabled)
@@ -190,6 +202,14 @@ const Tracking: React.FC = () => {
           estimatedDelivery: '2024-01-20T14:00:00Z',
           actualPickup: '2024-01-18T08:30:00Z',
           progress: 65,
+          milestones: [
+            { type: 'PICKUP', location: 'Nairobi Warehouse', timestamp: '2024-01-18T08:30:00Z', status: 'COMPLETED' },
+            { type: 'CHECKPOINT', location: 'Machakos Junction', timestamp: '2024-01-18T11:00:00Z', status: 'COMPLETED' },
+            { type: 'CHECKPOINT', location: 'Voi Checkpoint', timestamp: undefined, status: 'CURRENT' },
+            { type: 'DELIVERY', location: 'Mombasa Port', timestamp: undefined, status: 'PENDING' },
+          ],
+          etaConfidence: 88,
+          distanceRemaining: 180,
         },
         {
           id: '2',
@@ -224,6 +244,13 @@ const Tracking: React.FC = () => {
           estimatedDelivery: '2024-01-19T16:00:00Z',
           actualPickup: '2024-01-18T10:15:00Z',
           progress: 35,
+          milestones: [
+            { type: 'PICKUP', location: 'Kisumu Farm', timestamp: '2024-01-18T10:15:00Z', status: 'COMPLETED' },
+            { type: 'CHECKPOINT', location: 'Kericho Stop', timestamp: undefined, status: 'CURRENT' },
+            { type: 'DELIVERY', location: 'Nairobi Market', timestamp: undefined, status: 'PENDING' },
+          ],
+          etaConfidence: 92,
+          distanceRemaining: 245,
         },
       ]);
       setLoading(false);
@@ -570,93 +597,131 @@ const Tracking: React.FC = () => {
                       </span>
                       <span className="text-xs font-medium">{selectedShipment.progress}%</span>
                     </div>
+                    {selectedShipment.etaConfidence && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs text-gray-600">
+                          <TranslatedText text="ETA Confidence" />:
+                        </span>
+                        <span className={`text-xs font-medium px-2 py-0.5 rounded ${selectedShipment.etaConfidence >= 80 ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
+                          {selectedShipment.etaConfidence}%
+                        </span>
+                      </div>
+                    )}
+                    {selectedShipment.distanceRemaining && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs text-gray-600">
+                          <TranslatedText text="Distance Remaining" />:
+                        </span>
+                        <span className="text-xs font-medium">{selectedShipment.distanceRemaining} km</span>
+                      </div>
+                    )}
                   </div>
                 </div>
 
                 <div>
                   <h3 className="text-xs font-semibold text-gray-900 mb-2">
-                    <TranslatedText text="Driver & Vehicle" />
+                    <TranslatedText text="Milestones" />
                   </h3>
-                  <div className="space-y-1.5">
-                    <div className="flex justify-between items-center">
-                      <span className="text-xs text-gray-600">
-                        <TranslatedText text="Driver" />:
-                      </span>
-                      <span className="text-xs font-medium">{selectedShipment.driver.name}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-xs text-gray-600">
-                        <TranslatedText text="Phone" />:
-                      </span>
-                      <span className="text-xs font-medium">{selectedShipment.driver.phone}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-xs text-gray-600">
-                        <TranslatedText text="Vehicle" />:
-                      </span>
-                      <span className="text-xs font-medium">{selectedShipment.vehicle.plateNumber}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-xs text-gray-600">
-                        <TranslatedText text="Type" />:
-                      </span>
-                      <span className="text-xs font-medium">{selectedShipment.vehicle.type}</span>
-                    </div>
+                  <div className="space-y-2">
+                    {selectedShipment.milestones?.map((milestone, index) => (
+                      <div key={index} className="flex items-start gap-2">
+                        <div className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center ${
+                          milestone.status === 'COMPLETED' ? 'bg-green-500' : 
+                          milestone.status === 'CURRENT' ? 'bg-blue-500' : 
+                          'bg-gray-300'
+                        }`}>
+                          {milestone.status === 'COMPLETED' ? (
+                            <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/>
+                            </svg>
+                          ) : milestone.status === 'CURRENT' ? (
+                            <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+                          ) : (
+                            <div className="w-2 h-2 bg-gray-500 rounded-full"></div>
+                          )}
+                        </div>
+                        <div className="flex-1">
+                          <p className={`text-xs font-medium ${milestone.status === 'PENDING' ? 'text-gray-500' : 'text-gray-900'}`}>
+                            {milestone.location}
+                          </p>
+                          {milestone.timestamp && (
+                            <p className="text-[10px] text-gray-500">{new Date(milestone.timestamp).toLocaleString()}</p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
               </div>
 
+              {/* Messaging Button */}
               <div className="mt-4 pt-4 border-t border-gray-200">
-                <h3 className="text-xs font-semibold text-gray-900 mb-2.5">
-                  <TranslatedText text="Timeline" />
-                </h3>
-                <div className="space-y-2">
-                  {selectedShipment.actualPickup && (
-                    <div className="flex items-center text-xs">
-                      <div className="w-2 h-2 bg-green-500 rounded-full mr-2 flex-shrink-0"></div>
-                      <span className="text-gray-600">
-                        <TranslatedText text="Picked up on" /> {new Date(selectedShipment.actualPickup).toLocaleString()}
-                      </span>
-                    </div>
-                  )}
-                  <div className="flex items-center text-xs">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full mr-2 flex-shrink-0"></div>
-                    <span className="text-gray-600">
-                      <TranslatedText text="Estimated delivery" />: {new Date(selectedShipment.estimatedDelivery).toLocaleString()}
-                    </span>
-                  </div>
-                  {selectedShipment.actualDelivery && (
-                    <div className="flex items-center text-xs">
-                      <div className="w-2 h-2 bg-green-500 rounded-full mr-2 flex-shrink-0"></div>
-                      <span className="text-gray-600">
-                        <TranslatedText text="Delivered on" /> {new Date(selectedShipment.actualDelivery).toLocaleString()}
-                      </span>
-                    </div>
-                  )}
-                  
-                  {/* Real-time location updates */}
-                  {wsConnected && (
-                    <div className="flex items-start text-xs">
-                      <div className="w-2 h-2 bg-blue-500 rounded-full mr-2 mt-0.5 flex-shrink-0 animate-pulse"></div>
-                      <div className="flex-1">
-                        <span className="text-gray-600">
-                          <TranslatedText text="Current location updated" />: {new Date(selectedShipment.currentLocation.timestamp).toLocaleString()}
-                        </span>
-                        {lastUpdate && (
-                          <div className="text-xs text-blue-600 mt-0.5">
-                            <TranslatedText text="Last real-time update" />: {lastUpdate.toLocaleTimeString()}
-                          </div>
-                        )}
+                <button
+                  onClick={() => setShowMessaging(!showMessaging)}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                  </svg>
+                  Message Driver
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Messaging Panel */}
+          {showMessaging && selectedShipment && (
+            <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-4 mt-4">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-semibold text-gray-900">Chat with {selectedShipment.driver.name}</h3>
+                <button onClick={() => setShowMessaging(false)} className="text-gray-500 hover:text-gray-700">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
+                  </svg>
+                </button>
+              </div>
+              <div className="h-64 overflow-y-auto mb-3 space-y-2 bg-gray-50 rounded-lg p-3">
+                {messages.length === 0 ? (
+                  <p className="text-xs text-gray-500 text-center py-8">No messages yet. Say hello!</p>
+                ) : (
+                  messages.map((msg) => (
+                    <div key={msg.id} className={`flex ${msg.sender === 'me' ? 'justify-end' : 'justify-start'}`}>
+                      <div className={`max-w-[70%] px-3 py-2 rounded-lg text-sm ${
+                        msg.sender === 'me' ? 'bg-indigo-600 text-white' : 'bg-white border border-gray-200'
+                      }`}>
+                        <p>{msg.text}</p>
+                        <p className={`text-[10px] mt-1 ${msg.sender === 'me' ? 'text-indigo-200' : 'text-gray-500'}`}>
+                          {msg.timestamp.toLocaleTimeString()}
+                        </p>
                       </div>
                     </div>
-                  )}
-                </div>
+                  ))
+                )}
               </div>
-
-              <div className="mt-4 pt-4 border-t border-gray-200">
-                <button className="flex items-center space-x-2 px-3 py-1.5 text-sm bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors">
-                  <FaPhone className="w-3.5 h-3.5" />
-                  <span>Contact Driver</span>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={messageInput}
+                  onChange={(e) => setMessageInput(e.target.value)}
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter' && messageInput.trim()) {
+                      setMessages(prev => [...prev, { id: Date.now().toString(), sender: 'me', text: messageInput, timestamp: new Date() }]);
+                      setMessageInput('');
+                    }
+                  }}
+                  placeholder="Type a message..."
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+                <button
+                  onClick={() => {
+                    if (messageInput.trim()) {
+                      setMessages(prev => [...prev, { id: Date.now().toString(), sender: 'me', text: messageInput, timestamp: new Date() }]);
+                      setMessageInput('');
+                    }
+                  }}
+                  className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium"
+                >
+                  Send
                 </button>
               </div>
             </div>
@@ -667,4 +732,4 @@ const Tracking: React.FC = () => {
   );
 };
 
-export default Tracking; 
+export default Tracking;

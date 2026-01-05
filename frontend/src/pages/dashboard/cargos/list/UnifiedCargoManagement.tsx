@@ -37,8 +37,12 @@ const UnifiedCargoManagement = () => {
   const navigate = useNavigate();
   const { confirm, DialogComponent } = useConfirmDialog();
   
-  // Determine initial tab based on route
+  // Determine initial tab based on route and query params
   const getInitialTab = (): TabType => {
+    const searchParams = new URLSearchParams(location.search);
+    const tabParam = searchParams.get("tab");
+    
+    if (tabParam === "template") return "template";
     if (location.pathname.includes("/cargos/create")) return "create";
     if (location.pathname.includes("/cargos/active")) return "active";
     if (location.pathname.includes("/bidding")) return "bidding";
@@ -50,11 +54,18 @@ const UnifiedCargoManagement = () => {
 
   const [activeTab, setActiveTab] = useState<TabType>(getInitialTab());
 
-  // Update tab when route changes
+  // Update tab when route or query params changes
   useEffect(() => {
     const tab = getInitialTab();
     setActiveTab(tab);
-  }, [location.pathname]);
+    
+    // Handle status filter from query params
+    const searchParams = new URLSearchParams(location.search);
+    const statusParam = searchParams.get("status");
+    if (statusParam) {
+      setStatusFilter(statusParam);
+    }
+  }, [location.pathname, location.search]);
 
   // Update route when tab changes (for navigation)
   const handleTabChange = (tab: TabType) => {
@@ -471,17 +482,17 @@ const UnifiedCargoManagement = () => {
         className="pointer-events-none select-none fixed inset-0 w-full h-full object-cover opacity-10 z-0" 
         style={{objectPosition: 'center'}} 
       />
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 relative z-10">
+      <div className="max-w-7xl mx-auto px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8 py-3 sm:py-4 md:py-6 relative z-10">
         {/* Header */}
-        <div className="mb-4">
-          <h1 className="text-2xl font-bold text-gray-900">Cargo Management</h1>
-          <p className="text-sm text-gray-600 mt-1">
+        <div className="mb-3 sm:mb-4">
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Cargo Management</h1>
+          <p className="text-xs sm:text-sm text-gray-600 mt-1">
             Manage shipments, create new cargo, and track bidding
           </p>
         </div>
 
         {/* Navigation Tabs */}
-        <div className="bg-white rounded-lg border border-gray-200 mb-4">
+        <div className="bg-white rounded-lg border border-gray-200 mb-3 sm:mb-4 overflow-hidden">
           <nav className="flex flex-wrap sm:flex-nowrap gap-1.5 sm:gap-1 sm:space-x-1 p-1.5 sm:p-1 sm:overflow-x-auto sm:scrollbar-hide sm:scroll-smooth">
             {tabs.map((tab) => {
               const Icon = tab.icon;
@@ -491,7 +502,7 @@ const UnifiedCargoManagement = () => {
                   key={tab.id}
                   onClick={() => handleTabChange(tab.id)}
                   className={cn(
-                    "group px-2.5 sm:px-3 md:px-4 py-2 sm:py-2.5 rounded-md text-xs sm:text-sm font-medium flex items-center justify-center sm:justify-start gap-1.5 sm:gap-2 transition-all relative whitespace-nowrap flex-1 sm:flex-initial min-w-0",
+                    "group px-2.5 sm:px-3 md:px-4 py-2 sm:py-2.5 rounded-md text-xs sm:text-sm font-medium flex items-center justify-center sm:justify-start gap-1.5 sm:gap-2 transition-all relative whitespace-nowrap flex-1 sm:flex-initial min-w-0 touch-manipulation min-h-[44px] sm:min-h-0",
                     isActive
                       ? "bg-gray-100 text-gray-900 border border-gray-300"
                       : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
@@ -499,7 +510,7 @@ const UnifiedCargoManagement = () => {
                   title={tab.label}
                 >
                   <Icon className={cn(
-                    "w-4 h-4 sm:w-4 sm:h-4 flex-shrink-0",
+                    "w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0",
                     isActive ? "text-gray-700" : "text-gray-500"
                   )} />
                   <span className="hidden sm:inline truncate">{tab.label}</span>
@@ -533,59 +544,63 @@ const UnifiedCargoManagement = () => {
         </div>
 
         {/* Content Container */}
-        <div className="bg-white rounded-lg border border-gray-200 mb-6">
+        <div className="bg-white rounded-lg border border-gray-200 mb-4 sm:mb-6">
 
           {/* Tab Content */}
-          <div className="p-6 pt-6">
+          <div className="p-3 sm:p-4 md:p-6 pt-3 sm:pt-4 md:pt-6">
             {/* Filters - Only show for list views */}
             {(activeTab === "all" || activeTab === "active") && (
-              <div className="mb-6">
-                <div className="flex flex-col gap-3 lg:flex-row lg:items-end">
-                  <div className="relative flex-1">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 transform text-gray-400 w-4 h-4" />
+              <div className="mb-4 sm:mb-6">
+                <div className="flex flex-col gap-2 sm:gap-3 lg:flex-row lg:items-end">
+                  <div className="relative flex-1 w-full">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 transform text-gray-400 w-3.5 h-3.5 sm:w-4 sm:h-4" />
                     <input
                       type="text"
                       placeholder="Search cargo by name..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      className="w-full rounded-xl border border-transparent bg-white px-4 py-3 pl-11 text-sm text-gray-700 shadow-inner transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
+                      className="w-full rounded-lg sm:rounded-xl border border-transparent bg-white px-3 sm:px-4 py-2.5 sm:py-3 pl-9 sm:pl-11 text-sm text-gray-700 shadow-inner transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100 touch-manipulation min-h-[44px] sm:min-h-0"
                       aria-label="Search cargo by name"
                     />
                   </div>
-                  <FilterSelect
-                    label="Status"
-                    icon={<FaLayerGroup className="text-purple-500" />}
-                    value={statusFilter}
-                    placeholder="All Status"
-                    options={[
-                      { value: "DRAFT", label: "Draft" },
-                      { value: "PUBLISHED", label: "Published" },
-                      { value: "ASSIGNED", label: "Assigned" },
-                      { value: "IN_TRANSIT", label: "In Transit" },
-                      { value: "DELIVERED", label: "Delivered" },
-                      { value: "COMPLETED", label: "Completed" },
-                      { value: "CANCELLED", label: "Cancelled" },
-                    ]}
-                    onChange={setStatusFilter}
-                    className="sm:min-w-[180px]"
-                  />
-                  <FilterSelect
-                    label="Cargo Type"
-                    icon={<FaBox className="text-blue-500" />}
-                    value={cargoTypeFilter}
-                    placeholder="All Types"
-                    options={[
-                      { value: "GENERAL", label: "General" },
-                      { value: "FRAGILE", label: "Fragile" },
-                      { value: "HAZARDOUS", label: "Hazardous" },
-                      { value: "REFRIGERATED", label: "Refrigerated" },
-                      { value: "LIQUID", label: "Liquid" },
-                      { value: "OVERSIZED", label: "Oversized" },
-                      { value: "VALUABLE", label: "Valuable" },
-                    ]}
-                    onChange={setCargoTypeFilter}
-                    className="sm:min-w-[180px]"
-                  />
+                  <div className="w-full sm:w-auto">
+                    <FilterSelect
+                      label="Status"
+                      icon={<FaLayerGroup className="text-purple-500" />}
+                      value={statusFilter}
+                      placeholder="All Status"
+                      options={[
+                        { value: "DRAFT", label: "Draft" },
+                        { value: "PUBLISHED", label: "Published" },
+                        { value: "ASSIGNED", label: "Assigned" },
+                        { value: "IN_TRANSIT", label: "In Transit" },
+                        { value: "DELIVERED", label: "Delivered" },
+                        { value: "COMPLETED", label: "Completed" },
+                        { value: "CANCELLED", label: "Cancelled" },
+                      ]}
+                      onChange={setStatusFilter}
+                      className="w-full sm:min-w-[180px]"
+                    />
+                  </div>
+                  <div className="w-full sm:w-auto">
+                    <FilterSelect
+                      label="Cargo Type"
+                      icon={<FaBox className="text-blue-500" />}
+                      value={cargoTypeFilter}
+                      placeholder="All Types"
+                      options={[
+                        { value: "GENERAL", label: "General" },
+                        { value: "FRAGILE", label: "Fragile" },
+                        { value: "HAZARDOUS", label: "Hazardous" },
+                        { value: "REFRIGERATED", label: "Refrigerated" },
+                        { value: "LIQUID", label: "Liquid" },
+                        { value: "OVERSIZED", label: "Oversized" },
+                        { value: "VALUABLE", label: "Valuable" },
+                      ]}
+                      onChange={setCargoTypeFilter}
+                      className="w-full sm:min-w-[180px]"
+                    />
+                  </div>
                 </div>
               </div>
             )}
@@ -594,23 +609,23 @@ const UnifiedCargoManagement = () => {
             {(activeTab === "all" || activeTab === "active") && (
               <div>
                 {isLoading ? (
-                  <div className="text-center py-12">
+                  <div className="text-center py-8 sm:py-12">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                    <p className="mt-2 text-sm text-gray-600">Loading...</p>
+                    <p className="mt-2 text-xs sm:text-sm text-gray-600">Loading...</p>
                   </div>
                 ) : error ? (
-                  <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                    <p className="text-sm text-red-700">
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-3 sm:p-4">
+                    <p className="text-xs sm:text-sm text-red-700 break-words">
                       {error?.message || "Error loading cargo"}
                     </p>
                   </div>
                 ) : filteredLoads.length === 0 ? (
-                  <div className="text-center py-12">
-                    <Package className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  <div className="text-center py-8 sm:py-12 px-3 sm:px-4">
+                    <Package className="w-10 h-10 sm:w-12 sm:h-12 text-gray-400 mx-auto mb-3 sm:mb-4" />
+                    <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-2">
                       No cargo found
                     </h3>
-                    <p className="text-gray-600 mb-4">
+                    <p className="text-sm sm:text-base text-gray-600 mb-4">
                       {activeTab === "active"
                         ? "No active shipments at the moment."
                         : "Create your first cargo shipment to get started."}
@@ -618,7 +633,7 @@ const UnifiedCargoManagement = () => {
                     {activeTab === "all" && (
                       <button
                         onClick={() => setActiveTab("create")}
-                        className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                        className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors touch-manipulation min-h-[44px] sm:min-h-0"
                       >
                         <Plus className="w-4 h-4" />
                         Create Cargo
@@ -626,7 +641,7 @@ const UnifiedCargoManagement = () => {
                     )}
                   </div>
                 ) : (
-                  <div className="space-y-3 w-full overflow-hidden">
+                  <div className="space-y-2 sm:space-y-3 w-full overflow-hidden">
                     {filteredLoads.map((load: any) => (
                       <LoadItem
                         key={load.id}
@@ -647,11 +662,11 @@ const UnifiedCargoManagement = () => {
             {/* Create Tab */}
             {activeTab === "create" && (
               <div>
-                <div className="mb-6">
-                  <h2 className="text-xl font-semibold text-gray-900 mb-2">
+                <div className="mb-4 sm:mb-6">
+                  <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">
                     Create Cargo
                   </h2>
-                  <p className="text-sm text-gray-600">
+                  <p className="text-xs sm:text-sm text-gray-600">
                     {selectedTemplate
                       ? "Edit the template details below to create your cargo shipment"
                       : "Fill in the form below to create a new cargo shipment"}
@@ -675,11 +690,11 @@ const UnifiedCargoManagement = () => {
             {/* Template Tab - Shows template selection modal */}
             {activeTab === "template" && (
               <div>
-                <div className="mb-6">
-                  <h2 className="text-xl font-semibold text-gray-900 mb-2">
+                <div className="mb-4 sm:mb-6">
+                  <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">
                     Create from Template
                   </h2>
-                  <p className="text-sm text-gray-600">
+                  <p className="text-xs sm:text-sm text-gray-600">
                     Select a template to quickly create cargo with pre-filled information
                   </p>
                 </div>
@@ -702,8 +717,8 @@ const UnifiedCargoManagement = () => {
                     userRole={(user.role as "CARGO_OWNER" | "TRUCK_OWNER") || "CARGO_OWNER"}
                   />
                 ) : (
-                  <div className="text-center py-12">
-                    <p className="text-gray-600">
+                  <div className="text-center py-8 sm:py-12 px-3 sm:px-4">
+                    <p className="text-sm sm:text-base text-gray-600">
                       Please log in to access the bidding system.
                     </p>
                   </div>

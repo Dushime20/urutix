@@ -59,18 +59,18 @@ export const CargoFilters: React.FC<CargoFiltersProps> = ({
 
   return (
     <form
-      className="mb-6"
+      className="mb-4 sm:mb-6"
       role="search"
       aria-label="Cargo search and filters"
       onSubmit={(e) => e.preventDefault()}
     >
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-slate-900/5 via-white to-slate-900/5 p-4 shadow-[0_12px_30px_-12px_rgba(15,23,42,0.35)] backdrop-blur">
-        <div className="flex flex-wrap items-center gap-4">
-          <div className="relative min-w-[220px] flex-1">
-            <FaSearch className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+      <div className="relative overflow-hidden rounded-lg sm:rounded-2xl bg-gradient-to-r from-slate-900/5 via-white to-slate-900/5 p-3 sm:p-4 shadow-[0_12px_30px_-12px_rgba(15,23,42,0.35)] backdrop-blur">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
+          <div className="relative w-full sm:min-w-[220px] sm:flex-1">
+            <FaSearch className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-3.5 h-3.5 sm:w-4 sm:h-4" />
             <input
               type="search"
-              className="w-full rounded-xl border border-slate-200 bg-white/80 py-2.5 pl-10 pr-4 text-sm text-slate-700 shadow-inner transition focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-100"
+              className="w-full rounded-lg sm:rounded-xl border border-slate-200 bg-white/80 py-2.5 sm:py-2.5 pl-9 sm:pl-10 pr-3 sm:pr-4 text-sm text-slate-700 shadow-inner transition focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-100 touch-manipulation min-h-[44px] sm:min-h-0"
               placeholder="Search cargo by name..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -78,21 +78,25 @@ export const CargoFilters: React.FC<CargoFiltersProps> = ({
             />
           </div>
 
-          <div className="flex flex-wrap gap-3">
-            <FilterSelect
-              label={<TranslatedText text="Status" />}
-              value={filters.status || ""}
-              options={statusOptions}
-              onChange={handleStatusChange}
-              icon={<FaLayerGroup className="text-purple-500" />}
-            />
-            <FilterSelect
-              label={<TranslatedText text="Cargo Type" />}
-              value={filters.cargoType || ""}
-              options={cargoTypeOptions}
-              onChange={handleCargoTypeChange}
-              icon={<FaBox className="text-blue-500" />}
-            />
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full sm:w-auto">
+            <div className="flex-1 sm:flex-initial">
+              <FilterSelect
+                label={<TranslatedText text="Status" />}
+                value={filters.status || ""}
+                options={statusOptions}
+                onChange={handleStatusChange}
+                icon={<FaLayerGroup className="text-purple-500" />}
+              />
+            </div>
+            <div className="flex-1 sm:flex-initial">
+              <FilterSelect
+                label={<TranslatedText text="Cargo Type" />}
+                value={filters.cargoType || ""}
+                options={cargoTypeOptions}
+                onChange={handleCargoTypeChange}
+                icon={<FaBox className="text-blue-500" />}
+              />
+            </div>
           </div>
 
           <button
@@ -101,7 +105,7 @@ export const CargoFilters: React.FC<CargoFiltersProps> = ({
               setFilters({});
               setSearch("");
             }}
-            className="inline-flex items-center gap-2 rounded-xl border border-transparent bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-slate-900/10 transition hover:scale-[1.01] hover:bg-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2"
+            className="inline-flex items-center justify-center gap-2 rounded-lg sm:rounded-xl border border-transparent bg-slate-900 px-3 sm:px-4 py-2.5 sm:py-2 text-xs sm:text-sm font-semibold text-white shadow-lg shadow-slate-900/10 transition hover:scale-[1.01] hover:bg-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 touch-manipulation min-h-[44px] sm:min-h-0 w-full sm:w-auto"
             aria-label="Clear filters"
           >
             <FaFilter className="text-xs" />
