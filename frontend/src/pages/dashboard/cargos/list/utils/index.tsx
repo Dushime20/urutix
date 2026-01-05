@@ -33,6 +33,9 @@ export const getStatusColor = (status: any) => {
     case "ASSIGNED":
       className = "bg-yellow-100 text-yellow-800";
       break;
+    case "LOADED":
+      className = "bg-indigo-100 text-indigo-800";
+      break;
     case "IN_TRANSIT":
       className = "bg-purple-100 text-purple-800";
       break;
@@ -42,8 +45,14 @@ export const getStatusColor = (status: any) => {
     case "COMPLETED":
       className = "bg-green-100 text-green-800";
       break;
+    case "CLOSED":
+      className = "bg-gray-100 text-gray-800";
+      break;
     case "CANCELLED":
       className = "bg-red-100 text-red-800";
+      break;
+    case "PENDING_CONFIRMATION":
+      className = "bg-orange-100 text-orange-800";
       break;
     case "CREATED":
       className = "bg-cyan-100/50 text-cyan-800";
@@ -68,14 +77,22 @@ export const getStatusDisplayName = (status: any) => {
       return "Published";
     case "ASSIGNED":
       return "Assigned";
+    case "LOADED":
+      return "Loaded";
     case "IN_TRANSIT":
       return "In Transit";
     case "DELIVERED":
       return "Delivered";
     case "COMPLETED":
       return "Completed";
+    case "CLOSED":
+      return "Closed";
     case "CANCELLED":
       return "Cancelled";
+    case "PENDING_CONFIRMATION":
+      return "Pending Confirmation";
+    case "CREATED":
+      return "Created";
     case "DRAFT":
       return "Draft";
     default:

@@ -46,12 +46,6 @@ const FleetOwnerLayout: React.FC = () => {
     };
   }, []);
 
-  if (isLoading || !user) return null;
-
-  // Check if we're on the index dashboard route
-  const isDashboardIndex = location.pathname === '/dashboard/fleet' || 
-                           location.pathname === '/dashboard/fleet/';
-
   const handleOnboardingComplete = () => {
     localStorage.setItem('fleetOwnerOnboardingCompleted', 'true');
     setShowOnboarding(false);
@@ -61,6 +55,12 @@ const FleetOwnerLayout: React.FC = () => {
     localStorage.setItem('fleetOwnerOnboardingCompleted', 'true');
     setShowOnboarding(false);
   };
+
+  if (isLoading || !user) return null;
+
+  // Check if we're on the index dashboard route
+  const isDashboardIndex = location.pathname === '/dashboard/fleet' || 
+                           location.pathname === '/dashboard/fleet/';
 
   return (
     <>
@@ -102,4 +102,5 @@ const FleetOwnerLayout: React.FC = () => {
   );
 };
 
-export default FleetOwnerLayout; 
+export default FleetOwnerLayout;
+ 

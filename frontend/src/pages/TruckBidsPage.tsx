@@ -24,7 +24,8 @@ const TruckBidsPage: React.FC = () => {
 	const [requireAdvancePayment, setRequireAdvancePayment] = useState<boolean>(true);
 	const [quickRequireAdvancePayment, setQuickRequireAdvancePayment] = useState<boolean>(true);
 	const [trucks, setTrucks] = useState<any[]>([]);
-  const [drivers, setDrivers] = useState<any[]>([]);
+	const [availableDrivers, setAvailableDrivers] = useState<any[]>([]);
+	const [loadingDrivers, setLoadingDrivers] = useState(false);
 	const [selectedTruckId, setSelectedTruckId] = useState<string>('');
 	const [selectedDriverId, setSelectedDriverId] = useState<string>('');
   const [watchedIds, setWatchedIds] = useState<Set<string>>(new Set());
@@ -299,6 +300,9 @@ const TruckBidsPage: React.FC = () => {
 		setQuickBidAmount(String(defaultAmount));
 		setQuickAdvancePaymentPercentage(''); // Reset to empty, user can set their preferred percentage
 		setQuickRequireAdvancePayment(true); // Default to requiring advance payment
+		// Reset dates
+		setProposedPickupDate('');
+		setProposedDeliveryDate('');
 		setShowQuickBidModal(true);
 	};
 
@@ -309,6 +313,26 @@ const TruckBidsPage: React.FC = () => {
 			toast.error('Enter a valid bid amount');
 			return;
 		}
+
+		// Require pickup and delivery dates
+		if (!proposedPickupDate) {
+			toast.error('Please specify when you will pick up the cargo');
+			return;
+		}
+
+		if (!proposedDeliveryDate) {
+			toast.error('Please specify when you will deliver the cargo');
+			return;
+		}
+
+		// Validate that delivery date is after pickup date
+		const pickupDate = new Date(proposedPickupDate);
+		const deliveryDate = new Date(proposedDeliveryDate);
+		if (deliveryDate <= pickupDate) {
+			toast.error('Delivery date must be after pickup date');
+			return;
+		}
+
 		// Validate advance payment percentage if provided
 		const advancePercentage = quickAdvancePaymentPercentage ? Number(quickAdvancePaymentPercentage) : undefined;
 		if (advancePercentage !== undefined && (advancePercentage < 0 || advancePercentage > 100)) {
@@ -327,6 +351,8 @@ const TruckBidsPage: React.FC = () => {
 				loadId: selectedAuction.loadId,
 				bidAmount: amountNum,
 				bidCurrency: 'USD',
+				proposedPickupDate: proposedPickupDate,
+				proposedDeliveryDate: proposedDeliveryDate,
 				bidNotes: 'Quick bid from Truck Owner',
 				advancePaymentPercentage: quickRequireAdvancePayment ? advancePercentage : undefined,
 				requireAdvancePayment: quickRequireAdvancePayment,
@@ -340,6 +366,8 @@ const TruckBidsPage: React.FC = () => {
 			setQuickBidAmount('');
 			setQuickAdvancePaymentPercentage('');
 			setQuickRequireAdvancePayment(true);
+			setProposedPickupDate('');
+			setProposedDeliveryDate('');
 			// Refresh auctions to show updated bid information
 			await loadAuctions();
 		} catch (e: any) {
@@ -363,18 +391,55 @@ const TruckBidsPage: React.FC = () => {
 		setRequireAdvancePayment(true); // Default to requiring advance payment
 		setSelectedTruckId('');
 		setSelectedDriverId('');
+		setAvailableDrivers([]);
 		try {
-			const [truckList, driverList] = await Promise.all([
-				fleetApi.getTrucks({}),
-				fleetApi.getDrivers({ status: 'ACTIVE' })
-			]);
+			// Only load trucks initially, drivers will be loaded when truck is selected
+			const truckList = await fleetApi.getTrucks({});
 			setTrucks(truckList || []);
-			setDrivers(driverList || []);
 		} catch {
 			setTrucks([]);
-			setDrivers([]);
 		}
 		setShowBidModal(true);
+	};
+
+	// Fetch available drivers (not currently in trips) when truck is selected
+	const loadAvailableDrivers = async () => {
+		if (!selectedTruckId) {
+			setAvailableDrivers([]);
+			return;
+		}
+
+		setLoadingDrivers(true);
+		try {
+			// Get all active drivers
+			const allDrivers = await fleetApi.getDrivers({ status: 'ACTIVE' });
+			
+			// Filter to get only available drivers (drivers not currently in trips)
+			// Available drivers are those without currentTripId
+			const available = allDrivers.filter((driver: any) => {
+				// Driver is available if they don't have a currentTripId
+				return !driver.currentTripId;
+			});
+			
+			setAvailableDrivers(available || []);
+		} catch (error) {
+			console.error('Error loading available drivers:', error);
+			setAvailableDrivers([]);
+			toast.error('Failed to load available drivers');
+		} finally {
+			setLoadingDrivers(false);
+		}
+	};
+
+	// Handle truck selection - load available drivers when truck is selected
+	const handleTruckSelection = (truckId: string) => {
+		setSelectedTruckId(truckId);
+		setSelectedDriverId(''); // Reset driver selection when truck changes
+		if (truckId) {
+			loadAvailableDrivers();
+		} else {
+			setAvailableDrivers([]);
+		}
 	};
 
 	const placeBid = async () => {
@@ -384,6 +449,33 @@ const TruckBidsPage: React.FC = () => {
 			toast.error('Enter a valid bid amount');
 			return;
 		}
+		
+		// Require truck selection
+		if (!selectedTruckId) {
+			toast.error('Please select a truck for this cargo');
+			return;
+		}
+
+		// Require pickup date
+		if (!proposedPickupDate) {
+			toast.error('Please specify when you will pick up the cargo');
+			return;
+		}
+
+		// Require delivery date
+		if (!proposedDeliveryDate) {
+			toast.error('Please specify when you will deliver the cargo');
+			return;
+		}
+
+		// Validate that delivery date is after pickup date
+		const pickupDate = new Date(proposedPickupDate);
+		const deliveryDate = new Date(proposedDeliveryDate);
+		if (deliveryDate <= pickupDate) {
+			toast.error('Delivery date must be after pickup date');
+			return;
+		}
+
 		// Validate advance payment percentage if provided
 		const advancePercentage = advancePaymentPercentage ? Number(advancePaymentPercentage) : undefined;
 		if (advancePercentage !== undefined && (advancePercentage < 0 || advancePercentage > 100)) {
@@ -402,13 +494,13 @@ const TruckBidsPage: React.FC = () => {
 				loadId: selectedAuction.loadId,
 				bidAmount: amountNum,
 				bidCurrency: 'USD',
-				proposedPickupDate: proposedPickupDate || undefined,
-				proposedDeliveryDate: proposedDeliveryDate || undefined,
+				proposedPickupDate: proposedPickupDate,
+				proposedDeliveryDate: proposedDeliveryDate,
 				bidNotes: bidNotes || undefined,
 				advancePaymentPercentage: requireAdvancePayment ? advancePercentage : undefined,
 				requireAdvancePayment: requireAdvancePayment,
 				bidDetails: {
-					truckSpecifications: selectedTruckId ? { truckId: selectedTruckId } : {},
+					truckSpecifications: { truckId: selectedTruckId },
 					driverInfo: selectedDriverId ? { driverId: selectedDriverId } : undefined,
 				},
 			});
@@ -673,6 +765,41 @@ const TruckBidsPage: React.FC = () => {
 									</div>
 								)}
 							</div>
+
+							{/* Delivery Schedule Section - Required */}
+							<div className="bg-gradient-to-r from-green-50 to-blue-50 p-4 rounded-lg border-2 border-primary-200">
+								<div className="flex items-center gap-2 mb-3">
+									<FaClock className="text-primary-600" />
+									<h4 className="text-sm font-semibold text-gray-900">Schedule Delivery</h4>
+								</div>
+								<div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+									<div>
+										<label className="block text-xs font-semibold text-gray-900 mb-1.5">
+											Pickup Date & Time <span className="text-red-500">*</span>
+										</label>
+										<input 
+											type="datetime-local" 
+											value={proposedPickupDate} 
+											onChange={(e) => setProposedPickupDate(e.target.value)} 
+											required
+											className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white text-sm" 
+										/>
+									</div>
+									<div>
+										<label className="block text-xs font-semibold text-gray-900 mb-1.5">
+											Delivery Date & Time <span className="text-red-500">*</span>
+										</label>
+										<input 
+											type="datetime-local" 
+											value={proposedDeliveryDate} 
+											onChange={(e) => setProposedDeliveryDate(e.target.value)} 
+											required
+											min={proposedPickupDate || undefined}
+											className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white text-sm" 
+										/>
+									</div>
+								</div>
+							</div>
 						</div>
 						<div className="p-6 border-t flex items-center justify-end gap-2">
 							<button 
@@ -680,6 +807,8 @@ const TruckBidsPage: React.FC = () => {
 									setShowQuickBidModal(false);
 									setSelectedAuction(null);
 									setQuickBidAmount('');
+									setProposedPickupDate('');
+									setProposedDeliveryDate('');
 								}} 
 								className="px-4 py-2 rounded bg-gray-100 text-gray-700 hover:bg-gray-200"
 							>
@@ -687,7 +816,8 @@ const TruckBidsPage: React.FC = () => {
 							</button>
 							<button 
 								onClick={submitQuickBid} 
-								className="px-4 py-2 rounded bg-primary-600 text-white hover:bg-primary-700"
+								disabled={!quickBidAmount || Number(quickBidAmount) <= 0 || !proposedPickupDate || !proposedDeliveryDate}
+								className="px-4 py-2 rounded bg-primary-600 text-white hover:bg-primary-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
 							>
 								Submit Bid
 							</button>
@@ -810,69 +940,131 @@ const TruckBidsPage: React.FC = () => {
 									</div>
 								)}
 							</div>
-							{/* Dates Section */}
-							<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-								<div>
-									<label className="block text-sm font-medium text-gray-700 mb-2">
-										Proposed Pickup Date & Time
-									</label>
-									<input 
-										type="datetime-local" 
-										value={proposedPickupDate} 
-										onChange={(e) => setProposedPickupDate(e.target.value)} 
-										className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500" 
-									/>
+							{/* Delivery Schedule Section - Required */}
+							<div className="bg-gradient-to-r from-green-50 to-blue-50 p-5 rounded-lg border-2 border-primary-200">
+								<div className="flex items-center gap-2 mb-4">
+									<FaClock className="text-primary-600 text-lg" />
+									<h3 className="text-lg font-semibold text-gray-900">Schedule Delivery</h3>
 								</div>
-								<div>
-									<label className="block text-sm font-medium text-gray-700 mb-2">
-										Proposed Delivery Date & Time
-									</label>
-									<input 
-										type="datetime-local" 
-										value={proposedDeliveryDate} 
-										onChange={(e) => setProposedDeliveryDate(e.target.value)} 
-										className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500" 
-									/>
+								<p className="text-sm text-gray-600 mb-4">
+									Specify when you will pick up the cargo and when you will deliver it. This helps the cargo owner plan their operations.
+								</p>
+								<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+									<div>
+										<label className="block text-sm font-semibold text-gray-900 mb-2">
+											Pickup Date & Time <span className="text-red-500">*</span>
+										</label>
+										<input 
+											type="datetime-local" 
+											value={proposedPickupDate} 
+											onChange={(e) => setProposedPickupDate(e.target.value)} 
+											required
+											className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white font-medium" 
+										/>
+										<div className="text-xs text-gray-600 mt-1.5">
+											When will you pick up the cargo?
+										</div>
+									</div>
+									<div>
+										<label className="block text-sm font-semibold text-gray-900 mb-2">
+											Delivery Date & Time <span className="text-red-500">*</span>
+										</label>
+										<input 
+											type="datetime-local" 
+											value={proposedDeliveryDate} 
+											onChange={(e) => setProposedDeliveryDate(e.target.value)} 
+											required
+											min={proposedPickupDate || undefined}
+											className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white font-medium" 
+										/>
+										<div className="text-xs text-gray-600 mt-1.5">
+											When will you deliver the cargo?
+										</div>
+									</div>
+								</div>
+								{proposedPickupDate && proposedDeliveryDate && (
+									<div className="mt-4 p-3 bg-white rounded-lg border border-primary-200">
+										<div className="flex items-center gap-2 text-sm">
+											<FaClock className="text-primary-600" />
+											<span className="font-medium text-gray-900">Estimated Duration: </span>
+											<span className="text-gray-700">
+												{(() => {
+													const pickup = new Date(proposedPickupDate);
+													const delivery = new Date(proposedDeliveryDate);
+													const diffMs = delivery.getTime() - pickup.getTime();
+													const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+													const diffDays = Math.floor(diffHours / 24);
+													const hours = diffHours % 24;
+													if (diffDays > 0) {
+														return `${diffDays} day${diffDays > 1 ? 's' : ''} ${hours} hour${hours !== 1 ? 's' : ''}`;
+													}
+													return `${diffHours} hour${diffHours !== 1 ? 's' : ''}`;
+												})()}
+											</span>
+										</div>
+									</div>
+								)}
+							</div>
+
+							{/* Truck Selection - Required */}
+							<div>
+								<label className="block text-sm font-medium text-gray-700 mb-2">
+									Select Truck <span className="text-red-500">*</span>
+								</label>
+								<select 
+									value={selectedTruckId} 
+									onChange={(e) => handleTruckSelection(e.target.value)} 
+									className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white"
+									required
+								>
+									<option value="">— Select Truck —</option>
+									{trucks.map((t) => (
+										<option key={t.id} value={t.id}>
+											{t.plateNumber || t.name || t.id.slice(0,8)} • {t.make} {t.model}
+										</option>
+									))}
+								</select>
+								<div className="text-xs text-gray-500 mt-1">
+									Select the truck you want to use for this cargo shipment
 								</div>
 							</div>
 
-							{/* Truck and Driver Selection */}
-							<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-								<div>
-									<label className="block text-sm font-medium text-gray-700 mb-2">
-										Select Truck <span className="text-gray-500 font-normal">(Optional)</span>
-									</label>
-									<select 
-										value={selectedTruckId} 
-										onChange={(e) => setSelectedTruckId(e.target.value)} 
-										className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white"
-									>
-										<option value="">— Select Truck —</option>
-										{trucks.map((t) => (
-											<option key={t.id} value={t.id}>
-												{t.plateNumber || t.name || t.id.slice(0,8)} • {t.make} {t.model}
-											</option>
-										))}
-									</select>
-								</div>
+							{/* Driver Selection - Only shown after truck is selected */}
+							{selectedTruckId && (
 								<div>
 									<label className="block text-sm font-medium text-gray-700 mb-2">
 										Select Driver <span className="text-gray-500 font-normal">(Optional)</span>
 									</label>
-									<select 
-										value={selectedDriverId} 
-										onChange={(e) => setSelectedDriverId(e.target.value)} 
-										className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white"
-									>
-										<option value="">— Select Driver —</option>
-										{drivers.map((d) => (
-											<option key={d.id} value={d.id}>
-												{d.firstName} {d.lastName} • {d.licenseNumber}
-											</option>
-										))}
-									</select>
+									{loadingDrivers ? (
+										<div className="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-gray-50 flex items-center justify-center">
+											<span className="text-sm text-gray-500">Loading available drivers...</span>
+										</div>
+									) : (
+										<select 
+											value={selectedDriverId} 
+											onChange={(e) => setSelectedDriverId(e.target.value)} 
+											className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white"
+										>
+											<option value="">— Select Driver (Optional) —</option>
+											{availableDrivers.length === 0 ? (
+												<option value="" disabled>No available drivers (all drivers are currently on trips)</option>
+											) : (
+												availableDrivers.map((d) => (
+													<option key={d.id} value={d.id}>
+														{d.firstName} {d.lastName} {d.licenseNumber ? `• ${d.licenseNumber}` : ''}
+													</option>
+												))
+											)}
+										</select>
+									)}
+									<div className="text-xs text-gray-500 mt-1">
+										{availableDrivers.length === 0 
+											? 'No drivers are currently available (all drivers are on trips)'
+											: `Showing ${availableDrivers.length} available driver(s) (not currently on trips)`
+										}
+									</div>
 								</div>
-							</div>
+							)}
 
 							{/* Notes Section */}
 							<div>
@@ -900,7 +1092,7 @@ const TruckBidsPage: React.FC = () => {
 							</button>
 							<button 
 								onClick={placeBid} 
-								disabled={!bidAmount || Number(bidAmount) <= 0}
+								disabled={!bidAmount || Number(bidAmount) <= 0 || !selectedTruckId || !proposedPickupDate || !proposedDeliveryDate}
 								className="px-6 py-2.5 rounded-lg bg-primary-600 text-white font-semibold hover:bg-primary-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors shadow-sm"
 							>
 								Submit Bid

@@ -15,7 +15,10 @@ export default defineConfig({
       '@/types': path.resolve(__dirname, './src/types'),
       '@/contexts': path.resolve(__dirname, './src/contexts'),
       '@/config': path.resolve(__dirname, './src/config'),
-      '@/assets': path.resolve(__dirname, './src/assets')
+      '@/assets': path.resolve(__dirname, './src/assets'),
+      // Explicitly resolve React to avoid multiple instances
+      'react': path.resolve(__dirname, './node_modules/react'),
+      'react-dom': path.resolve(__dirname, './node_modules/react-dom')
     }
   },
   build: {

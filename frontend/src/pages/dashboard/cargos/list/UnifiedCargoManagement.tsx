@@ -1,5 +1,5 @@
-import { useState, useMemo, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useState, useMemo, useEffect, useRef } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
   Plus,
@@ -27,6 +27,7 @@ import FilterSelect from "@/components/common/FilterSelect";
 import { FaLayerGroup, FaBox } from "react-icons/fa";
 import logoUrutiX from "@/assets/logo-urutix.svg";
 import { useConfirmDialog } from "@/hooks/useConfirmDialog";
+import { loadStatusWebSocket } from "@/services/loadStatusWebSocket";
 import { AssignBrokerModal } from "@/components/CargoDashboard/AssignBrokerModal";
 
 type TabType = "all" | "active" | "create" | "template" | "bidding";
@@ -36,19 +37,19 @@ const UnifiedCargoManagement = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { confirm, DialogComponent } = useConfirmDialog();
-  
+
   // Determine initial tab based on route and query params
   const getInitialTab = (): TabType => {
     const searchParams = new URLSearchParams(location.search);
     const tabParam = searchParams.get("tab");
-    
+
     if (tabParam === "template") return "template";
     if (location.pathname.includes("/cargos/create")) return "create";
     if (location.pathname.includes("/cargos/active")) return "active";
     if (location.pathname.includes("/bidding")) return "bidding";
     return "all";
   };
-  
+
   const [selectedTemplate, setSelectedTemplate] = useState<Partial<CargoFormSchemaType> | null>(null);
   const [showTemplateModal, setShowTemplateModal] = useState(false);
 
@@ -58,7 +59,7 @@ const UnifiedCargoManagement = () => {
   useEffect(() => {
     const tab = getInitialTab();
     setActiveTab(tab);
-    
+
     // Handle status filter from query params
     const searchParams = new URLSearchParams(location.search);
     const statusParam = searchParams.get("status");
@@ -73,7 +74,7 @@ const UnifiedCargoManagement = () => {
     // Extract base path (either /dashboard or /cargo-owner)
     const pathParts = location.pathname.split("/").filter(Boolean);
     const basePath = pathParts[0] ? `/${pathParts[0]}` : "/dashboard";
-    
+
     if (tab === "create") {
       navigate(`${basePath}/cargos/create`, { replace: true });
     } else if (tab === "template") {
@@ -88,7 +89,7 @@ const UnifiedCargoManagement = () => {
       navigate(`${basePath}/cargos/list`, { replace: true });
     }
   };
-  
+
   const handleTemplateSelected = (template: Partial<CargoFormSchemaType>) => {
     setSelectedTemplate(template);
     setShowTemplateModal(false);
@@ -98,7 +99,7 @@ const UnifiedCargoManagement = () => {
     const basePath = pathParts[0] ? `/${pathParts[0]}` : "/dashboard";
     navigate(`${basePath}/cargos/create`, { replace: true });
   };
-  
+
   // Auto-open template modal when template tab becomes active
   useEffect(() => {
     if (activeTab === "template" && !showTemplateModal) {
@@ -115,10 +116,13 @@ const UnifiedCargoManagement = () => {
     useState<any>(null);
   const [editingCargo, setEditingCargo] = useState<any>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  
+
   // Broker assignment state
   const [showAssignBrokerModal, setShowAssignBrokerModal] = useState(false);
   const [selectedLoadForBroker, setSelectedLoadForBroker] = useState<any>(null);
+
+  const queryClient = useQueryClient();
+  const unsubscribeRefs = useRef<Map<string, () => void>>(new Map());
 
   const {
     data: loadsResponse,
@@ -157,6 +161,109 @@ const UnifiedCargoManagement = () => {
     return [];
   }, [loadsResponse]);
 
+  // Real-time status updates via WebSocket
+  useEffect(() => {
+    const token = localStorage.getItem('jwtToken');
+    if (!token || !loadsData || loadsData.length === 0) {
+      return;
+    }
+
+    // Connect to WebSocket
+    loadStatusWebSocket.connect(token).catch((error) => {
+      console.warn('Failed to connect to load status WebSocket:', error);
+      // Continue without WebSocket - not critical
+    });
+
+    // Subscribe to status updates for all loads
+    loadsData.forEach((load: any) => {
+      if (load.id) {
+        const unsubscribe = loadStatusWebSocket.onStatusUpdate(load.id, (update) => {
+          console.log(`📦 Real-time status update for load ${update.loadId}: ${update.status}`);
+
+          // Update the query cache with the new status
+          queryClient.setQueryData(
+            ["loads", searchTerm, statusFilter, cargoTypeFilter],
+            (oldData: any) => {
+              if (!oldData) return oldData;
+
+              // Helper function to update load in nested structures
+              const updateLoadInData = (data: any): any => {
+                if (Array.isArray(data)) {
+                  return data.map((item: any) =>
+                    item.id === update.loadId
+                      ? { ...item, status: update.status, updatedAt: update.timestamp }
+                      : item
+                  );
+                }
+                if (data?.data?.cargos) {
+                  return {
+                    ...data,
+                    data: {
+                      ...data.data,
+                      cargos: data.data.cargos.map((item: any) =>
+                        item.id === update.loadId
+                          ? { ...item, status: update.status, updatedAt: update.timestamp }
+                          : item
+                      ),
+                    },
+                  };
+                }
+                if (data?.data?.items) {
+                  return {
+                    ...data,
+                    data: {
+                      ...data.data,
+                      items: data.data.items.map((item: any) =>
+                        item.id === update.loadId
+                          ? { ...item, status: update.status, updatedAt: update.timestamp }
+                          : item
+                      ),
+                    },
+                  };
+                }
+                if (data?.data && Array.isArray(data.data)) {
+                  return {
+                    ...data,
+                    data: data.data.map((item: any) =>
+                      item.id === update.loadId
+                        ? { ...item, status: update.status, updatedAt: update.timestamp }
+                        : item
+                    ),
+                  };
+                }
+                return data;
+              };
+
+              return updateLoadInData(oldData);
+            }
+          );
+
+          // Show a subtle notification for status changes
+          toast.success(`Cargo "${load.title || 'Untitled'}" status updated to ${update.status}`, {
+            duration: 3000,
+            icon: '📦',
+          });
+        });
+
+        // Store unsubscribe function
+        unsubscribeRefs.current.set(load.id, unsubscribe);
+      }
+    });
+
+    // Cleanup on unmount or when loads change
+    return () => {
+      unsubscribeRefs.current.forEach((unsubscribe) => unsubscribe());
+      unsubscribeRefs.current.clear();
+
+      // Unsubscribe from all loads
+      loadsData.forEach((load: any) => {
+        if (load.id) {
+          loadStatusWebSocket.unsubscribeFromLoad(load.id);
+        }
+      });
+    };
+  }, [loadsData, queryClient, searchTerm, statusFilter, cargoTypeFilter]);
+
   // Filter for active shipments
   const activeLoads = useMemo(() => {
     return loadsData.filter(
@@ -180,9 +287,9 @@ const UnifiedCargoManagement = () => {
           // Also search by description, reference/ID, and cargo type as fallback
           const descriptionMatch = load.description?.toLowerCase().includes(searchLower);
           const referenceMatch = load.reference?.toLowerCase().includes(searchLower) ||
-                                 load.id?.toLowerCase().includes(searchLower);
+            load.id?.toLowerCase().includes(searchLower);
           const cargoTypeMatch = load.cargoType?.toLowerCase().includes(searchLower);
-          
+
           // Prioritize title match - if title matches, return true immediately
           if (titleMatch) return true;
           // Otherwise check other fields
@@ -395,7 +502,7 @@ const UnifiedCargoManagement = () => {
         longitude: load.deliveryLocation.coordinates?.coordinates?.[0] || load.deliveryLocation.longitude || 0,
       } : undefined,
     };
-    
+
     setEditingCargo(editData);
     setIsEditModalOpen(true);
   };
@@ -476,11 +583,11 @@ const UnifiedCargoManagement = () => {
   return (
     <div className="min-h-screen bg-gray-50 relative">
       {/* Background Logo */}
-      <img 
-        src={logoUrutiX} 
-        alt="UrutiX Logo Background" 
-        className="pointer-events-none select-none fixed inset-0 w-full h-full object-cover opacity-10 z-0" 
-        style={{objectPosition: 'center'}} 
+      <img
+        src={logoUrutiX}
+        alt="UrutiX Logo Background"
+        className="pointer-events-none select-none fixed inset-0 w-full h-full object-cover opacity-10 z-0"
+        style={{ objectPosition: 'center' }}
       />
       <div className="max-w-7xl mx-auto px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8 py-3 sm:py-4 md:py-6 relative z-10">
         {/* Header */}
@@ -686,7 +793,7 @@ const UnifiedCargoManagement = () => {
                 />
               </div>
             )}
-            
+
             {/* Template Tab - Shows template selection modal */}
             {activeTab === "template" && (
               <div>

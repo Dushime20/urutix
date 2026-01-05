@@ -1,5 +1,5 @@
 // I18n Context - React context for translation
-import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
 import { translationService } from '@/lib/i18n/translation-service';
 import type { LanguageCode } from '@/lib/i18n/translation-service';
 
