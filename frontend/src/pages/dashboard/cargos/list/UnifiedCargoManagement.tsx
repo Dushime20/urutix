@@ -1,5 +1,5 @@
-import { useState, useMemo, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useState, useMemo, useEffect, useRef } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
   Plus,
@@ -27,6 +27,7 @@ import FilterSelect from "@/components/common/FilterSelect";
 import { FaLayerGroup, FaBox } from "react-icons/fa";
 import logoUrutiX from "@/assets/logo-urutix.svg";
 import { useConfirmDialog } from "@/hooks/useConfirmDialog";
+import { loadStatusWebSocket } from "@/services/loadStatusWebSocket";
 
 type TabType = "all" | "active" | "create" | "template" | "bidding";
 
@@ -104,6 +105,9 @@ const UnifiedCargoManagement = () => {
   const [editingCargo, setEditingCargo] = useState<any>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
+  const queryClient = useQueryClient();
+  const unsubscribeRefs = useRef<Map<string, () => void>>(new Map());
+
   const {
     data: loadsResponse,
     isLoading,
@@ -148,6 +152,109 @@ const UnifiedCargoManagement = () => {
     }
     return [];
   }, [loadsResponse]);
+
+  // Real-time status updates via WebSocket
+  useEffect(() => {
+    const token = localStorage.getItem('jwtToken');
+    if (!token || !loadsData || loadsData.length === 0) {
+      return;
+    }
+
+    // Connect to WebSocket
+    loadStatusWebSocket.connect(token).catch((error) => {
+      console.warn('Failed to connect to load status WebSocket:', error);
+      // Continue without WebSocket - not critical
+    });
+
+    // Subscribe to status updates for all loads
+    loadsData.forEach((load: any) => {
+      if (load.id) {
+        const unsubscribe = loadStatusWebSocket.onStatusUpdate(load.id, (update) => {
+          console.log(`📦 Real-time status update for load ${update.loadId}: ${update.status}`);
+          
+          // Update the query cache with the new status
+          queryClient.setQueryData(
+            ["loads", searchTerm, statusFilter, cargoTypeFilter],
+            (oldData: any) => {
+              if (!oldData) return oldData;
+              
+              // Helper function to update load in nested structures
+              const updateLoadInData = (data: any): any => {
+                if (Array.isArray(data)) {
+                  return data.map((item: any) => 
+                    item.id === update.loadId 
+                      ? { ...item, status: update.status, updatedAt: update.timestamp }
+                      : item
+                  );
+                }
+                if (data?.data?.cargos) {
+                  return {
+                    ...data,
+                    data: {
+                      ...data.data,
+                      cargos: data.data.cargos.map((item: any) =>
+                        item.id === update.loadId
+                          ? { ...item, status: update.status, updatedAt: update.timestamp }
+                          : item
+                      ),
+                    },
+                  };
+                }
+                if (data?.data?.items) {
+                  return {
+                    ...data,
+                    data: {
+                      ...data.data,
+                      items: data.data.items.map((item: any) =>
+                        item.id === update.loadId
+                          ? { ...item, status: update.status, updatedAt: update.timestamp }
+                          : item
+                      ),
+                    },
+                  };
+                }
+                if (data?.data && Array.isArray(data.data)) {
+                  return {
+                    ...data,
+                    data: data.data.map((item: any) =>
+                      item.id === update.loadId
+                        ? { ...item, status: update.status, updatedAt: update.timestamp }
+                        : item
+                    ),
+                  };
+                }
+                return data;
+              };
+
+              return updateLoadInData(oldData);
+            }
+          );
+
+          // Show a subtle notification for status changes
+          toast.success(`Cargo "${load.title || 'Untitled'}" status updated to ${update.status}`, {
+            duration: 3000,
+            icon: '📦',
+          });
+        });
+
+        // Store unsubscribe function
+        unsubscribeRefs.current.set(load.id, unsubscribe);
+      }
+    });
+
+    // Cleanup on unmount or when loads change
+    return () => {
+      unsubscribeRefs.current.forEach((unsubscribe) => unsubscribe());
+      unsubscribeRefs.current.clear();
+      
+      // Unsubscribe from all loads
+      loadsData.forEach((load: any) => {
+        if (load.id) {
+          loadStatusWebSocket.unsubscribeFromLoad(load.id);
+        }
+      });
+    };
+  }, [loadsData, queryClient, searchTerm, statusFilter, cargoTypeFilter]);
 
   // Filter for active shipments
   const activeLoads = useMemo(() => {

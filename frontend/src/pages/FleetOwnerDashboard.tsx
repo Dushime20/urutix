@@ -13,6 +13,7 @@ import {
   FaBox,
   FaUser,
   FaSync,
+  FaSpinner,
   FaArrowUp,
   FaArrowDown,
   FaEye,
@@ -22,6 +23,7 @@ import {
   FaShieldAlt,
   FaCreditCard
 } from 'react-icons/fa';
+import { Clock } from 'lucide-react';
 import { fleetApi, type FleetItem, type Driver, type FleetAnalytics } from '../services/fleetApi';
 import { tripsAPI } from '../services/api';
 import { cargoOwnerAPI } from '../services/cargoApi';
@@ -323,8 +325,7 @@ const FleetOwnerDashboard: React.FC = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <FaSync className="w-8 h-8 text-primary-600 animate-spin mr-3" />
-        <span className="text-gray-600">Loading dashboard...</span>
+        <FaSpinner className="animate-spin text-primary-600 text-2xl" />
       </div>
     );
   }
@@ -347,14 +348,12 @@ const FleetOwnerDashboard: React.FC = () => {
               <h1 className="text-lg font-bold text-gray-900 mb-0.5">Dashboard</h1>
               <p className="text-xs text-gray-600">Welcome back! Here's your fleet overview</p>
             </div>
-            <button
-              onClick={loadDashboardData}
-              disabled={loading}
-              className="px-2.5 py-1.5 text-xs bg-primary-600 text-white rounded-lg hover:bg-primary-700 flex items-center gap-1.5 disabled:opacity-50"
-            >
-              <FaSync className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
-              Refresh
-            </button>
+            <div className="hidden md:flex items-center space-x-2 px-4 py-2 bg-white rounded-lg border border-gray-200 shadow-sm">
+              <Clock className="w-4 h-4 text-gray-400" />
+              <span className="text-xs font-medium text-gray-600">
+                {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+              </span>
+            </div>
           </div>
         </div>
 
