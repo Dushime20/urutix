@@ -167,7 +167,7 @@ const TenantAdminRoutes: React.FC = () => {
 
   // Filter and sort routes
   const filteredAndSortedRoutes = useMemo(() => {
-    let filtered = routes.filter((route) => {
+    const filtered = routes.filter((route) => {
       const matchesSearch =
         !searchTerm ||
         route.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { FaSearch, FaSortAmountUp, FaSortAmountDown } from 'react-icons/fa';
+import { Grid, Table } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { biddingAPI } from '../services/biddingApi';
 
@@ -30,6 +31,7 @@ const MyBidsPage: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
   const [sortBy, setSortBy] = useState<string>('createdAt');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [viewMode, setViewMode] = useState<'card' | 'table'>('card');
 
   useEffect(() => {
     if (user) {
@@ -78,15 +80,15 @@ const MyBidsPage: React.FC = () => {
   };
 
   const filteredBids = bids.filter(bid => {
-    const matchesSearch = bid.auctionTitle.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         bid.auction.title.toLowerCase().includes(searchTerm.toLowerCase());
+    const title = bid.auctionTitle || bid.auction?.title || '';
+    const matchesSearch = title.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'ALL' || bid.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
 
   const sortedBids = [...filteredBids].sort((a, b) => {
     let aValue: any, bValue: any;
-    
+
     switch (sortBy) {
       case 'amount':
         aValue = a.amount;
@@ -164,7 +166,7 @@ const MyBidsPage: React.FC = () => {
               />
             </div>
           </div>
-          
+
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
@@ -193,6 +195,30 @@ const MyBidsPage: React.FC = () => {
           >
             {sortOrder === 'asc' ? <FaSortAmountUp className="h-4 w-4 inline mr-1" /> : <FaSortAmountDown className="h-4 w-4 inline mr-1" />}
             {sortOrder === 'asc' ? 'Ascending' : 'Descending'}
+          </button>
+        </div>
+
+        {/* View Mode Toggle */}
+        <div className="flex items-center justify-end gap-2 bg-white border border-gray-200 rounded-lg p-1 w-fit ml-auto">
+          <button
+            onClick={() => setViewMode('card')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${viewMode === 'card'
+                ? 'bg-gray-900 text-white'
+                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+              }`}
+          >
+            <Grid className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Cards</span>
+          </button>
+          <button
+            onClick={() => setViewMode('table')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${viewMode === 'table'
+                ? 'bg-gray-900 text-white'
+                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+              }`}
+          >
+            <Table className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Table</span>
           </button>
         </div>
       </div>
@@ -229,77 +255,128 @@ const MyBidsPage: React.FC = () => {
           <div className="bg-white rounded-lg shadow p-8 text-center">
             <div className="text-gray-500 text-lg">No bids found</div>
             <div className="text-gray-400 text-sm mt-2">
-              {searchTerm || statusFilter !== 'ALL' 
-                ? 'Try adjusting your filters' 
+              {searchTerm || statusFilter !== 'ALL'
+                ? 'Try adjusting your filters'
                 : 'Start bidding on auctions to see them here'}
             </div>
           </div>
         ) : (
-          sortedBids.map((bid) => (
-            <div key={bid.id} className="bg-white rounded-lg shadow hover:shadow-md transition-shadow">
-              <div className="p-6">
-                <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-                  <div className="flex-1">
-                    <div className="flex items-start justify-between mb-2">
-                      <h3 className="text-lg font-semibold text-gray-900 line-clamp-2">
-                        {bid.auctionTitle}
-                      </h3>
-                      <div className="flex gap-2 ml-4">
-                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(bid.status)}`}>
-                          {bid.status}
-                        </span>
-                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${getAuctionStatusColor(bid.auction.status)}`}>
-                          {bid.auction.status}
-                        </span>
-                      </div>
-                    </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm text-gray-600">
-                      <div>
-                        <span className="font-medium">Your Bid:</span>
-                        <div className="text-lg font-bold text-blue-600">
-                          {formatCurrency(bid.amount, bid.currency)}
+          <>
+            {viewMode === 'card' ? (
+              sortedBids.map((bid) => (
+                <div key={bid.id} className="bg-white rounded-lg shadow hover:shadow-md transition-shadow">
+                  <div className="p-6">
+                    <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                      <div className="flex-1">
+                        <div className="flex items-start justify-between mb-2">
+                          <h3 className="text-lg font-semibold text-gray-900 line-clamp-2">
+                            {bid.auctionTitle}
+                          </h3>
+                          <div className="flex gap-2 ml-4">
+                            <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(bid.status)}`}>
+                              {bid.status}
+                            </span>
+                            {bid.auction && (
+                              <span className={`px-2 py-1 text-xs font-medium rounded-full ${getAuctionStatusColor(bid.auction.status)}`}>
+                                {bid.auction.status}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm text-gray-600">
+                          <div>
+                            <span className="font-medium">Your Bid:</span>
+                            <div className="text-lg font-bold text-blue-600">
+                              {formatCurrency(bid.amount, bid.currency)}
+                            </div>
+                          </div>
+
+                          <div>
+                            <span className="font-medium">Current Highest:</span>
+                            <div className="text-lg font-semibold">
+                              {bid.auction?.currentHighestBid
+                                ? formatCurrency(bid.auction.currentHighestBid, bid.currency)
+                                : 'No bids yet'
+                              }
+                            </div>
+                          </div>
+
+                          <div>
+                            <span className="font-medium">Total Bids:</span>
+                            <div className="text-lg font-semibold">{bid.auction?.totalBids || 0}</div>
+                          </div>
+
+                          <div>
+                            <span className="font-medium">Auction Ends:</span>
+                            <div className="text-lg font-semibold">
+                              {bid.auction?.endDate ? formatDate(bid.auction.endDate) : 'N/A'}
+                            </div>
+                          </div>
                         </div>
                       </div>
-                      
-                      <div>
-                        <span className="font-medium">Current Highest:</span>
-                        <div className="text-lg font-semibold">
-                          {bid.auction.currentHighestBid 
-                            ? formatCurrency(bid.auction.currentHighestBid, bid.currency)
-                            : 'No bids yet'
-                          }
+
+                      <div className="flex flex-col gap-2 lg:items-end">
+                        <div className="text-sm text-gray-500">
+                          Bid placed: {formatDate(bid.createdAt)}
                         </div>
-                      </div>
-                      
-                      <div>
-                        <span className="font-medium">Total Bids:</span>
-                        <div className="text-lg font-semibold">{bid.auction.totalBids}</div>
-                      </div>
-                      
-                      <div>
-                        <span className="font-medium">Auction Ends:</span>
-                        <div className="text-lg font-semibold">
-                          {formatDate(bid.auction.endDate)}
-                        </div>
+                        {bid.updatedAt !== bid.createdAt && (
+                          <div className="text-sm text-gray-500">
+                            Last updated: {formatDate(bid.updatedAt)}
+                          </div>
+                        )}
                       </div>
                     </div>
-                  </div>
-                  
-                  <div className="flex flex-col gap-2 lg:items-end">
-                    <div className="text-sm text-gray-500">
-                      Bid placed: {formatDate(bid.createdAt)}
-                    </div>
-                    {bid.updatedAt !== bid.createdAt && (
-                      <div className="text-sm text-gray-500">
-                        Last updated: {formatDate(bid.updatedAt)}
-                      </div>
-                    )}
                   </div>
                 </div>
+              ))
+            ) : (
+              <div className="bg-white rounded-lg shadow overflow-hidden border border-gray-200">
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Auction</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Your Bid</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Current High</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date Placed</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {sortedBids.map((bid) => (
+                        <tr key={bid.id} className="hover:bg-gray-50 transition-colors">
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm font-medium text-gray-900 line-clamp-1 max-w-xs">{bid.auctionTitle}</div>
+                            {bid.auction && <div className="text-[10px] text-gray-400 mt-0.5">Auction: {bid.auction.status}</div>}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm font-bold text-blue-600">{formatCurrency(bid.amount, bid.currency)}</div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm text-gray-900">
+                              {bid.auction?.currentHighestBid
+                                ? formatCurrency(bid.auction.currentHighestBid, bid.currency)
+                                : '---'}
+                            </div>
+                            <div className="text-[10px] text-gray-500">{bid.auction?.totalBids || 0} total bids</div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className={`px-2 py-1 text-[10px] font-medium rounded-full ${getStatusColor(bid.status)}`}>
+                              {bid.status}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {formatDate(bid.createdAt)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
-            </div>
-          ))
+            )}
+          </>
         )}
       </div>
     </div>

@@ -10,7 +10,7 @@ export const cargoOwnerAPI = {
   unpublishLoad: (id: string) => api.post(`/loads-v2/${id}/unpublish`),
 
   // Smart Matching
-  findMatches: (loadId: string, preferences: any) => 
+  findMatches: (loadId: string, preferences: any) =>
     api.post('/matching/find-matches', {
       loadId,
       algorithm: 'WEIGHTED_SCORE',
@@ -24,35 +24,35 @@ export const cargoOwnerAPI = {
       ...auctionSettings
     }),
 
-  getAuction: (loadId: string) => 
-    api.get(`/bidding/auctions/load/${loadId}`),
+  getAuction: (loadId: string) =>
+    api.get(`/bidding/loads/${loadId}/auction`),
 
-  getBids: (loadId: string) => 
-    api.get(`/bidding/bids/load/${loadId}`),
+  getBids: (loadId: string) =>
+    api.get(`/bidding/loads/${loadId}/bids`),
 
-  acceptBid: (bidId: string) => 
+  acceptBid: (bidId: string) =>
     api.post(`/bidding/bids/${bidId}/accept`),
 
   // Booking and Confirmation
-  createBooking: (data: any) => 
+  createBooking: (data: any) =>
     api.post('/bookings', data),
 
   confirmBooking: (bookingId: string, confirmationData: any) =>
     api.post(`/bookings/${bookingId}/confirm`, confirmationData),
 
   // Analytics and Insights
-  getMarketInsights: () => 
+  getMarketInsights: () =>
     api.get('/matching/market-insights'),
 
-  getComprehensiveMetrics: () => 
+  getComprehensiveMetrics: () =>
     api.get('/matching/comprehensive-metrics'),
 
   // Available Algorithms
-  getAvailableAlgorithms: () => 
+  getAvailableAlgorithms: () =>
     api.get('/matching/algorithms'),
 
   // Scoring Factors
-  getScoringFactors: () => 
+  getScoringFactors: () =>
     api.get('/matching/scoring-factors'),
 };
 

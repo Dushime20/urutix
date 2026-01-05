@@ -225,7 +225,7 @@ const TenantAdminDrivers: React.FC = () => {
 
   // Filter and sort drivers
   const filteredAndSortedDrivers = useMemo(() => {
-    let filtered = drivers.filter((driver) => {
+    const filtered = drivers.filter((driver) => {
       const matchesSearch =
         !searchTerm ||
         driver.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) ||

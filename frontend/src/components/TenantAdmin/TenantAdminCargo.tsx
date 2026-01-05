@@ -223,7 +223,7 @@ const TenantAdminCargo: React.FC = () => {
 
   // Filter and sort cargo
   const filteredAndSortedCargo = useMemo(() => {
-    let filtered = cargoLoads.filter((cargo) => {
+    const filtered = cargoLoads.filter((cargo) => {
       const matchesSearch =
         !searchTerm ||
         cargo.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||

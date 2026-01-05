@@ -121,7 +121,7 @@ const TenantAdminTrips: React.FC = () => {
 
   // Filter and sort trips
   const filteredAndSortedTrips = useMemo(() => {
-    let filtered = trips.filter((trip) => {
+    const filtered = trips.filter((trip) => {
       const matchesSearch =
         !searchTerm ||
         trip.reference?.toLowerCase().includes(searchTerm.toLowerCase()) ||

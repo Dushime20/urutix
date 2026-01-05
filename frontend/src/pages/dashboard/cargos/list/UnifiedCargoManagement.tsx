@@ -3,12 +3,15 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
   Plus,
+  Grid,
+  Table,
   Search,
   List,
   Activity,
   Gavel,
   Package,
   FileText,
+  Eye,
 } from "lucide-react";
 import { CargoLoadConfirmation } from "@/components/LoanRequest";
 import CargoDetailsModal from "@/components/CargoDetailsModal";
@@ -116,6 +119,7 @@ const UnifiedCargoManagement = () => {
     useState<any>(null);
   const [editingCargo, setEditingCargo] = useState<any>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<'card' | 'table'>('card');
 
   // Broker assignment state
   const [showAssignBrokerModal, setShowAssignBrokerModal] = useState(false);
@@ -673,7 +677,7 @@ const UnifiedCargoManagement = () => {
                   <div className="w-full sm:w-auto">
                     <FilterSelect
                       label="Status"
-                      icon={<FaLayerGroup className="text-purple-500" />}
+                      icon={<FaLayerGroup className="text-gray-500" />}
                       value={statusFilter}
                       placeholder="All Status"
                       options={[
@@ -692,7 +696,7 @@ const UnifiedCargoManagement = () => {
                   <div className="w-full sm:w-auto">
                     <FilterSelect
                       label="Cargo Type"
-                      icon={<FaBox className="text-blue-500" />}
+                      icon={<FaBox className="text-gray-500" />}
                       value={cargoTypeFilter}
                       placeholder="All Types"
                       options={[
@@ -708,6 +712,34 @@ const UnifiedCargoManagement = () => {
                       className="w-full sm:min-w-[180px]"
                     />
                   </div>
+                </div>
+
+                {/* View Mode Toggle */}
+                <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-lg p-1">
+                  <button
+                    onClick={() => setViewMode('card')}
+                    className={cn(
+                      "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors",
+                      viewMode === 'card'
+                        ? "bg-gray-900 text-white"
+                        : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                    )}
+                  >
+                    <Grid className="w-3.5 h-3.5" />
+                    <span className="hidden sm:inline">Cards</span>
+                  </button>
+                  <button
+                    onClick={() => setViewMode('table')}
+                    className={cn(
+                      "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors",
+                      viewMode === 'table'
+                        ? "bg-gray-900 text-white"
+                        : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                    )}
+                  >
+                    <Table className="w-3.5 h-3.5" />
+                    <span className="hidden sm:inline">Table</span>
+                  </button>
                 </div>
               </div>
             )}
@@ -748,20 +780,97 @@ const UnifiedCargoManagement = () => {
                     )}
                   </div>
                 ) : (
-                  <div className="space-y-2 sm:space-y-3 w-full overflow-hidden">
-                    {filteredLoads.map((load: any) => (
-                      <LoadItem
-                        key={load.id}
-                        load={load}
-                        handleViewClick={handleViewClick}
-                        handleConfirmLoading={handleConfirmLoading}
-                        handleDeleteCargo={handleDeleteCargo}
-                        handleEditCargo={handleEditCargo}
-                        handleAssignBroker={handleAssignBroker}
-                        handleUnassignBroker={handleUnassignBroker}
-                      />
-                    ))}
-                  </div>
+                  <>
+                    {viewMode === 'card' ? (
+                      <div className="space-y-2 sm:space-y-3 w-full overflow-hidden">
+                        {filteredLoads.map((load: any) => (
+                          <LoadItem
+                            key={load.id}
+                            load={load}
+                            handleViewClick={handleViewClick}
+                            handleConfirmLoading={handleConfirmLoading}
+                            handleDeleteCargo={handleDeleteCargo}
+                            handleEditCargo={handleEditCargo}
+                            handleAssignBroker={handleAssignBroker}
+                            handleUnassignBroker={handleUnassignBroker}
+                          />
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+                        <div className="overflow-x-auto">
+                          <table className="min-w-full divide-y divide-gray-200">
+                            <thead className="bg-gray-50">
+                              <tr>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cargo</th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Route</th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Details</th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Value</th>
+                                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                              </tr>
+                            </thead>
+                            <tbody className="bg-white divide-y divide-gray-200">
+                              {filteredLoads.map((load: any) => (
+                                <tr key={load.id} className="hover:bg-gray-50 transition-colors">
+                                  <td className="px-4 py-3 whitespace-nowrap">
+                                    <div className="flex items-center">
+                                      <div className="flex-shrink-0 h-10 w-10 bg-gray-100 rounded-lg flex items-center justify-center">
+                                        <Package className="h-5 w-5 text-gray-600" />
+                                      </div>
+                                      <div className="ml-3">
+                                        <div className="text-sm font-medium text-gray-900">{load.title || 'Untitled'}</div>
+                                        <div className="text-xs text-gray-500">{load.cargoType}</div>
+                                      </div>
+                                    </div>
+                                  </td>
+                                  <td className="px-4 py-3">
+                                    <div className="text-xs text-gray-900">
+                                      {load.pickupLocation?.city || load.pickupLocation?.address || 'N/A'}
+                                    </div>
+                                    <div className="text-xs text-gray-500">→</div>
+                                    <div className="text-xs text-gray-900">
+                                      {load.deliveryLocation?.city || load.deliveryLocation?.address || 'N/A'}
+                                    </div>
+                                  </td>
+                                  <td className="px-4 py-3 whitespace-nowrap">
+                                    <div className="text-xs text-gray-900">{load.weight ? `${load.weight} kg` : 'N/A'}</div>
+                                    <div className="text-xs text-gray-500">{load.volume ? `${load.volume} L` : ''}</div>
+                                  </td>
+                                  <td className="px-4 py-3 whitespace-nowrap">
+                                    <span className={cn(
+                                      "px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full",
+                                      load.status === 'DELIVERED' ? 'bg-green-100 text-green-800' :
+                                        load.status === 'IN_TRANSIT' ? 'bg-blue-100 text-blue-800' :
+                                          load.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
+                                            load.status === 'CANCELLED' ? 'bg-red-100 text-red-800' :
+                                              'bg-gray-100 text-gray-800'
+                                    )}>
+                                      {load.status}
+                                    </span>
+                                  </td>
+                                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                                    {load.offeredPrice ? `$${load.offeredPrice.toLocaleString()}` : 'N/A'}
+                                  </td>
+                                  <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
+                                    <div className="flex items-center justify-end gap-2">
+                                      <button
+                                        onClick={() => handleViewClick(load)}
+                                        className="text-blue-600 hover:text-blue-900 transition-colors"
+                                        title="View Details"
+                                      >
+                                        <Eye className="w-4 h-4" />
+                                      </button>
+                                    </div>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             )}
@@ -837,67 +946,75 @@ const UnifiedCargoManagement = () => {
       </div>
 
       {/* Modals */}
-      {isModalOpen && selectedLoad && (
-        <CargoDetailsModal
-          cargoId={selectedLoad.id}
-          isOpen={isModalOpen}
-          onClose={handleCloseModal}
-        />
-      )}
+      {
+        isModalOpen && selectedLoad && (
+          <CargoDetailsModal
+            cargoId={selectedLoad.id}
+            isOpen={isModalOpen}
+            onClose={handleCloseModal}
+          />
+        )
+      }
 
-      {isLoadConfirmationOpen && selectedCargoForConfirmation && (
-        <CargoLoadConfirmation
-          cargo={selectedCargoForConfirmation}
-          isOpen={isLoadConfirmationOpen}
-          onClose={handleCloseLoadConfirmation}
-          onConfirm={() => {
-            handleCloseLoadConfirmation();
-            refetch();
-          }}
-        />
-      )}
+      {
+        isLoadConfirmationOpen && selectedCargoForConfirmation && (
+          <CargoLoadConfirmation
+            cargo={selectedCargoForConfirmation}
+            isOpen={isLoadConfirmationOpen}
+            onClose={handleCloseLoadConfirmation}
+            onConfirm={() => {
+              handleCloseLoadConfirmation();
+              refetch();
+            }}
+          />
+        )
+      }
 
       {/* Assign Broker Modal */}
-      {selectedLoadForBroker && (
-        <AssignBrokerModal
-          key={`broker-modal-${selectedLoadForBroker.id}-${selectedLoadForBroker.brokerId || 'none'}`}
-          isOpen={showAssignBrokerModal}
-          onClose={async () => {
-            // Refresh data when closing to get latest broker assignment
-            await refetch();
-            setShowAssignBrokerModal(false);
-            // Update selectedLoadForBroker with fresh data
-            const freshLoads = loadsData || [];
-            const freshLoad = freshLoads.find((l: any) => l.id === selectedLoadForBroker.id);
-            if (freshLoad) {
-              setSelectedLoadForBroker(freshLoad);
-            } else {
-              setSelectedLoadForBroker(null);
-            }
-          }}
-          loadId={selectedLoadForBroker.id}
-          loadTitle={selectedLoadForBroker.title}
-          loadValue={selectedLoadForBroker.loadValue}
-          currentBrokerId={selectedLoadForBroker.brokerId || selectedLoadForBroker.broker?.id}
-          onSuccess={handleBrokerAssignmentSuccess}
-        />
-      )}
+      {
+        selectedLoadForBroker && (
+          <AssignBrokerModal
+            key={`broker-modal-${selectedLoadForBroker.id}-${selectedLoadForBroker.brokerId || 'none'}`}
+            isOpen={showAssignBrokerModal}
+            onClose={async () => {
+              // Refresh data when closing to get latest broker assignment
+              await refetch();
+              setShowAssignBrokerModal(false);
+              // Update selectedLoadForBroker with fresh data
+              const freshLoads = loadsData || [];
+              const freshLoad = freshLoads.find((l: any) => l.id === selectedLoadForBroker.id);
+              if (freshLoad) {
+                setSelectedLoadForBroker(freshLoad);
+              } else {
+                setSelectedLoadForBroker(null);
+              }
+            }}
+            loadId={selectedLoadForBroker.id}
+            loadTitle={selectedLoadForBroker.title}
+            loadValue={selectedLoadForBroker.loadValue}
+            currentBrokerId={selectedLoadForBroker.brokerId || selectedLoadForBroker.broker?.id}
+            onSuccess={handleBrokerAssignmentSuccess}
+          />
+        )
+      }
 
       {/* Edit Cargo Modal */}
-      {isEditModalOpen && editingCargo && (
-        <EnhancedCargoForm
-          isOpen={isEditModalOpen}
-          onClose={handleCloseEditModal}
-          onSubmit={handleUpdateCargo}
-          mode="edit"
-          initialData={editingCargo}
-          showTruckSelection={false}
-        />
-      )}
+      {
+        isEditModalOpen && editingCargo && (
+          <EnhancedCargoForm
+            isOpen={isEditModalOpen}
+            onClose={handleCloseEditModal}
+            onSubmit={handleUpdateCargo}
+            mode="edit"
+            initialData={editingCargo}
+            showTruckSelection={false}
+          />
+        )
+      }
 
       {/* Confirmation Dialog */}
       {DialogComponent}
-    </div>
+    </div >
   );
 };
 

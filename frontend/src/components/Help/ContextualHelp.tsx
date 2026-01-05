@@ -201,9 +201,9 @@ You'll be notified about:
 
   const filteredTopics = searchQuery
     ? helpTopics.filter(topic =>
-        topic.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        topic.description.toLowerCase().includes(searchQuery.toLowerCase())
-      )
+      topic.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      topic.description.toLowerCase().includes(searchQuery.toLowerCase())
+    )
     : helpTopics;
 
   const categories = Array.from(new Set(helpTopics.map(t => t.category)));
@@ -213,16 +213,11 @@ You'll be notified about:
       {/* Help Button */}
       <button
         onClick={() => setIsOpen(true)}
-        className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white rounded-lg transition-all shadow-md hover:shadow-lg font-medium relative group"
+        className="flex items-center gap-2 px-3 py-2 bg-gray-50 hover:bg-gray-100 text-gray-600 rounded-lg transition-colors font-medium relative group"
         title="Help & Support"
       >
         <HelpCircle className="w-5 h-5 group-hover:scale-110 transition-transform" />
         <span className="text-sm font-semibold">Help</span>
-        {/* Subtle pulse effect */}
-        <span className="absolute -top-1 -right-1 flex h-3 w-3">
-          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-yellow-400 opacity-75"></span>
-          <span className="relative inline-flex rounded-full h-3 w-3 bg-yellow-500"></span>
-        </span>
       </button>
 
       {/* Help Modal */}

@@ -97,7 +97,7 @@ const mockFetchLoanRequests = async (): Promise<LoanRequest[]> => {
       phone: '+250788900100'
     },
     {
-      id: '2', 
+      id: '2',
       name: 'Urwego Opportunity Bank',
       type: 'microfinance',
       email: 'loans@urwego.com',
@@ -445,10 +445,10 @@ const EnhancedLoanRequestsPage: React.FC = () => {
 
       setFetching(true);
       setError(null);
-      
+
       try {
         console.log('EnhancedLoanRequestsPage: Loading loan requests for lender:', lenderId);
-        
+
         // First, get the Lender entity ID from the User ID
         let actualLenderId = lenderId;
         try {
@@ -463,7 +463,7 @@ const EnhancedLoanRequestsPage: React.FC = () => {
           // Fallback: Try to get lender by user email
           try {
             const tenantLenders = await lendingApi.getTenantLenders();
-            const lender = Array.isArray(tenantLenders) 
+            const lender = Array.isArray(tenantLenders)
               ? tenantLenders.find((l: any) => l.contact_email === user?.email || l.id === lenderId)
               : null;
             if (lender) {
@@ -474,11 +474,11 @@ const EnhancedLoanRequestsPage: React.FC = () => {
             console.warn('Could not fetch tenant lenders, using user ID:', fallbackErr);
           }
         }
-        
+
         // Fetch loan requests and analytics from real APIs
         const [requestsResponse, analyticsData] = await Promise.all([
           lendingApi.getLenderLoanRequests(
-            actualLenderId, 
+            actualLenderId,
             statusFilter !== 'all' ? statusFilter : undefined,
             1, // page
             100 // limit
@@ -490,8 +490,8 @@ const EnhancedLoanRequestsPage: React.FC = () => {
         ]);
 
         // Extract data array from response (response might be { data: [...], total, page, ... } or just array)
-        const requestsData = Array.isArray(requestsResponse) 
-          ? requestsResponse 
+        const requestsData = Array.isArray(requestsResponse)
+          ? requestsResponse
           : (requestsResponse?.data || requestsResponse || []);
 
         console.log('EnhancedLoanRequestsPage: Received loan requests:', requestsData.length);
@@ -501,7 +501,7 @@ const EnhancedLoanRequestsPage: React.FC = () => {
           requestsData.map(async (req: any) => {
             let cargoData = null;
             let borrowerData = null;
-            
+
             // Fetch cargo/load details if cargo_id is available
             if (req.cargo_id) {
               try {
@@ -524,11 +524,11 @@ const EnhancedLoanRequestsPage: React.FC = () => {
                 console.warn(`Could not fetch cargo ${req.cargo_id}:`, err);
               }
             }
-            
+
             // Extract location info from cargo (handle gracefully if cargo data is not available)
             const pickupLoc = cargoData?.locations?.find((l: any) => l.type === 'PICKUP') || cargoData?.origin;
             const deliveryLoc = cargoData?.locations?.find((l: any) => l.type === 'DELIVERY') || cargoData?.destination;
-            
+
             // Format location strings safely
             const formatLocation = (loc: any) => {
               if (!loc) return '';
@@ -538,7 +538,7 @@ const EnhancedLoanRequestsPage: React.FC = () => {
               if (loc.name) return loc.name;
               return '';
             };
-            
+
             return {
               id: req.id,
               cargo_id: req.cargo_id || req.cargoId,
@@ -625,24 +625,24 @@ const EnhancedLoanRequestsPage: React.FC = () => {
         approved_amount: approvedAmount,
         interest_rate: interestRate
       });
-      
+
       // Find the approved loan request
       const approvedLoan = requests.find(req => req.id === loanId);
       if (approvedLoan) {
         // Update the loan status
-        setRequests(prev => prev.map(req => 
-          req.id === loanId 
+        setRequests(prev => prev.map(req =>
+          req.id === loanId
             ? { ...req, status: 'approved' as const }
             : req
         ));
-        
+
         // Show payment modal
         setSelectedLoanForPayment({ ...approvedLoan, status: 'approved' });
         setShowPaymentModal(true);
-        
+
         // Fetch truck owner's phone number automatically
         fetchTruckOwnerPhoneNumber(approvedLoan);
-        
+
         // Fetch advance payment calculation if trip_id exists
         if (approvedLoan.trip_id) {
           fetchAdvancePaymentCalculation(approvedLoan.trip_id, approvedLoan.id);
@@ -658,10 +658,10 @@ const EnhancedLoanRequestsPage: React.FC = () => {
   const handleRejectLoan = async (loanId: string, reason: string) => {
     try {
       await lendingApi.rejectLoanRequest(loanId, reason);
-      
+
       // Refresh the data
-      setRequests(prev => prev.map(req => 
-        req.id === loanId 
+      setRequests(prev => prev.map(req =>
+        req.id === loanId
           ? { ...req, status: 'rejected' as const }
           : req
       ));
@@ -674,10 +674,10 @@ const EnhancedLoanRequestsPage: React.FC = () => {
   // Function to fetch truck owner's phone number from payment info
   const fetchTruckOwnerPhoneNumber = async (loan: LoanRequest) => {
     if (!loan.trip_id && !loan.cargo_id) return;
-    
+
     try {
       setLoadingTruckOwnerInfo(true);
-      
+
       // Get trip details to find the truck owner
       let tripId = loan.trip_id;
       if (!tripId && loan.cargo_id) {
@@ -686,30 +686,30 @@ const EnhancedLoanRequestsPage: React.FC = () => {
         const trip = cargoResponse.data?.trip || cargoResponse.data?.trips?.[0];
         tripId = trip?.id;
       }
-      
+
       if (tripId) {
         // Get trip with truck and owner details
         const tripResponse = await api.get(`/trips/${tripId}`);
         const trip = tripResponse.data?.data || tripResponse.data;
-        
+
         // Get truck owner ID
         const truckOwnerId = trip?.assignedTruck?.ownerId || trip?.assignedTruck?.owner?.id;
-        
+
         if (truckOwnerId) {
           // Fetch truck owner's profile to get payment info
           const ownerProfileResponse = await api.get('/users/profile-by-id', {
             params: { userId: truckOwnerId }
           });
-          
-          const ownerProfile = ownerProfileResponse.data?.data?.profile || 
-                             ownerProfileResponse.data?.profile ||
-                             ownerProfileResponse.data?.data;
-          
+
+          const ownerProfile = ownerProfileResponse.data?.data?.profile ||
+            ownerProfileResponse.data?.profile ||
+            ownerProfileResponse.data?.data;
+
           // Extract phone number from payment info
           const phoneNumber = ownerProfile?.preferences?.paymentInfo?.phoneNumber ||
-                            ownerProfile?.phone ||
-                            trip?.assignedTruck?.owner?.phone;
-          
+            ownerProfile?.phone ||
+            trip?.assignedTruck?.owner?.phone;
+
           if (phoneNumber) {
             setTruckOwnerPhone(phoneNumber);
           }
@@ -727,7 +727,7 @@ const EnhancedLoanRequestsPage: React.FC = () => {
   const fetchLoanPayments = async (loanId: string) => {
     try {
       setLoadingPayments(true);
-      
+
       // Get trip ID from loan
       const loan = requests.find(r => r.id === loanId);
       if (!loan?.trip_id) {
@@ -748,12 +748,12 @@ const EnhancedLoanRequestsPage: React.FC = () => {
         setLoadingPayments(false);
         return;
       }
-      
+
       // Fetch payments for the trip
       const paymentsResponse = await api.get('/payments', {
         params: { tripId: loan.trip_id }
       });
-      
+
       setLoanPayments(paymentsResponse.data?.payments || paymentsResponse.data?.data?.payments || []);
     } catch (error) {
       console.error('Error fetching loan payments:', error);
@@ -769,13 +769,13 @@ const EnhancedLoanRequestsPage: React.FC = () => {
       const response = await api.patch(`/payments/${paymentId}/status`, {
         status: newStatus,
       });
-      
+
       if (response.data) {
         // Refresh payments
         if (selectedLoanForPaymentDetails) {
           await fetchLoanPayments(selectedLoanForPaymentDetails.id);
         }
-        
+
         // If status changed to pending, show retry payment option
         if (newStatus === 'pending' && selectedLoanForPaymentDetails) {
           // Optionally auto-open payment modal
@@ -783,13 +783,13 @@ const EnhancedLoanRequestsPage: React.FC = () => {
           setSelectedLoanForPayment(selectedLoanForPaymentDetails);
           setShowPaymentModal(true);
           fetchTruckOwnerPhoneNumber(selectedLoanForPaymentDetails);
-          
+
           // Fetch advance payment calculation if trip_id exists
           if (selectedLoanForPaymentDetails.trip_id) {
             fetchAdvancePaymentCalculation(selectedLoanForPaymentDetails.trip_id, selectedLoanForPaymentDetails.id);
           }
         }
-        
+
         setEditingPaymentId(null);
         setNewPaymentStatus('');
         alert('Payment status updated successfully');
@@ -807,7 +807,7 @@ const EnhancedLoanRequestsPage: React.FC = () => {
     if (paymentMethod === 'momo') {
       try {
         setProcessingPayment(true);
-        
+
         // Validate phone number is provided
         if (!truckOwnerPhone || truckOwnerPhone.trim() === '') {
           alert('Please enter the truck owner\'s phone number to proceed with Mobile Money payment.');
@@ -817,7 +817,7 @@ const EnhancedLoanRequestsPage: React.FC = () => {
 
         // Get payment amount (use approved amount or requested amount)
         const paymentAmount = selectedLoanForPayment.approved_amount || selectedLoanForPayment.requested_amount;
-        
+
         if (!paymentAmount || paymentAmount <= 0) {
           alert('Invalid payment amount. Please check the loan details.');
           setProcessingPayment(false);
@@ -842,7 +842,7 @@ const EnhancedLoanRequestsPage: React.FC = () => {
 
         if (response.data?.success) {
           alert('Mobile Money payment initiated successfully! A confirmation popup will be sent to your phone. Please confirm the payment to complete the transaction.');
-          
+
           // Update loan status to disbursed after successful payment initiation
           // Note: The actual disbursement will be completed when payment is confirmed
           try {
@@ -857,10 +857,10 @@ const EnhancedLoanRequestsPage: React.FC = () => {
             console.warn('Payment sent but disbursement update failed:', disburseError);
             // Payment was sent successfully, so we'll still show success
           }
-          
+
           // Refresh loan requests to get updated status
           await fetchLoanRequests();
-          
+
           // Close modal and reset
           setShowPaymentModal(false);
           setSelectedLoanForPayment(null);
@@ -905,8 +905,8 @@ const EnhancedLoanRequestsPage: React.FC = () => {
           <FaExclamationTriangle className="h-10 w-10 sm:h-12 sm:w-12 text-red-500 mx-auto mb-2 sm:mb-3" />
           <h2 className="text-base sm:text-lg font-semibold text-gray-900 mb-1.5 break-words">Error Loading Loan Requests</h2>
           <p className="text-xs sm:text-sm text-gray-600 mb-3 break-words">{error}</p>
-          <button 
-            onClick={() => window.location.reload()} 
+          <button
+            onClick={() => window.location.reload()}
             className="bg-blue-600 text-white px-4 py-2.5 text-xs sm:text-sm rounded-lg hover:bg-blue-700 transition-colors touch-manipulation min-h-[44px] sm:min-h-0"
           >
             Retry
@@ -943,12 +943,12 @@ const EnhancedLoanRequestsPage: React.FC = () => {
       'Created Date': new Date(r.created_at).toLocaleDateString(),
       'Due Date': r.due_date ? new Date(r.due_date).toLocaleDateString() : 'N/A'
     }));
-    
+
     const csv = [
       Object.keys(csvData[0]).join(','),
       ...csvData.map(row => Object.values(row).join(','))
     ].join('\n');
-    
+
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -960,21 +960,21 @@ const EnhancedLoanRequestsPage: React.FC = () => {
 
   const filtered = requests.filter(r => {
     if (!search && statusFilter === 'all' && priorityFilter === 'all' && lenderFilter === 'all') return true;
-    
+
     const matchesSearch = !search || [
-      r.borrower_name, 
-      r.borrower_email, 
-      r.borrower_company, 
-      r.cargo_type, 
-      r.pickup_location, 
+      r.borrower_name,
+      r.borrower_email,
+      r.borrower_company,
+      r.cargo_type,
+      r.pickup_location,
       r.delivery_location,
       r.purpose
     ].some(field => field?.toLowerCase().includes(search.toLowerCase()));
-    
+
     const matchesStatus = statusFilter === 'all' || r.status === statusFilter;
     const matchesPriority = priorityFilter === 'all' || r.priority === priorityFilter;
     const matchesLender = lenderFilter === 'all' || r.lender_id === lenderFilter;
-    
+
     return matchesSearch && matchesStatus && matchesPriority && matchesLender;
   });
 
@@ -993,10 +993,10 @@ const EnhancedLoanRequestsPage: React.FC = () => {
     <div className="min-h-screen bg-gray-50 p-2 sm:p-3 md:p-4">
       <div className="max-w-7xl mx-auto space-y-3 sm:space-y-4">
         {/* Header */}
-        <div className="bg-gradient-to-r from-purple-50 to-indigo-50 rounded-lg sm:rounded-xl border border-purple-100 px-3 sm:px-4 py-2.5 sm:py-3 mb-3 sm:mb-4">
+        <div className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg sm:rounded-xl border border-gray-200 px-3 sm:px-4 py-2.5 sm:py-3 mb-3 sm:mb-4">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3">
             <div className="flex items-center gap-2 sm:gap-2.5 min-w-0 flex-1">
-              <div className="p-1.5 sm:p-2 rounded-lg bg-gradient-to-br from-purple-500 to-purple-600 flex-shrink-0">
+              <div className="p-1.5 sm:p-2 rounded-lg bg-gradient-to-br from-gray-500 to-gray-600 flex-shrink-0">
                 <FaFileContract className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
               </div>
               <div className="min-w-0 flex-1">
@@ -1007,11 +1007,10 @@ const EnhancedLoanRequestsPage: React.FC = () => {
             <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
               <button
                 onClick={() => setGroupByStatus(!groupByStatus)}
-                className={`flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1.5 text-xs border rounded-lg transition-colors touch-manipulation min-h-[44px] sm:min-h-0 ${
-                  groupByStatus 
-                    ? 'bg-purple-50 border-purple-200 text-purple-700' 
+                className={`flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1.5 text-xs border rounded-lg transition-colors touch-manipulation min-h-[44px] sm:min-h-0 ${groupByStatus
+                    ? 'bg-purple-50 border-purple-200 text-purple-700'
                     : 'bg-white border-gray-200 hover:bg-gray-50'
-                }`}
+                  }`}
               >
                 <FaBars className="text-purple-600 w-3 h-3 flex-shrink-0" />
                 <span className="hidden sm:inline">{groupByStatus ? 'Grouped' : 'Group'} Status</span>
@@ -1019,11 +1018,10 @@ const EnhancedLoanRequestsPage: React.FC = () => {
               </button>
               <button
                 onClick={() => setGroupByLender(!groupByLender)}
-                className={`flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1.5 text-xs border rounded-lg transition-colors touch-manipulation min-h-[44px] sm:min-h-0 ${
-                  groupByLender 
-                    ? 'bg-blue-50 border-blue-200 text-blue-700' 
+                className={`flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1.5 text-xs border rounded-lg transition-colors touch-manipulation min-h-[44px] sm:min-h-0 ${groupByLender
+                    ? 'bg-blue-50 border-blue-200 text-blue-700'
                     : 'bg-white border-gray-200 hover:bg-gray-50'
-                }`}
+                  }`}
               >
                 <FaUsers className="text-blue-600 w-3 h-3 flex-shrink-0" />
                 <span className="hidden sm:inline">{groupByLender ? 'Grouped' : 'Group'} Lender</span>
@@ -1060,8 +1058,8 @@ const EnhancedLoanRequestsPage: React.FC = () => {
                     <FaArrowUp className="w-2.5 h-2.5 flex-shrink-0" /> <span className="truncate">+{analytics.monthlyGrowth}% this month</span>
                   </p>
                 </div>
-                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0 ml-2">
-                  <FaFileContract className="text-blue-600 text-xs sm:text-sm" />
+                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0 ml-2">
+                  <FaFileContract className="text-gray-600 text-xs sm:text-sm" />
                 </div>
               </div>
             </div>
@@ -1075,8 +1073,8 @@ const EnhancedLoanRequestsPage: React.FC = () => {
                     {((analytics.pendingRequests / analytics.totalRequests) * 100).toFixed(1)}% of total
                   </p>
                 </div>
-                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-yellow-100 rounded-lg flex items-center justify-center flex-shrink-0 ml-2">
-                  <FaClock className="text-yellow-600 text-xs sm:text-sm" />
+                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0 ml-2">
+                  <FaClock className="text-gray-600 text-xs sm:text-sm" />
                 </div>
               </div>
             </div>
@@ -1090,8 +1088,8 @@ const EnhancedLoanRequestsPage: React.FC = () => {
                     <FaDollarSign className="w-2.5 h-2.5 flex-shrink-0" /> <span className="truncate">Avg: RWF {(analytics.averageAmount / 1000000).toFixed(1)}M</span>
                   </p>
                 </div>
-                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0 ml-2">
-                  <FaMoneyBillWave className="text-purple-600 text-xs sm:text-sm" />
+                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0 ml-2">
+                  <FaMoneyBillWave className="text-gray-600 text-xs sm:text-sm" />
                 </div>
               </div>
             </div>
@@ -1105,8 +1103,8 @@ const EnhancedLoanRequestsPage: React.FC = () => {
                     <FaStar className="w-2.5 h-2.5 flex-shrink-0" /> <span className="truncate">Avg Risk: {analytics.averageRiskScore.toFixed(1)}</span>
                   </p>
                 </div>
-                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-emerald-100 rounded-lg flex items-center justify-center flex-shrink-0 ml-2">
-                  <FaCheckCircle className="text-emerald-600 text-xs sm:text-sm" />
+                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0 ml-2">
+                  <FaCheckCircle className="text-gray-600 text-xs sm:text-sm" />
                 </div>
               </div>
             </div>
@@ -1121,7 +1119,7 @@ const EnhancedLoanRequestsPage: React.FC = () => {
                 <h2 className="text-sm font-semibold text-gray-900">Loan Applications</h2>
                 <p className="text-xs text-gray-500 mt-0.5 break-words">Review borrower applications with advanced filtering and risk assessment</p>
               </div>
-              
+
               {/* Advanced Filters */}
               <div className="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
                 <div className="relative flex-1 sm:flex-initial">
@@ -1133,7 +1131,7 @@ const EnhancedLoanRequestsPage: React.FC = () => {
                     className="pl-9 pr-3 py-2 sm:py-1.5 w-full sm:w-64 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 text-sm touch-manipulation min-h-[44px] sm:min-h-0"
                   />
                 </div>
-                
+
                 <select
                   value={statusFilter}
                   onChange={e => setStatusFilter(e.target.value as any)}
@@ -1147,7 +1145,7 @@ const EnhancedLoanRequestsPage: React.FC = () => {
                   <option value="repaid">Repaid</option>
                   <option value="overdue">Overdue</option>
                 </select>
-                
+
                 <select
                   value={priorityFilter}
                   onChange={e => setPriorityFilter(e.target.value as any)}
@@ -1177,7 +1175,7 @@ const EnhancedLoanRequestsPage: React.FC = () => {
           <div className="p-2.5 sm:p-3">
             {fetching && (
               <div className="animate-pulse space-y-2">
-                {[...Array(3)].map((_,i) => (
+                {[...Array(3)].map((_, i) => (
                   <div key={i} className="h-12 bg-gray-100 rounded-lg" />
                 ))}
               </div>
@@ -1204,263 +1202,262 @@ const EnhancedLoanRequestsPage: React.FC = () => {
                   {/* Desktop Table View */}
                   <div className="overflow-x-auto rounded-lg ring-1 ring-gray-200">
                     <table className="min-w-full text-xs">
-                    <thead className="bg-gray-50 text-xs uppercase tracking-wide text-gray-600 select-none">
-                      <tr>
-                        <th onClick={() => toggleSort('borrower_name')} className="pl-4 pr-2 py-2.5 font-semibold text-left cursor-pointer group">
-                          <div className="inline-flex items-center gap-1">
-                            Borrower
-                            {sortBy === 'borrower_name' && <span className="text-[10px] font-normal">{sortDir === 'asc' ? '▲' : '▼'}</span>}
-                            {sortBy !== 'borrower_name' && <span className="opacity-0 group-hover:opacity-60 transition">⇅</span>}
-                          </div>
-                        </th>
-                        <th onClick={() => toggleSort('requested_amount')} className="px-2 py-2.5 font-semibold text-left cursor-pointer group">
-                          <div className="inline-flex items-center gap-1">
-                            Loan Details
-                            {sortBy === 'requested_amount' && <span className="text-[10px] font-normal">{sortDir === 'asc' ? '▲' : '▼'}</span>}
-                            {sortBy !== 'requested_amount' && <span className="opacity-0 group-hover:opacity-60 transition">⇅</span>}
-                          </div>
-                        </th>
-                        <th className="px-2 py-2.5 font-semibold text-left">Cargo Information</th>
-                        <th className="px-2 py-2.5 font-semibold text-left">Status & Priority</th>
-                        <th onClick={() => toggleSort('risk_score')} className="px-2 py-2.5 font-semibold text-left cursor-pointer group">
-                          <div className="inline-flex items-center gap-1">
-                            Risk Assessment
-                            {sortBy === 'risk_score' && <span className="text-[10px] font-normal">{sortDir === 'asc' ? '▲' : '▼'}</span>}
-                            {sortBy !== 'risk_score' && <span className="opacity-0 group-hover:opacity-60 transition">⇅</span>}
-                          </div>
-                        </th>
-                        <th className="pr-4 pl-2 py-2.5 font-semibold text-right">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-100 bg-white">
-                      {sorted.map((request) => (
-                        <tr key={request.id} className="group hover:bg-blue-50/60 transition-colors">
-                          <td className="pl-4 pr-2 py-3 align-middle">
-                            <div className="flex items-center gap-2">
-                              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-semibold text-xs ${
-                                request.status === 'approved' || request.status === 'disbursed' ? 'bg-green-500' :
-                                request.status === 'pending' ? 'bg-yellow-500' :
-                                request.status === 'rejected' || request.status === 'overdue' ? 'bg-red-500' : 'bg-gray-400'
-                              }`}>
-                                {request.borrower_name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
-                              </div>
-                              <div>
-                                <p className="font-semibold text-gray-900 text-xs">{request.borrower_name}</p>
-                                {request.borrower_company && (
-                                  <p className="text-xs text-gray-500 flex items-center gap-1">
-                                    <FaBuilding className="text-xs w-2.5 h-2.5" />
-                                    {request.borrower_company}
-                                  </p>
-                                )}
-                                <div className="flex items-center gap-1 text-xs text-gray-500 mt-0.5">
-                                  <FaEnvelope className="text-xs w-2.5 h-2.5" />
-                                  {request.borrower_email}
+                      <thead className="bg-gray-50 text-xs uppercase tracking-wide text-gray-600 select-none">
+                        <tr>
+                          <th onClick={() => toggleSort('borrower_name')} className="pl-4 pr-2 py-2.5 font-semibold text-left cursor-pointer group">
+                            <div className="inline-flex items-center gap-1">
+                              Borrower
+                              {sortBy === 'borrower_name' && <span className="text-[10px] font-normal">{sortDir === 'asc' ? '▲' : '▼'}</span>}
+                              {sortBy !== 'borrower_name' && <span className="opacity-0 group-hover:opacity-60 transition">⇅</span>}
+                            </div>
+                          </th>
+                          <th onClick={() => toggleSort('requested_amount')} className="px-2 py-2.5 font-semibold text-left cursor-pointer group">
+                            <div className="inline-flex items-center gap-1">
+                              Loan Details
+                              {sortBy === 'requested_amount' && <span className="text-[10px] font-normal">{sortDir === 'asc' ? '▲' : '▼'}</span>}
+                              {sortBy !== 'requested_amount' && <span className="opacity-0 group-hover:opacity-60 transition">⇅</span>}
+                            </div>
+                          </th>
+                          <th className="px-2 py-2.5 font-semibold text-left">Cargo Information</th>
+                          <th className="px-2 py-2.5 font-semibold text-left">Status & Priority</th>
+                          <th onClick={() => toggleSort('risk_score')} className="px-2 py-2.5 font-semibold text-left cursor-pointer group">
+                            <div className="inline-flex items-center gap-1">
+                              Risk Assessment
+                              {sortBy === 'risk_score' && <span className="text-[10px] font-normal">{sortDir === 'asc' ? '▲' : '▼'}</span>}
+                              {sortBy !== 'risk_score' && <span className="opacity-0 group-hover:opacity-60 transition">⇅</span>}
+                            </div>
+                          </th>
+                          <th className="pr-4 pl-2 py-2.5 font-semibold text-right">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100 bg-white">
+                        {sorted.map((request) => (
+                          <tr key={request.id} className="group hover:bg-blue-50/60 transition-colors">
+                            <td className="pl-4 pr-2 py-3 align-middle">
+                              <div className="flex items-center gap-2">
+                                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-semibold text-xs ${request.status === 'approved' || request.status === 'disbursed' ? 'bg-green-500' :
+                                    request.status === 'pending' ? 'bg-yellow-500' :
+                                      request.status === 'rejected' || request.status === 'overdue' ? 'bg-red-500' : 'bg-gray-400'
+                                  }`}>
+                                  {request.borrower_name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
+                                </div>
+                                <div>
+                                  <p className="font-semibold text-gray-900 text-xs">{request.borrower_name}</p>
+                                  {request.borrower_company && (
+                                    <p className="text-xs text-gray-500 flex items-center gap-1">
+                                      <FaBuilding className="text-xs w-2.5 h-2.5" />
+                                      {request.borrower_company}
+                                    </p>
+                                  )}
+                                  <div className="flex items-center gap-1 text-xs text-gray-500 mt-0.5">
+                                    <FaEnvelope className="text-xs w-2.5 h-2.5" />
+                                    {request.borrower_email}
+                                  </div>
                                 </div>
                               </div>
-                            </div>
-                          </td>
-                          <td className="px-2 py-3 align-middle">
-                            <div className="space-y-0.5">
-                              <p className="font-semibold text-gray-900 text-xs">RWF {(request.requested_amount / 1000000).toFixed(1)}M</p>
-                              <p className="text-xs text-gray-600">{request.interest_rate}% interest</p>
-                              <p className="text-xs text-gray-500">{request.loan_term_months} months term</p>
-                              {request.monthly_payment && (
-                                <p className="text-xs text-blue-600">
-                                  RWF {(request.monthly_payment / 1000).toFixed(0)}K/month
-                                </p>
-                              )}
-                              {/* Advance Payment Calculation */}
-                              {advancePaymentCalculations[request.id] && (() => {
-                                const calc = advancePaymentCalculations[request.id];
-                                return (
-                                  <div className="mt-2 pt-2 border-t border-gray-200">
-                                    <p className="text-xs font-medium text-gray-700 mb-1">Advance Payment Info:</p>
-                                    {calc.requireAdvancePayment ? (
-                                      <>
-                                        <p className="text-xs text-green-700 font-semibold">
-                                          Advance: {formatCurrencyUtil(calc.advanceAmount, calc.currency)}
-                                        </p>
+                            </td>
+                            <td className="px-2 py-3 align-middle">
+                              <div className="space-y-0.5">
+                                <p className="font-semibold text-gray-900 text-xs">RWF {(request.requested_amount / 1000000).toFixed(1)}M</p>
+                                <p className="text-xs text-gray-600">{request.interest_rate}% interest</p>
+                                <p className="text-xs text-gray-500">{request.loan_term_months} months term</p>
+                                {request.monthly_payment && (
+                                  <p className="text-xs text-blue-600">
+                                    RWF {(request.monthly_payment / 1000).toFixed(0)}K/month
+                                  </p>
+                                )}
+                                {/* Advance Payment Calculation */}
+                                {advancePaymentCalculations[request.id] && (() => {
+                                  const calc = advancePaymentCalculations[request.id];
+                                  return (
+                                    <div className="mt-2 pt-2 border-t border-gray-200">
+                                      <p className="text-xs font-medium text-gray-700 mb-1">Advance Payment Info:</p>
+                                      {calc.requireAdvancePayment ? (
+                                        <>
+                                          <p className="text-xs text-green-700 font-semibold">
+                                            Advance: {formatCurrencyUtil(calc.advanceAmount, calc.currency)}
+                                          </p>
+                                          <p className="text-xs text-gray-600">
+                                            ({formatPercentage(calc.advancePaymentPercentage)} of {formatCurrencyUtil(calc.transportationFee, calc.currency)})
+                                          </p>
+                                          <p className="text-xs text-gray-500">
+                                            Final: {formatCurrencyUtil(calc.finalAmount, calc.currency)}
+                                          </p>
+                                        </>
+                                      ) : (
                                         <p className="text-xs text-gray-600">
-                                          ({formatPercentage(calc.advancePaymentPercentage)} of {formatCurrencyUtil(calc.transportationFee, calc.currency)})
+                                          No advance required. Full payment after delivery.
                                         </p>
-                                        <p className="text-xs text-gray-500">
-                                          Final: {formatCurrencyUtil(calc.finalAmount, calc.currency)}
-                                        </p>
-                                      </>
-                                    ) : (
-                                      <p className="text-xs text-gray-600">
-                                        No advance required. Full payment after delivery.
-                                      </p>
-                                    )}
-                                  </div>
-                                );
-                              })()}
-                              {loadingCalculations[request.id] && (
-                                <p className="text-xs text-gray-400 italic">Loading payment info...</p>
-                              )}
-                            </div>
-                          </td>
-                          <td className="px-2 py-3 align-middle">
-                            <div className="space-y-0.5">
-                              <p className="font-medium text-gray-900 text-xs">{request.cargo_type}</p>
-                              <p className="text-xs text-gray-600">{request.cargo_weight}kg</p>
-                              <p className="text-xs text-gray-500">
-                                {request.pickup_location} → {request.delivery_location}
-                              </p>
-                              <p className="text-xs text-gray-500">
-                                {request.distance}km • {request.estimated_duration}h
-                              </p>
-                            </div>
-                          </td>
-                          <td className="px-2 py-3 align-middle">
-                            <div className="space-y-1.5">
-                              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(request.status)}`}>
-                                <span className="w-1.5 h-1.5 rounded-full bg-current"></span>
-                                {request.status.charAt(0).toUpperCase() + request.status.slice(1)}
-                              </span>
-                              <div>
-                                <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border ${getPriorityColor(request.priority)}`}>
-                                  {request.priority === 'urgent' ? <FaExclamationTriangle className="w-2.5 h-2.5" /> :
-                                   request.priority === 'high' ? <FaArrowUp className="w-2.5 h-2.5" /> :
-                                   request.priority === 'medium' ? <FaArrowDown className="w-2.5 h-2.5" /> :
-                                   <FaClock className="w-2.5 h-2.5" />}
-                                  {request.priority.charAt(0).toUpperCase() + request.priority.slice(1)}
-                                </span>
+                                      )}
+                                    </div>
+                                  );
+                                })()}
+                                {loadingCalculations[request.id] && (
+                                  <p className="text-xs text-gray-400 italic">Loading payment info...</p>
+                                )}
                               </div>
-                            </div>
-                          </td>
-                          <td className="px-2 py-3 align-middle">
-                            <div className="space-y-1">
-                              {request.risk_score && (
-                                <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium border ${getRiskScoreColor(request.risk_score)}`}>
-                                  <FaStar className="w-2.5 h-2.5" />
-                                  {request.risk_score}
-                                </span>
-                              )}
-                              <p className="text-xs text-gray-600">Credit: {request.credit_score}</p>
-                              {request.collateral_type && (
+                            </td>
+                            <td className="px-2 py-3 align-middle">
+                              <div className="space-y-0.5">
+                                <p className="font-medium text-gray-900 text-xs">{request.cargo_type}</p>
+                                <p className="text-xs text-gray-600">{request.cargo_weight}kg</p>
                                 <p className="text-xs text-gray-500">
-                                  Collateral: {request.collateral_type}
+                                  {request.pickup_location} → {request.delivery_location}
                                 </p>
-                              )}
-                            </div>
-                          </td>
-                          <td className="pr-4 pl-2 py-3 text-right relative">
-                            <div className="flex items-center gap-2 justify-end">
-                              <button
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  try {
-                                    // View details action - could show a modal with loan details
-                                    console.log('View details for loan:', request.id);
-                                    alert(`Loan Details:\n\nBorrower: ${request.borrower_name}\nAmount: RWF ${request.requested_amount.toLocaleString()}\nStatus: ${request.status}\nCreated: ${new Date(request.created_at).toLocaleDateString()}`);
-                                  } catch (error) {
-                                    console.error('Error viewing details:', error);
-                                  }
-                                }}
-                                className="p-1.5 rounded-lg hover:bg-blue-100 text-blue-600 hover:text-blue-700 transition"
-                                title="View Details"
-                              >
-                                <FaEye className="w-4 h-4" />
-                              </button>
-                              {request.status === 'pending' && (
-                                <>
-                                  <button
-                                    onClick={(e) => {
-                                      e.preventDefault();
-                                      e.stopPropagation();
-                                      try {
-                                        handleApproveLoan(
-                                          request.id,
-                                          request.requested_amount,
-                                          request.interest_rate || 10
-                                        );
-                                      } catch (error) {
-                                        console.error('Error approving loan:', error);
-                                        alert('Error approving loan. Please try again.');
-                                      }
-                                    }}
-                                    className="p-1.5 rounded-lg hover:bg-green-100 text-green-600 hover:text-green-700 transition"
-                                    title="Accept"
-                                  >
-                                    <FaCheck className="w-4 h-4" />
-                                  </button>
-                                  <button
-                                    onClick={(e) => {
-                                      e.preventDefault();
-                                      e.stopPropagation();
-                                      try {
-                                        const reason = prompt('Enter rejection reason:') || 'Application did not meet criteria';
-                                        if (reason) {
-                                          handleRejectLoan(request.id, reason);
-                                        }
-                                      } catch (error) {
-                                        console.error('Error rejecting loan:', error);
-                                        alert('Error rejecting loan. Please try again.');
-                                      }
-                                    }}
-                                    className="p-1.5 rounded-lg hover:bg-red-100 text-red-600 hover:text-red-700 transition"
-                                    title="Reject"
-                                  >
-                                    <FaTimes className="w-4 h-4" />
-                                  </button>
-                                </>
-                              )}
-                              {request.status === 'approved' && (
+                                <p className="text-xs text-gray-500">
+                                  {request.distance}km • {request.estimated_duration}h
+                                </p>
+                              </div>
+                            </td>
+                            <td className="px-2 py-3 align-middle">
+                              <div className="space-y-1.5">
+                                <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(request.status)}`}>
+                                  <span className="w-1.5 h-1.5 rounded-full bg-current"></span>
+                                  {request.status.charAt(0).toUpperCase() + request.status.slice(1)}
+                                </span>
+                                <div>
+                                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border ${getPriorityColor(request.priority)}`}>
+                                    {request.priority === 'urgent' ? <FaExclamationTriangle className="w-2.5 h-2.5" /> :
+                                      request.priority === 'high' ? <FaArrowUp className="w-2.5 h-2.5" /> :
+                                        request.priority === 'medium' ? <FaArrowDown className="w-2.5 h-2.5" /> :
+                                          <FaClock className="w-2.5 h-2.5" />}
+                                    {request.priority.charAt(0).toUpperCase() + request.priority.slice(1)}
+                                  </span>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-2 py-3 align-middle">
+                              <div className="space-y-1">
+                                {request.risk_score && (
+                                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium border ${getRiskScoreColor(request.risk_score)}`}>
+                                    <FaStar className="w-2.5 h-2.5" />
+                                    {request.risk_score}
+                                  </span>
+                                )}
+                                <p className="text-xs text-gray-600">Credit: {request.credit_score}</p>
+                                {request.collateral_type && (
+                                  <p className="text-xs text-gray-500">
+                                    Collateral: {request.collateral_type}
+                                  </p>
+                                )}
+                              </div>
+                            </td>
+                            <td className="pr-4 pl-2 py-3 text-right relative">
+                              <div className="flex items-center gap-2 justify-end">
                                 <button
                                   onClick={(e) => {
                                     e.preventDefault();
                                     e.stopPropagation();
                                     try {
-                                      // Open payment modal for approved loans (not yet disbursed)
-                                      setSelectedLoanForPayment(request);
-                                      setShowPaymentModal(true);
-                                      
-                                      // Fetch truck owner's phone number automatically
-                                      fetchTruckOwnerPhoneNumber(request);
-                                      
-                                      // Fetch advance payment calculation if trip_id exists
-                                      if (request.trip_id) {
-                                        fetchAdvancePaymentCalculation(request.trip_id, request.id);
-                                      }
+                                      // View details action - could show a modal with loan details
+                                      console.log('View details for loan:', request.id);
+                                      alert(`Loan Details:\n\nBorrower: ${request.borrower_name}\nAmount: RWF ${request.requested_amount.toLocaleString()}\nStatus: ${request.status}\nCreated: ${new Date(request.created_at).toLocaleDateString()}`);
                                     } catch (error) {
-                                      console.error('Error opening payment modal:', error);
-                                      alert('Error opening payment modal. Please try again.');
-                                    }
-                                  }}
-                                  className="p-1.5 rounded-lg hover:bg-green-100 text-green-600 hover:text-green-700 transition"
-                                  title="Pay / Retry Payment"
-                                >
-                                  <FaMoneyBillWave className="w-4 h-4" />
-                                </button>
-                              )}
-                              {request.status === 'disbursed' && (
-                                <button
-                                  onClick={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    try {
-                                      setSelectedLoanForPaymentDetails(request);
-                                      fetchLoanPayments(request.id);
-                                      setShowPaymentDetailsModal(true);
-                                    } catch (error) {
-                                      console.error('Error opening payment details:', error);
-                                      alert('Error opening payment details. Please try again.');
+                                      console.error('Error viewing details:', error);
                                     }
                                   }}
                                   className="p-1.5 rounded-lg hover:bg-blue-100 text-blue-600 hover:text-blue-700 transition"
-                                  title="View Payment Details"
+                                  title="View Details"
                                 >
-                                  <FaCreditCard className="w-4 h-4" />
+                                  <FaEye className="w-4 h-4" />
                                 </button>
-                              )}
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                                {request.status === 'pending' && (
+                                  <>
+                                    <button
+                                      onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        try {
+                                          handleApproveLoan(
+                                            request.id,
+                                            request.requested_amount,
+                                            request.interest_rate || 10
+                                          );
+                                        } catch (error) {
+                                          console.error('Error approving loan:', error);
+                                          alert('Error approving loan. Please try again.');
+                                        }
+                                      }}
+                                      className="p-1.5 rounded-lg hover:bg-green-100 text-green-600 hover:text-green-700 transition"
+                                      title="Accept"
+                                    >
+                                      <FaCheck className="w-4 h-4" />
+                                    </button>
+                                    <button
+                                      onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        try {
+                                          const reason = prompt('Enter rejection reason:') || 'Application did not meet criteria';
+                                          if (reason) {
+                                            handleRejectLoan(request.id, reason);
+                                          }
+                                        } catch (error) {
+                                          console.error('Error rejecting loan:', error);
+                                          alert('Error rejecting loan. Please try again.');
+                                        }
+                                      }}
+                                      className="p-1.5 rounded-lg hover:bg-red-100 text-red-600 hover:text-red-700 transition"
+                                      title="Reject"
+                                    >
+                                      <FaTimes className="w-4 h-4" />
+                                    </button>
+                                  </>
+                                )}
+                                {request.status === 'approved' && (
+                                  <button
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      try {
+                                        // Open payment modal for approved loans (not yet disbursed)
+                                        setSelectedLoanForPayment(request);
+                                        setShowPaymentModal(true);
+
+                                        // Fetch truck owner's phone number automatically
+                                        fetchTruckOwnerPhoneNumber(request);
+
+                                        // Fetch advance payment calculation if trip_id exists
+                                        if (request.trip_id) {
+                                          fetchAdvancePaymentCalculation(request.trip_id, request.id);
+                                        }
+                                      } catch (error) {
+                                        console.error('Error opening payment modal:', error);
+                                        alert('Error opening payment modal. Please try again.');
+                                      }
+                                    }}
+                                    className="p-1.5 rounded-lg hover:bg-green-100 text-green-600 hover:text-green-700 transition"
+                                    title="Pay / Retry Payment"
+                                  >
+                                    <FaMoneyBillWave className="w-4 h-4" />
+                                  </button>
+                                )}
+                                {request.status === 'disbursed' && (
+                                  <button
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      try {
+                                        setSelectedLoanForPaymentDetails(request);
+                                        fetchLoanPayments(request.id);
+                                        setShowPaymentDetailsModal(true);
+                                      } catch (error) {
+                                        console.error('Error opening payment details:', error);
+                                        alert('Error opening payment details. Please try again.');
+                                      }
+                                    }}
+                                    className="p-1.5 rounded-lg hover:bg-blue-100 text-blue-600 hover:text-blue-700 transition"
+                                    title="View Payment Details"
+                                  >
+                                    <FaCreditCard className="w-4 h-4" />
+                                  </button>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
                   <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mt-3 text-xs text-gray-500 px-2">
                     <span>{sorted.length} request{sorted.length !== 1 && 's'} shown</span>
@@ -1473,192 +1470,191 @@ const EnhancedLoanRequestsPage: React.FC = () => {
 
                 {/* Mobile Card View */}
                 <div className="md:hidden space-y-3">
-                {sorted.map((request) => (
-                  <div key={request.id} className="bg-white border border-gray-200 rounded-lg p-3 shadow-sm">
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex items-center gap-2 min-w-0 flex-1">
-                        <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold text-xs flex-shrink-0 ${
-                          request.status === 'approved' || request.status === 'disbursed' ? 'bg-green-500' :
-                          request.status === 'pending' ? 'bg-yellow-500' :
-                          request.status === 'rejected' || request.status === 'overdue' ? 'bg-red-500' : 'bg-gray-400'
-                        }`}>
-                          {request.borrower_name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="font-semibold text-gray-900 text-sm break-words">{request.borrower_name}</p>
-                          {request.borrower_company && (
-                            <p className="text-xs text-gray-500 flex items-center gap-1 mt-0.5 break-words">
-                              <FaBuilding className="w-2.5 h-2.5 flex-shrink-0" />
-                              {request.borrower_company}
+                  {sorted.map((request) => (
+                    <div key={request.id} className="bg-white border border-gray-200 rounded-lg p-3 shadow-sm">
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex items-center gap-2 min-w-0 flex-1">
+                          <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold text-xs flex-shrink-0 ${request.status === 'approved' || request.status === 'disbursed' ? 'bg-green-500' :
+                              request.status === 'pending' ? 'bg-yellow-500' :
+                                request.status === 'rejected' || request.status === 'overdue' ? 'bg-red-500' : 'bg-gray-400'
+                            }`}>
+                            {request.borrower_name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="font-semibold text-gray-900 text-sm break-words">{request.borrower_name}</p>
+                            {request.borrower_company && (
+                              <p className="text-xs text-gray-500 flex items-center gap-1 mt-0.5 break-words">
+                                <FaBuilding className="w-2.5 h-2.5 flex-shrink-0" />
+                                {request.borrower_company}
+                              </p>
+                            )}
+                            <p className="text-xs text-gray-500 flex items-center gap-1 mt-0.5 break-all">
+                              <FaEnvelope className="w-2.5 h-2.5 flex-shrink-0" />
+                              {request.borrower_email}
                             </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2 mb-3 pt-2 border-t border-gray-100">
+                        <div>
+                          <p className="text-xs text-gray-500">Loan Amount</p>
+                          <p className="font-semibold text-gray-900 text-sm">RWF {(request.requested_amount / 1000000).toFixed(1)}M</p>
+                          <p className="text-xs text-gray-600">{request.interest_rate}% interest • {request.loan_term_months} months</p>
+                          {request.monthly_payment && (
+                            <p className="text-xs text-blue-600">RWF {(request.monthly_payment / 1000).toFixed(0)}K/month</p>
                           )}
-                          <p className="text-xs text-gray-500 flex items-center gap-1 mt-0.5 break-all">
-                            <FaEnvelope className="w-2.5 h-2.5 flex-shrink-0" />
-                            {request.borrower_email}
+                        </div>
+
+                        <div>
+                          <p className="text-xs text-gray-500">Cargo Info</p>
+                          <p className="text-xs font-medium text-gray-900">{request.cargo_type}</p>
+                          <p className="text-xs text-gray-600">{request.cargo_weight}kg</p>
+                          <p className="text-xs text-gray-500 break-words">
+                            {request.pickup_location} → {request.delivery_location}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {request.distance}km • {request.estimated_duration}h
                           </p>
                         </div>
-                      </div>
-                    </div>
 
-                    <div className="space-y-2 mb-3 pt-2 border-t border-gray-100">
-                      <div>
-                        <p className="text-xs text-gray-500">Loan Amount</p>
-                        <p className="font-semibold text-gray-900 text-sm">RWF {(request.requested_amount / 1000000).toFixed(1)}M</p>
-                        <p className="text-xs text-gray-600">{request.interest_rate}% interest • {request.loan_term_months} months</p>
-                        {request.monthly_payment && (
-                          <p className="text-xs text-blue-600">RWF {(request.monthly_payment / 1000).toFixed(0)}K/month</p>
-                        )}
-                      </div>
-
-                      <div>
-                        <p className="text-xs text-gray-500">Cargo Info</p>
-                        <p className="text-xs font-medium text-gray-900">{request.cargo_type}</p>
-                        <p className="text-xs text-gray-600">{request.cargo_weight}kg</p>
-                        <p className="text-xs text-gray-500 break-words">
-                          {request.pickup_location} → {request.delivery_location}
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          {request.distance}km • {request.estimated_duration}h
-                        </p>
-                      </div>
-
-                      <div className="flex flex-wrap gap-2">
-                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(request.status)}`}>
-                          <span className="w-1.5 h-1.5 rounded-full bg-current"></span>
-                          {request.status.charAt(0).toUpperCase() + request.status.slice(1)}
-                        </span>
-                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border ${getPriorityColor(request.priority)}`}>
-                          {request.priority === 'urgent' ? <FaExclamationTriangle className="w-2.5 h-2.5" /> :
-                           request.priority === 'high' ? <FaArrowUp className="w-2.5 h-2.5" /> :
-                           request.priority === 'medium' ? <FaArrowDown className="w-2.5 h-2.5" /> :
-                           <FaClock className="w-2.5 h-2.5" />}
-                          {request.priority.charAt(0).toUpperCase() + request.priority.slice(1)}
-                        </span>
-                        {request.risk_score && (
-                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium border ${getRiskScoreColor(request.risk_score)}`}>
-                            <FaStar className="w-2.5 h-2.5" />
-                            {request.risk_score}
+                        <div className="flex flex-wrap gap-2">
+                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(request.status)}`}>
+                            <span className="w-1.5 h-1.5 rounded-full bg-current"></span>
+                            {request.status.charAt(0).toUpperCase() + request.status.slice(1)}
                           </span>
-                        )}
+                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border ${getPriorityColor(request.priority)}`}>
+                            {request.priority === 'urgent' ? <FaExclamationTriangle className="w-2.5 h-2.5" /> :
+                              request.priority === 'high' ? <FaArrowUp className="w-2.5 h-2.5" /> :
+                                request.priority === 'medium' ? <FaArrowDown className="w-2.5 h-2.5" /> :
+                                  <FaClock className="w-2.5 h-2.5" />}
+                            {request.priority.charAt(0).toUpperCase() + request.priority.slice(1)}
+                          </span>
+                          {request.risk_score && (
+                            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium border ${getRiskScoreColor(request.risk_score)}`}>
+                              <FaStar className="w-2.5 h-2.5" />
+                              {request.risk_score}
+                            </span>
+                          )}
+                        </div>
+
+                        <div>
+                          <p className="text-xs text-gray-500">Credit Score: <span className="font-medium text-gray-900">{request.credit_score}</span></p>
+                          {request.collateral_type && (
+                            <p className="text-xs text-gray-500">Collateral: {request.collateral_type}</p>
+                          )}
+                        </div>
                       </div>
 
-                      <div>
-                        <p className="text-xs text-gray-500">Credit Score: <span className="font-medium text-gray-900">{request.credit_score}</span></p>
-                        {request.collateral_type && (
-                          <p className="text-xs text-gray-500">Collateral: {request.collateral_type}</p>
+                      <div className="flex gap-2 pt-2 border-t border-gray-100">
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            try {
+                              console.log('View details for loan:', request.id);
+                              alert(`Loan Details:\n\nBorrower: ${request.borrower_name}\nAmount: RWF ${request.requested_amount.toLocaleString()}\nStatus: ${request.status}\nCreated: ${new Date(request.created_at).toLocaleDateString()}`);
+                            } catch (error) {
+                              console.error('Error viewing details:', error);
+                            }
+                          }}
+                          className="flex-1 px-3 py-2 text-xs font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors touch-manipulation min-h-[44px] flex items-center justify-center gap-1.5"
+                        >
+                          <FaEye className="w-3.5 h-3.5" />
+                          View Details
+                        </button>
+                        {request.status === 'pending' && (
+                          <>
+                            <button
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                try {
+                                  handleApproveLoan(request.id, request.requested_amount, request.interest_rate || 10);
+                                } catch (error) {
+                                  console.error('Error approving loan:', error);
+                                  alert('Error approving loan. Please try again.');
+                                }
+                              }}
+                              className="px-3 py-2 text-xs font-medium text-green-600 bg-green-50 border border-green-200 rounded-lg hover:bg-green-100 transition-colors touch-manipulation min-h-[44px] flex items-center justify-center"
+                              title="Accept"
+                            >
+                              <FaCheck className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                try {
+                                  const reason = prompt('Enter rejection reason:') || 'Application did not meet criteria';
+                                  if (reason) {
+                                    handleRejectLoan(request.id, reason);
+                                  }
+                                } catch (error) {
+                                  console.error('Error rejecting loan:', error);
+                                  alert('Error rejecting loan. Please try again.');
+                                }
+                              }}
+                              className="px-3 py-2 text-xs font-medium text-red-600 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 transition-colors touch-manipulation min-h-[44px] flex items-center justify-center"
+                              title="Reject"
+                            >
+                              <FaTimes className="w-3.5 h-3.5" />
+                            </button>
+                          </>
                         )}
-                      </div>
-                    </div>
-
-                    <div className="flex gap-2 pt-2 border-t border-gray-100">
-                      <button
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          try {
-                            console.log('View details for loan:', request.id);
-                            alert(`Loan Details:\n\nBorrower: ${request.borrower_name}\nAmount: RWF ${request.requested_amount.toLocaleString()}\nStatus: ${request.status}\nCreated: ${new Date(request.created_at).toLocaleDateString()}`);
-                          } catch (error) {
-                            console.error('Error viewing details:', error);
-                          }
-                        }}
-                        className="flex-1 px-3 py-2 text-xs font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors touch-manipulation min-h-[44px] flex items-center justify-center gap-1.5"
-                      >
-                        <FaEye className="w-3.5 h-3.5" />
-                        View Details
-                      </button>
-                      {request.status === 'pending' && (
-                        <>
+                        {request.status === 'approved' && (
                           <button
                             onClick={(e) => {
                               e.preventDefault();
                               e.stopPropagation();
                               try {
-                                handleApproveLoan(request.id, request.requested_amount, request.interest_rate || 10);
+                                setSelectedLoanForPayment(request);
+                                setShowPaymentModal(true);
+                                fetchTruckOwnerPhoneNumber(request);
+                                if (request.trip_id) {
+                                  fetchAdvancePaymentCalculation(request.trip_id, request.id);
+                                }
                               } catch (error) {
-                                console.error('Error approving loan:', error);
-                                alert('Error approving loan. Please try again.');
+                                console.error('Error opening payment modal:', error);
+                                alert('Error opening payment modal. Please try again.');
                               }
                             }}
                             className="px-3 py-2 text-xs font-medium text-green-600 bg-green-50 border border-green-200 rounded-lg hover:bg-green-100 transition-colors touch-manipulation min-h-[44px] flex items-center justify-center"
-                            title="Accept"
+                            title="Pay / Retry Payment"
                           >
-                            <FaCheck className="w-3.5 h-3.5" />
+                            <FaMoneyBillWave className="w-3.5 h-3.5" />
                           </button>
+                        )}
+                        {request.status === 'disbursed' && (
                           <button
                             onClick={(e) => {
                               e.preventDefault();
                               e.stopPropagation();
                               try {
-                                const reason = prompt('Enter rejection reason:') || 'Application did not meet criteria';
-                                if (reason) {
-                                  handleRejectLoan(request.id, reason);
-                                }
+                                setSelectedLoanForPaymentDetails(request);
+                                fetchLoanPayments(request.id);
+                                setShowPaymentDetailsModal(true);
                               } catch (error) {
-                                console.error('Error rejecting loan:', error);
-                                alert('Error rejecting loan. Please try again.');
+                                console.error('Error opening payment details:', error);
+                                alert('Error opening payment details. Please try again.');
                               }
                             }}
-                            className="px-3 py-2 text-xs font-medium text-red-600 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 transition-colors touch-manipulation min-h-[44px] flex items-center justify-center"
-                            title="Reject"
+                            className="px-3 py-2 text-xs font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors touch-manipulation min-h-[44px] flex items-center justify-center"
+                            title="View Payment Details"
                           >
-                            <FaTimes className="w-3.5 h-3.5" />
+                            <FaCreditCard className="w-3.5 h-3.5" />
                           </button>
-                        </>
-                      )}
-                      {request.status === 'approved' && (
-                        <button
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            try {
-                              setSelectedLoanForPayment(request);
-                              setShowPaymentModal(true);
-                              fetchTruckOwnerPhoneNumber(request);
-                              if (request.trip_id) {
-                                fetchAdvancePaymentCalculation(request.trip_id, request.id);
-                              }
-                            } catch (error) {
-                              console.error('Error opening payment modal:', error);
-                              alert('Error opening payment modal. Please try again.');
-                            }
-                          }}
-                          className="px-3 py-2 text-xs font-medium text-green-600 bg-green-50 border border-green-200 rounded-lg hover:bg-green-100 transition-colors touch-manipulation min-h-[44px] flex items-center justify-center"
-                          title="Pay / Retry Payment"
-                        >
-                          <FaMoneyBillWave className="w-3.5 h-3.5" />
-                        </button>
-                      )}
-                      {request.status === 'disbursed' && (
-                        <button
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            try {
-                              setSelectedLoanForPaymentDetails(request);
-                              fetchLoanPayments(request.id);
-                              setShowPaymentDetailsModal(true);
-                            } catch (error) {
-                              console.error('Error opening payment details:', error);
-                              alert('Error opening payment details. Please try again.');
-                            }
-                          }}
-                          className="px-3 py-2 text-xs font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors touch-manipulation min-h-[44px] flex items-center justify-center"
-                          title="View Payment Details"
-                        >
-                          <FaCreditCard className="w-3.5 h-3.5" />
-                        </button>
-                      )}
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
                 </div>
               </>
             )}
           </div>
         </div>
       </div>
-      
+
       {/* Payment Modal */}
       {showPaymentModal && selectedLoanForPayment && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-3 sm:p-4">
@@ -1678,7 +1674,7 @@ const EnhancedLoanRequestsPage: React.FC = () => {
                   <FaTimes className="w-5 h-5" />
                 </button>
               </div>
-              
+
               <div className="mb-4 sm:mb-6">
                 <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-3 sm:p-4 md:p-5 mb-3 sm:mb-4 border-2 border-blue-200">
                   <p className="text-xs sm:text-sm font-medium text-gray-700 mb-2">Disbursement Amount</p>
@@ -1701,7 +1697,7 @@ const EnhancedLoanRequestsPage: React.FC = () => {
                     💰 This amount will be sent to the truck owner via Mobile Money
                   </p>
                 </div>
-                
+
                 {/* Advance Payment Calculation Display */}
                 {loadingCalculations[selectedLoanForPayment.id] ? (
                   <div className="mb-3 sm:mb-4 p-2.5 sm:p-3 bg-gray-50 border border-gray-200 rounded-lg">
@@ -1758,7 +1754,7 @@ const EnhancedLoanRequestsPage: React.FC = () => {
                     </p>
                   </div>
                 ) : null}
-                
+
                 {loadingTruckOwnerInfo && (
                   <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
                     <p className="text-sm text-blue-700 flex items-center gap-2">
@@ -1767,7 +1763,7 @@ const EnhancedLoanRequestsPage: React.FC = () => {
                     </p>
                   </div>
                 )}
-                
+
                 {truckOwnerPhone && !loadingTruckOwnerInfo && (
                   <div className="mb-3 sm:mb-4 p-2.5 sm:p-3 bg-green-50 border border-green-200 rounded-lg">
                     <p className="text-xs sm:text-sm text-green-700 font-medium mb-1">Truck Owner Payment Info</p>
@@ -1779,22 +1775,19 @@ const EnhancedLoanRequestsPage: React.FC = () => {
                 <p className="text-xs sm:text-sm text-gray-700 mb-3 sm:mb-4">
                   Select your preferred payment method:
                 </p>
-                
+
                 <div className="space-y-2 sm:space-y-3">
                   <button
                     onClick={() => setPaymentMethod('momo')}
-                    className={`w-full p-3 sm:p-4 border-2 rounded-lg transition flex items-center gap-2 sm:gap-3 touch-manipulation min-h-[60px] sm:min-h-0 ${
-                      paymentMethod === 'momo'
+                    className={`w-full p-3 sm:p-4 border-2 rounded-lg transition flex items-center gap-2 sm:gap-3 touch-manipulation min-h-[60px] sm:min-h-0 ${paymentMethod === 'momo'
                         ? 'border-blue-600 bg-blue-50'
                         : 'border-gray-200 hover:border-gray-300'
-                    }`}
+                      }`}
                   >
-                    <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                      paymentMethod === 'momo' ? 'bg-blue-600' : 'bg-gray-100'
-                    }`}>
-                      <FaMoneyBillWave className={`w-4 h-4 sm:w-5 sm:h-5 ${
-                        paymentMethod === 'momo' ? 'text-white' : 'text-gray-600'
-                      }`} />
+                    <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${paymentMethod === 'momo' ? 'bg-blue-600' : 'bg-gray-100'
+                      }`}>
+                      <FaMoneyBillWave className={`w-4 h-4 sm:w-5 sm:h-5 ${paymentMethod === 'momo' ? 'text-white' : 'text-gray-600'
+                        }`} />
                     </div>
                     <div className="flex-1 text-left min-w-0">
                       <h5 className="font-semibold text-gray-900 text-sm sm:text-base">Mobile Money (Momo)</h5>
@@ -1806,7 +1799,7 @@ const EnhancedLoanRequestsPage: React.FC = () => {
                       <FaCheck className="text-blue-600 w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
                     )}
                   </button>
-                  
+
                   {paymentMethod === 'momo' && (
                     <div className="mt-2 sm:mt-3 p-3 sm:p-4 bg-gray-50 border border-gray-200 rounded-lg">
                       <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
@@ -1824,21 +1817,18 @@ const EnhancedLoanRequestsPage: React.FC = () => {
                       </p>
                     </div>
                   )}
-                  
+
                   <button
                     onClick={() => setPaymentMethod('card')}
-                    className={`w-full p-3 sm:p-4 border-2 rounded-lg transition flex items-center gap-2 sm:gap-3 touch-manipulation min-h-[60px] sm:min-h-0 ${
-                      paymentMethod === 'card'
+                    className={`w-full p-3 sm:p-4 border-2 rounded-lg transition flex items-center gap-2 sm:gap-3 touch-manipulation min-h-[60px] sm:min-h-0 ${paymentMethod === 'card'
                         ? 'border-blue-600 bg-blue-50'
                         : 'border-gray-200 hover:border-gray-300'
-                    }`}
+                      }`}
                   >
-                    <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                      paymentMethod === 'card' ? 'bg-blue-600' : 'bg-gray-100'
-                    }`}>
-                      <FaDollarSign className={`w-4 h-4 sm:w-5 sm:h-5 ${
-                        paymentMethod === 'card' ? 'text-white' : 'text-gray-600'
-                      }`} />
+                    <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${paymentMethod === 'card' ? 'bg-blue-600' : 'bg-gray-100'
+                      }`}>
+                      <FaDollarSign className={`w-4 h-4 sm:w-5 sm:h-5 ${paymentMethod === 'card' ? 'text-white' : 'text-gray-600'
+                        }`} />
                     </div>
                     <div className="flex-1 text-left min-w-0">
                       <h5 className="font-semibold text-gray-900 text-sm sm:text-base">Card Payment</h5>
@@ -1850,7 +1840,7 @@ const EnhancedLoanRequestsPage: React.FC = () => {
                   </button>
                 </div>
               </div>
-              
+
               <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 mt-4 sm:mt-6">
                 <button
                   onClick={() => {
@@ -1865,11 +1855,10 @@ const EnhancedLoanRequestsPage: React.FC = () => {
                 <button
                   onClick={handleProcessPayment}
                   disabled={!paymentMethod || processingPayment || (paymentMethod === 'momo' && (!truckOwnerPhone || truckOwnerPhone.trim() === ''))}
-                  className={`flex-1 px-4 py-2.5 rounded-lg text-white font-medium transition touch-manipulation min-h-[44px] sm:min-h-0 ${
-                    !paymentMethod || processingPayment || (paymentMethod === 'momo' && (!truckOwnerPhone || truckOwnerPhone.trim() === ''))
+                  className={`flex-1 px-4 py-2.5 rounded-lg text-white font-medium transition touch-manipulation min-h-[44px] sm:min-h-0 ${!paymentMethod || processingPayment || (paymentMethod === 'momo' && (!truckOwnerPhone || truckOwnerPhone.trim() === ''))
                       ? 'bg-gray-400 cursor-not-allowed'
                       : 'bg-blue-600 hover:bg-blue-700'
-                  }`}
+                    }`}
                 >
                   {processingPayment ? 'Processing...' : 'Proceed to Payment'}
                 </button>

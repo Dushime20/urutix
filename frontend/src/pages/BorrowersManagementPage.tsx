@@ -451,7 +451,7 @@ const BorrowersManagementPage: React.FC = () => {
 
   // Filter and sort borrowers
   const filteredBorrowers = useMemo(() => {
-    let filtered = borrowers.filter(borrower => {
+    const filtered = borrowers.filter(borrower => {
       const matchesSearch = 
         borrower.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         borrower.email.toLowerCase().includes(searchTerm.toLowerCase()) ||

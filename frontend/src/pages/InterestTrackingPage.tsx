@@ -297,7 +297,7 @@ const InterestTrackingPage: React.FC = () => {
 
   // Filter and sort data
   const filteredData = useMemo(() => {
-    let filtered = interestData.filter(loan => {
+    const filtered = interestData.filter(loan => {
       const matchesSearch = 
         loan.borrowerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
         loan.loanId.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -310,8 +310,8 @@ const InterestTrackingPage: React.FC = () => {
     });
 
     filtered.sort((a, b) => {
-      let aValue: any = a[sortField as keyof InterestEarning];
-      let bValue: any = b[sortField as keyof InterestEarning];
+      const aValue: any = a[sortField as keyof InterestEarning];
+      const bValue: any = b[sortField as keyof InterestEarning];
 
       if (typeof aValue === 'number' && typeof bValue === 'number') {
         return sortDirection === 'asc' ? aValue - bValue : bValue - aValue;

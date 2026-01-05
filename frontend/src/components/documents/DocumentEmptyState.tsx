@@ -66,7 +66,7 @@ export const DocumentEmptyState: React.FC<DocumentEmptyStateProps> = ({
 
   return (
     <div className="flex flex-col items-center justify-center py-12 px-4">
-      <div className="p-4 rounded-full bg-blue-100 mb-4">
+      <div className="p-4 rounded-full bg-gray-100 mb-4">
         {getEntityIcon()}
       </div>
       <h3 className="text-lg font-semibold text-gray-900 mb-2">

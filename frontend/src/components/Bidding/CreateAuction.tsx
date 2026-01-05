@@ -35,7 +35,7 @@ const CreateAuction: React.FC = () => {
 
   const loadCargos = async () => {
     if (!user) return;
-    
+
     setLoadingCargos(true);
     try {
       const response = await loadsAPI.getAll();
@@ -50,15 +50,15 @@ const CreateAuction: React.FC = () => {
       } else if (Array.isArray(response)) {
         cargosList = response;
       }
-      
+
       // Filter cargos that can be auctioned (CREATED, PUBLISHED status)
       const availableCargos = cargosList.filter(
-        (cargo: Cargo) => 
-          cargo.status === 'CREATED' || 
+        (cargo: Cargo) =>
+          cargo.status === 'CREATED' ||
           cargo.status === 'PUBLISHED' ||
           !cargo.status // Include cargos without status if needed
       );
-      
+
       setCargos(availableCargos);
     } catch (err: any) {
       console.error('Error loading cargos:', err);
@@ -99,7 +99,7 @@ const CreateAuction: React.FC = () => {
       };
 
       await biddingAPI.createAuction(auctionData);
-      
+
       toast.success('Auction created successfully!');
       setSuccess('Auction created successfully!');
       setFormData({
@@ -109,7 +109,7 @@ const CreateAuction: React.FC = () => {
         auctionEnd: '',
         reservePrice: '',
       });
-      
+
       // Reload cargos to refresh the list
       await loadCargos();
     } catch (error: any) {
@@ -126,7 +126,7 @@ const CreateAuction: React.FC = () => {
       <div className="bg-white rounded-lg shadow p-3 sm:p-4 md:p-6">
         <div className="mb-4 sm:mb-6">
           <h4 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2 flex items-center gap-2">
-            <FaGavel className="text-blue-500 flex-shrink-0" />
+            <FaGavel className="text-gray-500 flex-shrink-0" />
             <span>Create New Auction</span>
           </h4>
           <p className="text-xs sm:text-sm text-gray-600">

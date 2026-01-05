@@ -57,15 +57,15 @@ const Profile: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
-      
+
       // Fetch profile from API
       const response = await authAPI.getProfile();
       const userData = response.data?.data?.user || response.data?.user || response.data;
-      
+
       if (!userData) {
         throw new Error('No user data received');
       }
-      
+
       // Use logged-in user data from context as fallback
       const profileData: UserProfile = {
         id: userData.id || user?.id || '',
@@ -86,7 +86,7 @@ const Profile: React.FC = () => {
         createdAt: userData.createdAt || new Date().toISOString(),
         updatedAt: userData.updatedAt || new Date().toISOString(),
       };
-      
+
       setProfile(profileData);
       setFormData({
         firstName: profileData.firstName || '',
@@ -175,13 +175,13 @@ const Profile: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
-      
+
       // In a real app, this would call the API
       // await updateProfile(formData);
-      
+
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000));
-      
+
       if (profile) {
         const updatedProfile = {
           ...profile,
@@ -190,7 +190,7 @@ const Profile: React.FC = () => {
         };
         setProfile(updatedProfile);
       }
-      
+
       setEditing(false);
       setSuccess('Profile updated successfully!');
     } catch (err: any) {
@@ -218,10 +218,10 @@ const Profile: React.FC = () => {
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-100 px-4 py-3 mb-4">
+      <div className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl border border-gray-200 px-4 py-3 mb-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600">
+            <div className="p-2 rounded-lg bg-gradient-to-br from-gray-500 to-gray-600">
               <FaUser className="w-4 h-4 text-white" />
             </div>
             <div>
@@ -271,7 +271,7 @@ const Profile: React.FC = () => {
           {error}
         </div>
       )}
-      
+
       {success && (
         <div className="bg-green-50 border border-green-200 text-green-700 p-3 rounded-lg text-xs">
           {success}
@@ -284,8 +284,8 @@ const Profile: React.FC = () => {
         <div className="lg:col-span-1">
           <div className="bg-white rounded-lg border border-gray-200 p-3">
             <div className="text-center mb-4">
-              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                <FaUser className="w-8 h-8 text-blue-600" />
+              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                <FaUser className="w-8 h-8 text-gray-600" />
               </div>
               <h2 className="text-sm font-semibold text-gray-900">
                 {profile?.firstName} {profile?.lastName}
@@ -301,7 +301,7 @@ const Profile: React.FC = () => {
                 </span>
               </div>
             </div>
-            
+
             <div className="space-y-2">
               <div className="flex items-center space-x-2">
                 <FaEnvelope className="w-3.5 h-3.5 text-gray-400" />
@@ -316,9 +316,9 @@ const Profile: React.FC = () => {
               {profile?.websiteUrl && (
                 <div className="flex items-center space-x-2">
                   <FaBuilding className="w-3.5 h-3.5 text-gray-400" />
-                  <a 
-                    href={profile.websiteUrl} 
-                    target="_blank" 
+                  <a
+                    href={profile.websiteUrl}
+                    target="_blank"
                     rel="noopener noreferrer"
                     className="text-xs text-blue-600 hover:underline"
                   >
@@ -336,7 +336,7 @@ const Profile: React.FC = () => {
             <h3 className="text-sm font-semibold text-gray-900 mb-3">
               <TranslatedText text="Personal Information" />
             </h3>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1">
@@ -350,7 +350,7 @@ const Profile: React.FC = () => {
                   className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
                 />
               </div>
-              
+
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1">
                   <TranslatedText text="Last Name" />
@@ -363,7 +363,7 @@ const Profile: React.FC = () => {
                   className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
                 />
               </div>
-              
+
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1">
                   <TranslatedText text="Company Name" />
@@ -376,7 +376,7 @@ const Profile: React.FC = () => {
                   className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
                 />
               </div>
-              
+
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1">
                   <TranslatedText text="Phone Number" />
@@ -389,7 +389,7 @@ const Profile: React.FC = () => {
                   className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
                 />
               </div>
-              
+
               <div className="md:col-span-2">
                 <label className="block text-xs font-medium text-gray-700 mb-1">
                   <TranslatedText text="Address" />
@@ -402,7 +402,7 @@ const Profile: React.FC = () => {
                   className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
                 />
               </div>
-              
+
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1">
                   <TranslatedText text="City" />
@@ -415,7 +415,7 @@ const Profile: React.FC = () => {
                   className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
                 />
               </div>
-              
+
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1">
                   <TranslatedText text="State/Province" />
@@ -428,7 +428,7 @@ const Profile: React.FC = () => {
                   className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
                 />
               </div>
-              
+
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1">
                   <TranslatedText text="Country" />
@@ -441,7 +441,7 @@ const Profile: React.FC = () => {
                   className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
                 />
               </div>
-              
+
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1">
                   <TranslatedText text="Postal Code" />
@@ -454,7 +454,7 @@ const Profile: React.FC = () => {
                   className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
                 />
               </div>
-              
+
               <div className="md:col-span-2">
                 <label className="block text-xs font-medium text-gray-700 mb-1">
                   <TranslatedText text="Website" />
@@ -467,7 +467,7 @@ const Profile: React.FC = () => {
                   className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
                 />
               </div>
-              
+
               <div className="md:col-span-2">
                 <label className="block text-xs font-medium text-gray-700 mb-1">
                   <TranslatedText text="Bio" />

@@ -149,9 +149,9 @@ export default function LoadItem({
         truckRequirements: load.truckRequirements,
         carrierPreferences: load.carrierPreferences
           ? {
-              carrierName: load.carrierPreferences.preferredCarriers?.[0],
-              carrierType: undefined,
-            }
+            carrierName: load.carrierPreferences.preferredCarriers?.[0],
+            carrierType: undefined,
+          }
           : undefined,
         costPreferences: load.costPreferences ? {} : undefined,
         requiresPreShipmentInspection: load.requiresPreShipmentInspection,
@@ -228,7 +228,7 @@ export default function LoadItem({
               <ChevronLeft className="w-4 h-4" />
               Back to List
             </button>
-            
+
             {/* Mobile Detailed View */}
             <div className="space-y-4">
               {/* Header */}
@@ -246,7 +246,7 @@ export default function LoadItem({
                   </p>
                 </div>
               </div>
-              
+
               {/* Status Badges */}
               <div className="flex flex-wrap gap-2">
                 <span
@@ -271,80 +271,79 @@ export default function LoadItem({
 
               {/* Cargo Details - Mobile */}
               <div className="grid grid-cols-1 gap-4 mb-4 w-full">
-            <SmCard
-              Icon={MapPin}
-              title={getLocationDisplay(load)}
-              content={(() => {
-                const enrichedDetails = getEnrichedLocationDetails(load);
-                if (enrichedDetails?.pickup || enrichedDetails?.delivery) {
-                  return (
-                    <span className="text-xs text-teal-600 flex items-center mt-1">
-                      <Globe className="w-3 h-3 mr-1" />
-                      Enhanced location data
-                    </span>
-                  );
-                } else if (
-                  load.pickupLocation?.coordinates ||
-                  load.deliveryLocation?.coordinates
-                ) {
-                  return (
-                    <span className="text-xs text-gray-500 flex items-center mt-1">
-                      <MapPin className="w-3 h-3 mr-1" />
-                      Location data available
-                    </span>
-                  );
-                }
-                return null;
-              })()}
-            />
+                <SmCard
+                  Icon={MapPin}
+                  title={getLocationDisplay(load)}
+                  content={(() => {
+                    const enrichedDetails = getEnrichedLocationDetails(load);
+                    if (enrichedDetails?.pickup || enrichedDetails?.delivery) {
+                      return (
+                        <span className="text-xs text-teal-600 flex items-center mt-1">
+                          <Globe className="w-3 h-3 mr-1" />
+                          Enhanced location data
+                        </span>
+                      );
+                    } else if (
+                      load.pickupLocation?.coordinates ||
+                      load.deliveryLocation?.coordinates
+                    ) {
+                      return (
+                        <span className="text-xs text-gray-500 flex items-center mt-1">
+                          Location data available
+                        </span>
+                      );
+                    }
+                    return null;
+                  })()}
+                />
 
-            <SmCard
-              Icon={Calendar}
-              title="Pickup Date"
-              content={moment(load.pickupDate).format("lll")}
-            />
+                <SmCard
+                  Icon={Calendar}
+                  title="Pickup Date"
+                  content={moment(load.pickupDate).format("lll")}
+                />
 
-            <SmCard
-              Icon={Weight}
-              title="Weight"
-              content={formatWeight(load.weight)}
-            />
+                <SmCard
+                  Icon={Weight}
+                  title="Weight"
+                  content={formatWeight(load.weight)}
+                />
 
-            {load.volume && (
-              <SmCard
-                Icon={Box}
-                title="Volume"
-                content={formatVolume(load.volume)}
-              />
-            )}
+                {load.volume && (
+                  <SmCard
+                    Icon={Box}
+                    title="Volume"
+                    content={formatVolume(load.volume)}
+                  />
+                )}
 
-            <SmCard
-              Icon={DollarSign}
-              title="Value"
-              content={formatCurrency(load.loadValue, load.currencyCode)}
-            />
+                <SmCard
+                  Icon={DollarSign}
+                  title="Value"
+                  content={formatCurrency(load.loadValue, load.currencyCode)}
+                />
 
-            {load.offeredPrice && (
-              <SmCard
-                Icon={TrendingUp}
-                title="Offered"
-                content={formatCurrency(load.offeredPrice, load.currencyCode)}
-              />
-            )}
+                {load.offeredPrice && (
+                  <SmCard
+                    Icon={TrendingUp}
+                    title="Offered"
+                    content={formatCurrency(load.offeredPrice, load.currencyCode)}
+                  />
+                )}
 
-            {load.brokerId && (
-              <SmCard
-                Icon={Briefcase}
-                title="Broker"
-                content={
-                  load.broker?.profile?.companyName ||
-                  (load.broker?.profile?.firstName && load.broker?.profile?.lastName
-                    ? `${load.broker.profile.firstName} ${load.broker.profile.lastName}`
-                    : load.broker?.email || 'Broker Assigned')
-                }
-              />
-            )}
-          </div>
+                {load.brokerId && (
+                  <SmCard
+                    Icon={Briefcase}
+                    title="Broker"
+                    content={
+                      load.broker?.profile?.companyName ||
+                      (load.broker?.profile?.firstName && load.broker?.profile?.lastName
+                        ? `${load.broker.profile.firstName} ${load.broker.profile.lastName}`
+                        : load.broker?.email || 'Broker Assigned')
+                    }
+                  />
+                )}
+              </div>
 
               {/* Enhanced Location Information from OSM - Mobile */}
               {(() => {
@@ -352,151 +351,151 @@ export default function LoadItem({
 
                 if (detailedLocationInfo.hasEnrichedData) {
                   return (
-                    <div className="mb-4 p-4 bg-gradient-to-r from-teal-50 to-white rounded-xl border border-teal-200 shadow-sm w-full overflow-hidden">
+                    <div className="mb-4 p-4 bg-gradient-to-r from-gray-50 to-white rounded-xl border border-gray-200 shadow-sm w-full overflow-hidden">
                       <div className="flex items-center space-x-2 mb-3">
-                        <div className="p-1.5 bg-teal-100 rounded-lg flex-shrink-0">
-                          <Globe className="w-3.5 h-3.5 text-teal-600" />
+                        <div className="p-1.5 bg-gray-100 rounded-lg flex-shrink-0">
+                          <Globe className="w-3.5 h-3.5 text-gray-600" />
                         </div>
-                        <span className="text-xs font-medium text-teal-800 break-words">
+                        <span className="text-xs font-medium text-gray-800 break-words">
                           Enhanced Location Intelligence
                         </span>
                       </div>
 
                       <div className="grid grid-cols-1 gap-4">
-                    {/* Pickup Location Enhanced */}
-                    <div className="space-y-3 sm:space-y-4 p-3 sm:p-4 bg-white rounded-lg shadow-sm">
-                      <div className="flex items-center space-x-2 sm:space-x-3 flex-wrap">
-                        <div className="w-3 h-3 bg-teal-500 rounded-full flex-shrink-0"></div>
-                        <span className="text-xs sm:text-sm font-medium text-gray-700">
-                          Pickup Location
-                        </span>
-                        <div className="p-1 bg-gray-100 rounded flex-shrink-0">
-                          {getLocationTypeIcon(
-                            detailedLocationInfo.pickup.type
-                          )}
+                        {/* Pickup Location Enhanced */}
+                        <div className="space-y-3 sm:space-y-4 p-3 sm:p-4 bg-white rounded-lg shadow-sm">
+                          <div className="flex items-center space-x-2 sm:space-x-3 flex-wrap">
+                            <div className="w-3 h-3 bg-teal-500 rounded-full flex-shrink-0"></div>
+                            <span className="text-xs sm:text-sm font-medium text-gray-700">
+                              Pickup Location
+                            </span>
+                            <div className="p-1 bg-gray-100 rounded flex-shrink-0">
+                              {getLocationTypeIcon(
+                                detailedLocationInfo.pickup.type
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="space-y-2 text-xs sm:text-sm">
+                            <div className="font-medium text-gray-900 break-words">
+                              {detailedLocationInfo.pickup.name}
+                            </div>
+                            <div className="text-gray-600 break-words">
+                              {detailedLocationInfo.pickup.address}
+                            </div>
+
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span
+                                className={`text-xs px-2 sm:px-3 py-1 rounded-full ${getAccessTypeColor(
+                                  detailedLocationInfo.pickup.access
+                                )} bg-opacity-20 border whitespace-nowrap`}
+                              >
+                                {detailedLocationInfo.pickup.access} Access
+                              </span>
+                              <span
+                                className={`text-xs px-2 sm:px-3 py-1 rounded-full ${getSecurityLevelColor(
+                                  detailedLocationInfo.pickup.security
+                                )} bg-opacity-20 border whitespace-nowrap`}
+                              >
+                                {detailedLocationInfo.pickup.security} Security
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Delivery Location Enhanced */}
+                        <div className="space-y-3 sm:space-y-4 p-3 sm:p-4 bg-white rounded-lg shadow-sm">
+                          <div className="flex items-center space-x-2 sm:space-x-3 flex-wrap">
+                            <div className="w-3 h-3 bg-red-500 rounded-full flex-shrink-0"></div>
+                            <span className="text-xs sm:text-sm font-medium text-gray-700">
+                              Delivery Location
+                            </span>
+                            <div className="p-1 bg-gray-100 rounded flex-shrink-0">
+                              {getLocationTypeIcon(
+                                detailedLocationInfo.delivery.type
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="space-y-2 text-xs sm:text-sm">
+                            <div className="font-medium text-gray-900 break-words">
+                              {detailedLocationInfo.delivery.name}
+                            </div>
+                            <div className="text-gray-600 break-words">
+                              {detailedLocationInfo.delivery.address}
+                            </div>
+
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span
+                                className={`text-xs px-2 sm:px-3 py-1 rounded-full ${getAccessTypeColor(
+                                  detailedLocationInfo.delivery.access
+                                )} bg-opacity-20 border whitespace-nowrap`}
+                              >
+                                {detailedLocationInfo.delivery.access} Access
+                              </span>
+                              <span
+                                className={`text-xs px-2 sm:px-3 py-1 rounded-full ${getSecurityLevelColor(
+                                  detailedLocationInfo.delivery.security
+                                )} bg-opacity-20 border whitespace-nowrap`}
+                              >
+                                {detailedLocationInfo.delivery.security} Security
+                              </span>
+                            </div>
+                          </div>
                         </div>
                       </div>
 
-                      <div className="space-y-2 text-xs sm:text-sm">
-                        <div className="font-medium text-gray-900 break-words">
-                          {detailedLocationInfo.pickup.name}
-                        </div>
-                        <div className="text-gray-600 break-words">
-                          {detailedLocationInfo.pickup.address}
-                        </div>
-
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span
-                            className={`text-xs px-2 sm:px-3 py-1 rounded-full ${getAccessTypeColor(
-                              detailedLocationInfo.pickup.access
-                            )} bg-opacity-20 border whitespace-nowrap`}
-                          >
-                            {detailedLocationInfo.pickup.access} Access
+                      {/* Route Intelligence Summary */}
+                      <div className="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-gray-200">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0 text-xs">
+                          <span className="font-medium text-gray-800">
+                            Route Intelligence:
                           </span>
-                          <span
-                            className={`text-xs px-2 sm:px-3 py-1 rounded-full ${getSecurityLevelColor(
-                              detailedLocationInfo.pickup.security
-                            )} bg-opacity-20 border whitespace-nowrap`}
-                          >
-                            {detailedLocationInfo.pickup.security} Security
-                          </span>
+                          <div className="flex flex-wrap gap-2 sm:gap-4">
+                            <span className="text-gray-600 flex items-center">
+                              <div className="w-2 h-2 bg-gray-500 rounded-full mr-1 flex-shrink-0"></div>
+                              Real-time data
+                            </span>
+                            <span className="text-gray-600 flex items-center">
+                              <div className="w-2 h-2 bg-gray-500 rounded-full mr-1 flex-shrink-0"></div>
+                              Access analysis
+                            </span>
+                            <span className="text-gray-600 flex items-center">
+                              <div className="w-2 h-2 bg-gray-500 rounded-full mr-1 flex-shrink-0"></div>
+                              POI mapping
+                            </span>
+                          </div>
                         </div>
                       </div>
                     </div>
-
-                    {/* Delivery Location Enhanced */}
-                    <div className="space-y-3 sm:space-y-4 p-3 sm:p-4 bg-white rounded-lg shadow-sm">
-                      <div className="flex items-center space-x-2 sm:space-x-3 flex-wrap">
-                        <div className="w-3 h-3 bg-red-500 rounded-full flex-shrink-0"></div>
-                        <span className="text-xs sm:text-sm font-medium text-gray-700">
-                          Delivery Location
-                        </span>
-                        <div className="p-1 bg-gray-100 rounded flex-shrink-0">
-                          {getLocationTypeIcon(
-                            detailedLocationInfo.delivery.type
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="space-y-2 text-xs sm:text-sm">
-                        <div className="font-medium text-gray-900 break-words">
-                          {detailedLocationInfo.delivery.name}
-                        </div>
-                        <div className="text-gray-600 break-words">
-                          {detailedLocationInfo.delivery.address}
-                        </div>
-
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span
-                            className={`text-xs px-2 sm:px-3 py-1 rounded-full ${getAccessTypeColor(
-                              detailedLocationInfo.delivery.access
-                            )} bg-opacity-20 border whitespace-nowrap`}
-                          >
-                            {detailedLocationInfo.delivery.access} Access
-                          </span>
-                          <span
-                            className={`text-xs px-2 sm:px-3 py-1 rounded-full ${getSecurityLevelColor(
-                              detailedLocationInfo.delivery.security
-                            )} bg-opacity-20 border whitespace-nowrap`}
-                          >
-                            {detailedLocationInfo.delivery.security} Security
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Route Intelligence Summary */}
-                  <div className="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-teal-200">
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0 text-xs">
-                      <span className="font-medium text-teal-800">
-                        Route Intelligence:
-                      </span>
-                      <div className="flex flex-wrap gap-2 sm:gap-4">
-                        <span className="text-teal-600 flex items-center">
-                          <div className="w-2 h-2 bg-teal-500 rounded-full mr-1 flex-shrink-0"></div>
-                          Real-time data
-                        </span>
-                        <span className="text-teal-600 flex items-center">
-                          <div className="w-2 h-2 bg-teal-500 rounded-full mr-1 flex-shrink-0"></div>
-                          Access analysis
-                        </span>
-                        <span className="text-teal-600 flex items-center">
-                          <div className="w-2 h-2 bg-teal-500 rounded-full mr-1 flex-shrink-0"></div>
-                          POI mapping
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              );
-            }
-            return null;
-          })()}
+                  );
+                }
+                return null;
+              })()}
 
               {/* Special Requirements - Mobile */}
               {requirements?.length > 0 && (
                 <div className="mb-4 p-3 bg-gray-50 rounded-lg shadow-sm w-full overflow-hidden">
-              <div className="flex items-center space-x-2 sm:space-x-3 mb-2 sm:mb-3">
-                <div className="p-1.5 sm:p-2 bg-orange-100 rounded-lg flex-shrink-0">
-                  <AlertTriangle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-orange-600" />
+                  <div className="flex items-center space-x-2 sm:space-x-3 mb-2 sm:mb-3">
+                    <div className="p-1.5 sm:p-2 bg-gray-100 rounded-lg flex-shrink-0">
+                      <AlertTriangle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-600" />
+                    </div>
+                    <span className="text-xs sm:text-sm font-medium text-gray-700 break-words">
+                      Special Requirements
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5 sm:gap-2">
+                    {requirements?.map((req, index) => (
+                      <span
+                        key={index}
+                        className="px-2 sm:px-3 py-1 bg-white text-orange-700 text-xs rounded-full border border-orange-200 shadow-sm whitespace-nowrap"
+                      >
+                        {req}
+                      </span>
+                    ))}
+                  </div>
                 </div>
-                <span className="text-xs sm:text-sm font-medium text-gray-700 break-words">
-                  Special Requirements
-                </span>
-              </div>
-              <div className="flex flex-wrap gap-1.5 sm:gap-2">
-                {requirements?.map((req, index) => (
-                  <span
-                    key={index}
-                    className="px-2 sm:px-3 py-1 bg-white text-orange-700 text-xs rounded-full border border-orange-200 shadow-sm whitespace-nowrap"
-                  >
-                    {req}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
+              )}
 
               {/* Additional Info - Mobile */}
               <div className="flex flex-col text-xs text-gray-500 pt-3 border-t border-gray-200 gap-2">
@@ -520,7 +519,7 @@ export default function LoadItem({
                   )}
                 </div>
               </div>
-              
+
               {/* Action Buttons - Mobile */}
               <div className="flex flex-wrap gap-2 pt-3 border-t border-gray-200">
                 <button
@@ -570,7 +569,7 @@ export default function LoadItem({
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 mb-4 sm:mb-6 w-full">
             <div className="flex items-start sm:items-center space-x-3 sm:space-x-4 min-w-0 flex-1 max-w-full overflow-hidden">
               <div className="flex-shrink-0 mt-1 sm:mt-0">
-              {getCargoTypeIcon(load.cargoType)}
+                {getCargoTypeIcon(load.cargoType)}
               </div>
               <div className="min-w-0 flex-1 max-w-full overflow-hidden">
                 <h3 className="text-base sm:text-lg font-semibold text-gray-900 break-words overflow-wrap-anywhere">
@@ -605,7 +604,7 @@ export default function LoadItem({
                 const enrichedDetails = getEnrichedLocationDetails(load);
                 if (enrichedDetails?.pickup || enrichedDetails?.delivery) {
                   return (
-                    <span className="px-2 sm:px-3 py-1.5 sm:py-1 rounded-full text-xs font-medium bg-teal-100 text-teal-800 shadow-sm whitespace-nowrap flex items-center">
+                    <span className="px-2 sm:px-3 py-1.5 sm:py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700 shadow-sm whitespace-nowrap flex items-center">
                       <Globe className="w-3 h-3 inline mr-1 flex-shrink-0" />
                       <span className="hidden xs:inline">OSM Data</span>
                       <span className="xs:hidden">OSM</span>
@@ -626,7 +625,7 @@ export default function LoadItem({
                 const enrichedDetails = getEnrichedLocationDetails(load);
                 if (enrichedDetails?.pickup || enrichedDetails?.delivery) {
                   return (
-                    <span className="text-xs text-teal-600 flex items-center mt-1">
+                    <span className="text-xs text-gray-600 flex items-center mt-1">
                       <Globe className="w-3 h-3 mr-1" />
                       Enhanced location data
                     </span>
@@ -637,7 +636,6 @@ export default function LoadItem({
                 ) {
                   return (
                     <span className="text-xs text-gray-500 flex items-center mt-1">
-                      <MapPin className="w-3 h-3 mr-1" />
                       Location data available
                     </span>
                   );
@@ -700,12 +698,12 @@ export default function LoadItem({
 
             if (detailedLocationInfo.hasEnrichedData) {
               return (
-                <div className="mb-4 sm:mb-6 p-4 sm:p-6 bg-gradient-to-r from-teal-50 to-white rounded-xl border border-teal-200 shadow-sm w-full overflow-hidden">
+                <div className="mb-4 sm:mb-6 p-4 sm:p-6 bg-gradient-to-r from-gray-50 to-white rounded-xl border border-gray-200 shadow-sm w-full overflow-hidden">
                   <div className="flex items-center space-x-2 sm:space-x-3 mb-3 sm:mb-4">
-                    <div className="p-1.5 sm:p-2 bg-teal-100 rounded-lg flex-shrink-0">
-                      <Globe className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-teal-600" />
+                    <div className="p-1.5 sm:p-2 bg-gray-100 rounded-lg flex-shrink-0">
+                      <Globe className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-600" />
                     </div>
-                    <span className="text-xs sm:text-sm font-medium text-teal-800 break-words">
+                    <span className="text-xs sm:text-sm font-medium text-gray-800 break-words">
                       Enhanced Location Intelligence
                     </span>
                   </div>
@@ -795,22 +793,22 @@ export default function LoadItem({
                   </div>
 
                   {/* Route Intelligence Summary */}
-                  <div className="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-teal-200">
+                  <div className="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-gray-200">
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0 text-xs">
-                      <span className="font-medium text-teal-800">
+                      <span className="font-medium text-gray-800">
                         Route Intelligence:
                       </span>
                       <div className="flex flex-wrap gap-2 sm:gap-4">
-                        <span className="text-teal-600 flex items-center">
-                          <div className="w-2 h-2 bg-teal-500 rounded-full mr-1 flex-shrink-0"></div>
+                        <span className="text-gray-600 flex items-center">
+                          <div className="w-2 h-2 bg-gray-500 rounded-full mr-1 flex-shrink-0"></div>
                           Real-time data
                         </span>
-                        <span className="text-teal-600 flex items-center">
-                          <div className="w-2 h-2 bg-teal-500 rounded-full mr-1 flex-shrink-0"></div>
+                        <span className="text-gray-600 flex items-center">
+                          <div className="w-2 h-2 bg-gray-500 rounded-full mr-1 flex-shrink-0"></div>
                           Access analysis
                         </span>
-                        <span className="text-teal-600 flex items-center">
-                          <div className="w-2 h-2 bg-teal-500 rounded-full mr-1 flex-shrink-0"></div>
+                        <span className="text-gray-600 flex items-center">
+                          <div className="w-2 h-2 bg-gray-500 rounded-full mr-1 flex-shrink-0"></div>
                           POI mapping
                         </span>
                       </div>
@@ -826,8 +824,8 @@ export default function LoadItem({
           {requirements?.length > 0 && (
             <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-gray-50 rounded-lg shadow-sm group-hover:shadow w-full overflow-hidden">
               <div className="flex items-center space-x-2 sm:space-x-3 mb-2 sm:mb-3">
-                <div className="p-1.5 sm:p-2 bg-orange-100 rounded-lg flex-shrink-0">
-                  <AlertTriangle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-orange-600" />
+                <div className="p-1.5 sm:p-2 bg-gray-100 rounded-lg flex-shrink-0">
+                  <AlertTriangle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-600" />
                 </div>
                 <span className="text-xs sm:text-sm font-medium text-gray-700 break-words">
                   Special Requirements

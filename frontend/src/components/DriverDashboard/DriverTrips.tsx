@@ -140,7 +140,7 @@ const DriverTrips: React.FC<DriverTripsProps> = ({ driverId }) => {
 
   // Filter and sort trips
   const filteredAndSortedTrips = useMemo(() => {
-    let filtered = allTrips.filter((trip) => {
+    const filtered = allTrips.filter((trip) => {
       const matchesSearch =
         !searchTerm ||
         trip.tripNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||

@@ -111,7 +111,7 @@ const CargoDiscovery: React.FC = () => {
   };
 
   const getSortedLoads = () => {
-    let sorted = [...loads];
+    const sorted = [...loads];
     
     switch (sortBy) {
       case 'newest':

@@ -4,20 +4,9 @@
   "description": "Professional logistics and freight management platform connecting cargo owners with transporters",
   "icons": [
     {
-      "src": "favicon.ico",
-      "sizes": "64x64 32x32 24x24 16x16",
-      "type": "image/x-icon"
-    },
-    {
-      "src": "logo192.png",
-      "type": "image/png",
-      "sizes": "192x192",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "logo512.png",
-      "type": "image/png",
-      "sizes": "512x512",
+      "src": "urutix-logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
       "purpose": "any maskable"
     }
   ],
@@ -26,28 +15,50 @@
   "theme_color": "#8B5CF6",
   "background_color": "#ffffff",
   "orientation": "portrait-primary",
-  "categories": ["business", "logistics", "transportation"],
+  "categories": [
+    "business",
+    "logistics",
+    "transportation"
+  ],
   "shortcuts": [
     {
       "name": "Create Cargo",
       "short_name": "New Cargo",
       "description": "Create a new cargo shipment",
       "url": "/dashboard?action=create-cargo",
-      "icons": [{ "src": "/logo192.png", "sizes": "192x192" }]
+      "icons": [
+        {
+          "src": "/urutix-logo.svg",
+          "sizes": "any",
+          "type": "image/svg+xml"
+        }
+      ]
     },
     {
       "name": "Track Shipments",
       "short_name": "Tracking",
       "description": "Track active shipments",
       "url": "/dashboard/tracking",
-      "icons": [{ "src": "/logo192.png", "sizes": "192x192" }]
+      "icons": [
+        {
+          "src": "/urutix-logo.svg",
+          "sizes": "any",
+          "type": "image/svg+xml"
+        }
+      ]
     },
     {
       "name": "View Matches",
       "short_name": "Matches",
       "description": "View smart matches",
       "url": "/dashboard/matches",
-      "icons": [{ "src": "/logo192.png", "sizes": "192x192" }]
+      "icons": [
+        {
+          "src": "/urutix-logo.svg",
+          "sizes": "any",
+          "type": "image/svg+xml"
+        }
+      ]
     }
   ],
   "prefer_related_applications": false

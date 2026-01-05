@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { FaGavel, FaClock, FaDollarSign, FaMapMarkerAlt, FaTruck, FaEye, FaHeart, FaRegHeart } from 'react-icons/fa';
+import { FaGavel, FaClock, FaMapMarkerAlt, FaEye, FaHeart, FaRegHeart } from 'react-icons/fa';
+import { Grid, Table } from 'lucide-react';
 import { biddingAPI } from '../../services/biddingApi';
 import BidForm from './BidForm';
 
@@ -48,6 +49,7 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
   const [watchedAuctions, setWatchedAuctions] = useState<Set<string>>(new Set());
   const [loadingWatched, setLoadingWatched] = useState(false);
   const [watchingAuctions, setWatchingAuctions] = useState<Set<string>>(new Set());
+  const [viewMode, setViewMode] = useState<'card' | 'table'>('card');
 
   useEffect(() => {
     loadAuctions();
@@ -89,7 +91,7 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
       setAuctions(response.data);
     } catch (error) {
       console.error('Load auctions error:', error);
-      
+
       // Fallback to mock data if API fails
       const mockAuctions = [
         {
@@ -139,7 +141,7 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
           },
         },
       ];
-      
+
       setAuctions(mockAuctions);
       setError('Using demo data - API endpoint not available');
     } finally {
@@ -155,7 +157,7 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
   const handleWatchToggle = async (auctionId: string) => {
     try {
       setWatchingAuctions(prev => new Set(prev).add(auctionId));
-      
+
       if (watchedAuctions.has(auctionId)) {
         // Unwatch
         await biddingAPI.unwatchAuction(auctionId);
@@ -320,11 +322,10 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
             <button
               onClick={() => handleWatchToggle(auction.id)}
               disabled={watchingAuctions.has(auction.id)}
-              className={`p-2 rounded-full transition-colors duration-200 touch-manipulation min-w-[36px] min-h-[36px] flex items-center justify-center ${
-                watchedAuctions.has(auction.id)
-                  ? 'text-red-500 hover:text-red-600'
-                  : 'text-gray-400 hover:text-red-500'
-              } ${watchingAuctions.has(auction.id) ? 'opacity-50 cursor-not-allowed' : ''}`}
+              className={`p-2 rounded-full transition-colors duration-200 touch-manipulation min-w-[36px] min-h-[36px] flex items-center justify-center ${watchedAuctions.has(auction.id)
+                ? 'text-red-500 hover:text-red-600'
+                : 'text-gray-400 hover:text-red-500'
+                } ${watchingAuctions.has(auction.id) ? 'opacity-50 cursor-not-allowed' : ''}`}
               title={watchedAuctions.has(auction.id) ? 'Unwatch auction' : 'Watch auction'}
             >
               {watchingAuctions.has(auction.id) ? (
@@ -335,10 +336,10 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
                 <FaRegHeart className="w-4 h-4" />
               )}
             </button>
-            <FaGavel className="text-blue-500 w-4 h-4" />
+            <FaGavel className="text-gray-500 w-4 h-4" />
           </div>
         </div>
-        
+
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
           <h6 className="text-base sm:text-lg font-semibold text-gray-900 break-words">{auction.load.title}</h6>
           {watchedAuctions.has(auction.id) && (
@@ -349,7 +350,7 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
           )}
         </div>
         <p className="text-gray-600 text-xs sm:text-sm mb-3 sm:mb-4 line-clamp-2 break-words">{auction.load.description}</p>
-        
+
         <div className="space-y-1.5 sm:space-y-2 mb-3 sm:mb-4">
           <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-0 text-xs sm:text-sm">
             <span className="text-gray-500 flex items-center">
@@ -399,17 +400,16 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
           </div>
         </div>
       </div>
-      
+
       <div className="p-3 sm:p-4 md:p-6 bg-gray-50">
         <div className="flex flex-col sm:flex-row gap-2">
           <button
             onClick={() => handleBidClick(auction)}
             disabled={auction.status !== 'ACTIVE' || userRole === 'CARGO_OWNER'}
-            className={`flex-1 px-3 sm:px-4 py-2.5 sm:py-2 text-xs sm:text-sm font-medium rounded-md transition-colors duration-200 touch-manipulation min-h-[44px] sm:min-h-0 flex items-center justify-center gap-1.5 ${
-              auction.status !== 'ACTIVE' || userRole === 'CARGO_OWNER'
-                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                : 'bg-blue-600 text-white hover:bg-blue-700'
-            }`}
+            className={`flex-1 px-3 sm:px-4 py-2.5 sm:py-2 text-xs sm:text-sm font-medium rounded-md transition-colors duration-200 touch-manipulation min-h-[44px] sm:min-h-0 flex items-center justify-center gap-1.5 ${auction.status !== 'ACTIVE' || userRole === 'CARGO_OWNER'
+              ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+              : 'bg-blue-600 text-white hover:bg-blue-700'
+              }`}
           >
             <FaGavel className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             <span>{userRole === 'CARGO_OWNER' ? 'View Bids' : 'Place Bid'}</span>
@@ -435,7 +435,31 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
   return (
     <div className="auction-list">
       {renderFilters()}
-      
+
+      {/* View Mode Toggle */}
+      <div className="flex items-center justify-end gap-2 bg-white border border-gray-200 rounded-lg p-1 w-fit ml-auto mb-4">
+        <button
+          onClick={() => setViewMode('card')}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${viewMode === 'card'
+            ? 'bg-gray-900 text-white'
+            : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+            }`}
+        >
+          <Grid className="w-3.5 h-3.5" />
+          <span className="hidden sm:inline">Cards</span>
+        </button>
+        <button
+          onClick={() => setViewMode('table')}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${viewMode === 'table'
+            ? 'bg-gray-900 text-white'
+            : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+            }`}
+        >
+          <Table className="w-3.5 h-3.5" />
+          <span className="hidden sm:inline">Table</span>
+        </button>
+      </div>
+
       {filters.showWatchedOnly && (
         <div className="bg-red-50 border border-red-200 rounded-lg p-3 sm:p-4 mb-4 sm:mb-6">
           <div className="flex items-center flex-wrap gap-2">
@@ -445,7 +469,7 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
           </div>
         </div>
       )}
-      
+
       {error && (
         <div className="bg-red-50 border border-red-200 rounded-lg p-3 sm:p-4 mb-4 sm:mb-6">
           <div className="flex items-start sm:items-center">
@@ -473,16 +497,94 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
       )}
 
       {auctions.length === 0 ? (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4">
+        <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 sm:p-4">
           <div className="flex items-center gap-2">
-            <FaGavel className="text-blue-400 flex-shrink-0" />
-            <span className="text-xs sm:text-sm text-blue-800 break-words">No auctions found matching your criteria.</span>
+            <FaGavel className="text-gray-400 flex-shrink-0" />
+            <span className="text-xs sm:text-sm text-gray-800 break-words">No auctions found matching your criteria.</span>
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4 md:gap-6">
-          {auctions.map(renderAuctionCard)}
-        </div>
+        <>
+          {viewMode === 'card' ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4 md:gap-6">
+              {auctions.map(renderAuctionCard)}
+            </div>
+          ) : (
+            <div className="bg-white rounded-lg shadow overflow-hidden border border-gray-200">
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50 text-gray-500 uppercase tracking-wider text-[10px] font-semibold">
+                    <tr>
+                      <th className="px-4 py-3 text-left">Auction / Load</th>
+                      <th className="px-4 py-3 text-left">Route</th>
+                      <th className="px-4 py-3 text-left">Type / weight</th>
+                      <th className="px-4 py-3 text-left font-bold text-gray-900">Current Bid</th>
+                      <th className="px-4 py-3 text-left">Time Left</th>
+                      <th className="px-4 py-3 text-right">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {auctions.map((auction) => (
+                      <tr key={auction.id} className="hover:bg-gray-50 transition-colors group">
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-3">
+                            <div className="flex-shrink-0 w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
+                              <FaGavel className="w-4 h-4 text-gray-400 group-hover:text-gray-600 transition-colors" />
+                            </div>
+                            <div>
+                              <div className="text-sm font-semibold text-gray-900">{auction.load.title}</div>
+                              <div className="text-[10px] flex gap-1 mt-0.5">
+                                {getStatusBadge(auction.status)}
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="text-xs text-gray-900">{auction.load.pickupLocation}</div>
+                          <div className="text-[10px] text-gray-400">to</div>
+                          <div className="text-xs text-gray-900">{auction.load.deliveryLocation}</div>
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <div className="text-xs text-gray-900">{auction.load.weight} kg</div>
+                          <div className="text-[10px] text-gray-500">{auction.auctionType}</div>
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          {auction.currentHighestBid ? (
+                            <div className="text-sm font-bold text-green-600">{formatCurrency(auction.currentHighestBid)}</div>
+                          ) : (
+                            <div className="text-sm text-gray-400">No bids</div>
+                          )}
+                          <div className="text-[10px] text-gray-500">{auction.totalBids} total bids</div>
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <div className="flex items-center text-[11px] text-gray-600 gap-1">
+                            <FaClock className="w-3 h-3 text-gray-400" />
+                            {new Date(auction.auctionEnd).toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <button
+                              onClick={() => handleBidClick(auction)}
+                              disabled={auction.status !== 'ACTIVE' || userRole === 'CARGO_OWNER'}
+                              className={`p-2 rounded-lg transition-all ${auction.status !== 'ACTIVE' || userRole === 'CARGO_OWNER'
+                                ? 'bg-gray-50 text-gray-300 cursor-not-allowed'
+                                : 'bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white'
+                                }`}
+                              title={userRole === 'CARGO_OWNER' ? 'View Bids' : 'Place Bid'}
+                            >
+                              <FaGavel className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </>
       )}
 
       {/* Bid Modal */}

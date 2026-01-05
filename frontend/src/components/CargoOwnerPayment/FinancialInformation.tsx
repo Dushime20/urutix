@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { 
-  FaCreditCard,
+import {
+
   FaMobileAlt,
   FaWallet,
   FaSave,
@@ -28,11 +28,11 @@ interface FinancialInformationProps {
   showTitle?: boolean;
 }
 
-const FinancialInformation: React.FC<FinancialInformationProps> = ({ 
-  userId, 
+const FinancialInformation: React.FC<FinancialInformationProps> = ({
+  userId,
   userName,
   readOnly = false,
-  showTitle = true 
+  showTitle = true
 }) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -67,9 +67,9 @@ const FinancialInformation: React.FC<FinancialInformationProps> = ({
 
   // Load payment information from profile
   useEffect(() => {
-    const paymentInfoData = profileData?.profile?.preferences?.paymentInfo || 
-                           profileData?.preferences?.paymentInfo ||
-                           profileData?.data?.profile?.preferences?.paymentInfo;
+    const paymentInfoData = profileData?.profile?.preferences?.paymentInfo ||
+      profileData?.preferences?.paymentInfo ||
+      profileData?.data?.profile?.preferences?.paymentInfo;
     if (paymentInfoData) {
       setPaymentInfo(paymentInfoData);
     }
@@ -129,7 +129,7 @@ const FinancialInformation: React.FC<FinancialInformationProps> = ({
             {readOnly && userName ? `${userName}'s Payment Information` : 'Payment Methods'}
           </h3>
           <p className="text-sm text-gray-600">
-            {readOnly 
+            {readOnly
               ? 'Use this information to make payments to this user'
               : 'Add your payment information to receive payments. You can add one or all payment methods.'}
           </p>
@@ -152,8 +152,8 @@ const FinancialInformation: React.FC<FinancialInformationProps> = ({
         {/* Phone Number */}
         <div className="bg-gray-50 rounded-xl p-5 border border-gray-200 shadow-sm">
           <label className="block text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <FaMobileAlt className="w-4 h-4 text-blue-600" />
+            <div className="p-2 bg-gray-100 rounded-lg">
+              <FaMobileAlt className="w-4 h-4 text-gray-600" />
             </div>
             Phone Number
           </label>
@@ -169,7 +169,7 @@ const FinancialInformation: React.FC<FinancialInformationProps> = ({
                   title="Copy"
                 >
                   {copiedField === 'phoneNumber' ? (
-                    <FaCheckCircle className="w-4 h-4 text-green-600" />
+                    <FaCheckCircle className="w-4 h-4 text-gray-600" />
                   ) : (
                     <FaCopy className="w-4 h-4" />
                   )}
@@ -191,8 +191,8 @@ const FinancialInformation: React.FC<FinancialInformationProps> = ({
         {/* Mobile Money Code */}
         <div className="bg-gray-50 rounded-xl p-5 border border-gray-200 shadow-sm">
           <label className="block text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
-            <div className="p-2 bg-green-100 rounded-lg">
-              <FaMobileAlt className="w-4 h-4 text-green-600" />
+            <div className="p-2 bg-gray-100 rounded-lg">
+              <FaMobileAlt className="w-4 h-4 text-gray-600" />
             </div>
             Mobile Money (MoMo) Code
           </label>
@@ -230,8 +230,8 @@ const FinancialInformation: React.FC<FinancialInformationProps> = ({
         {/* Account Number */}
         <div className="bg-gray-50 rounded-xl p-5 border border-gray-200 shadow-sm">
           <label className="block text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
-            <div className="p-2 bg-purple-100 rounded-lg">
-              <FaWallet className="w-4 h-4 text-purple-600" />
+            <div className="p-2 bg-gray-100 rounded-lg">
+              <FaWallet className="w-4 h-4 text-gray-600" />
             </div>
             Account Number
           </label>
@@ -286,9 +286,9 @@ const FinancialInformation: React.FC<FinancialInformationProps> = ({
               onClick={() => {
                 setIsEditingPaymentInfo(false);
                 // Reset to original values
-                const paymentInfoData = profileData?.profile?.preferences?.paymentInfo || 
-                                     profileData?.preferences?.paymentInfo ||
-                                     profileData?.data?.profile?.preferences?.paymentInfo;
+                const paymentInfoData = profileData?.profile?.preferences?.paymentInfo ||
+                  profileData?.preferences?.paymentInfo ||
+                  profileData?.data?.profile?.preferences?.paymentInfo;
                 if (paymentInfoData) {
                   setPaymentInfo(paymentInfoData);
                 } else {

@@ -1,9 +1,9 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
-import { Plus, Search, Bell, Trash2, CheckCircle, Box, Truck, CreditCard, Settings, X } from 'lucide-react';
+import { Search, Bell, Trash2, CheckCircle, Box, Truck, CreditCard, Settings } from 'lucide-react';
 import { notificationApi } from '../services/notifications/notificationApi';
-import type { CreateNotificationRequest, Notification } from '../services/notifications/notificationApi';
+import type { Notification } from '../services/notifications/notificationApi';
 import { TranslatedText } from '../components/translated-text';
 
 const NotificationsPage: React.FC = () => {
@@ -15,13 +15,7 @@ const NotificationsPage: React.FC = () => {
     search: '',
   });
   const [currentPage, setCurrentPage] = useState(1);
-  const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedNotifications, setSelectedNotifications] = useState<string[]>([]);
-  const [createForm, setCreateForm] = useState<Partial<CreateNotificationRequest>>({
-    category: 'SYSTEM',
-    priority: 'NORMAL',
-    channels: ['IN_APP'],
-  });
 
   const queryClient = useQueryClient();
 
@@ -30,7 +24,6 @@ const NotificationsPage: React.FC = () => {
     const category = searchParams.get('category');
     if (category) {
       setFilters(prev => ({ ...prev, category }));
-      setCreateForm(prev => ({ ...prev, category }));
     }
   }, [searchParams]);
 
@@ -74,20 +67,7 @@ const NotificationsPage: React.FC = () => {
     }
   });
 
-  // Create notification mutation
-  const createMutation = useMutation({
-    mutationFn: (request: CreateNotificationRequest) =>
-      notificationApi.createNotification(request),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['notifications'] });
-      setShowCreateModal(false);
-      setCreateForm({
-        category: 'SYSTEM',
-        priority: 'NORMAL',
-        channels: ['IN_APP'],
-      });
-    },
-  });
+
 
   // Mark as read mutation
   const markAsReadMutation = useMutation({
@@ -144,24 +124,7 @@ const NotificationsPage: React.FC = () => {
     setCurrentPage(1);
   }, []);
 
-  // Handle create notification
-  const handleCreateNotification = useCallback(() => {
-    if (createForm.title && createForm.message && createForm.recipientId) {
-      createMutation.mutate(createForm as CreateNotificationRequest);
-    }
-  }, [createForm, createMutation]);
 
-  // Handle channel selection
-  const handleChannelToggle = useCallback((channel: string) => {
-    setCreateForm(prev => {
-      const currentChannels = prev.channels || [];
-      if (currentChannels.includes(channel)) {
-        return { ...prev, channels: currentChannels.filter(c => c !== channel) };
-      } else {
-        return { ...prev, channels: [...currentChannels, channel] };
-      }
-    });
-  }, []);
 
   if (error) {
     return (
@@ -212,14 +175,7 @@ const NotificationsPage: React.FC = () => {
                 0 <TranslatedText text="unread" />
               </div>
             )}
-            <button
-              onClick={() => setShowCreateModal(true)}
-              className="bg-blue-600 text-white px-2 sm:px-3 py-1.5 text-xs sm:text-sm rounded-lg hover:bg-blue-700 flex items-center gap-1.5 transition-colors touch-manipulation min-h-[44px] flex-1 sm:flex-initial whitespace-nowrap"
-            >
-              <Plus className="w-3.5 h-3.5 flex-shrink-0" />
-              <span className="hidden sm:inline"><TranslatedText text="Create" /> {filters.category ? categoryInfo.name : ''} <TranslatedText text="Notification" /></span>
-              <span className="sm:hidden"><TranslatedText text="Create" /></span>
-            </button>
+
           </div>
         </div>
         {filters.category && (
@@ -569,11 +525,10 @@ const NotificationsPage: React.FC = () => {
                 <button
                   key={pageNum}
                   onClick={() => setCurrentPage(pageNum)}
-                  className={`px-3 sm:px-2.5 py-2 sm:py-1.5 text-xs border rounded-lg transition-colors touch-manipulation min-h-[44px] sm:min-h-0 min-w-[44px] sm:min-w-0 ${
-                    currentPage === pageNum
-                      ? 'bg-blue-600 text-white border-blue-600'
-                      : 'border-gray-300 hover:bg-gray-50'
-                  }`}
+                  className={`px-3 sm:px-2.5 py-2 sm:py-1.5 text-xs border rounded-lg transition-colors touch-manipulation min-h-[44px] sm:min-h-0 min-w-[44px] sm:min-w-0 ${currentPage === pageNum
+                    ? 'bg-blue-600 text-white border-blue-600'
+                    : 'border-gray-300 hover:bg-gray-50'
+                    }`}
                 >
                   {pageNum}
                 </button>
@@ -590,183 +545,7 @@ const NotificationsPage: React.FC = () => {
         </div>
       )}
 
-      {/* Create Notification Modal */}
-      {showCreateModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-3 sm:p-4">
-          <div className="bg-white rounded-lg p-3 sm:p-4 w-full max-w-md shadow-xl max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-3">
-              <h2 className="text-base sm:text-lg font-semibold">
-                <TranslatedText text="Create Notification" />
-              </h2>
-              <button
-                onClick={() => setShowCreateModal(false)}
-                className="text-gray-400 hover:text-gray-600 transition-colors touch-manipulation min-w-[32px] min-h-[32px] flex items-center justify-center"
-                aria-label="Close"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            
-            <div className="space-y-3">
-              <div>
-                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
-                  <TranslatedText text="Title" /> *
-                </label>
-                <input
-                  type="text"
-                  value={createForm.title || ''}
-                  onChange={(e) => setCreateForm(prev => ({ ...prev, title: e.target.value }))}
-                  className="w-full border border-gray-300 rounded-lg p-2 sm:p-1.5 text-sm touch-manipulation min-h-[44px] sm:min-h-0"
-                  placeholder="Notification title"
-                />
-              </div>
 
-              <div>
-                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
-                  <TranslatedText text="Message" /> *
-                </label>
-                <textarea
-                  value={createForm.message || ''}
-                  onChange={(e) => setCreateForm(prev => ({ ...prev, message: e.target.value }))}
-                  className="w-full border border-gray-300 rounded-lg p-2 sm:p-1.5 text-sm resize-none"
-                  rows={3}
-                  placeholder="Notification message"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
-                  <TranslatedText text="Recipient ID" /> *
-                </label>
-                <input
-                  type="text"
-                  value={createForm.recipientId || ''}
-                  onChange={(e) => setCreateForm(prev => ({ ...prev, recipientId: e.target.value }))}
-                  className="w-full border border-gray-300 rounded-lg p-2 sm:p-1.5 text-sm touch-manipulation min-h-[44px] sm:min-h-0"
-                  placeholder="UUID of the recipient"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
-                  <TranslatedText text="Category" />
-                </label>
-                <select
-                  value={createForm.category || ''}
-                  onChange={(e) => setCreateForm(prev => ({ ...prev, category: e.target.value }))}
-                  className="w-full border border-gray-300 rounded-lg p-2 sm:p-1.5 text-sm touch-manipulation min-h-[44px] sm:min-h-0"
-                >
-                  <option value="SYSTEM"><TranslatedText text="System" /></option>
-                  <option value="DRIVER"><TranslatedText text="Driver" /></option>
-                  <option value="VEHICLE"><TranslatedText text="Vehicle" /></option>
-                  <option value="CARGO"><TranslatedText text="Cargo" /></option>
-                  <option value="TRIP"><TranslatedText text="Trip" /></option>
-                  <option value="FINANCIAL"><TranslatedText text="Financial" /></option>
-                  <option value="COMPLIANCE"><TranslatedText text="Compliance" /></option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
-                  <TranslatedText text="Priority" />
-                </label>
-                <select
-                  value={createForm.priority || ''}
-                  onChange={(e) => setCreateForm(prev => ({ ...prev, priority: e.target.value }))}
-                  className="w-full border border-gray-300 rounded-lg p-2 sm:p-1.5 text-sm touch-manipulation min-h-[44px] sm:min-h-0"
-                >
-                  <option value="LOW"><TranslatedText text="Low" /></option>
-                  <option value="NORMAL"><TranslatedText text="Normal" /></option>
-                  <option value="HIGH"><TranslatedText text="High" /></option>
-                  <option value="URGENT"><TranslatedText text="Urgent" /></option>
-                  <option value="CRITICAL"><TranslatedText text="Critical" /></option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
-                  <TranslatedText text="Channels" />
-                </label>
-                <div className="space-y-1.5">
-                  {['IN_APP', 'EMAIL', 'SMS', 'PUSH'].map((channel) => (
-                    <label key={channel} className="flex items-center touch-manipulation min-h-[44px]">
-                      <input
-                        type="checkbox"
-                        checked={createForm.channels?.includes(channel) || false}
-                        onChange={() => handleChannelToggle(channel)}
-                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-4 h-4"
-                      />
-                      <span className="ml-2 text-xs sm:text-sm text-gray-700">{channel}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
-                  <TranslatedText text="Requires Action" />
-                </label>
-                <label className="flex items-center touch-manipulation min-h-[44px]">
-                  <input
-                    type="checkbox"
-                    checked={createForm.requiresAction || false}
-                    onChange={(e) => setCreateForm(prev => ({ ...prev, requiresAction: e.target.checked }))}
-                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-4 h-4"
-                  />
-                  <span className="ml-2 text-xs sm:text-sm text-gray-700">
-                    <TranslatedText text="User must take action" />
-                  </span>
-                </label>
-              </div>
-
-              {createForm.requiresAction && (
-                <>
-                  <div>
-                    <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
-                      <TranslatedText text="Action URL" />
-                    </label>
-                    <input
-                      type="text"
-                      value={createForm.actionUrl || ''}
-                      onChange={(e) => setCreateForm(prev => ({ ...prev, actionUrl: e.target.value }))}
-                      className="w-full border border-gray-300 rounded-lg p-2 sm:p-1.5 text-sm touch-manipulation min-h-[44px] sm:min-h-0"
-                      placeholder="URL for the action"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
-                      <TranslatedText text="Action Text" />
-                    </label>
-                    <input
-                      type="text"
-                      value={createForm.actionText || ''}
-                      onChange={(e) => setCreateForm(prev => ({ ...prev, actionText: e.target.value }))}
-                      className="w-full border border-gray-300 rounded-lg p-2 sm:p-1.5 text-sm touch-manipulation min-h-[44px] sm:min-h-0"
-                      placeholder="Text for the action button"
-                    />
-                  </div>
-                </>
-              )}
-            </div>
-
-            <div className="flex flex-col sm:flex-row justify-end gap-2 mt-4">
-              <button
-                onClick={() => setShowCreateModal(false)}
-                className="px-4 py-2.5 sm:px-3 sm:py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors touch-manipulation min-h-[44px] sm:min-h-0"
-              >
-                <TranslatedText text="Cancel" />
-              </button>
-              <button
-                onClick={handleCreateNotification}
-                disabled={!createForm.title || !createForm.message || !createForm.recipientId || createMutation.isPending}
-                className="px-4 py-2.5 sm:px-3 sm:py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors touch-manipulation min-h-[44px] sm:min-h-0"
-              >
-                {createMutation.isPending ? <TranslatedText text="Creating..." /> : <TranslatedText text="Create" />}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

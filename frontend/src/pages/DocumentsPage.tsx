@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useParams } from 'react-router-dom';
-import { Plus, Search, Eye, Trash2, Download, FileText, Box, Truck, CreditCard, X, Upload, CheckCircle, XCircle, Clock, AlertCircle, Info, Filter } from 'lucide-react';
+import { Plus, Search, Eye, Trash2, Download, FileText, Box, Truck, CreditCard, X, Upload, CheckCircle, XCircle, Clock, AlertCircle, Info } from 'lucide-react';
 import { documentApi } from '../services/documents/documentApi';
 import type { CreateDocumentRequest } from '../services/documents/documentApi';
 import toast from 'react-hot-toast';
@@ -61,11 +61,11 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ entityTypeOverride }) => 
   // Get entity display name and icon
   const getEntityInfo = (type: string) => {
     const entityInfo = {
-      CARGO: { name: 'Cargo', icon: Box, color: 'text-blue-600' },
-      TRIP: { name: 'Trip', icon: Truck, color: 'text-green-600' },
-      FINANCIAL: { name: 'Financial', icon: CreditCard, color: 'text-purple-600' },
-      DRIVER: { name: 'Driver', icon: Truck, color: 'text-orange-600' },
-      VEHICLE: { name: 'Vehicle', icon: Truck, color: 'text-red-600' },
+      CARGO: { name: 'Cargo', icon: Box, color: 'text-gray-600' },
+      TRIP: { name: 'Trip', icon: Truck, color: 'text-gray-600' },
+      FINANCIAL: { name: 'Financial', icon: CreditCard, color: 'text-gray-600' },
+      DRIVER: { name: 'Driver', icon: Truck, color: 'text-gray-600' },
+      VEHICLE: { name: 'Vehicle', icon: Truck, color: 'text-gray-600' },
       USER: { name: 'User', icon: FileText, color: 'text-gray-600' },
     };
     return entityInfo[type as keyof typeof entityInfo] || { name: 'Document', icon: FileText, color: 'text-gray-600' };
@@ -121,13 +121,13 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ entityTypeOverride }) => 
       // Invalidate all document-related queries to ensure fresh data
       queryClient.invalidateQueries({ queryKey: ['documents'] });
       queryClient.invalidateQueries({ queryKey: ['documentStatistics'] });
-      
+
       // Show success notification
       toast.success(`Document "${data.title || 'uploaded'}" uploaded successfully!`, {
         duration: 4000,
         icon: '✅',
       });
-      
+
       // Close modal and reset form
       setShowUploadModal(false);
       setSelectedFile(null);
@@ -140,7 +140,7 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ entityTypeOverride }) => 
         entityId: entityId || undefined, // Keep entityId if from URL
       });
       setSelectedEntity(null);
-      
+
       // Refetch documents to show the new document immediately
       refetch();
     },
@@ -266,7 +266,7 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ entityTypeOverride }) => 
       });
       return;
     }
-    
+
     if (!uploadForm.title) {
       toast.error('Please enter a document title', {
         duration: 3000,
@@ -274,7 +274,7 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ entityTypeOverride }) => 
       });
       return;
     }
-    
+
     if (!uploadForm.entityId) {
       toast.error('Please select an entity', {
         duration: 3000,
@@ -282,7 +282,7 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ entityTypeOverride }) => 
       });
       return;
     }
-    
+
     // Validate UUID format (if manually entered)
     if (!selectedEntity && !isValidUUID(uploadForm.entityId.trim())) {
       toast.error('Entity ID must be a valid UUID format (e.g., 550e8400-e29b-41d4-a716-446655440000)', {
@@ -291,23 +291,23 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ entityTypeOverride }) => 
       });
       return;
     }
-    
+
     // Ensure documentType is set to a valid value (default to 'OTHER' if not set or invalid)
     const validDocumentTypes = [
-      'DRIVER_LICENSE', 'DRIVER_MEDICAL_CERT', 'DRIVER_DRUG_TEST', 'DRIVER_BACKGROUND_CHECK', 
-      'DRIVER_TRAINING_CERT', 'DRIVER_INSURANCE', 'VEHICLE_REGISTRATION', 'VEHICLE_INSURANCE', 
-      'VEHICLE_INSPECTION', 'VEHICLE_MAINTENANCE', 'VEHICLE_PERMIT', 'CARGO_MANIFEST', 
-      'CARGO_INSURANCE', 'CARGO_CUSTOMS', 'CARGO_WEIGHT_CERT', 'TRIP_PERMIT', 'TRIP_ROUTE_PLAN', 
-      'TRIP_WEIGHT_TICKET', 'POD', 'INVOICE', 'RECEIPT', 'PAYMENT_PROOF', 'EXPENSE_RECEIPT', 
-      'BUSINESS_LICENSE', 'BUSINESS_INSURANCE', 'BUSINESS_TAX_CERT', 'BUSINESS_PERMIT', 
-      'SAFETY_CERT', 'ENVIRONMENTAL_CERT', 'QUALITY_CERT', 'CONTRACT', 'AGREEMENT', 'POLICY', 
+      'DRIVER_LICENSE', 'DRIVER_MEDICAL_CERT', 'DRIVER_DRUG_TEST', 'DRIVER_BACKGROUND_CHECK',
+      'DRIVER_TRAINING_CERT', 'DRIVER_INSURANCE', 'VEHICLE_REGISTRATION', 'VEHICLE_INSURANCE',
+      'VEHICLE_INSPECTION', 'VEHICLE_MAINTENANCE', 'VEHICLE_PERMIT', 'CARGO_MANIFEST',
+      'CARGO_INSURANCE', 'CARGO_CUSTOMS', 'CARGO_WEIGHT_CERT', 'TRIP_PERMIT', 'TRIP_ROUTE_PLAN',
+      'TRIP_WEIGHT_TICKET', 'POD', 'INVOICE', 'RECEIPT', 'PAYMENT_PROOF', 'EXPENSE_RECEIPT',
+      'BUSINESS_LICENSE', 'BUSINESS_INSURANCE', 'BUSINESS_TAX_CERT', 'BUSINESS_PERMIT',
+      'SAFETY_CERT', 'ENVIRONMENTAL_CERT', 'QUALITY_CERT', 'CONTRACT', 'AGREEMENT', 'POLICY',
       'USER_ID_PROOF', 'USER_ADDRESS_PROOF', 'USER_BANK_DETAILS', 'MANUAL', 'OTHER'
     ];
-    
+
     const documentType = uploadForm.documentType && validDocumentTypes.includes(uploadForm.documentType)
       ? uploadForm.documentType
       : 'OTHER';
-    
+
     // Create a clean request object with only valid values - explicitly set documentType
     const cleanRequest: CreateDocumentRequest = {
       entityType: uploadForm.entityType || 'CARGO',
@@ -322,7 +322,7 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ entityTypeOverride }) => 
       metadata: uploadForm.metadata,
       sendNotification: uploadForm.sendNotification,
     };
-    
+
     // Debug: Log to ensure we're not sending invalid values
     if (!validDocumentTypes.includes(cleanRequest.documentType)) {
       console.error('Invalid documentType detected:', cleanRequest.documentType);
@@ -332,7 +332,7 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ entityTypeOverride }) => 
       });
       return;
     }
-    
+
     uploadMutation.mutate({
       request: cleanRequest,
       file: selectedFile,
@@ -376,19 +376,9 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ entityTypeOverride }) => 
     setCurrentPage(1);
   }, []);
 
-  // Handle select all documents
-  const handleSelectAll = useCallback((checked: boolean) => {
-    if (checked) {
-      setSelectedDocuments(safeDocumentsData.documents.map(d => d.id) || []);
-    } else {
-      setSelectedDocuments([]);
-    }
-  }, [safeDocumentsData.documents]);
-  
-  // Use handleSelectAll in the checkbox
-  const handleSelectAllChange = (checked: boolean) => {
-    handleSelectAll(checked);
-  };
+
+
+
 
   // Check if all documents are selected
   const allSelected = selectedDocuments.length > 0 && selectedDocuments.length === (safeDocumentsData.documents.length || 0);
@@ -409,7 +399,7 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ entityTypeOverride }) => 
               </h3>
               <div className="mt-2 text-sm text-red-700">
                 <p className="mb-3">{error.message}</p>
-                
+
                 {/* Provide specific guidance based on error type */}
                 {error.message?.includes('Tenant ID not found') && (
                   <div className="bg-red-100 p-3 rounded-md mb-3">
@@ -421,7 +411,7 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ entityTypeOverride }) => 
                     </ul>
                   </div>
                 )}
-                
+
                 {error.message?.includes('Server error') && (
                   <div className="bg-red-100 p-3 rounded-md mb-3">
                     <p className="font-medium">Server Issue:</p>
@@ -433,7 +423,7 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ entityTypeOverride }) => 
                   </div>
                 )}
               </div>
-              
+
               <div className="mt-4 flex space-x-3">
                 <button
                   onClick={() => refetch()}
@@ -469,7 +459,7 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ entityTypeOverride }) => 
                 {entityType ? `${entityInfo.name} Documents` : 'Document Management'}
               </h1>
               <p className="text-xs text-gray-600 mt-0.5">
-                {entityType 
+                {entityType
                   ? `Manage all ${entityInfo.name.toLowerCase()} documents and files`
                   : 'Manage all documents across the platform'
                 }
@@ -497,9 +487,9 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ entityTypeOverride }) => 
       {/* Statistics */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
         <div className="bg-white p-3 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all duration-200 group relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-50/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+          <div className="absolute inset-0 bg-gradient-to-br from-gray-50/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
           <div className="relative">
-            <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg p-2 w-fit mb-2 group-hover:scale-110 transition-transform">
+            <div className="bg-gradient-to-br from-gray-500 to-gray-600 rounded-lg p-2 w-fit mb-2 group-hover:scale-110 transition-transform">
               <FileText className="text-white w-4 h-4" />
             </div>
             <div className="text-xl font-bold text-gray-900 mb-0.5">
@@ -509,9 +499,9 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ entityTypeOverride }) => 
           </div>
         </div>
         <div className="bg-white p-3 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all duration-200 group relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-yellow-50/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+          <div className="absolute inset-0 bg-gradient-to-br from-gray-50/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
           <div className="relative">
-            <div className="bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-lg p-2 w-fit mb-2 group-hover:scale-110 transition-transform">
+            <div className="bg-gradient-to-br from-gray-500 to-gray-600 rounded-lg p-2 w-fit mb-2 group-hover:scale-110 transition-transform">
               <FileText className="text-white w-4 h-4" />
             </div>
             <div className="text-xl font-bold text-gray-900 mb-0.5">
@@ -521,9 +511,9 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ entityTypeOverride }) => 
           </div>
         </div>
         <div className="bg-white p-3 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all duration-200 group relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-green-50/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+          <div className="absolute inset-0 bg-gradient-to-br from-gray-50/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
           <div className="relative">
-            <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-lg p-2 w-fit mb-2 group-hover:scale-110 transition-transform">
+            <div className="bg-gradient-to-br from-gray-500 to-gray-600 rounded-lg p-2 w-fit mb-2 group-hover:scale-110 transition-transform">
               <CheckCircle className="text-white w-4 h-4" />
             </div>
             <div className="text-xl font-bold text-gray-900 mb-0.5">
@@ -533,9 +523,9 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ entityTypeOverride }) => 
           </div>
         </div>
         <div className="bg-white p-3 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all duration-200 group relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-red-50/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+          <div className="absolute inset-0 bg-gradient-to-br from-gray-50/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
           <div className="relative">
-            <div className="bg-gradient-to-br from-red-500 to-red-600 rounded-lg p-2 w-fit mb-2 group-hover:scale-110 transition-transform">
+            <div className="bg-gradient-to-br from-gray-500 to-gray-600 rounded-lg p-2 w-fit mb-2 group-hover:scale-110 transition-transform">
               <XCircle className="text-white w-4 h-4" />
             </div>
             <div className="text-xl font-bold text-gray-900 mb-0.5">
@@ -545,7 +535,7 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ entityTypeOverride }) => 
           </div>
         </div>
       </div>
-      
+
       {/* Show warning if using fallback data */}
       {!statistics && !isLoading && (
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-2.5">
@@ -788,15 +778,15 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ entityTypeOverride }) => 
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap">
                       <div className="flex items-center gap-1.5">
-                        {document.status === 'PENDING' && <Clock className="w-3 h-3 text-yellow-600" />}
-                        {document.status === 'VERIFIED' && <CheckCircle className="w-3 h-3 text-green-600" />}
-                        {document.status === 'REJECTED' && <XCircle className="w-3 h-3 text-red-600" />}
-                        {document.status === 'EXPIRED' && <AlertCircle className="w-3 h-3 text-red-600" />}
+                        {document.status === 'PENDING' && <Clock className="w-3 h-3 text-gray-600" />}
+                        {document.status === 'VERIFIED' && <CheckCircle className="w-3 h-3 text-gray-600" />}
+                        {document.status === 'REJECTED' && <XCircle className="w-3 h-3 text-gray-600" />}
+                        {document.status === 'EXPIRED' && <AlertCircle className="w-3 h-3 text-gray-600" />}
                         <span className={`inline-flex px-2 py-0.5 text-xs font-semibold rounded-full ${documentApi.getDocumentStatusColor(document.status)}`}>
-                          {document.status === 'PENDING' ? 'Pending Review' : 
-                           document.status === 'VERIFIED' ? 'Verified' :
-                           document.status === 'REJECTED' ? 'Rejected' :
-                           document.status === 'EXPIRED' ? 'Expired' : document.status}
+                          {document.status === 'PENDING' ? 'Pending Review' :
+                            document.status === 'VERIFIED' ? 'Verified' :
+                              document.status === 'REJECTED' ? 'Rejected' :
+                                document.status === 'EXPIRED' ? 'Expired' : document.status}
                         </span>
                       </div>
                     </td>
@@ -868,11 +858,10 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ entityTypeOverride }) => 
               <button
                 key={page}
                 onClick={() => setCurrentPage(page)}
-                className={`px-2.5 py-1.5 text-xs border rounded-lg transition-colors ${
-                  currentPage === page
-                    ? 'bg-blue-600 text-white border-blue-600'
-                    : 'border-gray-300 hover:bg-gray-50'
-                }`}
+                className={`px-2.5 py-1.5 text-xs border rounded-lg transition-colors ${currentPage === page
+                  ? 'bg-blue-600 text-white border-blue-600'
+                  : 'border-gray-300 hover:bg-gray-50'
+                  }`}
               >
                 {page}
               </button>
@@ -902,7 +891,7 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ entityTypeOverride }) => 
                 <X className="w-4 h-4" />
               </button>
             </div>
-            
+
             <div className="space-y-3">
               {/* Drag and Drop File Upload */}
               <div>
@@ -919,11 +908,10 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ entityTypeOverride }) => 
                   onDragLeave={handleDrag}
                   onDragOver={handleDrag}
                   onDrop={handleDrop}
-                  className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
-                    dragActive
-                      ? 'border-blue-500 bg-blue-50'
-                      : 'border-gray-300 bg-gray-50 hover:border-gray-400 hover:bg-gray-100'
-                  }`}
+                  className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${dragActive
+                    ? 'border-blue-500 bg-blue-50'
+                    : 'border-gray-300 bg-gray-50 hover:border-gray-400 hover:bg-gray-100'
+                    }`}
                 >
                   <input
                     ref={fileInputRef}

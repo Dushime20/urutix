@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
-import { 
-  FaFileAlt, 
+import {
+  FaFileAlt,
   FaDownload,
   FaCalendarAlt,
   FaFilter,
@@ -345,12 +345,12 @@ const FinancialReportsPage: React.FC = () => {
   // Filter templates
   const filteredTemplates = useMemo(() => {
     return reportTemplates.filter(template => {
-      const matchesSearch = 
+      const matchesSearch =
         template.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         template.description.toLowerCase().includes(searchTerm.toLowerCase());
-      
+
       const matchesCategory = categoryFilter === 'all' || template.category === categoryFilter;
-      
+
       return matchesSearch && matchesCategory;
     });
   }, [reportTemplates, searchTerm, categoryFilter]);
@@ -358,12 +358,12 @@ const FinancialReportsPage: React.FC = () => {
   // Filter generated reports
   const filteredReports = useMemo(() => {
     return generatedReports.filter(report => {
-      const matchesSearch = 
+      const matchesSearch =
         report.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         report.generatedBy.toLowerCase().includes(searchTerm.toLowerCase());
-      
+
       const matchesStatus = statusFilter === 'all' || report.status === statusFilter;
-      
+
       return matchesSearch && matchesStatus;
     });
   }, [generatedReports, searchTerm, statusFilter]);
@@ -414,7 +414,7 @@ const FinancialReportsPage: React.FC = () => {
 
   const handleGenerateReport = async (template: ReportTemplate) => {
     setIsGenerating(template.id);
-    
+
     // Simulate report generation
     setTimeout(() => {
       setIsGenerating(null);
@@ -455,10 +455,10 @@ const FinancialReportsPage: React.FC = () => {
   return (
     <div className="space-y-3 sm:space-y-4">
       {/* Header */}
-      <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg sm:rounded-xl border border-indigo-100 px-3 sm:px-4 py-2.5 sm:py-3 mb-3 sm:mb-4">
+      <div className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg sm:rounded-xl border border-gray-200 px-3 sm:px-4 py-2.5 sm:py-3 mb-3 sm:mb-4">
         <div className="flex flex-col gap-3">
           <div className="flex items-center gap-2 sm:gap-2.5">
-            <div className="p-1.5 sm:p-2 rounded-lg bg-gradient-to-br from-indigo-500 to-indigo-600 flex-shrink-0">
+            <div className="p-1.5 sm:p-2 rounded-lg bg-gradient-to-br from-gray-500 to-gray-600 flex-shrink-0">
               <FaFileAlt className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
             </div>
             <div className="min-w-0 flex-1">
@@ -495,8 +495,8 @@ const FinancialReportsPage: React.FC = () => {
                 <span className="text-green-600 text-xs truncate">{reportTemplates.filter(t => t.isScheduled).length} scheduled</span>
               </div>
             </div>
-            <div className="h-9 w-9 sm:h-10 sm:w-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0 ml-2">
-              <FaFileAlt className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />
+            <div className="h-9 w-9 sm:h-10 sm:w-10 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0 ml-2">
+              <FaFileAlt className="h-4 w-4 sm:h-5 sm:w-5 text-gray-600" />
             </div>
           </div>
         </div>
@@ -511,8 +511,8 @@ const FinancialReportsPage: React.FC = () => {
                 <span className="text-green-600 text-xs truncate">+23% vs last month</span>
               </div>
             </div>
-            <div className="h-9 w-9 sm:h-10 sm:w-10 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0 ml-2">
-              <FaChartBar className="h-4 w-4 sm:h-5 sm:w-5 text-green-600" />
+            <div className="h-9 w-9 sm:h-10 sm:w-10 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0 ml-2">
+              <FaChartBar className="h-4 w-4 sm:h-5 sm:w-5 text-gray-600" />
             </div>
           </div>
         </div>
@@ -526,8 +526,8 @@ const FinancialReportsPage: React.FC = () => {
                 <span className="text-blue-600 text-xs truncate">Next run in 2 days</span>
               </div>
             </div>
-            <div className="h-9 w-9 sm:h-10 sm:w-10 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0 ml-2">
-              <FaClock className="h-4 w-4 sm:h-5 sm:w-5 text-purple-600" />
+            <div className="h-9 w-9 sm:h-10 sm:w-10 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0 ml-2">
+              <FaClock className="h-4 w-4 sm:h-5 sm:w-5 text-gray-600" />
             </div>
           </div>
         </div>
@@ -541,8 +541,8 @@ const FinancialReportsPage: React.FC = () => {
                 <span className="text-gray-600 text-xs truncate">67% of 37 GB limit</span>
               </div>
             </div>
-            <div className="h-9 w-9 sm:h-10 sm:w-10 bg-orange-100 rounded-lg flex items-center justify-center flex-shrink-0 ml-2">
-              <FaDatabase className="h-4 w-4 sm:h-5 sm:w-5 text-orange-600" />
+            <div className="h-9 w-9 sm:h-10 sm:w-10 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0 ml-2">
+              <FaDatabase className="h-4 w-4 sm:h-5 sm:w-5 text-gray-600" />
             </div>
           </div>
         </div>
@@ -708,7 +708,7 @@ const FinancialReportsPage: React.FC = () => {
             </div>
           </div>
         ))}
-        </div>
+      </div>
 
       {/* Generated Reports Table - Desktop */}
       <div className="hidden md:block bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden mb-3 sm:mb-4">
@@ -894,117 +894,117 @@ const FinancialReportsPage: React.FC = () => {
         <>
           <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 p-3 sm:p-4">
             <div className="relative top-4 sm:top-10 md:top-20 mx-auto p-3 sm:p-4 border w-full max-w-4xl shadow-lg rounded-lg bg-white max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-3 sm:mb-4">
-              <h3 className="text-sm sm:text-base font-bold text-gray-900 break-words pr-2">
-                {selectedTemplate.name}
-              </h3>
-              <button
-                onClick={() => setSelectedTemplate(null)}
-                className="text-gray-400 hover:text-gray-600 transition-colors touch-manipulation min-w-[32px] min-h-[32px] flex items-center justify-center flex-shrink-0"
-                aria-label="Close"
-              >
-                <FaTimesCircle className="h-5 w-5" />
-              </button>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
-              <div className="space-y-4">
-                <div>
-                  <h4 className="text-sm font-medium text-gray-900 mb-2">Report Details</h4>
-                  <div className="bg-gray-50 rounded-lg p-3 space-y-2">
-                    <div className="flex justify-between text-xs">
-                      <span className="text-gray-600">Category:</span>
-                      <span className="font-medium capitalize">{selectedTemplate.category}</span>
-                    </div>
-                    <div className="flex justify-between text-xs">
-                      <span className="text-gray-600">Type:</span>
-                      <span className="font-medium capitalize">{selectedTemplate.type}</span>
-                    </div>
-                    <div className="flex justify-between text-xs">
-                      <span className="text-gray-600">Format:</span>
-                      <span className="font-medium uppercase">{selectedTemplate.format}</span>
-                    </div>
-                    <div className="flex justify-between text-xs">
-                      <span className="text-gray-600">Estimated Time:</span>
-                      <span className="font-medium">{selectedTemplate.estimatedTime}</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <h4 className="text-sm font-medium text-gray-900 mb-2">Description</h4>
-                  <div className="bg-gray-50 rounded-lg p-3">
-                    <p className="text-xs text-gray-700">{selectedTemplate.description}</p>
-                  </div>
-                </div>
+              <div className="flex items-center justify-between mb-3 sm:mb-4">
+                <h3 className="text-sm sm:text-base font-bold text-gray-900 break-words pr-2">
+                  {selectedTemplate.name}
+                </h3>
+                <button
+                  onClick={() => setSelectedTemplate(null)}
+                  className="text-gray-400 hover:text-gray-600 transition-colors touch-manipulation min-w-[32px] min-h-[32px] flex items-center justify-center flex-shrink-0"
+                  aria-label="Close"
+                >
+                  <FaTimesCircle className="h-5 w-5" />
+                </button>
               </div>
 
-              <div className="space-y-4">
-                <div>
-                  <h4 className="text-sm font-medium text-gray-900 mb-2">Data Points Included</h4>
-                  <div className="bg-gray-50 rounded-lg p-3">
-                    <div className="space-y-1.5">
-                      {selectedTemplate.dataPoints.map((point, index) => (
-                        <div key={index} className="flex items-center">
-                          <FaCheckCircle className="h-3 w-3 text-green-500 mr-1.5" />
-                          <span className="text-xs text-gray-700">{point}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                {selectedTemplate.isScheduled && selectedTemplate.scheduleSettings && (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
+                <div className="space-y-4">
                   <div>
-                    <h4 className="text-sm font-medium text-gray-900 mb-2">Schedule Settings</h4>
+                    <h4 className="text-sm font-medium text-gray-900 mb-2">Report Details</h4>
                     <div className="bg-gray-50 rounded-lg p-3 space-y-2">
                       <div className="flex justify-between text-xs">
-                        <span className="text-gray-600">Frequency:</span>
-                        <span className="font-medium capitalize">{selectedTemplate.scheduleSettings.frequency}</span>
+                        <span className="text-gray-600">Category:</span>
+                        <span className="font-medium capitalize">{selectedTemplate.category}</span>
                       </div>
                       <div className="flex justify-between text-xs">
-                        <span className="text-gray-600">Next Run:</span>
-                        <span className="font-medium">{new Date(selectedTemplate.scheduleSettings.nextRun).toLocaleDateString()}</span>
+                        <span className="text-gray-600">Type:</span>
+                        <span className="font-medium capitalize">{selectedTemplate.type}</span>
                       </div>
-                      <div>
-                        <span className="text-xs text-gray-600">Recipients:</span>
-                        <div className="mt-1">
-                          {selectedTemplate.scheduleSettings.recipients.map((email, index) => (
-                            <span key={index} className="inline-block bg-blue-100 text-blue-800 text-xs px-1.5 py-0.5 rounded mr-1 mb-1">
-                              {email}
-                            </span>
-                          ))}
-                        </div>
+                      <div className="flex justify-between text-xs">
+                        <span className="text-gray-600">Format:</span>
+                        <span className="font-medium uppercase">{selectedTemplate.format}</span>
+                      </div>
+                      <div className="flex justify-between text-xs">
+                        <span className="text-gray-600">Estimated Time:</span>
+                        <span className="font-medium">{selectedTemplate.estimatedTime}</span>
                       </div>
                     </div>
                   </div>
-                )}
+
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-900 mb-2">Description</h4>
+                    <div className="bg-gray-50 rounded-lg p-3">
+                      <p className="text-xs text-gray-700">{selectedTemplate.description}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-900 mb-2">Data Points Included</h4>
+                    <div className="bg-gray-50 rounded-lg p-3">
+                      <div className="space-y-1.5">
+                        {selectedTemplate.dataPoints.map((point, index) => (
+                          <div key={index} className="flex items-center">
+                            <FaCheckCircle className="h-3 w-3 text-green-500 mr-1.5" />
+                            <span className="text-xs text-gray-700">{point}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {selectedTemplate.isScheduled && selectedTemplate.scheduleSettings && (
+                    <div>
+                      <h4 className="text-sm font-medium text-gray-900 mb-2">Schedule Settings</h4>
+                      <div className="bg-gray-50 rounded-lg p-3 space-y-2">
+                        <div className="flex justify-between text-xs">
+                          <span className="text-gray-600">Frequency:</span>
+                          <span className="font-medium capitalize">{selectedTemplate.scheduleSettings.frequency}</span>
+                        </div>
+                        <div className="flex justify-between text-xs">
+                          <span className="text-gray-600">Next Run:</span>
+                          <span className="font-medium">{new Date(selectedTemplate.scheduleSettings.nextRun).toLocaleDateString()}</span>
+                        </div>
+                        <div>
+                          <span className="text-xs text-gray-600">Recipients:</span>
+                          <div className="mt-1">
+                            {selectedTemplate.scheduleSettings.recipients.map((email, index) => (
+                              <span key={index} className="inline-block bg-blue-100 text-blue-800 text-xs px-1.5 py-0.5 rounded mr-1 mb-1">
+                                {email}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row justify-end gap-2 sm:space-x-2 mt-3 sm:mt-4">
+                <button
+                  onClick={() => setSelectedTemplate(null)}
+                  className="px-3 py-2.5 sm:py-1.5 text-sm bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors touch-manipulation min-h-[44px] sm:min-h-0"
+                >
+                  Close
+                </button>
+                <button
+                  onClick={() => handleScheduleReport(selectedTemplate)}
+                  className="px-3 py-2.5 sm:py-1.5 text-sm bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors touch-manipulation min-h-[44px] sm:min-h-0"
+                >
+                  <span className="hidden sm:inline">Schedule Report</span>
+                  <span className="sm:hidden">Schedule</span>
+                </button>
+                <button
+                  onClick={() => handleGenerateReport(selectedTemplate)}
+                  className="px-3 py-2.5 sm:py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors touch-manipulation min-h-[44px] sm:min-h-0"
+                >
+                  Generate Now
+                </button>
               </div>
             </div>
-
-            <div className="flex flex-col sm:flex-row justify-end gap-2 sm:space-x-2 mt-3 sm:mt-4">
-              <button
-                onClick={() => setSelectedTemplate(null)}
-                className="px-3 py-2.5 sm:py-1.5 text-sm bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors touch-manipulation min-h-[44px] sm:min-h-0"
-              >
-                Close
-              </button>
-              <button
-                onClick={() => handleScheduleReport(selectedTemplate)}
-                className="px-3 py-2.5 sm:py-1.5 text-sm bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors touch-manipulation min-h-[44px] sm:min-h-0"
-              >
-                <span className="hidden sm:inline">Schedule Report</span>
-                <span className="sm:hidden">Schedule</span>
-              </button>
-              <button
-                onClick={() => handleGenerateReport(selectedTemplate)}
-                className="px-3 py-2.5 sm:py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors touch-manipulation min-h-[44px] sm:min-h-0"
-              >
-                Generate Now
-              </button>
-            </div>
           </div>
-        </div>
         </>
       )}
     </div>

@@ -108,17 +108,17 @@ export const getCargoTypeIcon = (cargoType: any) => {
 
   switch (cargoTypeStr) {
     case "FRAGILE":
-      return <AlertTriangle className={cn("bg-orange-500", className)} />;
+      return <AlertTriangle className={cn("bg-gray-500", className)} />;
     case "HAZARDOUS":
-      return <Shield className={cn("bg-red-500", className)} />;
+      return <Shield className={cn("bg-gray-500", className)} />;
     case "REFRIGERATED":
-      return <Thermometer className={cn("bg-blue-500", className)} />;
+      return <Thermometer className={cn("bg-gray-500", className)} />;
     case "LIQUID":
-      return <Package className={cn("bg-purple-500", className)} />;
+      return <Package className={cn("bg-gray-500", className)} />;
     case "OVERSIZED":
-      return <Truck className={cn("bg-indigo-500", className)} />;
+      return <Truck className={cn("bg-gray-500", className)} />;
     case "VALUABLE":
-      return <Star className={cn("bg-yellow-500", className)} />;
+      return <Star className={cn("bg-gray-500", className)} />;
     default:
       return <Package className={cn("bg-gray-500", className)} />;
   }
@@ -292,22 +292,22 @@ export const getLocationTypeIcon = (locationType: string) => {
   const type = locationType.toLowerCase();
 
   if (type.includes("warehouse") || type.includes("storage"))
-    return <Package className="size-4 text-blue-500" />;
+    return <Package className="size-4 text-gray-500" />;
 
   if (type.includes("port") || type.includes("terminal"))
-    return <Anchor className="size-4 text-indigo-500" />;
+    return <Anchor className="size-4 text-gray-500" />;
 
   if (type.includes("airport"))
-    return <Plane className="size-4 text-purple-500" />;
+    return <Plane className="size-4 text-gray-500" />;
 
   if (type.includes("factory") || type.includes("industrial"))
-    return <Factory className="size-4 text-orange-500" />;
+    return <Factory className="size-4 text-gray-500" />;
 
   if (type.includes("commercial") || type.includes("retail"))
-    return <Store className="size-4 text-green-500" />;
+    return <Store className="size-4 text-gray-500" />;
 
   if (type.includes("residential"))
-    return <Home className="size-4 text-pink-500" />;
+    return <Home className="size-4 text-gray-500" />;
 
   return <MapPin className="size-4 text-gray-500" />;
 };

@@ -15,7 +15,7 @@ const DashboardHeader = () => {
   const [showMobileSearch, setShowMobileSearch] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
-  
+
   // Real-time notifications for cargo owners (hook must be called unconditionally)
   const cargoOwnerNotifications = useCargoOwnerNotifications();
 
@@ -62,16 +62,16 @@ const DashboardHeader = () => {
   // Role-based navigation items
   const getNavItems = () => {
     const basePath = user?.role === 'CARGO_OWNER' ? '/cargo-owner' : '/dashboard';
-    
+
     if (user?.role === 'CARGO_OWNER') {
       return [
-        { 
-          label: 'Dashboard', 
+        {
+          label: 'Dashboard',
           path: basePath,
           icon: Home
         },
-        { 
-          label: 'Cargo Management', 
+        {
+          label: 'Cargo Management',
           path: `${basePath}/cargos/list`,
           icon: Package,
           subItems: [
@@ -82,53 +82,53 @@ const DashboardHeader = () => {
             { label: 'Templates', path: `${basePath}/cargos/list?tab=template` },
           ]
         },
-        { 
-          label: 'My Bids', 
+        {
+          label: 'My Bids',
           path: `${basePath}/my-bids`,
           icon: Gavel
         },
-        { 
-          label: 'Bidding', 
+        {
+          label: 'Bidding',
           path: `${basePath}/bidding`,
           icon: Gavel
         },
-        { 
-          label: 'Tracking', 
+        {
+          label: 'Tracking',
           path: `${basePath}/tracking`,
           icon: MapPin
         },
-        { 
-          label: 'Analytics', 
+        {
+          label: 'Analytics',
           path: `${basePath}/analytics`,
           icon: BarChart3
         },
-        { 
-          label: 'Payments', 
+        {
+          label: 'Payments',
           path: `${basePath}/payments`,
           icon: CreditCard
         },
-        { 
-          label: 'Documents', 
+        {
+          label: 'Documents',
           path: `${basePath}/documents`,
           icon: FileText
         },
-        { 
-          label: 'Notifications', 
+        {
+          label: 'Notifications',
           path: `${basePath}/notifications`,
           icon: Bell
         },
       ];
     }
-    
+
     if (user?.role === 'BROKER') {
       return [
-        { 
-          label: 'Dashboard', 
+        {
+          label: 'Dashboard',
           path: '/dashboard/broker',
           icon: Home
         },
-        { 
-          label: 'My Loads', 
+        {
+          label: 'My Loads',
           path: '/dashboard/broker/loads',
           icon: Package,
           subItems: [
@@ -137,23 +137,23 @@ const DashboardHeader = () => {
             { label: 'Completed', path: '/dashboard/broker/loads?status=COMPLETED' },
           ]
         },
-        { 
-          label: 'Cargo Discovery', 
+        {
+          label: 'Cargo Discovery',
           path: '/dashboard/broker/discovery',
           icon: Search
         },
-        { 
-          label: 'Deal Facilitation', 
+        {
+          label: 'Deal Facilitation',
           path: '/dashboard/broker/deals',
           icon: TrendingUp
         },
-        { 
-          label: 'Smart Matching', 
+        {
+          label: 'Smart Matching',
           path: '/dashboard/broker/smart-matching',
           icon: Gavel
         },
-        { 
-          label: 'Services', 
+        {
+          label: 'Services',
           path: '/dashboard/broker/contracts',
           icon: FileText,
           subItems: [
@@ -163,123 +163,123 @@ const DashboardHeader = () => {
             { label: 'Documents', path: '/dashboard/broker/documents' },
           ]
         },
-        { 
-          label: 'Disputes', 
+        {
+          label: 'Disputes',
           path: '/dashboard/broker/disputes',
           icon: AlertCircle
         },
-        { 
-          label: 'Market Intelligence', 
+        {
+          label: 'Market Intelligence',
           path: '/dashboard/broker/market-intelligence',
           icon: BarChart3
         },
-        { 
-          label: 'Credit Management', 
+        {
+          label: 'Credit Management',
           path: '/dashboard/broker/credit-management',
           icon: CreditCard
         },
-        { 
-          label: 'Multi-Stop', 
+        {
+          label: 'Multi-Stop',
           path: '/dashboard/broker/multi-stop',
           icon: Route
         },
-        { 
-          label: 'Performance Analytics', 
+        {
+          label: 'Performance Analytics',
           path: '/dashboard/broker/performance',
           icon: BarChart3
         },
-        { 
-          label: 'Commissions', 
+        {
+          label: 'Commissions',
           path: '/dashboard/broker/commissions',
           icon: DollarSign
         },
-        { 
-          label: 'Analytics', 
+        {
+          label: 'Analytics',
           path: '/dashboard/broker/analytics',
           icon: BarChart3
         },
-        { 
-          label: 'Notifications', 
+        {
+          label: 'Notifications',
           path: '/dashboard/broker/notifications',
           icon: Bell
         },
-        { 
-          label: 'Profile', 
+        {
+          label: 'Profile',
           path: '/dashboard/broker/profile',
           icon: User
         },
       ];
     }
-    
+
     if (user?.role === 'DRIVER') {
       return [
-        { 
-          label: 'Dashboard', 
+        {
+          label: 'Dashboard',
           path: '/dashboard/driver',
           icon: Home
         },
-        { 
-          label: 'My Trips', 
+        {
+          label: 'My Trips',
           path: '/dashboard/driver/trips',
           icon: Route
         },
-        { 
-          label: 'My Truck', 
+        {
+          label: 'My Truck',
           path: '/dashboard/driver/truck',
           icon: Truck
         },
-        { 
-          label: 'Cargo Management', 
+        {
+          label: 'Cargo Management',
           path: '/dashboard/driver/cargo',
           icon: Package
         },
-        { 
-          label: 'Earnings', 
+        {
+          label: 'Earnings',
           path: '/dashboard/driver/earnings',
           icon: DollarSign
         },
-        { 
-          label: 'Safety & Compliance', 
+        {
+          label: 'Safety & Compliance',
           path: '/dashboard/driver/safety',
           icon: Shield
         },
-        { 
-          label: 'Documents', 
+        {
+          label: 'Documents',
           path: '/dashboard/driver/documents',
           icon: FileText
         },
-        { 
-          label: 'Live Tracking', 
+        {
+          label: 'Live Tracking',
           path: '/dashboard/driver/tracking',
           icon: MapPin
         },
-        { 
-          label: 'Analytics', 
+        {
+          label: 'Analytics',
           path: '/dashboard/driver/analytics',
           icon: BarChart3
         },
-        { 
-          label: 'Notifications', 
+        {
+          label: 'Notifications',
           path: '/dashboard/driver/notifications',
           icon: Bell
         },
-        { 
-          label: 'Profile', 
+        {
+          label: 'Profile',
           path: '/dashboard/driver/profile',
           icon: User
         },
       ];
     }
-    
+
     if (user?.role === 'TRUCK_OWNER') {
       return [
-        { 
-          label: 'Dashboard', 
+        {
+          label: 'Dashboard',
           path: '/dashboard/fleet',
           icon: Home
         },
-        { 
-          label: 'Fleet Management', 
+        {
+          label: 'Fleet Management',
           path: '/dashboard/fleet/trucks',
           icon: Truck,
           subItems: [
@@ -287,166 +287,166 @@ const DashboardHeader = () => {
             { label: 'Dashboard', path: '/dashboard/fleet' },
           ]
         },
-        { 
-          label: 'Drivers', 
+        {
+          label: 'Drivers',
           path: '/dashboard/fleet/drivers',
           icon: Users,
           subItems: [
             { label: 'My Drivers', path: '/dashboard/fleet/drivers' },
           ]
         },
-        { 
-          label: 'Trips', 
+        {
+          label: 'Trips',
           path: '/dashboard/trips',
           icon: Route
         },
-        { 
-          label: 'Bids', 
+        {
+          label: 'Bids',
           path: '/dashboard/fleet/bids',
           icon: Gavel
         },
-        { 
-          label: 'Route Planning', 
+        {
+          label: 'Route Planning',
           path: '/dashboard/fleet/routes',
           icon: Route
         },
-        { 
-          label: 'Safety Records', 
+        {
+          label: 'Safety Records',
           path: '/dashboard/fleet/safety',
           icon: Shield
         },
-        { 
-          label: 'Financial Management', 
+        {
+          label: 'Financial Management',
           path: '/dashboard/fleet/financial',
           icon: DollarSign
         },
-        { 
-          label: 'Analytics', 
+        {
+          label: 'Analytics',
           path: '/dashboard/fleet/analytics',
           icon: BarChart3
         },
-        { 
-          label: 'Payments', 
+        {
+          label: 'Payments',
           path: '/dashboard/payments',
           icon: CreditCard
         },
-        { 
-          label: 'Notifications', 
+        {
+          label: 'Notifications',
           path: '/dashboard/notifications',
           icon: Bell
         },
       ];
     }
-    
+
     if (user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN') {
       return [
-        { 
-          label: 'Overview', 
+        {
+          label: 'Overview',
           path: '/admin',
           icon: Home
         },
-        { 
-          label: 'Monitoring', 
+        {
+          label: 'Monitoring',
           path: '/admin/monitoring',
           icon: BarChart3
         },
-        { 
-          label: 'Bidding', 
+        {
+          label: 'Bidding',
           path: '/admin/bidding',
           icon: Gavel
         },
-        { 
-          label: 'Disputes', 
+        {
+          label: 'Disputes',
           path: '/admin/disputes',
           icon: AlertCircle
         },
-        { 
-          label: 'Financial', 
+        {
+          label: 'Financial',
           path: '/admin/financial',
           icon: DollarSign
         },
-        { 
-          label: 'Users', 
+        {
+          label: 'Users',
           path: '/admin/users',
           icon: Users
         },
-        { 
-          label: 'Trucks', 
+        {
+          label: 'Trucks',
           path: '/admin/trucks',
           icon: Truck
         },
-        { 
-          label: 'Loads', 
+        {
+          label: 'Loads',
           path: '/admin/loads',
           icon: Package
         },
-        { 
-          label: 'Trips', 
+        {
+          label: 'Trips',
           path: '/admin/trips',
           icon: Route
         },
-        { 
-          label: 'Analytics', 
+        {
+          label: 'Analytics',
           path: '/admin/analytics',
           icon: BarChart3
         },
-        { 
-          label: 'Tenants', 
+        {
+          label: 'Tenants',
           path: '/admin/tenants',
           icon: Building
         },
-        { 
-          label: 'Routes', 
+        {
+          label: 'Routes',
           path: '/admin/routes',
           icon: Route
         },
-        { 
-          label: 'Lenders', 
+        {
+          label: 'Lenders',
           path: '/admin/lenders/register',
           icon: DollarSign
         },
-        { 
-          label: 'Borrowers', 
+        {
+          label: 'Borrowers',
           path: '/admin/borrowers',
           icon: Users
         },
-        { 
-          label: 'Notifications', 
+        {
+          label: 'Notifications',
           path: '/dashboard/notifications',
           icon: Bell
         },
       ];
     }
-    
+
     if (user?.role === 'LENDER') {
       return [
-        { 
-          label: 'Overview', 
+        {
+          label: 'Overview',
           path: '/lender',
           icon: Home
         },
-        { 
-          label: 'Loan Requests', 
+        {
+          label: 'Loan Requests',
           path: '/lender/requests',
           icon: Wallet
         },
-        { 
-          label: 'Active Loans', 
+        {
+          label: 'Active Loans',
           path: '/lender/active',
           icon: Receipt
         },
-        { 
-          label: 'Disbursements', 
+        {
+          label: 'Disbursements',
           path: '/lender/disbursements',
           icon: Wallet
         },
-        { 
-          label: 'Repayments', 
+        {
+          label: 'Repayments',
           path: '/lender/repayments',
           icon: CheckCircle
         },
-        { 
-          label: 'Analytics', 
+        {
+          label: 'Analytics',
           path: '/lender/analytics',
           icon: BarChart3,
           subItems: [
@@ -456,8 +456,8 @@ const DashboardHeader = () => {
             { label: 'Financial Reports', path: '/lender/reports' },
           ]
         },
-        { 
-          label: 'Management', 
+        {
+          label: 'Management',
           path: '/lender/borrowers',
           icon: Users,
           subItems: [
@@ -468,8 +468,8 @@ const DashboardHeader = () => {
             { label: 'Receipts', path: '/lender/receipts' },
           ]
         },
-        { 
-          label: 'Account', 
+        {
+          label: 'Account',
           path: '/lender/profile',
           icon: User,
           subItems: [
@@ -481,67 +481,67 @@ const DashboardHeader = () => {
         },
       ];
     }
-    
+
     if (user?.role === 'TENANT_ADMIN') {
       return [
-        { 
-          label: 'Dashboard', 
+        {
+          label: 'Dashboard',
           path: '/tenant-admin',
           icon: Home
         },
-        { 
-          label: 'Fleet Management', 
+        {
+          label: 'Fleet Management',
           path: '/tenant-admin/fleet',
           icon: Truck
         },
-        { 
-          label: 'Cargo Operations', 
+        {
+          label: 'Cargo Operations',
           path: '/tenant-admin/cargo',
           icon: Package
         },
-        { 
-          label: 'Drivers', 
+        {
+          label: 'Drivers',
           path: '/tenant-admin/drivers',
           icon: Users
         },
-        { 
-          label: 'Lenders', 
+        {
+          label: 'Lenders',
           path: '/tenant-admin/lenders',
           icon: DollarSign
         },
-        { 
-          label: 'Routes', 
+        {
+          label: 'Routes',
           path: '/tenant-admin/routes',
           icon: Route
         },
-        { 
-          label: 'Trip Management', 
+        {
+          label: 'Trip Management',
           path: '/tenant-admin/trips',
           icon: ClipboardList
         },
-        { 
-          label: 'Financial', 
+        {
+          label: 'Financial',
           path: '/tenant-admin/financial',
           icon: DollarSign
         },
-        { 
-          label: 'Analytics', 
+        {
+          label: 'Analytics',
           path: '/tenant-admin/analytics',
           icon: BarChart3
         },
-        { 
-          label: 'Reports', 
+        {
+          label: 'Reports',
           path: '/tenant-admin/reports',
           icon: ClipboardList
         },
-        { 
-          label: 'Tenant Settings', 
+        {
+          label: 'Tenant Settings',
           path: '/tenant-admin/settings',
           icon: Settings
         },
       ];
     }
-    
+
     // Default navigation for other roles
     return [
       { label: 'Dashboard', path: '/dashboard', icon: Home },
@@ -583,24 +583,24 @@ const DashboardHeader = () => {
   const getActiveNavItem = () => {
     const path = location.pathname;
     const basePath = user?.role === 'CARGO_OWNER' ? '/cargo-owner' : '/dashboard';
-    
+
     // Dashboard paths
-    if (path === basePath || path === `${basePath}/` || 
-        path === '/dashboard/broker' || path === '/dashboard/broker/' ||
-        path === '/dashboard/driver' || path === '/dashboard/driver/' ||
-        path === '/dashboard/fleet' || path === '/dashboard/fleet/' ||
-        path === '/admin' || path === '/admin/' ||
-        path === '/lender' || path === '/lender/' ||
-        path === '/tenant-admin' || path === '/tenant-admin/') return 'Dashboard';
-    
+    if (path === basePath || path === `${basePath}/` ||
+      path === '/dashboard/broker' || path === '/dashboard/broker/' ||
+      path === '/dashboard/driver' || path === '/dashboard/driver/' ||
+      path === '/dashboard/fleet' || path === '/dashboard/fleet/' ||
+      path === '/admin' || path === '/admin/' ||
+      path === '/lender' || path === '/lender/' ||
+      path === '/tenant-admin' || path === '/tenant-admin/') return 'Dashboard';
+
     // Broker-specific paths
     if (user?.role === 'BROKER') {
       if (path.includes('/broker/loads')) return 'My Loads';
       if (path.includes('/broker/discovery')) return 'Cargo Discovery';
       if (path.includes('/broker/deals')) return 'Deal Facilitation';
       if (path.includes('/broker/smart-matching')) return 'Smart Matching';
-      if (path.includes('/broker/contracts') || path.includes('/broker/insurance') || 
-          path.includes('/broker/escrow') || path.includes('/broker/documents')) return 'Services';
+      if (path.includes('/broker/contracts') || path.includes('/broker/insurance') ||
+        path.includes('/broker/escrow') || path.includes('/broker/documents')) return 'Services';
       if (path.includes('/broker/disputes')) return 'Disputes';
       if (path.includes('/broker/market-intelligence')) return 'Market Intelligence';
       if (path.includes('/broker/credit-management')) return 'Credit Management';
@@ -611,7 +611,7 @@ const DashboardHeader = () => {
       if (path.includes('/broker/notifications')) return 'Notifications';
       if (path.includes('/broker/profile')) return 'Profile';
     }
-    
+
     // Driver-specific paths
     if (user?.role === 'DRIVER') {
       if (path.includes('/driver/trips')) return 'My Trips';
@@ -625,7 +625,7 @@ const DashboardHeader = () => {
       if (path.includes('/driver/notifications')) return 'Notifications';
       if (path.includes('/driver/profile')) return 'Profile';
     }
-    
+
     // Truck Owner/Fleet Owner paths
     if (user?.role === 'TRUCK_OWNER') {
       if (path.includes('/fleet/trucks') || path.includes('/fleet')) return 'Fleet Management';
@@ -639,7 +639,7 @@ const DashboardHeader = () => {
       if (path.includes('/payments')) return 'Payments';
       if (path.includes('/notifications')) return 'Notifications';
     }
-    
+
     // Admin paths
     if (user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN') {
       if (path.includes('/admin/monitoring')) return 'Monitoring';
@@ -657,22 +657,22 @@ const DashboardHeader = () => {
       if (path.includes('/admin/borrowers')) return 'Borrowers';
       if (path.includes('/notifications')) return 'Notifications';
     }
-    
+
     // Lender paths
     if (user?.role === 'LENDER') {
       if (path.includes('/lender/requests')) return 'Loan Requests';
       if (path.includes('/lender/active')) return 'Active Loans';
       if (path.includes('/lender/disbursements')) return 'Disbursements';
       if (path.includes('/lender/repayments')) return 'Repayments';
-      if (path.includes('/lender/analytics') || path.includes('/lender/risk') || 
-          path.includes('/lender/interest') || path.includes('/lender/reports')) return 'Analytics';
-      if (path.includes('/lender/borrowers') || path.includes('/lender/policies') || 
-          path.includes('/lender/credit') || path.includes('/lender/history') || 
-          path.includes('/lender/receipts')) return 'Management';
-      if (path.includes('/lender/profile') || path.includes('/lender/team') || 
-          path.includes('/lender/notifications') || path.includes('/lender/support')) return 'Account';
+      if (path.includes('/lender/analytics') || path.includes('/lender/risk') ||
+        path.includes('/lender/interest') || path.includes('/lender/reports')) return 'Analytics';
+      if (path.includes('/lender/borrowers') || path.includes('/lender/policies') ||
+        path.includes('/lender/credit') || path.includes('/lender/history') ||
+        path.includes('/lender/receipts')) return 'Management';
+      if (path.includes('/lender/profile') || path.includes('/lender/team') ||
+        path.includes('/lender/notifications') || path.includes('/lender/support')) return 'Account';
     }
-    
+
     // Tenant Admin paths
     if (user?.role === 'TENANT_ADMIN') {
       if (path.includes('/tenant-admin/fleet')) return 'Fleet Management';
@@ -686,7 +686,7 @@ const DashboardHeader = () => {
       if (path.includes('/tenant-admin/reports')) return 'Reports';
       if (path.includes('/tenant-admin/settings')) return 'Tenant Settings';
     }
-    
+
     // Cargo owner paths
     if (path.includes('/cargos')) return 'Cargo Management';
     if (path.includes('/bidding') || path.includes('/my-bids')) return 'Bidding';
@@ -709,20 +709,17 @@ const DashboardHeader = () => {
   };
 
   return (
-    <div className="bg-[#1a1f37] text-white p-3 sm:p-4 md:p-6 pb-6 sm:pb-8 md:pb-12 relative overflow-hidden z-50">
-      {/* Decorative Background Elements */}
-      <div className="absolute top-0 right-0 w-64 sm:w-96 h-64 sm:h-96 bg-orange-500/10 rounded-full blur-3xl -mr-8 sm:-mr-16 -mt-8 sm:-mt-16 pointer-events-none"></div>
-      <div className="absolute bottom-0 left-0 w-48 sm:w-64 h-48 sm:h-64 bg-rose-500/10 rounded-full blur-3xl -ml-8 sm:-ml-16 -mb-8 sm:-mb-16 pointer-events-none"></div>
+    <div className="bg-white border-b border-gray-200 text-gray-900 px-4 pt-6 pb-3 sm:px-6 sm:pt-8 sm:pb-4 relative overflow-hidden z-50">
 
       {/* Custom Header inside Dark Section */}
       <div className="max-w-7xl mx-auto px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8 relative z-50">
         {/* Top Row: Logo, Mobile Menu, Search, Notifications, User */}
-        <div className="flex justify-between items-center mb-4 sm:mb-6 md:mb-10 relative z-50 gap-2 sm:gap-3 md:gap-4">
+        <div className="flex justify-between items-center relative z-50 gap-2 sm:gap-3 md:gap-4">
           <div className="flex items-center gap-2 sm:gap-3 md:gap-4 min-w-0 flex-1">
             {/* Mobile Menu Button */}
             <button
               onClick={() => setShowMobileMenu(!showMobileMenu)}
-              className="lg:hidden p-2 bg-white/10 rounded-lg hover:bg-white/20 active:bg-white/30 transition-colors touch-manipulation min-w-[44px] min-h-[44px] flex items-center justify-center flex-shrink-0"
+              className="lg:hidden p-2 bg-gray-50 rounded-lg hover:bg-gray-100 active:bg-gray-200 transition-colors touch-manipulation min-w-[44px] min-h-[44px] flex items-center justify-center flex-shrink-0 text-gray-600"
               aria-label="Toggle menu"
             >
               {showMobileMenu ? (
@@ -734,28 +731,28 @@ const DashboardHeader = () => {
 
             {/* Logo */}
             <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
-              <div className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 bg-blue-600 rounded-lg flex items-center justify-center transform rotate-45">
-                <div className="w-3 h-3 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4 bg-white transform -rotate-45"></div>
+              <div className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 bg-emerald-600 rounded-lg flex items-center justify-center">
+                <Truck className="w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5 text-white" />
               </div>
               <span className="text-base sm:text-lg md:text-xl font-bold">UrutiX</span>
             </div>
-            
+
             {/* Desktop Nav */}
-            <div className="hidden lg:flex items-center gap-1 sm:gap-2 ml-4 sm:ml-8 text-gray-400 text-sm font-medium overflow-x-auto scrollbar-hide max-w-3xl">
+            <div className="hidden lg:flex items-center gap-1 sm:gap-2 ml-4 sm:ml-8 text-gray-500 text-sm font-medium overflow-x-auto scrollbar-hide max-w-3xl">
               {navItems.map(item => {
                 const hasSubItems = item.subItems && item.subItems.length > 0;
-                const isActive = activeNavItem === item.label || 
+                const isActive = activeNavItem === item.label ||
                   (hasSubItems && item.subItems?.some(sub => location.pathname.includes(sub.path.split('/').pop() || '')));
-                
+
                 const setRef = (el: HTMLDivElement | null) => {
                   if (el) {
                     dropdownRefs.current[item.label] = el;
                   }
                 };
-                
+
                 return (
                   <div key={item.label} className="relative" ref={setRef}>
-                    <button 
+                    <button
                       onClick={() => {
                         if (hasSubItems) {
                           setOpenDropdown(openDropdown === item.label ? null : item.label);
@@ -763,11 +760,10 @@ const DashboardHeader = () => {
                           handleNavClick(item.path);
                         }
                       }}
-                      className={`px-3 py-1.5 rounded-full whitespace-nowrap transition-all touch-manipulation flex items-center gap-1 ${
-                        isActive
-                          ? 'text-white bg-white/10' 
-                          : 'hover:text-white'
-                      }`}
+                      className={`px-3 py-1.5 rounded-full whitespace-nowrap transition-all touch-manipulation flex items-center gap-1 ${isActive
+                        ? 'text-emerald-600 bg-emerald-50'
+                        : 'hover:text-gray-900 hover:bg-gray-100'
+                        }`}
                     >
                       {item.icon && <item.icon className="w-4 h-4" />}
                       <span>{item.label}</span>
@@ -775,7 +771,7 @@ const DashboardHeader = () => {
                         <ChevronDown className={`w-3 h-3 transition-transform ${openDropdown === item.label ? 'rotate-180' : ''}`} />
                       )}
                     </button>
-                    
+
                     {/* Dropdown Menu */}
                     {hasSubItems && openDropdown === item.label && (
                       <div className="absolute top-full left-0 mt-1 w-48 bg-white rounded-lg shadow-xl border border-gray-200 z-50">
@@ -784,11 +780,10 @@ const DashboardHeader = () => {
                             <button
                               key={subItem.path}
                               onClick={() => handleNavClick(subItem.path)}
-                              className={`w-full text-left px-4 py-2 text-sm transition-colors ${
-                                location.pathname === subItem.path || location.pathname.startsWith(subItem.path + '/')
-                                  ? 'bg-blue-50 text-blue-700 font-medium'
-                                  : 'text-gray-700 hover:bg-gray-50'
-                              }`}
+                              className={`w-full text-left px-4 py-2 text-sm transition-colors ${location.pathname === subItem.path || location.pathname.startsWith(subItem.path + '/')
+                                ? 'bg-emerald-50 text-emerald-700 font-medium'
+                                : 'text-gray-700 hover:bg-gray-50'
+                                }`}
                             >
                               {subItem.label}
                             </button>
@@ -806,7 +801,7 @@ const DashboardHeader = () => {
             {/* Mobile Search Button */}
             <button
               onClick={() => setShowMobileSearch(!showMobileSearch)}
-              className="lg:hidden p-2 bg-white/10 rounded-full hover:bg-white/20 active:bg-white/30 transition-colors relative touch-manipulation min-w-[44px] min-h-[44px] flex items-center justify-center"
+              className="lg:hidden p-2 bg-gray-50 rounded-full hover:bg-gray-100 active:bg-gray-200 transition-colors relative touch-manipulation min-w-[44px] min-h-[44px] flex items-center justify-center text-gray-600"
               aria-label="Search"
             >
               <Search className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -815,24 +810,24 @@ const DashboardHeader = () => {
             {/* Desktop Search */}
             <div className="hidden md:flex relative">
               <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input 
-                type="text" 
-                placeholder="Search anything here" 
-                className="bg-white/10 border-none rounded-full pl-10 pr-4 py-2 text-sm text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 outline-none w-48 lg:w-64"
+              <input
+                type="text"
+                placeholder="Search anything here"
+                className="bg-gray-50 border border-gray-200 rounded-full pl-10 pr-4 py-2 text-sm text-gray-900 placeholder-gray-400 focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none w-48 lg:w-64"
               />
             </div>
 
             {/* Notifications */}
-            <button 
-              onClick={() => navigate(user?.role === 'CARGO_OWNER' ? '/cargo-owner/notifications' : '/dashboard/notifications')} 
-              className="p-2 sm:p-2 bg-white/10 rounded-full hover:bg-white/20 active:bg-white/30 transition-colors relative touch-manipulation min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center"
+            <button
+              onClick={() => navigate(user?.role === 'CARGO_OWNER' ? '/cargo-owner/notifications' : '/dashboard/notifications')}
+              className="p-2 sm:p-2 bg-gray-50 rounded-full hover:bg-gray-100 active:bg-gray-200 transition-colors relative touch-manipulation min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center text-gray-600"
             >
               <Bell className="w-4 h-4 sm:w-5 sm:h-5" />
               {(cargoOwnerNotifications.unreadCount > 0 || (user?.role !== 'CARGO_OWNER')) && (
-                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full border-2 border-[#1a1f37]"></span>
+                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
               )}
               {cargoOwnerNotifications.unreadCount > 0 && (
-                <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-[#1a1f37]">
+                <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-white">
                   {cargoOwnerNotifications.unreadCount > 9 ? '9+' : cargoOwnerNotifications.unreadCount}
                 </span>
               )}
@@ -843,25 +838,23 @@ const DashboardHeader = () => {
 
             {/* User Menu */}
             <div className="relative z-[9999]" ref={userMenuRef}>
-              <button 
+              <button
                 onClick={() => setShowUserMenu(!showUserMenu)}
-                className="w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 bg-gradient-to-br from-orange-400 to-rose-500 rounded-full p-0.5 cursor-pointer flex-shrink-0 hover:ring-2 hover:ring-white/20 transition-all touch-manipulation focus:outline-none focus:ring-2 focus:ring-white/50"
+                className="w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 bg-gray-100 hover:bg-gray-200 border border-gray-200 rounded-full flex items-center justify-center flex-shrink-0 transition-all touch-manipulation focus:outline-none focus:ring-2 focus:ring-emerald-500"
               >
-                <div className="w-full h-full bg-[#1a1f37] rounded-full flex items-center justify-center overflow-hidden">
-                  {user?.role === 'DRIVER' ? (
-                    <User className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-white" />
-                  ) : (
-                    <div className="text-xs sm:text-sm font-bold text-white">
-                      {user?.firstName?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || 'U'}
-                    </div>
-                  )}
-                </div>
+                {user?.role === 'DRIVER' ? (
+                  <User className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-gray-600" />
+                ) : (
+                  <div className="text-xs sm:text-sm font-bold text-gray-700">
+                    {user?.firstName?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || 'U'}
+                  </div>
+                )}
               </button>
               {/* Dropdown Menu */}
               {showUserMenu && (
-                <div 
+                <div
                   className="fixed w-48 bg-white rounded-lg shadow-2xl border border-gray-200"
-                  style={{ 
+                  style={{
                     top: '4.5rem',
                     right: '1rem',
                     zIndex: 99999
@@ -870,7 +863,7 @@ const DashboardHeader = () => {
                   <div className="p-2">
                     <div className="px-3 py-2 border-b border-gray-100">
                       <div className="text-sm font-semibold text-gray-900">
-                        {user?.firstName && user?.lastName 
+                        {user?.firstName && user?.lastName
                           ? `${user.firstName} ${user.lastName}`
                           : user?.firstName || user?.email || 'User'
                         }
@@ -914,9 +907,9 @@ const DashboardHeader = () => {
           <div className="mb-4 md:hidden">
             <div className="relative">
               <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input 
-                type="text" 
-                placeholder="Search anything here" 
+              <input
+                type="text"
+                placeholder="Search anything here"
                 className="w-full bg-white/10 border-none rounded-full pl-10 pr-4 py-2.5 text-sm text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 outline-none"
                 autoFocus
               />
@@ -926,20 +919,20 @@ const DashboardHeader = () => {
 
         {/* Mobile Navigation Menu */}
         {showMobileMenu && (
-          <div 
+          <div
             ref={mobileMenuRef}
             className="lg:hidden mb-4 bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10"
           >
             <div className="space-y-1">
               {navItems.map(item => {
                 const hasSubItems = item.subItems && item.subItems.length > 0;
-                const isActive = activeNavItem === item.label || 
+                const isActive = activeNavItem === item.label ||
                   (hasSubItems && item.subItems?.some(sub => location.pathname.includes(sub.path.split('/').pop() || '')));
                 const isSubMenuOpen = openDropdown === item.label;
-                
+
                 return (
                   <div key={item.label}>
-                    <button 
+                    <button
                       onClick={() => {
                         if (hasSubItems) {
                           setOpenDropdown(isSubMenuOpen ? null : item.label);
@@ -947,11 +940,10 @@ const DashboardHeader = () => {
                           handleNavClick(item.path);
                         }
                       }}
-                      className={`w-full text-left px-4 py-3 rounded-lg transition-all touch-manipulation min-h-[44px] flex items-center justify-between ${
-                        isActive
-                          ? 'text-white bg-white/10 font-medium' 
-                          : 'text-gray-300 hover:text-white hover:bg-white/5'
-                      }`}
+                      className={`w-full text-left px-4 py-3 rounded-lg transition-all touch-manipulation min-h-[44px] flex items-center justify-between ${isActive
+                        ? 'text-white bg-white/10 font-medium'
+                        : 'text-gray-300 hover:text-white hover:bg-white/5'
+                        }`}
                     >
                       <div className="flex items-center gap-2">
                         {item.icon && <item.icon className="w-4 h-4" />}
@@ -961,7 +953,7 @@ const DashboardHeader = () => {
                         <ChevronDown className={`w-4 h-4 transition-transform ${isSubMenuOpen ? 'rotate-180' : ''}`} />
                       )}
                     </button>
-                    
+
                     {/* Mobile Sub-menu */}
                     {hasSubItems && isSubMenuOpen && (
                       <div className="ml-4 mt-1 space-y-1 border-l-2 border-white/10 pl-4">
@@ -969,11 +961,10 @@ const DashboardHeader = () => {
                           <button
                             key={subItem.path}
                             onClick={() => handleNavClick(subItem.path)}
-                            className={`w-full text-left px-4 py-2 rounded-lg transition-all touch-manipulation min-h-[44px] text-sm ${
-                              location.pathname === subItem.path || location.pathname.startsWith(subItem.path + '/')
-                                ? 'text-white bg-white/10 font-medium'
-                                : 'text-gray-300 hover:text-white hover:bg-white/5'
-                            }`}
+                            className={`w-full text-left px-4 py-2 rounded-lg transition-all touch-manipulation min-h-[44px] text-sm ${location.pathname === subItem.path || location.pathname.startsWith(subItem.path + '/')
+                              ? 'text-white bg-white/10 font-medium'
+                              : 'text-gray-300 hover:text-white hover:bg-white/5'
+                              }`}
                           >
                             {subItem.label}
                           </button>

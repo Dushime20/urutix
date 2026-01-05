@@ -139,7 +139,7 @@ const RepaymentsPage: React.FC = () => {
 
   // Filter and sort repayments
   const filteredRepayments = useMemo(() => {
-    let filtered = repayments.filter(payment => {
+    const filtered = repayments.filter(payment => {
       const matchesSearch = !searchTerm || 
         payment.borrowerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
         payment.cargoType.toLowerCase().includes(searchTerm.toLowerCase()) ||

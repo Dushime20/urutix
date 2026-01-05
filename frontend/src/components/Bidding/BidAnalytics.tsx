@@ -1,6 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { FaChartLine, FaDollarSign, FaPercentage, FaClock } from 'react-icons/fa';
 
+interface LoadPerformance {
+  title: string;
+  totalBids: number;
+  finalPrice: number;
+  status: string;
+}
+
 interface BidAnalyticsProps {
   userRole: 'CARGO_OWNER' | 'TRUCK_OWNER';
 }
@@ -8,7 +15,16 @@ interface BidAnalyticsProps {
 const BidAnalytics: React.FC<BidAnalyticsProps> = ({ userRole }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [analytics, setAnalytics] = useState({
+  const [analytics, setAnalytics] = useState<{
+    totalBids: number;
+    successfulBids: number;
+    averageBidAmount: number;
+    totalValue: number;
+    successRate: number;
+    averageResponseTime: number;
+    topPerformingLoads: LoadPerformance[];
+    bidTrends: any[];
+  }>({
     totalBids: 0,
     successfulBids: 0,
     averageBidAmount: 0,
@@ -29,7 +45,7 @@ const BidAnalytics: React.FC<BidAnalyticsProps> = ({ userRole }) => {
       // Load analytics data
       const response = await fetch('/api/bidding/analytics');
       const data = await response.json();
-      
+
       // Ensure all required properties exist with fallbacks
       setAnalytics({
         totalBids: data.totalBids || 0,
@@ -44,7 +60,7 @@ const BidAnalytics: React.FC<BidAnalyticsProps> = ({ userRole }) => {
     } catch (error) {
       setError('Failed to load analytics data - using demo data');
       console.error('Analytics error:', error);
-      
+
       // Set demo data when API fails
       setAnalytics({
         totalBids: 25,
@@ -106,11 +122,11 @@ const BidAnalytics: React.FC<BidAnalyticsProps> = ({ userRole }) => {
     <div className="bid-analytics">
       <div className="mb-4 sm:mb-6">
         <h4 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2 flex items-center gap-2">
-          <FaChartLine className="text-blue-500 flex-shrink-0" />
+          <FaChartLine className="text-gray-500 flex-shrink-0" />
           <span>Bidding Analytics</span>
         </h4>
         <p className="text-xs sm:text-sm text-gray-600">
-          {userRole === 'CARGO_OWNER' 
+          {userRole === 'CARGO_OWNER'
             ? 'Track your auction performance and bid statistics'
             : 'Monitor your bidding success and market insights'
           }
@@ -137,7 +153,7 @@ const BidAnalytics: React.FC<BidAnalyticsProps> = ({ userRole }) => {
         <div className="bg-white rounded-lg shadow p-3 sm:p-4 md:p-6">
           <div className="flex items-center">
             <div className="flex-shrink-0">
-              <FaDollarSign className="h-6 w-6 sm:h-8 sm:w-8 text-green-500" />
+              <FaDollarSign className="h-6 w-6 sm:h-8 sm:w-8 text-gray-500" />
             </div>
             <div className="ml-3 sm:ml-4 min-w-0 flex-1">
               <p className="text-xs sm:text-sm font-medium text-gray-500">Total Bids</p>
@@ -149,7 +165,7 @@ const BidAnalytics: React.FC<BidAnalyticsProps> = ({ userRole }) => {
         <div className="bg-white rounded-lg shadow p-3 sm:p-4 md:p-6">
           <div className="flex items-center">
             <div className="flex-shrink-0">
-              <FaPercentage className="h-6 w-6 sm:h-8 sm:w-8 text-blue-500" />
+              <FaPercentage className="h-6 w-6 sm:h-8 sm:w-8 text-gray-500" />
             </div>
             <div className="ml-3 sm:ml-4 min-w-0 flex-1">
               <p className="text-xs sm:text-sm font-medium text-gray-500">Success Rate</p>
@@ -161,7 +177,7 @@ const BidAnalytics: React.FC<BidAnalyticsProps> = ({ userRole }) => {
         <div className="bg-white rounded-lg shadow p-3 sm:p-4 md:p-6">
           <div className="flex items-center">
             <div className="flex-shrink-0">
-              <FaDollarSign className="h-6 w-6 sm:h-8 sm:w-8 text-yellow-500" />
+              <FaDollarSign className="h-6 w-6 sm:h-8 sm:w-8 text-gray-500" />
             </div>
             <div className="ml-3 sm:ml-4 min-w-0 flex-1">
               <p className="text-xs sm:text-sm font-medium text-gray-500">Avg Bid Amount</p>
@@ -173,7 +189,7 @@ const BidAnalytics: React.FC<BidAnalyticsProps> = ({ userRole }) => {
         <div className="bg-white rounded-lg shadow p-3 sm:p-4 md:p-6">
           <div className="flex items-center">
             <div className="flex-shrink-0">
-              <FaClock className="h-6 w-6 sm:h-8 sm:w-8 text-purple-500" />
+              <FaClock className="h-6 w-6 sm:h-8 sm:w-8 text-gray-500" />
             </div>
             <div className="ml-3 sm:ml-4 min-w-0 flex-1">
               <p className="text-xs sm:text-sm font-medium text-gray-500">Avg Response Time</p>
@@ -258,11 +274,10 @@ const BidAnalytics: React.FC<BidAnalyticsProps> = ({ userRole }) => {
                       {formatCurrency(load.finalPrice)}
                     </td>
                     <td className="px-4 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
-                      <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                        load.status === 'COMPLETED' 
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-yellow-100 text-yellow-800'
-                      }`}>
+                      <span className={`px-2 py-1 text-xs font-medium rounded-full ${load.status === 'COMPLETED'
+                        ? 'bg-green-100 text-green-800'
+                        : 'bg-yellow-100 text-yellow-800'
+                        }`}>
                         {load.status}
                       </span>
                     </td>
@@ -287,11 +302,10 @@ const BidAnalytics: React.FC<BidAnalyticsProps> = ({ userRole }) => {
                   </div>
                   <div className="col-span-2">
                     <span className="text-gray-500">Status:</span>
-                    <span className={`ml-1 px-2 py-0.5 text-xs font-medium rounded-full ${
-                      load.status === 'COMPLETED' 
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-yellow-100 text-yellow-800'
-                    }`}>
+                    <span className={`ml-1 px-2 py-0.5 text-xs font-medium rounded-full ${load.status === 'COMPLETED'
+                      ? 'bg-green-100 text-green-800'
+                      : 'bg-yellow-100 text-yellow-800'
+                      }`}>
                       {load.status}
                     </span>
                   </div>

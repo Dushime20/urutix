@@ -406,7 +406,7 @@ const RiskAnalysisPage: React.FC = () => {
 
   // Filter and sort assessments
   const filteredAssessments = useMemo(() => {
-    let filtered = riskAssessments.filter(assessment => {
+    const filtered = riskAssessments.filter(assessment => {
       const matchesSearch = 
         assessment.borrowerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
         assessment.loanId.toLowerCase().includes(searchTerm.toLowerCase()) ||
