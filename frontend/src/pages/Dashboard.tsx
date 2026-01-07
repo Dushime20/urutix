@@ -23,7 +23,8 @@ import {
   Mic,
   Camera,
   FileText,
-  Settings
+  Settings,
+  Plus
 } from 'lucide-react';
 // Dynamically import recharts to reduce initial bundle size
 import {
@@ -55,8 +56,21 @@ import OnboardingTour from '../components/Onboarding/OnboardingTour';
 import { useOnboardingStore, useShouldShowOnboarding } from '../stores/onboardingStore';
 import VoiceCargoInput from '../components/VoiceInput/VoiceCargoInput';
 import CameraDocumentScanner from '../components/Camera/CameraDocumentScanner';
+import { FleetDashboard } from '../components/FleetDashboard/FleetDashboard';
 
 const Dashboard = () => {
+  const { user } = useAuth();
+
+  // If user is a truck owner (CARRIER), show fleet dashboard
+  if (user && user.role === 'CARRIER') {
+    return <FleetDashboard />;
+  }
+
+  // Otherwise show cargo owner dashboard
+  return <CargoOwnerDashboard />;
+};
+
+const CargoOwnerDashboard = () => {
   const layoutContext = useCargoOwnerLayout();
   const { user } = useAuth();
   const { setHideHeader } = layoutContext || {};
@@ -465,130 +479,13 @@ const Dashboard = () => {
 
   const renderOverview = () => (
     <div className="space-y-8">
-      {/* 1. Critical Alerts Section */}
-      {(biddingData.pendingBids > 0 || matchingData.matchRecommendations > 0 || paymentData.pendingPayments > 0 || stats.incompleteCargos > 0) && (
-        <section aria-label="Action Required">
-          <div className="flex items-center gap-2 mb-4">
-            <h2 className="text-lg font-bold text-gray-900">Action Required</h2>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {/* Quick Action - Create & Choose */}
-            <div
-              className="bg-white border border-gray-200 rounded-xl p-4 flex flex-col gap-2 transition-all hover:scale-[1.02] hover:shadow-xl cursor-pointer relative overflow-hidden group"
-              onClick={() => setShowQuickActionFlow(true)}
-            >
-              <div className="relative z-10">
-                <div className="flex justify-between items-start mb-2">
-                  <h3 className="font-bold text-gray-900 text-lg">Quick Action</h3>
-                  <div className="p-2 rounded-lg bg-gray-50 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
-                    <Zap className="w-5 h-5 text-gray-600" />
-                  </div>
-                </div>
-                <p className="text-sm text-gray-500 mb-3">Create cargo & choose your journey in one flow</p>
-                <div className="flex items-center gap-2 text-gray-600 font-medium text-sm group-hover:underline">
-                  <span>Get Started</span>
-                  <ArrowUpRight className="w-4 h-4" />
-                </div>
-              </div>
-            </div>
-
-            {/* Pending Bids */}
-            {biddingData.pendingBids > 0 && (
-              <div className="bg-white border border-gray-200 rounded-xl p-4 flex flex-col gap-2 transition-transform hover:scale-[1.02] cursor-pointer hover:shadow-md" onClick={() => navigate('/dashboard/bidding')}>
-                <div className="flex justify-between items-start mb-2">
-                  <h3 className="font-semibold text-gray-900 text-lg">Pending Bids</h3>
-                  <div className="p-2 rounded-lg bg-gray-50 flex items-center justify-center flex-shrink-0">
-                    <Gavel className="w-4 h-4 text-gray-600" />
-                  </div>
-                </div>
-                <p className="text-sm text-gray-500">You have {biddingData.pendingBids} bid{biddingData.pendingBids !== 1 ? 's' : ''} waiting.</p>
-              </div>
-            )}
-            {/* Matches */}
-            {matchingData.matchRecommendations > 0 && (
-              <div className="bg-white border border-gray-200 rounded-xl p-4 flex flex-col gap-2 transition-transform hover:scale-[1.02] cursor-pointer hover:shadow-md" onClick={() => { setActiveTab('All Cargos'); navigate('/dashboard/cargos?filter=matching'); }}>
-                <div className="flex justify-between items-start mb-2">
-                  <h3 className="font-semibold text-gray-900 text-lg">Matches</h3>
-                  <div className="p-2 rounded-lg bg-gray-50 flex items-center justify-center flex-shrink-0">
-                    <Zap className="w-4 h-4 text-gray-600" />
-                  </div>
-                </div>
-                <p className="text-sm text-gray-500">{matchingData.matchRecommendations} new match{matchingData.matchRecommendations !== 1 ? 'es' : ''} found.</p>
-              </div>
-            )}
-            {/* Payments */}
-            {paymentData.pendingPayments > 0 && (
-              <div className="bg-white border border-gray-200 rounded-xl p-4 flex flex-col gap-2 transition-transform hover:scale-[1.02] cursor-pointer hover:shadow-md" onClick={() => setActiveTab('Transactions')}>
-                <div className="flex justify-between items-start mb-2">
-                  <h3 className="font-semibold text-gray-900 text-lg">Payments</h3>
-                  <div className="p-2 rounded-lg bg-gray-50 flex items-center justify-center flex-shrink-0">
-                    <CreditCard className="w-4 h-4 text-gray-600" />
-                  </div>
-                </div>
-                <p className="text-sm text-gray-500">{paymentData.pendingPayments} payment{paymentData.pendingPayments !== 1 ? 's' : ''} due.</p>
-              </div>
-            )}
-            {/* Incomplete */}
-            {stats.incompleteCargos > 0 && (
-              <div className="bg-white border border-gray-200 rounded-xl p-4 flex flex-col gap-2 transition-transform hover:scale-[1.02] cursor-pointer hover:shadow-md" onClick={() => { setActiveTab('All Cargos'); navigate('/dashboard/cargos?filter=drafts'); }}>
-                <div className="flex justify-between items-start mb-2">
-                  <h3 className="font-semibold text-gray-900 text-lg">Drafts</h3>
-                  <div className="p-2 rounded-lg bg-gray-50 flex items-center justify-center flex-shrink-0">
-                    <Package className="w-4 h-4 text-gray-600" />
-                  </div>
-                </div>
-                <p className="text-sm text-gray-500">{stats.incompleteCargos} draft{stats.incompleteCargos !== 1 ? 's' : ''} pending.</p>
-              </div>
-            )}
-          </div>
-        </section>
-      )}
-
-      {/* 2. Smart Insights Section */}
-      {insights.length > 0 && (
-        <section aria-label="Smart Insights">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <h2 className="text-lg font-bold text-gray-900">Smart Insights</h2>
-            </div>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {insights.map((insight, index) => (
-              <div
-                key={index}
-                className="rounded-xl p-4 border bg-white border-gray-200 flex flex-col justify-between h-full hover:shadow-md transition-shadow cursor-pointer"
-                onClick={insight.onClick}
-              >
-                <div className="flex justify-between items-start mb-3">
-                  <h3 className="font-semibold text-gray-900 text-sm">{insight.title}</h3>
-                  <div className={`p - 2 rounded - lg bg - gray - 50 ${insight.color} shadow - sm`}>
-                    <insight.icon className="w-5 h-5" />
-                  </div>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600 mt-1 leading-relaxed">{insight.message}</p>
-                </div>
-                <button
-                  onClick={insight.onClick}
-                  className="self-start text-xs font-semibold text-gray-600 hover:underline mt-2 flex items-center gap-1"
-                >
-                  {insight.action}
-                  <ArrowUpRight className="w-3 h-3" />
-                </button>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* 3. Advanced Features Section */}
-      <section aria-label="Advanced Features" className="mt-8">
+      {/* 1. Advanced Features Section */}
+      <section aria-label="Advanced Features">
         <div className="flex items-center gap-2 mb-4">
           <h2 className="text-lg font-bold text-gray-900">Advanced Features</h2>
           <span className="text-xs bg-violet-100 text-violet-700 px-2 py-1 rounded-full font-semibold">NEW</span>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {/* Voice Input */}
           {/* Voice Input */}
           <button
             onClick={() => {
@@ -674,6 +571,44 @@ const Dashboard = () => {
           </button>
         </div>
       </section>
+
+      {/* 2. Smart Insights Section */}
+      {insights.length > 0 && (
+        <section aria-label="Smart Insights">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <h2 className="text-lg font-bold text-gray-900">Smart Insights</h2>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {insights.map((insight, index) => (
+              <div
+                key={index}
+                className="rounded-xl p-4 border bg-white border-gray-200 flex flex-col justify-between h-full hover:shadow-md transition-shadow cursor-pointer"
+                onClick={insight.onClick}
+              >
+                <div className="flex justify-between items-start mb-3">
+                  <h3 className="font-semibold text-gray-900 text-sm">{insight.title}</h3>
+                  <div className={`p - 2 rounded - lg bg - gray - 50 ${insight.color} shadow - sm`}>
+                    <insight.icon className="w-5 h-5" />
+                  </div>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600 mt-1 leading-relaxed">{insight.message}</p>
+                </div>
+                <button
+                  onClick={insight.onClick}
+                  className="self-start text-xs font-semibold text-gray-600 hover:underline mt-2 flex items-center gap-1"
+                >
+                  {insight.action}
+                  <ArrowUpRight className="w-3 h-3" />
+                </button>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
 
       {/* 4. Key Performance Indicators */}
       <section>
@@ -961,13 +896,29 @@ const Dashboard = () => {
                   : 'Welcome to your dashboard'}
               </p>
             </div>
-            <button
-              onClick={() => setShowQuickActionFlow(true)}
-              className="inline-flex items-center gap-2 px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-medium shadow-sm"
-            >
-              <Zap className="w-5 h-5" />
-              Quick Create
-            </button>
+            <div className="flex flex-wrap gap-3">
+              <button
+                onClick={() => setShowQuickActionFlow(true)}
+                className="inline-flex items-center gap-2 px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-medium shadow-sm"
+              >
+                <Zap className="w-5 h-5" />
+                Quick Create
+              </button>
+              <button
+                onClick={() => setActiveTab('Transactions')}
+                className="inline-flex items-center gap-2 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium shadow-sm"
+              >
+                <CreditCard className="w-5 h-5" />
+                Request Financing
+              </button>
+              <button
+                onClick={() => navigate('/cargo-owner/cargos/create')}
+                className="inline-flex items-center gap-2 px-6 py-3 bg-white text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-medium shadow-sm"
+              >
+                <Plus className="w-5 h-5" />
+                Full Form
+              </button>
+            </div>
           </div>
 
           {/* Clean Navigation Tabs */}
@@ -975,7 +926,6 @@ const Dashboard = () => {
             {[
               { id: 'Overview', label: 'Overview', icon: Activity },
               { id: 'All Cargos', label: 'Cargos', icon: Package },
-              { id: 'Tracking', label: 'Tracking', icon: MapPin },
               { id: 'Transactions', label: 'Financials', icon: Wallet },
               { id: 'Analytics', label: 'Analytics', icon: BarChart3 },
               { id: 'Documents', label: 'Documents', icon: FileText },
