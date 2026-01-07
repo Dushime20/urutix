@@ -732,7 +732,10 @@ const CargoOwnerPayment: React.FC = () => {
 
               <button
                 onClick={() => handleInitiatePayment(load)}
-                className="w-full mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+                style={{ backgroundColor: '#345E85' }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#2A4D6E'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#345E85'}
+                className="w-full mt-4 px-4 py-2 text-white rounded-lg transition-colors flex items-center justify-center gap-2"
               >
                 <span>Make Payment</span>
                 <ArrowRight className="w-4 h-4" />

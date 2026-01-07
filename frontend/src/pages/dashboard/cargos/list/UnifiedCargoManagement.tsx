@@ -22,7 +22,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import LoadItem from "./components/loadItem";
 import TemplateSelectionModal from "../create/components/TemplateSelectionModal";
 import type { CargoFormSchemaType } from "../create/components/form/cargoFormSchema";
-// Removed unused imports - statistics are now in analytics page
 import { cn } from "@/utils/cn";
 import toast from "react-hot-toast";
 import type { ICargoBody, ICargoResponse } from "../create/types/cargo";
@@ -32,6 +31,7 @@ import logoUrutiX from "@/assets/logo-urutix.svg";
 import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 import { loadStatusWebSocket } from "@/services/loadStatusWebSocket";
 import { AssignBrokerModal } from "@/components/CargoDashboard/AssignBrokerModal";
+import { getStatusColor, getStatusDisplayName } from "./utils";
 
 type TabType = "all" | "active" | "create" | "template" | "bidding";
 
@@ -594,16 +594,19 @@ const UnifiedCargoManagement = () => {
         style={{ objectPosition: 'center' }}
       />
       <div className="max-w-7xl mx-auto px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8 py-3 sm:py-4 md:py-6 relative z-10">
-        {/* Header */}
-        <div className="mb-3 sm:mb-4">
-          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Cargo Management</h1>
-          <p className="text-xs sm:text-sm text-gray-600 mt-1">
-            Manage shipments, create new cargo, and track bidding
-          </p>
-        </div>
+        {/* Header - Hide for bidding tab */}
+        {activeTab !== "bidding" && (
+          <div className="mb-3 sm:mb-4 rounded-lg px-4 py-3" style={{ backgroundColor: '#345E85' }}>
+            <h1 className="text-xl sm:text-2xl font-bold text-white">Cargo Management</h1>
+            <p className="text-xs sm:text-sm text-white/90 mt-1">
+              Manage shipments, create new cargo, and track bidding
+            </p>
+          </div>
+        )}
 
-        {/* Navigation Tabs */}
-        <div className="bg-white rounded-lg border border-gray-200 mb-3 sm:mb-4 overflow-hidden">
+        {/* Navigation Tabs - Hide for bidding tab */}
+        {activeTab !== "bidding" && (
+          <div className="bg-white rounded-lg border border-gray-200 mb-3 sm:mb-4 overflow-hidden">
           <nav className="flex flex-wrap sm:flex-nowrap gap-1.5 sm:gap-1 sm:space-x-1 p-1.5 sm:p-1 sm:overflow-x-auto sm:scrollbar-hide sm:scroll-smooth">
             {tabs.map((tab) => {
               const Icon = tab.icon;
@@ -653,9 +656,11 @@ const UnifiedCargoManagement = () => {
             })}
           </nav>
         </div>
+        )}
 
-        {/* Content Container */}
-        <div className="bg-white rounded-lg border border-gray-200 mb-4 sm:mb-6">
+        {/* Content Container - Hide for bidding tab */}
+        {activeTab !== "bidding" && (
+          <div className="bg-white rounded-lg border border-gray-200 mb-4 sm:mb-6">
 
           {/* Tab Content */}
           <div className="p-3 sm:p-4 md:p-6 pt-3 sm:pt-4 md:pt-6">
@@ -840,13 +845,9 @@ const UnifiedCargoManagement = () => {
                                   <td className="px-4 py-3 whitespace-nowrap">
                                     <span className={cn(
                                       "px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full",
-                                      load.status === 'DELIVERED' ? 'bg-green-100 text-green-800' :
-                                        load.status === 'IN_TRANSIT' ? 'bg-blue-100 text-blue-800' :
-                                          load.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
-                                            load.status === 'CANCELLED' ? 'bg-red-100 text-red-800' :
-                                              'bg-gray-100 text-gray-800'
+                                      getStatusColor(load.status)
                                     )}>
-                                      {load.status}
+                                      {getStatusDisplayName(load.status)}
                                     </span>
                                   </td>
                                   <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
@@ -924,25 +925,32 @@ const UnifiedCargoManagement = () => {
                 />
               </div>
             )}
+          </div>
+        </div>
+        )}
 
-            {/* Bidding Tab */}
-            {activeTab === "bidding" && (
-              <div>
-                {user ? (
-                  <BiddingDashboard
-                    userRole={(user.role as "CARGO_OWNER" | "TRUCK_OWNER") || "CARGO_OWNER"}
-                  />
-                ) : (
-                  <div className="text-center py-8 sm:py-12 px-3 sm:px-4">
-                    <p className="text-sm sm:text-base text-gray-600">
-                      Please log in to access the bidding system.
-                    </p>
-                  </div>
-                )}
+        {/* Bidding Tab - Outside the container */}
+        {activeTab === "bidding" && (
+          <div>
+            <div className="mb-3 sm:mb-4 rounded-lg px-4 py-3" style={{ backgroundColor: '#345E85' }}>
+              <h1 className="text-xl sm:text-2xl font-bold text-white">Bidding Dashboard</h1>
+              <p className="text-xs sm:text-sm text-white/90 mt-1">
+                Manage bids and auctions for your cargo
+              </p>
+            </div>
+            {user ? (
+              <BiddingDashboard
+                userRole={(user.role as "CARGO_OWNER" | "TRUCK_OWNER") || "CARGO_OWNER"}
+              />
+            ) : (
+              <div className="text-center py-8 sm:py-12 px-3 sm:px-4">
+                <p className="text-sm sm:text-base text-gray-600">
+                  Please log in to access the bidding system.
+                </p>
               </div>
             )}
           </div>
-        </div>
+        )}
       </div>
 
       {/* Modals */}
