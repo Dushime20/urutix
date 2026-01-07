@@ -223,15 +223,8 @@ You'll be notified about:
       {/* Help Modal */}
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogContent className="w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
-          <DialogHeader className="relative pb-4 border-b border-gray-200">
+          <DialogHeader className="pb-4 border-b border-gray-200">
             <DialogTitle className="text-xl font-bold text-gray-900">Help & Support</DialogTitle>
-            <button
-              onClick={() => setIsOpen(false)}
-              className="absolute top-0 right-0 p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
-              aria-label="Close"
-            >
-              <X className="w-5 h-5 text-gray-500" />
-            </button>
           </DialogHeader>
 
           <div className="flex-1 overflow-y-auto">

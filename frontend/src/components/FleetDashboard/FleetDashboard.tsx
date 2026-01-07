@@ -418,172 +418,121 @@ export const FleetDashboard: React.FC = () => {
   return (
     <ErrorBoundary>
       <div className="p-6">
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">
-            <TranslatedText text="Fleet Dashboard" />
-          </h1>
-          <p className="text-gray-600">
-            <TranslatedText text="Manage your trucks and drivers" />
-          </p>
-        </div>
-        
-        {/* Simple test content */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-4">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Dashboard Status</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-blue-50 p-4 rounded-lg">
-              <h3 className="font-medium text-blue-900">
-                <TranslatedText text="Trucks" />
-              </h3>
-              <p className="text-2xl font-bold text-blue-600">2</p>
-            </div>
-            <div className="bg-green-50 p-4 rounded-lg">
-              <h3 className="font-medium text-green-900">
-                <TranslatedText text="Drivers" />
-              </h3>
-              <p className="text-2xl font-bold text-green-600">2</p>
-            </div>
-            <div className="bg-orange-50 p-4 rounded-lg">
-              <h3 className="font-medium text-orange-900">
-                <TranslatedText text="Active Trips" />
-              </h3>
-              <p className="text-2xl font-bold text-orange-600">1</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Header with actions */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <h2 className="text-lg font-semibold text-gray-900">
-                <TranslatedText text="Fleet Management" />
-              </h2>
-              <div className="flex items-center gap-2">
-                <button 
-                  onClick={handleCreateTruck}
-                  className="px-3 py-1 text-sm bg-primary-600 text-white rounded hover:bg-primary-700"
-                >
-                  <TranslatedText text="Add Truck" />
-                </button>
-                <button 
-                  onClick={handleCreateDriver}
-                  className="px-3 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700"
-                >
-                  <TranslatedText text="Add Driver" />
-                </button>
+        {/* Header */}
+        <div className="bg-white border-b border-gray-200 mb-6">
+          <div className="flex items-center justify-between px-6 py-4">
+            {/* Search Bar */}
+            <div className="flex items-center flex-1 max-w-md">
+              <div className="relative w-full">
+                <input
+                  type="text"
+                  placeholder="Search trucks, drivers..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-navy-500 focus:border-transparent"
+                />
+                <svg className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <button className="p-2 rounded hover:bg-gray-100">
-                <FiGrid className="w-4 h-4" />
+
+            {/* Right Side Icons */}
+            <div className="flex items-center gap-4">
+              <button className="p-2 hover:bg-gray-100 rounded-lg relative">
+                <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                </svg>
+                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
               </button>
-              <button className="p-2 rounded hover:bg-gray-100">
-                <FiList className="w-4 h-4" />
-              </button>
-              <button aria-label="Refresh" className="p-2 rounded hover:bg-gray-100">
-                <FaSync />
-              </button>
-              <button 
-                onClick={debugAuthentication}
-                className="p-2 rounded hover:bg-gray-100 text-xs bg-yellow-100 text-yellow-800"
-                title="Debug Authentication"
-              >
-                🔍
+              <button className="flex items-center gap-2 p-2 hover:bg-gray-100 rounded-lg">
+                <div className="w-8 h-8 bg-navy-600 rounded-full flex items-center justify-center text-white font-semibold">
+                  {user?.firstName?.charAt(0) || 'F'}
+                </div>
               </button>
             </div>
           </div>
-        </div>
 
-        {/* Tab Navigation */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-4">
-          <div className="border-b border-gray-200">
-            <nav className="flex space-x-8 px-6">
-              <button
-                onClick={() => {
-                  setActiveTab('trucks');
-                  navigate('/dashboard/fleet/trucks');
-                }}
-                className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 ${
-                  activeTab === 'trucks'
-                    ? 'border-primary-500 text-primary-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                <FaTruck className="w-4 h-4" />
-                <TranslatedText text="Trucks" />
-              </button>
-              <button
-                onClick={() => {
-                  setActiveTab('drivers');
-                  navigate('/dashboard/fleet/drivers');
-                }}
-                className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 ${
-                  activeTab === 'drivers'
-                    ? 'border-primary-500 text-primary-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                <FaUser className="w-4 h-4" />
-                <TranslatedText text="Drivers" />
-              </button>
-              <button
-                onClick={() => {
-                  setActiveTab('analytics');
-                  navigate('/dashboard/fleet/analytics');
-                }}
-                className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 ${
-                  activeTab === 'analytics'
-                    ? 'border-primary-500 text-primary-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                <FaChartBar className="w-4 h-4" />
-                <TranslatedText text="Analytics" />
-              </button>
-              <button
-                onClick={() => {
-                  setActiveTab('safety');
-                  navigate('/dashboard/fleet/safety');
-                }}
-                className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 ${
-                  activeTab === 'safety'
-                    ? 'border-primary-500 text-primary-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                <FaExclamationTriangle className="w-4 h-4" />
-                <TranslatedText text="Safety" />
-              </button>
-              <button
-                onClick={() => {
-                  setActiveTab('financial');
-                  navigate('/dashboard/fleet/financial');
-                }}
-                className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 ${
-                  activeTab === 'financial'
-                    ? 'border-primary-500 text-primary-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                <FaDollarSign className="w-4 h-4" />
-                <TranslatedText text="Financial" />
-              </button>
-              <button
-                onClick={() => {
-                  setActiveTab('routes');
-                  navigate('/dashboard/fleet/routes');
-                }}
-                className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 ${
-                  activeTab === 'routes'
-                    ? 'border-primary-500 text-primary-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                <FaRoute className="w-4 h-4" />
-                <TranslatedText text="Routes" />
-              </button>
-            </nav>
+          {/* Menu Tabs */}
+          <div className="flex items-center gap-8 px-6">
+            <button
+              onClick={() => {
+                setActiveTab('trucks');
+                navigate('/dashboard/fleet/trucks');
+              }}
+              className={`pb-3 border-b-2 font-medium ${
+                activeTab === 'trucks'
+                  ? 'border-navy-600 text-navy-600'
+                  : 'border-transparent text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              <TranslatedText text="Trucks" />
+            </button>
+            <button
+              onClick={() => {
+                setActiveTab('drivers');
+                navigate('/dashboard/fleet/drivers');
+              }}
+              className={`pb-3 border-b-2 font-medium ${
+                activeTab === 'drivers'
+                  ? 'border-navy-600 text-navy-600'
+                  : 'border-transparent text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              <TranslatedText text="Drivers" />
+            </button>
+            <button
+              onClick={() => {
+                setActiveTab('analytics');
+                navigate('/dashboard/fleet/analytics');
+              }}
+              className={`pb-3 border-b-2 font-medium ${
+                activeTab === 'analytics'
+                  ? 'border-navy-600 text-navy-600'
+                  : 'border-transparent text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              <TranslatedText text="Analytics" />
+            </button>
+            <button
+              onClick={() => {
+                setActiveTab('safety');
+                navigate('/dashboard/fleet/safety');
+              }}
+              className={`pb-3 border-b-2 font-medium ${
+                activeTab === 'safety'
+                  ? 'border-navy-600 text-navy-600'
+                  : 'border-transparent text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              <TranslatedText text="Safety" />
+            </button>
+            <button
+              onClick={() => {
+                setActiveTab('financial');
+                navigate('/dashboard/fleet/financial');
+              }}
+              className={`pb-3 border-b-2 font-medium ${
+                activeTab === 'financial'
+                  ? 'border-navy-600 text-navy-600'
+                  : 'border-transparent text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              <TranslatedText text="Financial" />
+            </button>
+            <button
+              onClick={() => {
+                setActiveTab('routes');
+                navigate('/dashboard/fleet/routes');
+              }}
+              className={`pb-3 border-b-2 font-medium ${
+                activeTab === 'routes'
+                  ? 'border-navy-600 text-navy-600'
+                  : 'border-transparent text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              <TranslatedText text="Routes" />
+            </button>
           </div>
         </div>
 
