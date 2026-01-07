@@ -279,49 +279,6 @@ function App() {
               <Route path="tenant-dashboard" element={<TenantDashboardPage />} />
             </Route>
 
-            {/* Fleet Dashboard Routes (under dashboard path) */}
-            <Route path="/dashboard/fleet" element={<FleetOwnerLayout />}>
-              <Route index element={<FleetOwnerDashboard />} />
-              <Route path="analytics" element={<FleetAnalytics />} />
-              <Route path="trucks" element={<UnifiedFleetManagement />} />
-              <Route path="trucks/create" element={<UnifiedFleetManagement />} />
-              <Route path="trucks/:truckId/records" element={<TruckRecordsPage />} />
-              <Route path="trips" element={<UnifiedFleetManagement />} />
-              <Route path="bids" element={<TruckBidsPage />} />
-              <Route path="drivers" element={<UnifiedDriverManagement />} />
-              <Route path="drivers/create" element={<UnifiedDriverManagement />} />
-              <Route path="assignments" element={<UnifiedDriverManagement />} />
-              <Route path="maintenance" element={<FleetDashboard />} />
-              <Route path="payments" element={<FleetPaymentManagement />} />
-              <Route path="revenue" element={<FleetAnalytics />} />
-              <Route path="reports" element={<FleetAnalytics />} />
-              <Route path="history" element={<FleetAnalytics />} />
-              <Route path="routes" element={<RoutesPage />} />
-              <Route path="tenant-dashboard" element={<TenantDashboardPage />} />
-              <Route path="profile" element={<FleetDashboard />} />
-              <Route path="settings" element={<FleetDashboard />} />
-              <Route path="notifications" element={<FleetDashboard />} />
-              <Route path="support" element={<FleetHelpSupport />} />
-              <Route path="ratings" element={<UnifiedDriverManagement />} />
-              <Route path="rewards" element={<UnifiedDriverManagement />} />
-              <Route path="scoring" element={<UnifiedDriverManagement />} />
-              <Route path="safety" element={<FleetSafety />} />
-              <Route path="financial" element={<UnifiedFinancialManagement />} />
-              <Route path="cost-analysis" element={<UnifiedFinancialManagement />} />
-              <Route path="insurance" element={<FleetDashboard />} />
-              
-              {/* Fleet Transaction Flow Routes */}
-              <Route path="available-loads" element={<MatchResults />} />
-              <Route path="booking-requests" element={<BookingConfirmation />} />
-              <Route path="contract-negotiation/:bookingId" element={<ContractNegotiation />} />
-              <Route path="payment-processing/:bookingId" element={<PaymentProcessing />} />
-              <Route path="escrow-management/:bookingId" element={<EscrowManagement />} />
-              <Route path="trip-tracking/:tripId" element={<TripTracking />} />
-              <Route path="delivery-confirmation/:tripId" element={<DeliveryConfirmation />} />
-              <Route path="settlement-processing/:tripId" element={<SettlementProcessing />} />
-              <Route path="dispute-resolution/:tripId" element={<DisputeResolution />} />
-            </Route>
-
             {/* Driver Routes */}
             <Route path="/dashboard/driver" element={<DriverLayout />}>
               <Route index element={<DriverDashboard />} />

@@ -83,11 +83,6 @@ const DashboardHeader = () => {
           ]
         },
         {
-          label: 'My Bids',
-          path: `${basePath}/my-bids`,
-          icon: Gavel
-        },
-        {
           label: 'Bidding',
           path: `${basePath}/bidding`,
           icon: Gavel
