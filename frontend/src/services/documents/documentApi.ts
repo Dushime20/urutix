@@ -294,9 +294,13 @@ export class DocumentApiService {
   }
 
   // Get document statistics
-  async getDocumentStatistics(): Promise<Record<string, any>> {
+  async getDocumentStatistics(entityType?: string): Promise<Record<string, any>> {
     try {
-      const response = await api.get(`${this.baseUrl}/statistics`, {
+      const url = entityType 
+        ? `${this.baseUrl}/statistics?entityType=${entityType}`
+        : `${this.baseUrl}/statistics`;
+        
+      const response = await api.get(url, {
         headers: this.getHeaders(),
       });
       return response.data;
