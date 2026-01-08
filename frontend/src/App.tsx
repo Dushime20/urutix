@@ -279,6 +279,18 @@ function App() {
               <Route path="tenant-dashboard" element={<TenantDashboardPage />} />
             </Route>
 
+            {/* Fleet Dashboard Routes */}
+            <Route path="/dashboard/fleet" element={<FleetOwnerLayout />}>
+              <Route index element={<FleetDashboard />} />
+              <Route path="trucks" element={<UnifiedFleetManagement />} />
+              <Route path="drivers" element={<UnifiedDriverManagement />} />
+              <Route path="analytics" element={<FleetAnalytics />} />
+              <Route path="safety" element={<FleetSafety />} />
+              <Route path="financial" element={<FleetPaymentManagement />} />
+              <Route path="routes" element={<RoutesPage />} />
+              <Route path="bids" element={<TruckBidsPage />} />
+            </Route>
+
             {/* Driver Routes */}
             <Route path="/dashboard/driver" element={<DriverLayout />}>
               <Route index element={<DriverDashboard />} />

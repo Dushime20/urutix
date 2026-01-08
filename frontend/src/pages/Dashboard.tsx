@@ -56,15 +56,17 @@ import OnboardingTour from '../components/Onboarding/OnboardingTour';
 import { useOnboardingStore, useShouldShowOnboarding } from '../stores/onboardingStore';
 import VoiceCargoInput from '../components/VoiceInput/VoiceCargoInput';
 import CameraDocumentScanner from '../components/Camera/CameraDocumentScanner';
-import { FleetDashboard } from '../components/FleetDashboard/FleetDashboard';
 
 const Dashboard = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
 
-  // If user is a truck owner (CARRIER), show fleet dashboard
-  if (user && user.role === 'CARRIER') {
-    return <FleetDashboard />;
-  }
+  // If user is a truck owner (CARRIER), redirect to fleet dashboard
+  useEffect(() => {
+    if (user && user.role === 'CARRIER') {
+      navigate('/dashboard/fleet', { replace: true });
+    }
+  }, [user, navigate]);
 
   // Otherwise show cargo owner dashboard
   return <CargoOwnerDashboard />;
