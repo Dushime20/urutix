@@ -3,6 +3,7 @@ import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import { Icon } from 'leaflet';
 import { FaSync, FaExclamationTriangle, FaTruck, FaUser, FaRoute, FaDollarSign, FaChartBar } from 'react-icons/fa';
 import { FiGrid, FiList } from 'react-icons/fi';
+import { CheckCircle, Activity, Settings, AlertCircle, ArrowUpRight } from 'lucide-react';
 import { FleetFilters } from './FleetFilters';
 import { FleetModal } from './FleetModal';
 import { FleetSkeleton } from './FleetSkeleton';
@@ -26,6 +27,7 @@ import { TruckAnalytics } from './TruckAnalytics';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import { TranslatedText } from '../translated-text';
 import { useCargoOwnerLayout } from '../../contexts/CargoOwnerLayoutContext';
+import TruckBidsPage from '../../pages/TruckBidsPage';
 
 // Fix default marker icon for Leaflet in React
 import iconUrl from 'leaflet/dist/images/marker-icon.png';
@@ -339,12 +341,29 @@ export const FleetDashboard: React.FC = () => {
                   {trucks.length} trucks • {drivers.length} drivers
                 </p>
               </div>
-              <button
-                onClick={handleCreateNew}
-                className="inline-flex items-center gap-2 px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-medium shadow-sm"
-              >
-                Add New {activeTab === 'drivers' ? 'Driver' : 'Truck'}
-              </button>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={handleCreateTruck}
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-medium shadow-sm"
+                >
+                  <FaTruck className="w-4 h-4" />
+                  Add New Truck
+                </button>
+                <button
+                  onClick={handleCreateDriver}
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors font-medium shadow-sm"
+                >
+                  <FaUser className="w-4 h-4" />
+                  Add New Driver
+                </button>
+                <button
+                  onClick={() => setActiveTab('routes')}
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-white text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-medium shadow-sm"
+                >
+                  <FaRoute className="w-4 h-4" />
+                  Manage Routes
+                </button>
+              </div>
             </div>
 
             <div className="mt-8 flex gap-1 overflow-x-auto scrollbar-hide">
@@ -435,7 +454,10 @@ export const FleetDashboard: React.FC = () => {
               <section>
                 <h2 className="text-xl font-bold text-gray-900 mb-6">Fleet Overview</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                  <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+                  <button
+                    onClick={() => setActiveTab('trucks')}
+                    className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100 hover:shadow-md transition-shadow text-left cursor-pointer"
+                  >
                     <div className="flex items-center justify-between mb-6">
                       <div className="p-4 bg-primary-50 rounded-xl">
                         <FaTruck className="w-8 h-8 text-primary-600" />
@@ -450,9 +472,12 @@ export const FleetDashboard: React.FC = () => {
                         <span className="text-gray-600">{trucks.length - availableTrucks} in use</span>
                       </div>
                     </div>
-                  </div>
+                  </button>
 
-                  <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+                  <button
+                    onClick={() => setActiveTab('drivers')}
+                    className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100 hover:shadow-md transition-shadow text-left cursor-pointer"
+                  >
                     <div className="flex items-center justify-between mb-6">
                       <div className="p-4 bg-blue-50 rounded-xl">
                         <FaUser className="w-8 h-8 text-blue-600" />
@@ -467,9 +492,12 @@ export const FleetDashboard: React.FC = () => {
                         <span className="text-gray-600">{drivers.length - availableDrivers} assigned</span>
                       </div>
                     </div>
-                  </div>
+                  </button>
 
-                  <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+                  <button
+                    onClick={() => setActiveTab('routes')}
+                    className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100 hover:shadow-md transition-shadow text-left cursor-pointer"
+                  >
                     <div className="flex items-center justify-between mb-6">
                       <div className="p-4 bg-violet-50 rounded-xl">
                         <FaRoute className="w-8 h-8 text-violet-600" />
@@ -485,9 +513,12 @@ export const FleetDashboard: React.FC = () => {
                         </div>
                       </div>
                     </div>
-                  </div>
+                  </button>
 
-                  <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+                  <button
+                    onClick={() => setActiveTab('analytics')}
+                    className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100 hover:shadow-md transition-shadow text-left cursor-pointer"
+                  >
                     <div className="flex items-center justify-between mb-6">
                       <div className="p-4 bg-amber-50 rounded-xl">
                         <FaDollarSign className="w-8 h-8 text-amber-600" />
@@ -503,7 +534,7 @@ export const FleetDashboard: React.FC = () => {
                         ></div>
                       </div>
                     </div>
-                  </div>
+                  </button>
                 </div>
               </section>
 
@@ -558,60 +589,6 @@ export const FleetDashboard: React.FC = () => {
                       </div>
                     </div>
                   </div>
-                </div>
-              </section>
-
-              {/* Quick Actions */}
-              <section>
-                <h2 className="text-xl font-bold text-gray-900 mb-6">Quick Actions</h2>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <button
-                    onClick={handleCreateTruck}
-                    className="bg-white rounded-xl p-8 shadow-sm border border-gray-200 hover:border-primary-300 hover:shadow-md transition-all text-left group"
-                  >
-                    <div className="flex items-start gap-4">
-                      <div className="p-4 bg-primary-50 rounded-xl group-hover:bg-primary-100 transition-colors">
-                        <FaTruck className="w-8 h-8 text-primary-600" />
-                      </div>
-                      <div className="flex-1">
-                        <h3 className="text-lg font-bold text-gray-900 mb-2">Add New Truck</h3>
-                        <p className="text-sm text-gray-600">Register a new truck to your fleet</p>
-                      </div>
-                      <ArrowUpRight className="w-5 h-5 text-gray-400 group-hover:text-primary-600 transition-colors" />
-                    </div>
-                  </button>
-
-                  <button
-                    onClick={handleCreateDriver}
-                    className="bg-white rounded-xl p-8 shadow-sm border border-gray-200 hover:border-blue-300 hover:shadow-md transition-all text-left group"
-                  >
-                    <div className="flex items-start gap-4">
-                      <div className="p-4 bg-blue-50 rounded-xl group-hover:bg-blue-100 transition-colors">
-                        <FaUser className="w-8 h-8 text-blue-600" />
-                      </div>
-                      <div className="flex-1">
-                        <h3 className="text-lg font-bold text-gray-900 mb-2">Add New Driver</h3>
-                        <p className="text-sm text-gray-600">Onboard a new driver to your team</p>
-                      </div>
-                      <ArrowUpRight className="w-5 h-5 text-gray-400 group-hover:text-blue-600 transition-colors" />
-                    </div>
-                  </button>
-
-                  <button
-                    onClick={() => setActiveTab('routes')}
-                    className="bg-white rounded-xl p-8 shadow-sm border border-gray-200 hover:border-violet-300 hover:shadow-md transition-all text-left group"
-                  >
-                    <div className="flex items-start gap-4">
-                      <div className="p-4 bg-violet-50 rounded-xl group-hover:bg-violet-100 transition-colors">
-                        <FaRoute className="w-8 h-8 text-violet-600" />
-                      </div>
-                      <div className="flex-1">
-                        <h3 className="text-lg font-bold text-gray-900 mb-2">Manage Routes</h3>
-                        <p className="text-sm text-gray-600">Plan and optimize delivery routes</p>
-                      </div>
-                      <ArrowUpRight className="w-5 h-5 text-gray-400 group-hover:text-violet-600 transition-colors" />
-                    </div>
-                  </button>
                 </div>
               </section>
 
