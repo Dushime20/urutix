@@ -176,19 +176,59 @@ const AdminDashboard: React.FC = () => {
   return (
     <div className="space-y-3">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-3">
-        <div>
-          <h1 className="text-lg font-bold text-gray-900">
-            <TranslatedText text="Admin Dashboard" />
-          </h1>
-          <p className="text-xs text-gray-600 mt-0.5">
-            <TranslatedText text="Platform overview and key metrics" />
-          </p>
+      <div className="bg-white border-b border-gray-200 mb-6">
+        <div className="flex items-center justify-between px-6 py-4">
+          {/* Search Bar */}
+          <div className="flex items-center flex-1 max-w-md">
+            <div className="relative w-full">
+              <input
+                type="text"
+                placeholder="Search..."
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-navy-500 focus:border-transparent"
+              />
+              <svg className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
+          </div>
+
+          {/* Right Side Icons */}
+          <div className="flex items-center gap-4">
+            <button className="p-2 hover:bg-gray-100 rounded-lg relative">
+              <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+              </svg>
+              <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+            </button>
+            <button className="flex items-center gap-2 p-2 hover:bg-gray-100 rounded-lg">
+              <div className="w-8 h-8 bg-navy-600 rounded-full flex items-center justify-center text-white font-semibold">
+                A
+              </div>
+            </button>
+          </div>
         </div>
-        <button className="px-2.5 py-1.5 text-xs bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-1.5 transition-colors">
-          <FaSync className="w-3 h-3" />
-          <TranslatedText text="Refresh" />
-        </button>
+
+        {/* Menu Tabs */}
+        <div className="flex items-center gap-8 px-6">
+          <button className="pb-3 border-b-2 border-navy-600 text-navy-600 font-medium">
+            <TranslatedText text="Overview" />
+          </button>
+          <button className="pb-3 border-b-2 border-transparent text-gray-600 hover:text-gray-900">
+            <TranslatedText text="Users" />
+          </button>
+          <button className="pb-3 border-b-2 border-transparent text-gray-600 hover:text-gray-900">
+            <TranslatedText text="Analytics" />
+          </button>
+          <button className="pb-3 border-b-2 border-transparent text-gray-600 hover:text-gray-900">
+            <TranslatedText text="Settings" />
+          </button>
+          <button className="pb-3 border-b-2 border-transparent text-gray-600 hover:text-gray-900">
+            <TranslatedText text="Reports" />
+          </button>
+          <button className="pb-3 border-b-2 border-transparent text-gray-600 hover:text-gray-900">
+            <TranslatedText text="Help" />
+          </button>
+        </div>
       </div>
 
       {/* Stats Grid */}

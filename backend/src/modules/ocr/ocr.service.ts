@@ -1,11 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import * as Tesseract from 'tesseract.js';
-import * as pdfParse from 'pdf-parse';
 import axios from 'axios';
 import { createWorker } from 'tesseract.js';
 import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf';
 import * as fs from 'fs';
 import * as path from 'path';
+const pdfParse = require('pdf-parse');
+
 
 // Optional canvas import - only needed for PDF OCR fallback
 let createCanvas: any = null;
@@ -22,10 +23,28 @@ try {
 @Injectable()
 export class OcrService {
   async extractText(url: string): Promise<{ text: string }> {
-    if (url.endsWith('.pdf')) {
-      // Download PDF and extract text from all pages
-      const response = await axios.get(url, { responseType: 'arraybuffer' });
-      const data = await pdfParse(response.data);
+    try {
+      console.log('Starting OCR extraction for URL:', url);
+      
+      // Validate URL format
+      if (!url.startsWith('http://') && !url.startsWith('https://')) {
+        throw new Error('URL must start with http:// or https://');
+      }
+      
+      if (url.endsWith('.pdf')) {
+        // Download PDF and extract text from all pages
+        console.log('Processing PDF file...');
+        const response = await axios.get(url, { 
+          responseType: 'arraybuffer',
+          timeout: 30000, // 30 second timeout
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+          }
+        });
+        console.log('PDF downloaded, size:', response.data.length);
+        
+        const data = await pdfParse(response.data);
+        console.log('PDF parsed successfully, text length:', data.text?.length || 0);
       if (data.text && data.text.trim().length > 0) {
         return { text: data.text };
       } else {
@@ -62,6 +81,21 @@ export class OcrService {
       } = await worker.recognize(url);
       await worker.terminate();
       return { text };
+    }
+    } catch (error) {
+      console.error('OCR extraction error:', error);
+      
+      if (error.response) {
+        // The request was made and the server responded with a status code
+        // that falls out of the range of 2xx
+        throw new Error(`HTTP ${error.response.status}: ${error.response.statusText}`);
+      } else if (error.request) {
+        // The request was made but no response was received
+        throw new Error('Network error: Failed to fetch the file. Please check the URL and network connectivity.');
+      } else {
+        // Something happened in setting up the request that triggered an Error
+        throw new Error(`OCR extraction failed: ${error.message}`);
+      }
     }
   }
 

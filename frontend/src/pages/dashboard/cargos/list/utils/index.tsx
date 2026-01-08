@@ -31,31 +31,31 @@ export const getStatusColor = (status: any) => {
       className = "bg-blue-100 text-blue-800";
       break;
     case "ASSIGNED":
-      className = "bg-yellow-100 text-yellow-800";
+      className = "bg-amber-100 text-amber-800";
       break;
     case "LOADED":
-      className = "bg-indigo-100 text-indigo-800";
+      className = "bg-violet-100 text-violet-800";
       break;
     case "IN_TRANSIT":
-      className = "bg-purple-100 text-purple-800";
+      className = "bg-sky-100 text-sky-800";
       break;
     case "DELIVERED":
-      className = "bg-green-100 text-green-800";
+      className = "bg-emerald-100 text-emerald-800";
       break;
     case "COMPLETED":
-      className = "bg-green-100 text-green-800";
+      className = "bg-teal-100 text-teal-800";
       break;
     case "CLOSED":
-      className = "bg-gray-100 text-gray-800";
+      className = "bg-slate-100 text-slate-800";
       break;
     case "CANCELLED":
-      className = "bg-red-100 text-red-800";
+      className = "bg-rose-100 text-rose-800";
       break;
     case "PENDING_CONFIRMATION":
       className = "bg-orange-100 text-orange-800";
       break;
     case "CREATED":
-      className = "bg-cyan-100/50 text-cyan-800";
+      className = "bg-cyan-100 text-cyan-800";
       break;
     case "DRAFT":
       className = "bg-white group-hover:bg-gray-100 text-gray-800";

@@ -261,21 +261,11 @@ const QuickCreateModal: React.FC<QuickCreateModalProps> = ({ isOpen, onClose, on
         setSelectingFor(null);
       }}>
         <DialogContent className="w-full max-w-3xl max-h-[90vh]">
-          <DialogHeader className="relative">
+          <DialogHeader>
             <DialogTitle className="text-lg font-bold text-gray-900 flex items-center gap-2">
-              <Map className="w-5 h-5 text-indigo-600" />
+              <Map className="w-5 h-5" style={{ color: '#345E85' }} />
               Select {selectingFor === 'pickup' ? 'Pickup' : 'Delivery'} Location
             </DialogTitle>
-            <button
-              onClick={() => {
-                setShowMapPicker(false);
-                setSelectingFor(null);
-              }}
-              className="absolute top-0 right-0 p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
-              aria-label="Close"
-            >
-              <X className="w-5 h-5 text-gray-500" />
-            </button>
           </DialogHeader>
 
           <div className="mt-4">
@@ -310,31 +300,24 @@ const QuickCreateModal: React.FC<QuickCreateModalProps> = ({ isOpen, onClose, on
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="w-full max-w-md sm:max-w-lg max-h-[90vh] overflow-y-auto">
-        <DialogHeader className="relative">
+        <DialogHeader>
           <DialogTitle className="text-lg sm:text-xl font-bold text-gray-900 flex items-center gap-2">
-            <div className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center">
-              <Zap className="w-4 h-4 text-indigo-600" />
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: '#E8EDF3' }}>
+              <Zap className="w-4 h-4" style={{ color: '#345E85' }} />
             </div>
             Quick Create Cargo
           </DialogTitle>
-          <button
-            onClick={onClose}
-            className="absolute top-0 right-0 p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
-            aria-label="Close"
-          >
-            <X className="w-5 h-5 text-gray-500" />
-          </button>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4 mt-4">
           {recentCargos.length > 0 && (
-            <div className="bg-blue-50 border border-blue-100 rounded-lg p-3">
+            <div className="rounded-lg p-3" style={{ backgroundColor: '#E8EDF3', borderColor: '#C5D3E0', borderWidth: '1px' }}>
               <div className="flex items-center gap-2 mb-2">
-                <Copy className="w-4 h-4 text-blue-600" />
-                <span className="text-sm font-medium text-blue-900">Copy from recent</span>
+                <Copy className="w-4 h-4" style={{ color: '#345E85' }} />
+                <span className="text-sm font-medium" style={{ color: '#1E3A52' }}>Copy from recent</span>
               </div>
               <Select onValueChange={handleDuplicate}>
-                <SelectTrigger className="w-full h-9 bg-white border-blue-200 text-xs">
+                <SelectTrigger className="w-full h-9 bg-white text-xs" style={{ borderColor: '#C5D3E0' }}>
                   <SelectValue placeholder="Select a shipment to duplicate..." />
                 </SelectTrigger>
                 <SelectContent>
@@ -410,7 +393,7 @@ const QuickCreateModal: React.FC<QuickCreateModalProps> = ({ isOpen, onClose, on
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="pickupLocation" className="text-sm font-medium text-gray-700 mb-1.5 flex items-center gap-1.5">
-                <MapPin className="w-4 h-4 text-blue-500" />
+                <MapPin className="w-4 h-4" style={{ color: '#345E85' }} />
                 Pickup Location *
               </Label>
               <div className="flex gap-2">
@@ -427,7 +410,10 @@ const QuickCreateModal: React.FC<QuickCreateModalProps> = ({ isOpen, onClose, on
                 <button
                   type="button"
                   onClick={() => openMapPicker('pickup')}
-                  className="px-3 min-h-[44px] bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg transition-colors flex items-center gap-1"
+                  className="px-3 min-h-[44px] rounded-lg transition-colors flex items-center gap-1"
+                  style={{ backgroundColor: '#E8EDF3', color: '#345E85' }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#C5D3E0'}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#E8EDF3'}
                   title="Select on map"
                 >
                   <Map className="w-4 h-4" />
@@ -563,7 +549,10 @@ const QuickCreateModal: React.FC<QuickCreateModalProps> = ({ isOpen, onClose, on
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px] flex items-center justify-center gap-2"
+              className="flex-1 px-4 py-2.5 text-white rounded-lg transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px] flex items-center justify-center gap-2"
+              style={{ backgroundColor: loading ? '#345E85' : '#345E85' }}
+              onMouseEnter={(e) => !loading && (e.currentTarget.style.backgroundColor = '#2A4D6E')}
+              onMouseLeave={(e) => !loading && (e.currentTarget.style.backgroundColor = '#345E85')}
             >
               {loading ? (
                 <>

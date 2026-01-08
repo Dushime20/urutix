@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
 import { MapContainer, TileLayer, Marker } from "react-leaflet";
 import { Icon } from "leaflet";
 import {
@@ -8,8 +7,7 @@ import {
   FaExclamationTriangle,
   FaPlus,
 } from "react-icons/fa";
-import { FiGrid, FiList } from "react-icons/fi";
-import { ChevronLeft, ChevronRight, Package, TrendingUp, MapPin, Eye, EyeOff, BarChart3, Home, ChevronRight as ChevronRightIcon, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Package, TrendingUp, MapPin, Eye, EyeOff, BarChart3, X, Bell, User } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
 import { CargoFilters } from "./CargoFilters";
 import { CargoModal } from "./CargoModal";
@@ -33,8 +31,6 @@ import {
 } from "../../services/cargoApi";
 import api from "../../services/api";
 import toast from "react-hot-toast";
-import { TranslatedText } from "../translated-text";
-// import type { Cargo, CargoFilters as CargoFiltersType, CargoData } from '../../types/cargo';
 
 // Temporary local interfaces to bypass module resolution issue
 interface Cargo {
@@ -168,12 +164,6 @@ interface CargoFilters {
   isTimeCritical?: boolean;
 }
 
-interface CargoData {
-  items: Cargo[];
-  total: number;
-  hasMore: boolean;
-}
-
 type CargoFiltersType = CargoFilters;
 
 // Fix default marker icon for Leaflet in React
@@ -196,7 +186,6 @@ export const CargoDashboard: React.FC = () => {
   const { confirm, DialogComponent } = useConfirmDialog();
   const layoutContext = useCargoOwnerLayout();
   const setHideHeader = layoutContext?.setHideHeader;
-  const navigate = useNavigate();
   const { user } = useAuth();
   
   // Debug: Log context availability
@@ -211,7 +200,6 @@ export const CargoDashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedCargo, setSelectedCargo] = useState<Cargo | null>(null);
-  const [view, setView] = useState<"grid" | "list">("list");
   const [filters, setFilters] = useState<CargoFiltersType>({});
   const [search, setSearch] = useState("");
   const [hasMore, setHasMore] = useState(true);
@@ -445,6 +433,7 @@ export const CargoDashboard: React.FC = () => {
       const newCargo = await createCargo(cargoData);
       setCargos((prev) => [newCargo, ...prev]);
       setShowForm(false);
+      return newCargo;
     } catch (error: any) {
       console.error("Error creating cargo:", error);
       throw error;
@@ -464,6 +453,7 @@ export const CargoDashboard: React.FC = () => {
         );
         setShowForm(false);
         setEditingCargo(null);
+        return updatedCargo;
       } catch (error: any) {
         console.error("Error updating cargo:", error);
         throw error;
@@ -749,362 +739,352 @@ export const CargoDashboard: React.FC = () => {
 
   return (
     <ErrorBoundary>
-      <div className="min-h-screen bg-gray-50">
-        {/* Content Section */}
-        <div className="max-w-7xl mx-auto px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8 mt-3 sm:mt-4 md:mt-6 relative z-10">
-          {/* Breadcrumb Navigation */}
-          <nav className="mb-3 sm:mb-4 pt-3 sm:pt-4 flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-gray-600 overflow-x-auto scrollbar-hide">
-            <button
-              onClick={() => navigate('/dashboard')}
-              className="flex items-center gap-1 hover:text-blue-600 transition-colors touch-manipulation min-h-[44px] sm:min-h-0 flex-shrink-0"
-            >
-              <Home className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-              <span className="whitespace-nowrap">Dashboard</span>
-            </button>
-            <ChevronRightIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400 flex-shrink-0" />
-            <span className="text-gray-900 font-medium whitespace-nowrap flex-shrink-0">Cargo Management</span>
-          </nav>
-          {/* Stats Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6">
-          <div className="bg-white rounded-lg sm:rounded-xl p-3 sm:p-4 md:p-5 border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-            <div className="flex items-center justify-between">
-              <div className="min-w-0 flex-1">
-                <p className="text-gray-600 text-xs sm:text-sm font-medium mb-1">Total Cargos</p>
-                <p className="text-2xl sm:text-3xl font-bold text-gray-900 truncate">{stats.total}</p>
-              </div>
-              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gray-50 rounded-lg flex items-center justify-center border border-gray-200 flex-shrink-0 ml-2">
-                <Package className="w-5 h-5 sm:w-6 sm:h-6 text-gray-600" />
-              </div>
+      {/* Top App Bar */}
+      <header className="bg-navy-800 text-white px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between shadow-lg">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center">
+            <div className="w-6 h-6 bg-navy-700 rounded-md flex items-center justify-center">
+              <Package className="w-4 h-4 text-white" />
             </div>
           </div>
-          
-          <div className="bg-white rounded-lg sm:rounded-xl p-3 sm:p-4 md:p-5 border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-            <div className="flex items-center justify-between">
-              <div className="min-w-0 flex-1">
-                <p className="text-gray-600 text-xs sm:text-sm font-medium mb-1">Published</p>
-                <p className="text-2xl sm:text-3xl font-bold text-gray-900 truncate">{stats.published}</p>
-              </div>
-              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gray-50 rounded-lg flex items-center justify-center border border-gray-200 flex-shrink-0 ml-2">
-                <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6 text-gray-600" />
-              </div>
-            </div>
-          </div>
-          
-          <div className="bg-white rounded-lg sm:rounded-xl p-3 sm:p-4 md:p-5 border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-            <div className="flex items-center justify-between">
-              <div className="min-w-0 flex-1">
-                <p className="text-gray-600 text-xs sm:text-sm font-medium mb-1">In Transit</p>
-                <p className="text-2xl sm:text-3xl font-bold text-gray-900 truncate">{stats.inTransit}</p>
-              </div>
-              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gray-50 rounded-lg flex items-center justify-center border border-gray-200 flex-shrink-0 ml-2">
-                <MapPin className="w-5 h-5 sm:w-6 sm:h-6 text-gray-600" />
-              </div>
-            </div>
-          </div>
-          
-          <div className="bg-white rounded-lg sm:rounded-xl p-3 sm:p-4 md:p-5 border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-            <div className="flex items-center justify-between">
-              <div className="min-w-0 flex-1">
-                <p className="text-gray-600 text-xs sm:text-sm font-medium mb-1">Total Value</p>
-                <p className="text-xl sm:text-2xl font-bold text-gray-900 break-words">
-                  {(() => {
-                    const value = stats.totalValue;
-                    if (value >= 1000000) return `$${(value / 1000000).toFixed(1)}M`;
-                    if (value >= 1000) return `$${(value / 1000).toFixed(1)}K`;
-                    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(value);
-                  })()}
-                </p>
-              </div>
-              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gray-50 rounded-lg flex items-center justify-center border border-gray-200 flex-shrink-0 ml-2">
-                <BarChart3 className="w-5 h-5 sm:w-6 sm:h-6 text-gray-600" />
-              </div>
-            </div>
-          </div>
+          <h1 className="text-xl font-semibold">Cargo Owner Dashboard</h1>
         </div>
+        <div className="flex items-center gap-4">
+          <button className="p-2 rounded-lg hover:bg-navy-700 transition-colors" aria-label="Notifications">
+            <Bell className="w-5 h-5" />
+          </button>
+          <button className="p-2 rounded-lg hover:bg-navy-700 transition-colors" aria-label="Profile">
+            <User className="w-5 h-5" />
+          </button>
+        </div>
+      </header>
 
-        <div className="bg-white rounded-lg sm:rounded-xl md:rounded-2xl p-3 sm:p-4 md:p-6 shadow-sm">
-            {/* Header Section */}
-            <div className="flex flex-col gap-3 sm:gap-4 mb-4 sm:mb-6 pb-3 sm:pb-4 border-b border-gray-200">
-              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-                <div className="min-w-0 flex-1">
-                  <h1 className="text-xl sm:text-2xl font-bold text-gray-900 flex items-center gap-2">
-                    <Package className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600 flex-shrink-0" />
-                    <span className="truncate"><TranslatedText text="Cargo Dashboard" /></span>
-                  </h1>
-                  <p className="text-xs sm:text-sm text-gray-500 mt-1">Manage and track all your cargo shipments</p>
+      {/* Main Content */}
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-7xl mx-auto px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8 mt-3 sm:mt-4 md:mt-6 relative z-10">
+          {/* Hero Section with KPIs */}
+          <section className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-2xl font-bold text-navy-800">Welcome back, {user?.firstName || 'Cargo Owner'}</h2>
+                <p className="text-gray-600">Here's your freight overview today</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="bg-gray-50 rounded-lg p-4 border border-gray-200 flex items-center gap-4">
+                <div className="w-12 h-12 bg-navy-100 rounded-lg flex items-center justify-center">
+                  <Package className="w-6 h-6 text-navy-700" />
                 </div>
-                <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center flex-wrap">
-                  <Button
-                    onClick={handleCreateNew}
-                    className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white touch-manipulation min-h-[44px] sm:min-h-0 order-1"
-                  >
-                    <FaPlus className="w-4 h-4" />
-                    <span className="hidden sm:inline"><TranslatedText text="Create New Cargo" /></span>
-                    <span className="sm:hidden"><TranslatedText text="Create" /></span>
-                  </Button>
-                  <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1 order-2">
-                    <Button
-                      variant={view === "list" ? "default" : "ghost"}
-                      size="sm"
-                      aria-label="List view"
-                      onClick={() => setView("list")}
-                      className="h-8 sm:h-8 touch-manipulation min-w-[44px] sm:min-w-0"
-                    >
-                      <FiList className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      variant={view === "grid" ? "default" : "ghost"}
-                      size="sm"
-                      aria-label="Grid view"
-                      onClick={() => setView("grid")}
-                      className="h-8 sm:h-8 touch-manipulation min-w-[44px] sm:min-w-0"
-                    >
-                      <FiGrid className="w-4 h-4" />
-                    </Button>
-                  </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    aria-label="Export"
-                    onClick={handleExport}
-                    className="h-9 sm:h-9 touch-manipulation min-h-[44px] sm:min-h-0 order-3 flex-1 sm:flex-initial"
-                  >
-                    <FaDownload className="w-4 h-4" />
-                    <span className="hidden sm:inline ml-2">Export</span>
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    aria-label="Refresh"
-                    onClick={() => loadCargos(true)}
-                    className="h-9 sm:h-9 touch-manipulation min-h-[44px] sm:min-h-0 order-4 flex-1 sm:flex-initial"
-                    disabled={loading}
-                  >
-                    <FaSync className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-                    <span className="hidden sm:inline ml-2">Refresh</span>
-                  </Button>
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Total Cargos</p>
+                  <p className="text-2xl font-bold text-navy-800">{stats.total}</p>
+                </div>
+              </div>
+              <div className="bg-gray-50 rounded-lg p-4 border border-gray-200 flex items-center gap-4">
+                <div className="w-12 h-12 bg-navy-100 rounded-lg flex items-center justify-center">
+                  <TrendingUp className="w-6 h-6 text-navy-700" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Published</p>
+                  <p className="text-2xl font-bold text-navy-800">{stats.published}</p>
+                </div>
+              </div>
+              <div className="bg-gray-50 rounded-lg p-4 border border-gray-200 flex items-center gap-4">
+                <div className="w-12 h-12 bg-navy-100 rounded-lg flex items-center justify-center">
+                  <MapPin className="w-6 h-6 text-navy-700" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-600">In Transit</p>
+                  <p className="text-2xl font-bold text-navy-800">{stats.inTransit}</p>
+                </div>
+              </div>
+              <div className="bg-gray-50 rounded-lg p-4 border border-gray-200 flex items-center gap-4">
+                <div className="w-12 h-12 bg-navy-100 rounded-lg flex items-center justify-center">
+                  <BarChart3 className="w-6 h-6 text-navy-700" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Total Value</p>
+                  <p className="text-xl font-bold text-navy-800">
+                    {(() => {
+                      const value = stats.totalValue;
+                      if (value >= 1000000) return `$${(value / 1000000).toFixed(1)}M`;
+                      if (value >= 1000) return `$${(value / 1000).toFixed(1)}K`;
+                      return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(value);
+                    })()}
+                  </p>
                 </div>
               </div>
             </div>
-            <CargoFilters
-              filters={filters}
-              setFilters={setFilters}
-              search={search}
-              setSearch={setSearch}
-            />
-            
-            {/* Map Toggle Section */}
-            <div className="mb-3 sm:mb-4">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0 mb-2">
-                <h3 className="text-xs sm:text-sm font-semibold text-gray-700 flex items-center gap-2">
-                  <MapPin className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                  <span>Cargo Locations Map</span>
-                </h3>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowMap(!showMap)}
-                  className="h-8 sm:h-8 text-xs touch-manipulation min-h-[44px] sm:min-h-0 w-full sm:w-auto"
-                >
-                  {showMap ? (
-                    <>
-                      <EyeOff className="w-3.5 h-3.5 sm:w-4 sm:h-4 sm:mr-1" />
-                      <span className="hidden sm:inline">Hide Map</span>
-                      <span className="sm:hidden">Hide</span>
-                    </>
-                  ) : (
-                    <>
-                      <Eye className="w-3.5 h-3.5 sm:w-4 sm:h-4 sm:mr-1" />
-                      <span className="hidden sm:inline">Show Map</span>
-                      <span className="sm:hidden">Show</span>
-                    </>
-                  )}
-                </Button>
-              </div>
-              {showMap && (
-                <div className="relative z-10 fleet-map-container rounded-lg overflow-hidden border border-gray-200 shadow-sm">
-                  <div className="w-full h-[250px] sm:h-[350px]">
-                    <MapContainer
-                      center={[0, 0]}
-                      zoom={2}
-                      style={{ width: "100%", height: "100%" }}
-                      scrollWheelZoom={true}
-                      aria-label="Cargo locations map"
+          </section>
+
+        {/* Two-Column Layout */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Left Column (70%) */}
+            <div className="lg:col-span-2 space-y-6">
+              {/* Active Loads Card */}
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-navy-800">Active Loads</h3>
+                  <Button variant="outline" size="sm" onClick={handleCreateNew} className="border-navy-300 text-navy-700 hover:bg-navy-50">
+                    <FaPlus className="w-4 h-4 mr-2" />
+                    Create New
+                  </Button>
+                </div>
+                <CargoFilters
+                  filters={filters}
+                  setFilters={setFilters}
+                  search={search}
+                  setSearch={setSearch}
+                />
+                {/* Map Toggle */}
+                <div className="mb-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="text-sm font-semibold text-navy-700 flex items-center gap-2">
+                      <MapPin className="w-4 h-4" />
+                      Cargo Locations Map
+                    </h4>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowMap(!showMap)}
+                      className="text-navy-600 hover:bg-navy-100"
                     >
-                    <TileLayer
-                      attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                      url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                    />
-                    {allCargos.map((cargo) => {
-                      const pickupCoords = cargo.pickupLocation?.coordinates;
-                      if (
-                        pickupCoords &&
-                        pickupCoords.latitude &&
-                        pickupCoords.longitude
-                      ) {
-                        return (
-                          <Marker
-                            key={cargo.id}
-                            position={[pickupCoords.latitude, pickupCoords.longitude]}
-                            icon={cargoIcon}
+                      {showMap ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </Button>
+                  </div>
+                  {showMap && (
+                      <div className="rounded-lg overflow-hidden border border-gray-200 shadow-sm">
+                      <div className="w-full h-[250px] sm:h-[350px]">
+                        <MapContainer
+                          center={[0, 0]}
+                          zoom={2}
+                          style={{ width: "100%", height: "100%" }}
+                          scrollWheelZoom={true}
+                          aria-label="Cargo locations map"
+                        >
+                          <TileLayer
+                            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                           />
-                        );
-                      }
-                      return null;
-                    })}
-                  </MapContainer>
-                  </div>
+                          {allCargos.map((cargo) => {
+                            const pickupCoords = cargo.pickupLocation?.coordinates;
+                            if (
+                              pickupCoords &&
+                              pickupCoords.latitude &&
+                              pickupCoords.longitude
+                            ) {
+                              return (
+                                <Marker
+                                  key={cargo.id}
+                                  position={[pickupCoords.latitude, pickupCoords.longitude]}
+                                  icon={cargoIcon}
+                                />
+                              );
+                            }
+                            return null;
+                          })}
+                        </MapContainer>
+                      </div>
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-        {error && (
-          <div
-            className="bg-red-50 border border-red-200 text-red-800 p-3 sm:p-4 rounded-lg flex items-start sm:items-center gap-2 sm:gap-3 mb-3 sm:mb-4 shadow-sm"
-            role="alert"
-          >
-            <div className="flex-shrink-0 mt-0.5 sm:mt-0">
-              <FaExclamationTriangle className="w-4 h-4 sm:w-5 sm:h-5" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="font-medium text-sm sm:text-base">Error loading cargos</p>
-              <p className="text-xs sm:text-sm text-red-600 mt-1 break-words">{error}</p>
-            </div>
-            <button
-              onClick={() => setError(null)}
-              className="text-red-400 hover:text-red-600 transition-colors touch-manipulation min-w-[32px] min-h-[32px] flex items-center justify-center flex-shrink-0"
-              aria-label="Dismiss error"
-            >
-              <X className="w-4 h-4 sm:w-5 sm:h-5" />
-            </button>
-          </div>
-        )}
-        {loading && allCargos.length === 0 ? (
-          <CargoSkeleton />
-        ) : allCargos.length === 0 ? (
-          <div className="text-center py-8 sm:py-12 px-3 sm:px-4">
-            <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
-              <Package className="w-6 h-6 sm:w-8 sm:h-8 text-gray-400" />
-            </div>
-            <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2">No cargos found</h3>
-            <p className="text-sm sm:text-base text-gray-500 mb-4 sm:mb-6 max-w-md mx-auto">
-              {search || Object.keys(filters).length > 0
-                ? "Try adjusting your search or filters to find what you're looking for."
-                : "Get started by creating your first cargo shipment."}
-            </p>
-            {(!search && Object.keys(filters).length === 0) && (
-              <Button
-                onClick={handleCreateNew}
-                className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white mx-auto touch-manipulation min-h-[44px] sm:min-h-0"
-              >
-                <FaPlus className="w-4 h-4" />
-                <TranslatedText text="Create New Cargo" />
-              </Button>
-            )}
-          </div>
-        ) : (
-          <>
-            <CargoTable
-              cargos={allCargos.slice((page - 1) * itemsPerPage, page * itemsPerPage) || []}
-              lastCargoRef={lastCargoRef}
-              view={view}
-              onRowClick={setSelectedCargo}
-              onBulkAction={handleBulkAction}
-              onEditCargo={handleEditCargo}
-              onDeleteCargo={handleDeleteCargo}
-              onPublishCargo={handlePublishCargo}
-              onAssignBroker={handleAssignBroker}
-            />
-            
-            {/* Pagination */}
-            {allCargos.length > 0 && (
-              <div className="mt-4 sm:mt-6 flex flex-col gap-3 sm:gap-4 px-3 sm:px-4 py-3 bg-white rounded-lg border border-gray-200 shadow-sm">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 w-full">
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 w-full sm:w-auto">
-                    <div className="text-xs sm:text-sm text-gray-700">
-                      Showing <span className="font-medium">{(page - 1) * itemsPerPage + 1}</span> to{' '}
-                      <span className="font-medium">
-                        {Math.min(page * itemsPerPage, totalCargos)}
-                      </span>{' '}
-                      of <span className="font-medium">{totalCargos}</span> cargos
+                {error && (
+                  <div className="bg-red-50 border border-red-200 text-red-800 p-4 rounded-lg flex items-start gap-3 mb-4" role="alert">
+                    <FaExclamationTriangle className="w-5 h-5 mt-0.5" />
+                    <div className="flex-1">
+                      <p className="font-medium">Error loading cargos</p>
+                      <p className="text-sm text-red-600 mt-1">{error}</p>
                     </div>
-                    
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs sm:text-sm text-gray-700 whitespace-nowrap">Show:</span>
-                      <select
-                        value={itemsPerPage}
-                        onChange={(e) => handleItemsPerPageChange(Number(e.target.value))}
-                        className="h-9 sm:h-9 rounded-md border border-gray-300 bg-white px-2 sm:px-3 py-1 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 touch-manipulation min-h-[44px] sm:min-h-0"
-                      >
-                        <option value={10}>10</option>
-                        <option value={25}>25</option>
-                        <option value={50}>50</option>
-                        <option value={100}>100</option>
-                      </select>
+                    <button onClick={() => setError(null)} className="text-red-400 hover:text-red-600">
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+                )}
+                {loading && allCargos.length === 0 ? (
+                  <CargoSkeleton />
+                ) : allCargos.length === 0 ? (
+                  <div className="text-center py-12 px-4">
+                    <div className="w-16 h-16 bg-navy-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <Package className="w-8 h-8 text-navy-400" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-navy-800 mb-2">No cargos found</h3>
+                    <p className="text-gray-600 mb-6">
+                      {search || Object.keys(filters).length > 0
+                        ? "Try adjusting your search or filters."
+                        : "Get started by creating your first cargo shipment."}
+                    </p>
+                    {(!search && Object.keys(filters).length === 0) && (
+                      <Button onClick={handleCreateNew} className="bg-navy-600 text-white hover:bg-navy-700">
+                        <FaPlus className="w-4 h-4 mr-2" />
+                        Create New Cargo
+                      </Button>
+                    )}
+                  </div>
+                ) : (
+                  <>
+                    <CargoTable
+                      cargos={allCargos.slice((page - 1) * itemsPerPage, page * itemsPerPage) || []}
+                      lastCargoRef={lastCargoRef}
+                      view={undefined}
+                      onRowClick={setSelectedCargo}
+                      onBulkAction={handleBulkAction}
+                      onEditCargo={handleEditCargo}
+                      onDeleteCargo={handleDeleteCargo}
+                      onPublishCargo={handlePublishCargo}
+                      onAssignBroker={handleAssignBroker}
+                    />
+                    {/* Pagination */}
+                    {allCargos.length > 0 && (
+                      <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4 px-4 py-3 bg-gray-50 rounded-lg border border-gray-200">
+                        <div className="text-sm text-gray-700">
+                          Showing <span className="font-medium">{(page - 1) * itemsPerPage + 1}</span> to{' '}
+                          <span className="font-medium">{Math.min(page * itemsPerPage, totalCargos)}</span> of{' '}
+                          <span className="font-medium">{totalCargos}</span> cargos
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm text-gray-700">Show:</span>
+                          <select
+                            value={itemsPerPage}
+                            onChange={(e) => handleItemsPerPageChange(Number(e.target.value))}
+                            className="h-9 rounded-md border border-navy-300 bg-white px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-navy-500"
+                          >
+                            <option value={10}>10</option>
+                            <option value={25}>25</option>
+                            <option value={50}>50</option>
+                            <option value={100}>100</option>
+                          </select>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handlePageChange(page - 1)}
+                            disabled={page === 1 || loading}
+                            className="border-navy-300 text-navy-700 hover:bg-navy-50"
+                          >
+                            <ChevronLeft className="w-4 h-4" />
+                            Previous
+                          </Button>
+                          <div className="flex items-center gap-1">
+                            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                              let pageNum: number;
+                              if (totalPages <= 5) {
+                                pageNum = i + 1;
+                              } else if (page <= 3) {
+                                pageNum = i + 1;
+                              } else if (page >= totalPages - 2) {
+                                pageNum = totalPages - 4 + i;
+                              } else {
+                                pageNum = page - 2 + i;
+                              }
+                              return (
+                                <Button
+                                  key={pageNum}
+                                  variant={page === pageNum ? "default" : "outline"}
+                                  size="sm"
+                                  onClick={() => handlePageChange(pageNum)}
+                                  disabled={loading}
+                                  className={`min-w-[40px] ${
+                                    page === pageNum
+                                      ? "bg-navy-600 text-white hover:bg-navy-700"
+                                      : "border-navy-300 text-navy-700 hover:bg-navy-50"
+                                  }`}
+                                >
+                                  {pageNum}
+                                </Button>
+                              );
+                            })}
+                          </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handlePageChange(page + 1)}
+                            disabled={page >= totalPages || loading}
+                            className="border-navy-300 text-navy-700 hover:bg-navy-50"
+                          >
+                            Next
+                            <ChevronRight className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* Right Column (30%) */}
+            <div className="space-y-6">
+              {/* Quick Actions */}
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <h3 className="text-lg font-semibold text-navy-800 mb-4">Quick Actions</h3>
+                <div className="space-y-3">
+                  <Button onClick={handleCreateNew} className="w-full bg-navy-600 text-white hover:bg-navy-700">
+                    <FaPlus className="w-4 h-4 mr-2" />
+                    Create New Cargo
+                  </Button>
+                  <Button variant="outline" className="w-full border-navy-300 text-navy-700 hover:bg-navy-50" onClick={handleExport}>
+                    <FaDownload className="w-4 h-4 mr-2" />
+                    Export Data
+                  </Button>
+                  <Button variant="outline" className="w-full border-navy-300 text-navy-700 hover:bg-navy-50" onClick={() => loadCargos(true)} disabled={loading}>
+                    <FaSync className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+                    Refresh
+                  </Button>
+                </div>
+              </div>
+
+              {/* Alerts */}
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <h3 className="text-lg font-semibold text-navy-800 mb-4">Alerts</h3>
+                <div className="space-y-3">
+                  <div className="flex items-start gap-3 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+                    <FaExclamationTriangle className="w-5 h-5 text-yellow-600 mt-0.5" />
+                    <div>
+                      <p className="text-sm font-medium text-yellow-800">2 contracts expiring soon</p>
+                      <p className="text-xs text-yellow-600 mt-1">Review and renew to avoid disruption</p>
                     </div>
                   </div>
-                  
-                  <div className="flex items-center gap-1.5 sm:gap-2 w-full sm:w-auto justify-center sm:justify-end">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handlePageChange(page - 1)}
-                      disabled={page === 1 || loading}
-                      className="flex items-center justify-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation min-h-[44px] sm:min-h-0 flex-1 sm:flex-initial"
-                    >
-                      <ChevronLeft className="w-4 h-4" />
-                      <span className="hidden sm:inline">Previous</span>
-                      <span className="sm:hidden">Prev</span>
-                    </Button>
-                    
-                    <div className="flex items-center gap-1 overflow-x-auto scrollbar-hide">
-                      {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                        let pageNum: number;
-                        if (totalPages <= 5) {
-                          pageNum = i + 1;
-                        } else if (page <= 3) {
-                          pageNum = i + 1;
-                        } else if (page >= totalPages - 2) {
-                          pageNum = totalPages - 4 + i;
-                        } else {
-                          pageNum = page - 2 + i;
-                        }
-                        
-                        return (
-                          <Button
-                            key={pageNum}
-                            variant={page === pageNum ? "default" : "outline"}
-                            size="sm"
-                            onClick={() => handlePageChange(pageNum)}
-                            disabled={loading}
-                            className={`min-w-[40px] sm:min-w-[40px] touch-manipulation min-h-[44px] sm:min-h-0 ${
-                              page === pageNum
-                                ? "bg-blue-600 text-white hover:bg-blue-700"
-                                : "hover:bg-gray-50"
-                            } disabled:opacity-50 disabled:cursor-not-allowed`}
-                          >
-                            {pageNum}
-                          </Button>
-                        );
-                      })}
+                  <div className="flex items-start gap-3 p-3 bg-red-50 rounded-lg border border-red-200">
+                    <FaExclamationTriangle className="w-5 h-5 text-red-600 mt-0.5" />
+                    <div>
+                      <p className="text-sm font-medium text-red-800">1 delivery overdue</p>
+                      <p className="text-xs text-red-600 mt-1">Contact transporter immediately</p>
                     </div>
-                    
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handlePageChange(page + 1)}
-                      disabled={page >= totalPages || loading}
-                      className="flex items-center justify-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation min-h-[44px] sm:min-h-0 flex-1 sm:flex-initial"
-                    >
-                      <span className="hidden sm:inline">Next</span>
-                      <span className="sm:hidden">Next</span>
-                      <ChevronRight className="w-4 h-4" />
-                    </Button>
                   </div>
                 </div>
               </div>
-            )}
-          </>
-        )}
+
+              {/* Performance Snapshot */}
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <h3 className="text-lg font-semibold text-navy-800 mb-4">Performance Snapshot</h3>
+                <div className="space-y-4">
+                  <div>
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="text-sm text-gray-600">On‑time Delivery Rate</span>
+                      <span className="text-sm font-semibold text-navy-800">94%</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div className="bg-green-500 h-2 rounded-full" style={{ width: '94%' }}></div>
+                    </div>
+                  </div>
+                  <div>
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="text-sm text-gray-600">Avg Delivery Time</span>
+                      <span className="text-sm font-semibold text-navy-800">2.3 days</span>
+                    </div>
+                  </div>
+                  <div>
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="text-sm text-gray-600">This Month Spend</span>
+                      <span className="text-sm font-semibold text-navy-800">$12,450</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        {/* Cargo Details Modal */}
         <CargoModal
           cargo={selectedCargo}
           onClose={() => setSelectedCargo(null)}
@@ -1141,7 +1121,6 @@ export const CargoDashboard: React.FC = () => {
 
         {/* Confirmation Dialog */}
         {DialogComponent}
-          </div>
         </div>
       </div>
     </ErrorBoundary>

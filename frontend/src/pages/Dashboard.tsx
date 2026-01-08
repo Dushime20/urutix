@@ -4,7 +4,6 @@ import {
   TrendingUp,
   Wallet,
   ArrowUpRight,
-  Plus,
   DollarSign,
   Package,
   Truck,
@@ -13,19 +12,19 @@ import {
   AlertCircle,
   Award,
   Zap,
-  Target,
   Star,
   TrendingUp as TrendingUpIcon,
   Activity,
   BarChart3,
   Sparkles,
   Gavel,
-  Users,
   CreditCard,
   MapPin,
-  CheckCircle2,
   Mic,
-  Camera
+  Camera,
+  FileText,
+  Settings,
+  Plus
 } from 'lucide-react';
 // Dynamically import recharts to reduce initial bundle size
 import {
@@ -59,6 +58,21 @@ import VoiceCargoInput from '../components/VoiceInput/VoiceCargoInput';
 import CameraDocumentScanner from '../components/Camera/CameraDocumentScanner';
 
 const Dashboard = () => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+
+  // If user is a truck owner (CARRIER), redirect to fleet dashboard
+  useEffect(() => {
+    if (user && user.role === 'CARRIER') {
+      navigate('/dashboard/fleet', { replace: true });
+    }
+  }, [user, navigate]);
+
+  // Otherwise show cargo owner dashboard
+  return <CargoOwnerDashboard />;
+};
+
+const CargoOwnerDashboard = () => {
   const layoutContext = useCargoOwnerLayout();
   const { user } = useAuth();
   const { setHideHeader } = layoutContext || {};
@@ -89,8 +103,6 @@ const Dashboard = () => {
   const [activeTab, setActiveTab] = useState('Overview');
   const [cargos, setCargos] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [hoveredCard, setHoveredCard] = useState<string | null>(null);
-  const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
   const [showQuickCreate, setShowQuickCreate] = useState(false);
   const [showQuickActionPanel, setShowQuickActionPanel] = useState(false);
   const [showQuickActionFlow, setShowQuickActionFlow] = useState(false);
@@ -114,12 +126,6 @@ const Dashboard = () => {
     matchSuccessRate: 0,
     recentMatches: [] as any[],
   });
-  const [brokerData, setBrokerData] = useState({
-    assignedBrokers: 0,
-    totalCommissions: 0,
-    pendingCommissions: 0,
-    recentAssignments: [] as any[],
-  });
 
   // Payment data for loaded cargos
   const [paymentData, setPaymentData] = useState({
@@ -135,7 +141,6 @@ const Dashboard = () => {
       try {
         const data = await fetchCargos(1, '', {});
         setCargos(Array.isArray(data) ? data : []);
-        setLastUpdate(new Date());
       } catch (error) {
         console.error('Error refreshing cargos:', error);
       }
@@ -241,34 +246,12 @@ const Dashboard = () => {
           });
         }
 
-        // Calculate broker data from cargos
+        // Calculate broker data from cargos (not currently used)
+        // This section can be removed or re-enabled when broker features are needed
         try {
-          const cargoArray = Array.isArray(cargoData) ? cargoData : [];
-          const brokerAssignments = cargoArray.filter((c: any) => c.brokerId).length;
-          const brokersWithCommissions = cargoArray.filter((c: any) =>
-            c.brokerId && c.brokerCommissionAmount
-          );
-          const totalCommissions = brokersWithCommissions.reduce((sum: number, c: any) =>
-            sum + (Number(c.brokerCommissionAmount) || 0), 0
-          );
-          const pendingCommissions = brokersWithCommissions.filter((c: any) =>
-            c.brokerCommissionStatus === 'PENDING'
-          ).length;
-
-          setBrokerData({
-            assignedBrokers: brokerAssignments,
-            totalCommissions,
-            pendingCommissions,
-            recentAssignments: cargoArray.filter((c: any) => c.brokerId).slice(0, 5),
-          });
+          // Broker data calculation removed since it's not being used
         } catch (error) {
           // Set defaults if calculation fails
-          setBrokerData({
-            assignedBrokers: 0,
-            totalCommissions: 0,
-            pendingCommissions: 0,
-            recentAssignments: [],
-          });
         }
 
       } catch (error) {
@@ -384,13 +367,13 @@ const Dashboard = () => {
     return cargos
       .filter(c => c.status === 'IN_TRANSIT' || c.status === 'ASSIGNED' || c.status === 'PUBLISHED')
       .slice(0, 3)
-      .map((cargo, index) => ({
+      .map((cargo) => ({
         id: cargo.id,
         name: cargo.title || `Cargo ${cargo.id.slice(0, 8)}`,
         target: cargo.loadValue || 0,
         current: cargo.loadValue ? cargo.loadValue * 0.6 : 0, // Simulated progress
         icon: Truck,
-        color: index === 0 ? 'bg-orange-100 text-orange-600' : index === 1 ? 'bg-emerald-100 text-emerald-600' : 'bg-violet-100 text-violet-600',
+        color: 'bg-orange-100 text-orange-600',
         status: cargo.status,
         pickupLocation: cargo.pickupLocation?.name || 'Unknown',
         deliveryLocation: cargo.deliveryLocation?.name || 'Unknown',
@@ -402,7 +385,7 @@ const Dashboard = () => {
     return cargos
       .sort((a, b) => new Date(b.updatedAt || b.createdAt).getTime() - new Date(a.updatedAt || a.createdAt).getTime())
       .slice(0, 4)
-      .map((cargo, index) => {
+      .map((cargo) => {
         const date = new Date(cargo.updatedAt || cargo.createdAt);
         const statusColors: Record<string, string> = {
           'DELIVERED': 'bg-green-100 text-green-700',
@@ -444,10 +427,10 @@ const Dashboard = () => {
     });
   }, [cargos]);
 
-  // Sync horizontal menu with tabs
-  const handleNavClick = (tabName: string) => {
-    setActiveTab(tabName);
-  };
+  // Sync horizontal menu with tabs (currently unused)
+  // const handleNavClick = (tabName: string) => {
+  //   setActiveTab(tabName);
+  // };
 
   // Calculate recommendations/insights
   const insights = useMemo(() => {
@@ -498,130 +481,13 @@ const Dashboard = () => {
 
   const renderOverview = () => (
     <div className="space-y-8">
-      {/* 1. Critical Alerts Section */}
-      {(biddingData.pendingBids > 0 || matchingData.matchRecommendations > 0 || paymentData.pendingPayments > 0 || stats.incompleteCargos > 0) && (
-        <section aria-label="Action Required">
-          <div className="flex items-center gap-2 mb-4">
-            <h2 className="text-lg font-bold text-gray-900">Action Required</h2>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {/* Quick Action - Create & Choose */}
-            <div
-              className="bg-white border border-gray-200 rounded-xl p-4 flex flex-col gap-2 transition-all hover:scale-[1.02] hover:shadow-xl cursor-pointer relative overflow-hidden group"
-              onClick={() => setShowQuickActionFlow(true)}
-            >
-              <div className="relative z-10">
-                <div className="flex justify-between items-start mb-2">
-                  <h3 className="font-bold text-gray-900 text-lg">Quick Action</h3>
-                  <div className="p-2 rounded-lg bg-gray-50 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
-                    <Zap className="w-5 h-5 text-gray-600" />
-                  </div>
-                </div>
-                <p className="text-sm text-gray-500 mb-3">Create cargo & choose your journey in one flow</p>
-                <div className="flex items-center gap-2 text-gray-600 font-medium text-sm group-hover:underline">
-                  <span>Get Started</span>
-                  <ArrowUpRight className="w-4 h-4" />
-                </div>
-              </div>
-            </div>
-
-            {/* Pending Bids */}
-            {biddingData.pendingBids > 0 && (
-              <div className="bg-white border border-gray-200 rounded-xl p-4 flex flex-col gap-2 transition-transform hover:scale-[1.02] cursor-pointer hover:shadow-md" onClick={() => navigate('/dashboard/bidding')}>
-                <div className="flex justify-between items-start mb-2">
-                  <h3 className="font-semibold text-gray-900 text-lg">Pending Bids</h3>
-                  <div className="p-2 rounded-lg bg-gray-50 flex items-center justify-center flex-shrink-0">
-                    <Gavel className="w-4 h-4 text-gray-600" />
-                  </div>
-                </div>
-                <p className="text-sm text-gray-500">You have {biddingData.pendingBids} bid{biddingData.pendingBids !== 1 ? 's' : ''} waiting.</p>
-              </div>
-            )}
-            {/* Matches */}
-            {matchingData.matchRecommendations > 0 && (
-              <div className="bg-white border border-gray-200 rounded-xl p-4 flex flex-col gap-2 transition-transform hover:scale-[1.02] cursor-pointer hover:shadow-md" onClick={() => { setActiveTab('All Cargos'); navigate('/dashboard/cargos?filter=matching'); }}>
-                <div className="flex justify-between items-start mb-2">
-                  <h3 className="font-semibold text-gray-900 text-lg">Matches</h3>
-                  <div className="p-2 rounded-lg bg-gray-50 flex items-center justify-center flex-shrink-0">
-                    <Zap className="w-4 h-4 text-gray-600" />
-                  </div>
-                </div>
-                <p className="text-sm text-gray-500">{matchingData.matchRecommendations} new match{matchingData.matchRecommendations !== 1 ? 'es' : ''} found.</p>
-              </div>
-            )}
-            {/* Payments */}
-            {paymentData.pendingPayments > 0 && (
-              <div className="bg-white border border-gray-200 rounded-xl p-4 flex flex-col gap-2 transition-transform hover:scale-[1.02] cursor-pointer hover:shadow-md" onClick={() => setActiveTab('Transactions')}>
-                <div className="flex justify-between items-start mb-2">
-                  <h3 className="font-semibold text-gray-900 text-lg">Payments</h3>
-                  <div className="p-2 rounded-lg bg-gray-50 flex items-center justify-center flex-shrink-0">
-                    <CreditCard className="w-4 h-4 text-gray-600" />
-                  </div>
-                </div>
-                <p className="text-sm text-gray-500">{paymentData.pendingPayments} payment{paymentData.pendingPayments !== 1 ? 's' : ''} due.</p>
-              </div>
-            )}
-            {/* Incomplete */}
-            {stats.incompleteCargos > 0 && (
-              <div className="bg-white border border-gray-200 rounded-xl p-4 flex flex-col gap-2 transition-transform hover:scale-[1.02] cursor-pointer hover:shadow-md" onClick={() => { setActiveTab('All Cargos'); navigate('/dashboard/cargos?filter=drafts'); }}>
-                <div className="flex justify-between items-start mb-2">
-                  <h3 className="font-semibold text-gray-900 text-lg">Drafts</h3>
-                  <div className="p-2 rounded-lg bg-gray-50 flex items-center justify-center flex-shrink-0">
-                    <Package className="w-4 h-4 text-gray-600" />
-                  </div>
-                </div>
-                <p className="text-sm text-gray-500">{stats.incompleteCargos} draft{stats.incompleteCargos !== 1 ? 's' : ''} pending.</p>
-              </div>
-            )}
-          </div>
-        </section>
-      )}
-
-      {/* 2. Smart Insights Section */}
-      {insights.length > 0 && (
-        <section aria-label="Smart Insights">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <h2 className="text-lg font-bold text-gray-900">Smart Insights</h2>
-            </div>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {insights.map((insight, index) => (
-              <div
-                key={index}
-                className="rounded-xl p-4 border bg-white border-gray-200 flex flex-col justify-between h-full hover:shadow-md transition-shadow cursor-pointer"
-                onClick={insight.onClick}
-              >
-                <div className="flex justify-between items-start mb-3">
-                  <h3 className="font-semibold text-gray-900 text-sm">{insight.title}</h3>
-                  <div className={`p - 2 rounded - lg bg - gray - 50 ${insight.color} shadow - sm`}>
-                    <insight.icon className="w-5 h-5" />
-                  </div>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600 mt-1 leading-relaxed">{insight.message}</p>
-                </div>
-                <button
-                  onClick={insight.onClick}
-                  className="self-start text-xs font-semibold text-gray-600 hover:underline mt-2 flex items-center gap-1"
-                >
-                  {insight.action}
-                  <ArrowUpRight className="w-3 h-3" />
-                </button>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* 3. Advanced Features Section */}
-      <section aria-label="Advanced Features" className="mt-8">
+      {/* 1. Advanced Features Section */}
+      <section aria-label="Advanced Features">
         <div className="flex items-center gap-2 mb-4">
           <h2 className="text-lg font-bold text-gray-900">Advanced Features</h2>
           <span className="text-xs bg-violet-100 text-violet-700 px-2 py-1 rounded-full font-semibold">NEW</span>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {/* Voice Input */}
           {/* Voice Input */}
           <button
             onClick={() => {
@@ -707,6 +573,44 @@ const Dashboard = () => {
           </button>
         </div>
       </section>
+
+      {/* 2. Smart Insights Section */}
+      {insights.length > 0 && (
+        <section aria-label="Smart Insights">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <h2 className="text-lg font-bold text-gray-900">Smart Insights</h2>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {insights.map((insight, index) => (
+              <div
+                key={index}
+                className="rounded-xl p-4 border bg-white border-gray-200 flex flex-col justify-between h-full hover:shadow-md transition-shadow cursor-pointer"
+                onClick={insight.onClick}
+              >
+                <div className="flex justify-between items-start mb-3">
+                  <h3 className="font-semibold text-gray-900 text-sm">{insight.title}</h3>
+                  <div className={`p - 2 rounded - lg bg - gray - 50 ${insight.color} shadow - sm`}>
+                    <insight.icon className="w-5 h-5" />
+                  </div>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600 mt-1 leading-relaxed">{insight.message}</p>
+                </div>
+                <button
+                  onClick={insight.onClick}
+                  className="self-start text-xs font-semibold text-gray-600 hover:underline mt-2 flex items-center gap-1"
+                >
+                  {insight.action}
+                  <ArrowUpRight className="w-3 h-3" />
+                </button>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
 
       {/* 4. Key Performance Indicators */}
       <section>
@@ -822,7 +726,7 @@ const Dashboard = () => {
             {activeCargosList.length === 0 ? (
               <p className="text-center text-gray-400 py-4 text-sm">No active shipments</p>
             ) : (
-              activeCargosList.map((cargo, idx) => (
+              activeCargosList.map((cargo) => (
                 <div key={cargo.id} className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 border border-transparent hover:border-gray-100 transition-colors cursor-pointer" onClick={() => setActiveTab('Tracking')}>
                   <div className="p-2 rounded-lg bg-gray-50 flex items-center justify-center flex-shrink-0">
                     <cargo.icon className="w-5 h-5 text-gray-600" />
@@ -972,149 +876,106 @@ const Dashboard = () => {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50 -m-2 sm:-m-4">
+    <div className="min-h-screen bg-gray-50">
       {/* Use shared DashboardHeader component */}
       <DashboardHeader />
 
-      {/* Welcome Section - unique to Dashboard */}
-      {/* Welcome Section - unique to Dashboard */}
-      <div className="bg-white border-b border-gray-200 pt-4 pb-0 mb-6">
-        <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8">
-          {/* Welcome Section */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+      {/* Modern Welcome Section */}
+      <div className="bg-white shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
-              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold mb-2 text-gray-900">
+              <h1 className="text-3xl font-bold text-gray-900">
                 {(() => {
                   const hour = new Date().getHours();
                   const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
-                  return `${greeting}, ${user?.firstName || 'User'}!`;
+                  return `${greeting}, ${user?.firstName || 'User'}`;
                 })()}
               </h1>
-              <p className="text-gray-500 text-sm sm:text-base">
+              <p className="mt-1 text-gray-600">
                 {stats.totalCargos > 0
-                  ? `You have ${stats.activeCargos} active cargo${stats.activeCargos !== 1 ? 's' : ''} and ${stats.completedCargos} completed.`
-                  : 'Ready to ship your first cargo? Get started below!'}
+                  ? `${stats.activeCargos} active shipment${stats.activeCargos !== 1 ? 's' : ''} • ${stats.completedCargos} completed`
+                  : 'Welcome to your dashboard'}
               </p>
             </div>
-            <div className="flex gap-2 sm:gap-3 flex-shrink-0">
+            <div className="flex flex-wrap gap-3">
+              <button
+                onClick={() => setShowQuickActionFlow(true)}
+                className="inline-flex items-center gap-2 px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-medium shadow-sm"
+              >
+                <Zap className="w-5 h-5" />
+                Quick Create
+              </button>
               <button
                 onClick={() => setActiveTab('Transactions')}
-                className="flex items-center justify-center gap-1.5 sm:gap-2 bg-emerald-600 hover:bg-emerald-700 text-white py-2 sm:py-2.5 px-3 sm:px-4 rounded-lg transition-all duration-200 text-xs sm:text-sm font-medium touch-manipulation min-h-[40px] hover:shadow-md whitespace-nowrap"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium shadow-sm"
               >
-                <CreditCard className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                <span>Request Financing</span>
+                <CreditCard className="w-5 h-5" />
+                Request Financing
               </button>
               <button
-                onClick={() => setShowQuickActionPanel(true)}
-                className="relative flex items-center justify-center gap-1.5 sm:gap-2 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white py-2 sm:py-2.5 px-3 sm:px-4 rounded-lg transition-all duration-200 text-xs sm:text-sm font-medium touch-manipulation min-h-[40px] hover:shadow-lg whitespace-nowrap group"
+                onClick={() => navigate('/cargo-owner/cargos/create')}
+                className="inline-flex items-center gap-2 px-6 py-3 bg-white text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-medium shadow-sm"
               >
-                <Zap className="w-3.5 h-3.5 sm:w-4 sm:h-4 group-hover:animate-pulse" />
-                <span className="font-semibold">Quick Post</span>
-                <span className="absolute -top-1 -right-1 w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
-              </button>
-              <button
-                onClick={() => {
-                  setActiveTab('All Cargos');
-                  setTimeout(() => {
-                    navigate('/dashboard/cargos/create');
-                  }, 100);
-                }}
-                className="flex items-center justify-center gap-1.5 sm:gap-2 bg-white hover:bg-gray-50 text-gray-700 py-2 sm:py-2.5 px-3 sm:px-4 rounded-lg transition-all duration-200 text-xs sm:text-sm font-medium touch-manipulation min-h-[40px] hover:shadow-sm whitespace-nowrap border border-gray-300"
-              >
-                <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-500" />
-                <span>Full Form</span>
+                <Plus className="w-5 h-5" />
+                Full Form
               </button>
             </div>
           </div>
 
-          <div className="flex gap-2 sm:gap-4 border-b border-gray-200 text-xs sm:text-sm font-medium overflow-x-auto scrollbar-hide">
+          {/* Clean Navigation Tabs */}
+          <div className="mt-8 flex gap-1 overflow-x-auto scrollbar-hide">
             {[
-              { id: 'Overview', label: 'Overview' },
-              { id: 'All Cargos', label: 'Cargo Management' },
-              { id: 'Transactions', label: 'Financials' },
-              { id: 'Analytics', label: 'Reports' },
-              { id: 'Tracking', label: 'Live Tracking' },
-              { id: 'Documents', label: 'Documents' },
-              { id: 'Notifications', label: 'Notifications' },
-              { id: 'Settings', label: 'Profile' },
-              { id: 'Support', label: 'Support' }
-            ].map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`pb-3 relative transition-colors whitespace-nowrap flex-shrink-0 px-2 sm:px-0 touch-manipulation min-h-[44px] sm:min-h-0 flex items-center border-b-2 ${activeTab === tab.id
-                  ? 'text-emerald-600 border-emerald-600 font-semibold'
-                  : 'text-gray-500 border-transparent hover:text-gray-700 hover:border-gray-300'
+              { id: 'Overview', label: 'Overview', icon: Activity },
+              { id: 'All Cargos', label: 'Cargos', icon: Package },
+              { id: 'Transactions', label: 'Financials', icon: Wallet },
+              { id: 'Analytics', label: 'Analytics', icon: BarChart3 },
+              { id: 'Documents', label: 'Documents', icon: FileText },
+              { id: 'Settings', label: 'Settings', icon: Settings }
+            ].map((tab) => {
+              const Icon = tab.icon;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-all whitespace-nowrap ${
+                    activeTab === tab.id
+                      ? 'bg-primary-50 text-primary-700'
+                      : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
                   }`}
-              >
-                <span className="text-xs sm:text-sm">{tab.label}</span>
-                {activeTab === tab.id && (
-                  <div className="absolute bottom-0 left-0 w-full h-0.5 bg-white rounded-t-full"></div>
-                )}
-              </button>
-            ))}
+                >
+                  <Icon className="w-4 h-4" />
+                  <span className="text-sm">{tab.label}</span>
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>
 
-      {/* Main Content Grid */}
-      <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 mt-0 sm:mt-2 relative z-20 min-h-[400px] sm:min-h-[500px]">
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {activeTab === 'Overview' && renderOverview()}
-        {activeTab === 'All Cargos' && (
-          <div className="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-4 md:p-6 shadow-sm min-h-[500px] sm:min-h-[600px]">
-            <UnifiedCargoManagement />
-          </div>
-        )}
-        {activeTab === 'Transactions' && (
-          <div className="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-4 md:p-6 shadow-sm min-h-[500px] sm:min-h-[600px]">
-            <UnifiedFinancialManagement />
-          </div>
-        )}
-        {activeTab === 'Analytics' && (
-          <div className="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-4 md:p-6 shadow-sm min-h-[500px] sm:min-h-[600px]">
-            <UnifiedAnalyticsManagement />
-          </div>
-        )}
-        {activeTab === 'Tracking' && (
-          <div className="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-4 md:p-6 shadow-sm min-h-[500px] sm:min-h-[600px]">
-            <UnifiedTrackingManagement />
-          </div>
-        )}
-        {activeTab === 'Documents' && (
-          <div className="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-4 md:p-6 shadow-sm min-h-[500px] sm:min-h-[600px]">
-            <UnifiedDocumentManagement />
-          </div>
-        )}
-        {activeTab === 'Notifications' && (
-          <div className="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-4 md:p-6 shadow-sm min-h-[500px] sm:min-h-[600px]">
-            <UnifiedNotificationManagement />
-          </div>
-        )}
-        {activeTab === 'Settings' && (
-          <div className="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-4 md:p-6 shadow-sm min-h-[500px] sm:min-h-[600px]">
-            <UnifiedAccountManagement />
-          </div>
-        )}
-        {activeTab === 'Support' && (
-          <div className="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-4 md:p-6 shadow-sm min-h-[500px] sm:min-h-[600px]">
-            <CargoHelpSupport />
-          </div>
-        )}
+        {activeTab === 'All Cargos' && <UnifiedCargoManagement />}
+        {activeTab === 'Transactions' && <UnifiedFinancialManagement />}
+        {activeTab === 'Analytics' && <UnifiedAnalyticsManagement />}
+        {activeTab === 'Tracking' && <UnifiedTrackingManagement />}
+        {activeTab === 'Documents' && <UnifiedDocumentManagement />}
+        {activeTab === 'Notifications' && <UnifiedNotificationManagement />}
+        {activeTab === 'Settings' && <UnifiedAccountManagement />}
+        {activeTab === 'Support' && <CargoHelpSupport />}
       </div>
 
       {/* Use shared DashboardFooter component */}
       <DashboardFooter />
 
-      {/* Floating Action Button - Always Accessible */}
+      {/* Floating Action Button */}
       <button
         onClick={() => setShowQuickActionFlow(true)}
-        className="fixed bottom-6 right-6 w-14 h-14 bg-indigo-600 hover:bg-indigo-700 text-white rounded-full shadow-lg hover:shadow-xl transition-all flex items-center justify-center z-50 group"
-        title="Quick Action: Create & Ship"
+        className="fixed bottom-8 right-8 w-16 h-16 bg-primary-600 hover:bg-primary-700 text-white rounded-full shadow-lg hover:shadow-xl transition-all flex items-center justify-center z-50"
+        title="Quick Create"
       >
-        <Zap className="w-6 h-6 group-hover:scale-110 transition-transform" />
-        <span className="absolute -top-2 -right-2 w-5 h-5 bg-emerald-500 rounded-full flex items-center justify-center text-[10px] font-bold border-2 border-white">
-          1
-        </span>
+        <Zap className="w-7 h-7" />
       </button>
 
       {/* Quick Create Modal */}
@@ -1127,7 +988,6 @@ const Dashboard = () => {
             try {
               const cargoData = await fetchCargos(1, '', {});
               setCargos(Array.isArray(cargoData) ? cargoData : []);
-              setLastUpdate(new Date());
             } catch (error) {
               console.error('Error refreshing cargos:', error);
             }
@@ -1147,7 +1007,6 @@ const Dashboard = () => {
             try {
               const cargoData = await fetchCargos(1, '', {});
               setCargos(Array.isArray(cargoData) ? cargoData : []);
-              setLastUpdate(new Date());
             } catch (error) {
               console.error('Error refreshing cargos:', error);
             }
@@ -1177,7 +1036,6 @@ const Dashboard = () => {
             try {
               const cargoData = await fetchCargos(1, '', {});
               setCargos(Array.isArray(cargoData) ? cargoData : []);
-              setLastUpdate(new Date());
             } catch (error) {
               console.error('Error refreshing cargos:', error);
             }

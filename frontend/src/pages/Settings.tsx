@@ -508,7 +508,7 @@ const Settings: React.FC = () => {
                   <button className="w-full md:w-auto px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700">
                     Download My Data
                   </button>
-                  <button className="w-full md:w-auto px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 ml-0 md:ml-3">
+                  <button className="w-full md:w-auto px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 ml-0 md:ml-3">
                     Deactivate Account
                   </button>
                 </div>

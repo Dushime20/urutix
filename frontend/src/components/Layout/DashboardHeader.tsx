@@ -83,11 +83,6 @@ const DashboardHeader = () => {
           ]
         },
         {
-          label: 'My Bids',
-          path: `${basePath}/my-bids`,
-          icon: Gavel
-        },
-        {
           label: 'Bidding',
           path: `${basePath}/bidding`,
           icon: Gavel
@@ -279,21 +274,9 @@ const DashboardHeader = () => {
           icon: Home
         },
         {
-          label: 'Fleet Management',
-          path: '/dashboard/fleet/trucks',
-          icon: Truck,
-          subItems: [
-            { label: 'Truck Management', path: '/dashboard/fleet/trucks' },
-            { label: 'Dashboard', path: '/dashboard/fleet' },
-          ]
-        },
-        {
           label: 'Drivers',
           path: '/dashboard/fleet/drivers',
-          icon: Users,
-          subItems: [
-            { label: 'My Drivers', path: '/dashboard/fleet/drivers' },
-          ]
+          icon: Users
         },
         {
           label: 'Trips',
@@ -628,7 +611,6 @@ const DashboardHeader = () => {
 
     // Truck Owner/Fleet Owner paths
     if (user?.role === 'TRUCK_OWNER') {
-      if (path.includes('/fleet/trucks') || path.includes('/fleet')) return 'Fleet Management';
       if (path.includes('/fleet/drivers')) return 'Drivers';
       if (path.includes('/trips')) return 'Trips';
       if (path.includes('/fleet/bids')) return 'Bids';
@@ -731,15 +713,15 @@ const DashboardHeader = () => {
 
             {/* Logo */}
             <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
-              <div className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 bg-emerald-600 rounded-lg flex items-center justify-center">
+              <div className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 bg-[#345E85] rounded-lg flex items-center justify-center">
                 <Truck className="w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5 text-white" />
               </div>
               <span className="text-base sm:text-lg md:text-xl font-bold">UrutiX</span>
             </div>
 
-            {/* Desktop Nav */}
-            <div className="hidden lg:flex items-center gap-1 sm:gap-2 ml-4 sm:ml-8 text-gray-500 text-sm font-medium overflow-x-auto scrollbar-hide max-w-3xl">
-              {navItems.map(item => {
+            {/* Desktop Nav - Keep only most important items */}
+            <div className="hidden lg:flex items-center gap-1 sm:gap-2 ml-4 sm:ml-8 text-gray-500 text-sm font-medium">
+              {navItems.slice(0, 4).map(item => {
                 const hasSubItems = item.subItems && item.subItems.length > 0;
                 const isActive = activeNavItem === item.label ||
                   (hasSubItems && item.subItems?.some(sub => location.pathname.includes(sub.path.split('/').pop() || '')));
@@ -761,7 +743,7 @@ const DashboardHeader = () => {
                         }
                       }}
                       className={`px-3 py-1.5 rounded-full whitespace-nowrap transition-all touch-manipulation flex items-center gap-1 ${isActive
-                        ? 'text-emerald-600 bg-emerald-50'
+                        ? 'text-navy-600 bg-navy-50'
                         : 'hover:text-gray-900 hover:bg-gray-100'
                         }`}
                     >
@@ -781,7 +763,7 @@ const DashboardHeader = () => {
                               key={subItem.path}
                               onClick={() => handleNavClick(subItem.path)}
                               className={`w-full text-left px-4 py-2 text-sm transition-colors ${location.pathname === subItem.path || location.pathname.startsWith(subItem.path + '/')
-                                ? 'bg-emerald-50 text-emerald-700 font-medium'
+                                ? 'bg-navy-50 text-navy-700 font-medium'
                                 : 'text-gray-700 hover:bg-gray-50'
                                 }`}
                             >
@@ -813,9 +795,12 @@ const DashboardHeader = () => {
               <input
                 type="text"
                 placeholder="Search anything here"
-                className="bg-gray-50 border border-gray-200 rounded-full pl-10 pr-4 py-2 text-sm text-gray-900 placeholder-gray-400 focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none w-48 lg:w-64"
+                className="bg-gray-50 border border-gray-200 rounded-full pl-10 pr-4 py-2 text-sm text-gray-900 placeholder-gray-400 focus:bg-white focus:ring-2 focus:ring-navy-500 outline-none w-48 lg:w-64"
               />
             </div>
+
+            {/* Help & Support */}
+            <ContextualHelp context={location.pathname} />
 
             {/* Notifications */}
             <button
@@ -833,14 +818,11 @@ const DashboardHeader = () => {
               )}
             </button>
 
-            {/* Help & Support */}
-            <ContextualHelp context={location.pathname} />
-
             {/* User Menu */}
             <div className="relative z-[9999]" ref={userMenuRef}>
               <button
                 onClick={() => setShowUserMenu(!showUserMenu)}
-                className="w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 bg-gray-100 hover:bg-gray-200 border border-gray-200 rounded-full flex items-center justify-center flex-shrink-0 transition-all touch-manipulation focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className="w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 bg-gray-100 hover:bg-gray-200 border border-gray-200 rounded-full flex items-center justify-center flex-shrink-0 transition-all touch-manipulation focus:outline-none focus:ring-2 focus:ring-navy-500"
               >
                 {user?.role === 'DRIVER' ? (
                   <User className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-gray-600" />

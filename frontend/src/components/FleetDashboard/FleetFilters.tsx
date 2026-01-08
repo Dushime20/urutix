@@ -1,5 +1,6 @@
 import React from 'react';
 import { FaSearch, FaFilter, FaMapMarkerAlt } from 'react-icons/fa';
+import { TranslatedText } from '../translated-text';
 import type { FleetFilters as FleetFiltersType } from '../../types/fleet';
 
 interface FleetFiltersProps {
@@ -28,8 +29,6 @@ const FleetFiltersComp: React.FC<FleetFiltersProps> = ({
   // Debug logging
   console.log('FleetFilters component rendering');
   
-  const { tSync } = useTranslation();
-  
   const statusOptions = [
     { value: '', label: 'All Status' },
     { value: FLEET_STATUS.AVAILABLE, label: 'Available' },
@@ -38,8 +37,8 @@ const FleetFiltersComp: React.FC<FleetFiltersProps> = ({
     { value: FLEET_STATUS.OUT_OF_SERVICE, label: 'Out of Service' }
   ];
   
-  // Translate status labels
-  const getTranslatedLabel = (label: string) => tSync(label);
+  // Translate status labels (simplified - just return the label)
+  const getTranslatedLabel = (label: string) => label;
 
   const handleStatusChange = (status: string) => {
     setFilters({

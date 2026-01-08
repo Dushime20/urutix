@@ -3,6 +3,7 @@ import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import { Icon } from 'leaflet';
 import { FaSync, FaExclamationTriangle, FaTruck, FaUser, FaRoute, FaDollarSign, FaChartBar } from 'react-icons/fa';
 import { FiGrid, FiList } from 'react-icons/fi';
+import { CheckCircle, Activity, Settings, AlertCircle, ArrowUpRight } from 'lucide-react';
 import { FleetFilters } from './FleetFilters';
 import { FleetModal } from './FleetModal';
 import { FleetSkeleton } from './FleetSkeleton';
@@ -13,6 +14,8 @@ import { SafetyManagement } from './SafetyManagement';
 import { FinancialManagement } from './FinancialManagement';
 import { RouteAssignmentManager } from './RouteAssignmentManager';
 import { useAuth } from '../../contexts/AuthContext';
+import DashboardHeader from '../Layout/DashboardHeader';
+import DashboardFooter from '../Layout/DashboardFooter';
 import 'leaflet/dist/leaflet.css';
 import { fleetApi } from '../../services/fleetApi';
 import type { FleetItem as ServiceTruck, Driver as ServiceDriver } from '../../services/fleetApi';
@@ -23,6 +26,8 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { TruckAnalytics } from './TruckAnalytics';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import { TranslatedText } from '../translated-text';
+import { useCargoOwnerLayout } from '../../contexts/CargoOwnerLayoutContext';
+import TruckBidsPage from '../../pages/TruckBidsPage';
 
 // Fix default marker icon for Leaflet in React
 import iconUrl from 'leaflet/dist/images/marker-icon.png';
@@ -40,11 +45,11 @@ const fleetIcon = new Icon({
 });
 
 export const FleetDashboard: React.FC = () => {
-  console.log('FleetDashboard component is rendering');
-  
   const location = useLocation();
   const navigate = useNavigate();
   const { user, isLoading: authLoading, accessToken } = useAuth();
+  const layoutContext = useCargoOwnerLayout();
+  const { setHideHeader } = layoutContext || {};
   const { confirm, DialogComponent } = useConfirmDialog();
   const [fleetItems, setFleetItems] = useState<LocalFleetItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -56,7 +61,6 @@ export const FleetDashboard: React.FC = () => {
   const [hasMore, setHasMore] = useState(true);
   const [page, setPage] = useState(1);
   
-  // Determine active tab based on current route
   const isTrucksRoute = location.pathname.includes('/trucks');
   const isDriversRoute = location.pathname.includes('/drivers');
   const isAnalyticsRoute = location.pathname.includes('/analytics');
@@ -64,65 +68,33 @@ export const FleetDashboard: React.FC = () => {
   const isFinancialRoute = location.pathname.includes('/financial');
   const isRoutesRoute = location.pathname.includes('/routes');
 
-  const [activeTab, setActiveTab] = useState<'trucks' | 'drivers' | 'analytics' | 'safety' | 'financial' | 'routes'>(
-    isTrucksRoute ? 'trucks' : 
-    isDriversRoute ? 'drivers' : 
-    isAnalyticsRoute ? 'analytics' : 
-    isSafetyRoute ? 'safety' : 
-    isFinancialRoute ? 'financial' :
-    isRoutesRoute ? 'routes' : 'trucks'
-  );  const observer = useRef<IntersectionObserver | null>(null);
+  const [activeTab, setActiveTab] = useState<'overview' | 'trucks' | 'drivers' | 'analytics' | 'safety' | 'financial' | 'routes'>('overview');
   
-  // CRUD state
+  const observer = useRef<IntersectionObserver | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [formMode, setFormMode] = useState<'create' | 'edit'>('create');
   const [editingFleetItem, setEditingFleetItem] = useState<LocalFleetItem | null>(null);
 
-  // Debug auth state
   useEffect(() => {
-    console.log('FleetDashboard: Auth state changed -', {
-      user: user ? `${user.firstName} ${user.lastName}` : 'null',
-      authLoading,
-      hasToken: !!accessToken,
-      tokenPreview: accessToken ? `${accessToken.substring(0, 20)}...` : 'none'
-    });
-    
-    // Debug authentication details
-    if (user && accessToken) {
-      console.log('🔍 Detailed auth debug:');
-      console.log('User role:', user.role);
-      console.log('User tenant:', user.tenantId);
-      console.log('Token in localStorage:', !!localStorage.getItem('accessToken'));
-      console.log('Token in state:', !!accessToken);
+    if (setHideHeader) {
+      setHideHeader(true);
+      return () => setHideHeader(false);
     }
-  }, [user, authLoading, accessToken]);
+  }, [setHideHeader]);
 
-  // Check authentication before loading fleet data
   useEffect(() => {
     if (!authLoading && !user) {
-      console.log('❌ User not authenticated, redirecting to login');
       navigate('/auth');
       return;
     }
     
     if (!authLoading && user && accessToken) {
-      console.log('✅ User authenticated, testing token validity...');
-      
-      // Test token validity
       authAPI.testAuth()
-        .then(() => {
-          console.log('✅ Token is valid, loading fleet data');
-          loadFleetItems(true);
-        })
-        .catch((error) => {
-          console.error('❌ Token validation failed:', error);
-          console.log('🔐 Redirecting to login due to invalid token');
-          navigate('/auth');
-        });
+        .then(() => loadFleetItems(true))
+        .catch(() => navigate('/auth'));
     }
   }, [authLoading, user, accessToken, navigate]);
 
-  // Route-based form opening
   useEffect(() => {
     if (location.pathname === '/dashboard/fleet/trucks/create') {
       setActiveTab('trucks');
@@ -137,7 +109,6 @@ export const FleetDashboard: React.FC = () => {
     }
   }, [location.pathname]);
 
-  // Helpers to normalize API responses to local FleetItem shape
   const normalizeTruck = (t: ServiceTruck): LocalFleetItem => {
     const name = [t.make, t.model].filter(Boolean).join(' ').trim() || t.plateNumber || t.id;
     const status = (t.status as unknown as FleetStatus) || FleetStatus.AVAILABLE;
@@ -176,57 +147,25 @@ export const FleetDashboard: React.FC = () => {
     } as LocalFleetItem;
   };
 
-  // Fetch fleet items with filters, search, and pagination
   const loadFleetItems = useCallback(async (reset = false) => {
     setLoading(true);
     setError(null);
     try {
-      let data: LocalFleetItem[] = [];
-      
-      if (activeTab === 'trucks') {
-        // Use the new getTrucks method with filters
-        const truckFilters: { search?: string; status?: string } = {};
-        if (search) truckFilters.search = search;
-        if (filters.status) truckFilters.status = filters.status;
-        
-        const raw = await fleetApi.getTrucks(truckFilters);
-        data = raw.map(normalizeTruck);
-      } else if (activeTab === 'drivers') {
-        // Use the new getDrivers method with filters
-        const driverFilters: { search?: string } = {};
-        if (search) driverFilters.search = search;
-        const rawDrivers = await fleetApi.getDrivers(driverFilters);
-        data = rawDrivers.map(normalizeDriver);
-      }
-      
-      setFleetItems(prev => {
-        if (reset) {
-          return data;
-        } else {
-          // Prevent duplicates by checking if item already exists
-          const existingIds = new Set(prev.map(item => item.id));
-          const newItems = data.filter(item => !existingIds.has(item.id));
-          return [...prev, ...newItems];
-        }
-      });
-      setHasMore(data.length > 0);
-      setPage(prev => reset ? 2 : prev + 1);
+      const truckData = await fleetApi.getTrucks({});
+      const driverData = await fleetApi.getDrivers({});
+      const allData = [...truckData.map(normalizeTruck), ...driverData.map(normalizeDriver)];
+      setFleetItems(allData);
     } catch (e) {
       setError('Failed to load fleet items.');
-      console.error('Error loading fleet items:', e);
     } finally {
       setLoading(false);
     }
-  }, [activeTab, page, search, filters]);
+  }, []);
 
   useEffect(() => {
     loadFleetItems(true);
-    // eslint-disable-next-line
-  }, [filters, search, activeTab]);
+  }, []);
 
-  // Real-time updates are not configured in this build
-
-  // Infinite scroll
   const lastFleetItemRef = useCallback((node: HTMLElement | null) => {
     if (loading) return;
     if (observer.current) observer.current.disconnect();
@@ -238,13 +177,11 @@ export const FleetDashboard: React.FC = () => {
     if (node) observer.current.observe(node);
   }, [loading, hasMore, loadFleetItems]);
 
-  // Export functionality
   const handleExport = () => {
     const exportFilters: any = {};
     if (search) exportFilters.search = search;
     if (filters.status) exportFilters.status = filters.status;
-    fleetApi
-      .exportFleetData('csv', exportFilters)
+    fleetApi.exportFleetData('csv', exportFilters)
       .then((blob: Blob) => {
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -253,27 +190,13 @@ export const FleetDashboard: React.FC = () => {
         a.click();
         window.URL.revokeObjectURL(url);
       })
-      .catch((err: unknown) => {
-        console.error('Export failed:', err);
-      });
+      .catch((err: unknown) => console.error('Export failed:', err));
   };
 
-  // Bulk actions (example: delete)
   const handleBulkAction = (action: 'delete' | 'export' | 'update', selectedIds: string[]) => {
-    switch (action) {
-      case 'delete':
-        // Handle bulk delete
-        break;
-      case 'export':
-        handleExport();
-        break;
-      case 'update':
-        // Handle bulk update
-        break;
-    }
+    if (action === 'export') handleExport();
   };
 
-  // CRUD Functions
   const handleCreateFleetItem = useCallback(async (fleetData: any) => {
     try {
       let newFleetItem: LocalFleetItem;
@@ -289,7 +212,6 @@ export const FleetDashboard: React.FC = () => {
       
       setFleetItems(prev => [newFleetItem, ...prev]);
       setShowForm(false);
-      // Navigate back to main fleet dashboard if we're on a create route
       if (location.pathname.includes('/create')) {
         navigate('/dashboard/fleet');
       }
@@ -336,12 +258,11 @@ export const FleetDashboard: React.FC = () => {
     if (!confirmed) return;
     
     try {
-      if (activeTab === 'trucks') {
+      const item = fleetItems.find(i => i.id === fleetItemId);
+      if (item?.type === 'truck') {
         await fleetApi.deleteTruck(fleetItemId);
-      } else if (activeTab === 'drivers') {
+      } else if (item?.type === 'driver') {
         await fleetApi.deleteDriver(fleetItemId);
-      } else {
-        throw new Error('Unsupported fleet type');
       }
       
       setFleetItems(prev => prev.filter(item => item.id !== fleetItemId));
@@ -349,7 +270,7 @@ export const FleetDashboard: React.FC = () => {
       console.error('Error deleting fleet item:', error);
       setError('Failed to delete fleet item');
     }
-  }, [activeTab]);
+  }, [fleetItems]);
 
   const handleEditFleetItem = useCallback((fleetItem: LocalFleetItem) => {
     setEditingFleetItem(fleetItem);
@@ -362,26 +283,6 @@ export const FleetDashboard: React.FC = () => {
     setFormMode('create');
     setShowForm(true);
   }, []);
-
-  // Debug function to test authentication
-  const debugAuthentication = useCallback(() => {
-    console.log('🔍 Debug Authentication:');
-    console.log('User:', user);
-    console.log('Access Token:', accessToken ? 'Present' : 'Missing');
-    console.log('Token in localStorage:', localStorage.getItem('accessToken') ? 'Present' : 'Missing');
-    
-    // Test API call
-    if (accessToken) {
-      console.log('🧪 Testing API call...');
-      fleetApi.getTrucks()
-        .then(trucks => {
-          console.log('✅ API call successful, trucks:', trucks.length);
-        })
-        .catch(error => {
-          console.error('❌ API call failed:', error);
-        });
-    }
-  }, [user, accessToken]);
 
   const handleCreateTruck = useCallback(() => {
     setActiveTab('trucks');
@@ -400,13 +301,11 @@ export const FleetDashboard: React.FC = () => {
   const handleCloseForm = useCallback(() => {
     setShowForm(false);
     setEditingFleetItem(null);
-    // Navigate back to main fleet dashboard if we're on a create route
     if (location.pathname.includes('/create')) {
       navigate('/dashboard/fleet');
     }
   }, [location.pathname, navigate]);
 
-  // Accessibility: focus management for modal
   useEffect(() => {
     if (selectedFleetItem) {
       document.body.style.overflow = 'hidden';
@@ -415,279 +314,384 @@ export const FleetDashboard: React.FC = () => {
     }
   }, [selectedFleetItem]);
 
+  const trucks = fleetItems.filter(item => item.type === 'truck');
+  const drivers = fleetItems.filter(item => item.type === 'driver');
+  const availableTrucks = trucks.filter(item => item.status === 'AVAILABLE').length;
+  const availableDrivers = drivers.filter(item => item.status === 'AVAILABLE').length;
+  const inTransit = fleetItems.filter(item => item.status === 'IN_TRANSIT').length;
+  const utilization = trucks.length > 0 ? Math.round((inTransit / trucks.length) * 100) : 0;
+
   return (
     <ErrorBoundary>
-      <div className="p-6">
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">
-            <TranslatedText text="Fleet Dashboard" />
-          </h1>
-          <p className="text-gray-600">
-            <TranslatedText text="Manage your trucks and drivers" />
-          </p>
-        </div>
-        
-        {/* Simple test content */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-4">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Dashboard Status</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-blue-50 p-4 rounded-lg">
-              <h3 className="font-medium text-blue-900">
-                <TranslatedText text="Trucks" />
-              </h3>
-              <p className="text-2xl font-bold text-blue-600">2</p>
-            </div>
-            <div className="bg-green-50 p-4 rounded-lg">
-              <h3 className="font-medium text-green-900">
-                <TranslatedText text="Drivers" />
-              </h3>
-              <p className="text-2xl font-bold text-green-600">2</p>
-            </div>
-            <div className="bg-orange-50 p-4 rounded-lg">
-              <h3 className="font-medium text-orange-900">
-                <TranslatedText text="Active Trips" />
-              </h3>
-              <p className="text-2xl font-bold text-orange-600">1</p>
-            </div>
-          </div>
-        </div>
+      <div className="min-h-screen bg-gray-50">
+        <DashboardHeader />
 
-        {/* Header with actions */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <h2 className="text-lg font-semibold text-gray-900">
-                <TranslatedText text="Fleet Management" />
-              </h2>
-              <div className="flex items-center gap-2">
-                <button 
+        <div className="bg-white shadow-sm">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900">
+                  {(() => {
+                    const hour = new Date().getHours();
+                    const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
+                    return `${greeting}, ${user?.firstName || 'User'}`;
+                  })()}
+                </h1>
+                <p className="mt-1 text-gray-600">
+                  {trucks.length} trucks • {drivers.length} drivers
+                </p>
+              </div>
+              <div className="flex items-center gap-3">
+                <button
                   onClick={handleCreateTruck}
-                  className="px-3 py-1 text-sm bg-primary-600 text-white rounded hover:bg-primary-700"
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-medium shadow-sm"
                 >
-                  <TranslatedText text="Add Truck" />
+                  <FaTruck className="w-4 h-4" />
+                  Add New Truck
                 </button>
-                <button 
+                <button
                   onClick={handleCreateDriver}
-                  className="px-3 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700"
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors font-medium shadow-sm"
                 >
-                  <TranslatedText text="Add Driver" />
+                  <FaUser className="w-4 h-4" />
+                  Add New Driver
+                </button>
+                <button
+                  onClick={() => setActiveTab('routes')}
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-white text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-medium shadow-sm"
+                >
+                  <FaRoute className="w-4 h-4" />
+                  Manage Routes
                 </button>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <button className="p-2 rounded hover:bg-gray-100">
-                <FiGrid className="w-4 h-4" />
-              </button>
-              <button className="p-2 rounded hover:bg-gray-100">
-                <FiList className="w-4 h-4" />
-              </button>
-              <button aria-label="Refresh" className="p-2 rounded hover:bg-gray-100">
-                <FaSync />
-              </button>
-              <button 
-                onClick={debugAuthentication}
-                className="p-2 rounded hover:bg-gray-100 text-xs bg-yellow-100 text-yellow-800"
-                title="Debug Authentication"
-              >
-                🔍
-              </button>
-            </div>
-          </div>
-        </div>
 
-        {/* Tab Navigation */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-4">
-          <div className="border-b border-gray-200">
-            <nav className="flex space-x-8 px-6">
+            <div className="mt-8 flex gap-1 overflow-x-auto scrollbar-hide">
               <button
-                onClick={() => {
-                  setActiveTab('trucks');
-                  navigate('/dashboard/fleet/trucks');
-                }}
-                className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 ${
-                  activeTab === 'trucks'
-                    ? 'border-primary-500 text-primary-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                <FaTruck className="w-4 h-4" />
-                <TranslatedText text="Trucks" />
-              </button>
-              <button
-                onClick={() => {
-                  setActiveTab('drivers');
-                  navigate('/dashboard/fleet/drivers');
-                }}
-                className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 ${
-                  activeTab === 'drivers'
-                    ? 'border-primary-500 text-primary-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                <FaUser className="w-4 h-4" />
-                <TranslatedText text="Drivers" />
-              </button>
-              <button
-                onClick={() => {
-                  setActiveTab('analytics');
-                  navigate('/dashboard/fleet/analytics');
-                }}
-                className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 ${
-                  activeTab === 'analytics'
-                    ? 'border-primary-500 text-primary-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                onClick={() => setActiveTab('overview')}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-all whitespace-nowrap ${
+                  activeTab === 'overview'
+                    ? 'bg-primary-50 text-primary-700'
+                    : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
                 }`}
               >
                 <FaChartBar className="w-4 h-4" />
-                <TranslatedText text="Analytics" />
+                <span className="text-sm"><TranslatedText text="Overview" /></span>
               </button>
               <button
-                onClick={() => {
-                  setActiveTab('safety');
-                  navigate('/dashboard/fleet/safety');
-                }}
-                className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 ${
-                  activeTab === 'safety'
-                    ? 'border-primary-500 text-primary-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                onClick={() => setActiveTab('trucks')}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-all whitespace-nowrap ${
+                  activeTab === 'trucks'
+                    ? 'bg-primary-50 text-primary-700'
+                    : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
                 }`}
               >
-                <FaExclamationTriangle className="w-4 h-4" />
-                <TranslatedText text="Safety" />
+                <FaTruck className="w-4 h-4" />
+                <span className="text-sm"><TranslatedText text="Trucks" /></span>
               </button>
               <button
-                onClick={() => {
-                  setActiveTab('financial');
-                  navigate('/dashboard/fleet/financial');
-                }}
-                className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 ${
+                onClick={() => setActiveTab('drivers')}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-all whitespace-nowrap ${
+                  activeTab === 'drivers'
+                    ? 'bg-primary-50 text-primary-700'
+                    : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                }`}
+              >
+                <FaUser className="w-4 h-4" />
+                <span className="text-sm"><TranslatedText text="Drivers" /></span>
+              </button>
+              <button
+                onClick={() => setActiveTab('analytics')}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-all whitespace-nowrap ${
+                  activeTab === 'analytics'
+                    ? 'bg-primary-50 text-primary-700'
+                    : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                }`}
+              >
+                <FaChartBar className="w-4 h-4" />
+                <span className="text-sm"><TranslatedText text="Analytics" /></span>
+              </button>
+              <button
+                onClick={() => setActiveTab('safety')}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-all whitespace-nowrap ${
+                  activeTab === 'safety'
+                    ? 'bg-primary-50 text-primary-700'
+                    : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                }`}
+              >
+                <span className="text-sm"><TranslatedText text="Safety" /></span>
+              </button>
+              <button
+                onClick={() => setActiveTab('financial')}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-all whitespace-nowrap ${
                   activeTab === 'financial'
-                    ? 'border-primary-500 text-primary-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    ? 'bg-primary-50 text-primary-700'
+                    : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
                 }`}
               >
                 <FaDollarSign className="w-4 h-4" />
-                <TranslatedText text="Financial" />
+                <span className="text-sm"><TranslatedText text="Financial" /></span>
               </button>
               <button
-                onClick={() => {
-                  setActiveTab('routes');
-                  navigate('/dashboard/fleet/routes');
-                }}
-                className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 ${
+                onClick={() => setActiveTab('routes')}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-all whitespace-nowrap ${
                   activeTab === 'routes'
-                    ? 'border-primary-500 text-primary-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    ? 'bg-primary-50 text-primary-700'
+                    : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
                 }`}
               >
                 <FaRoute className="w-4 h-4" />
-                <TranslatedText text="Routes" />
+                <span className="text-sm"><TranslatedText text="Routes" /></span>
               </button>
-            </nav>
+            </div>
           </div>
         </div>
 
-        <FleetFilters filters={filters} setFilters={setFilters} search={search} setSearch={setSearch} activeTab={activeTab} />
-        
-        {/* Fleet Map - Only show for trucks and drivers tabs where location is relevant */}
-        {(activeTab === 'trucks' || activeTab === 'drivers') && (
-          <div className="my-4">
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900">
-                  <TranslatedText text="Fleet Locations" />
-                </h3>
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <span className="flex items-center gap-1">
-                    <FaTruck className="w-3 h-3" />
-                    <TranslatedText text="Trucks" />: {fleetItems.filter(item => item.type === 'truck').length}
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <FaUser className="w-3 h-3" />
-                    <TranslatedText text="Drivers" />: {fleetItems.filter(item => item.type === 'driver').length}
-                  </span>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {activeTab === 'overview' ? (
+            <div className="space-y-8">
+              {/* Fleet Statistics - Larger cards with more detail */}
+              <section>
+                <h2 className="text-xl font-bold text-gray-900 mb-6">Fleet Overview</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  <button
+                    onClick={() => setActiveTab('trucks')}
+                    className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100 hover:shadow-md transition-shadow text-left cursor-pointer"
+                  >
+                    <div className="flex items-center justify-between mb-6">
+                      <div className="p-4 bg-primary-50 rounded-xl">
+                        <FaTruck className="w-8 h-8 text-primary-600" />
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-500 mb-2">Total Trucks</p>
+                      <h3 className="text-4xl font-bold text-gray-900 mb-3">{trucks.length}</h3>
+                      <div className="flex items-center gap-2 text-sm">
+                        <span className="text-emerald-600 font-semibold">{availableTrucks} available</span>
+                        <span className="text-gray-400">•</span>
+                        <span className="text-gray-600">{trucks.length - availableTrucks} in use</span>
+                      </div>
+                    </div>
+                  </button>
+
+                  <button
+                    onClick={() => setActiveTab('drivers')}
+                    className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100 hover:shadow-md transition-shadow text-left cursor-pointer"
+                  >
+                    <div className="flex items-center justify-between mb-6">
+                      <div className="p-4 bg-blue-50 rounded-xl">
+                        <FaUser className="w-8 h-8 text-blue-600" />
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-500 mb-2">Total Drivers</p>
+                      <h3 className="text-4xl font-bold text-gray-900 mb-3">{drivers.length}</h3>
+                      <div className="flex items-center gap-2 text-sm">
+                        <span className="text-emerald-600 font-semibold">{availableDrivers} available</span>
+                        <span className="text-gray-400">•</span>
+                        <span className="text-gray-600">{drivers.length - availableDrivers} assigned</span>
+                      </div>
+                    </div>
+                  </button>
+
+                  <button
+                    onClick={() => setActiveTab('routes')}
+                    className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100 hover:shadow-md transition-shadow text-left cursor-pointer"
+                  >
+                    <div className="flex items-center justify-between mb-6">
+                      <div className="p-4 bg-violet-50 rounded-xl">
+                        <FaRoute className="w-8 h-8 text-violet-600" />
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-500 mb-2">Active Routes</p>
+                      <h3 className="text-4xl font-bold text-gray-900 mb-3">{inTransit}</h3>
+                      <div className="flex items-center gap-2 text-sm">
+                        <div className="flex items-center gap-1.5">
+                          <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+                          <span className="text-emerald-600 font-semibold">Live tracking</span>
+                        </div>
+                      </div>
+                    </div>
+                  </button>
+
+                  <button
+                    onClick={() => setActiveTab('analytics')}
+                    className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100 hover:shadow-md transition-shadow text-left cursor-pointer"
+                  >
+                    <div className="flex items-center justify-between mb-6">
+                      <div className="p-4 bg-amber-50 rounded-xl">
+                        <FaDollarSign className="w-8 h-8 text-amber-600" />
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-500 mb-2">Fleet Utilization</p>
+                      <h3 className="text-4xl font-bold text-gray-900 mb-3">{utilization}%</h3>
+                      <div className="w-full bg-gray-100 rounded-full h-2.5 mt-2">
+                        <div 
+                          className="bg-gradient-to-r from-primary-500 to-primary-600 h-2.5 rounded-full transition-all duration-500" 
+                          style={{ width: `${utilization}%` }}
+                        ></div>
+                      </div>
+                    </div>
+                  </button>
                 </div>
-              </div>
-              <MapContainer
-                center={[40.7128, -74.0060]} // New York coordinates as default
-                zoom={10}
-                style={{ width: '100%', height: 400 }}
-                scrollWheelZoom={true}
-                className="rounded-lg fleet-map-container"
-              >
-                <TileLayer
-                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                />
-                {fleetItems.map((item) => {
-                  const coords = item.currentLocation?.coordinates?.coordinates;
-                  if (coords && coords.length >= 2) {
-                    return (
-                      <Marker 
-                        key={item.id} 
-                        position={[coords[1], coords[0]]} // [lat, lng] from [lng, lat]
-                        icon={fleetIcon}
-                      >
-                        <Popup>
-                          <div className="text-sm">
-                            <p><strong>ID:</strong> {item.id}</p>
-                            <p><strong>Type:</strong> {item.type}</p>
-                            <p><strong>Name:</strong> {item.name}</p>
-                            <p><strong>Status:</strong> {item.status}</p>
-                            <p><strong>Location:</strong> {item.currentLocation?.address || 'N/A'}</p>
-                            <p><strong>Updated:</strong> {new Date(item.updatedAt).toLocaleDateString()}</p>
+              </section>
+
+              {/* Fleet Status Breakdown */}
+              <section>
+                <h2 className="text-xl font-bold text-gray-900 mb-6">Fleet Status</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+                    <div className="flex items-center gap-4">
+                      <div className="p-3 bg-emerald-50 rounded-lg">
+                        <CheckCircle className="w-6 h-6 text-emerald-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-500 mb-1">Available</p>
+                        <p className="text-2xl font-bold text-gray-900">{fleetItems.filter(item => item.status === 'AVAILABLE').length}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+                    <div className="flex items-center gap-4">
+                      <div className="p-3 bg-blue-50 rounded-lg">
+                        <Activity className="w-6 h-6 text-blue-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-500 mb-1">In Transit</p>
+                        <p className="text-2xl font-bold text-gray-900">{inTransit}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+                    <div className="flex items-center gap-4">
+                      <div className="p-3 bg-amber-50 rounded-lg">
+                        <Settings className="w-6 h-6 text-amber-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-500 mb-1">Maintenance</p>
+                        <p className="text-2xl font-bold text-gray-900">{fleetItems.filter(item => item.status === 'MAINTENANCE').length}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+                    <div className="flex items-center gap-4">
+                      <div className="p-3 bg-gray-100 rounded-lg">
+                        <AlertCircle className="w-6 h-6 text-gray-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-500 mb-1">Inactive</p>
+                        <p className="text-2xl font-bold text-gray-900">{fleetItems.filter(item => item.status === 'INACTIVE').length}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              {/* Recent Activity */}
+              <section>
+                <h2 className="text-xl font-bold text-gray-900 mb-6">Recent Activity</h2>
+                <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                  <div className="p-6">
+                    {fleetItems.length === 0 ? (
+                      <div className="text-center py-12">
+                        <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-100 rounded-full mb-4">
+                          <FaTruck className="w-8 h-8 text-gray-400" />
+                        </div>
+                        <p className="text-gray-500 mb-2">No fleet activity yet</p>
+                        <p className="text-sm text-gray-400">Start by adding trucks and drivers to your fleet</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {fleetItems.slice(0, 5).map((item, index) => (
+                          <div key={item.id} className="flex items-center gap-4 p-4 rounded-lg hover:bg-gray-50 transition-colors">
+                            <div className={`p-3 rounded-lg ${
+                              item.type === 'truck' ? 'bg-primary-50' : 'bg-blue-50'
+                            }`}>
+                              {item.type === 'truck' ? (
+                                <FaTruck className={`w-5 h-5 ${
+                                  item.type === 'truck' ? 'text-primary-600' : 'text-blue-600'
+                                }`} />
+                              ) : (
+                                <FaUser className="w-5 h-5 text-blue-600" />
+                              )}
+                            </div>
+                            <div className="flex-1">
+                              <p className="font-semibold text-gray-900">{item.name}</p>
+                              <p className="text-sm text-gray-500">
+                                {item.type === 'truck' ? `Plate: ${item.plateNumber || 'N/A'}` : `License: ${item.licenseNumber || 'N/A'}`}
+                              </p>
+                            </div>
+                            <div className="text-right">
+                              <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
+                                item.status === 'AVAILABLE' ? 'bg-emerald-50 text-emerald-700' :
+                                item.status === 'IN_TRANSIT' ? 'bg-blue-50 text-blue-700' :
+                                item.status === 'MAINTENANCE' ? 'bg-amber-50 text-amber-700' :
+                                'bg-gray-100 text-gray-700'
+                              }`}>
+                                {item.status}
+                              </span>
+                            </div>
                           </div>
-                        </Popup>
-                      </Marker>
-                    );
-                  }
-                  return null;
-                })}
-              </MapContainer>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </section>
             </div>
-          </div>
-        )}
-        
-        {error && (
-          <div className="bg-red-100 text-red-700 p-4 rounded flex items-center gap-2 mb-4" role="alert">
-            <FaExclamationTriangle /> {error}
-          </div>
-        )}
-        
-        {activeTab === 'analytics' ? (
-          <TruckAnalytics trucks={fleetItems.filter(item => item.type === 'truck')} />
-        ) : activeTab === 'safety' ? (
-          <SafetyManagement />
-        ) : activeTab === 'financial' ? (
-          <FinancialManagement />
-        ) : activeTab === 'routes' ? (
-          <RouteAssignmentManager />
-        ) : loading && fleetItems.length === 0 ? (
-          <FleetSkeleton />
-        ) : (
-          <FleetTable
-            fleetItems={fleetItems}
-            lastFleetItemRef={lastFleetItemRef}
-            view={view}
-            activeTab={activeTab}
-            onRowClick={setSelectedFleetItem}
-            onBulkAction={handleBulkAction}
-            onEditFleetItem={handleEditFleetItem}
-            onDeleteFleetItem={handleDeleteFleetItem}
+          ) : (
+            <>
+              <FleetFilters filters={filters} setFilters={setFilters} search={search} setSearch={setSearch} activeTab={activeTab} />
+
+              {error && (
+                <div className="bg-red-100 text-red-700 p-4 rounded flex items-center gap-2 mb-4" role="alert">
+                  <FaExclamationTriangle /> {error}
+                </div>
+              )}
+
+              {activeTab === 'analytics' ? (
+                <TruckAnalytics trucks={trucks} />
+              ) : activeTab === 'safety' ? (
+                <SafetyManagement />
+              ) : activeTab === 'financial' ? (
+                <FinancialManagement />
+              ) : activeTab === 'routes' ? (
+                <RouteAssignmentManager />
+              ) : loading && fleetItems.length === 0 ? (
+                <FleetSkeleton />
+              ) : (
+                <FleetTable
+                  fleetItems={fleetItems.filter(item => activeTab === 'trucks' ? item.type === 'truck' : item.type === 'driver')}
+                  lastFleetItemRef={lastFleetItemRef}
+                  view={view}
+                  activeTab={activeTab}
+                  onRowClick={setSelectedFleetItem}
+                  onBulkAction={handleBulkAction}
+                  onEditFleetItem={handleEditFleetItem}
+                  onDeleteFleetItem={handleDeleteFleetItem}
+                />
+              )}
+            </>
+          )}
+
+          <FleetModal fleetItem={selectedFleetItem} onClose={()=>setSelectedFleetItem(null)} activeTab={activeTab} />
+
+          <FleetFormStepper
+            isOpen={showForm}
+            onClose={handleCloseForm}
+            onSubmit={formMode === 'create' ? handleCreateFleetItem : handleUpdateFleetItem}
+            initialData={editingFleetItem}
+            mode={formMode}
+            activeTab={activeTab === 'drivers' ? 'drivers' : 'trucks'}
           />
-        )}
-        
-        <FleetModal fleetItem={selectedFleetItem} onClose={()=>setSelectedFleetItem(null)} activeTab={activeTab} />
-        
-        {/* CRUD Form */}
-        <FleetFormStepper
-          isOpen={showForm}
-          onClose={handleCloseForm}
-          onSubmit={formMode === 'create' ? handleCreateFleetItem : handleUpdateFleetItem}
-          initialData={editingFleetItem}
-          mode={formMode}
-          activeTab={activeTab === 'drivers' ? 'drivers' : 'trucks'}
-        />
+        </div>
+
+        <DashboardFooter />
       </div>
       {DialogComponent}
     </ErrorBoundary>

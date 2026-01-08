@@ -170,7 +170,7 @@ export default function LoadItem({
   }, [handleEditCargo, load, navigate]);
 
   return (
-    <div className="group p-4 sm:p-6 lg:p-8 transition-all duration-300 border-l-4 border-l-teal-500 shadow hover:shadow-md hover:-translate-y-1 rounded-lg bg-gray-100 hover:bg-white overflow-hidden w-full max-w-full">
+    <div className="group p-4 sm:p-6 lg:p-8 transition-all duration-300 border-l-4 border-l-primary-500 shadow hover:shadow-md hover:-translate-y-1 rounded-lg bg-gray-100 hover:bg-white overflow-hidden w-full max-w-full">
       {/* Mobile Simplified View */}
       <div className="sm:hidden">
         {!showMobileDetails ? (
@@ -278,7 +278,7 @@ export default function LoadItem({
                     const enrichedDetails = getEnrichedLocationDetails(load);
                     if (enrichedDetails?.pickup || enrichedDetails?.delivery) {
                       return (
-                        <span className="text-xs text-teal-600 flex items-center mt-1">
+                        <span className="text-xs text-primary-600 flex items-center mt-1">
                           <Globe className="w-3 h-3 mr-1" />
                           Enhanced location data
                         </span>
@@ -365,7 +365,7 @@ export default function LoadItem({
                         {/* Pickup Location Enhanced */}
                         <div className="space-y-3 sm:space-y-4 p-3 sm:p-4 bg-white rounded-lg shadow-sm">
                           <div className="flex items-center space-x-2 sm:space-x-3 flex-wrap">
-                            <div className="w-3 h-3 bg-teal-500 rounded-full flex-shrink-0"></div>
+                            <div className="w-3 h-3 bg-primary-500 rounded-full flex-shrink-0"></div>
                             <span className="text-xs sm:text-sm font-medium text-gray-700">
                               Pickup Location
                             </span>
@@ -625,7 +625,7 @@ export default function LoadItem({
                 const enrichedDetails = getEnrichedLocationDetails(load);
                 if (enrichedDetails?.pickup || enrichedDetails?.delivery) {
                   return (
-                    <span className="text-xs text-gray-600 flex items-center mt-1">
+                    <span className="text-xs text-primary-600 flex items-center mt-1">
                       <Globe className="w-3 h-3 mr-1" />
                       Enhanced location data
                     </span>
@@ -712,7 +712,7 @@ export default function LoadItem({
                     {/* Pickup Location Enhanced */}
                     <div className="space-y-3 sm:space-y-4 p-3 sm:p-4 bg-white rounded-lg shadow-sm">
                       <div className="flex items-center space-x-2 sm:space-x-3 flex-wrap">
-                        <div className="w-3 h-3 bg-teal-500 rounded-full flex-shrink-0"></div>
+                        <div className="w-3 h-3 bg-primary-500 rounded-full flex-shrink-0"></div>
                         <span className="text-xs sm:text-sm font-medium text-gray-700">
                           Pickup Location
                         </span>
@@ -872,7 +872,7 @@ export default function LoadItem({
         <div className="sm:ml-6 relative flex items-center sm:items-center lg:items-center lg:justify-center max-lg:w-full max-lg:justify-end flex-shrink-0">
           <div className="flex items-center lg:flex-col gap-2 lg:sticky lg:top-32">
             <button
-              className="p-3 bg-white text-gray-400 hover:text-teal-600 hover:bg-teal-50 rounded-xl transition-all duration-200 shadow-sm hover:shadow-md"
+              className="p-3 bg-white text-gray-400 hover:text-primary-600 hover:bg-primary-50 rounded-xl transition-all duration-200 shadow-sm hover:shadow-md"
               title="View Details"
               onClick={() => handleViewClick(load)}
             >
@@ -888,7 +888,7 @@ export default function LoadItem({
               </button>
             )}
             <button
-              className="p-3 bg-white text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-xl transition-all duration-200 shadow-sm hover:shadow-md"
+              className="p-3 bg-white text-gray-400 hover:text-primary-600 hover:bg-primary-50 rounded-xl transition-all duration-200 shadow-sm hover:shadow-md"
               title="Edit Cargo"
               onClick={handleEditClick}
             >
