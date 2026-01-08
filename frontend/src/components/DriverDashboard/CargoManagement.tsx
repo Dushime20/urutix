@@ -74,6 +74,39 @@ export const CargoManagement: React.FC<CargoManagementProps> = ({ driverId }) =>
   const [checkedCargos, setCheckedCargos] = useState<Set<string>>(new Set());
   const [proceeding, setProceeding] = useState(false);
 
+  const formatLocation = (loc: any): string => {
+    if (!loc) return 'N/A';
+    if (typeof loc === 'string') return loc;
+    
+    // Handle coordinates object if passed directly
+    if (typeof loc.latitude === 'number' && typeof loc.longitude === 'number') {
+      return `Lat: ${loc.latitude.toFixed(4)}, Lng: ${loc.longitude.toFixed(4)}`;
+    }
+
+    // Try to get address string from common fields
+    const addr = loc.address || loc.locationData?.address || loc.street;
+    if (typeof addr === 'string') return addr;
+    
+    // If address is itself an object, format its components
+    const target = (typeof addr === 'object' && addr !== null) ? addr : loc;
+    
+    const parts = [
+      target.street || target.address,
+      target.city,
+      target.state,
+      target.postalCode,
+      target.country
+    ].filter(p => typeof p === 'string' && p.length > 0);
+
+    if (parts.length > 0) return parts.join(', ');
+    
+    // Fallback to name
+    const name = target.name || target.locationData?.name;
+    if (typeof name === 'string') return name;
+
+    return 'N/A';
+  };
+
   // Fetch assigned loads from API
   useEffect(() => {
     const fetchAssignedLoads = async () => {
@@ -101,8 +134,8 @@ export const CargoManagement: React.FC<CargoManagementProps> = ({ driverId }) =>
               width: load.width || load.dimensions?.width || 0,
               height: load.height || load.dimensions?.height || 0,
             },
-            pickupLocation: pickupLoc?.address || pickupLoc?.name || 'N/A',
-            deliveryLocation: deliveryLoc?.address || deliveryLoc?.name || 'N/A',
+            pickupLocation: formatLocation(pickupLoc),
+            deliveryLocation: formatLocation(deliveryLoc),
             pickupTime: load.pickupDate || load.pickupTime || '',
             deliveryTime: load.deliveryDate || load.deliveryTime || '',
             value: load.value || load.cargoValue || 0,
@@ -283,8 +316,8 @@ export const CargoManagement: React.FC<CargoManagementProps> = ({ driverId }) =>
             width: load.width || load.dimensions?.width || 0,
             height: load.height || load.dimensions?.height || 0,
           },
-          pickupLocation: pickupLoc?.address || pickupLoc?.name || 'N/A',
-          deliveryLocation: deliveryLoc?.address || deliveryLoc?.name || 'N/A',
+          pickupLocation: formatLocation(pickupLoc),
+          deliveryLocation: formatLocation(deliveryLoc),
           pickupTime: load.pickupDate || load.pickupTime || '',
           deliveryTime: load.deliveryDate || load.deliveryTime || '',
           value: load.value || load.cargoValue || 0,

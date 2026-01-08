@@ -1076,7 +1076,7 @@ export class LoadsController {
       const load = await this.loadsService.findOne(
         id,
         req.user.tenantId,
-        req.user.userId,
+        req.user,
       );
       return {
         message: 'Load retrieved successfully',

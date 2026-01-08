@@ -609,7 +609,13 @@ export class DocumentController {
   }
 
   @Post(':id/archive')
-  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN, UserRole.TRUCK_OWNER)
+  @Roles(
+    UserRole.ADMIN,
+    UserRole.SUPER_ADMIN,
+    UserRole.TRUCK_OWNER,
+    UserRole.CARGO_OWNER,
+    UserRole.DRIVER,
+  )
   @ApiOperation({
     summary: 'Archive document',
     description: 'Archive a document (soft delete)',
@@ -695,6 +701,7 @@ export class DocumentController {
     UserRole.SUPER_ADMIN,
     UserRole.TRUCK_OWNER,
     UserRole.DRIVER,
+    UserRole.CARGO_OWNER,
   )
   @ApiOperation({
     summary: 'Download document',
