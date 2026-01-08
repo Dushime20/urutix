@@ -61,7 +61,7 @@ import {
   PricingStatus,
 } from '../../entities/price-suggestion.entity';
 import { Location } from '../../entities/location.entity';
-import { User } from '../../entities/user.entity';
+import { User, UserRole } from '../../entities/user.entity';
 import { UserProfile } from '../../entities/user-profile.entity';
 import { Bid, BidStatus } from '../../entities/bid.entity';
 import { Payment, PaymentType, PaymentStatus } from '../../entities/payment.entity';
@@ -876,7 +876,7 @@ export class LoadsService {
   /**
    * Find a single load by ID with proper error handling
    */
-  async findOne(id: string, tenantId: string, userId?: string): Promise<Load> {
+  async findOne(id: string, tenantId: string, user?: any): Promise<Load> {
     this.logger.log(`Finding load ${id} for tenant ${tenantId}`);
 
     try {
@@ -888,12 +888,38 @@ export class LoadsService {
         .where('load.id = :id', { id })
         .andWhere('load.tenantId = :tenantId', { tenantId });
 
-      // If userId provided, ensure user can only see their own loads
-      if (userId) {
-        queryBuilder.andWhere('load.cargoOwnerId = :userId', { userId });
+      const load = await queryBuilder.getOne();
+
+      if (!load) {
+        throw new NotFoundException(`Load with ID ${id} not found`);
       }
 
-      const load = await queryBuilder.getOne();
+      // Permissions check
+      // If user info is provided, enforce ownership or role-based access
+      if (user && (user.userId || user.id)) {
+        const userId = user.userId || user.id;
+        const role = user.role;
+
+        // Allow viewing if:
+        // 1. User is the cargo owner
+        // 2. User is ADMIN, SUPER_ADMIN, or AGENT
+        // 3. User is a TRUCK_OWNER or DRIVER (within the same tenant)
+        const isOwner = load.cargoOwnerId === userId;
+        const isPrivileged = [
+          UserRole.ADMIN,
+          UserRole.SUPER_ADMIN,
+          UserRole.AGENT,
+        ].includes(role);
+        const isCarrierRelated = [
+          UserRole.TRUCK_OWNER,
+          UserRole.DRIVER,
+        ].includes(role);
+
+        if (!isOwner && !isPrivileged && !isCarrierRelated) {
+          this.logger.warn(`Access denied for user ${userId} with role ${role} to load ${id}`);
+          throw new ForbiddenException('You do not have permission to view this load');
+        }
+      }
 
       // Load broker profile separately if broker exists
       if (load?.broker && load.brokerId) {
@@ -905,12 +931,11 @@ export class LoadsService {
         }
       }
 
-      if (!load) {
-        throw new NotFoundException(`Load with ID ${id} not found`);
-      }
-
       return load;
     } catch (error) {
+      if (error instanceof NotFoundException || error instanceof ForbiddenException) {
+        throw error;
+      }
       this.logger.error(
         `Failed to find load ${id}: ${error.message}`,
         error.stack,

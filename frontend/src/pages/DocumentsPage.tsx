@@ -10,6 +10,7 @@ import { HelpIcon } from '../components/documents/HelpIcon';
 import { DocumentEmptyState } from '../components/documents/DocumentEmptyState';
 import { useConfirmDialog } from '../hooks/useConfirmDialog';
 import { useAuth } from '../contexts/AuthContext';
+import DocumentPreviewModal from '../components/documents/DocumentPreviewModal';
 
 interface DocumentsPageProps {
   entityTypeOverride?: string;
@@ -75,6 +76,7 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ entityTypeOverride }) => 
   const [selectedDocuments, setSelectedDocuments] = useState<string[]>([]);
   const [dragActive, setDragActive] = useState(false);
   const [selectedEntity, setSelectedEntity] = useState<{ id: string; name: string; type: string } | null>(null);
+  const [previewDoc, setPreviewDoc] = useState<{ id: string; title: string; fileName: string } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dragRef = useRef<HTMLDivElement>(null);
 
@@ -894,7 +896,11 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ entityTypeOverride }) => 
                     <td className="px-4 py-3 whitespace-nowrap text-xs font-medium">
                       <div className="flex gap-1.5">
                         <button
-                          onClick={() => window.open(document.fileUrl, '_blank')}
+                          onClick={() => setPreviewDoc({
+                            id: document.id,
+                            title: document.title,
+                            fileName: document.fileName
+                          })}
                           className="text-blue-600 hover:text-blue-900 transition-colors"
                           title="View"
                         >
@@ -1318,6 +1324,17 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ entityTypeOverride }) => 
 
       {/* Confirmation Dialog */}
       {DialogComponent}
+
+      {/* Document Preview Modal */}
+      {previewDoc && (
+        <DocumentPreviewModal
+          isOpen={!!previewDoc}
+          onClose={() => setPreviewDoc(null)}
+          documentId={previewDoc.id}
+          title={previewDoc.title}
+          fileName={previewDoc.fileName}
+        />
+      )}
     </div>
   );
 };

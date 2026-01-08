@@ -8,28 +8,18 @@ import {
   AlertTriangle, 
   Shield, 
   Thermometer, 
-  Weight, 
-  Ruler, 
   FileText, 
   Truck, 
   Route, 
   Info, 
   CheckCircle, 
-  XCircle,
   Download,
   Eye,
-  Camera,
   MessageSquare,
-  Navigation,
-  Calendar,
   DollarSign,
-  Star,
-  Flag,
   Zap,
   Snowflake,
-  Flame,
-  Droplets,
-  Sun
+  Flame
 } from 'lucide-react';
 import { driverApi } from '../../services/driverApi';
 import toast from 'react-hot-toast';
@@ -139,12 +129,41 @@ export const CargoDetails: React.FC<CargoDetailsProps> = ({
   const [cargo, setCargo] = useState<CargoItem | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Helper function to format "Not Available" or "None"
-  const formatValue = (value: any, fallback: string = 'Not Available'): string => {
-    if (value === null || value === undefined || value === '' || (Array.isArray(value) && value.length === 0)) {
-      return fallback;
+  // Helper function to format any value including location objects
+  const formatValue = (loc: any, fallback: string = 'Not Available'): string => {
+    if (!loc) return fallback;
+    if (typeof loc === 'string') return loc;
+    
+    // Handle coordinates object
+    if (typeof loc.latitude === 'number' && typeof loc.longitude === 'number') {
+      return `Lat: ${loc.latitude.toFixed(4)}, Lng: ${loc.longitude.toFixed(4)}`;
     }
-    return value;
+
+    // Try to get address string from common fields
+    const addr = loc.address || loc.locationData?.address || loc.street;
+    if (typeof addr === 'string') return addr;
+    
+    // If address is itself an object, format its components
+    const target = (typeof addr === 'object' && addr !== null) ? addr : loc;
+    
+    const parts = [
+      target.street || target.address,
+      target.city,
+      target.state,
+      target.postalCode,
+      target.country
+    ].filter(p => typeof p === 'string' && p.length > 0);
+
+    if (parts.length > 0) return parts.join(', ');
+    
+    // Fallback to name
+    const name = target.name || target.locationData?.name;
+    if (typeof name === 'string') return name;
+
+    if (Array.isArray(loc) && loc.length === 0) return fallback;
+    if (typeof loc === 'object' && Object.keys(loc).length === 0) return fallback;
+
+    return fallback;
   };
 
   // Fetch real cargo data from API
@@ -211,17 +230,11 @@ export const CargoDetails: React.FC<CargoDetailsProps> = ({
             email: load.contactInfo?.contactEmail || 
                    load.cargoOwner?.email || 
                    'Not Available',
-            address: pickupLoc?.locationData?.address || 
-                    pickupLoc?.address || 
-                    load.origin?.address || 
-                    'Not Available'
+            address: formatValue(pickupLoc)
           },
           route: {
             pickup: {
-              address: pickupLoc?.locationData?.address || 
-                      pickupLoc?.address || 
-                      load.origin?.address || 
-                      'Not Available',
+              address: formatValue(pickupLoc),
               coordinates: pickupLoc?.locationData?.coordinates ? 
                           [pickupLoc.locationData.coordinates.latitude, pickupLoc.locationData.coordinates.longitude] :
                           (load.origin?.coordinates ? [load.origin.coordinates.latitude, load.origin.coordinates.longitude] : [0, 0]),
@@ -239,10 +252,7 @@ export const CargoDetails: React.FC<CargoDetailsProps> = ({
                           'None'
             },
             delivery: {
-              address: deliveryLoc?.locationData?.address || 
-                      deliveryLoc?.address || 
-                      load.destination?.address || 
-                      'Not Available',
+              address: formatValue(deliveryLoc),
               coordinates: deliveryLoc?.locationData?.coordinates ? 
                           [deliveryLoc.locationData.coordinates.latitude, deliveryLoc.locationData.coordinates.longitude] :
                           (load.destination?.coordinates ? [load.destination.coordinates.latitude, load.destination.coordinates.longitude] : [0, 0]),
@@ -396,7 +406,7 @@ export const CargoDetails: React.FC<CargoDetailsProps> = ({
             return (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
+                onClick={() => setActiveTab(tab.id as any)}
                 className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center space-x-2 ${
                   activeTab === tab.id
                     ? 'border-blue-500 text-blue-600'
