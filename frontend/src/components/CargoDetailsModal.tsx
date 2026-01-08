@@ -34,11 +34,19 @@ import {
   Heart,
   MessageSquare,
   Award,
-  CheckCircle
+  CheckCircle,
+  Upload,
+  Download
 } from 'lucide-react';
 import type { Cargo } from '../types/cargo';
 import { loadsAPI } from '@/services/load';
 import { matchingAPI } from '@/services/api';
+import { documentApi } from '@/services/documents/documentApi';
+import type { Document } from '@/services/documents/documentApi';
+import toast from 'react-hot-toast';
+import { useConfirmDialog } from '@/hooks/useConfirmDialog';
+import DocumentPreviewModal from '@/components/documents/DocumentPreviewModal';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface CargoDetailsModalProps {
   isOpen: boolean;
@@ -47,10 +55,13 @@ interface CargoDetailsModalProps {
 }
 
 const CargoDetailsModal = ({ isOpen, onClose, cargoId }: CargoDetailsModalProps) => {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<'overview' | 'tracking' | 'documents' | 'history' | 'matching'>('overview');
   const [matches, setMatches] = useState<any[]>([]);
   const [matchesLoading, setMatchesLoading] = useState(false);
   const [matchesError, setMatchesError] = useState<string | null>(null);
+  const { confirm, DialogComponent } = useConfirmDialog();
+  const [previewDoc, setPreviewDoc] = useState<{ id: string; title: string; fileName: string } | null>(null);
 
   const { data: cargoResponse, isLoading, error } = useQuery({
     queryKey: ['cargo', cargoId],
@@ -144,6 +155,15 @@ const CargoDetailsModal = ({ isOpen, onClose, cargoId }: CargoDetailsModalProps)
 
     fetchMatches();
   }, [activeTab, cargo?.id]);
+
+  // Fetch documents for the cargo
+  const { data: documentsData, isLoading: documentsLoading, refetch: refetchDocuments } = useQuery({
+    queryKey: ['cargoDocuments', cargoId],
+    queryFn: () => documentApi.getDocumentsByEntity('CARGO', cargoId!),
+    enabled: !!cargoId && isOpen && activeTab === 'documents',
+  });
+
+  const documents = (documentsData as unknown as Document[]) || [];
 
   const getStatusColor = (status: string) => {
     if (!status) return 'bg-gray-100 text-gray-800';
@@ -406,8 +426,8 @@ const CargoDetailsModal = ({ isOpen, onClose, cargoId }: CargoDetailsModalProps)
                     { id: 'tracking', label: 'Tracking', icon: Navigation },
                     { id: 'documents', label: 'Documents', icon: FileText },
                     { id: 'history', label: 'History', icon: Clock3 },
-                    { id: 'matching', label: 'Matching', icon: Target },
-                  ].map((tab) => (
+                    { id: 'matching', label: 'Matching', icon: Target, roles: ['CARGO_OWNER', 'BROKER', 'ADMIN', 'SUPER_ADMIN'] },
+                  ].filter(tab => !tab.roles || (user?.role && tab.roles.includes(user.role))).map((tab) => (
                     <button
                       key={tab.id}
                       onClick={() => setActiveTab(tab.id as any)}
@@ -832,10 +852,12 @@ const CargoDetailsModal = ({ isOpen, onClose, cargoId }: CargoDetailsModalProps)
                       </h3>
                       
                       <div className="space-y-3">
-                        <button className="w-full btn btn-outline btn-sm hover:bg-blue-50 hover:text-blue-700 transition-colors">
-                          <Edit className="w-4 h-4 mr-2" />
-                          Edit Cargo
-                        </button>
+                        {(user?.role === 'CARGO_OWNER' || user?.role === 'BROKER' || user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN') && (
+                          <button className="w-full btn btn-outline btn-sm hover:bg-blue-50 hover:text-blue-700 transition-colors">
+                            <Edit className="w-4 h-4 mr-2" />
+                            Edit Cargo
+                          </button>
+                        )}
                         
                         <button className="w-full btn btn-outline btn-sm hover:bg-purple-50 hover:text-purple-700 transition-colors">
                           <Eye className="w-4 h-4 mr-2" />
@@ -852,10 +874,12 @@ const CargoDetailsModal = ({ isOpen, onClose, cargoId }: CargoDetailsModalProps)
                           Photo Documentation
                         </button>
 
-                        <button className="w-full btn btn-outline btn-sm hover:bg-red-50 hover:text-red-700 transition-colors">
-                          <Trash2 className="w-4 h-4 mr-2" />
-                          Delete Cargo
-                        </button>
+                        {(user?.role === 'CARGO_OWNER' || user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN') && (
+                          <button className="w-full btn btn-outline btn-sm hover:bg-red-50 hover:text-red-700 transition-colors">
+                            <Trash2 className="w-4 h-4 mr-2" />
+                            Delete Cargo
+                          </button>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -877,15 +901,130 @@ const CargoDetailsModal = ({ isOpen, onClose, cargoId }: CargoDetailsModalProps)
               )}
 
               {activeTab === 'documents' && (
-                <div className="bg-gradient-to-r from-gray-50 to-yellow-50 rounded-lg p-6 border border-gray-200">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                    <FileText className="w-5 h-5 mr-2 text-yellow-600" />
-                    Documents
-                  </h3>
-                  <div className="text-center py-8">
-                    <FileText className="w-16 h-16 text-yellow-400 mx-auto mb-4" />
-                    <p className="text-gray-600 mb-4">Document management functionality will be implemented here.</p>
-                    <p className="text-sm text-gray-500">This will include invoice uploads, delivery receipts, and compliance documents.</p>
+                <div className="space-y-6">
+                  <div className="bg-gradient-to-r from-gray-50 to-yellow-50 rounded-lg p-6 border border-gray-200">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                        <FileText className="w-5 h-5 mr-2 text-yellow-600" />
+                        Documents
+                      </h3>
+                      {(user?.role === 'CARGO_OWNER' || user?.role === 'BROKER' || user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN') && (
+                        <button 
+                          onClick={() => {/* Trigger upload modal or logic */}}
+                          className="btn btn-primary btn-sm flex items-center"
+                        >
+                          <Upload className="w-4 h-4 mr-2" />
+                          Upload Document
+                        </button>
+                      )}
+                    </div>
+
+                    {documentsLoading ? (
+                      <div className="text-center py-12">
+                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-600 mx-auto mb-4"></div>
+                        <p className="text-gray-600">Loading documents...</p>
+                      </div>
+                    ) : documents.length > 0 ? (
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {documents.map((doc) => (
+                          <div 
+                            key={doc.id}
+                            className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow group"
+                          >
+                            <div className="flex items-start justify-between mb-3">
+                              <div className="p-2 bg-yellow-50 rounded-lg">
+                                <FileText className="w-6 h-6 text-yellow-600" />
+                              </div>
+                              <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button 
+                                  onClick={() => setPreviewDoc({
+                                    id: doc.id,
+                                    title: doc.title,
+                                    fileName: doc.fileName
+                                  })}
+                                  className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+                                  title="View Document"
+                                >
+                                  <Eye className="w-4 h-4" />
+                                </button>
+                                <button 
+                                  onClick={async () => {
+                                    try {
+                                      const blob = await documentApi.downloadDocument(doc.id);
+                                      const url = window.URL.createObjectURL(blob);
+                                      const a = document.createElement('a');
+                                      a.href = url;
+                                      a.download = doc.fileName;
+                                      document.body.appendChild(a);
+                                      a.click();
+                                      window.URL.revokeObjectURL(url);
+                                    } catch (error) {
+                                      toast.error('Failed to download document');
+                                    }
+                                  }}
+                                  className="p-1.5 text-green-600 hover:bg-green-50 rounded-md transition-colors"
+                                  title="Download"
+                                >
+                                  <Download className="w-4 h-4" />
+                                </button>
+                                {(user?.role === 'CARGO_OWNER' || user?.role === 'BROKER' || user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN') && (
+                                  <button 
+                                    onClick={async () => {
+                                      const confirmed = await confirm({
+                                        title: "Delete Document",
+                                        message: `Are you sure you want to delete "${doc.title}"?`,
+                                        variant: "danger"
+                                      });
+                                      if (confirmed) {
+                                        try {
+                                          await documentApi.deleteDocument(doc.id);
+                                          toast.success('Document deleted');
+                                          refetchDocuments();
+                                        } catch (error) {
+                                          toast.error('Failed to delete document');
+                                        }
+                                      }
+                                    }}
+                                    className="p-1.5 text-red-600 hover:bg-red-50 rounded-md transition-colors"
+                                    title="Delete"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                            <div>
+                              <h4 className="font-medium text-gray-900 truncate" title={doc.title}>
+                                {doc.title}
+                              </h4>
+                              <p className="text-xs text-gray-500 mt-1 truncate">
+                                {doc.fileName}
+                              </p>
+                              <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100">
+                                <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${
+                                  doc.status === 'VERIFIED' ? 'bg-green-100 text-green-700' :
+                                  doc.status === 'REJECTED' ? 'bg-red-100 text-red-700' :
+                                  'bg-yellow-100 text-yellow-700'
+                                }`}>
+                                  {doc.status}
+                                </span>
+                                <span className="text-[10px] text-gray-400">
+                                  {new Date(doc.createdAt).toLocaleDateString()}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-12">
+                        <FileText className="w-16 h-16 text-yellow-200 mx-auto mb-4" />
+                        <h4 className="text-lg font-medium text-gray-900 mb-1">No documents found</h4>
+                        <p className="text-gray-500 max-w-xs mx-auto">
+                          No documents have been uploaded for this cargo yet.
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
@@ -1577,9 +1716,20 @@ const CargoDetailsModal = ({ isOpen, onClose, cargoId }: CargoDetailsModalProps)
             </div>
           )}
         </div>
+        {DialogComponent}
+
+        {previewDoc && (
+          <DocumentPreviewModal
+            isOpen={!!previewDoc}
+            onClose={() => setPreviewDoc(null)}
+            documentId={previewDoc.id}
+            title={previewDoc.title}
+            fileName={previewDoc.fileName}
+          />
+        )}
       </div>
     </div>
   );
 };
 
-export default CargoDetailsModal; 
+export default CargoDetailsModal;
