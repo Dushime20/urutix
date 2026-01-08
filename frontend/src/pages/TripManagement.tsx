@@ -27,56 +27,7 @@ const TripManagement: React.FC = () => {
   useEffect(() => {
     // Simulate fetching trips data
     setTimeout(() => {
-      setTrips([
-        {
-          id: 'trip-1',
-          tripNumber: 'TRIP-2024-001',
-          loadId: 'load-123',
-          truckId: 'truck-456',
-          driverId: 'driver-789',
-          status: 'IN_PROGRESS',
-          plannedStartTime: new Date('2024-01-15T10:00:00'),
-          plannedEndTime: new Date('2024-01-16T18:00:00'),
-          actualStartTime: new Date('2024-01-15T10:30:00'),
-          agreedPrice: 2500,
-          pickupLocation: 'Los Angeles, CA',
-          deliveryLocation: 'San Francisco, CA',
-          driverName: 'John Smith',
-          truckPlate: 'ABC-123'
-        },
-        {
-          id: 'trip-2',
-          tripNumber: 'TRIP-2024-002',
-          loadId: 'load-124',
-          truckId: 'truck-457',
-          driverId: 'driver-790',
-          status: 'PLANNED',
-          plannedStartTime: new Date('2024-01-17T08:00:00'),
-          plannedEndTime: new Date('2024-01-18T16:00:00'),
-          agreedPrice: 3200,
-          pickupLocation: 'Chicago, IL',
-          deliveryLocation: 'Detroit, MI',
-          driverName: 'Mike Johnson',
-          truckPlate: 'XYZ-789'
-        },
-        {
-          id: 'trip-3',
-          tripNumber: 'TRIP-2024-003',
-          loadId: 'load-125',
-          truckId: 'truck-458',
-          driverId: 'driver-791',
-          status: 'COMPLETED',
-          plannedStartTime: new Date('2024-01-10T09:00:00'),
-          plannedEndTime: new Date('2024-01-11T17:00:00'),
-          actualStartTime: new Date('2024-01-10T09:15:00'),
-          actualEndTime: new Date('2024-01-11T16:45:00'),
-          agreedPrice: 1800,
-          pickupLocation: 'Miami, FL',
-          deliveryLocation: 'Orlando, FL',
-          driverName: 'Sarah Wilson',
-          truckPlate: 'DEF-456'
-        }
-      ]);
+      setTrips([]);
       setLoading(false);
     }, 1000);
   }, []);
@@ -234,6 +185,13 @@ const TripManagement: React.FC = () => {
         </div>
 
         {/* Trips List */}
+        {trips.length === 0 ? (
+          <div className="text-center py-12 bg-gray-50 rounded-lg">
+            <FaTruck className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">No Active Trips</h3>
+            <p className="text-gray-600">You don't have any active trips at the moment</p>
+          </div>
+        ) : (
         <div className="bg-white rounded-lg shadow overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-200">
             <h2 className="text-lg font-semibold text-gray-900">Trip Details</h2>
@@ -300,6 +258,7 @@ const TripManagement: React.FC = () => {
             </div>
           )}
         </div>
+        )}
       </div>
     </div>
   );
