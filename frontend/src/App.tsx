@@ -19,6 +19,7 @@ const DriverDashboard = lazy(() => import('./components/DriverDashboard/DriverDa
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
 const Analytics = lazy(() => import('./pages/Analytics'));
 const FleetAnalytics = lazy(() => import('./pages/FleetAnalytics'));
+const DriverAssignments = lazy(() => import('./components/FleetDashboard/DriverAssignments').then(module => ({ default: module.DriverAssignments })));
 
 // Keep essential components that are needed immediately (layouts, auth, home)
 import CargoOwnerLayout from './components/Layout/CargoOwnerLayout';
@@ -306,6 +307,9 @@ function App() {
               <Route path="profile" element={<DriverDashboard />} />
               <Route path="settings" element={<DriverDashboard />} />
               <Route path="support" element={<DriverDashboard />} />
+              <Route path="ratings" element={<UnifiedReputationManagement />} />
+              <Route path="rewards" element={<UnifiedReputationManagement />} />
+              <Route path="scoring" element={<UnifiedReputationManagement />} />
             </Route>
 
             {/* Admin Routes */}

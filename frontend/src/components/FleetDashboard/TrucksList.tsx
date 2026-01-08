@@ -1503,7 +1503,7 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
                 <p className="text-sm font-medium text-gray-600">Total Trucks</p>
                 <p className="text-2xl font-bold text-gray-900">{trucks.length}</p>
               </div>
-              <FaTruck className="w-8 h-8 text-primary-600" />
+              <FaTruck className="w-8 h-8 text-[#345E85]" />
             </div>
           </div>
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
@@ -1678,7 +1678,7 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
               {/* Truck Header */}
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center gap-3">
-                  <FaTruck className="w-6 h-6 text-primary-600" />
+                  <FaTruck className="w-6 h-6 text-[#345E85]" />
                   <div>
                     <h3>{truck.name || truck.plateNumber}</h3>
                     <p className="text-sm text-gray-500">{truck.plateNumber}</p>
@@ -1723,7 +1723,7 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
                       setSelectedTruck(truck);
                       setShowAssignDriver(true);
                     }}
-                    className="text-primary-600 hover:text-primary-800 text-sm flex items-center gap-1"
+                    className="text-blue-600 hover:text-blue-800 text-sm flex items-center gap-1"
                   >
                     <FaUserPlus className="w-3 h-3" />
                     Assign Driver
@@ -1790,7 +1790,7 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
                         setSelectedTruck(truck);
                         setShowAssignRoute(true);
                       }}
-                      className="text-primary-600 hover:text-primary-800 text-sm flex items-center gap-1"
+                      className="text-blue-600 hover:text-blue-800 text-sm flex items-center gap-1"
                     >
                       <FaRoute className="w-3 h-3" />
                       {Array.isArray(truck.assignedRouteDetails) && truck.assignedRouteDetails.length > 0 ? 'Assign More' : 'Assign Route'}
@@ -1879,7 +1879,7 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
                   <tr key={truck.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4">
                       <div className="flex items-center">
-                        <FaTruck className="w-5 h-5 text-primary-600 mr-3" />
+                        <FaTruck className="w-5 h-5 text-[#345E85] mr-3" />
                         <div>
                           <div className="text-sm font-medium text-gray-900">{truck.name || truck.plateNumber}</div>
                      <div className="text-sm text-gray-500">{truck.plateNumber}</div>
@@ -1985,7 +1985,7 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
                               setSelectedTruck(truck);
                               setShowAssignDriver(true);
                             }}
-                            className="text-primary-600 hover:text-primary-800 text-sm flex items-center gap-1"
+                            className="text-blue-600 hover:text-blue-800 text-sm flex items-center gap-1"
                           >
                             <FaUserPlus className="w-3 h-3" />
                           </button>
@@ -2068,7 +2068,7 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
                     onClick={() => setCurrentPage(pageNum)}
                     className={`px-3 py-2 text-sm rounded-lg ${
                       currentPage === pageNum
-                        ? 'bg-primary-600 text-white'
+                        ? 'bg-blue-600 text-white'
                         : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                     }`}
                   >
@@ -2086,7 +2086,7 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
                     onClick={() => setCurrentPage(pageNum)}
                     className={`px-3 py-2 text-sm rounded-lg ${
                       currentPage === pageNum
-                        ? 'bg-primary-600 text-white'
+                        ? 'bg-blue-600 text-white'
                         : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                     }`}
                   >
@@ -2150,7 +2150,7 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
                         onClick={() => handleAssignDriver(selectedTruck.id, driver.id)}
                         className="w-full p-3 text-left border border-gray-200 rounded-lg hover:bg-gray-50 flex items-center gap-3"
                       >
-                        <FaUser className="w-4 h-4 text-primary-600" />
+                        <FaUser className="w-4 h-4 text-[#345E85]" />
                         <div>
                           <p className="font-medium text-gray-900">{driver.firstName ? `${driver.firstName} ${driver.lastName || ''}`.trim() : (driver.name || 'Unnamed')}</p>
                           <p className="text-sm text-gray-500">{driver.licenseNumber} • {driver.experience} years experience</p>
@@ -2213,7 +2213,7 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
                         onClick={() => handleAssignRoute(selectedTruck.id, route.id)}
                         className="w-full p-3 text-left border border-gray-200 rounded-lg hover:bg-gray-50 flex items-center gap-3"
                       >
-                        <FaRoute className="w-4 h-4 text-primary-600" />
+                        <FaRoute className="w-4 h-4 text-[#345E85]" />
                         <div>
                           <p className="font-medium text-gray-900">{route.name}</p>
                           <p className="text-sm text-gray-500">{route.origin} to {route.destination}</p>
@@ -2267,7 +2267,7 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
             <div className="p-6 border-t">
               <button
                 onClick={() => { setShowTruckRoutes(false); setShowAssignRoute(true); }}
-                className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
               >
                 Assign Route
               </button>
@@ -2510,7 +2510,7 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
                     setShowTruckDetails(false);
                     setShowEditTruck(true);
                   }}
-                  className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 flex items-center gap-2"
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
                 >
                   <FaEdit className="w-4 h-4" />
                   Edit Truck
@@ -2668,7 +2668,7 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
             <div className="flex items-center justify-center gap-3">
               <button 
                 onClick={() => loadData()} 
-                className="px-4 py-2.5 bg-primary-600 text-white rounded-lg hover:bg-primary-700 active:bg-primary-800 transition-all duration-200 flex items-center gap-2 shadow-md hover:shadow-lg font-medium text-sm"
+                className="px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 active:bg-blue-800 transition-all duration-200 flex items-center gap-2 shadow-md hover:shadow-lg font-medium text-sm"
               >
                 <FaSync className="w-4 h-4" />
                 Try Again
