@@ -290,15 +290,6 @@ function App() {
               <Route path="financial" element={<FleetPaymentManagement />} />
               <Route path="routes" element={<RoutesPage />} />
               <Route path="bids" element={<TruckBidsPage />} />
-              <Route path="assignments" element={<UnifiedDriverManagement />} />
-              <Route path="ratings" element={<UnifiedReputationManagement />} />
-              <Route path="rewards" element={<UnifiedReputationManagement />} />
-              <Route path="scoring" element={<UnifiedReputationManagement />} />
-            </Route>
-
-            {/* Trips Route */}
-            <Route path="/dashboard/trips" element={<FleetOwnerLayout />}>
-              <Route index element={<TripManagement />} />
             </Route>
 
             {/* Driver Routes */}
