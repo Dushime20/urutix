@@ -274,12 +274,7 @@ const DashboardHeader = () => {
           icon: Home
         },
         {
-          label: 'Truck Management',
-          path: '/dashboard/fleet/trucks',
-          icon: Truck
-        },
-        {
-          label: 'Driver Management',
+          label: 'Drivers',
           path: '/dashboard/fleet/drivers',
           icon: Users
         },
@@ -616,8 +611,7 @@ const DashboardHeader = () => {
 
     // Truck Owner/Fleet Owner paths
     if (user?.role === 'TRUCK_OWNER') {
-      if (path.includes('/fleet/trucks')) return 'Truck Management';
-      if (path.includes('/fleet/drivers')) return 'Driver Management';
+      if (path.includes('/fleet/drivers')) return 'Drivers';
       if (path.includes('/trips')) return 'Trips';
       if (path.includes('/fleet/bids')) return 'Bids';
       if (path.includes('/fleet/routes')) return 'Route Planning';

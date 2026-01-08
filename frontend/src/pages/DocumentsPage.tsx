@@ -9,19 +9,58 @@ import EntitySelector from '../components/documents/EntitySelector';
 import { HelpIcon } from '../components/documents/HelpIcon';
 import { DocumentEmptyState } from '../components/documents/DocumentEmptyState';
 import { useConfirmDialog } from '../hooks/useConfirmDialog';
+import { useAuth } from '../contexts/AuthContext';
+import DocumentPreviewModal from '../components/documents/DocumentPreviewModal';
 
 interface DocumentsPageProps {
   entityTypeOverride?: string;
 }
 
+// Helper function to map user roles to entity types
+const getRoleBasedEntityType = (userRole: string | undefined): string => {
+  const roleToEntityMap: Record<string, string> = {
+    'CARGO_OWNER': 'CARGO',
+    'TRUCK_OWNER': 'VEHICLE',
+    'FLEET_OWNER': 'VEHICLE',
+    'DRIVER': 'DRIVER',
+    'AGENT': 'USER',
+    'LENDER': 'USER',
+  };
+  
+  return roleToEntityMap[userRole || ''] || 'CARGO';
+};
+
+// Map document type to category for automatic categorization
+const getCategoryFromDocumentType = (docType: string): string => {
+  if (docType.startsWith('DRIVER_')) return 'DRIVER';
+  if (docType.startsWith('VEHICLE_')) return 'VEHICLE';
+  if (docType.startsWith('CARGO_')) return 'CARGO';
+  if (docType.startsWith('TRIP_') || docType === 'POD') return 'TRIP';
+  if (docType.startsWith('BUSINESS_')) return 'BUSINESS';
+  if (['INVOICE', 'RECEIPT', 'PAYMENT_PROOF', 'EXPENSE_RECEIPT'].includes(docType)) return 'FINANCIAL';
+  if (['SAFETY_CERT', 'ENVIRONMENTAL_CERT', 'QUALITY_CERT'].includes(docType)) return 'COMPLIANCE';
+  if (['CONTRACT', 'AGREEMENT', 'POLICY'].includes(docType)) return 'LEGAL';
+  if (['USER_ID_PROOF', 'USER_ADDRESS_PROOF', 'USER_BANK_DETAILS'].includes(docType)) return 'IDENTITY';
+  return 'OTHER';
+};
+
 const DocumentsPage: React.FC<DocumentsPageProps> = ({ entityTypeOverride }) => {
   const { confirm, DialogComponent } = useConfirmDialog();
+  const { user } = useAuth(); // Get the logged-in user
   const { entityType: urlEntityType, entityId } = useParams();
+  
+  // For VIEWING/FILTERING: Only use override or URL params (no role-based default)
+  // This ensures "All Documents" view shows all documents, not filtered by role
   const entityType = entityTypeOverride || urlEntityType;
+  
+  // For UPLOADING: Use role-based entity type as the default
+  const roleBasedEntityType = getRoleBasedEntityType(user?.role);
+  const uploadEntityType = entityType || roleBasedEntityType;
+  
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploadForm, setUploadForm] = useState<Partial<CreateDocumentRequest>>({
-    entityType: entityType || 'CARGO',
-    category: entityType || 'CARGO',
+    entityType: uploadEntityType,
+    category: uploadEntityType,
     documentType: 'OTHER',
     priority: 'NORMAL',
   });
@@ -37,6 +76,7 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ entityTypeOverride }) => 
   const [selectedDocuments, setSelectedDocuments] = useState<string[]>([]);
   const [dragActive, setDragActive] = useState(false);
   const [selectedEntity, setSelectedEntity] = useState<{ id: string; name: string; type: string } | null>(null);
+  const [previewDoc, setPreviewDoc] = useState<{ id: string; title: string; fileName: string } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dragRef = useRef<HTMLDivElement>(null);
 
@@ -45,8 +85,18 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ entityTypeOverride }) => 
   // Update filters when URL params change
   useEffect(() => {
     if (entityType) {
-      setFilters(prev => ({ ...prev, entityType, category: entityType }));
-      setUploadForm(prev => ({ ...prev, entityType, category: entityType }));
+      if (entityType === 'FINANCIAL') {
+        // Special case for Financial tab: Filter by category instead of entityType
+        setFilters(prev => ({ ...prev, entityType: '', category: 'FINANCIAL' }));
+        setUploadForm(prev => ({ ...prev, entityType: 'CARGO', category: 'FINANCIAL', documentType: 'INVOICE' }));
+      } else {
+        setFilters(prev => ({ ...prev, entityType, category: '' }));
+        setUploadForm(prev => ({ ...prev, entityType, category: 'OTHER' }));
+      }
+    } else {
+      // When viewing all documents (no entityType), clear filters and use role-based entity type for upload
+      setFilters(prev => ({ ...prev, entityType: '', category: '' }));
+      setUploadForm(prev => ({ ...prev, entityType: uploadEntityType, category: 'OTHER' }));
     }
     // Auto-populate entityId from URL if available
     if (entityId) {
@@ -56,7 +106,7 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ entityTypeOverride }) => 
         // EntitySelector will handle fetching when modal opens
       }
     }
-  }, [entityType, entityId]);
+  }, [entityType, entityId, uploadEntityType]);
 
   // Get entity display name and icon
   const getEntityInfo = (type: string) => {
@@ -89,8 +139,8 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ entityTypeOverride }) => 
 
   // Fetch document statistics
   const { data: statistics } = useQuery({
-    queryKey: ['documentStatistics'],
-    queryFn: () => documentApi.getDocumentStatistics(),
+    queryKey: ['documentStatistics', entityType],
+    queryFn: () => documentApi.getDocumentStatistics(entityType),
     retry: 2,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
     staleTime: 10 * 60 * 1000, // Statistics can be cached longer
@@ -157,14 +207,14 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ entityTypeOverride }) => 
   // Delete document mutation
   const deleteMutation = useMutation({
     mutationFn: (id: string) => documentApi.deleteDocument(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['documents'] });
-      queryClient.invalidateQueries({ queryKey: ['documentStatistics'] });
+    onSuccess: async () => {
+      // Invalidate ALL document queries to force refetch
+      await queryClient.invalidateQueries({ queryKey: ['documents'], refetchType: 'all' });
+      await queryClient.invalidateQueries({ queryKey: ['documentStatistics'], refetchType: 'all' });
       toast.success('Document deleted successfully', {
         duration: 3000,
         icon: '🗑️',
       });
-      refetch();
     },
     onError: (error: any) => {
       const errorMessage = error?.response?.data?.message || error?.message || 'Failed to delete document';
@@ -178,15 +228,15 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ entityTypeOverride }) => 
   // Bulk operations
   const bulkDeleteMutation = useMutation({
     mutationFn: (ids: string[]) => Promise.all(ids.map(id => documentApi.deleteDocument(id))),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['documents'] });
-      queryClient.invalidateQueries({ queryKey: ['documentStatistics'] });
+    onSuccess: async () => {
+      // Invalidate ALL document queries to force refetch
+      await queryClient.invalidateQueries({ queryKey: ['documents'], refetchType: 'all' });
+      await queryClient.invalidateQueries({ queryKey: ['documentStatistics'], refetchType: 'all' });
       toast.success(`${selectedDocuments.length} document(s) deleted successfully`, {
         duration: 3000,
         icon: '🗑️',
       });
       setSelectedDocuments([]);
-      refetch();
     },
     onError: (error: any) => {
       const errorMessage = error?.response?.data?.message || error?.message || 'Failed to delete documents';
@@ -446,7 +496,7 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ entityTypeOverride }) => 
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6 py-4 px-2">
       {/* Header */}
       <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-100 px-4 py-3 mb-4">
         <div className="flex justify-between items-center">
@@ -471,7 +521,7 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ entityTypeOverride }) => 
             className="bg-blue-600 text-white px-3 py-1.5 text-sm rounded-lg hover:bg-blue-700 flex items-center gap-1.5 transition-colors"
           >
             <Plus className="w-3.5 h-3.5" />
-            Upload {entityType ? entityInfo.name : 'Document'}
+            Add Document
           </button>
         </div>
         {entityType && (
@@ -536,6 +586,23 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ entityTypeOverride }) => 
         </div>
       </div>
 
+      {/* Category Statistics */}
+      {!isLoading && safeStatistics.documentsByCategory && Object.keys(safeStatistics.documentsByCategory).length > 0 && (
+        <div className="flex flex-wrap gap-2 mb-2">
+          {Object.entries(safeStatistics.documentsByCategory)
+            .sort((a, b) => (b[1] as number) - (a[1] as number))
+            .map(([category, count]) => (
+              <div 
+                key={category} 
+                className="flex items-center bg-white border border-gray-200 rounded-full px-2.5 py-1 shadow-sm hover:border-blue-300 transition-all cursor-default group"
+              >
+                <span className="text-[10px] font-bold text-blue-600 mr-1.5 group-hover:scale-110 transition-transform">{count as number}</span>
+                <span className="text-[9px] font-medium text-gray-500 uppercase tracking-wider">{category.replace('_', ' ')}</span>
+              </div>
+            ))}
+        </div>
+      )}
+
       {/* Show warning if using fallback data */}
       {!statistics && !isLoading && (
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-2.5">
@@ -588,10 +655,16 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ entityTypeOverride }) => 
               onChange={(e) => handleFilterChange('category', e.target.value)}
             >
               <option value="">All Categories</option>
+              <option value="CARGO">Cargo</option>
+              <option value="VEHICLE">Vehicle</option>
+              <option value="DRIVER">Driver</option>
+              <option value="TRIP">Trip</option>
+              <option value="BUSINESS">Business</option>
               <option value="COMPLIANCE">Compliance</option>
               <option value="FINANCIAL">Financial</option>
               <option value="LEGAL">Legal</option>
               <option value="OPERATIONAL">Operational</option>
+              <option value="OTHER">Other</option>
             </select>
             <select
               className="px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
@@ -697,6 +770,9 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ entityTypeOverride }) => 
                     checked={allSelected}
                   />
                 </th>
+                <th className="px-2 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  #
+                </th>
                 <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Document
                 </th>
@@ -720,13 +796,13 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ entityTypeOverride }) => 
             <tbody className="bg-white divide-y divide-gray-200">
               {isLoading ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-4 text-center text-xs text-gray-500">
+                  <td colSpan={8} className="px-4 py-4 text-center text-xs text-gray-500">
                     Loading documents...
                   </td>
                 </tr>
               ) : safeDocumentsData.documents.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-8">
+                  <td colSpan={8} className="px-4 py-8">
                     <DocumentEmptyState
                       entityType={entityType}
                       hasFilters={!!(filters.search || filters.category || filters.status || (!entityType && filters.entityType))}
@@ -745,7 +821,7 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ entityTypeOverride }) => 
                   </td>
                 </tr>
               ) : (
-                safeDocumentsData.documents.map((document) => (
+                safeDocumentsData.documents.map((document, index) => (
                   <tr key={document.id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-4 py-3 whitespace-nowrap">
                       <input
@@ -754,6 +830,9 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ entityTypeOverride }) => 
                         checked={selectedDocuments.includes(document.id)}
                         onChange={(e) => handleDocumentSelect(document.id, e.target.checked)}
                       />
+                    </td>
+                    <td className="px-2 py-3 whitespace-nowrap text-xs text-gray-500">
+                      {(currentPage - 1) * 20 + index + 1}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap">
                       <div className="flex items-center">
@@ -773,8 +852,12 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ entityTypeOverride }) => 
                       </div>
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap">
-                      <div className="text-xs text-gray-900">{document.documentType}</div>
-                      <div className="text-xs text-gray-500">{document.category}</div>
+                      <div className="text-xs font-medium text-gray-900">
+                        {document.documentType.split('_').map(word => word.charAt(0) + word.slice(1).toLowerCase()).join(' ')}
+                      </div>
+                      <div className="text-[10px] text-gray-500 uppercase tracking-wider">
+                        {document.category}
+                      </div>
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap">
                       <div className="flex items-center gap-1.5">
@@ -813,7 +896,11 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ entityTypeOverride }) => 
                     <td className="px-4 py-3 whitespace-nowrap text-xs font-medium">
                       <div className="flex gap-1.5">
                         <button
-                          onClick={() => window.open(document.fileUrl, '_blank')}
+                          onClick={() => setPreviewDoc({
+                            id: document.id,
+                            title: document.title,
+                            fileName: document.fileName
+                          })}
                           className="text-blue-600 hover:text-blue-900 transition-colors"
                           title="View"
                         >
@@ -827,7 +914,17 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ entityTypeOverride }) => 
                           <Download className="w-3.5 h-3.5" />
                         </button>
                         <button
-                          onClick={() => deleteMutation.mutate(document.id)}
+                          onClick={async () => {
+                            const confirmed = await confirm({
+                              title: 'Delete Document',
+                              message: `Are you sure you want to delete "${document.title}"? This action cannot be undone.`,
+                              confirmText: 'Delete',
+                              cancelText: 'Cancel',
+                            });
+                            if (confirmed) {
+                              deleteMutation.mutate(document.id);
+                            }
+                          }}
                           className="text-red-600 hover:text-red-900 transition-colors"
                           title="Delete"
                         >
@@ -879,20 +976,21 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ entityTypeOverride }) => 
 
       {/* Upload Modal */}
       {showUploadModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-4 w-full max-w-md shadow-xl">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-sm font-semibold">Upload Document</h2>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg flex flex-col max-h-[90vh]">
+            <div className="flex items-center justify-between p-4 border-b">
+              <h2 className="text-lg font-bold text-gray-800">Upload New Document</h2>
               <button
                 onClick={() => setShowUploadModal(false)}
-                className="text-gray-400 hover:text-gray-600 transition-colors"
+                className="p-1.5 rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-all"
                 disabled={uploadMutation.isPending}
               >
-                <X className="w-4 h-4" />
+                <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="space-y-3">
+            <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
+              <div className="space-y-5">
               {/* Drag and Drop File Upload */}
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1">
@@ -984,28 +1082,49 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ entityTypeOverride }) => 
 
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1">
-                  Entity Type
+                  Entity Type *
                   <HelpIcon
-                    content="Select the type of entity this document belongs to (Cargo, Trip, Driver, etc.)"
+                    content={entityType 
+                      ? `This is locked to ${getEntityInfo(entityType).name} because you're viewing ${getEntityInfo(entityType).name} documents.`
+                      : 'Select the type of entity this document belongs to (Cargo, Trip, Driver, Vehicle, etc.)'
+                    }
                     position="right"
                   />
                 </label>
-                <select
-                  value={uploadForm.entityType || ''}
-                  onChange={(e) => {
-                    setUploadForm(prev => ({ ...prev, entityType: e.target.value }));
-                    setSelectedEntity(null);
-                    setUploadForm(prev => ({ ...prev, entityId: undefined }));
-                  }}
-                  className="w-full border border-gray-300 rounded-lg p-1.5 text-sm"
-                  disabled={uploadMutation.isPending}
-                >
-                  <option value="DRIVER">Driver</option>
-                  <option value="VEHICLE">Vehicle</option>
-                  <option value="CARGO">Cargo</option>
-                  <option value="TRIP">Trip</option>
-                  <option value="USER">User</option>
-                </select>
+                
+                {/* Show DROPDOWN when viewing All Documents (no entityType) */}
+                {!entityType ? (
+                  <select
+                    value={uploadForm.entityType || ''}
+                    onChange={(e) => {
+                      setUploadForm(prev => ({ ...prev, entityType: e.target.value }));
+                      setSelectedEntity(null);
+                      setUploadForm(prev => ({ ...prev, entityId: undefined }));
+                    }}
+                    className="w-full border border-gray-300 rounded-lg p-1.5 text-sm focus:ring-2 focus:ring-blue-500"
+                    disabled={uploadMutation.isPending}
+                  >
+                    <option value="CARGO">Cargo</option>
+                    <option value="VEHICLE">Vehicle</option>
+                    <option value="DRIVER">Driver</option>
+                    <option value="TRIP">Trip</option>
+                    <option value="USER">User</option>
+                  </select>
+                ) : (
+                  /* Show READ-ONLY when viewing specific entity type */
+                  <>
+                    <input
+                      type="text"
+                      value={getEntityInfo(uploadForm.entityType || '').name}
+                      className="w-full border border-gray-300 rounded-lg p-1.5 text-sm bg-gray-100 cursor-not-allowed"
+                      disabled={true}
+                      readOnly={true}
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Locked to {getEntityInfo(entityType).name} documents
+                    </p>
+                  </>
+                )}
               </div>
 
               <div>
@@ -1060,7 +1179,11 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ entityTypeOverride }) => 
                 </label>
                 <select
                   value={uploadForm.documentType || 'OTHER'}
-                  onChange={(e) => setUploadForm(prev => ({ ...prev, documentType: e.target.value }))}
+                  onChange={(e) => {
+                    const docType = e.target.value;
+                    const category = getCategoryFromDocumentType(docType);
+                    setUploadForm(prev => ({ ...prev, documentType: docType, category }));
+                  }}
                   className="w-full border border-gray-300 rounded-lg p-1.5 text-sm"
                   disabled={uploadMutation.isPending}
                 >
@@ -1121,6 +1244,11 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ entityTypeOverride }) => 
                     <option value="OTHER">Other</option>
                   </optgroup>
                 </select>
+                {uploadForm.documentType && (
+                  <p className="text-[10px] text-gray-500 mt-1">
+                    Auto-categorized as: <span className="font-medium text-blue-600">{uploadForm.category}</span>
+                  </p>
+                )}
               </div>
 
               <div>
@@ -1162,8 +1290,9 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ entityTypeOverride }) => 
                 />
               </div>
             </div>
+          </div>
 
-            <div className="flex justify-end gap-2 mt-4">
+            <div className="flex justify-end gap-3 p-4 border-t bg-gray-50 rounded-b-xl">
               <button
                 onClick={() => setShowUploadModal(false)}
                 className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
@@ -1195,6 +1324,17 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ entityTypeOverride }) => 
 
       {/* Confirmation Dialog */}
       {DialogComponent}
+
+      {/* Document Preview Modal */}
+      {previewDoc && (
+        <DocumentPreviewModal
+          isOpen={!!previewDoc}
+          onClose={() => setPreviewDoc(null)}
+          documentId={previewDoc.id}
+          title={previewDoc.title}
+          fileName={previewDoc.fileName}
+        />
+      )}
     </div>
   );
 };
