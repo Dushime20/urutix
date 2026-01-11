@@ -93,16 +93,6 @@ const DashboardHeader = () => {
           icon: MapPin
         },
         {
-          label: 'Analytics',
-          path: `${basePath}/analytics`,
-          icon: BarChart3
-        },
-        {
-          label: 'Payments',
-          path: `${basePath}/payments`,
-          icon: CreditCard
-        },
-        {
           label: 'Documents',
           path: `${basePath}/documents`,
           icon: FileText
@@ -289,6 +279,11 @@ const DashboardHeader = () => {
           icon: Gavel
         },
         {
+          label: 'Fleet Analytics',
+          path: '/dashboard/fleet/analytics',
+          icon: BarChart3
+        },
+        {
           label: 'Route Planning',
           path: '/dashboard/fleet/routes',
           icon: Route
@@ -302,11 +297,6 @@ const DashboardHeader = () => {
           label: 'Financial Management',
           path: '/dashboard/fleet/financial',
           icon: DollarSign
-        },
-        {
-          label: 'Analytics',
-          path: '/dashboard/fleet/analytics',
-          icon: BarChart3
         },
         {
           label: 'Payments',
@@ -617,7 +607,7 @@ const DashboardHeader = () => {
       if (path.includes('/fleet/routes')) return 'Route Planning';
       if (path.includes('/fleet/safety')) return 'Safety Records';
       if (path.includes('/fleet/financial')) return 'Financial Management';
-      if (path.includes('/fleet/analytics')) return 'Analytics';
+      if (path.includes('/fleet/analytics')) return 'Fleet Analytics';
       if (path.includes('/payments')) return 'Payments';
       if (path.includes('/notifications')) return 'Notifications';
     }
@@ -691,12 +681,12 @@ const DashboardHeader = () => {
   };
 
   return (
-    <div className="bg-white border-b border-gray-200 text-gray-900 px-4 pt-6 pb-3 sm:px-6 sm:pt-8 sm:pb-4 relative overflow-hidden z-50">
+    <div className="bg-white border-b border-gray-200 text-gray-900 px-4 pt-6 pb-3 sm:px-6 sm:pt-8 sm:pb-4 relative overflow-hidden z-40">
 
       {/* Custom Header inside Dark Section */}
-      <div className="max-w-7xl mx-auto px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8 relative z-50">
+      <div className="max-w-7xl mx-auto px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8 relative z-40">
         {/* Top Row: Logo, Mobile Menu, Search, Notifications, User */}
-        <div className="flex justify-between items-center relative z-50 gap-2 sm:gap-3 md:gap-4">
+        <div className="flex justify-between items-center relative z-40 gap-2 sm:gap-3 md:gap-4">
           <div className="flex items-center gap-2 sm:gap-3 md:gap-4 min-w-0 flex-1">
             {/* Mobile Menu Button */}
             <button
@@ -720,8 +710,8 @@ const DashboardHeader = () => {
             </div>
 
             {/* Desktop Nav - Keep only most important items */}
-            <div className="hidden lg:flex items-center gap-1 sm:gap-2 ml-4 sm:ml-8 text-gray-500 text-sm font-medium">
-              {navItems.slice(0, 4).map(item => {
+            <div className="hidden lg:flex items-center gap-1 sm:gap-2 ml-4 sm:ml-8 text-gray-500 text-sm font-medium overflow-x-auto max-w-full">
+              {navItems.slice(0, 5).map(item => {
                 const hasSubItems = item.subItems && item.subItems.length > 0;
                 const isActive = activeNavItem === item.label ||
                   (hasSubItems && item.subItems?.some(sub => location.pathname.includes(sub.path.split('/').pop() || '')));

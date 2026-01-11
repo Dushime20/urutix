@@ -333,7 +333,7 @@ const UserRatings: React.FC = () => {
             <div className="flex justify-end">
               <button
                 type="submit"
-                className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+                className="px-3 py-1.5 text-sm bg-[#345E85] text-white rounded-lg hover:bg-[#2a4d6d] focus:outline-none focus:ring-2 focus:ring-[#345E85] transition-colors"
               >
                 Submit Rating
               </button>

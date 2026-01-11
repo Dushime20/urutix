@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { FaSearch, FaUser, FaEnvelope, FaPhone, FaIdCard, FaTruck, FaTrash, FaEye, FaPlus } from 'react-icons/fa';
+import { createPortal } from 'react-dom';
+import { FaSearch, FaUser, FaEnvelope, FaPhone, FaIdCard, FaTruck, FaTrash, FaEye, FaPlus, FaTimes } from 'react-icons/fa';
 import { fleetApi } from '../../services/fleetApi';
 import type { Driver } from '../../services/fleetApi';
 
@@ -21,6 +22,7 @@ export const DriversList: React.FC<DriversListProps> = ({ onAddDriver, refreshTr
 	const [refreshKey, setRefreshKey] = useState(0);
 	const [currentPage, setCurrentPage] = useState(1);
 	const [itemsPerPage] = useState(10);
+	const [selectedDriver, setSelectedDriver] = useState<Driver | null>(null);
 
 	useEffect(() => {
 		let cancelled = false;
@@ -60,6 +62,10 @@ export const DriversList: React.FC<DriversListProps> = ({ onAddDriver, refreshTr
 		if (!confirm('Delete this driver?')) return;
 		await fleetApi.deleteDriver(driverId);
 		setRefreshKey((k) => k + 1);
+	};
+
+	const handleView = (driver: Driver) => {
+		setSelectedDriver(driver);
 	};
 
 	return (
@@ -147,7 +153,7 @@ export const DriversList: React.FC<DriversListProps> = ({ onAddDriver, refreshTr
 										<td className="px-4 py-3 text-gray-700"><span className="inline-flex items-center gap-2"><FaTruck className="text-gray-400" />{d.currentTruckId ? `${d.currentTruckId.slice(0, 8)}...` : '-'}</span></td>
 										<td className="px-4 py-3 text-right">
 											<div className="inline-flex items-center gap-2">
-												<button className="px-2 py-1 text-sm text-gray-700 hover:text-gray-900 inline-flex items-center gap-1"><FaEye /> View</button>
+												<button onClick={() => handleView(d)} className="px-2 py-1 text-sm text-gray-700 hover:text-gray-900 inline-flex items-center gap-1"><FaEye /> View</button>
 												<button onClick={() => handleDelete(d.id)} className="px-2 py-1 text-sm text-red-600 hover:text-red-700 inline-flex items-center gap-1"><FaTrash /> Delete</button>
 											</div>
 										</td>
@@ -178,6 +184,84 @@ export const DriversList: React.FC<DriversListProps> = ({ onAddDriver, refreshTr
 					</div>
 				</div>
 			</div>
+
+			{/* Driver Details Dialog */}
+			{selectedDriver && createPortal(
+				<div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4" onClick={() => setSelectedDriver(null)}>
+					<div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+						<div className="flex items-center justify-between p-6 border-b border-gray-200">
+							<h2 className="text-2xl font-bold text-gray-900">Driver Details</h2>
+							<button onClick={() => setSelectedDriver(null)} className="text-gray-400 hover:text-gray-600">
+								<FaTimes className="w-6 h-6" />
+							</button>
+						</div>
+						<div className="p-6 space-y-6">
+							<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+								<div>
+									<h3 className="text-sm font-medium text-gray-500 mb-1">Full Name</h3>
+									<p className="text-lg font-semibold text-gray-900">{selectedDriver.firstName} {selectedDriver.lastName}</p>
+								</div>
+								<div>
+									<h3 className="text-sm font-medium text-gray-500 mb-1">Driver ID</h3>
+									<p className="text-lg text-gray-900">{selectedDriver.id}</p>
+								</div>
+								<div>
+									<h3 className="text-sm font-medium text-gray-500 mb-1">Email</h3>
+									<p className="text-lg text-gray-900 flex items-center gap-2"><FaEnvelope className="text-gray-400" />{selectedDriver.email}</p>
+								</div>
+								<div>
+									<h3 className="text-sm font-medium text-gray-500 mb-1">Phone</h3>
+									<p className="text-lg text-gray-900 flex items-center gap-2"><FaPhone className="text-gray-400" />{selectedDriver.phone || 'N/A'}</p>
+								</div>
+								<div>
+									<h3 className="text-sm font-medium text-gray-500 mb-1">License Number</h3>
+									<p className="text-lg text-gray-900 flex items-center gap-2"><FaIdCard className="text-gray-400" />{selectedDriver.licenseNumber}</p>
+								</div>
+								<div>
+									<h3 className="text-sm font-medium text-gray-500 mb-1">Experience</h3>
+									<p className="text-lg text-gray-900">{typeof selectedDriver.experience === 'number' ? `${selectedDriver.experience} years` : 'N/A'}</p>
+								</div>
+								<div>
+									<h3 className="text-sm font-medium text-gray-500 mb-1">Status</h3>
+									<span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${selectedDriver.status === 'ACTIVE' ? 'bg-green-100 text-green-700' : selectedDriver.status === 'SUSPENDED' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-700'}`}>{selectedDriver.status}</span>
+								</div>
+								<div>
+									<h3 className="text-sm font-medium text-gray-500 mb-1">Availability</h3>
+									<span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${selectedDriver.availabilityStatus === 'AVAILABLE' ? 'bg-blue-100 text-blue-700' : selectedDriver.availabilityStatus === 'IN_TRANSIT' ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-700'}`}>{selectedDriver.availabilityStatus}</span>
+								</div>
+								<div>
+									<h3 className="text-sm font-medium text-gray-500 mb-1">Assigned Truck</h3>
+									<p className="text-lg text-gray-900 flex items-center gap-2"><FaTruck className="text-gray-400" />{selectedDriver.currentTruckId || 'Not assigned'}</p>
+								</div>
+								<div>
+									<h3 className="text-sm font-medium text-gray-500 mb-1">Date of Birth</h3>
+									<p className="text-lg text-gray-900">{selectedDriver.dateOfBirth ? new Date(selectedDriver.dateOfBirth).toLocaleDateString() : 'N/A'}</p>
+								</div>
+								<div>
+									<h3 className="text-sm font-medium text-gray-500 mb-1">License Expiry</h3>
+									<p className="text-lg text-gray-900">{selectedDriver.licenseExpiry ? new Date(selectedDriver.licenseExpiry).toLocaleDateString() : 'N/A'}</p>
+								</div>
+								<div>
+									<h3 className="text-sm font-medium text-gray-500 mb-1">Medical Certificate Expiry</h3>
+									<p className="text-lg text-gray-900">{selectedDriver.medicalCertificateExpiry ? new Date(selectedDriver.medicalCertificateExpiry).toLocaleDateString() : 'N/A'}</p>
+								</div>
+							</div>
+							{selectedDriver.address && (
+								<div>
+									<h3 className="text-sm font-medium text-gray-500 mb-1">Address</h3>
+									<p className="text-lg text-gray-900">{selectedDriver.address}</p>
+								</div>
+							)}
+						</div>
+						<div className="flex justify-end gap-3 p-6 border-t border-gray-200">
+							<button onClick={() => setSelectedDriver(null)} className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">
+								Close
+							</button>
+						</div>
+					</div>
+				</div>,
+				document.body
+			)}
 		</div>
 	);
 };

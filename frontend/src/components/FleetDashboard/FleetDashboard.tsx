@@ -516,7 +516,7 @@ export const FleetDashboard: React.FC = () => {
                   </button>
 
                   <button
-                    onClick={() => setActiveTab('analytics')}
+                    onClick={() => navigate('/dashboard/fleet/analytics')}
                     className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100 hover:shadow-md transition-shadow text-left cursor-pointer"
                   >
                     <div className="flex items-center justify-between mb-6">

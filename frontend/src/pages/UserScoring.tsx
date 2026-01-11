@@ -177,7 +177,7 @@ const UserScoring: React.FC = () => {
           <button
             onClick={calculateAllScores}
             disabled={calculating}
-            className="px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+            className="px-6 py-3 bg-[#345E85] text-white rounded-md hover:bg-[#2a4d6d] focus:outline-none focus:ring-2 focus:ring-[#345E85] disabled:opacity-50"
           >
             {calculating ? 'Calculating...' : 'Recalculate Scores'}
           </button>
