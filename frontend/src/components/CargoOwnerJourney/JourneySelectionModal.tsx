@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FaTruck, FaGavel, FaRocket, FaCheck, FaClock, FaDollarSign, FaStar } from 'react-icons/fa';
+import { FaTruck, FaGavel, FaRocket, FaCheck, FaClock, FaDollarSign, FaUserTie } from 'react-icons/fa';
 import { HelpCircle, BarChart3 } from 'lucide-react';
 import JourneyDecisionHelper from './JourneyDecisionHelper';
 import JourneyComparison from './JourneyComparison';
@@ -7,7 +7,7 @@ import JourneyComparison from './JourneyComparison';
 interface JourneySelectionModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onJourneySelected: (journey: 'smart-matching' | 'publish-bid') => void;
+  onJourneySelected: (journey: 'smart-matching' | 'publish-bid' | 'assign-broker') => void;
   cargoData: any;
   loading?: boolean;
 }
@@ -26,7 +26,7 @@ const JourneySelectionModal: React.FC<JourneySelectionModalProps> = ({
 
   const getRecommendation = () => {
     if (!cargoData) return 'smart-matching';
-    
+
     if (cargoData.urgencyLevel === 'CRITICAL' || cargoData.urgencyLevel === 'HIGH') {
       return 'smart-matching';
     }
@@ -89,104 +89,140 @@ const JourneySelectionModal: React.FC<JourneySelectionModalProps> = ({
 
         <div className="p-6">
           {/* Journey Options */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          {/* Journey Options */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
             {/* Smart Matching */}
-            <div className={`relative rounded-xl border-2 p-6 transition-all duration-200 ${
-              recommendation === 'smart-matching' 
-                ? 'border-blue-500 bg-blue-50' 
-                : 'border-gray-200 hover:border-blue-300'
-            }`}>
+            <div className={`relative rounded-xl border-2 p-6 transition-all duration-200 flex flex-col ${recommendation === 'smart-matching'
+              ? 'border-blue-500 bg-blue-50'
+              : 'border-gray-200 hover:border-blue-300'
+              }`}>
               {recommendation === 'smart-matching' && (
                 <div className="absolute -top-2 -right-2 bg-blue-500 text-white text-xs px-2 py-1 rounded-full">
                   Recommended
                 </div>
               )}
-              
+
               <div className="flex items-center mb-4">
                 <div className="bg-blue-100 rounded-full p-3 mr-4">
                   <FaRocket className="text-blue-600" size={24} />
                 </div>
                 <div>
-                  <h3 className="text-xl font-semibold text-gray-900">Smart Matching</h3>
-                  <p className="text-sm text-gray-600">Fast, automated matching</p>
+                  <h3 className="text-lg font-bold text-gray-900">Smart Matching</h3>
+                  <p className="text-xs text-gray-600">Automated & Fast</p>
                 </div>
               </div>
-              
-              <div className="space-y-3 mb-6">
+
+              <div className="space-y-3 mb-6 flex-grow">
                 <div className="flex items-center text-sm">
-                  <FaCheck className="text-green-500 mr-2" />
+                  <FaCheck className="text-green-500 mr-2 flex-shrink-0" />
                   <span>Instant truck matching</span>
                 </div>
                 <div className="flex items-center text-sm">
-                  <FaCheck className="text-green-500 mr-2" />
+                  <FaCheck className="text-green-500 mr-2 flex-shrink-0" />
                   <span>AI-powered recommendations</span>
                 </div>
                 <div className="flex items-center text-sm">
-                  <FaCheck className="text-green-500 mr-2" />
+                  <FaCheck className="text-green-500 mr-2 flex-shrink-0" />
                   <span>Quick booking process</span>
-                </div>
-                <div className="flex items-center text-sm">
-                  <FaCheck className="text-green-500 mr-2" />
-                  <span>Best for urgent shipments</span>
                 </div>
               </div>
 
               <button
                 onClick={() => onJourneySelected('smart-matching')}
                 disabled={loading}
-                className="w-full px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="w-full px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                {loading ? 'Processing...' : 'Choose Smart Matching'}
+                Select Smart Match
+              </button>
+            </div>
+
+            {/* Assign to Broker - NEW */}
+            <div className={`relative rounded-xl border-2 p-6 transition-all duration-200 flex flex-col ${recommendation === 'assign-broker'
+                ? 'border-purple-500 bg-purple-50'
+                : 'border-gray-200 hover:border-purple-300'
+              }`}>
+              <div className="flex items-center mb-4">
+                <div className="bg-purple-100 rounded-full p-3 mr-4">
+                  <FaUserTie className="text-purple-600" size={24} />
+                  {/* Ideally FaUserTie, but using FaTruck or similar if not imported. I'll stick to imports available or assume FaUserTie if I import it.
+                      Let's use FaTruck for now as it is imported, but I should probably import FaUserTie.
+                      Actually, let's just use what's available to avoid import errors or let the user fix imports.
+                      I see FaStar is imported. I'll use FaStar for 'Trusted Broker'.
+                  */}
+                  {/* Better yet, I'll add FaUserTie to imports next step if needed, but for now specific icon usage: */}
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-gray-900">Assign to Broker</h3>
+                  <p className="text-xs text-gray-600">Expert Management</p>
+                </div>
+              </div>
+
+              <div className="space-y-3 mb-6 flex-grow">
+                <div className="flex items-center text-sm">
+                  <FaCheck className="text-green-500 mr-2 flex-shrink-0" />
+                  <span>Dedicated broker support</span>
+                </div>
+                <div className="flex items-center text-sm">
+                  <FaCheck className="text-green-500 mr-2 flex-shrink-0" />
+                  <span>Negotiated rates</span>
+                </div>
+                <div className="flex items-center text-sm">
+                  <FaCheck className="text-green-500 mr-2 flex-shrink-0" />
+                  <span>End-to-end handling</span>
+                </div>
+              </div>
+
+              <button
+                onClick={() => onJourneySelected('assign-broker')}
+                disabled={loading}
+                className="w-full px-4 py-2 bg-purple-600 text-white font-medium rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500"
+              >
+                Assign Broker
               </button>
             </div>
 
             {/* Publish for Bid */}
-            <div className={`relative rounded-xl border-2 p-6 transition-all duration-200 ${
-              recommendation === 'publish-bid' 
-                ? 'border-green-500 bg-green-50' 
-                : 'border-gray-200 hover:border-green-300'
-            }`}>
+            <div className={`relative rounded-xl border-2 p-6 transition-all duration-200 flex flex-col ${recommendation === 'publish-bid'
+              ? 'border-green-500 bg-green-50'
+              : 'border-gray-200 hover:border-green-300'
+              }`}>
               {recommendation === 'publish-bid' && (
                 <div className="absolute -top-2 -right-2 bg-green-500 text-white text-xs px-2 py-1 rounded-full">
                   Recommended
                 </div>
               )}
-              
+
               <div className="flex items-center mb-4">
                 <div className="bg-green-100 rounded-full p-3 mr-4">
                   <FaGavel className="text-green-600" size={24} />
                 </div>
                 <div>
-                  <h3 className="text-xl font-semibold text-gray-900">Publish for Bid</h3>
-                  <p className="text-sm text-gray-600">Competitive pricing, flexible selection</p>
+                  <h3 className="text-lg font-bold text-gray-900">Publish for Bid</h3>
+                  <p className="text-xs text-gray-600">Competitive Market</p>
                 </div>
               </div>
-              
-              <div className="space-y-3 mb-6">
+
+              <div className="space-y-3 mb-6 flex-grow">
                 <div className="flex items-center text-sm">
-                  <FaCheck className="text-green-500 mr-2" />
-                  <span>Multiple truck owner bids</span>
+                  <FaCheck className="text-green-500 mr-2 flex-shrink-0" />
+                  <span>Receive multiple bids</span>
                 </div>
                 <div className="flex items-center text-sm">
-                  <FaCheck className="text-green-500 mr-2" />
-                  <span>Competitive pricing options</span>
+                  <FaCheck className="text-green-500 mr-2 flex-shrink-0" />
+                  <span>Optimize for cost</span>
                 </div>
                 <div className="flex items-center text-sm">
-                  <FaCheck className="text-green-500 mr-2" />
-                  <span>Detailed truck profiles</span>
-                </div>
-                <div className="flex items-center text-sm">
-                  <FaCheck className="text-green-500 mr-2" />
-                  <span>Best for cost optimization</span>
+                  <FaCheck className="text-green-500 mr-2 flex-shrink-0" />
+                  <span>Choose your hauler</span>
                 </div>
               </div>
 
               <button
                 onClick={() => onJourneySelected('publish-bid')}
                 disabled={loading}
-                className="w-full px-6 py-3 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="w-full px-4 py-2 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500"
               >
-                {loading ? 'Processing...' : 'Choose Publish for Bid'}
+                Publish for Bid
               </button>
             </div>
           </div>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FaDollarSign, FaCalendarAlt, FaTruck, FaUser, FaChartLine } from 'react-icons/fa';
+import { DollarSign, Calendar, Truck, TrendingUp } from 'lucide-react';
 
 interface Auction {
   id: string;
@@ -83,15 +83,15 @@ const BidForm: React.FC<BidFormProps> = ({ auction, onSubmit, onCancel }) => {
       const bidAmount = parseFloat(formData.bidAmount);
       const currentBid = auction.currentHighestBid;
       const loadValue = auction.load.loadValue;
-      
+
       let probability = 50; // Base probability
-      
+
       if (bidAmount < currentBid) {
         probability += 30; // Higher chance if bidding lower
       } else if (bidAmount < loadValue * 0.8) {
         probability += 20; // Good value proposition
       }
-      
+
       setSuccessProbability(Math.min(probability, 95));
     }
   }, [formData.bidAmount, auction.currentHighestBid, auction.load.loadValue]);
@@ -102,7 +102,7 @@ const BidForm: React.FC<BidFormProps> = ({ auction, onSubmit, onCancel }) => {
       setFormData(prev => ({
         ...prev,
         [parent]: {
-          ...prev[parent as keyof typeof prev],
+          ...(prev[parent as keyof typeof prev] as object),
           [child]: value,
         },
       }));
@@ -165,7 +165,7 @@ const BidForm: React.FC<BidFormProps> = ({ auction, onSubmit, onCancel }) => {
         </div>
         <div>
           <div className="mb-2">
-            <span className="font-medium">Type:</span> 
+            <span className="font-medium">Type:</span>
             <span className="ml-2 px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">
               {auction.auctionType}
             </span>
@@ -191,7 +191,7 @@ const BidForm: React.FC<BidFormProps> = ({ auction, onSubmit, onCancel }) => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            <FaDollarSign className="inline mr-1" />
+            <DollarSign className="inline mr-1" />
             Bid Amount *
           </label>
           <input
@@ -226,7 +226,7 @@ const BidForm: React.FC<BidFormProps> = ({ auction, onSubmit, onCancel }) => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            <FaCalendarAlt className="inline mr-1" />
+            <Calendar className="inline mr-1" />
             Proposed Pickup Date
           </label>
           <input
@@ -238,7 +238,7 @@ const BidForm: React.FC<BidFormProps> = ({ auction, onSubmit, onCancel }) => {
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            <FaCalendarAlt className="inline mr-1" />
+            <Calendar className="inline mr-1" />
             Proposed Delivery Date
           </label>
           <input
@@ -287,7 +287,7 @@ const BidForm: React.FC<BidFormProps> = ({ auction, onSubmit, onCancel }) => {
   const renderTruckSpecifications = () => (
     <div className="bg-white rounded-lg shadow p-6 mb-6">
       <h6 className="text-lg font-medium text-gray-900 mb-4">
-        <FaTruck className="inline mr-1" />
+        <Truck className="inline mr-1" />
         Truck Specifications
       </h6>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -367,22 +367,20 @@ const BidForm: React.FC<BidFormProps> = ({ auction, onSubmit, onCancel }) => {
   const renderSuccessProbability = () => (
     <div className="bg-white rounded-lg shadow p-6 mb-6">
       <h6 className="text-lg font-medium text-gray-900 mb-4">
-        <FaChartLine className="inline mr-1" />
+        <TrendingUp className="inline mr-1" />
         Bid Analysis
       </h6>
       <div className="text-center">
-        <h4 className={`text-2xl font-bold mb-2 ${
-          successProbability > 70 ? 'text-green-600' : 
+        <h4 className={`text-2xl font-bold mb-2 ${successProbability > 70 ? 'text-green-600' :
           successProbability > 40 ? 'text-yellow-600' : 'text-red-600'
-        }`}>
+          }`}>
           {successProbability}% Success Probability
         </h4>
         <div className="w-full bg-gray-200 rounded-full h-2 mb-3">
           <div
-            className={`h-2 rounded-full ${
-              successProbability > 70 ? 'bg-green-500' : 
+            className={`h-2 rounded-full ${successProbability > 70 ? 'bg-green-500' :
               successProbability > 40 ? 'bg-yellow-500' : 'bg-red-500'
-            }`}
+              }`}
             style={{ width: `${successProbability}%` }}
           ></div>
         </div>
@@ -396,7 +394,7 @@ const BidForm: React.FC<BidFormProps> = ({ auction, onSubmit, onCancel }) => {
   return (
     <div className="bid-form">
       {renderAuctionSummary()}
-      
+
       <form onSubmit={handleSubmit}>
         {renderBidDetails()}
         {renderTruckSpecifications()}

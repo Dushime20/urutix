@@ -13,8 +13,20 @@ interface Cargo {
   cargoType: string;
   pickupLocationId: string;
   deliveryLocationId: string;
-  pickupLocation?: { name: string; address: string };
-  deliveryLocation?: { name: string; address: string };
+  pickupLocation?: {
+    name: string;
+    address: string;
+    city?: string;
+    state?: string;
+    country?: string;
+  };
+  deliveryLocation?: {
+    name: string;
+    address: string;
+    city?: string;
+    state?: string;
+    country?: string;
+  };
   pickupDate: string;
   deliveryDate: string;
   loadValue: number;
@@ -95,7 +107,25 @@ interface Cargo {
   };
   requiresPreShipmentInspection?: boolean;
   requiresDeliveryInspection?: boolean;
+
   requiresPhotographicDocumentation?: boolean;
+  // Transporter/Carrier details (inferred from backend response)
+  transporter?: {
+    id: string;
+    name: string;
+    email?: string;
+    phone?: string;
+    logo?: string;
+  };
+  truckOwner?: {
+    id: string;
+    name: string;
+  };
+  assignedTruck?: {
+    id: string;
+    plateNumber: string;
+    driverName?: string;
+  };
 }
 
 interface CargoTableProps {
@@ -130,68 +160,120 @@ export const CargoTable: React.FC<CargoTableProps> = ({
     return true;
   };
 
-  // Helper function to get pickup location display (prefer address, fallback to name)
+  // Helper function to get pickup location display (prefer city/country, fallback to address/name)
   const getPickupLocation = (cargo: Cargo): string => {
-    if (cargo.pickupLocation?.address && cargo.pickupLocation.address.trim() !== '') {
-      return cargo.pickupLocation.address;
+    const loc = cargo.pickupLocation;
+    if (!loc) return 'Pickup';
+
+    // Prefer City, Country
+    if (loc.city && loc.country) {
+      return `${loc.city}, ${loc.country}`;
     }
-    return cargo.pickupLocation?.name || 'Pickup'; // Will be translated in display
+
+    // Fallback: Try to parse City from Address
+    if (loc.address && loc.address.includes(',')) {
+      const parts = loc.address.split(',').map(p => p.trim());
+      // Simple heuristic: if >= 2 parts, take last two as City, Country
+      if (parts.length >= 2) {
+        const potentialCountry = parts[parts.length - 1];
+        const potentialCity = parts[parts.length - 2];
+        // Basic check to ensure they aren't numbers (like zip codes)
+        if (isNaN(Number(potentialCity)) && isNaN(Number(potentialCountry))) {
+          return `${potentialCity}, ${potentialCountry}`;
+        }
+      }
+    }
+
+    // Fallback to address
+    if (loc.address && loc.address.trim() !== '') {
+      return loc.address;
+    }
+    return loc.name || 'Pickup';
   };
 
   // Helper function to get delivery location display
   const getDeliveryLocation = (cargo: Cargo): string => {
-    if (cargo.deliveryLocation?.address && cargo.deliveryLocation.address.trim() !== '') {
-      return cargo.deliveryLocation.address;
+    const loc = cargo.deliveryLocation;
+    if (!loc) return 'Delivery';
+
+    // Prefer City, Country
+    if (loc.city && loc.country) {
+      return `${loc.city}, ${loc.country}`;
     }
-    return cargo.deliveryLocation?.name || 'Delivery'; // Will be translated in display
+
+    // Fallback: Try to parse City from Address
+    if (loc.address && loc.address.includes(',')) {
+      const parts = loc.address.split(',').map(p => p.trim());
+      if (parts.length >= 2) {
+        const potentialCountry = parts[parts.length - 1];
+        const potentialCity = parts[parts.length - 2];
+        if (isNaN(Number(potentialCity)) && isNaN(Number(potentialCountry))) {
+          return `${potentialCity}, ${potentialCountry}`;
+        }
+      }
+    }
+
+    // Fallback to address
+    if (loc.address && loc.address.trim() !== '') {
+      return loc.address;
+    }
+    return loc.name || 'Delivery';
   };
 
-  // Helper function to get broker display name
-  const getBrokerName = (cargo: Cargo): string | null => {
-    // Debug: Log broker data for troubleshooting
-    if (cargo.brokerId || cargo.broker) {
-      console.log('Broker data for cargo:', cargo.id, {
-        brokerId: cargo.brokerId,
-        broker: cargo.broker,
-        hasBroker: !!cargo.broker,
-        hasProfile: !!cargo.broker?.profile,
-      });
+
+
+
+  // Helper to get Operator (Transporter or Broker)
+  const getOperatorDetails = (cargo: Cargo) => {
+    if (cargo.transporter) {
+      return { name: cargo.transporter.name, type: 'TRANSPORTER', icon: 'TRUCK' };
     }
-    
-    // First check if we have a full broker object
+    if (cargo.truckOwner) {
+      return { name: cargo.truckOwner.name, type: 'TRANSPORTER', icon: 'TRUCK' };
+    }
+    // If truck is assigned but no transporter object, maybe show truck plate?
+    if (cargo.assignedTruck) {
+      return { name: `Truck ${cargo.assignedTruck.plateNumber}`, type: 'TRANSPORTER', icon: 'TRUCK' };
+    }
+
+    // Check Broker
     if (cargo.broker) {
       const profile = cargo.broker.profile;
-      if (profile?.companyName) {
-        return profile.companyName;
-      }
-      if (profile?.firstName || profile?.lastName) {
-        return `${profile.firstName || ''} ${profile.lastName || ''}`.trim();
-      }
-      if (cargo.broker.email && cargo.broker.email !== 'Broker Assigned') {
-        return cargo.broker.email;
-      }
+      let name = 'Unverified Broker';
+      if (profile?.companyName) name = profile.companyName;
+      else if (profile?.firstName) name = `${profile.firstName} ${profile.lastName || ''}`;
+      else if (cargo.broker.email) name = cargo.broker.email;
+
+      return { name, type: 'BROKER', icon: 'USER' };
     }
-    
-    // Fallback: if we only have brokerId, show a generic message
+
     if (cargo.brokerId) {
-      return 'Broker Assigned';
+      return { name: 'Broker Assigned', type: 'BROKER', icon: 'USER' };
     }
-    
+
     return null;
   };
 
   const getStatusColor = (status: string) => {
+    const base = "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold uppercase tracking-wide border";
     switch (status?.toLowerCase()) {
       case 'available':
-        return 'bg-green-100 text-green-800';
-              case 'IN_TRANSIT':
-        return 'bg-primary-100 text-primary-800';
+      case 'published':
+        return `${base} bg-emerald-50 text-emerald-700 border-emerald-200/60 shadow-sm shadow-emerald-500/10`;
+      case 'in_transit':
+        return `${base} bg-blue-50 text-blue-700 border-blue-200/60 shadow-sm shadow-blue-500/10 animate-pulse`;
       case 'delivered':
-        return 'bg-gray-100 text-gray-800';
+      case 'completed':
+        return `${base} bg-slate-100 text-slate-600 border-slate-200 shadow-sm`;
+      case 'assigned':
+        return `${base} bg-purple-50 text-purple-700 border-purple-200/60 shadow-sm shadow-purple-500/10`;
       case 'cancelled':
-        return 'bg-red-100 text-red-800';
+        return `${base} bg-red-50 text-red-700 border-red-200/60 shadow-sm shadow-red-500/10`;
+      case 'draft':
+        return `${base} bg-gray-50 text-gray-600 border-gray-200 border-dashed`;
+
       default:
-        return 'bg-gray-100 text-gray-800';
+        return `${base} bg-gray-50 text-gray-600 border-gray-200`;
     }
   };
 
@@ -223,7 +305,7 @@ export const CargoTable: React.FC<CargoTableProps> = ({
                 {cargo.status}
               </span>
             </div>
-            
+
             <div className="flex-grow flex flex-col">
               <div className="space-y-2">
                 {(cargo.pickupLocation || cargo.deliveryLocation) && (
@@ -234,14 +316,14 @@ export const CargoTable: React.FC<CargoTableProps> = ({
                     </span>
                   </div>
                 )}
-                
+
                 {hasValue(cargo.pickupDate) && (
                   <div className="flex items-center space-x-2 text-sm text-gray-600">
                     <FaCalendar className="text-gray-400" />
                     <span>{new Date(cargo.pickupDate).toLocaleDateString()}</span>
                   </div>
                 )}
-                
+
                 {(hasValue(cargo.loadValue) || hasValue(cargo.weight)) && (
                   <div className="text-sm flex flex-wrap gap-2">
                     {hasValue(cargo.loadValue) && (
@@ -256,76 +338,84 @@ export const CargoTable: React.FC<CargoTableProps> = ({
                 )}
 
                 {/* Broker Card */}
-                {(cargo.brokerId || cargo.broker) && (
-                  <div className="mt-2">
-                    <div className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-purple-50 border border-purple-200 rounded-md">
-                      <FaUserTie className="w-3.5 h-3.5 text-purple-600" />
-                      <span className="text-xs font-medium text-purple-700">
-                        {getBrokerName(cargo) || 'Broker Assigned'}
-                      </span>
-                    </div>
-                  </div>
-                )}
+                {/* Operator Card (Transporter or Broker) */}
+                {(() => {
+                  const op = getOperatorDetails(cargo);
+                  if (op) {
+                    const isTransporter = op.type === 'TRANSPORTER';
+                    return (
+                      <div className="mt-2">
+                        <div className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border ${isTransporter ? 'bg-blue-50 border-blue-200' : 'bg-purple-50 border-purple-200'}`}>
+                          <FaUserTie className={`w-3.5 h-3.5 ${isTransporter ? 'text-blue-600' : 'text-purple-600'}`} />
+                          <span className={`text-xs font-medium ${isTransporter ? 'text-blue-700' : 'text-purple-700'}`}>
+                            {op.name}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
               </div>
-              
+
               {/* Spacer to push buttons to middle */}
               <div className="flex-grow flex items-center justify-end mt-3">
                 {/* Action Buttons - Centered vertically in the middle */}
                 <div className="flex items-center justify-end gap-2 flex-wrap">
-              {onEditCargo && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onEditCargo(cargo);
-                  }}
-                  className="p-2 sm:p-1 min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center text-blue-600 hover:text-blue-800 active:bg-blue-50 transition-colors touch-manipulation rounded"
-                  title="Edit"
-                  aria-label="Edit"
-                >
-                  <FaEdit className="w-4 h-4 sm:w-4 sm:h-4" />
-                </button>
-              )}
-              {onDeleteCargo && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onDeleteCargo(cargo.id);
-                  }}
-                  className="p-2 sm:p-1 min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center text-red-600 hover:text-red-800 active:bg-red-50 transition-colors touch-manipulation rounded"
-                  title="Delete"
-                  aria-label="Delete"
-                >
-                  <FaTrash className="w-4 h-4 sm:w-4 sm:h-4" />
-                </button>
-              )}
-              {onPublishCargo && cargo.status === 'DRAFT' && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onPublishCargo(cargo.id);
-                  }}
-                  className="p-2 sm:p-1 min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center text-green-600 hover:text-green-800 active:bg-green-50 transition-colors touch-manipulation rounded"
-                  title="Publish"
-                  aria-label="Publish"
-                >
-                  <FaEye className="w-4 h-4 sm:w-4 sm:h-4" />
-                </button>
-              )}
-              {onAssignBroker && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    console.log('Assign Broker clicked for cargo:', cargo.id);
-                    onAssignBroker(cargo);
-                  }}
-                  className="p-2 sm:p-1.5 min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 text-purple-600 hover:text-purple-800 hover:bg-purple-50 active:bg-purple-100 rounded transition-colors border border-purple-200 flex items-center gap-1 touch-manipulation"
-                  title="Assign Broker"
-                  aria-label="Assign Broker"
-                >
-                  <FaUserTie className="w-4 h-4 flex-shrink-0" />
-                  <span className="text-xs font-medium hidden sm:inline">Broker</span>
-                </button>
-              )}
+                  {onEditCargo && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onEditCargo(cargo);
+                      }}
+                      className="p-2 sm:p-1 min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center text-blue-600 hover:text-blue-800 active:bg-blue-50 transition-colors touch-manipulation rounded"
+                      title="Edit"
+                      aria-label="Edit"
+                    >
+                      <FaEdit className="w-4 h-4 sm:w-4 sm:h-4" />
+                    </button>
+                  )}
+                  {onDeleteCargo && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDeleteCargo(cargo.id);
+                      }}
+                      className="p-2 sm:p-1 min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center text-red-600 hover:text-red-800 active:bg-red-50 transition-colors touch-manipulation rounded"
+                      title="Delete"
+                      aria-label="Delete"
+                    >
+                      <FaTrash className="w-4 h-4 sm:w-4 sm:h-4" />
+                    </button>
+                  )}
+                  {onPublishCargo && cargo.status === 'DRAFT' && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onPublishCargo(cargo.id);
+                      }}
+                      className="p-2 sm:p-1 min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center text-green-600 hover:text-green-800 active:bg-green-50 transition-colors touch-manipulation rounded"
+                      title="Publish"
+                      aria-label="Publish"
+                    >
+                      <FaEye className="w-4 h-4 sm:w-4 sm:h-4" />
+                    </button>
+                  )}
+                  {onAssignBroker && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        console.log('Assign Broker clicked for cargo:', cargo.id);
+                        onAssignBroker(cargo);
+                      }}
+                      className="p-2 sm:p-1.5 min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 text-purple-600 hover:text-purple-800 hover:bg-purple-50 active:bg-purple-100 rounded transition-colors border border-purple-200 flex items-center gap-1 touch-manipulation"
+                      title="Assign Broker"
+                      aria-label="Assign Broker"
+                    >
+                      <FaUserTie className="w-4 h-4 flex-shrink-0" />
+                      <span className="text-xs font-medium hidden sm:inline">Broker</span>
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
@@ -356,7 +446,7 @@ export const CargoTable: React.FC<CargoTableProps> = ({
               <TranslatedText text="Created" />
             </th>
             <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">
-              <TranslatedText text="Broker" />
+              <TranslatedText text="Operator" />
             </th>
             <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
               <TranslatedText text="Actions" />
@@ -409,16 +499,21 @@ export const CargoTable: React.FC<CargoTableProps> = ({
                 {hasValue(cargo.pickupDate) ? new Date(cargo.pickupDate).toLocaleDateString() : '-'}
               </td>
               <td className="px-3 sm:px-6 py-4 whitespace-nowrap hidden md:table-cell">
-                {(cargo.brokerId || cargo.broker) ? (
-                  <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-purple-50 border border-purple-200 rounded-md">
-                    <FaUserTie className="w-3.5 h-3.5 text-purple-600" />
-                    <span className="text-xs font-medium text-purple-700">
-                      {getBrokerName(cargo) || 'Broker Assigned'}
-                    </span>
-                  </div>
-                ) : (
-                  <span className="text-gray-400 text-xs">-</span>
-                )}
+                {(() => {
+                  const op = getOperatorDetails(cargo);
+                  if (op) {
+                    const isTransporter = op.type === 'TRANSPORTER';
+                    return (
+                      <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border ${isTransporter ? 'bg-blue-50 border-blue-200 text-blue-700' : 'bg-purple-50 border-purple-200 text-purple-700'}`}>
+                        <FaUserTie className={`w-3.5 h-3.5 ${isTransporter ? 'text-blue-600' : 'text-purple-600'}`} />
+                        <span className="text-xs font-medium">
+                          {op.name}
+                        </span>
+                      </div>
+                    );
+                  }
+                  return <span className="text-gray-400 text-xs">-</span>;
+                })()}
               </td>
               <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm font-medium">
                 <div className="flex flex-wrap gap-2">
@@ -446,7 +541,7 @@ export const CargoTable: React.FC<CargoTableProps> = ({
                       <FaEdit className="w-4 h-4" />
                     </button>
                   )}
-                  {onDeleteCargo && (
+                  {onDeleteCargo && cargo.status === 'DRAFT' && (
                     <button
                       onClick={(e) => {
                         e.stopPropagation();

@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Search, Bell, User, Menu, X, ChevronDown, Package, Gavel, MapPin, BarChart3, CreditCard, FileText, Settings, HelpCircle, Truck, Users, Route, Shield, TrendingUp, Wallet, AlertCircle, DollarSign, Home, Calendar, Mic, Camera, Zap, Sparkles, Clock, CheckCircle, Building, ClipboardList, AlertTriangle, Receipt, Percent, History, List, Star, ThumbsUp, Gift, Warehouse } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
-import { useCargoOwnerNotifications } from '../../hooks/useCargoOwnerNotifications';
+import { useCargoOwnerNotifications } from '../../hooks/useCargoOwnerNotifications.tsx';
 import ContextualHelp from '../Help/ContextualHelp';
 import { useOnboardingStore } from '../../stores/onboardingStore';
 
@@ -818,20 +818,90 @@ const DashboardHeader = () => {
             </div>
 
             {/* Notifications */}
-            <button
-              onClick={() => navigate(user?.role === 'CARGO_OWNER' ? '/cargo-owner/notifications' : '/dashboard/notifications')}
-              className="p-2 sm:p-2 bg-gray-50 rounded-full hover:bg-gray-100 active:bg-gray-200 transition-colors relative touch-manipulation min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center text-gray-600"
-            >
-              <Bell className="w-4 h-4 sm:w-5 sm:h-5" />
-              {(cargoOwnerNotifications.unreadCount > 0 || (user?.role !== 'CARGO_OWNER')) && (
-                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
+            <div className="relative" ref={(el) => { if (el) dropdownRefs.current['notifications'] = el; }}>
+              <button
+                onClick={() => setOpenDropdown(openDropdown === 'notifications' ? null : 'notifications')}
+                className="p-2 sm:p-2 bg-gray-50 rounded-full hover:bg-gray-100 active:bg-gray-200 transition-colors relative touch-manipulation min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center text-gray-600"
+              >
+                <Bell className="w-4 h-4 sm:w-5 sm:h-5" />
+                {(cargoOwnerNotifications.unreadCount > 0 || (user?.role !== 'CARGO_OWNER' && false)) && (
+                  <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
+                )}
+                {cargoOwnerNotifications.unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-white">
+                    {cargoOwnerNotifications.unreadCount > 9 ? '9+' : cargoOwnerNotifications.unreadCount}
+                  </span>
+                )}
+              </button>
+
+              {/* Notification Dropdown */}
+              {openDropdown === 'notifications' && (
+                <div className="absolute top-full right-0 mt-2 w-80 md:w-96 bg-white rounded-lg shadow-xl border border-gray-200 z-50 overflow-hidden">
+                  <div className="p-3 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                    <h3 className="font-semibold text-gray-900">Notifications</h3>
+                    {cargoOwnerNotifications.unreadCount > 0 && (
+                      <button
+                        onClick={() => cargoOwnerNotifications.markAllAsRead()}
+                        className="text-xs text-emerald-600 hover:text-emerald-700 font-medium"
+                      >
+                        Mark all reads
+                      </button>
+                    )}
+                  </div>
+                  <div className="max-h-[70vh] overflow-y-auto custom-scrollbar">
+                    {cargoOwnerNotifications.notifications.length === 0 ? (
+                      <div className="p-8 text-center text-gray-500">
+                        <Bell className="w-8 h-8 mx-auto mb-2 text-gray-300" />
+                        <p className="text-sm">No notifications yet</p>
+                      </div>
+                    ) : (
+                      <div className="divide-y divide-gray-100">
+                        {cargoOwnerNotifications.notifications.map((notification) => (
+                          <div
+                            key={notification.id}
+                            className={`p-4 hover:bg-gray-50 transition-colors cursor-pointer ${!notification.isRead ? 'bg-blue-50/50' : ''}`}
+                            onClick={() => {
+                              if (!notification.isRead) cargoOwnerNotifications.markAsRead(notification.id);
+                              // Handle navigation based on type
+                              if (notification.type === 'cargo_status_updated' && notification.data?.status === 'LOADED') {
+                                navigate(`/cargo-owner/payment?loadId=${notification.data.cargoId}&action=pay`);
+                                setOpenDropdown(null);
+                              }
+                            }}
+                          >
+                            <div className="flex gap-3">
+                              <div className={`mt-1 w-2 h-2 rounded-full flex-shrink-0 ${!notification.isRead ? 'bg-blue-500' : 'bg-gray-300'}`} />
+                              <div className="flex-1">
+                                <p className={`text-sm ${!notification.isRead ? 'font-semibold text-gray-900' : 'text-gray-700'}`}>
+                                  {notification.title}
+                                </p>
+                                <p className="text-xs text-gray-500 mt-1 line-clamp-2">
+                                  {notification.message}
+                                </p>
+                                <p className="text-[10px] text-gray-400 mt-2">
+                                  {new Date(notification.timestamp).toLocaleString()}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <div className="p-2 border-t border-gray-100 bg-gray-50 text-center">
+                    <button
+                      onClick={() => {
+                        navigate(user?.role === 'CARGO_OWNER' ? '/cargo-owner/notifications' : '/dashboard/notifications');
+                        setOpenDropdown(null);
+                      }}
+                      className="text-xs text-gray-600 hover:text-gray-900 font-medium"
+                    >
+                      View All Notifications
+                    </button>
+                  </div>
+                </div>
               )}
-              {cargoOwnerNotifications.unreadCount > 0 && (
-                <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-white">
-                  {cargoOwnerNotifications.unreadCount > 9 ? '9+' : cargoOwnerNotifications.unreadCount}
-                </span>
-              )}
-            </button>
+            </div>
 
             {/* Help & Support */}
             <ContextualHelp context={location.pathname} />

@@ -1,6 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { FaGavel, FaClock, FaMapMarkerAlt, FaEye, FaHeart, FaRegHeart } from 'react-icons/fa';
-import { Grid, Table } from 'lucide-react';
+import {
+  Gavel,
+  Clock,
+  MapPin,
+  Eye,
+  Heart,
+  Grid,
+  Table
+} from 'lucide-react';
 import { biddingAPI } from '../../services/biddingApi';
 import BidForm from './BidForm';
 
@@ -331,12 +338,12 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
               {watchingAuctions.has(auction.id) ? (
                 <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
               ) : watchedAuctions.has(auction.id) ? (
-                <FaHeart className="w-4 h-4" />
+                <Heart className="w-4 h-4 fill-current" />
               ) : (
-                <FaRegHeart className="w-4 h-4" />
+                <Heart className="w-4 h-4" />
               )}
             </button>
-            <FaGavel className="text-gray-500 w-4 h-4" />
+            <Gavel className="text-gray-500 w-4 h-4" />
           </div>
         </div>
 
@@ -344,7 +351,7 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
           <h6 className="text-base sm:text-lg font-semibold text-gray-900 break-words">{auction.load.title}</h6>
           {watchedAuctions.has(auction.id) && (
             <span className="text-xs bg-red-100 text-red-800 px-2 py-1 rounded-full flex items-center w-fit">
-              <FaHeart className="w-3 h-3 mr-1" />
+              <Heart className="w-3 h-3 mr-1 fill-current" />
               Watched
             </span>
           )}
@@ -354,14 +361,14 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
         <div className="space-y-1.5 sm:space-y-2 mb-3 sm:mb-4">
           <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-0 text-xs sm:text-sm">
             <span className="text-gray-500 flex items-center">
-              <FaMapMarkerAlt className="mr-1 flex-shrink-0" />
+              <MapPin className="mr-1 flex-shrink-0 w-3 h-3" />
               Pickup
             </span>
             <span className="text-gray-700 break-words text-right sm:text-left">{auction.load.pickupLocation}</span>
           </div>
           <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-0 text-xs sm:text-sm">
             <span className="text-gray-500 flex items-center">
-              <FaMapMarkerAlt className="mr-1 flex-shrink-0" />
+              <MapPin className="mr-1 flex-shrink-0 w-3 h-3" />
               Delivery
             </span>
             <span className="text-gray-700 break-words text-right sm:text-left">{auction.load.deliveryLocation}</span>
@@ -392,7 +399,7 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
 
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 sm:gap-0 text-xs sm:text-sm text-gray-500">
           <div className="flex items-center">
-            <FaClock className="mr-1 flex-shrink-0" />
+            <Clock className="mr-1 flex-shrink-0 w-4 h-4" />
             <span className="break-words">Ends {formatDate(auction.auctionEnd)}</span>
           </div>
           <div>
@@ -411,11 +418,11 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
               : 'bg-blue-600 text-white hover:bg-blue-700'
               }`}
           >
-            <FaGavel className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            <Gavel className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             <span>{userRole === 'CARGO_OWNER' ? 'View Bids' : 'Place Bid'}</span>
           </button>
           <button className="flex-1 px-3 sm:px-4 py-2.5 sm:py-2 text-xs sm:text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors duration-200 touch-manipulation min-h-[44px] sm:min-h-0 flex items-center justify-center gap-1.5">
-            <FaEye className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            <Eye className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             <span>Details</span>
           </button>
         </div>
@@ -463,7 +470,7 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
       {filters.showWatchedOnly && (
         <div className="bg-red-50 border border-red-200 rounded-lg p-3 sm:p-4 mb-4 sm:mb-6">
           <div className="flex items-center flex-wrap gap-2">
-            <FaHeart className="text-red-500 mr-1 flex-shrink-0" />
+            <Heart className="text-red-500 mr-1 flex-shrink-0 fill-current" />
             <h3 className="text-base sm:text-lg font-medium text-red-800">Watched Auctions</h3>
             <span className="text-xs sm:text-sm text-red-600">({auctions.length} auctions)</span>
           </div>
@@ -499,7 +506,7 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
       {auctions.length === 0 ? (
         <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 sm:p-4">
           <div className="flex items-center gap-2">
-            <FaGavel className="text-gray-400 flex-shrink-0" />
+            <Gavel className="text-gray-400 flex-shrink-0" />
             <span className="text-xs sm:text-sm text-gray-800 break-words">No auctions found matching your criteria.</span>
           </div>
         </div>
@@ -529,7 +536,7 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-3">
                             <div className="flex-shrink-0 w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
-                              <FaGavel className="w-4 h-4 text-gray-400 group-hover:text-gray-600 transition-colors" />
+                              <Gavel className="w-4 h-4 text-gray-400 group-hover:text-gray-600 transition-colors" />
                             </div>
                             <div>
                               <div className="text-sm font-semibold text-gray-900">{auction.load.title}</div>
@@ -558,7 +565,7 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap">
                           <div className="flex items-center text-[11px] text-gray-600 gap-1">
-                            <FaClock className="w-3 h-3 text-gray-400" />
+                            <Clock className="w-3 h-3 text-gray-400" />
                             {new Date(auction.auctionEnd).toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                           </div>
                         </td>
@@ -573,7 +580,7 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
                                 }`}
                               title={userRole === 'CARGO_OWNER' ? 'View Bids' : 'Place Bid'}
                             >
-                              <FaGavel className="w-3.5 h-3.5" />
+                              <Gavel className="w-3.5 h-3.5" />
                             </button>
                           </div>
                         </td>

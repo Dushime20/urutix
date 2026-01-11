@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { MapContainer, TileLayer, Marker } from "react-leaflet";
-import { Icon } from "leaflet";
+
 import {
   FaSync,
   FaDownload,
@@ -9,8 +8,8 @@ import {
   FaPlus,
 } from "react-icons/fa";
 import { FiGrid, FiList } from "react-icons/fi";
-import { ChevronLeft, ChevronRight, Package, TrendingUp, MapPin, Eye, EyeOff, BarChart3, Home, ChevronRight as ChevronRightIcon, X } from "lucide-react";
-import { useAuth } from "../../contexts/AuthContext";
+import { ChevronLeft, ChevronRight, Package, TrendingUp, MapPin, BarChart3, Home, ChevronRight as ChevronRightIcon, X } from "lucide-react";
+
 import { CargoFilters } from "./CargoFilters";
 import { CargoModal } from "./CargoModal";
 import { CargoSkeleton } from "./CargoSkeleton";
@@ -20,8 +19,10 @@ import EnhancedCargoForm from "../../pages/dashboard/cargos/create/components/fo
 import { useConfirmDialog } from "../../hooks/useConfirmDialog";
 import { AssignBrokerModal } from "./AssignBrokerModal";
 import { useCargoOwnerLayout } from "../../contexts/CargoOwnerLayoutContext";
+import DashboardHeader from "../Dashboard/Layout/DashboardHeader";
 
-import "leaflet/dist/leaflet.css";
+
+
 import {
   fetchCargos,
   exportCargos,
@@ -168,37 +169,23 @@ interface CargoFilters {
   isTimeCritical?: boolean;
 }
 
-interface CargoData {
-  items: Cargo[];
-  total: number;
-  hasMore: boolean;
-}
+
 
 type CargoFiltersType = CargoFilters;
 
 // Fix default marker icon for Leaflet in React
-import iconUrl from "leaflet/dist/images/marker-icon.png";
-import iconRetinaUrl from "leaflet/dist/images/marker-icon-2x.png";
-import iconShadow from "leaflet/dist/images/marker-shadow.png";
+
 import { Button } from "../ui";
 
-const cargoIcon = new Icon({
-  iconUrl,
-  iconRetinaUrl,
-  shadowUrl: iconShadow,
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41],
-});
+
 
 export const CargoDashboard: React.FC = () => {
   const { confirm, DialogComponent } = useConfirmDialog();
   const layoutContext = useCargoOwnerLayout();
   const setHideHeader = layoutContext?.setHideHeader;
   const navigate = useNavigate();
-  const { user } = useAuth();
-  
+
+
   // Debug: Log context availability
   useEffect(() => {
     console.log('🔍 CargoDashboard - Layout context:', {
@@ -211,7 +198,7 @@ export const CargoDashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedCargo, setSelectedCargo] = useState<Cargo | null>(null);
-  const [view, setView] = useState<"grid" | "list">("list");
+  const [view, setView] = useState<"grid" | "list">("grid");
   const [filters, setFilters] = useState<CargoFiltersType>({});
   const [search, setSearch] = useState("");
   const [hasMore, setHasMore] = useState(true);
@@ -220,9 +207,9 @@ export const CargoDashboard: React.FC = () => {
   const [totalCargos, setTotalCargos] = useState(0);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [allCargos, setAllCargos] = useState<Cargo[]>([]); // Store all fetched cargos
-  const [showMap, setShowMap] = useState(true); // Toggle map visibility
+
   const observer = useRef<IntersectionObserver | null>(null);
-  
+
   // Calculate statistics
   const stats = useMemo(() => {
     const total = allCargos.length;
@@ -230,7 +217,7 @@ export const CargoDashboard: React.FC = () => {
     const inTransit = allCargos.filter(c => c.status === 'IN_TRANSIT').length;
     const completed = allCargos.filter(c => c.status === 'DELIVERED' || c.status === 'COMPLETED').length;
     const totalValue = allCargos.reduce((sum, c) => sum + (Number(c.loadValue) || 0), 0);
-    
+
     return { total, published, inTransit, completed, totalValue };
   }, [allCargos]);
 
@@ -238,7 +225,7 @@ export const CargoDashboard: React.FC = () => {
   const [showForm, setShowForm] = useState(false);
   const [formMode, setFormMode] = useState<"create" | "edit">("create");
   const [editingCargo, setEditingCargo] = useState<Cargo | null>(null);
-  
+
   // Broker assignment state
   const [showAssignBrokerModal, setShowAssignBrokerModal] = useState(false);
   const [selectedLoadForBroker, setSelectedLoadForBroker] = useState<Cargo | null>(null);
@@ -254,13 +241,13 @@ export const CargoDashboard: React.FC = () => {
       hasModalOpen,
       setHideHeaderAvailable: typeof setHideHeader === 'function'
     });
-    
+
     if (typeof setHideHeader === 'function') {
       setHideHeader(hasModalOpen);
     } else {
       console.warn('⚠️ setHideHeader is not available in context');
     }
-    
+
     // Cleanup: show header when component unmounts
     return () => {
       if (typeof setHideHeader === 'function') {
@@ -281,7 +268,7 @@ export const CargoDashboard: React.FC = () => {
         const apiSearch = search && search.trim() ? search.trim() : undefined;
         const items = await fetchCargos(currentPage, apiSearch, filters);
         const itemsArray = Array.isArray(items) ? items : [];
-        
+
         // Always apply client-side filtering to ensure search works by cargo name
         // This provides a fallback if API search fails or doesn't work as expected
         let filteredItems = itemsArray;
@@ -294,14 +281,14 @@ export const CargoDashboard: React.FC = () => {
             const descriptionMatch = cargo.description?.toLowerCase().includes(searchLower);
             const cargoTypeMatch = cargo.cargoType?.toLowerCase().includes(searchLower);
             const idMatch = cargo.id?.toLowerCase().includes(searchLower);
-            
+
             // Prioritize title match - if title matches, return true immediately
             if (titleMatch) return true;
             // Otherwise check other fields
             return descriptionMatch || cargoTypeMatch || idMatch;
           });
         }
-        
+
         // Store all fetched cargos - for pagination, we need all items
         if (targetPage !== undefined || reset) {
           setAllCargos(filteredItems);
@@ -331,7 +318,7 @@ export const CargoDashboard: React.FC = () => {
             console.warn("API search failed, falling back to client-side search:", e);
             const items = await fetchCargos(page, undefined, filters);
             const itemsArray = Array.isArray(items) ? items : [];
-            
+
             // Apply client-side filtering - prioritize cargo name/title
             const searchLower = search.toLowerCase().trim();
             const filteredItems = itemsArray.filter((cargo: Cargo) => {
@@ -341,13 +328,13 @@ export const CargoDashboard: React.FC = () => {
               const descriptionMatch = cargo.description?.toLowerCase().includes(searchLower);
               const cargoTypeMatch = cargo.cargoType?.toLowerCase().includes(searchLower);
               const idMatch = cargo.id?.toLowerCase().includes(searchLower);
-              
+
               // Prioritize title match - if title matches, return true immediately
               if (titleMatch) return true;
               // Otherwise check other fields
               return descriptionMatch || cargoTypeMatch || idMatch;
             });
-            
+
             setCargos(reset ? filteredItems : [...cargos, ...filteredItems]);
             setHasMore(filteredItems.length >= itemsPerPage);
             setTotalCargos((prev) => reset ? filteredItems.length : prev + filteredItems.length);
@@ -362,7 +349,7 @@ export const CargoDashboard: React.FC = () => {
             console.error("Fallback search also failed:", fallbackError);
           }
         }
-        
+
         setError("Failed to load cargos. Please try again.");
         console.error("Error loading cargos:", e);
         // Keep existing cargos on error instead of clearing
@@ -440,11 +427,12 @@ export const CargoDashboard: React.FC = () => {
   };
 
   // CRUD Functions
-  const handleCreateCargo = useCallback(async (cargoData: any) => {
+  const handleCreateCargo = useCallback(async (cargoData: any): Promise<any> => {
     try {
       const newCargo = await createCargo(cargoData);
       setCargos((prev) => [newCargo, ...prev]);
       setShowForm(false);
+      return newCargo;
     } catch (error: any) {
       console.error("Error creating cargo:", error);
       throw error;
@@ -452,7 +440,7 @@ export const CargoDashboard: React.FC = () => {
   }, []);
 
   const handleUpdateCargo = useCallback(
-    async (cargoData: any) => {
+    async (cargoData: any): Promise<any> => {
       if (!editingCargo) return;
 
       try {
@@ -464,6 +452,7 @@ export const CargoDashboard: React.FC = () => {
         );
         setShowForm(false);
         setEditingCargo(null);
+        return updatedCargo;
       } catch (error: any) {
         console.error("Error updating cargo:", error);
         throw error;
@@ -483,14 +472,24 @@ export const CargoDashboard: React.FC = () => {
 
     if (!confirmed) return;
 
+    // Double check status before deletion
+    const cargoToDelete = allCargos.find(c => c.id === cargoId);
+    if (cargoToDelete && cargoToDelete.status !== 'DRAFT') {
+      toast.error("Only draft cargos can be deleted");
+      return;
+    }
+
     try {
       await deleteCargo(cargoId);
+      // Remove from list immediately
+      setAllCargos((prev) => prev.filter((c) => c.id !== cargoId));
       setCargos((prev) => prev.filter((cargo) => cargo.id !== cargoId));
+      toast.success("Cargo deleted successfully");
     } catch (error: any) {
       console.error("Error deleting cargo:", error);
       setError("Failed to delete cargo");
     }
-  }, [confirm]);
+  }, [allCargos, confirm]);
 
   const handlePublishCargo = useCallback(async (cargoId: string) => {
     try {
@@ -667,7 +666,7 @@ export const CargoDashboard: React.FC = () => {
     console.log("📍 Delivery location:", cargo.deliveryLocation);
     console.log("📍 Enriched locations:", cargo.enrichedLocations);
     console.log("📍 Locations array:", cargo.locations);
-    
+
     try {
       // Try to fetch full cargo details with relations if locations are missing
       let fullCargo = cargo;
@@ -683,10 +682,10 @@ export const CargoDashboard: React.FC = () => {
           console.warn("⚠️ Could not fetch full cargo, using existing data:", fetchError);
         }
       }
-      
+
       const formData = transformCargoToFormData(fullCargo);
       console.log("📝 Transformed form data:", formData);
-      
+
       setEditingCargo(formData);
       setFormMode("edit");
       setShowForm(true);
@@ -749,80 +748,106 @@ export const CargoDashboard: React.FC = () => {
 
   return (
     <ErrorBoundary>
-      <div className="min-h-screen bg-gray-50">
-        {/* Content Section */}
-        <div className="max-w-7xl mx-auto px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8 mt-3 sm:mt-4 md:mt-6 relative z-10">
-          {/* Breadcrumb Navigation */}
-          <nav className="mb-3 sm:mb-4 pt-3 sm:pt-4 flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-gray-600 overflow-x-auto scrollbar-hide">
+      <div className="min-h-screen bg-slate-50 font-['Manrope',sans-serif] antialiased">
+        <DashboardHeader onCreateClick={handleCreateNew} />
+
+        {/* Main Content */}
+        <div className="max-w-[1536px] mx-auto px-4 md:px-8 lg:px-12 xl:px-20 py-8 md:py-12">
+          {/* Breadcrumb Navigation - Styled to match premium theme */}
+          <nav className="mb-6 flex items-center gap-2 text-xs sm:text-sm text-slate-500 overflow-x-auto scrollbar-hide">
             <button
               onClick={() => navigate('/dashboard')}
-              className="flex items-center gap-1 hover:text-blue-600 transition-colors touch-manipulation min-h-[44px] sm:min-h-0 flex-shrink-0"
+              className="flex items-center gap-1 hover:text-teal-600 transition-colors font-medium"
             >
-              <Home className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-              <span className="whitespace-nowrap">Dashboard</span>
+              <Home className="size-3.5 sm:size-4" />
+              <span>Dashboard</span>
             </button>
-            <ChevronRightIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400 flex-shrink-0" />
-            <span className="text-gray-900 font-medium whitespace-nowrap flex-shrink-0">Cargo Management</span>
+            <ChevronRightIcon className="size-3 sm:size-3.5 text-slate-300" />
+            <span className="text-slate-900 font-bold">Cargo Management</span>
           </nav>
-          {/* Stats Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6">
-          <div className="bg-white rounded-lg sm:rounded-xl p-3 sm:p-4 md:p-5 border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-            <div className="flex items-center justify-between">
-              <div className="min-w-0 flex-1">
-                <p className="text-gray-600 text-xs sm:text-sm font-medium mb-1">Total Cargos</p>
-                <p className="text-2xl sm:text-3xl font-bold text-gray-900 truncate">{stats.total}</p>
-              </div>
-              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gray-50 rounded-lg flex items-center justify-center border border-gray-200 flex-shrink-0 ml-2">
-                <Package className="w-5 h-5 sm:w-6 sm:h-6 text-gray-600" />
-              </div>
-            </div>
-          </div>
-          
-          <div className="bg-white rounded-lg sm:rounded-xl p-3 sm:p-4 md:p-5 border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-            <div className="flex items-center justify-between">
-              <div className="min-w-0 flex-1">
-                <p className="text-gray-600 text-xs sm:text-sm font-medium mb-1">Published</p>
-                <p className="text-2xl sm:text-3xl font-bold text-gray-900 truncate">{stats.published}</p>
-              </div>
-              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gray-50 rounded-lg flex items-center justify-center border border-gray-200 flex-shrink-0 ml-2">
-                <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6 text-gray-600" />
-              </div>
-            </div>
-          </div>
-          
-          <div className="bg-white rounded-lg sm:rounded-xl p-3 sm:p-4 md:p-5 border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-            <div className="flex items-center justify-between">
-              <div className="min-w-0 flex-1">
-                <p className="text-gray-600 text-xs sm:text-sm font-medium mb-1">In Transit</p>
-                <p className="text-2xl sm:text-3xl font-bold text-gray-900 truncate">{stats.inTransit}</p>
-              </div>
-              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gray-50 rounded-lg flex items-center justify-center border border-gray-200 flex-shrink-0 ml-2">
-                <MapPin className="w-5 h-5 sm:w-6 sm:h-6 text-gray-600" />
-              </div>
-            </div>
-          </div>
-          
-          <div className="bg-white rounded-lg sm:rounded-xl p-3 sm:p-4 md:p-5 border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-            <div className="flex items-center justify-between">
-              <div className="min-w-0 flex-1">
-                <p className="text-gray-600 text-xs sm:text-sm font-medium mb-1">Total Value</p>
-                <p className="text-xl sm:text-2xl font-bold text-gray-900 break-words">
-                  {(() => {
-                    const value = stats.totalValue;
-                    if (value >= 1000000) return `$${(value / 1000000).toFixed(1)}M`;
-                    if (value >= 1000) return `$${(value / 1000).toFixed(1)}K`;
-                    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(value);
-                  })()}
-                </p>
-              </div>
-              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gray-50 rounded-lg flex items-center justify-center border border-gray-200 flex-shrink-0 ml-2">
-                <BarChart3 className="w-5 h-5 sm:w-6 sm:h-6 text-gray-600" />
-              </div>
-            </div>
-          </div>
-        </div>
 
-        <div className="bg-white rounded-lg sm:rounded-xl md:rounded-2xl p-3 sm:p-4 md:p-6 shadow-sm">
+          {/* Stats Cards */}
+          {/* Stats Cards - Premium Command Center Style */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
+            <div className="relative overflow-hidden rounded-2xl bg-[#0f172a] p-5 shadow-lg shadow-slate-900/10 group cursor-pointer transition-all hover:-translate-y-1 hover:shadow-xl border border-slate-800">
+              <div className="absolute right-0 top-0 h-32 w-32 translate-x-10 translate-y-[-10px] bg-gradient-to-br from-indigo-500/10 to-transparent blur-2xl transition-all group-hover:from-indigo-500/20" />
+              <div className="relative flex items-start justify-between">
+                <div>
+                  <p className="text-sm font-medium text-slate-400">Total Cargos</p>
+                  <div className="mt-2 flex items-baseline gap-2">
+                    <span className="text-3xl font-bold text-white tracking-tight">{stats.total}</span>
+                    <span className="text-xs font-medium text-indigo-400 bg-indigo-500/10 px-1.5 py-0.5 rounded">+12%</span>
+                  </div>
+                </div>
+                <div className="rounded-xl bg-indigo-500/20 p-2.5 text-indigo-400 group-hover:bg-indigo-500 group-hover:text-white transition-colors">
+                  <Package className="h-5 w-5" />
+                </div>
+              </div>
+              <div className="mt-4 h-1.5 w-full rounded-full bg-slate-800/50">
+                <div className="h-full w-[70%] rounded-full bg-indigo-500" />
+              </div>
+            </div>
+
+            <div className="relative overflow-hidden rounded-2xl bg-white p-5 shadow-lg shadow-slate-200/50 group cursor-pointer transition-all hover:-translate-y-1 hover:shadow-xl border border-slate-100">
+              <div className="absolute right-0 top-0 h-32 w-32 translate-x-10 translate-y-[-10px] bg-gradient-to-br from-emerald-500/10 to-transparent blur-2xl transition-all group-hover:from-emerald-500/20" />
+              <div className="relative flex items-start justify-between">
+                <div>
+                  <p className="text-sm font-medium text-slate-500">Active / Published</p>
+                  <div className="mt-2 flex items-baseline gap-2">
+                    <span className="text-3xl font-bold text-slate-900 tracking-tight">{stats.published}</span>
+                    <span className="text-xs font-medium text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">Active</span>
+                  </div>
+                </div>
+                <div className="rounded-xl bg-emerald-50 p-2.5 text-emerald-600 group-hover:bg-emerald-500 group-hover:text-white transition-colors">
+                  <TrendingUp className="h-5 w-5" />
+                </div>
+              </div>
+              <div className="mt-4 h-1.5 w-full rounded-full bg-slate-100">
+                <div className="h-full w-[45%] rounded-full bg-emerald-500" />
+              </div>
+            </div>
+
+            <div className="relative overflow-hidden rounded-2xl bg-white p-5 shadow-lg shadow-slate-200/50 group cursor-pointer transition-all hover:-translate-y-1 hover:shadow-xl border border-slate-100">
+              <div className="absolute right-0 top-0 h-32 w-32 translate-x-10 translate-y-[-10px] bg-gradient-to-br from-blue-500/10 to-transparent blur-2xl transition-all group-hover:from-blue-500/20" />
+              <div className="relative flex items-start justify-between">
+                <div>
+                  <p className="text-sm font-medium text-slate-500">In Transit</p>
+                  <div className="mt-2 flex items-baseline gap-2">
+                    <span className="text-3xl font-bold text-slate-900 tracking-tight">{stats.inTransit}</span>
+                    <span className="text-xs font-medium text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">En Route</span>
+                  </div>
+                </div>
+                <div className="rounded-xl bg-blue-50 p-2.5 text-blue-600 group-hover:bg-blue-500 group-hover:text-white transition-colors">
+                  <MapPin className="h-5 w-5" />
+                </div>
+              </div>
+              <div className="mt-4 h-1.5 w-full rounded-full bg-slate-100">
+                <div className="h-full w-[20%] rounded-full bg-blue-500" />
+              </div>
+            </div>
+
+            <div className="relative overflow-hidden rounded-2xl bg-white p-5 shadow-lg shadow-slate-200/50 group cursor-pointer transition-all hover:-translate-y-1 hover:shadow-xl border border-slate-100">
+              <div className="absolute right-0 top-0 h-32 w-32 translate-x-10 translate-y-[-10px] bg-gradient-to-br from-orange-500/10 to-transparent blur-2xl transition-all group-hover:from-orange-500/20" />
+              <div className="relative flex items-start justify-between">
+                <div>
+                  <p className="text-sm font-medium text-slate-500">Total Value</p>
+                  <div className="mt-2 flex items-baseline gap-2">
+                    <span className="text-2xl font-bold text-slate-900 tracking-tight">
+                      ${stats.totalValue.toLocaleString('en-US', { notation: 'compact', maximumFractionDigits: 1 })}
+                    </span>
+                  </div>
+                </div>
+                <div className="rounded-xl bg-orange-50 p-2.5 text-orange-600 group-hover:bg-orange-500 group-hover:text-white transition-colors">
+                  <BarChart3 className="h-5 w-5" />
+                </div>
+              </div>
+              <div className="mt-4 h-1.5 w-full rounded-full bg-slate-100">
+                <div className="h-full w-[85%] rounded-full bg-orange-500" />
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg sm:rounded-xl md:rounded-2xl p-3 sm:p-4 md:p-6 shadow-sm">
             {/* Header Section */}
             <div className="flex flex-col gap-3 sm:gap-4 mb-4 sm:mb-6 pb-3 sm:pb-4 border-b border-gray-200">
               <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
@@ -892,255 +917,190 @@ export const CargoDashboard: React.FC = () => {
               search={search}
               setSearch={setSearch}
             />
-            
-            {/* Map Toggle Section */}
-            <div className="mb-3 sm:mb-4">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0 mb-2">
-                <h3 className="text-xs sm:text-sm font-semibold text-gray-700 flex items-center gap-2">
-                  <MapPin className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                  <span>Cargo Locations Map</span>
-                </h3>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowMap(!showMap)}
-                  className="h-8 sm:h-8 text-xs touch-manipulation min-h-[44px] sm:min-h-0 w-full sm:w-auto"
-                >
-                  {showMap ? (
-                    <>
-                      <EyeOff className="w-3.5 h-3.5 sm:w-4 sm:h-4 sm:mr-1" />
-                      <span className="hidden sm:inline">Hide Map</span>
-                      <span className="sm:hidden">Hide</span>
-                    </>
-                  ) : (
-                    <>
-                      <Eye className="w-3.5 h-3.5 sm:w-4 sm:h-4 sm:mr-1" />
-                      <span className="hidden sm:inline">Show Map</span>
-                      <span className="sm:hidden">Show</span>
-                    </>
-                  )}
-                </Button>
-              </div>
-              {showMap && (
-                <div className="relative z-10 fleet-map-container rounded-lg overflow-hidden border border-gray-200 shadow-sm">
-                  <div className="w-full h-[250px] sm:h-[350px]">
-                    <MapContainer
-                      center={[0, 0]}
-                      zoom={2}
-                      style={{ width: "100%", height: "100%" }}
-                      scrollWheelZoom={true}
-                      aria-label="Cargo locations map"
-                    >
-                    <TileLayer
-                      attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                      url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                    />
-                    {allCargos.map((cargo) => {
-                      const pickupCoords = cargo.pickupLocation?.coordinates;
-                      if (
-                        pickupCoords &&
-                        pickupCoords.latitude &&
-                        pickupCoords.longitude
-                      ) {
-                        return (
-                          <Marker
-                            key={cargo.id}
-                            position={[pickupCoords.latitude, pickupCoords.longitude]}
-                            icon={cargoIcon}
-                          />
-                        );
-                      }
-                      return null;
-                    })}
-                  </MapContainer>
-                  </div>
-                </div>
-              )}
-            </div>
-        {error && (
-          <div
-            className="bg-red-50 border border-red-200 text-red-800 p-3 sm:p-4 rounded-lg flex items-start sm:items-center gap-2 sm:gap-3 mb-3 sm:mb-4 shadow-sm"
-            role="alert"
-          >
-            <div className="flex-shrink-0 mt-0.5 sm:mt-0">
-              <FaExclamationTriangle className="w-4 h-4 sm:w-5 sm:h-5" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="font-medium text-sm sm:text-base">Error loading cargos</p>
-              <p className="text-xs sm:text-sm text-red-600 mt-1 break-words">{error}</p>
-            </div>
-            <button
-              onClick={() => setError(null)}
-              className="text-red-400 hover:text-red-600 transition-colors touch-manipulation min-w-[32px] min-h-[32px] flex items-center justify-center flex-shrink-0"
-              aria-label="Dismiss error"
-            >
-              <X className="w-4 h-4 sm:w-5 sm:h-5" />
-            </button>
-          </div>
-        )}
-        {loading && allCargos.length === 0 ? (
-          <CargoSkeleton />
-        ) : allCargos.length === 0 ? (
-          <div className="text-center py-8 sm:py-12 px-3 sm:px-4">
-            <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
-              <Package className="w-6 h-6 sm:w-8 sm:h-8 text-gray-400" />
-            </div>
-            <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2">No cargos found</h3>
-            <p className="text-sm sm:text-base text-gray-500 mb-4 sm:mb-6 max-w-md mx-auto">
-              {search || Object.keys(filters).length > 0
-                ? "Try adjusting your search or filters to find what you're looking for."
-                : "Get started by creating your first cargo shipment."}
-            </p>
-            {(!search && Object.keys(filters).length === 0) && (
-              <Button
-                onClick={handleCreateNew}
-                className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white mx-auto touch-manipulation min-h-[44px] sm:min-h-0"
+
+            {error && (
+              <div
+                className="bg-red-50 border border-red-200 text-red-800 p-3 sm:p-4 rounded-lg flex items-start sm:items-center gap-2 sm:gap-3 mb-3 sm:mb-4 shadow-sm"
+                role="alert"
               >
-                <FaPlus className="w-4 h-4" />
-                <TranslatedText text="Create New Cargo" />
-              </Button>
-            )}
-          </div>
-        ) : (
-          <>
-            <CargoTable
-              cargos={allCargos.slice((page - 1) * itemsPerPage, page * itemsPerPage) || []}
-              lastCargoRef={lastCargoRef}
-              view={view}
-              onRowClick={setSelectedCargo}
-              onBulkAction={handleBulkAction}
-              onEditCargo={handleEditCargo}
-              onDeleteCargo={handleDeleteCargo}
-              onPublishCargo={handlePublishCargo}
-              onAssignBroker={handleAssignBroker}
-            />
-            
-            {/* Pagination */}
-            {allCargos.length > 0 && (
-              <div className="mt-4 sm:mt-6 flex flex-col gap-3 sm:gap-4 px-3 sm:px-4 py-3 bg-white rounded-lg border border-gray-200 shadow-sm">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 w-full">
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 w-full sm:w-auto">
-                    <div className="text-xs sm:text-sm text-gray-700">
-                      Showing <span className="font-medium">{(page - 1) * itemsPerPage + 1}</span> to{' '}
-                      <span className="font-medium">
-                        {Math.min(page * itemsPerPage, totalCargos)}
-                      </span>{' '}
-                      of <span className="font-medium">{totalCargos}</span> cargos
-                    </div>
-                    
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs sm:text-sm text-gray-700 whitespace-nowrap">Show:</span>
-                      <select
-                        value={itemsPerPage}
-                        onChange={(e) => handleItemsPerPageChange(Number(e.target.value))}
-                        className="h-9 sm:h-9 rounded-md border border-gray-300 bg-white px-2 sm:px-3 py-1 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 touch-manipulation min-h-[44px] sm:min-h-0"
-                      >
-                        <option value={10}>10</option>
-                        <option value={25}>25</option>
-                        <option value={50}>50</option>
-                        <option value={100}>100</option>
-                      </select>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center gap-1.5 sm:gap-2 w-full sm:w-auto justify-center sm:justify-end">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handlePageChange(page - 1)}
-                      disabled={page === 1 || loading}
-                      className="flex items-center justify-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation min-h-[44px] sm:min-h-0 flex-1 sm:flex-initial"
-                    >
-                      <ChevronLeft className="w-4 h-4" />
-                      <span className="hidden sm:inline">Previous</span>
-                      <span className="sm:hidden">Prev</span>
-                    </Button>
-                    
-                    <div className="flex items-center gap-1 overflow-x-auto scrollbar-hide">
-                      {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                        let pageNum: number;
-                        if (totalPages <= 5) {
-                          pageNum = i + 1;
-                        } else if (page <= 3) {
-                          pageNum = i + 1;
-                        } else if (page >= totalPages - 2) {
-                          pageNum = totalPages - 4 + i;
-                        } else {
-                          pageNum = page - 2 + i;
-                        }
-                        
-                        return (
-                          <Button
-                            key={pageNum}
-                            variant={page === pageNum ? "default" : "outline"}
-                            size="sm"
-                            onClick={() => handlePageChange(pageNum)}
-                            disabled={loading}
-                            className={`min-w-[40px] sm:min-w-[40px] touch-manipulation min-h-[44px] sm:min-h-0 ${
-                              page === pageNum
-                                ? "bg-blue-600 text-white hover:bg-blue-700"
-                                : "hover:bg-gray-50"
-                            } disabled:opacity-50 disabled:cursor-not-allowed`}
-                          >
-                            {pageNum}
-                          </Button>
-                        );
-                      })}
-                    </div>
-                    
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handlePageChange(page + 1)}
-                      disabled={page >= totalPages || loading}
-                      className="flex items-center justify-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation min-h-[44px] sm:min-h-0 flex-1 sm:flex-initial"
-                    >
-                      <span className="hidden sm:inline">Next</span>
-                      <span className="sm:hidden">Next</span>
-                      <ChevronRight className="w-4 h-4" />
-                    </Button>
-                  </div>
+                <div className="flex-shrink-0 mt-0.5 sm:mt-0">
+                  <FaExclamationTriangle className="w-4 h-4 sm:w-5 sm:h-5" />
                 </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-sm sm:text-base">Error loading cargos</p>
+                  <p className="text-xs sm:text-sm text-red-600 mt-1 break-words">{error}</p>
+                </div>
+                <button
+                  onClick={() => setError(null)}
+                  className="text-red-400 hover:text-red-600 transition-colors touch-manipulation min-w-[32px] min-h-[32px] flex items-center justify-center flex-shrink-0"
+                  aria-label="Dismiss error"
+                >
+                  <X className="w-4 h-4 sm:w-5 sm:h-5" />
+                </button>
               </div>
             )}
-          </>
-        )}
-        <CargoModal
-          cargo={selectedCargo}
-          onClose={() => setSelectedCargo(null)}
-        />
+            {loading && allCargos.length === 0 ? (
+              <CargoSkeleton />
+            ) : allCargos.length === 0 ? (
+              <div className="text-center py-8 sm:py-12 px-3 sm:px-4">
+                <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+                  <Package className="w-6 h-6 sm:w-8 sm:h-8 text-gray-400" />
+                </div>
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2">No cargos found</h3>
+                <p className="text-sm sm:text-base text-gray-500 mb-4 sm:mb-6 max-w-md mx-auto">
+                  {search || Object.keys(filters).length > 0
+                    ? "Try adjusting your search or filters to find what you're looking for."
+                    : "Get started by creating your first cargo shipment."}
+                </p>
+                {(!search && Object.keys(filters).length === 0) && (
+                  <Button
+                    onClick={handleCreateNew}
+                    className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white mx-auto touch-manipulation min-h-[44px] sm:min-h-0"
+                  >
+                    <FaPlus className="w-4 h-4" />
+                    <TranslatedText text="Create New Cargo" />
+                  </Button>
+                )}
+              </div>
+            ) : (
+              <>
+                <CargoTable
+                  cargos={allCargos.slice((page - 1) * itemsPerPage, page * itemsPerPage) || []}
+                  lastCargoRef={lastCargoRef}
+                  view={view}
+                  onRowClick={setSelectedCargo}
+                  onBulkAction={handleBulkAction}
+                  onEditCargo={handleEditCargo}
+                  onDeleteCargo={handleDeleteCargo}
+                  onPublishCargo={handlePublishCargo}
+                  onAssignBroker={handleAssignBroker}
+                />
 
-        {/* Assign Broker Modal */}
-        {selectedLoadForBroker && (
-          <AssignBrokerModal
-            isOpen={showAssignBrokerModal}
-            onClose={() => {
-              setShowAssignBrokerModal(false);
-              setSelectedLoadForBroker(null);
-            }}
-            loadId={selectedLoadForBroker.id}
-            loadTitle={selectedLoadForBroker.title}
-            loadValue={selectedLoadForBroker.loadValue}
-            currentBrokerId={(selectedLoadForBroker as any).brokerId}
-            onSuccess={handleBrokerAssignmentSuccess}
-          />
-        )}
+                {/* Pagination */}
+                {allCargos.length > 0 && (
+                  <div className="mt-4 sm:mt-6 flex flex-col gap-3 sm:gap-4 px-3 sm:px-4 py-3 bg-white rounded-lg border border-gray-200 shadow-sm">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 w-full">
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 w-full sm:w-auto">
+                        <div className="text-xs sm:text-sm text-gray-700">
+                          Showing <span className="font-medium">{(page - 1) * itemsPerPage + 1}</span> to{' '}
+                          <span className="font-medium">
+                            {Math.min(page * itemsPerPage, totalCargos)}
+                          </span>{' '}
+                          of <span className="font-medium">{totalCargos}</span> cargos
+                        </div>
 
-        {/* CRUD Form */}
-        <EnhancedCargoForm
-          isOpen={showForm}
-          onClose={handleCloseForm}
-          onSubmit={
-            formMode === "create" ? handleCreateCargo : handleUpdateCargo
-          }
-          initialData={editingCargo}
-          mode={formMode}
-          showTruckSelection={formMode === "create"}
-          onTruckSelected={handleTruckSelected}
-        />
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs sm:text-sm text-gray-700 whitespace-nowrap">Show:</span>
+                          <select
+                            value={itemsPerPage}
+                            onChange={(e) => handleItemsPerPageChange(Number(e.target.value))}
+                            className="h-9 sm:h-9 rounded-md border border-gray-300 bg-white px-2 sm:px-3 py-1 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 touch-manipulation min-h-[44px] sm:min-h-0"
+                          >
+                            <option value={10}>10</option>
+                            <option value={25}>25</option>
+                            <option value={50}>50</option>
+                            <option value={100}>100</option>
+                          </select>
+                        </div>
+                      </div>
 
-        {/* Confirmation Dialog */}
-        {DialogComponent}
+                      <div className="flex items-center gap-1.5 sm:gap-2 w-full sm:w-auto justify-center sm:justify-end">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handlePageChange(page - 1)}
+                          disabled={page === 1 || loading}
+                          className="flex items-center justify-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation min-h-[44px] sm:min-h-0 flex-1 sm:flex-initial"
+                        >
+                          <ChevronLeft className="w-4 h-4" />
+                          <span className="hidden sm:inline">Previous</span>
+                          <span className="sm:hidden">Prev</span>
+                        </Button>
+
+                        <div className="flex items-center gap-1 overflow-x-auto scrollbar-hide">
+                          {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                            let pageNum: number;
+                            if (totalPages <= 5) {
+                              pageNum = i + 1;
+                            } else if (page <= 3) {
+                              pageNum = i + 1;
+                            } else if (page >= totalPages - 2) {
+                              pageNum = totalPages - 4 + i;
+                            } else {
+                              pageNum = page - 2 + i;
+                            }
+
+                            return (
+                              <Button
+                                key={pageNum}
+                                variant={page === pageNum ? "default" : "outline"}
+                                size="sm"
+                                onClick={() => handlePageChange(pageNum)}
+                                disabled={loading}
+                                className={`min-w-[40px] sm:min-w-[40px] touch-manipulation min-h-[44px] sm:min-h-0 ${page === pageNum
+                                  ? "bg-blue-600 text-white hover:bg-blue-700"
+                                  : "hover:bg-gray-50"
+                                  } disabled:opacity-50 disabled:cursor-not-allowed`}
+                              >
+                                {pageNum}
+                              </Button>
+                            );
+                          })}
+                        </div>
+
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handlePageChange(page + 1)}
+                          disabled={page >= totalPages || loading}
+                          className="flex items-center justify-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation min-h-[44px] sm:min-h-0 flex-1 sm:flex-initial"
+                        >
+                          <span className="hidden sm:inline">Next</span>
+                          <span className="sm:hidden">Next</span>
+                          <ChevronRight className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+            <CargoModal
+              cargo={selectedCargo}
+              onClose={() => setSelectedCargo(null)}
+            />
+
+            {/* Assign Broker Modal */}
+            {selectedLoadForBroker && (
+              <AssignBrokerModal
+                isOpen={showAssignBrokerModal}
+                onClose={() => {
+                  setShowAssignBrokerModal(false);
+                  setSelectedLoadForBroker(null);
+                }}
+                loadId={selectedLoadForBroker.id}
+                loadTitle={selectedLoadForBroker.title}
+                loadValue={selectedLoadForBroker.loadValue}
+                currentBrokerId={(selectedLoadForBroker as any).brokerId}
+                onSuccess={handleBrokerAssignmentSuccess}
+              />
+            )}
+
+            {/* CRUD Form */}
+            <EnhancedCargoForm
+              isOpen={showForm}
+              onClose={handleCloseForm}
+              onSubmit={
+                formMode === "create" ? handleCreateCargo : handleUpdateCargo
+              }
+              initialData={editingCargo}
+              mode={formMode}
+              showTruckSelection={formMode === "create"}
+              onTruckSelected={handleTruckSelected}
+            />
+
+            {/* Confirmation Dialog */}
+            {DialogComponent}
           </div>
         </div>
       </div>

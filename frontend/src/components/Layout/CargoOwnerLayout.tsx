@@ -26,18 +26,20 @@ const CargoOwnerLayout: React.FC = () => {
 
   if (isLoading || !user) return null;
 
-  // Check if we're on the index dashboard route (both /dashboard and /cargo-owner)
-  const isDashboardIndex = location.pathname === '/dashboard' || 
-                           location.pathname === '/dashboard/' ||
-                           location.pathname === '/cargo-owner' ||
-                           location.pathname === '/cargo-owner/';
+  // Check if we're on the customized dashboard routes
+  const isDashboardIndex = location.pathname === '/dashboard' ||
+    location.pathname === '/dashboard/' ||
+    location.pathname === '/cargo-owner' ||
+    location.pathname === '/cargo-owner/' ||
+    location.pathname.startsWith('/dashboard/cargos') ||
+    location.pathname.startsWith('/cargo-owner/cargos');
 
   return (
     <CargoOwnerLayoutProvider
       value={{
         sidebarCollapsed: false,
-        toggleSidebar: () => {}, // No-op since sidebar is gone
-        setSidebarCollapsed: () => {},
+        toggleSidebar: () => { }, // No-op since sidebar is gone
+        setSidebarCollapsed: () => { },
         hideHeader,
         setHideHeader,
       }}

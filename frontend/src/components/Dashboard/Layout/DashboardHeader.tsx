@@ -1,0 +1,123 @@
+import React, { useState } from 'react';
+import { Bell, AlertTriangle, CheckCircle, Droplets, Fuel, X, Search } from 'lucide-react';
+import QuickActions from '../Widgets/QuickActions';
+
+interface DashboardHeaderProps {
+    onCreateClick?: () => void;
+}
+
+const DashboardHeader: React.FC<DashboardHeaderProps> = ({ onCreateClick }) => {
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+    return (
+        <>
+            {/* Marquee Alert Bar */}
+            <div className="bg-[#0a101f] text-white py-2 overflow-hidden border-b border-white/5">
+                <div className="flex items-center animate-marquee whitespace-nowrap">
+                    <div className="flex gap-16 items-center text-[11px] font-bold tracking-widest uppercase opacity-80">
+                        <span className="flex items-center gap-2 text-amber-400">
+                            <AlertTriangle size={14} /> Port Congestion: Lagos Apapa (3-day delay)
+                        </span>
+                        <span className="flex items-center gap-2">
+                            <Droplets size={14} className="text-blue-400" /> Heavy Rain Alert: Accra-Lome Corridor
+                        </span>
+                        <span className="flex items-center gap-2 text-green-400">
+                            <CheckCircle size={14} /> Border Clearance: Mombasa-Kampala operating normally
+                        </span>
+                        <span className="flex items-center gap-2 text-amber-400">
+                            <Fuel size={14} /> Fuel Surcharge Update: +2% effective Nov 1st
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            {/* Header Section - Dark Theme */}
+            <div className="bg-[#0f172a] text-white">
+                <header className="max-w-[1536px] mx-auto flex items-center justify-between px-4 md:px-8 lg:px-12 xl:px-20 py-5 border-b border-white/10">
+                    <div className="flex items-center gap-4 md:gap-10">
+                        {/* Mobile Menu Toggle */}
+                        <button
+                            className="lg:hidden p-2 -ml-2 text-gray-400 hover:text-white"
+                            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                        >
+                            {isMobileMenuOpen ? <X size={24} /> : (
+                                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                                </svg>
+                            )}
+                        </button>
+
+                        {/* Logo */}
+                        <div className="flex items-center gap-3 cursor-pointer">
+                            <div className="size-10 bg-gradient-to-br from-teal-500 to-teal-700 flex items-center justify-center rounded-xl shadow-lg shadow-teal-500/20">
+                                <svg className="size-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+                                </svg>
+                            </div>
+                            <h2 className="text-xl md:text-2xl font-black tracking-tighter text-white">UrutiX<span className="text-teal-400">.</span></h2>
+                        </div>
+
+                        {/* Desktop Navigation */}
+                        <nav className="hidden lg:flex items-center gap-10">
+                            <a className="text-white text-sm font-bold relative after:content-[''] after:absolute after:bottom-[-4px] after:left-0 after:w-full after:h-0.5 after:bg-teal-500" href="/dashboard">Dashboard</a>
+                            <a className="text-white/60 hover:text-white text-sm font-semibold transition-all" href="/dashboard/cargos">Shipments</a>
+                            <a className="text-white/60 hover:text-white text-sm font-semibold transition-all" href="#">Financing</a>
+                            <a className="text-white/60 hover:text-white text-sm font-semibold transition-all" href="#">Wallet</a>
+                            <a className="text-white/60 hover:text-white text-sm font-semibold transition-all" href="#">Reports</a>
+                        </nav>
+
+                        {/* Search Bar */}
+                        <div className="hidden xl:flex items-center relative ml-8 group">
+                            <Search className="absolute left-3 text-white/40 group-focus-within:text-teal-500 transition-colors" size={16} />
+                            <input
+                                type="text"
+                                placeholder="Search cargo ID, route..."
+                                className="bg-white/5 border border-white/10 rounded-full py-2 pl-10 pr-12 text-sm text-white focus:outline-none focus:border-teal-500/50 w-64 transition-all"
+                            />
+                            <span className="absolute right-3 text-[10px] font-bold text-white/20 border border-white/10 rounded px-1.5 py-0.5">⌘K</span>
+                        </div>
+                    </div>
+
+                    <div className="flex items-center gap-4 md:gap-6">
+                        <div className="hidden 2xl:flex items-center gap-2 px-4 py-1.5 bg-white/5 border border-white/10 rounded-full">
+                            <span className="text-teal-400">🌿</span>
+                            <span className="text-[10px] font-bold text-white/80 uppercase tracking-wider">Carbon Saver Tier 1</span>
+                        </div>
+
+                        <QuickActions onCreateClick={onCreateClick} />
+
+                        <button className="p-2 text-white/60 hover:text-white transition-all relative">
+                            <Bell size={24} />
+                            <span className="absolute top-2 right-2 size-2 bg-teal-500 rounded-full border-2 border-[#0f172a]"></span>
+                        </button>
+
+                        <div className="flex items-center gap-3 pl-4 md:pl-6 border-l border-white/10">
+                            <div className="text-right hidden sm:block">
+                                <p className="text-sm font-bold">Kofi Annan</p>
+                                <p className="text-[9px] font-bold text-teal-400 uppercase tracking-widest">Premium Exporter</p>
+                            </div>
+                            <div className="size-10 rounded-full bg-gradient-to-br from-teal-400 to-emerald-600 border-2 border-white/20 shadow-inner overflow-hidden">
+                                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Kofi" alt="User" className="size-full" />
+                            </div>
+                        </div>
+                    </div>
+                </header>
+
+                {/* Mobile Nav Menu */}
+                {isMobileMenuOpen && (
+                    <div className="lg:hidden absolute top-[120px] left-0 right-0 bg-[#0f172a] border-b border-white/10 p-4 z-50 shadow-xl">
+                        <nav className="flex flex-col space-y-3 text-sm font-semibold text-gray-400">
+                            <a href="/dashboard" className="text-white px-3 py-2 bg-white/5 rounded-lg">Dashboard</a>
+                            <a href="/dashboard/cargos" className="hover:text-white px-3 py-2">Shipments</a>
+                            <a href="#" className="hover:text-white px-3 py-2">Financing</a>
+                            <a href="#" className="hover:text-white px-3 py-2">Wallet</a>
+                            <a href="#" className="hover:text-white px-3 py-2">Reports</a>
+                        </nav>
+                    </div>
+                )}
+            </div>
+        </>
+    );
+};
+
+export default DashboardHeader;

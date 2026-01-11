@@ -38,7 +38,7 @@ export const useCargoOwnerNotifications = () => {
     newSocket.on('connect', () => {
       console.log('Cargo owner notifications: Connected to WebSocket');
       setIsConnected(true);
-      
+
       // Join cargo owner-specific room
       newSocket.emit('join:cargo-owner', { userId: user.id });
     });
@@ -61,7 +61,7 @@ export const useCargoOwnerNotifications = () => {
         category: 'CARGO',
         priority: 'HIGH',
       };
-      
+
       setNotifications((prev) => [notification, ...prev]);
       toast.success('New match found!', {
         icon: '🎯',
@@ -82,7 +82,7 @@ export const useCargoOwnerNotifications = () => {
         category: 'CARGO',
         priority: 'HIGH',
       };
-      
+
       setNotifications((prev) => [notification, ...prev]);
       toast.success('New bid received!', {
         icon: '💰',
@@ -103,25 +103,55 @@ export const useCargoOwnerNotifications = () => {
         category: 'CARGO',
         priority: 'MEDIUM',
       };
-      
+
       setNotifications((prev) => [notification, ...prev]);
     });
 
     // Listen for cargo status updates
     newSocket.on('cargo:status:updated', (data: any) => {
+      const isLoaded = data.status === 'LOADED';
       const notification: Notification = {
         id: data.id || Date.now().toString(),
         type: 'cargo_status_updated',
-        title: 'Cargo Status Updated',
-        message: `Your cargo ${data.cargoId || ''} status changed to ${data.status || ''}`,
+        title: isLoaded ? 'Cargo Loaded!' : 'Cargo Status Updated',
+        message: isLoaded
+          ? `Your cargo ${data.cargoId || ''} has been loaded. Payment is now ready to be processed.`
+          : `Your cargo ${data.cargoId || ''} status changed to ${data.status || ''}`,
         data,
         timestamp: new Date().toISOString(),
         isRead: false,
         category: 'CARGO',
-        priority: 'NORMAL',
+        priority: isLoaded ? 'HIGH' : 'NORMAL',
       };
-      
+
       setNotifications((prev) => [notification, ...prev]);
+
+      if (isLoaded) {
+        toast((t) => (
+          <div className="flex flex-col gap-2">
+            <span className="font-medium">Cargo Loaded! 🚚</span>
+            <span className="text-sm">Your cargo is ready for payment.</span>
+            <button
+              onClick={() => {
+                toast.dismiss(t.id);
+                // Use window.location as fallback or simple navigation
+                window.location.href = `/cargo-owner/payment?loadId=${data.cargoId}&action=pay`;
+              }}
+              className="bg-blue-600 text-white px-3 py-1.5 rounded text-xs font-medium hover:bg-blue-700 transition w-fit"
+            >
+              Make Payment / Request Finance
+            </button>
+          </div>
+        ), {
+          duration: 8000,
+          position: 'top-right',
+          style: {
+            border: '1px solid #E5E7EB',
+            padding: '16px',
+            color: '#1F2937',
+          },
+        });
+      }
     });
 
     // Listen for payment notifications
@@ -137,7 +167,7 @@ export const useCargoOwnerNotifications = () => {
         category: 'FINANCIAL',
         priority: 'HIGH',
       };
-      
+
       setNotifications((prev) => [notification, ...prev]);
       toast.error('Payment required!', {
         icon: '💳',
@@ -158,7 +188,7 @@ export const useCargoOwnerNotifications = () => {
         category: 'CARGO',
         priority: 'HIGH',
       };
-      
+
       setNotifications((prev) => [notification, ...prev]);
       toast.success('Cargo delivered!', {
         icon: '✅',
@@ -183,9 +213,9 @@ export const useCargoOwnerNotifications = () => {
       isConnected: false,
       unreadCount: 0,
       highPriorityUnread: 0,
-      markAsRead: () => {},
-      markAllAsRead: () => {},
-      removeNotification: () => {},
+      markAsRead: () => { },
+      markAllAsRead: () => { },
+      removeNotification: () => { },
     };
   }
 
