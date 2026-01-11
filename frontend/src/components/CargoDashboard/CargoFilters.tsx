@@ -33,8 +33,8 @@ const cargoTypeOptions: FilterSelectOption[] = [
 interface CargoFiltersProps {
   filters: any;
   setFilters: React.Dispatch<React.SetStateAction<any>>;
-  search: string;
-  setSearch: (value: string) => void;
+  search?: string;
+  setSearch?: (value: string) => void;
 }
 
 export const CargoFilters: React.FC<CargoFiltersProps> = ({
@@ -66,17 +66,20 @@ export const CargoFilters: React.FC<CargoFiltersProps> = ({
     >
       <div className="relative overflow-hidden rounded-lg sm:rounded-2xl bg-gradient-to-r from-slate-900/5 via-white to-slate-900/5 p-3 sm:p-4 shadow-[0_12px_30px_-12px_rgba(15,23,42,0.35)] backdrop-blur">
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
-          <div className="relative w-full sm:min-w-[220px] sm:flex-1">
-            <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
-            <input
-              type="search"
-              className="w-full rounded-lg sm:rounded-xl border border-slate-200 bg-white/80 py-2.5 sm:py-2.5 pl-9 sm:pl-10 pr-3 sm:pr-4 text-sm text-slate-700 shadow-inner transition focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-100 touch-manipulation min-h-[44px] sm:min-h-0"
-              placeholder="Search by ID, name, or description..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              aria-label="Search cargo"
-            />
-          </div>
+          {/* Only show search if props are provided */}
+          {search !== undefined && setSearch && (
+            <div className="relative w-full sm:min-w-[220px] sm:flex-1">
+              <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
+              <input
+                type="search"
+                className="w-full rounded-lg sm:rounded-xl border border-slate-200 bg-white/80 py-2.5 sm:py-2.5 pl-9 sm:pl-10 pr-3 sm:pr-4 text-sm text-slate-700 shadow-inner transition focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-100 touch-manipulation min-h-[44px] sm:min-h-0"
+                placeholder="Search by ID, name, or description..."
+                value={search}
+                onChange={(e) => setSearch?.(e.target.value)}
+                aria-label="Search cargo"
+              />
+            </div>
+          )}
 
           <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full sm:w-auto">
             <div className="flex-1 sm:flex-initial">
@@ -103,7 +106,7 @@ export const CargoFilters: React.FC<CargoFiltersProps> = ({
             type="button"
             onClick={() => {
               setFilters({});
-              setSearch("");
+              setSearch?.("");
             }}
             className="inline-flex items-center justify-center gap-2 rounded-lg sm:rounded-xl border border-transparent bg-slate-900 px-3 sm:px-4 py-2.5 sm:py-2 text-xs sm:text-sm font-semibold text-white shadow-lg shadow-slate-900/10 transition hover:scale-[1.01] hover:bg-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 touch-manipulation min-h-[44px] sm:min-h-0 w-full sm:w-auto"
             aria-label="Clear filters"

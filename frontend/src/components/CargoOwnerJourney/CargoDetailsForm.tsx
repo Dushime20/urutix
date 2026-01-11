@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
-import { FaWeightHanging, FaMapMarkerAlt, FaCalendarAlt, FaFileUpload, FaShieldAlt, FaExclamationTriangle, FaSnowflake, FaBox, FaInfoCircle, FaCheck, FaArrowRight, FaArrowLeft } from 'react-icons/fa';
+import { FaWeightHanging, FaMapMarkerAlt, FaCalendarAlt, FaFileUpload, FaShieldAlt, FaExclamationTriangle, FaSnowflake, FaBox, FaInfoCircle, FaCheck, FaArrowRight, FaArrowLeft, FaRoad, FaClock, FaGasPump, FaSave } from 'react-icons/fa';
+import { RouteIntelligenceService, type RouteInsight } from '../../services/routeIntelligence';
+import { draftCargoApi } from '../../services/draftCargoApi';
+import { toast } from 'react-hot-toast';
 import { MapContainer, TileLayer, Marker, useMapEvents, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -80,6 +83,7 @@ const CargoDetailsForm: React.FC<CargoDetailsFormProps> = ({ onSubmit, loading, 
 
   const [currentTab, setCurrentTab] = useState<'basic' | 'location' | 'special' | 'review'>('basic');
   const [aiSuggestions, setAiSuggestions] = useState<any>(null);
+  const [routeInsight, setRouteInsight] = useState<RouteInsight | null>(null);
   const [activeMapField, setActiveMapField] = useState<'pickup' | 'delivery' | null>(null);
   const [isGeocoding, setIsGeocoding] = useState(false);
 
@@ -147,6 +151,19 @@ const CargoDetailsForm: React.FC<CargoDetailsFormProps> = ({ onSubmit, loading, 
     { value: 'HIGH', label: 'High Priority', color: 'text-orange-600' },
     { value: 'URGENT', label: 'Urgent', color: 'text-red-600' }
   ];
+
+  // Effect to fetch Route Insights when cities change
+  React.useEffect(() => {
+    if (formData.pickupLocation.city && formData.deliveryLocation.city) {
+      const insight = RouteIntelligenceService.getRouteInsights(
+        formData.pickupLocation.city,
+        formData.deliveryLocation.city
+      );
+      setRouteInsight(insight);
+    } else {
+      setRouteInsight(null);
+    }
+  }, [formData.pickupLocation.city, formData.deliveryLocation.city]);
 
   const handleInputChange = (field: string, value: any) => {
     if (field.includes('.')) {
@@ -226,6 +243,66 @@ const CargoDetailsForm: React.FC<CargoDetailsFormProps> = ({ onSubmit, loading, 
       insuranceRecommendation: formData.estimatedValue > 5000 ? 'High-value insurance recommended' : 'Standard coverage sufficient'
     };
     setAiSuggestions(suggestions);
+  };
+
+  const handleSaveDraft = async () => {
+    try {
+      const draftData = {
+        title: formData.title,
+        description: formData.description,
+        weight: formData.weight,
+        dimensions: formData.dimensions,
+        cargoType: formData.cargoType,
+        pickupDate: formData.pickupDate,
+        deliveryDate: formData.deliveryDate,
+        locations: [
+          {
+            type: 'PICKUP',
+            sequence: 1,
+            locationData: {
+              name: 'Pickup Location',
+              address: formData.pickupLocation.address,
+              city: formData.pickupLocation.city,
+              state: formData.pickupLocation.state,
+              coordinates: formData.pickupLocation.coordinates ? {
+                latitude: formData.pickupLocation.coordinates.lat,
+                longitude: formData.pickupLocation.coordinates.lng
+              } : { latitude: 0, longitude: 0 }
+            },
+            scheduledDate: formData.pickupDate,
+            estimatedTime: 0
+          },
+          {
+            type: 'DELIVERY',
+            sequence: 2,
+            locationData: {
+              name: 'Delivery Location',
+              address: formData.deliveryLocation.address,
+              city: formData.deliveryLocation.city,
+              state: formData.deliveryLocation.state,
+              coordinates: formData.deliveryLocation.coordinates ? {
+                latitude: formData.deliveryLocation.coordinates.lat,
+                longitude: formData.deliveryLocation.coordinates.lng
+              } : { latitude: 0, longitude: 0 }
+            },
+            scheduledDate: formData.deliveryDate,
+            estimatedTime: 0
+          }
+        ],
+        loadValue: formData.estimatedValue,
+        urgencyLevel: formData.urgency,
+        isHazardous: formData.isHazmat,
+        isFragile: formData.isFragile,
+        requiresRefrigeration: formData.isRefrigerated
+      };
+
+      // @ts-ignore
+      await draftCargoApi.saveAsDraft(draftData);
+      toast.success('Cargo saved as draft');
+    } catch (error) {
+      console.error('Error saving draft:', error);
+      toast.error('Failed to save draft');
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -549,6 +626,68 @@ const CargoDetailsForm: React.FC<CargoDetailsFormProps> = ({ onSubmit, loading, 
           />
         </div>
       </div>
+
+      {/* Route Intelligence Display */}
+      {routeInsight && (
+        <div className="mt-4 bg-indigo-50 border border-indigo-200 rounded-xl p-4 transition-all duration-500 animate-fadeIn">
+          <h4 className="text-sm font-bold text-indigo-900 flex items-center mb-3">
+            <FaRoad className="mr-2 text-indigo-600" />
+            Smart Route Intelligence
+            <span className="ml-auto text-[10px] bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full border border-indigo-200">
+              {routeInsight.priority === 'high' ? 'High Traffic Route' : 'Standard Route'}
+            </span>
+          </h4>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs mb-3">
+            <div className="flex items-center p-2 bg-white rounded-lg border border-indigo-100 shadow-sm">
+              <div className="p-1.5 bg-blue-100 rounded-full mr-2 text-blue-600">
+                <FaClock />
+              </div>
+              <div>
+                <div className="text-gray-500">Est. Time</div>
+                <div className="font-bold text-gray-800">{routeInsight.estimatedTime} Hours</div>
+              </div>
+            </div>
+
+            <div className="flex items-center p-2 bg-white rounded-lg border border-indigo-100 shadow-sm">
+              <div className="p-1.5 bg-green-100 rounded-full mr-2 text-green-600">
+                <FaGasPump />
+              </div>
+              <div>
+                <div className="text-gray-500">Distance</div>
+                <div className="font-bold text-gray-800">{routeInsight.distance} km</div>
+              </div>
+            </div>
+
+            <div className="flex items-center p-2 bg-white rounded-lg border border-indigo-100 shadow-sm">
+              <div className="p-1.5 bg-purple-100 rounded-full mr-2 text-purple-600">
+                <FaShieldAlt />
+              </div>
+              <div>
+                <div className="text-gray-500">Road Condition</div>
+                <div className="font-bold text-gray-800 capitalize">{routeInsight.routeType}</div>
+              </div>
+            </div>
+          </div>
+
+          {(routeInsight.weatherConditions || routeInsight.trafficLevel === 'heavy') && (
+            <div className="space-y-2">
+              {routeInsight.weatherConditions && (
+                <div className="text-xs text-indigo-800 flex items-start bg-indigo-100/50 p-2 rounded-lg">
+                  <FaSnowflake className="mr-2 mt-0.5 flex-shrink-0 text-indigo-500" />
+                  <span><strong>Weather Alert:</strong> {routeInsight.weatherConditions}</span>
+                </div>
+              )}
+              {routeInsight.trafficLevel === 'heavy' && (
+                <div className="text-xs text-orange-800 flex items-start bg-orange-50 p-2 rounded-lg border border-orange-100">
+                  <FaExclamationTriangle className="mr-2 mt-0.5 flex-shrink-0 text-orange-500" />
+                  <span><strong>Traffic Warning:</strong> Heavy traffic reported on this route. Consider alternative departure times.</span>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 
@@ -841,45 +980,56 @@ const CargoDetailsForm: React.FC<CargoDetailsFormProps> = ({ onSubmit, loading, 
             <div className="flex justify-between mt-8 pt-6 border-t border-gray-100">
               <button
                 type="button"
-                onClick={() => {
-                  const tabs = ['basic', 'location', 'special', 'review'];
-                  const currentIndex = tabs.indexOf(currentTab);
-                  if (currentIndex > 0) {
-                    setCurrentTab(tabs[currentIndex - 1] as any);
-                  }
-                }}
-                disabled={currentTab === 'basic'}
-                className={`flex items-center px-5 py-2.5 text-sm font-medium rounded-xl transition-all ${currentTab === 'basic' ? 'text-gray-300 cursor-not-allowed' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'}`}
+                onClick={handleSaveDraft}
+                className="flex items-center px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 transition-all mr-auto"
               >
-                <FaArrowLeft className="mr-2 w-3 h-3" />
-                Back
+                <FaSave className="mr-2 w-3 h-3" />
+                Save Draft
               </button>
 
-              {currentTab === 'review' ? (
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="flex items-center px-8 py-2.5 text-sm font-bold text-white bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl hover:from-blue-700 hover:to-blue-800 shadow-lg shadow-blue-500/30 transition-all transform hover:scale-[1.02] disabled:opacity-70 disabled:cursor-wait"
-                >
-                  {loading ? 'Processing...' : 'Post Cargo Now'}
-                  {!loading && <FaCheck className="ml-2 w-3 h-3" />}
-                </button>
-              ) : (
+              <div className="flex gap-3">
                 <button
                   type="button"
                   onClick={() => {
                     const tabs = ['basic', 'location', 'special', 'review'];
                     const currentIndex = tabs.indexOf(currentTab);
-                    if (currentIndex < tabs.length - 1) {
-                      setCurrentTab(tabs[currentIndex + 1] as any);
+                    if (currentIndex > 0) {
+                      setCurrentTab(tabs[currentIndex - 1] as any);
                     }
                   }}
-                  className="flex items-center px-6 py-2.5 text-sm font-bold text-white bg-blue-600 rounded-xl hover:bg-blue-700 shadow-md shadow-blue-500/20 transition-all transform hover:translate-x-1"
+                  disabled={currentTab === 'basic'}
+                  className={`flex items-center px-5 py-2.5 text-sm font-medium rounded-xl transition-all ${currentTab === 'basic' ? 'text-gray-300 cursor-not-allowed' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'}`}
                 >
-                  Next Step
-                  <FaArrowRight className="ml-2 w-3 h-3" />
+                  <FaArrowLeft className="mr-2 w-3 h-3" />
+                  Back
                 </button>
-              )}
+
+                {currentTab === 'review' ? (
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="flex items-center px-8 py-2.5 text-sm font-bold text-white bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl hover:from-blue-700 hover:to-blue-800 shadow-lg shadow-blue-500/30 transition-all transform hover:scale-[1.02] disabled:opacity-70 disabled:cursor-wait"
+                  >
+                    {loading ? 'Processing...' : 'Post Cargo Now'}
+                    {!loading && <FaCheck className="ml-2 w-3 h-3" />}
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const tabs = ['basic', 'location', 'special', 'review'];
+                      const currentIndex = tabs.indexOf(currentTab);
+                      if (currentIndex < tabs.length - 1) {
+                        setCurrentTab(tabs[currentIndex + 1] as any);
+                      }
+                    }}
+                    className="flex items-center px-6 py-2.5 text-sm font-bold text-white bg-blue-600 rounded-xl hover:bg-blue-700 shadow-md shadow-blue-500/20 transition-all transform hover:translate-x-1"
+                  >
+                    Next Step
+                    <FaArrowRight className="ml-2 w-3 h-3" />
+                  </button>
+                )}
+              </div>
             </div>
           </form>
         </div>

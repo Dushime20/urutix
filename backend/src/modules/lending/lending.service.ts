@@ -110,7 +110,7 @@ export class LendingService {
     private moduleRef: ModuleRef,
 
     private urutiLendingIntegration: UrutiLendingIntegrationService,
-  ) {}
+  ) { }
 
   // Credit and Risk Management
   private async validateCreditLimit(
@@ -190,16 +190,16 @@ export class LendingService {
     if (tenantId) {
       this.logger.log(`Creating lender for tenant: ${tenantId}`);
     }
-    
+
     // Step 1: Check if user already exists BEFORE creating lender
     // For tenant-specific lenders, check within the tenant scope
     this.logger.log(`Checking if user with email ${createLenderDto.contact_email} already exists...`);
     const existingUser = await this.userRepository.findOne({
-      where: tenantId 
-        ? { 
-            email: createLenderDto.contact_email.trim().toLowerCase(),
-            tenantId: tenantId,
-          }
+      where: tenantId
+        ? {
+          email: createLenderDto.contact_email.trim().toLowerCase(),
+          tenantId: tenantId,
+        }
         : { email: createLenderDto.contact_email.trim().toLowerCase() },
     });
 
@@ -229,14 +229,14 @@ export class LendingService {
 
     // Step 3: After lender is successfully created, proceed with user account creation
     this.logger.log(`Proceeding with user account creation for email: ${createLenderDto.contact_email}`);
-    
+
     try {
       // Create new user for lender (following tenant creation pattern)
       this.logger.log(`👤 Creating new lender user account...`);
-      
+
       // Use provided tenantId or default tenant ID
       const lenderTenantId = tenantId || '00000000-0000-0000-0000-000000000001';
-      
+
       // Generate temporary password (will be replaced when lender sets password)
       const tempPassword = crypto.randomBytes(32).toString('hex');
       const tempPasswordHash = await bcrypt.hash(tempPassword, 12);
@@ -291,14 +291,14 @@ export class LendingService {
       this.logger.log(`📧 Email address: ${createLenderDto.contact_email.trim().toLowerCase()}`);
       this.logger.log(`📧 Lender name: ${createLenderDto.name}`);
       this.logger.log(`📧 EmailService instance: ${this.emailService ? 'EXISTS' : 'MISSING'}`);
-      
+
       try {
         if (!this.emailService) {
           this.logger.error('❌ EmailService is not injected properly!');
           this.logger.warn('⚠️ EmailService is not available, skipping email send');
           throw new Error('EmailService is not available');
         }
-        
+
         this.logger.log('📧 Calling emailService.sendLenderPasswordSetupEmail...');
         await this.emailService.sendLenderPasswordSetupEmail(
           createLenderDto.contact_email.trim().toLowerCase(),
@@ -339,7 +339,7 @@ export class LendingService {
       this.logger.error(
         `⚠️ Lender was created successfully (ID: ${savedLender.id}), but user account creation failed. Rolling back lender creation.`,
       );
-      
+
       // Rollback: Delete the lender that was created
       try {
         await this.lenderRepository.remove(savedLender);
@@ -347,13 +347,13 @@ export class LendingService {
       } catch (rollbackError) {
         this.logger.error(`❌ Failed to rollback lender creation: ${rollbackError.message}`);
       }
-      
+
       // Re-throw the original error so frontend can show it
       throw error;
     }
 
     this.logger.log(`Lender creation process completed for: ${createLenderDto.name} (ID: ${savedLender.id})`);
-    
+
     return {
       id: savedLender.id,
       api_key: apiKey,
@@ -515,35 +515,35 @@ export class LendingService {
 
     // Resolve lender_id before creating the loan request
     let resolvedLenderId: string | undefined = undefined;
-    
+
     if (lenderId) {
       // Check if lenderId is a User ID (from users with LENDER role) or a Lender entity ID
       // First try to find as Lender entity ID
       let lender = await this.lenderRepository.findOne({
         where: { id: lenderId },
       });
-      
+
       // If not found, try to find Lender by user email or other identifier
       if (!lender) {
         const user = await this.userRepository.findOne({
           where: { id: lenderId, role: UserRole.LENDER },
           relations: ['profile'],
         });
-        
+
         if (user) {
           // Try to find Lender by contact_email matching user email
           lender = await this.lenderRepository.findOne({
             where: { contact_email: user.email },
           });
-          
+
           // If still not found, create a Lender entity for this user
           if (!lender) {
             this.logger.log(`Creating Lender entity for user ${lenderId} (${user.email})`);
             lender = this.lenderRepository.create({
-              name: user.profile?.companyName || 
-                    (user.profile?.firstName && user.profile?.lastName 
-                      ? `${user.profile.firstName} ${user.profile.lastName}` 
-                      : user.email) || 'Unknown Lender',
+              name: user.profile?.companyName ||
+                (user.profile?.firstName && user.profile?.lastName
+                  ? `${user.profile.firstName} ${user.profile.lastName}`
+                  : user.email) || 'Unknown Lender',
               contact_email: user.email,
               status: LenderStatus.ACTIVE,
               tenant_id: tenantId,
@@ -554,7 +554,7 @@ export class LendingService {
           }
         }
       }
-      
+
       if (lender) {
         // Validate lender and use its ID
         await this.validateLenderAvailability(lender.id);
@@ -854,11 +854,11 @@ export class LendingService {
       const beneficiaries = loan.requested_split && Array.isArray(loan.requested_split) && loan.requested_split.length > 0
         ? loan.requested_split
         : [{
-            recipientId: loan.cargo_id || null,
-            recipientType: 'cargo_owner',
-            amount: loan.approved_amount || loan.requested_amount,
-            percentage: 100,
-          }];
+          recipientId: loan.cargo_id || null,
+          recipientType: 'cargo_owner',
+          amount: loan.approved_amount || loan.requested_amount,
+          percentage: 100,
+        }];
 
       const disbursement = manager.create(LoanDisbursement, {
         loan_request_id: loanId,
@@ -923,32 +923,32 @@ export class LendingService {
 
       // Get truck owner phone number - try multiple sources
       let truckOwnerPhone = paymentDto.truckOwnerPhoneNumber;
-      
+
       // Get assignedTruckId from trip or load
       const assignedTruckId = trip.truckId || trip.load?.assignedTruckId;
-      
+
       if (!truckOwnerPhone && assignedTruckId) {
         // Get truck details
         const truck = await manager.findOne('Truck', {
           where: { id: assignedTruckId },
           relations: ['owner', 'owner.profile'],
         } as any);
-        
+
         if (truck?.owner) {
           // Try to get phone from profile preferences
           truckOwnerPhone = truck.owner.profile?.preferences?.paymentInfo?.phoneNumber ||
-                           truck.owner.phone ||
-                           truck.owner.profile?.phone;
-          
+            truck.owner.phone ||
+            truck.owner.profile?.phone;
+
           // If still not found, fetch full user profile
           if (!truckOwnerPhone) {
             const ownerUser = await manager.findOne('User', {
               where: { id: truck.owner.id },
               relations: ['profile'],
             } as any);
-            
+
             truckOwnerPhone = ownerUser?.profile?.preferences?.paymentInfo?.phoneNumber ||
-                             ownerUser?.phone;
+              ownerUser?.phone;
           }
         }
       }
@@ -966,13 +966,13 @@ export class LendingService {
       const beneficiaries = loan.requested_split && Array.isArray(loan.requested_split) && loan.requested_split.length > 0
         ? loan.requested_split
         : [{
-            recipientId: trip.truckId || trip.load?.assignedTruckId || null,
-            recipientType: 'truck_owner',
-            amount: loan.approved_amount || loan.requested_amount,
-            percentage: 100,
-            phoneNumber: truckOwnerPhone || null,
-          }];
-      
+          recipientId: trip.truckId || trip.load?.assignedTruckId || null,
+          recipientType: 'truck_owner',
+          amount: loan.approved_amount || loan.requested_amount,
+          percentage: 100,
+          phoneNumber: truckOwnerPhone || null,
+        }];
+
       const disbursement = manager.create(LoanDisbursement, {
         loan_request_id: loanId,
         beneficiaries: beneficiaries,
@@ -988,15 +988,15 @@ export class LendingService {
           // Dynamically import PaymentsService to avoid circular dependency
           const PaymentsServiceModule = await import('../payments/payments.service');
           const PaymentsServiceClass = PaymentsServiceModule.PaymentsService;
-          
+
           // Get PaymentsService from the current module context
           // Since PaymentsModule is imported in LendingModule, it should be available
           if (this.moduleRef) {
             const paymentsService = this.moduleRef.get(PaymentsServiceClass, { strict: false });
-            
+
             if (paymentsService) {
               const { PaymentMethod, PaymentType } = await import('../../entities/payment.entity');
-              
+
               // Validate trip exists
               if (!trip || !trip.id) {
                 throw new BadRequestException('Trip not found or invalid for this loan');
@@ -1007,7 +1007,7 @@ export class LendingService {
               if (!paymentAmount || paymentAmount <= 0) {
                 throw new BadRequestException('Invalid loan amount for payment');
               }
-              
+
               const createPaymentDto = {
                 tripId: trip.id,
                 amount: paymentAmount,
@@ -1028,7 +1028,7 @@ export class LendingService {
               };
 
               this.logger.log(`Creating payment for loan ${loan.id}, amount: ${paymentAmount}, tripId: ${trip.id}`);
-              
+
               const payment = await paymentsService.createPayment(
                 createPaymentDto,
                 tenantId,
@@ -1226,18 +1226,18 @@ export class LendingService {
       const principalOutstanding = Math.max(
         0,
         (loan.approved_amount || 0) -
-          (loan.repayments || []).reduce(
-            (s, r) => s + Number(r.principal_paid || 0),
-            0,
-          ),
+        (loan.repayments || []).reduce(
+          (s, r) => s + Number(r.principal_paid || 0),
+          0,
+        ),
       );
       const interestOutstanding = Math.max(
         0,
         (loan.interest_amount || 0) -
-          (loan.repayments || []).reduce(
-            (s, r) => s + Number(r.interest_paid || 0),
-            0,
-          ),
+        (loan.repayments || []).reduce(
+          (s, r) => s + Number(r.interest_paid || 0),
+          0,
+        ),
       );
       const interestPaid = Math.min(appliedAmount, interestOutstanding);
       const principalPaid = appliedAmount - interestPaid;
@@ -1338,6 +1338,18 @@ export class LendingService {
   }
 
   // Dashboard/Reporting methods
+  async getLoansByTenantId(tenantId: string, status?: string): Promise<LoanRequest[]> {
+    const whereCondition: any = { tenant_id: tenantId };
+    if (status) {
+      whereCondition.status = status;
+    }
+    return await this.loanRequestRepository.find({
+      where: whereCondition,
+      relations: ['lender'],
+      order: { created_at: 'DESC' },
+    });
+  }
+
   async getLoanRequestById(
     loanId: string,
     relations: string[] = [],
@@ -1948,7 +1960,7 @@ export class LendingService {
         ...loan,
         days_overdue: Math.floor(
           (new Date().getTime() - new Date(loan.due_date).getTime()) /
-            (1000 * 3600 * 24),
+          (1000 * 3600 * 24),
         ),
       })),
       total,
@@ -2567,19 +2579,19 @@ export class LendingService {
         status: this.getRepaymentStatus(repayment),
         borrower: repayment.loan_request?.borrower
           ? {
-              id: repayment.loan_request.borrower.id,
-              name:
-                repayment.loan_request.borrower.company_name ||
-                repayment.loan_request.borrower.contact_name,
-              email: repayment.loan_request.borrower.email,
-            }
+            id: repayment.loan_request.borrower.id,
+            name:
+              repayment.loan_request.borrower.company_name ||
+              repayment.loan_request.borrower.contact_name,
+            email: repayment.loan_request.borrower.email,
+          }
           : null,
         loan: repayment.loan_request
           ? {
-              id: repayment.loan_request.id,
-              requestedAmount: repayment.loan_request.requested_amount,
-              approvedAmount: repayment.loan_request.approved_amount,
-            }
+            id: repayment.loan_request.id,
+            requestedAmount: repayment.loan_request.requested_amount,
+            approvedAmount: repayment.loan_request.approved_amount,
+          }
           : null,
       }));
 
@@ -2715,9 +2727,9 @@ export class LendingService {
         rejectionReason: loan.rejection_reason,
         lender: loan.lender
           ? {
-              id: loan.lender.id,
-              name: loan.lender.name,
-            }
+            id: loan.lender.id,
+            name: loan.lender.name,
+          }
           : null,
       }));
 

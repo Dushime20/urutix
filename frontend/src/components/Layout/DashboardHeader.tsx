@@ -1,10 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Search, Bell, User, Menu, X, ChevronDown, Package, Gavel, MapPin, BarChart3, CreditCard, FileText, Settings, HelpCircle, Truck, Users, Route, Shield, TrendingUp, Wallet, AlertCircle, DollarSign, Home, Calendar, Mic, Camera, Zap, Sparkles, Clock, CheckCircle, Building, ClipboardList, AlertTriangle, Receipt, Percent, History, List, Star, ThumbsUp, Gift, Warehouse } from 'lucide-react';
+import { Search, Bell, User, Menu, X, ChevronDown, Package, Gavel, MapPin, BarChart3, CreditCard, FileText, Settings, HelpCircle, Truck, Users, Route, Shield, TrendingUp, Wallet, AlertCircle, DollarSign, Home, CheckCircle, Building, ClipboardList, Receipt } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useCargoOwnerNotifications } from '../../hooks/useCargoOwnerNotifications.tsx';
 import ContextualHelp from '../Help/ContextualHelp';
-import { useOnboardingStore } from '../../stores/onboardingStore';
 
 const DashboardHeader = () => {
   const { user, logout } = useAuth();
@@ -116,6 +115,11 @@ const DashboardHeader = () => {
           label: 'Notifications',
           path: `${basePath}/notifications`,
           icon: Bell
+        },
+        {
+          label: 'Financing',
+          path: `${basePath}/financing`,
+          icon: DollarSign
         },
       ];
     }
@@ -695,6 +699,7 @@ const DashboardHeader = () => {
     if (path.includes('/tracking') || path.includes('/routes')) return 'Tracking';
     if (path.includes('/documents')) return 'Documents';
     if (path.includes('/notifications')) return 'Notifications';
+    if (path.includes('/financing')) return 'Financing';
     if (path.includes('/settings') || path.includes('/profile')) return 'Settings';
     if (path.includes('/support')) return 'Support';
     return null;

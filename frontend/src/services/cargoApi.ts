@@ -12,7 +12,7 @@ export const cargoOwnerAPI = {
   getAssignedLoads: (params?: any) => api.get('/loads-v2/assigned-loads', { params }),
 
   // Smart Matching
-  findMatches: (loadId: string, preferences: any) => 
+  findMatches: (loadId: string, preferences: any) =>
     api.post('/matching/find-matches', {
       loadId,
       algorithm: 'WEIGHTED_SCORE',
@@ -26,35 +26,35 @@ export const cargoOwnerAPI = {
       ...auctionSettings
     }),
 
-  getAuction: (loadId: string) => 
+  getAuction: (loadId: string) =>
     api.get(`/bidding/auctions/load/${loadId}`),
 
-  getBids: (loadId: string) => 
+  getBids: (loadId: string) =>
     api.get(`/bidding/bids/load/${loadId}`),
 
-  acceptBid: (bidId: string) => 
+  acceptBid: (bidId: string) =>
     api.post(`/bidding/bids/${bidId}/accept`),
 
   // Booking and Confirmation
-  createBooking: (data: any) => 
+  createBooking: (data: any) =>
     api.post('/bookings', data),
 
   confirmBooking: (bookingId: string, confirmationData: any) =>
     api.post(`/bookings/${bookingId}/confirm`, confirmationData),
 
   // Analytics and Insights
-  getMarketInsights: () => 
+  getMarketInsights: () =>
     api.get('/matching/market-insights'),
 
-  getComprehensiveMetrics: () => 
+  getComprehensiveMetrics: () =>
     api.get('/matching/comprehensive-metrics'),
 
   // Available Algorithms
-  getAvailableAlgorithms: () => 
+  getAvailableAlgorithms: () =>
     api.get('/matching/algorithms'),
 
   // Scoring Factors
-  getScoringFactors: () => 
+  getScoringFactors: () =>
     api.get('/matching/scoring-factors'),
 };
 
@@ -81,10 +81,10 @@ export const fetchCargos = async (page?: number, search?: string, filters?: any)
       }
     });
   }
-  
+
   try {
     const response = await api.get(`/loads?${params.toString()}`);
-    
+
     // Handle paginated response structure
     if (response.data && response.data.items) {
       return response.data.items; // Return the items array
@@ -107,7 +107,7 @@ export const fetchCargos = async (page?: number, search?: string, filters?: any)
         });
       }
       const fallbackResponse = await api.get(`/loads?${fallbackParams.toString()}`);
-      
+
       if (fallbackResponse.data && fallbackResponse.data.items) {
         return fallbackResponse.data.items;
       } else if (Array.isArray(fallbackResponse.data)) {
@@ -131,6 +131,10 @@ export const deleteCargo = async (id: string) => {
 };
 export const publishCargo = async (id: string) => {
   const response = await api.post(`/loads/${id}/publish`);
+  return response.data;
+};
+export const unpublishCargo = async (id: string) => {
+  const response = await api.post(`/loads/${id}/unpublish`);
   return response.data;
 };
 export const exportCargos = () => api.get('/loads/export');

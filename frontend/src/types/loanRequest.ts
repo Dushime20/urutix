@@ -21,6 +21,9 @@ export interface LoanRequest {
   lender?: any;
   disbursements?: any[];
   repayments?: any[];
+  purpose?: string;
+  interest_rate?: number;
+  loan_term_months?: number;
 }
 
 export interface CreateLoanRequestDto {

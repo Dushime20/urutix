@@ -60,7 +60,7 @@ export class LendingController {
     private readonly lenderAnalyticsService: LenderAnalyticsService,
     private readonly repaymentProcessorService: RepaymentProcessorService,
     private readonly urutiLendingIntegration: UrutiLendingIntegrationService,
-  ) {}
+  ) { }
 
   // ===== ADMIN ENDPOINTS =====
 
@@ -268,6 +268,7 @@ export class LendingController {
     return await this.lendingService.getAllLenders(tenantId);
   }
 
+
   @Get('lending/tenant/lenders')
   @Roles(UserRole.TENANT_ADMIN, UserRole.CARGO_OWNER)
   @ApiOperation({
@@ -283,20 +284,20 @@ export class LendingController {
     if (!tenantId) {
       throw new BadRequestException('Tenant ID is required');
     }
-    
+
     // Get lenders for the tenant
     let lenders = await this.lendingService.getAllLenders(tenantId);
-    
+
     // Filter to only show active lenders for cargo owners
     if (req.user?.role === UserRole.CARGO_OWNER) {
-      lenders = lenders.filter((lender: any) => 
+      lenders = lenders.filter((lender: any) =>
         lender.status === 'active' || lender.status === LenderStatus.ACTIVE
       );
     }
 
     // Also get external system lenders (regardless of tenant) - these should be available to all cargo owners
     const externalLenders = await this.lendingService.getAllLenders(undefined, 'active');
-    
+
     // Log all lenders for debugging
     console.log(`[getTenantLenders] Total active lenders (no tenant filter): ${externalLenders.length}`);
     externalLenders.forEach((lender: any) => {
@@ -308,19 +309,19 @@ export class LendingController {
         hasApiKey: !!lender.outbound_api_key_encrypted,
       });
     });
-    
+
     const externalSystemLenders = externalLenders.filter((lender: any) => {
       const hasIntegrationType = lender.metadata?.integrationType === 'uruti_lending_platform' ||
-                                  lender.metadata?.integrationType === 'external_lending_system';
+        lender.metadata?.integrationType === 'external_lending_system';
       const hasCallbackUrl = lender.callback_url?.includes('urutilending.com') ||
-                             lender.callback_url?.includes('localhost:3000') ||
-                             lender.callback_url?.includes('localhost:3001') ||
-                             lender.callback_url?.includes('localhost:3002');
+        lender.callback_url?.includes('localhost:3000') ||
+        lender.callback_url?.includes('localhost:3001') ||
+        lender.callback_url?.includes('localhost:3002');
       const hasApiKey = !!lender.outbound_api_key_encrypted;
-      
+
       // A lender is external if it has integrationType OR (callback_url AND API key)
       const isExternal = hasIntegrationType || (hasCallbackUrl && hasApiKey);
-      
+
       if (isExternal) {
         console.log(`[getTenantLenders] ✅ External system lender found: ${lender.name}`, {
           integrationType: lender.metadata?.integrationType,
@@ -333,13 +334,13 @@ export class LendingController {
           console.log(`[getTenantLenders] ⚠️ Lender ${lender.name} has callback_url but no API key - not considered external`);
         }
       }
-      
+
       return isExternal;
     });
 
     // Log for debugging
     console.log(`[getTenantLenders] Found ${externalSystemLenders.length} external system lenders`);
-    
+
     if (externalSystemLenders.length === 0) {
       console.warn(`[getTenantLenders] ⚠️ No external system lenders found!`);
       console.warn(`[getTenantLenders] To configure a lender for external system:`);
@@ -364,7 +365,7 @@ export class LendingController {
             metadata.integrationType = 'external_lending_system';
           }
         }
-        
+
         return {
           ...lender,
           metadata: {
@@ -378,7 +379,7 @@ export class LendingController {
 
     // Fetch loan officers from each external system lender - these will be displayed directly in External Lending System tab
     const loanOfficersAsLenders: any[] = [];
-    
+
     for (const externalLender of externalSystemLenders) {
       if (!externalLender.outbound_api_key_encrypted) {
         console.warn(`[getTenantLenders] Lender ${externalLender.id} (${externalLender.name}) has no API key configured - skipping loan officer fetch`);
@@ -386,12 +387,12 @@ export class LendingController {
       }
 
       console.log(`[getTenantLenders] Fetching loan officers for lender ${externalLender.id} (${externalLender.name})`);
-      
+
       // getLoanOfficers now returns empty array on error instead of throwing
       const officers = await this.urutiLendingIntegration.getLoanOfficers(externalLender.id);
-      
+
       console.log(`[getTenantLenders] ✅ Found ${officers.length} loan officers for lender ${externalLender.id}`);
-      
+
       if (officers.length === 0) {
         console.warn(`[getTenantLenders] ⚠️ No loan officers returned for lender ${externalLender.id} (${externalLender.name})`);
         console.warn(`[getTenantLenders] Possible reasons:`);
@@ -401,16 +402,16 @@ export class LendingController {
         console.warn(`  4. External system is unreachable (network error - check logs above)`);
         continue;
       }
-      
+
       // Convert loan officers to lender-like format - these ARE the external lenders
       for (const officer of officers) {
         if (!officer.id || !officer.name) {
           console.warn(`[getTenantLenders] ⚠️ Skipping invalid loan officer (missing id or name):`, officer);
           continue;
         }
-        
+
         console.log(`[getTenantLenders] ✅ Adding loan officer: ${officer.name} (${officer.id})`);
-        
+
         loanOfficersAsLenders.push({
           id: `officer-${officer.id}`, // Prefix to distinguish from regular lenders
           name: officer.name,
@@ -1267,6 +1268,7 @@ export class LendingController {
   // ===== TENANT ENDPOINTS =====
 
   @Get('lending/tenant/:tenantId/loans')
+  @Roles(UserRole.TENANT_ADMIN, UserRole.CARGO_OWNER)
   @ApiOperation({
     summary: 'Get tenant loan history',
     description:
@@ -1319,13 +1321,7 @@ export class LendingController {
     @Param('tenantId', ParseUUIDPipe) tenantId: string,
     @Query('status') status?: string,
   ) {
-    const queryBuilder = this.lendingService.getTenantLoansQuery(tenantId);
-
-    if (status) {
-      queryBuilder.andWhere('loan.status = :status', { status });
-    }
-
-    return await queryBuilder.getMany();
+    return await this.lendingService.getLoansByTenantId(tenantId, status);
   }
 
   // ===== RISK ASSESSMENT ENDPOINTS =====

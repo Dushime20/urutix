@@ -6,9 +6,11 @@ import {
   Eye,
   Heart,
   Grid,
-  Table
+  Table,
+  Download
 } from 'lucide-react';
 import { biddingAPI } from '../../services/biddingApi';
+import toast from 'react-hot-toast';
 import BidForm from './BidForm';
 
 interface Auction {
@@ -54,7 +56,6 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
     showWatchedOnly: false,
   });
   const [watchedAuctions, setWatchedAuctions] = useState<Set<string>>(new Set());
-  const [loadingWatched, setLoadingWatched] = useState(false);
   const [watchingAuctions, setWatchingAuctions] = useState<Set<string>>(new Set());
   const [viewMode, setViewMode] = useState<'card' | 'table'>('card');
 
@@ -70,17 +71,14 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
   }, [showWatchedOnly]);
 
   const loadWatchedAuctions = async () => {
-    setLoadingWatched(true);
     try {
       const response = await biddingAPI.getWatchedAuctions();
-      const watchedIds = new Set(response.data.map((auction: Auction) => auction.id));
+      const watchedIds = new Set<string>(response.data.map((auction: Auction) => auction.id));
       setWatchedAuctions(watchedIds);
     } catch (error) {
       console.error('Load watched auctions error:', error);
       // If API fails, start with empty watched set
       setWatchedAuctions(new Set());
-    } finally {
-      setLoadingWatched(false);
     }
   };
 
@@ -92,67 +90,55 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
         // If showing watched only, get watched auctions
         response = await biddingAPI.getWatchedAuctions();
       } else {
+        // Clean filters before sending
+        const apiFilters: any = {};
+        if (filters.status && filters.status !== 'all') apiFilters.status = filters.status;
+        if (filters.auctionType && filters.auctionType !== 'all') apiFilters.auctionType = filters.auctionType;
+        if (filters.minValue) apiFilters.minValue = filters.minValue;
+        if (filters.maxValue) apiFilters.maxValue = filters.maxValue;
+
         // Get all auctions with filters
-        response = await biddingAPI.getAuctions(filters);
+        response = await biddingAPI.getAuctions(apiFilters);
       }
       setAuctions(response.data);
     } catch (error) {
       console.error('Load auctions error:', error);
-
-      // Fallback to mock data if API fails
-      const mockAuctions = [
-        {
-          id: 'mock-auction-1',
-          loadId: 'mock-load-1',
-          auctionType: 'REVERSE',
-          status: 'ACTIVE',
-          auctionStart: new Date().toISOString(),
-          auctionEnd: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-          reservePrice: 1500,
-          minimumBidIncrement: 50,
-          totalBids: 3,
-          uniqueBidders: 2,
-          currentHighestBid: 1400,
-          load: {
-            title: 'Electronics Shipment',
-            description: 'Fragile electronics from NYC to LA',
-            weight: 500,
-            loadValue: 5000,
-            pickupDate: new Date().toISOString(),
-            deliveryDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
-            pickupLocation: 'New York, NY',
-            deliveryLocation: 'Los Angeles, CA',
-          },
-        },
-        {
-          id: 'mock-auction-2',
-          loadId: 'mock-load-2',
-          auctionType: 'FORWARD',
-          status: 'SCHEDULED',
-          auctionStart: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(),
-          auctionEnd: new Date(Date.now() + 26 * 60 * 60 * 1000).toISOString(),
-          reservePrice: 2000,
-          minimumBidIncrement: 100,
-          totalBids: 0,
-          uniqueBidders: 0,
-          currentHighestBid: null,
-          load: {
-            title: 'Furniture Delivery',
-            description: 'Heavy furniture from Chicago to Miami',
-            weight: 1200,
-            loadValue: 3000,
-            pickupDate: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(),
-            deliveryDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(),
-            pickupLocation: 'Chicago, IL',
-            deliveryLocation: 'Miami, FL',
-          },
-        },
-      ];
-
-      setAuctions(mockAuctions);
-      setError('Using demo data - API endpoint not available');
+      setError('Failed to load auctions. Please try again.');
+      setAuctions([]);
+      // Mock data removed to enforce API integration testing
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleExport = async () => {
+    try {
+      const toastId = toast.loading('Exporting bid history...');
+
+      // Clean filters
+      const apiFilters: any = {};
+      if (filters.status && filters.status !== 'all') apiFilters.status = filters.status;
+      if (filters.auctionType && filters.auctionType !== 'all') apiFilters.auctionType = filters.auctionType;
+      if (filters.minValue) apiFilters.minValue = filters.minValue;
+      if (filters.maxValue) apiFilters.maxValue = filters.maxValue;
+      if (filters.showWatchedOnly) apiFilters.showWatchedOnly = true;
+
+      const response = await biddingAPI.exportBidHistory(apiFilters);
+
+      // Create download
+      const blob = new Blob([response.data], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `bid-history-${new Date().toISOString().split('T')[0]}.csv`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+
+      toast.dismiss(toastId);
+      toast.success('Bid history exported successfully');
+    } catch (error) {
+      console.error('Export error:', error);
+      toast.error('Failed to export bid history');
     }
   };
 
@@ -180,7 +166,7 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
       }
     } catch (error) {
       console.error('Watch toggle error:', error);
-      // You could add a toast notification here
+      toast.error('Failed to update watchlist');
     } finally {
       setWatchingAuctions(prev => {
         const newSet = new Set(prev);
@@ -196,11 +182,13 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
         ...bidData,
         loadId: selectedAuction?.loadId,
       });
+      toast.success('Bid submitted successfully');
       setShowBidModal(false);
       setSelectedAuction(null);
       loadAuctions(); // Refresh the list
     } catch (error) {
       console.error('Bid submission error:', error);
+      toast.error('Failed to submit bid. Please try again.');
     }
   };
 
@@ -443,28 +431,38 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
     <div className="auction-list">
       {renderFilters()}
 
-      {/* View Mode Toggle */}
-      <div className="flex items-center justify-end gap-2 bg-white border border-gray-200 rounded-lg p-1 w-fit ml-auto mb-4">
+      {/* View Mode Toggle & Actions */}
+      <div className="flex items-center justify-end gap-2 mb-4">
         <button
-          onClick={() => setViewMode('card')}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${viewMode === 'card'
-            ? 'bg-gray-900 text-white'
-            : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-            }`}
+          onClick={handleExport}
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 rounded-md text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors mr-auto"
         >
-          <Grid className="w-3.5 h-3.5" />
-          <span className="hidden sm:inline">Cards</span>
+          <Download className="w-3.5 h-3.5" />
+          <span className="hidden sm:inline">Export History</span>
         </button>
-        <button
-          onClick={() => setViewMode('table')}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${viewMode === 'table'
-            ? 'bg-gray-900 text-white'
-            : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-            }`}
-        >
-          <Table className="w-3.5 h-3.5" />
-          <span className="hidden sm:inline">Table</span>
-        </button>
+
+        <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-lg p-1">
+          <button
+            onClick={() => setViewMode('card')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${viewMode === 'card'
+              ? 'bg-gray-900 text-white'
+              : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+              }`}
+          >
+            <Grid className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Cards</span>
+          </button>
+          <button
+            onClick={() => setViewMode('table')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${viewMode === 'table'
+              ? 'bg-gray-900 text-white'
+              : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+              }`}
+          >
+            <Table className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Table</span>
+          </button>
+        </div>
       </div>
 
       {filters.showWatchedOnly && (

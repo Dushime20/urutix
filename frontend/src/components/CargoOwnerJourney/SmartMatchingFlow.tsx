@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { FaTruck, FaStar, FaMapMarkerAlt, FaClock, FaWeightHanging, FaShieldAlt, FaThermometerHalf, FaRoute, FaCheck, FaTimes, FaCog } from 'react-icons/fa';
-import { cargoOwnerAPI } from '../../services/cargoApi';
-import type { MatchedTruck } from '../../services/cargoApi';
+import { FaTruck, FaStar, FaMapMarkerAlt, FaClock, FaWeightHanging, FaShieldAlt, FaThermometerHalf, FaRoute, FaCheck, FaTimes, FaChartLine, FaChartBar } from 'react-icons/fa';
+import { cargoOwnerAPI } from '../../services/cargoOwnerAPI';
+import type { MatchedTruck, MarketInsights } from '../../services/cargoOwnerAPI';
 
 interface CargoDetails {
   id?: string;
@@ -47,13 +47,14 @@ interface SmartMatchingFlowProps {
 
 const SmartMatchingFlow: React.FC<SmartMatchingFlowProps> = ({ cargoDetails, onComplete }) => {
   const [matchedTrucks, setMatchedTrucks] = useState<MatchedTruck[]>([]);
+  const [marketInsights, setMarketInsights] = useState<MarketInsights | null>(null);
   const [selectedTruck, setSelectedTruck] = useState<MatchedTruck | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showDetails, setShowDetails] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'list' | 'table' | 'comparison'>('list');
   const [compareList, setCompareList] = useState<string[]>([]);
-  
+
   // Filters
   const [filters, setFilters] = useState({
     minScore: 0,
@@ -74,24 +75,31 @@ const SmartMatchingFlow: React.FC<SmartMatchingFlowProps> = ({ cargoDetails, onC
   const findMatches = async () => {
     setLoading(true);
     setError(null);
-    
-    try {
-      // Call the real matching API
-      const response = await cargoOwnerAPI.findMatches(cargoDetails.id!, {
-        maxDistance: 500,
-        minRating: 4.0,
-        maxCost: cargoDetails.loadValue * 0.3,
-        requiresRefrigeration: cargoDetails.requiresRefrigeration,
-        requiresHazmat: cargoDetails.isHazardous,
-        isTimeCritical: cargoDetails.urgencyLevel === 'CRITICAL',
-        includeDrivers: true,
-        limit: 10
-      });
 
-      if (response.data) {
-        setMatchedTrucks(response.data);
+    try {
+      // Call both APIs in parallel
+      const [matchesResponse, insightsResponse] = await Promise.all([
+        cargoOwnerAPI.findMatches(cargoDetails.id!, {
+          maxDistance: 500,
+          minRating: 4.0,
+          maxCost: cargoDetails.loadValue * 0.3,
+          requiresRefrigeration: cargoDetails.requiresRefrigeration,
+          requiresHazmat: cargoDetails.isHazardous,
+          isTimeCritical: cargoDetails.urgencyLevel === 'CRITICAL',
+          includeDrivers: true,
+          limit: 10
+        }),
+        cargoOwnerAPI.getMarketInsights()
+      ]);
+
+      if (matchesResponse.data) {
+        setMatchedTrucks(matchesResponse.data);
       } else {
         setError('No matches found');
+      }
+
+      if (insightsResponse.data) {
+        setMarketInsights(insightsResponse.data);
       }
     } catch (error) {
       console.error('Matching error:', error);
@@ -174,7 +182,7 @@ const SmartMatchingFlow: React.FC<SmartMatchingFlowProps> = ({ cargoDetails, onC
     <div className="bg-gray-50 rounded-lg p-4 mb-6">
       <div className="flex items-center justify-between mb-4">
         <h3 className="font-medium text-gray-900">Filters & Sort</h3>
-        <button 
+        <button
           onClick={() => setFilters({ minScore: 0, maxCost: 0, minRating: 0, truckType: '', hasGPS: false, hasRefrigeration: false, hasHazmat: false })}
           className="text-sm text-blue-600 hover:text-blue-700 font-medium"
         >
@@ -184,9 +192,9 @@ const SmartMatchingFlow: React.FC<SmartMatchingFlowProps> = ({ cargoDetails, onC
       <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Min Match Score</label>
-          <input 
-            type="number" 
-            min="0" 
+          <input
+            type="number"
+            min="0"
             max="100"
             value={filters.minScore || ''}
             onChange={(e) => setFilters(prev => ({ ...prev, minScore: Number(e.target.value) }))}
@@ -196,8 +204,8 @@ const SmartMatchingFlow: React.FC<SmartMatchingFlowProps> = ({ cargoDetails, onC
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Max Cost ($)</label>
-          <input 
-            type="number" 
+          <input
+            type="number"
             min="0"
             value={filters.maxCost || ''}
             onChange={(e) => setFilters(prev => ({ ...prev, maxCost: Number(e.target.value) }))}
@@ -207,7 +215,7 @@ const SmartMatchingFlow: React.FC<SmartMatchingFlowProps> = ({ cargoDetails, onC
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Min Rating</label>
-          <select 
+          <select
             value={filters.minRating}
             onChange={(e) => setFilters(prev => ({ ...prev, minRating: Number(e.target.value) }))}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
@@ -221,7 +229,7 @@ const SmartMatchingFlow: React.FC<SmartMatchingFlowProps> = ({ cargoDetails, onC
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Sort By</label>
           <div className="flex gap-2">
-            <select 
+            <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as any)}
               className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm"
@@ -231,7 +239,7 @@ const SmartMatchingFlow: React.FC<SmartMatchingFlowProps> = ({ cargoDetails, onC
               <option value="rating">Rating</option>
               <option value="distance">Distance</option>
             </select>
-            <button 
+            <button
               onClick={() => setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')}
               className="px-3 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-100"
             >
@@ -242,8 +250,8 @@ const SmartMatchingFlow: React.FC<SmartMatchingFlowProps> = ({ cargoDetails, onC
       </div>
       <div className="flex gap-4 mt-4">
         <label className="flex items-center text-sm">
-          <input 
-            type="checkbox" 
+          <input
+            type="checkbox"
             checked={filters.hasGPS}
             onChange={(e) => setFilters(prev => ({ ...prev, hasGPS: e.target.checked }))}
             className="mr-2"
@@ -251,8 +259,8 @@ const SmartMatchingFlow: React.FC<SmartMatchingFlowProps> = ({ cargoDetails, onC
           GPS Tracking
         </label>
         <label className="flex items-center text-sm">
-          <input 
-            type="checkbox" 
+          <input
+            type="checkbox"
             checked={filters.hasRefrigeration}
             onChange={(e) => setFilters(prev => ({ ...prev, hasRefrigeration: e.target.checked }))}
             className="mr-2"
@@ -260,8 +268,8 @@ const SmartMatchingFlow: React.FC<SmartMatchingFlowProps> = ({ cargoDetails, onC
           Refrigeration
         </label>
         <label className="flex items-center text-sm">
-          <input 
-            type="checkbox" 
+          <input
+            type="checkbox"
             checked={filters.hasHazmat}
             onChange={(e) => setFilters(prev => ({ ...prev, hasHazmat: e.target.checked }))}
             className="mr-2"
@@ -311,7 +319,7 @@ const SmartMatchingFlow: React.FC<SmartMatchingFlowProps> = ({ cargoDetails, onC
                 </div>
               </td>
               <td className="px-4 py-3">
-                <button 
+                <button
                   onClick={() => handleSelectTruck(truck)}
                   className="text-blue-600 hover:text-blue-700 font-medium text-sm"
                 >
@@ -403,6 +411,47 @@ const SmartMatchingFlow: React.FC<SmartMatchingFlowProps> = ({ cargoDetails, onC
         </div>
       )}
 
+      {/* Market Insights Dashboard */}
+      {marketInsights && (
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
+          <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
+            <FaChartLine className="mr-2 text-blue-600" />
+            Market Intelligence
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="bg-blue-50 rounded p-3">
+              <div className="text-sm text-blue-700 font-medium mb-1">Avg Cost/Mile</div>
+              <div className="text-2xl font-bold text-blue-900">
+                ${marketInsights.averageCostPerMile.toFixed(2)}
+              </div>
+            </div>
+            <div className="bg-green-50 rounded p-3">
+              <div className="text-sm text-green-700 font-medium mb-1">Optimal Price</div>
+              <div className="text-2xl font-bold text-green-900">
+                ${marketInsights.recommendedPricing.optimalPrice.toLocaleString()}
+              </div>
+              <div className="text-xs text-green-600">
+                Range: ${marketInsights.recommendedPricing.minPrice} - ${marketInsights.recommendedPricing.maxPrice}
+              </div>
+            </div>
+            <div className="bg-purple-50 rounded p-3">
+              <div className="text-sm text-purple-700 font-medium mb-1">Market Demand</div>
+              <div className="flex items-center">
+                <FaChartBar className="mr-1 text-purple-600" />
+                <span className="text-lg font-bold text-purple-900">{marketInsights.marketDemand}</span>
+              </div>
+            </div>
+            <div className="bg-amber-50 rounded p-3">
+              <div className="text-sm text-amber-700 font-medium mb-1">Supply Level</div>
+              <div className="flex items-center">
+                <FaTruck className="mr-1 text-amber-600" />
+                <span className="text-lg font-bold text-amber-900">{marketInsights.supplyLevel}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Cargo Summary */}
       <div className="bg-blue-50 rounded-lg p-4 mb-6">
         <h3 className="text-lg font-medium text-blue-900 mb-2">Cargo Summary</h3>
@@ -427,19 +476,19 @@ const SmartMatchingFlow: React.FC<SmartMatchingFlowProps> = ({ cargoDetails, onC
       {/* View Mode Tabs */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex gap-2 bg-gray-100 p-1 rounded-lg">
-          <button 
+          <button
             onClick={() => setViewMode('list')}
             className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${viewMode === 'list' ? 'bg-white text-gray-900 shadow' : 'text-gray-600'}`}
           >
             List View
           </button>
-          <button 
+          <button
             onClick={() => setViewMode('table')}
             className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${viewMode === 'table' ? 'bg-white text-gray-900 shadow' : 'text-gray-600'}`}
           >
             Table View
           </button>
-          <button 
+          <button
             onClick={() => setViewMode('comparison')}
             className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${viewMode === 'comparison' ? 'bg-white text-gray-900 shadow' : 'text-gray-600'}`}
           >
@@ -462,134 +511,133 @@ const SmartMatchingFlow: React.FC<SmartMatchingFlowProps> = ({ cargoDetails, onC
       {viewMode === 'list' && (
         <div className="space-y-4">
           {filteredTrucks.map((truck) => (
-          <div
-            key={truck.id}
-            className={`border rounded-lg p-6 cursor-pointer transition-all ${
-              selectedTruck?.id === truck.id
+            <div
+              key={truck.id}
+              className={`border rounded-lg p-6 cursor-pointer transition-all ${selectedTruck?.id === truck.id
                 ? 'border-blue-500 bg-blue-50'
                 : 'border-gray-200 hover:border-blue-300'
-            }`}
-            onClick={() => handleSelectTruck(truck)}
-          >
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <input 
-                      type="checkbox" 
-                      checked={compareList.includes(truck.id)}
-                      onChange={() => toggleCompare(truck.id)}
-                      className="mt-1"
-                      disabled={!compareList.includes(truck.id) && compareList.length >= 3}
-                    />
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-900">
-                        {truck.truckOwner.name}
-                      </h3>
-                      <p className="text-sm text-gray-600">{truck.truck.make} {truck.truck.model} ({truck.truck.truckType})</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getScoreBgColor(truck.score)} ${getScoreColor(truck.score)}`}>
-                      <FaStar className="mr-1" />
-                      {truck.score}% Match
-                    </div>
-                    <p className="text-lg font-bold text-gray-900 mt-1">
-                      ${truck.estimatedCost.toLocaleString()}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
-                  <div className="flex items-center">
-                    <FaMapMarkerAlt className="text-gray-400 mr-2" />
-                    <span className="text-sm">{truck.distance} miles</span>
-                  </div>
-                  <div className="flex items-center">
-                    <FaClock className="text-gray-400 mr-2" />
-                    <span className="text-sm">{truck.estimatedTime} hours</span>
-                  </div>
-                  <div className="flex items-center">
-                    <FaStar className="text-gray-400 mr-2" />
-                    <span className="text-sm">{truck.driver.rating} ★ Driver</span>
-                  </div>
-                  <div className="flex items-center">
-                    <FaShieldAlt className="text-gray-400 mr-2" />
-                    <span className="text-sm">Risk: {Math.round(truck.riskScore * 100)}%</span>
-                  </div>
-                </div>
-
-                <div className="flex items-center space-x-4 text-sm text-gray-600">
-                  <div className="flex items-center">
-                    <FaCheck className="text-green-500 mr-1" />
-                    <span>Available Now</span>
-                  </div>
-                  {truck.truck.hasRefrigeration && (
-                    <div className="flex items-center">
-                      <FaThermometerHalf className="text-blue-500 mr-1" />
-                      <span>Refrigerated</span>
-                    </div>
-                  )}
-                  {truck.truck.hasHazmatPermit && (
-                    <div className="flex items-center">
-                      <FaShieldAlt className="text-orange-500 mr-1" />
-                      <span>Hazmat Certified</span>
-                    </div>
-                  )}
-                  {truck.truck.hasGpsTracking && (
-                    <div className="flex items-center">
-                      <FaRoute className="text-purple-500 mr-1" />
-                      <span>GPS Tracking</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              <div className="ml-4">
-                {selectedTruck?.id === truck.id ? (
-                  <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
-                    <FaCheck className="text-white text-sm" />
-                  </div>
-                ) : (
-                  <div className="w-6 h-6 border-2 border-gray-300 rounded-full"></div>
-                )}
-              </div>
-            </div>
-
-            {/* Detailed View */}
-            {showDetails === truck.id && (
-              <div className="mt-4 pt-4 border-t border-gray-200">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <h4 className="font-medium text-gray-900 mb-2">Driver Details</h4>
-                    <p className="text-sm text-gray-600">{truck.driver.firstName} {truck.driver.lastName}</p>
-                    <p className="text-sm text-gray-600">{truck.driver.experience} years experience</p>
-                    <p className="text-sm text-gray-600">Rating: {truck.driver.rating} ★</p>
-                    <p className="text-sm text-gray-600">Endorsements: {truck.driver.endorsements.join(', ')}</p>
-                  </div>
-                  <div>
-                    <h4 className="font-medium text-gray-900 mb-2">Truck Details</h4>
-                    <p className="text-sm text-gray-600">{truck.truck.make} {truck.truck.model} ({truck.truck.year})</p>
-                    <p className="text-sm text-gray-600">Capacity: {truck.truck.capacityWeight} kg</p>
-                    <p className="text-sm text-gray-600">Type: {truck.truck.truckType}</p>
-                    <p className="text-sm text-gray-600">Insurance: ${truck.truck.insuranceCoverage.toLocaleString()}</p>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setShowDetails(showDetails === truck.id ? null : truck.id);
-              }}
-              className="mt-3 text-blue-600 hover:text-blue-800 text-sm font-medium"
+                }`}
+              onClick={() => handleSelectTruck(truck)}
             >
-              {showDetails === truck.id ? 'Hide Details' : 'View Details'}
-            </button>
-          </div>
-        ))}
-      </div>
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="checkbox"
+                        checked={compareList.includes(truck.id)}
+                        onChange={() => toggleCompare(truck.id)}
+                        className="mt-1"
+                        disabled={!compareList.includes(truck.id) && compareList.length >= 3}
+                      />
+                      <div>
+                        <h3 className="text-lg font-semibold text-gray-900">
+                          {truck.truckOwner.name}
+                        </h3>
+                        <p className="text-sm text-gray-600">{truck.truck.make} {truck.truck.model} ({truck.truck.truckType})</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getScoreBgColor(truck.score)} ${getScoreColor(truck.score)}`}>
+                        <FaStar className="mr-1" />
+                        {truck.score}% Match
+                      </div>
+                      <p className="text-lg font-bold text-gray-900 mt-1">
+                        ${truck.estimatedCost.toLocaleString()}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                    <div className="flex items-center">
+                      <FaMapMarkerAlt className="text-gray-400 mr-2" />
+                      <span className="text-sm">{truck.distance} miles</span>
+                    </div>
+                    <div className="flex items-center">
+                      <FaClock className="text-gray-400 mr-2" />
+                      <span className="text-sm">{truck.estimatedTime} hours</span>
+                    </div>
+                    <div className="flex items-center">
+                      <FaStar className="text-gray-400 mr-2" />
+                      <span className="text-sm">{truck.driver.rating} ★ Driver</span>
+                    </div>
+                    <div className="flex items-center">
+                      <FaShieldAlt className="text-gray-400 mr-2" />
+                      <span className="text-sm">Risk: {Math.round(truck.riskScore * 100)}%</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center space-x-4 text-sm text-gray-600">
+                    <div className="flex items-center">
+                      <FaCheck className="text-green-500 mr-1" />
+                      <span>Available Now</span>
+                    </div>
+                    {truck.truck.hasRefrigeration && (
+                      <div className="flex items-center">
+                        <FaThermometerHalf className="text-blue-500 mr-1" />
+                        <span>Refrigerated</span>
+                      </div>
+                    )}
+                    {truck.truck.hasHazmatPermit && (
+                      <div className="flex items-center">
+                        <FaShieldAlt className="text-orange-500 mr-1" />
+                        <span>Hazmat Certified</span>
+                      </div>
+                    )}
+                    {truck.truck.hasGpsTracking && (
+                      <div className="flex items-center">
+                        <FaRoute className="text-purple-500 mr-1" />
+                        <span>GPS Tracking</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="ml-4">
+                  {selectedTruck?.id === truck.id ? (
+                    <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
+                      <FaCheck className="text-white text-sm" />
+                    </div>
+                  ) : (
+                    <div className="w-6 h-6 border-2 border-gray-300 rounded-full"></div>
+                  )}
+                </div>
+              </div>
+
+              {/* Detailed View */}
+              {showDetails === truck.id && (
+                <div className="mt-4 pt-4 border-t border-gray-200">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <h4 className="font-medium text-gray-900 mb-2">Driver Details</h4>
+                      <p className="text-sm text-gray-600">{truck.driver.firstName} {truck.driver.lastName}</p>
+                      <p className="text-sm text-gray-600">{truck.driver.experience} years experience</p>
+                      <p className="text-sm text-gray-600">Rating: {truck.driver.rating} ★</p>
+                      <p className="text-sm text-gray-600">Endorsements: {truck.driver.endorsements.join(', ')}</p>
+                    </div>
+                    <div>
+                      <h4 className="font-medium text-gray-900 mb-2">Truck Details</h4>
+                      <p className="text-sm text-gray-600">{truck.truck.make} {truck.truck.model} ({truck.truck.year})</p>
+                      <p className="text-sm text-gray-600">Capacity: {truck.truck.capacityWeight} kg</p>
+                      <p className="text-sm text-gray-600">Type: {truck.truck.truckType}</p>
+                      <p className="text-sm text-gray-600">Insurance: ${truck.truck.insuranceCoverage.toLocaleString()}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowDetails(showDetails === truck.id ? null : truck.id);
+                }}
+                className="mt-3 text-blue-600 hover:text-blue-800 text-sm font-medium"
+              >
+                {showDetails === truck.id ? 'Hide Details' : 'View Details'}
+              </button>
+            </div>
+          ))}
+        </div>
       )}
 
       {/* Action Buttons */}
@@ -603,11 +651,10 @@ const SmartMatchingFlow: React.FC<SmartMatchingFlowProps> = ({ cargoDetails, onC
         <button
           onClick={handleConfirmSelection}
           disabled={!selectedTruck}
-          className={`px-6 py-2 rounded-lg text-white font-medium transition-colors ${
-            selectedTruck
-              ? 'bg-blue-600 hover:bg-blue-700'
-              : 'bg-gray-300 cursor-not-allowed'
-          }`}
+          className={`px-6 py-2 rounded-lg text-white font-medium transition-colors ${selectedTruck
+            ? 'bg-blue-600 hover:bg-blue-700'
+            : 'bg-gray-300 cursor-not-allowed'
+            }`}
         >
           Confirm Selection
         </button>
