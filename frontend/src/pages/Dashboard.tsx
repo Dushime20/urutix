@@ -480,32 +480,35 @@ const CargoOwnerDashboard = () => {
   }, [stats.incompleteCargos, matchingData.matchRecommendations]);
 
   const renderOverview = () => (
-    <div className="space-y-8">
-      {/* 1. Advanced Features Section */}
+    <div className="space-y-6 md:space-y-8">
+      {/* 1. Advanced Features Section - Premium Styling */}
       <section aria-label="Advanced Features">
-        <div className="flex items-center gap-2 mb-4">
-          <h2 className="text-lg font-bold text-gray-900">Advanced Features</h2>
-          <span className="text-xs bg-violet-100 text-violet-700 px-2 py-1 rounded-full font-semibold">NEW</span>
+        <div className="flex items-center gap-3 mb-6">
+          <h2 className="text-xl md:text-2xl font-black text-[#0f172a] tracking-tight">Advanced Features</h2>
+          <span className="text-[10px] bg-gradient-to-r from-violet-500 to-purple-600 text-white px-3 py-1.5 rounded-full font-black uppercase tracking-widest shadow-lg shadow-violet-500/20">NEW</span>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
           {/* Voice Input */}
           <button
             onClick={() => {
               setShowVoiceInput(true);
               markFeatureDiscovered('voice_input');
             }}
-            className="p-6 bg-white border border-gray-200 rounded-2xl text-left hover:shadow-lg transition-all group"
+            className="p-6 md:p-8 bg-white border border-slate-100 rounded-3xl text-left hover:shadow-2xl hover:shadow-teal-500/10 hover:-translate-y-1 transition-all duration-300 group relative overflow-hidden"
           >
-            <div className="flex justify-between items-start mb-4">
-              <h3 className="text-lg font-bold text-gray-900 mb-1">Voice Create</h3>
-              <div className="bg-gray-50 rounded-xl p-3 w-fit group-hover:scale-110 transition-transform">
-                <Mic className="w-6 h-6 text-gray-600" />
+            <div className="absolute top-0 right-0 w-32 h-32 bg-teal-500/5 rounded-full blur-2xl group-hover:bg-teal-500/10 transition-colors"></div>
+            <div className="relative z-10">
+              <div className="flex justify-between items-start mb-6">
+                <h3 className="text-lg md:text-xl font-black text-[#0f172a] tracking-tight">Voice Create</h3>
+                <div className="bg-teal-50 rounded-2xl p-3 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
+                  <Mic className="w-6 h-6 text-teal-600" />
+                </div>
               </div>
-            </div>
-            <p className="text-sm text-gray-500">Speak to create cargo hands-free</p>
-            <div className="mt-4 flex items-center gap-2">
-              <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">2 min</span>
-              <span className="text-xs text-gray-400">→</span>
+              <p className="text-sm text-slate-500 leading-relaxed mb-4">Speak to create cargo hands-free</p>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] bg-slate-100 text-slate-600 px-2.5 py-1 rounded-lg font-bold">2 min</span>
+                <span className="text-slate-300 text-xs">→</span>
+              </div>
             </div>
           </button>
 
@@ -515,18 +518,21 @@ const CargoOwnerDashboard = () => {
               setShowDocumentScanner(true);
               markFeatureDiscovered('document_scanner');
             }}
-            className="p-6 bg-white border border-gray-200 rounded-2xl text-left hover:shadow-lg transition-all group"
+            className="p-6 md:p-8 bg-white border border-slate-100 rounded-3xl text-left hover:shadow-2xl hover:shadow-indigo-500/10 hover:-translate-y-1 transition-all duration-300 group relative overflow-hidden"
           >
-            <div className="flex justify-between items-start mb-4">
-              <h3 className="text-lg font-bold text-gray-900 mb-1">Scan Documents</h3>
-              <div className="bg-gray-50 rounded-xl p-3 w-fit group-hover:scale-110 transition-transform">
-                <Camera className="w-6 h-6 text-gray-600" />
+            <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 rounded-full blur-2xl group-hover:bg-indigo-500/10 transition-colors"></div>
+            <div className="relative z-10">
+              <div className="flex justify-between items-start mb-6">
+                <h3 className="text-lg md:text-xl font-black text-[#0f172a] tracking-tight">Scan Documents</h3>
+                <div className="bg-indigo-50 rounded-2xl p-3 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
+                  <Camera className="w-6 h-6 text-indigo-600" />
+                </div>
               </div>
-            </div>
-            <p className="text-sm text-gray-500">Camera upload with OCR</p>
-            <div className="mt-4 flex items-center gap-2">
-              <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">Instant</span>
-              <span className="text-xs text-gray-400">→</span>
+              <p className="text-sm text-slate-500 leading-relaxed mb-4">Camera upload with OCR</p>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] bg-slate-100 text-slate-600 px-2.5 py-1 rounded-lg font-bold">Instant</span>
+                <span className="text-slate-300 text-xs">→</span>
+              </div>
             </div>
           </button>
 
@@ -536,18 +542,21 @@ const CargoOwnerDashboard = () => {
               navigate('/dashboard/reports/builder');
               markFeatureDiscovered('custom_reports');
             }}
-            className="p-6 bg-white border border-gray-200 rounded-2xl text-left hover:shadow-lg transition-all group"
+            className="p-6 md:p-8 bg-white border border-slate-100 rounded-3xl text-left hover:shadow-2xl hover:shadow-purple-500/10 hover:-translate-y-1 transition-all duration-300 group relative overflow-hidden"
           >
-            <div className="flex justify-between items-start mb-4">
-              <h3 className="text-lg font-bold text-gray-900 mb-1">Custom Reports</h3>
-              <div className="bg-gray-50 rounded-xl p-3 w-fit group-hover:scale-110 transition-transform">
-                <BarChart3 className="w-6 h-6 text-gray-600" />
+            <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/5 rounded-full blur-2xl group-hover:bg-purple-500/10 transition-colors"></div>
+            <div className="relative z-10">
+              <div className="flex justify-between items-start mb-6">
+                <h3 className="text-lg md:text-xl font-black text-[#0f172a] tracking-tight">Custom Reports</h3>
+                <div className="bg-purple-50 rounded-2xl p-3 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
+                  <BarChart3 className="w-6 h-6 text-purple-600" />
+                </div>
               </div>
-            </div>
-            <p className="text-sm text-gray-500">Build your own dashboards</p>
-            <div className="mt-4 flex items-center gap-2">
-              <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">Drag & Drop</span>
-              <span className="text-xs text-gray-400">→</span>
+              <p className="text-sm text-slate-500 leading-relaxed mb-4">Build your own dashboards</p>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] bg-slate-100 text-slate-600 px-2.5 py-1 rounded-lg font-bold">Drag & Drop</span>
+                <span className="text-slate-300 text-xs">→</span>
+              </div>
             </div>
           </button>
 
@@ -557,18 +566,21 @@ const CargoOwnerDashboard = () => {
               navigate('/dashboard/routes');
               markFeatureDiscovered('route_planner');
             }}
-            className="p-6 bg-white border border-gray-200 rounded-2xl text-left hover:shadow-lg transition-all group"
+            className="p-6 md:p-8 bg-white border border-slate-100 rounded-3xl text-left hover:shadow-2xl hover:shadow-amber-500/10 hover:-translate-y-1 transition-all duration-300 group relative overflow-hidden"
           >
-            <div className="flex justify-between items-start mb-4">
-              <h3 className="text-lg font-bold text-gray-900 mb-1">Route Planner</h3>
-              <div className="bg-gray-50 rounded-xl p-3 w-fit group-hover:scale-110 transition-transform">
-                <MapPin className="w-6 h-6 text-gray-600" />
+            <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/5 rounded-full blur-2xl group-hover:bg-amber-500/10 transition-colors"></div>
+            <div className="relative z-10">
+              <div className="flex justify-between items-start mb-6">
+                <h3 className="text-lg md:text-xl font-black text-[#0f172a] tracking-tight">Route Planner</h3>
+                <div className="bg-amber-50 rounded-2xl p-3 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
+                  <MapPin className="w-6 h-6 text-amber-600" />
+                </div>
               </div>
-            </div>
-            <p className="text-sm text-gray-500">Optimize multi-stop routes</p>
-            <div className="mt-4 flex items-center gap-2">
-              <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">AI Powered</span>
-              <span className="text-xs text-gray-400">→</span>
+              <p className="text-sm text-slate-500 leading-relaxed mb-4">Optimize multi-stop routes</p>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] bg-gradient-to-r from-amber-500 to-orange-500 text-white px-2.5 py-1 rounded-lg font-bold">AI Powered</span>
+                <span className="text-slate-300 text-xs">→</span>
+              </div>
             </div>
           </button>
         </div>
@@ -876,85 +888,143 @@ const CargoOwnerDashboard = () => {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-slate-50 font-['Manrope',sans-serif] antialiased selection:bg-teal-100 selection:text-teal-900">
       {/* Use shared DashboardHeader component */}
       <DashboardHeader />
 
-      {/* Modern Welcome Section */}
-      <div className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      {/* Premium Welcome Section - Dark Theme */}
+      <div className="w-full bg-[#0f172a] text-white">
+        <div className="max-w-[1536px] mx-auto px-4 sm:px-6 md:px-8 lg:px-12 xl:px-20 pt-6 md:pt-10 pb-16 md:pb-24 lg:pb-32">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8 md:mb-12">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">
+              <h1 className="text-2xl sm:text-3xl md:text-5xl font-extrabold tracking-tight">
                 {(() => {
                   const hour = new Date().getHours();
                   const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
                   return `${greeting}, ${user?.firstName || 'User'}`;
                 })()}
               </h1>
-              <p className="mt-1 text-gray-600">
+              <p className="text-white/50 text-sm md:text-lg mt-2 max-w-2xl">
                 {stats.totalCargos > 0
-                  ? `${stats.activeCargos} active shipment${stats.activeCargos !== 1 ? 's' : ''} • ${stats.completedCargos} completed`
-                  : 'Welcome to your dashboard'}
+                  ? `Overseeing ${stats.activeCargos} active shipment${stats.activeCargos !== 1 ? 's' : ''} • ${stats.completedCargos} completed successfully`
+                  : 'Welcome to your premium cargo management dashboard'}
               </p>
             </div>
-            <div className="flex flex-wrap gap-3">
-              <button
+            <div className="flex items-center gap-2 sm:gap-4 text-[10px] md:text-xs font-bold text-white/60">
+              <div className="flex items-center gap-2 px-3 md:px-4 py-2 bg-white/5 rounded-xl border border-white/10 backdrop-blur-sm">
+                <Clock size={14} />
+                <span className="inline">{new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })}</span>
+              </div>
+              <div className="flex items-center gap-2 px-3 md:px-4 py-2 bg-white/5 rounded-xl border border-white/10 backdrop-blur-sm">
+                <Activity size={14} />
+                {new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })} GMT
+              </div>
+            </div>
+          </div>
+
+          {/* Premium Action Buttons */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-10">
+            <div className="flex bg-white/5 p-1 rounded-xl border border-white/10 w-full sm:w-auto overflow-x-auto scrollbar-hide">
+              {['Overview', 'All Cargos', 'Transactions', 'Analytics', 'Documents', 'Settings'].map((tab) => (
+                <button 
+                  key={tab} 
+                  onClick={() => setActiveTab(tab)}
+                  className={`flex-1 sm:flex-none px-4 md:px-6 py-2 rounded-lg text-[10px] md:text-xs font-bold transition-all whitespace-nowrap ${activeTab === tab ? 'bg-teal-500 text-white shadow-lg shadow-teal-500/20' : 'text-white/60 hover:text-white hover:bg-white/5'}`}
+                >
+                  {tab}
+                </button>
+              ))}
+            </div>
+
+            <div className="flex items-center gap-3 w-full sm:w-auto">
+              <button 
                 onClick={() => setShowQuickActionFlow(true)}
-                className="inline-flex items-center gap-2 px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-medium shadow-sm"
+                className="flex items-center gap-2 px-4 py-2.5 bg-teal-500 hover:bg-teal-600 border border-teal-400/20 rounded-xl text-white text-xs font-bold transition-all flex-1 sm:flex-none justify-center group shadow-lg shadow-teal-500/20"
               >
-                <Zap className="w-5 h-5" />
+                <Zap size={14} className="group-hover:scale-110 transition-transform" fill="currentColor" />
                 Quick Create
               </button>
-              <button
+              <button 
                 onClick={() => setActiveTab('Transactions')}
-                className="inline-flex items-center gap-2 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium shadow-sm"
+                className="flex items-center gap-2 px-4 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-white/80 text-xs font-bold transition-all flex-1 sm:flex-none justify-center group"
               >
-                <CreditCard className="w-5 h-5" />
-                Request Financing
-              </button>
-              <button
-                onClick={() => navigate('/cargo-owner/cargos/create')}
-                className="inline-flex items-center gap-2 px-6 py-3 bg-white text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-medium shadow-sm"
-              >
-                <Plus className="w-5 h-5" />
-                Full Form
+                <CreditCard size={14} className="group-hover:text-green-400 transition-colors" />
+                Financing
               </button>
             </div>
           </div>
 
-          {/* Clean Navigation Tabs */}
-          <div className="mt-8 flex gap-1 overflow-x-auto scrollbar-hide">
-            {[
-              { id: 'Overview', label: 'Overview', icon: Activity },
-              { id: 'All Cargos', label: 'Cargos', icon: Package },
-              { id: 'Transactions', label: 'Financials', icon: Wallet },
-              { id: 'Analytics', label: 'Analytics', icon: BarChart3 },
-              { id: 'Documents', label: 'Documents', icon: FileText },
-              { id: 'Settings', label: 'Settings', icon: Settings }
-            ].map((tab) => {
-              const Icon = tab.icon;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-all whitespace-nowrap ${
-                    activeTab === tab.id
-                      ? 'bg-primary-50 text-primary-700'
-                      : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-                  }`}
-                >
-                  <Icon className="w-4 h-4" />
-                  <span className="text-sm">{tab.label}</span>
-                </button>
-              );
-            })}
+          {/* Premium Stats Grid - Keeping dev content */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-5 md:gap-6">
+            {/* Total Cargos */}
+            <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-3xl p-5 md:p-6 group hover:bg-white/15 transition-all duration-300 cursor-pointer">
+              <div className="flex items-center justify-between mb-4">
+                <div className="p-3 bg-white/10 rounded-2xl group-hover:scale-110 transition-transform">
+                  <Package className="w-6 h-6 text-teal-400" />
+                </div>
+                {stats.growthRate > 0 && (
+                  <div className="flex items-center gap-1 text-emerald-400 text-xs font-bold bg-emerald-400/10 px-2 py-1 rounded-lg">
+                    <TrendingUpIcon className="w-3 h-3" />
+                    +{stats.growthRate}%
+                  </div>
+                )}
+              </div>
+              <h3 className="text-3xl md:text-4xl font-black text-white mb-1">{stats.totalCargos}</h3>
+              <p className="text-white/40 text-xs md:text-sm font-bold uppercase tracking-widest">Total Cargos</p>
+            </div>
+
+            {/* Active Cargos */}
+            <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-3xl p-5 md:p-6 group hover:bg-white/15 transition-all duration-300 cursor-pointer">
+              <div className="flex items-center justify-between mb-4">
+                <div className="p-3 bg-white/10 rounded-2xl group-hover:scale-110 transition-transform">
+                  <Truck className="w-6 h-6 text-blue-400" />
+                </div>
+                <div className="flex items-center gap-1 text-sky-400 text-xs font-bold bg-sky-400/10 px-2 py-1 rounded-lg">
+                  <Activity className="w-3 h-3" />
+                  Live
+                </div>
+              </div>
+              <h3 className="text-3xl md:text-4xl font-black text-white mb-1">{stats.activeCargos}</h3>
+              <p className="text-white/40 text-xs md:text-sm font-bold uppercase tracking-widest">Active Shipments</p>
+            </div>
+
+            {/* Completed Cargos */}
+            <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-3xl p-5 md:p-6 group hover:bg-white/15 transition-all duration-300 cursor-pointer">
+              <div className="flex items-center justify-between mb-4">
+                <div className="p-3 bg-white/10 rounded-2xl group-hover:scale-110 transition-transform">
+                  <CheckCircle className="w-6 h-6 text-green-400" />
+                </div>
+              </div>
+              <h3 className="text-3xl md:text-4xl font-black text-white mb-1">{stats.completedCargos}</h3>
+              <p className="text-white/40 text-xs md:text-sm font-bold uppercase tracking-widest mb-3">Completed</p>
+              <div className="w-full bg-white/10 rounded-full h-2 overflow-hidden">
+                <div className="bg-gradient-to-r from-green-400 to-emerald-500 h-2 rounded-full transition-all duration-500" style={{ width: stats.totalCargos > 0 ? `${(stats.completedCargos / stats.totalCargos) * 100}%` : '0%' }}></div>
+              </div>
+              <p className="text-white/30 text-[10px] mt-2 font-bold">{Math.round(stats.completionRate)}% completion rate</p>
+            </div>
+
+            {/* Total Value */}
+            <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-3xl p-5 md:p-6 group hover:bg-white/15 transition-all duration-300 cursor-pointer">
+              <div className="flex items-center justify-between mb-4">
+                <div className="p-3 bg-white/10 rounded-2xl group-hover:scale-110 transition-transform">
+                  <DollarSign className="w-6 h-6 text-amber-400" />
+                </div>
+                <div className="flex items-center gap-1 text-emerald-400 text-xs font-bold bg-emerald-400/10 px-2 py-1 rounded-lg">
+                  <Wallet className="w-3 h-3" />
+                  Revenue
+                </div>
+              </div>
+              <h3 className="text-2xl md:text-3xl font-black text-white mb-1">
+                {loading ? '...' : `$${(Number(stats.totalValue) || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
+              </h3>
+              <p className="text-white/40 text-xs md:text-sm font-bold uppercase tracking-widest">Total Value</p>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {/* Main Content - Overlapping the dark header */}
+      <main className="relative z-10 w-full max-w-[1536px] mx-auto px-4 sm:px-6 md:px-8 lg:px-12 xl:px-20 -mt-10 md:-mt-16 lg:-mt-24 pb-20 md:pb-32">
         {activeTab === 'Overview' && renderOverview()}
         {activeTab === 'All Cargos' && <UnifiedCargoManagement />}
         {activeTab === 'Transactions' && <UnifiedFinancialManagement />}
@@ -964,7 +1034,7 @@ const CargoOwnerDashboard = () => {
         {activeTab === 'Notifications' && <UnifiedNotificationManagement />}
         {activeTab === 'Settings' && <UnifiedAccountManagement />}
         {activeTab === 'Support' && <CargoHelpSupport />}
-      </div>
+      </main>
 
       {/* Use shared DashboardFooter component */}
       <DashboardFooter />
