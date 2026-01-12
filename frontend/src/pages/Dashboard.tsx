@@ -888,143 +888,85 @@ const CargoOwnerDashboard = () => {
   );
 
   return (
-    <div className="min-h-screen bg-slate-50 font-['Manrope',sans-serif] antialiased selection:bg-teal-100 selection:text-teal-900">
+    <div className="min-h-screen bg-gray-50">
       {/* Use shared DashboardHeader component */}
       <DashboardHeader />
 
-      {/* Premium Welcome Section - Dark Theme */}
-      <div className="w-full bg-[#0f172a] text-white">
-        <div className="max-w-[1536px] mx-auto px-4 sm:px-6 md:px-8 lg:px-12 xl:px-20 pt-6 md:pt-10 pb-16 md:pb-24 lg:pb-32">
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8 md:mb-12">
+      {/* Modern Welcome Section - Clean White Theme */}
+      <div className="bg-white shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
-              <h1 className="text-2xl sm:text-3xl md:text-5xl font-extrabold tracking-tight">
+              <h1 className="text-3xl font-bold text-gray-900">
                 {(() => {
                   const hour = new Date().getHours();
                   const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
                   return `${greeting}, ${user?.firstName || 'User'}`;
                 })()}
               </h1>
-              <p className="text-white/50 text-sm md:text-lg mt-2 max-w-2xl">
+              <p className="mt-1 text-gray-600">
                 {stats.totalCargos > 0
-                  ? `Overseeing ${stats.activeCargos} active shipment${stats.activeCargos !== 1 ? 's' : ''} • ${stats.completedCargos} completed successfully`
-                  : 'Welcome to your premium cargo management dashboard'}
+                  ? `${stats.activeCargos} active shipment${stats.activeCargos !== 1 ? 's' : ''} • ${stats.completedCargos} completed`
+                  : 'Welcome to your dashboard'}
               </p>
             </div>
-            <div className="flex items-center gap-2 sm:gap-4 text-[10px] md:text-xs font-bold text-white/60">
-              <div className="flex items-center gap-2 px-3 md:px-4 py-2 bg-white/5 rounded-xl border border-white/10 backdrop-blur-sm">
-                <Clock size={14} />
-                <span className="inline">{new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })}</span>
-              </div>
-              <div className="flex items-center gap-2 px-3 md:px-4 py-2 bg-white/5 rounded-xl border border-white/10 backdrop-blur-sm">
-                <Activity size={14} />
-                {new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })} GMT
-              </div>
-            </div>
-          </div>
-
-          {/* Premium Action Buttons */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-10">
-            <div className="flex bg-white/5 p-1 rounded-xl border border-white/10 w-full sm:w-auto overflow-x-auto scrollbar-hide">
-              {['Overview', 'All Cargos', 'Transactions', 'Analytics', 'Documents', 'Settings'].map((tab) => (
-                <button 
-                  key={tab} 
-                  onClick={() => setActiveTab(tab)}
-                  className={`flex-1 sm:flex-none px-4 md:px-6 py-2 rounded-lg text-[10px] md:text-xs font-bold transition-all whitespace-nowrap ${activeTab === tab ? 'bg-teal-500 text-white shadow-lg shadow-teal-500/20' : 'text-white/60 hover:text-white hover:bg-white/5'}`}
-                >
-                  {tab}
-                </button>
-              ))}
-            </div>
-
-            <div className="flex items-center gap-3 w-full sm:w-auto">
-              <button 
+            <div className="flex flex-wrap gap-3">
+              <button
                 onClick={() => setShowQuickActionFlow(true)}
-                className="flex items-center gap-2 px-4 py-2.5 bg-teal-500 hover:bg-teal-600 border border-teal-400/20 rounded-xl text-white text-xs font-bold transition-all flex-1 sm:flex-none justify-center group shadow-lg shadow-teal-500/20"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-medium shadow-sm"
               >
-                <Zap size={14} className="group-hover:scale-110 transition-transform" fill="currentColor" />
+                <Zap className="w-5 h-5" />
                 Quick Create
               </button>
-              <button 
+              <button
                 onClick={() => setActiveTab('Transactions')}
-                className="flex items-center gap-2 px-4 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-white/80 text-xs font-bold transition-all flex-1 sm:flex-none justify-center group"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium shadow-sm"
               >
-                <CreditCard size={14} className="group-hover:text-green-400 transition-colors" />
-                Financing
+                <CreditCard className="w-5 h-5" />
+                Request Financing
+              </button>
+              <button
+                onClick={() => navigate('/cargo-owner/cargos/create')}
+                className="inline-flex items-center gap-2 px-6 py-3 bg-white text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-medium shadow-sm"
+              >
+                <Plus className="w-5 h-5" />
+                Full Form
               </button>
             </div>
           </div>
 
-          {/* Premium Stats Grid - Keeping dev content */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-5 md:gap-6">
-            {/* Total Cargos */}
-            <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-3xl p-5 md:p-6 group hover:bg-white/15 transition-all duration-300 cursor-pointer">
-              <div className="flex items-center justify-between mb-4">
-                <div className="p-3 bg-white/10 rounded-2xl group-hover:scale-110 transition-transform">
-                  <Package className="w-6 h-6 text-teal-400" />
-                </div>
-                {stats.growthRate > 0 && (
-                  <div className="flex items-center gap-1 text-emerald-400 text-xs font-bold bg-emerald-400/10 px-2 py-1 rounded-lg">
-                    <TrendingUpIcon className="w-3 h-3" />
-                    +{stats.growthRate}%
-                  </div>
-                )}
-              </div>
-              <h3 className="text-3xl md:text-4xl font-black text-white mb-1">{stats.totalCargos}</h3>
-              <p className="text-white/40 text-xs md:text-sm font-bold uppercase tracking-widest">Total Cargos</p>
-            </div>
-
-            {/* Active Cargos */}
-            <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-3xl p-5 md:p-6 group hover:bg-white/15 transition-all duration-300 cursor-pointer">
-              <div className="flex items-center justify-between mb-4">
-                <div className="p-3 bg-white/10 rounded-2xl group-hover:scale-110 transition-transform">
-                  <Truck className="w-6 h-6 text-blue-400" />
-                </div>
-                <div className="flex items-center gap-1 text-sky-400 text-xs font-bold bg-sky-400/10 px-2 py-1 rounded-lg">
-                  <Activity className="w-3 h-3" />
-                  Live
-                </div>
-              </div>
-              <h3 className="text-3xl md:text-4xl font-black text-white mb-1">{stats.activeCargos}</h3>
-              <p className="text-white/40 text-xs md:text-sm font-bold uppercase tracking-widest">Active Shipments</p>
-            </div>
-
-            {/* Completed Cargos */}
-            <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-3xl p-5 md:p-6 group hover:bg-white/15 transition-all duration-300 cursor-pointer">
-              <div className="flex items-center justify-between mb-4">
-                <div className="p-3 bg-white/10 rounded-2xl group-hover:scale-110 transition-transform">
-                  <CheckCircle className="w-6 h-6 text-green-400" />
-                </div>
-              </div>
-              <h3 className="text-3xl md:text-4xl font-black text-white mb-1">{stats.completedCargos}</h3>
-              <p className="text-white/40 text-xs md:text-sm font-bold uppercase tracking-widest mb-3">Completed</p>
-              <div className="w-full bg-white/10 rounded-full h-2 overflow-hidden">
-                <div className="bg-gradient-to-r from-green-400 to-emerald-500 h-2 rounded-full transition-all duration-500" style={{ width: stats.totalCargos > 0 ? `${(stats.completedCargos / stats.totalCargos) * 100}%` : '0%' }}></div>
-              </div>
-              <p className="text-white/30 text-[10px] mt-2 font-bold">{Math.round(stats.completionRate)}% completion rate</p>
-            </div>
-
-            {/* Total Value */}
-            <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-3xl p-5 md:p-6 group hover:bg-white/15 transition-all duration-300 cursor-pointer">
-              <div className="flex items-center justify-between mb-4">
-                <div className="p-3 bg-white/10 rounded-2xl group-hover:scale-110 transition-transform">
-                  <DollarSign className="w-6 h-6 text-amber-400" />
-                </div>
-                <div className="flex items-center gap-1 text-emerald-400 text-xs font-bold bg-emerald-400/10 px-2 py-1 rounded-lg">
-                  <Wallet className="w-3 h-3" />
-                  Revenue
-                </div>
-              </div>
-              <h3 className="text-2xl md:text-3xl font-black text-white mb-1">
-                {loading ? '...' : `$${(Number(stats.totalValue) || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
-              </h3>
-              <p className="text-white/40 text-xs md:text-sm font-bold uppercase tracking-widest">Total Value</p>
-            </div>
+          {/* Clean Navigation Tabs */}
+          <div className="mt-8 flex gap-1 overflow-x-auto scrollbar-hide">
+            {[
+              { id: 'Overview', label: 'Overview', icon: Activity },
+              { id: 'All Cargos', label: 'Cargos', icon: Package },
+              { id: 'Transactions', label: 'Financials', icon: Wallet },
+              { id: 'Analytics', label: 'Analytics', icon: BarChart3 },
+              { id: 'Documents', label: 'Documents', icon: FileText },
+              { id: 'Settings', label: 'Settings', icon: Settings }
+            ].map((tab) => {
+              const Icon = tab.icon;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-all whitespace-nowrap ${
+                    activeTab === tab.id
+                      ? 'bg-primary-50 text-primary-700'
+                      : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                  }`}
+                >
+                  <Icon className="w-4 h-4" />
+                  <span className="text-sm">{tab.label}</span>
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>
 
-      {/* Main Content - Overlapping the dark header */}
-      <main className="relative z-10 w-full max-w-[1536px] mx-auto px-4 sm:px-6 md:px-8 lg:px-12 xl:px-20 -mt-10 md:-mt-16 lg:-mt-24 pb-20 md:pb-32">
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {activeTab === 'Overview' && renderOverview()}
         {activeTab === 'All Cargos' && <UnifiedCargoManagement />}
         {activeTab === 'Transactions' && <UnifiedFinancialManagement />}
@@ -1034,7 +976,7 @@ const CargoOwnerDashboard = () => {
         {activeTab === 'Notifications' && <UnifiedNotificationManagement />}
         {activeTab === 'Settings' && <UnifiedAccountManagement />}
         {activeTab === 'Support' && <CargoHelpSupport />}
-      </main>
+      </div>
 
       {/* Use shared DashboardFooter component */}
       <DashboardFooter />
