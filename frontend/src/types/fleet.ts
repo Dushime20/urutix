@@ -1,64 +1,70 @@
-export enum FleetStatus {
-  AVAILABLE = 'AVAILABLE',
-  IN_TRANSIT = 'IN_TRANSIT',
-  MAINTENANCE = 'MAINTENANCE',
-  OUT_OF_SERVICE = 'OUT_OF_SERVICE'
-}
+export const FleetStatus = {
+  AVAILABLE: 'AVAILABLE',
+  IN_TRANSIT: 'IN_TRANSIT',
+  MAINTENANCE: 'MAINTENANCE',
+  OUT_OF_SERVICE: 'OUT_OF_SERVICE'
+} as const;
+export type FleetStatus = (typeof FleetStatus)[keyof typeof FleetStatus];
 
-export enum DocumentType {
-  INSURANCE = 'insurance',
-  REGISTRATION = 'registration',
-  INSPECTION = 'inspection',
-  PERMIT = 'permit',
-  LICENSE = 'license',
-  CERTIFICATE = 'certificate',
-  CONTRACT = 'contract',
-  MANUAL = 'manual',
-  WARRANTY = 'warranty',
-  OTHER = 'other'
-}
+export const DocumentType = {
+  INSURANCE: 'insurance',
+  REGISTRATION: 'registration',
+  INSPECTION: 'inspection',
+  PERMIT: 'permit',
+  LICENSE: 'license',
+  CERTIFICATE: 'certificate',
+  CONTRACT: 'contract',
+  MANUAL: 'manual',
+  WARRANTY: 'warranty',
+  OTHER: 'other'
+} as const;
+export type DocumentType = (typeof DocumentType)[keyof typeof DocumentType];
 
-export enum DocumentStatus {
-  VALID = 'valid',
-  EXPIRED = 'expired',
-  EXPIRING_SOON = 'expiring_soon',
-  PENDING = 'pending',
-  REJECTED = 'rejected',
-  UNDER_REVIEW = 'under_review'
-}
+export const DocumentStatus = {
+  VALID: 'valid',
+  EXPIRED: 'expired',
+  EXPIRING_SOON: 'expiring_soon',
+  PENDING: 'pending',
+  REJECTED: 'rejected',
+  UNDER_REVIEW: 'under_review'
+} as const;
+export type DocumentStatus = (typeof DocumentStatus)[keyof typeof DocumentStatus];
 
-export enum InspectionType {
-  SAFETY = 'safety',
-  EMISSIONS = 'emissions',
-  WEIGHT = 'weight',
-  BRAKE = 'brake',
-  TIRE = 'tire',
-  ELECTRICAL = 'electrical',
-  HYDRAULIC = 'hydraulic',
-  PRE_TRIP = 'pre_trip',
-  POST_TRIP = 'post_trip',
-  ANNUAL = 'annual',
-  BIENNIAL = 'biennial'
-}
+export const InspectionType = {
+  SAFETY: 'safety',
+  EMISSIONS: 'emissions',
+  WEIGHT: 'weight',
+  BRAKE: 'brake',
+  TIRE: 'tire',
+  ELECTRICAL: 'electrical',
+  HYDRAULIC: 'hydraulic',
+  PRE_TRIP: 'pre_trip',
+  POST_TRIP: 'post_trip',
+  ANNUAL: 'annual',
+  BIENNIAL: 'biennial'
+} as const;
+export type InspectionType = (typeof InspectionType)[keyof typeof InspectionType];
 
-export enum MaintenanceType {
-  PREVENTIVE = 'preventive',
-  CORRECTIVE = 'corrective',
-  EMERGENCY = 'emergency',
-  SCHEDULED = 'scheduled',
-  INSPECTION = 'inspection',
-  REPAIR = 'repair',
-  REPLACEMENT = 'replacement',
-  UPGRADE = 'upgrade'
-}
+export const MaintenanceType = {
+  PREVENTIVE: 'preventive',
+  CORRECTIVE: 'corrective',
+  EMERGENCY: 'emergency',
+  SCHEDULED: 'scheduled',
+  INSPECTION: 'inspection',
+  REPAIR: 'repair',
+  REPLACEMENT: 'replacement',
+  UPGRADE: 'upgrade'
+} as const;
+export type MaintenanceType = (typeof MaintenanceType)[keyof typeof MaintenanceType];
 
-export enum ComplianceStatus {
-  COMPLIANT = 'compliant',
-  NON_COMPLIANT = 'non_compliant',
-  WARNING = 'warning',
-  CRITICAL = 'critical',
-  PENDING = 'pending'
-}
+export const ComplianceStatus = {
+  COMPLIANT: 'compliant',
+  NON_COMPLIANT: 'non_compliant',
+  WARNING: 'warning',
+  CRITICAL: 'critical',
+  PENDING: 'pending'
+} as const;
+export type ComplianceStatus = (typeof ComplianceStatus)[keyof typeof ComplianceStatus];
 
 export interface Route {
   id: string;
@@ -309,7 +315,7 @@ export interface FleetItem {
   };
   createdAt: Date;
   updatedAt: Date;
-  
+
   // Truck specific fields
   licensePlate?: string;
   plateNumber?: string; // Added for form compatibility
@@ -335,7 +341,7 @@ export interface FleetItem {
   insurancePolicy?: string; // Added for form compatibility
   insuranceExpiry?: string; // Added for form compatibility
   roadworthyCertExpiry?: string; // Added for form compatibility
-  
+
   // Equipment and capabilities
   hasRefrigeration?: boolean;
   hasLiftGate?: boolean;
@@ -433,10 +439,10 @@ export interface FleetItem {
   hasComposite?: boolean;
   hasInsulated?: boolean;
   hasHumidityMonitoring?: boolean;
-  
+
   // Equipment list
   equipmentList?: string[];
-  
+
   // Multiple assignments
   assignedDrivers?: DriverAssignment[];
   primaryDriver?: {
@@ -444,7 +450,31 @@ export interface FleetItem {
     name: string;
   };
   assignedRoutes?: RouteAssignment[];
-  
+
+  // Capabilities (Added for FleetTable compatibility)
+  cargoCapabilities?: {
+    supportedCargoTypes?: string[];
+    temperatureRange?: { min: number; max: number };
+    maxFragileHandling?: boolean;
+    maxHazardousHandling?: boolean;
+    maxRefrigeratedHandling?: boolean;
+    maxLiquidHandling?: boolean;
+    maxOversizedHandling?: boolean;
+    maxValuableHandling?: boolean;
+  };
+  loadingCapabilities?: {
+    hasForklift?: boolean;
+    hasCrane?: boolean;
+    hasTailLift?: boolean;
+    hasSideLift?: boolean;
+  };
+  securityFeatures?: {
+    hasGps?: boolean;
+    hasTracking?: boolean;
+    hasTemperatureAlerts?: boolean;
+    hasCargoMonitoring?: boolean;
+  };
+
   // Comprehensive records
   documents?: TruckDocument[];
   maintenance?: MaintenanceRecord[];
@@ -453,7 +483,7 @@ export interface FleetItem {
   fuelRecords?: FuelRecord[];
   tireRecords?: TireRecord[];
   compliance?: ComplianceRecord[];
-  
+
   // Driver specific fields
   firstName?: string;
   lastName?: string;
@@ -465,7 +495,7 @@ export interface FleetItem {
     licensePlate: string;
   };
   qualifications?: DriverQualification[];
-  
+
   // Common fields
   contactInfo?: {
     phone?: string;

@@ -7,7 +7,7 @@ export interface FleetItem {
   model: string;
   year: number;
   status: string;
-  currentLocation?: string;
+  currentLocation?: any;
   capacityWeight: number;
   capacityVolume: number;
   assignedDrivers: DriverAssignment[];
@@ -85,6 +85,75 @@ export interface FleetAnalytics {
 
 // Real API calls using the backend
 export const fleetApi = {
+  // ===== DASHBOARD HELPER METHODS =====
+
+  // Get top performing drivers (mock logic using existing data)
+  async getTopDrivers(limit: number = 3): Promise<any[]> {
+    try {
+      const drivers = await this.getDrivers();
+      // Mock scoring logic: prioritize active drivers, then by experience
+      const sorted = drivers
+        .map(d => ({
+          ...d,
+          rating: 4.5 + (Math.random() * 0.5), // Mock rating 4.5-5.0
+          trips: Math.floor(Math.random() * 50) + 10,
+          performanceStatus: Math.random() > 0.3 ? 'On Time' : 'Efficient'
+        }))
+        .sort((a, b) => b.rating - a.rating)
+        .slice(0, limit);
+
+      return sorted;
+    } catch (error) {
+      console.error('❌ Error getting top drivers:', error);
+      return [];
+    }
+  },
+
+  // Get maintenance alerts from truck data
+  async getMaintenanceAlerts(): Promise<any[]> {
+    try {
+      const trucks = await this.getTrucks();
+      const alerts: any[] = [];
+
+      trucks.forEach(truck => {
+        // Check for maintenance status
+        if (['maintenance', 'repair', 'service'].includes(truck.status?.toLowerCase())) {
+          alerts.push({
+            id: `alert-${truck.id}`,
+            truckId: truck.id,
+            plateNumber: truck.plateNumber,
+            type: 'Critical',
+            message: 'Vehicle currently in maintenance',
+            date: new Date().toISOString()
+          });
+        }
+
+        // Check for upcoming maintenance (mock logic if date is missing)
+        if (truck.nextMaintenanceDate) {
+          const nextDate = new Date(truck.nextMaintenanceDate);
+          const today = new Date();
+          const daysDiff = Math.ceil((nextDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+
+          if (daysDiff < 7) {
+            alerts.push({
+              id: `warn-${truck.id}`,
+              truckId: truck.id,
+              plateNumber: truck.plateNumber,
+              type: 'Warning',
+              message: `Scheduled service due in ${daysDiff} days`,
+              date: truck.nextMaintenanceDate
+            });
+          }
+        }
+      });
+
+      return alerts;
+    } catch (error) {
+      console.error('❌ Error getting maintenance alerts:', error);
+      return [];
+    }
+  },
+
   // Get trucks with optional filters
   async getTrucks(filters?: { search?: string; status?: string }): Promise<FleetItem[]> {
     try {
@@ -97,14 +166,14 @@ export const fleetApi = {
 
       const url = `/fleet/trucks${params.toString() ? `?${params.toString()}` : ''}`;
       console.log('🔑 Request URL:', url);
-      
+
       const response = await api.get(url);
       console.log('✅ Trucks fetch successful - Full response:', response);
       console.log('✅ Trucks fetch - response.data:', response.data);
       console.log('✅ Trucks fetch - response.data.trucks:', response.data?.trucks);
       console.log('✅ Trucks fetch - response.data.trucks is array?', Array.isArray(response.data?.trucks));
       console.log('✅ Trucks fetch - response.data.trucks length:', response.data?.trucks?.length);
-      
+
       // Backend returns { message, trucks }
       const trucks = response.data?.trucks || response.data || [];
       console.log('✅ Returning trucks:', Array.isArray(trucks) ? trucks.length : 'Not an array');
@@ -297,8 +366,54 @@ export const fleetApi = {
       });
       console.log('✅ Bulk driver deletion successful');
       return true;
+      return true;
     } catch (error: any) {
       console.error('❌ Error bulk deleting drivers:', error);
+      throw error;
+    }
+  },
+
+
+
+  // Driver Compliance/Documents (Mocked implementation for now)
+  async getDriverDocuments(driverId: string): Promise<any[]> {
+    try {
+      console.log('📄 Fetching documents for driver:', driverId);
+      // In a real app, this would be: await api.get(`/fleet/drivers/${driverId}/documents`);
+      // For now, return mock data or reuse compliance structure
+      return [
+        {
+          id: 'doc-1',
+          regulation: 'Driver License',
+          requirement: 'DL-12345678',
+          status: 'COMPLIANT',
+          dueDate: '2025-12-31',
+          lastChecked: '2023-01-01',
+          notes: 'Class A Commercial License'
+        },
+        {
+          id: 'doc-2',
+          regulation: 'Medical Certificate',
+          requirement: 'Med-554433',
+          status: 'COMPLIANT',
+          dueDate: '2024-06-30',
+          lastChecked: '2023-06-01',
+          notes: 'Annual physical'
+        }
+      ];
+    } catch (error) {
+      console.error('❌ Error fetching driver documents:', error);
+      return [];
+    }
+  },
+
+  async addDriverDocument(driverId: string, docData: any): Promise<any> {
+    try {
+      console.log('➕ Adding document for driver:', driverId, docData);
+      // In a real app: await api.post(`/fleet/drivers/${driverId}/documents`, docData);
+      return { id: `new-${Date.now()}`, ...docData };
+    } catch (error) {
+      console.error('❌ Error adding driver document:', error);
       throw error;
     }
   },
@@ -314,7 +429,7 @@ export const fleetApi = {
     console.log('🔗 Making request to /fleet/routes');
     console.log('🔗 Full URL will be: http://localhost:3000/api/fleet/routes');
     console.log('🔗 About to make API call...');
-    
+
     try {
       const response = await api.get('/fleet/routes');
       console.log('✅ Routes response received!');
@@ -323,7 +438,7 @@ export const fleetApi = {
       console.log('✅ Routes response keys:', Object.keys(response.data));
       console.log('✅ Routes count:', response.data.routes?.length || 0);
       console.log('✅ Direct routes array:', Array.isArray(response.data) ? response.data.length : 'Not an array');
-      
+
       // Check if response.data is directly an array of routes
       if (Array.isArray(response.data)) {
         console.log('✅ Response is direct array of routes');
@@ -333,13 +448,16 @@ export const fleetApi = {
           origin: r.origin,
           destination: r.destination,
           distance: r.distance ?? 0,
-          estimatedDuration: r.estimatedDuration ?? r.estimatedTime ?? r.estimatedHours ?? 0,
+          estimatedTime: r.estimatedTime ?? r.estimatedDuration ?? r.estimatedHours ?? 0,
           status: r.status ?? 'active',
           assignedDrivers: Array.isArray(r.assignedDrivers) ? r.assignedDrivers : [],
           assignedTrucks: Array.isArray(r.assignedTrucks) ? r.assignedTrucks : [],
+          isActive: r.isActive ?? true,
+          createdAt: r.createdAt ?? new Date().toISOString(),
+          updatedAt: r.updatedAt ?? new Date().toISOString(),
         } as Route));
       }
-      
+
       // Check if response.data has a routes property
       if (response.data.routes && Array.isArray(response.data.routes)) {
         console.log('✅ Response has routes property with array');
@@ -349,13 +467,16 @@ export const fleetApi = {
           origin: r.origin,
           destination: r.destination,
           distance: r.distance ?? 0,
-          estimatedDuration: r.estimatedDuration ?? r.estimatedTime ?? r.estimatedHours ?? 0,
+          estimatedTime: r.estimatedTime ?? r.estimatedDuration ?? r.estimatedHours ?? 0,
           status: r.status ?? 'active',
           assignedDrivers: Array.isArray(r.assignedDrivers) ? r.assignedDrivers : [],
           assignedTrucks: Array.isArray(r.assignedTrucks) ? r.assignedTrucks : [],
+          isActive: r.isActive ?? true,
+          createdAt: r.createdAt ?? new Date().toISOString(),
+          updatedAt: r.updatedAt ?? new Date().toISOString(),
         } as Route));
       }
-      
+
       // Check if response.data has a data property (nested response)
       if (response.data.data && Array.isArray(response.data.data)) {
         console.log('✅ Response has data property with array');
@@ -365,13 +486,16 @@ export const fleetApi = {
           origin: r.origin,
           destination: r.destination,
           distance: r.distance ?? 0,
-          estimatedDuration: r.estimatedDuration ?? r.estimatedTime ?? r.estimatedHours ?? 0,
+          estimatedTime: r.estimatedTime ?? r.estimatedDuration ?? r.estimatedHours ?? 0,
           status: r.status ?? 'active',
           assignedDrivers: Array.isArray(r.assignedDrivers) ? r.assignedDrivers : [],
           assignedTrucks: Array.isArray(r.assignedTrucks) ? r.assignedTrucks : [],
+          isActive: r.isActive ?? true,
+          createdAt: r.createdAt ?? new Date().toISOString(),
+          updatedAt: r.updatedAt ?? new Date().toISOString(),
         } as Route));
       }
-      
+
       console.log('⚠️ No valid routes array found in response');
       console.log('⚠️ Response structure:', JSON.stringify(response.data, null, 2));
       console.log('⚠️ Returning empty array');
@@ -454,12 +578,12 @@ export const fleetApi = {
       console.error('❌ Error response data:', error.response?.data);
       console.error('❌ Error response status:', error.response?.status);
       console.error('❌ Error message:', error.message);
-      
+
       // Re-throw with enhanced error info
       const enhancedError = new Error(
-        error.response?.data?.message || 
-        error.response?.data?.error || 
-        error.message || 
+        error.response?.data?.message ||
+        error.response?.data?.error ||
+        error.message ||
         'Failed to assign driver to truck'
       );
       (enhancedError as any).response = error.response;
@@ -485,9 +609,9 @@ export const fleetApi = {
   async assignRouteToTruck(truckId: string, routeId: string, assignmentData?: { notes?: string }): Promise<boolean> {
     try {
       console.log('🛣️ Assigning route:', routeId, 'to truck:', truckId);
-      
+
       const response = await api.post(`/fleet/routes/${routeId}/assign-truck/${truckId}`, assignmentData || {});
-      
+
       console.log('✅ Route assignment successful:', response.data);
       return true;
     } catch (error: any) {
@@ -500,9 +624,9 @@ export const fleetApi = {
   async unassignRouteFromTruck(truckId: string, routeId: string): Promise<boolean> {
     try {
       console.log('🚫 Unassigning route:', routeId, 'from truck:', truckId);
-      
+
       const response = await api.delete(`/fleet/routes/${routeId}/unassign-truck/${truckId}`);
-      
+
       console.log('✅ Route unassignment successful:', response.data);
       return true;
     } catch (error: any) {
@@ -515,9 +639,9 @@ export const fleetApi = {
   async getTruckRoutes(truckId: string): Promise<Route[]> {
     try {
       console.log('📋 Fetching routes for truck:', truckId);
-      
+
       const response = await api.get(`/fleet/trucks/${truckId}/routes`);
-      
+
       console.log('✅ Truck routes fetch successful:', response.data);
       const raw = response.data.routes || [];
       // Normalize to Route shape expected by UI
@@ -546,9 +670,9 @@ export const fleetApi = {
   async getRouteAssignments(routeId: string): Promise<any[]> {
     try {
       console.log('� Fetching assignments for route:', routeId);
-      
+
       const response = await api.get(`/fleet/routes/${routeId}/assignments`);
-      
+
       console.log('✅ Route assignments fetch successful:', response.data);
       return response.data.assignments || [];
     } catch (error: any) {
@@ -561,9 +685,9 @@ export const fleetApi = {
   async bulkAssignRoutes(assignments: { routeId: string; truckId: string }[]): Promise<any> {
     try {
       console.log('📦 Bulk assigning routes:', assignments);
-      
+
       const response = await api.post('/fleet/routes/bulk-assign', { assignments });
-      
+
       console.log('✅ Bulk route assignment successful:', response.data);
       return response.data;
     } catch (error: any) {
@@ -673,6 +797,86 @@ export const fleetApi = {
       console.error('❌ Error scheduling maintenance:', error);
       throw error;
     }
+  },
+
+  // ===== SMART MATCHING BOOKINGS (MOCK) =====
+  async getBookingRequests(): Promise<any[]> {
+    console.log('🔮 Fetching smart matching booking requests...');
+    // Simulate API delay
+    await new Promise(resolve => setTimeout(resolve, 800));
+
+    // Mock Data: Inbound bookings from "Smart Matching"
+    return [
+      {
+        id: 'bk_123456',
+        status: 'PENDING',
+        createdAt: new Date(Date.now() - 1000 * 60 * 30).toISOString(), // 30 mins ago
+        matchScore: 0.98,
+        price: 3200,
+        load: {
+          id: 'ld_88291',
+          title: 'Electronics Shipment - High Priority',
+          origin: { city: 'Kigali', country: 'Rwanda' },
+          destination: { city: 'Nairobi', country: 'Kenya' },
+          pickupDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 2).toISOString(), // 2 days from now
+          weight: 4500, // kg
+          cargoType: 'ELECTRONICS'
+        },
+        cargoOwner: {
+          name: 'TechImports Ltd.',
+          rating: 4.9,
+          verified: true
+        },
+        requestedTruckId: 'tr_9912', // Specifically matched to this truck
+        requestedTruckPlate: 'RAB 123 A'
+      },
+      {
+        id: 'bk_778291',
+        status: 'PENDING',
+        createdAt: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(), // 2 hours ago
+        matchScore: 0.92,
+        price: 1850,
+        load: {
+          id: 'ld_11029',
+          title: 'Fresh Produce (Avocados)',
+          origin: { city: 'Musanze', country: 'Rwanda' },
+          destination: { city: 'Kampala', country: 'Uganda' },
+          pickupDate: new Date(Date.now() + 1000 * 60 * 60 * 24).toISOString(), // Tomorrow
+          weight: 8000,
+          cargoType: 'PERISHABLE'
+        },
+        cargoOwner: {
+          name: 'FreshFarm Co-op',
+          rating: 4.7,
+          verified: true
+        },
+        requestedTruckId: 'tr_5521',
+        requestedTruckPlate: 'RAC 555 B'
+      },
+      {
+        id: 'bk_992102',
+        status: 'ACCEPTED', // History item
+        createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 5).toISOString(),
+        matchScore: 0.95,
+        price: 2100,
+        load: {
+          id: 'ld_55102',
+          title: 'Construction Materials',
+          origin: { city: 'Huye', country: 'Rwanda' },
+          destination: { city: 'Bujumbura', country: 'Burundi' },
+          pickupDate: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2).toISOString(),
+          weight: 12000,
+          cargoType: 'CONSTRUCTION'
+        },
+        cargoOwner: {
+          name: 'BuildRight Construction',
+          rating: 4.5,
+          verified: true
+        },
+        requestedTruckId: 'tr_9912',
+        requestedTruckPlate: 'RAB 123 A'
+      }
+    ];
   },
 
   // Get maintenance history
@@ -1199,7 +1403,7 @@ export const fleetApi = {
   async subscribeFleetUpdates(callback: (update: Partial<FleetItem>) => void): Promise<() => void> {
     try {
       console.log('🔌 Setting up fleet updates subscription');
-      
+
       // For now, we'll use a polling approach since WebSocket isn't implemented yet
       // In a real implementation, this would connect to a WebSocket or use Server-Sent Events
       const intervalId = setInterval(async () => {
@@ -1224,7 +1428,7 @@ export const fleetApi = {
     } catch (error) {
       console.error('❌ Error setting up fleet subscription:', error);
       // Return a no-op unsubscribe function
-      return () => {};
+      return () => { };
     }
   },
 
@@ -1232,7 +1436,7 @@ export const fleetApi = {
   async subscribeTruckUpdates(truckId: string, callback: (update: Partial<FleetItem>) => void): Promise<() => void> {
     try {
       console.log('🔌 Setting up truck updates subscription for:', truckId);
-      
+
       const intervalId = setInterval(async () => {
         try {
           const response = await api.get(`/fleet/trucks/${truckId}/updates`);
@@ -1250,7 +1454,7 @@ export const fleetApi = {
       };
     } catch (error) {
       console.error('❌ Error setting up truck subscription:', error);
-      return () => {};
+      return () => { };
     }
   },
 
@@ -1258,7 +1462,7 @@ export const fleetApi = {
   async subscribeDriverUpdates(driverId: string, callback: (update: Partial<Driver>) => void): Promise<() => void> {
     try {
       console.log('🔌 Setting up driver updates subscription for:', driverId);
-      
+
       const intervalId = setInterval(async () => {
         try {
           const response = await api.get(`/fleet/drivers/${driverId}/updates`);
@@ -1276,7 +1480,7 @@ export const fleetApi = {
       };
     } catch (error) {
       console.error('❌ Error setting up driver subscription:', error);
-      return () => {};
+      return () => { };
     }
   },
 

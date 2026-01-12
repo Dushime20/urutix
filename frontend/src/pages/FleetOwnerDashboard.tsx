@@ -10,10 +10,11 @@ import {
   FaCheckCircle,
   FaUser,
   FaStar,
-  FaBolt
+  FaBolt,
+  FaClipboardCheck
 } from 'react-icons/fa';
 import { Clock, Zap, AlertTriangle, Bell, Search, X, Settings, LogOut, Fuel, Droplets, CheckCircle, Plus } from 'lucide-react';
-import { fleetApi, type FleetItem, type Driver } from '../services/fleetApi';
+import { fleetApi, type FleetItem } from '../services/fleetApi';
 import { tripsAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -63,7 +64,10 @@ const FleetOwnerDashboard: React.FC = () => {
     pendingPayments: 0, activeTrips: 0, completedTrips: 0, utilizationRate: 0,
   });
   const [trucks, setTrucks] = useState<FleetItem[]>([]);
-  const [drivers, setDrivers] = useState<Driver[]>([]);
+  const [topDrivers, setTopDrivers] = useState<any[]>([]);
+  const [maintenanceAlerts, setMaintenanceAlerts] = useState<any[]>([]);
+  const [recentInspections, setRecentInspections] = useState<any[]>([]);
+  const [trips, setTrips] = useState<any[]>([]);
 
   // Truck creation state (matching cargo creation pattern)
   const [showTruckForm, setShowTruckForm] = useState(false);
@@ -109,15 +113,28 @@ const FleetOwnerDashboard: React.FC = () => {
       setTrucks(Array.isArray(trucksData) ? trucksData : []);
 
       const driversData = await fleetApi.getDrivers();
-      setDrivers(driversData);
+      // setDrivers(driversData);
+
+      // Fetch Top Drivers & Alerts
+      const topDriversData = await fleetApi.getTopDrivers(5);
+      setTopDrivers(topDriversData);
+
+      const alertsData = await fleetApi.getMaintenanceAlerts();
+      setMaintenanceAlerts(alertsData);
+
+      const inspectionsData = await fleetApi.getSafetyInspections();
+      setRecentInspections(inspectionsData.slice(0, 5)); // Get recent 5
 
       let tripsData: any[] = [];
       try {
         const tripsResponse = await tripsAPI.getAll({});
         tripsData = tripsResponse.data?.data || tripsResponse.data?.trips || [];
+        setTrips(tripsData);
       } catch (e) {
         console.warn('Failed to load trips:', e);
       }
+
+      const analyticsData = await fleetApi.fetchAnalytics();
 
       // Calculations
       const trucksInTransit = trucksData.filter(t => ['intransit', 'in_transit', 'in-transit'].includes(t.status?.toLowerCase())).length;
@@ -133,13 +150,13 @@ const FleetOwnerDashboard: React.FC = () => {
         trucksAvailable,
         trucksInMaintenance,
         totalDrivers: driversData.length,
-        activeDrivers: driversData.filter(d => d.status === 'ACTIVE').length,
-        totalRevenue,
-        monthlyRevenue: totalRevenue * 0.3,
+        activeDrivers: driversData.filter((d: any) => d.status === 'ACTIVE').length,
+        totalRevenue: analyticsData.totalRevenue || totalRevenue,
+        monthlyRevenue: (analyticsData.totalRevenue || totalRevenue) * 0.3,
         pendingPayments: trucksInTransit * 5000,
-        activeTrips: tripsData.length,
-        completedTrips: 0,
-        utilizationRate: Math.round(utilizationRate),
+        activeTrips: tripsData.filter(t => ['active', 'in_progress', 'started'].includes(t.status?.toLowerCase())).length,
+        completedTrips: tripsData.filter(t => ['completed', 'delivered'].includes(t.status?.toLowerCase())).length,
+        utilizationRate: analyticsData.utilizationRate || Math.round(utilizationRate),
       });
 
     } catch (error) {
@@ -196,17 +213,24 @@ const FleetOwnerDashboard: React.FC = () => {
       <div className="bg-[#0a101f] text-white py-2 overflow-hidden border-b border-white/5">
         <div className="flex items-center animate-marquee whitespace-nowrap">
           <div className="flex gap-16 items-center text-[11px] font-bold tracking-widest uppercase opacity-80">
-            <span className="flex items-center gap-2 text-amber-400">
-              <AlertTriangle size={14} /> Maintenance Alert: TRK-004 brake service required
-            </span>
+            {maintenanceAlerts.length > 0 ? (
+              <span className="flex items-center gap-2 text-amber-400">
+                <AlertTriangle size={14} /> Maintenance Alert: {maintenanceAlerts.length} vehicles require attention
+              </span>
+            ) : (
+              <span className="flex items-center gap-2 text-emerald-400">
+                <CheckCircle size={14} /> Fleet Health: All vehicles fully operational
+              </span>
+            )}
+
             <span className="flex items-center gap-2">
-              <Droplets size={14} className="text-blue-400" /> Heavy Rain Alert: Nairobi-Mombasa Route
+              <Droplets size={14} className="text-blue-400" /> Weather Update: Heavy Rain Expected (Nairobi-Mombasa)
             </span>
             <span className="flex items-center gap-2 text-green-400">
-              <CheckCircle size={14} /> All border crossings operating normally
+              <CheckCircle size={14} /> Border Status: Busia & Malaba operating normally
             </span>
             <span className="flex items-center gap-2 text-amber-400">
-              <Fuel size={14} /> Fuel Surcharge Update: +2% effective Jan 15th
+              <Fuel size={14} /> Fuel Price: Diesel KES 210.00 (+2% effective Jan 15th)
             </span>
           </div>
         </div>
@@ -240,8 +264,11 @@ const FleetOwnerDashboard: React.FC = () => {
             <nav className="hidden lg:flex items-center gap-10">
               <a className="text-white text-sm font-bold relative after:content-[''] after:absolute after:bottom-[-4px] after:left-0 after:w-full after:h-0.5 after:bg-blue-500" href="/dashboard/fleet">Dashboard</a>
               <a className="text-white/60 hover:text-white text-sm font-semibold transition-all" href="/dashboard/fleet/trucks">Fleet</a>
+              <a className="text-white/60 hover:text-white text-sm font-semibold transition-all" href="/fleet-manager">Fleet Manager</a>
               <a className="text-white/60 hover:text-white text-sm font-semibold transition-all" href="/dashboard/fleet/drivers">Drivers</a>
               <a className="text-white/60 hover:text-white text-sm font-semibold transition-all" href="/dashboard/fleet/maintenance">Maintenance</a>
+              <a className="text-white/60 hover:text-white text-sm font-semibold transition-all" href="/dashboard/fleet/bids">Load Board</a>
+              <a className="text-white/60 hover:text-white text-sm font-semibold transition-all" href="/dashboard/fleet/smart-bookings">Smart Bookings</a>
               <a className="text-white/60 hover:text-white text-sm font-semibold transition-all" href="/dashboard/fleet/reports">Reports</a>
             </nav>
 
@@ -347,8 +374,11 @@ const FleetOwnerDashboard: React.FC = () => {
             <nav className="flex flex-col space-y-3 text-sm font-semibold text-gray-400">
               <a href="/dashboard/fleet" className="text-white px-3 py-2 bg-white/5 rounded-lg">Dashboard</a>
               <a href="/dashboard/fleet/trucks" className="hover:text-white px-3 py-2">Fleet</a>
+              <a href="/fleet-manager" className="hover:text-white px-3 py-2">Fleet Manager</a>
               <a href="/dashboard/fleet/drivers" className="hover:text-white px-3 py-2">Drivers</a>
               <a href="/dashboard/fleet/maintenance" className="hover:text-white px-3 py-2">Maintenance</a>
+              <a href="/dashboard/fleet/bids" className="hover:text-white px-3 py-2">Load Board</a>
+              <a href="/dashboard/fleet/smart-bookings" className="hover:text-white px-3 py-2">Smart Bookings</a>
               <a href="/dashboard/fleet/reports" className="hover:text-white px-3 py-2">Reports</a>
             </nav>
           </div>
@@ -484,6 +514,12 @@ const FleetOwnerDashboard: React.FC = () => {
               className="px-4 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg text-sm font-semibold text-white transition-all flex items-center gap-2"
             >
               <FaChartLine className="text-slate-400" /> Fleet Status
+            </button>
+            <button
+              onClick={() => navigate('/dashboard/fleet/smart-bookings')}
+              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-bold shadow-lg shadow-indigo-600/20 transition-all flex items-center gap-2"
+            >
+              <Zap className="w-4 h-4" /> SMART MATCHES
             </button>
             <button
               onClick={() => navigate('/dashboard/fleet/dispatch')}
@@ -647,26 +683,25 @@ const FleetOwnerDashboard: React.FC = () => {
                 <button className="text-xs text-blue-600 hover:text-blue-700">View All</button>
               </div>
               <div className="space-y-3">
-                {[
-                  { name: 'Musa Jibril', rating: 4.7, status: 'On Time', color: 'text-emerald-600', bg: 'bg-emerald-50 border-emerald-200' },
-                  { name: 'Alice W.', rating: 4.8, status: 'Fuel Efficient', color: 'text-orange-600', bg: 'bg-orange-50 border-orange-200' },
-                  { name: 'David K.', rating: 4.5, status: 'Resting', color: 'text-gray-600', bg: 'bg-gray-100 border-gray-200' }
-                ].map((driver, i) => (
+                {topDrivers.length > 0 ? topDrivers.map((driver, i) => (
                   <div key={i} className="flex items-center justify-between p-3 bg-white hover:bg-blue-50 rounded-xl transition-colors cursor-pointer group border border-gray-200 shadow-sm">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center border border-gray-200 group-hover:border-blue-300">
-                        <span className="font-bold text-xs text-gray-500">{driver.name.charAt(0)}</span>
+                        {/* Fallback avatar logic */}
+                        <span className="font-bold text-xs text-gray-500">{(driver.name || driver.firstName || 'D').charAt(0)}</span>
                       </div>
                       <div>
-                        <p className="text-sm font-bold text-gray-900">{driver.name}</p>
-                        <p className="text-xs text-gray-500 flex items-center gap-1"><FaStar className="text-yellow-500 w-3 h-3" /> {driver.rating}/5</p>
+                        <p className="text-sm font-bold text-gray-900">{driver.name || `${driver.firstName} ${driver.lastName}`}</p>
+                        <p className="text-xs text-gray-500 flex items-center gap-1"><FaStar className="text-yellow-500 w-3 h-3" /> {driver.rating?.toFixed(1) || '4.5'}/5</p>
                       </div>
                     </div>
-                    <span className={`text-[10px] font-bold px-2 py-1 rounded border ${driver.bg} ${driver.color}`}>
-                      {driver.status}
+                    <span className={`text-[10px] font-bold px-2 py-1 rounded border ${driver.performanceStatus === 'On Time' ? 'bg-emerald-50 border-emerald-200 text-emerald-600' : 'bg-blue-50 border-blue-200 text-blue-600'}`}>
+                      {driver.performanceStatus || 'Active'}
                     </span>
                   </div>
-                ))}
+                )) : (
+                  <div className="text-center py-4 text-gray-500 text-sm">No driver data available</div>
+                )}
               </div>
             </div>
           </div>
@@ -694,31 +729,48 @@ const FleetOwnerDashboard: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50">
-                  {[1, 2].map((_, i) => (
+                  {trips.length > 0 ? trips.slice(0, 5).map((trip, i) => (
                     <tr key={i} className="group hover:bg-gray-50/50">
                       <td className="py-4">
-                        <span className="text-sm font-bold text-blue-600">DISP-442{i + 1}</span>
+                        <span className="text-sm font-bold text-blue-600">
+                          {trip.tripId || trip.id ? `#${(trip.tripId || trip.id).substring(0, 8)}` : `DISP-${4420 + i}`}
+                        </span>
                       </td>
                       <td className="py-4">
                         <div className="flex items-center gap-3">
                           <div className="p-2 bg-gray-100 rounded-lg text-gray-400"><FaTruck /></div>
                           <div>
-                            <p className="text-sm font-bold text-gray-900">TRK-109</p>
-                            <p className="text-xs text-gray-500">Musa Jibril</p>
+                            <p className="text-sm font-bold text-gray-900">{trip.truck?.plateNumber || trip.truckId || 'Unassigned'}</p>
+                            <p className="text-xs text-gray-500">{trip.driver?.name || trip.driverId || 'No Driver'}</p>
                           </div>
                         </div>
                       </td>
-                      <td className="py-4 text-sm text-gray-600">Naivasha ICD</td>
+                      <td className="py-4 text-sm text-gray-600">{trip.route?.destination || trip.destination || 'N/A'}</td>
                       <td className="py-4">
-                        <span className="text-[10px] font-bold bg-emerald-100 text-emerald-700 px-2 py-1 rounded-full border border-emerald-200">COMPLETED</span>
+                        <span className={`text-[10px] font-bold px-2 py-1 rounded-full border ${['completed', 'delivered'].includes(trip.status?.toLowerCase()) ? 'bg-emerald-100 text-emerald-700 border-emerald-200' :
+                          ['active', 'in_progress', 'started'].includes(trip.status?.toLowerCase()) ? 'bg-blue-100 text-blue-700 border-blue-200' :
+                            'bg-gray-100 text-gray-700 border-gray-200'
+                          }`}>
+                          {trip.status || 'PENDING'}
+                        </span>
                       </td>
                       <td className="py-4 text-right">
                         <div className="flex items-center justify-end gap-1 text-sm font-medium text-gray-900">
-                          <FaStar className="text-yellow-400" /> 5.0
+                          {['completed', 'delivered'].includes(trip.status?.toLowerCase()) ? (
+                            <><FaStar className="text-yellow-400" /> 5.0</>
+                          ) : (
+                            <span className="text-gray-400 text-xs">In Progress</span>
+                          )}
                         </div>
                       </td>
                     </tr>
-                  ))}
+                  )) : (
+                    <tr>
+                      <td colSpan={5} className="py-8 text-center text-gray-500 text-sm">
+                        No recent trips found.
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
@@ -731,21 +783,71 @@ const FleetOwnerDashboard: React.FC = () => {
               <h3 className="text-lg font-bold text-gray-900">Maintenance Alerts</h3>
             </div>
 
-            <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-start gap-4 mb-4">
-              <div className="p-2 bg-white rounded-full text-red-500 shadow-sm"><AlertTriangle className="w-5 h-5" /></div>
-              <div>
-                <h4 className="text-sm font-bold text-red-700">TRK-004: Critical Coverage</h4>
-                <p className="text-xs text-red-600 mt-1">Brake wear limit exceeded on rear axle. Immediate service required.</p>
-                <button className="mt-3 text-xs font-bold text-red-700 underline decoration-red-300 hover:decoration-red-700">BOOK SERVICE</button>
+            {maintenanceAlerts.length > 0 ? maintenanceAlerts.map((alert, i) => (
+              <div key={i} className={`rounded-xl p-4 flex items-start gap-4 mb-4 ${alert.type === 'Critical' ? 'bg-red-50 border border-red-200' : 'bg-orange-50 border border-orange-200'}`}>
+                <div className={`p-2 bg-white rounded-full shadow-sm ${alert.type === 'Critical' ? 'text-red-500' : 'text-orange-500'}`}>
+                  {alert.type === 'Critical' ? <AlertTriangle className="w-5 h-5" /> : <Clock className="w-5 h-5" />}
+                </div>
+                <div>
+                  <h4 className={`text-sm font-bold ${alert.type === 'Critical' ? 'text-red-700' : 'text-orange-700'}`}>
+                    {alert.plateNumber}: {alert.type}
+                  </h4>
+                  <p className={`text-xs mt-1 ${alert.type === 'Critical' ? 'text-red-600' : 'text-orange-600'}`}>{alert.message}</p>
+                  {alert.type === 'Critical' && (
+                    <button className="mt-3 text-xs font-bold text-red-700 underline decoration-red-300 hover:decoration-red-700">BOOK SERVICE</button>
+                  )}
+                </div>
               </div>
-            </div>
-            <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 flex items-start gap-4">
-              <div className="p-2 bg-white rounded-full text-orange-500 shadow-sm"><Clock className="w-5 h-5" /></div>
-              <div>
-                <h4 className="text-sm font-bold text-orange-700">TRK-102: Scheduled Service</h4>
-                <p className="text-xs text-orange-600 mt-1">Due for routine oil change in 400km.</p>
+            )) : (
+              <div className="text-center py-6 text-gray-500 text-sm">
+                <CheckCircle className="w-8 h-8 mx-auto text-emerald-500 mb-2" />
+                No maintenance alerts. Fleet is healthy!
               </div>
+            )}
+          </div>
+
+          <div className="bg-white rounded-2xl shadow-sm p-6 border border-gray-200 mt-6">
+            <div className="flex items-center gap-2 mb-6">
+              <div className="p-2 bg-purple-100 rounded-lg text-purple-600">
+                <FaClipboardCheck className="w-5 h-5" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-900">Recent Inspections</h3>
             </div>
+
+            {recentInspections.length > 0 ? (
+              <div className="space-y-4">
+                {recentInspections.map((inspection, i) => (
+                  <div key={i} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-100">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-2 h-10 rounded-full ${inspection.status === 'PASSED' ? 'bg-emerald-500' :
+                        inspection.status === 'FAILED' ? 'bg-red-500' : 'bg-amber-500'
+                        }`}></div>
+                      <div>
+                        <p className="text-sm font-bold text-gray-900">
+                          {inspection.truckPlate || inspection.truck?.plateNumber || inspection.truckId}
+                        </p>
+                        <p className="text-xs text-gray-500">{inspection.inspector || inspection.inspectorName || 'Unknown Inspector'}</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <span className={`text-[10px] font-bold px-2 py-1 rounded border ${inspection.status === 'PASSED' ? 'bg-emerald-50 text-emerald-600 border-emerald-200' :
+                        inspection.status === 'FAILED' ? 'bg-red-50 text-red-600 border-red-200' : 'bg-amber-50 text-amber-600 border-amber-200'
+                        }`}>
+                        {inspection.status}
+                      </span>
+                      <p className="text-[10px] text-gray-400 mt-1">
+                        {new Date(inspection.inspectionDate || inspection.date).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-6 text-gray-500 text-sm">
+                <FaClipboardCheck className="w-8 h-8 mx-auto text-gray-300 mb-2" />
+                No recent inspections found.
+              </div>
+            )}
           </div>
 
         </div>

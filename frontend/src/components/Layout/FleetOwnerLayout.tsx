@@ -58,13 +58,17 @@ const FleetOwnerLayout: React.FC = () => {
 
   if (isLoading || !user) return null;
 
-  // Check if we're on the index dashboard route
-  const isDashboardIndex = location.pathname === '/dashboard/fleet' || 
-                           location.pathname === '/dashboard/fleet/';
+  // Check if we're on a route that manages its own layout (like dashboard index or load board)
+  const isSelfAndLayout = location.pathname === '/dashboard/fleet' ||
+    location.pathname === '/dashboard/fleet/' ||
+    location.pathname === '/dashboard/fleet/' ||
+    location.pathname === '/dashboard/fleet/bids' ||
+    location.pathname === '/dashboard/fleet/smart-bookings' ||
+    location.pathname === '/dashboard/fleet/maintenance';
 
   return (
     <>
-      {isDashboardIndex ? (
+      {isSelfAndLayout ? (
         // Dashboard index route has its own layout with welcome section (includes header/footer)
         <div className="min-h-screen bg-gray-50 flex flex-col">
           <main className="flex-1 relative z-0">
@@ -103,4 +107,3 @@ const FleetOwnerLayout: React.FC = () => {
 };
 
 export default FleetOwnerLayout;
- 

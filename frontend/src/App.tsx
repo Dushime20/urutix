@@ -17,6 +17,10 @@ const DriverDashboard = lazy(() => import('./components/DriverDashboard/DriverDa
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
 const Analytics = lazy(() => import('./pages/Analytics'));
 const FleetAnalytics = lazy(() => import('./pages/FleetAnalytics'));
+const SmartBookingsPage = lazy(() => import('./pages/SmartBookingsPage'));
+const NewFleetManager = lazy(() => import('./pages/NewFleetManager'));
+const DispatchPage = lazy(() => import('./pages/DispatchPage'));
+const MaintenancePage = lazy(() => import('./pages/MaintenancePage'));
 
 // Keep essential components that are needed immediately (layouts, auth, home)
 import CargoOwnerLayout from './components/Layout/CargoOwnerLayout';
@@ -162,6 +166,12 @@ function App() {
             <Suspense fallback={<PageLoadingFallback />}>
               <Routes>
                 <Route path="/" element={<Home />} />
+                <Route path="/fleet-manager" element={<NewFleetManager />} />
+                <Route path="/dispatch" element={<DispatchPage />} />
+                <Route path="/dispatch" element={<DispatchPage />} />
+                <Route path="/dashboard/fleet/dispatch" element={<DispatchPage />} />
+                <Route path="/dashboard/fleet/reports" element={<FleetAnalytics />} />
+                <Route path="/dashboard/fleet/smart-bookings" element={<SmartBookingsPage />} />
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/driver/setup-password" element={<DriverPasswordSetup />} />
                 <Route path="/tenant/setup-password" element={<TenantPasswordSetup />} />
@@ -275,7 +285,7 @@ function App() {
                 {/* Fleet Dashboard Routes (under dashboard path) */}
                 <Route path="/dashboard/fleet" element={<FleetOwnerLayout />}>
                   <Route index element={<FleetOwnerDashboard />} />
-                  <Route path="analytics" element={<FleetAnalytics />} />
+                  <Route index element={<FleetOwnerDashboard />} />
                   <Route path="trucks" element={<UnifiedFleetManagement />} />
                   <Route path="trucks/create" element={<UnifiedFleetManagement />} />
                   <Route path="trucks/:truckId/records" element={<TruckRecordsPage />} />
@@ -284,11 +294,9 @@ function App() {
                   <Route path="drivers" element={<UnifiedDriverManagement />} />
                   <Route path="drivers/create" element={<UnifiedDriverManagement />} />
                   <Route path="assignments" element={<UnifiedDriverManagement />} />
-                  <Route path="maintenance" element={<FleetDashboard />} />
+                  <Route path="maintenance" element={<MaintenancePage />} />
                   <Route path="payments" element={<FleetPaymentManagement />} />
-                  <Route path="revenue" element={<FleetAnalytics />} />
-                  <Route path="reports" element={<FleetAnalytics />} />
-                  <Route path="history" element={<FleetAnalytics />} />
+                  <Route path="payments" element={<FleetPaymentManagement />} />
                   <Route path="routes" element={<RoutesPage />} />
                   <Route path="tenant-dashboard" element={<TenantDashboardPage />} />
                   <Route path="profile" element={<FleetDashboard />} />

@@ -1,9 +1,11 @@
 import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import { biddingAPI, biddingHelpers } from '../services/biddingApi';
 import { fleetApi } from '../services/fleetApi';
-import { FaSearch, FaGavel, FaDollarSign, FaClock, FaPlus, FaStar, FaRegStar, FaMapMarkerAlt, FaTimes } from 'react-icons/fa';
-import { Grid, Table } from 'lucide-react';
+import { FaSearch, FaGavel, FaDollarSign, FaClock, FaPlus, FaStar, FaRegStar, FaMapMarkerAlt, FaTimes, FaTruck, FaChartLine, FaCheckCircle, FaBolt, FaUser, FaRoute, FaFilter, FaArrowRight } from 'react-icons/fa';
+import { Grid, Table, AlertTriangle, Clock, MapPin, Search, Bell, Menu, X, Filter, Download, Calendar, ArrowUpRight, ArrowDownRight, MoreVertical, Shield, Zap, Settings, LogOut, CheckCircle, Droplets, Fuel, ChevronDown } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 
 const TruckBidsPage: React.FC = () => {
 	const [auctions, setAuctions] = useState<any[]>([]);
@@ -32,6 +34,36 @@ const TruckBidsPage: React.FC = () => {
 	const [watchedIds, setWatchedIds] = useState<Set<string>>(new Set());
 	const [showWatchedOnly, setShowWatchedOnly] = useState(false);
 	const [view, setView] = useState<'cards' | 'table'>('cards');
+
+	// Header/Navigation State
+	const navigate = useNavigate();
+	const { user, logout } = useAuth();
+	const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+	const [showUserMenu, setShowUserMenu] = useState(false);
+	const userMenuRef = React.useRef<HTMLDivElement>(null);
+
+	// Close user menu when clicking outside
+	useEffect(() => {
+		function handleClickOutside(event: MouseEvent) {
+			if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
+				setShowUserMenu(false);
+			}
+		}
+		document.addEventListener("mousedown", handleClickOutside);
+		return () => {
+			document.removeEventListener("mousedown", handleClickOutside);
+		};
+	}, [userMenuRef]);
+
+	const handleLogout = async () => {
+		try {
+			await logout();
+			navigate('/auth');
+		} catch (error) {
+			console.error('Logout error:', error);
+			navigate('/auth');
+		}
+	};
 
 	// Helper function to get location name from load locations array
 	const getLocationName = (load: any, type: 'PICKUP' | 'DELIVERY'): string => {
@@ -514,614 +546,888 @@ const TruckBidsPage: React.FC = () => {
 		}
 	};
 
-	return (
-		<div className="p-4 md:p-6">
-			<div className="flex items-center justify-between mb-4">
-				<div>
-					<h2 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
-						<FaGavel className="text-primary-600" /> Available Auctions
-					</h2>
-					<p className="text-sm text-gray-600 mt-1">
-						Browse and bid on cargo shipments from all cargo owners
-					</p>
-				</div>
-				<div className="flex items-center gap-2">
-					{/* View Mode Toggle */}
-					<div className="flex items-center gap-2 bg-white border border-gray-200 rounded-lg p-1">
-						<button
-							onClick={() => setView('cards')}
-							className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${view === 'cards'
-								? 'bg-gray-900 text-white'
-								: 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-								}`}
-						>
-							<Grid className="w-3.5 h-3.5" />
-							<span className="hidden sm:inline">Cards</span>
-						</button>
-						<button
-							onClick={() => setView('table')}
-							className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${view === 'table'
-								? 'bg-gray-900 text-white'
-								: 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-								}`}
-						>
-							<Table className="w-3.5 h-3.5" />
-							<span className="hidden sm:inline">Table</span>
-						</button>
+	// --- UI COMPONENTS (Copied from FleetOwnerDashboard) ---
+
+	const Header = () => (
+		<>
+			{/* Marquee Alert Bar */}
+			<div className="bg-[#0a101f] text-white py-2 overflow-hidden border-b border-white/5">
+				<div className="flex items-center animate-marquee whitespace-nowrap">
+					<div className="flex gap-16 items-center text-[11px] font-bold tracking-widest uppercase opacity-80">
+						<span className="flex items-center gap-2 text-emerald-400">
+							<CheckCircle size={14} /> Fleet Health: All vehicles fully operational
+						</span>
+						<span className="flex items-center gap-2">
+							<Droplets size={14} className="text-blue-400" /> Weather Update: Heavy Rain Expected (Nairobi-Mombasa)
+						</span>
+						<span className="flex items-center gap-2 text-green-400">
+							<CheckCircle size={14} /> Border Status: Busia & Malaba operating normally
+						</span>
+						<span className="flex items-center gap-2 text-amber-400">
+							<Fuel size={14} /> Fuel Price: Diesel KES 210.00 (+2% effective Jan 15th)
+						</span>
 					</div>
-					<button onClick={() => setShowWatchedOnly((v) => !v)} className={`inline-flex items-center gap-2 px-3 py-2 rounded text-xs sm:text-sm ${showWatchedOnly ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}>
-						{showWatchedOnly ? <FaStar /> : <FaRegStar />} {showWatchedOnly ? 'Watched' : 'Show Watched'}
-					</button>
-					<button onClick={seedAuctions} className="hidden sm:inline-flex items-center gap-2 px-3 py-2 rounded bg-yellow-100 hover:bg-yellow-200 text-yellow-700 text-xs sm:text-sm"><FaPlus /> Seed Samples</button>
 				</div>
 			</div>
 
-			<div className="bg-white border border-gray-200 rounded-lg p-4 mb-4">
-				<div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-					<div className="relative">
-						<FaSearch className="absolute left-3 top-3 text-gray-400" />
-						<input value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} placeholder="Search load, origin, destination..." className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
-					</div>
-					<select value={status} onChange={(e) => { setStatus(e.target.value); setPage(1); }} className="w-full px-3 py-2 border border-gray-300 rounded-lg">
-						<option value="all">All Statuses</option>
-						<option value="ACTIVE">Active</option>
-						<option value="SCHEDULED">Scheduled</option>
-						<option value="CLOSED">Closed</option>
-					</select>
-					<div className="flex items-center text-sm text-gray-600">Total: {filtered.length}</div>
-				</div>
-			</div>
+			{/* Header Section - Dark Theme */}
+			<div className="bg-[#0f172a] text-white">
+				<header className="max-w-[1920px] mx-auto flex items-center justify-between px-4 md:px-8 lg:px-12 xl:px-20 py-5 border-b border-white/10">
+					<div className="flex items-center gap-4 md:gap-10">
+						{/* Mobile Menu Toggle */}
+						<button
+							className="lg:hidden p-2 -ml-2 text-gray-400 hover:text-white"
+							onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+						>
+							{isMobileMenuOpen ? <X size={24} /> : (
+								<svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+									<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+								</svg>
+							)}
+						</button>
 
-			{view === 'cards' ? (
-				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-					{loading ? (
-						<div className="col-span-full text-center py-8 text-gray-500">Loading...</div>
-					) : filtered.length === 0 ? (
-						<div className="col-span-full text-center py-8 text-gray-500">No auctions found</div>
-					) : (
-						filtered.map((a) => {
-							if (!a) return null;
-
-							// Debug logging for each auction (only log first few to avoid spam)
-							if (filtered.indexOf(a) < 2) {
-								console.log(`🔍 Auction ${filtered.indexOf(a)}:`, {
-									id: a.id,
-									hasLoad: !!a.load,
-									loadTitle: a?.load?.title,
-									hasCargoOwner: !!a?.load?.cargoOwner,
-									cargoOwnerName: getCargoOwnerName(a?.load),
-									hasLocations: !!a?.load?.locations,
-									locationsCount: a?.load?.locations?.length,
-								});
-							}
-
-							const cargoOwnerName = getCargoOwnerName(a?.load);
-							const pickupLocation = getLocationName(a?.load, 'PICKUP');
-							const deliveryLocation = getLocationName(a?.load, 'DELIVERY');
-
-							return (
-								<div key={a.id} className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-									<div className="flex items-start justify-between">
-										<div className="flex-1 min-w-0">
-											<div className="font-semibold text-gray-900 truncate">{a?.load?.title || 'Untitled Load'}</div>
-											{cargoOwnerName ? (
-												<div className="text-xs text-gray-500 mt-0.5">
-													Owner: {cargoOwnerName}
-												</div>
-											) : (
-												<div className="text-xs text-gray-400 mt-0.5 italic">Owner: Not available</div>
-											)}
-											<div className="text-sm text-gray-600 mt-1.5 flex items-center gap-1">
-												<FaMapMarkerAlt className="text-gray-400 text-xs flex-shrink-0" />
-												<span className="truncate">{pickupLocation} → {deliveryLocation}</span>
-											</div>
-										</div>
-										<div className="flex items-center gap-2">
-											<button onClick={() => toggleWatch(a)} className="text-yellow-500 hover:text-yellow-600" title={watchedIds.has(a.id) ? 'Unwatch' : 'Watch'}>
-												{watchedIds.has(a.id) ? <FaStar /> : <FaRegStar />}
-											</button>
-											<span className={`px-2 py-1 rounded-full text-xs font-medium bg-${biddingHelpers.getStatusColor(a.status)}-100 text-${biddingHelpers.getStatusColor(a.status)}-700`}>{a.status}</span>
-										</div>
-									</div>
-									<div className="mt-3 grid grid-cols-2 gap-3 text-sm">
-										<div className="flex items-center gap-2 text-gray-700">
-											<FaDollarSign className="text-gray-400" />
-											<span>Current: {a.currentBid ? biddingHelpers.formatCurrency(a.currentBid) : '—'}</span>
-										</div>
-										<div className="flex items-center gap-2 text-gray-700">
-											<FaClock className="text-gray-400" />
-											<span>Ends in: {a.auctionEnd ? biddingHelpers.getTimeRemaining(a.auctionEnd) : '—'}</span>
-										</div>
-									</div>
-									<div className="mt-4 flex items-center justify-between">
-										<button onClick={() => openQuickBidModal(a)} className="px-3 py-2 rounded bg-primary-600 text-white hover:bg-primary-700 inline-flex items-center gap-2"><FaPlus /> Quick Bid</button>
-										<button onClick={() => openBidModal(a)} className="px-3 py-2 rounded bg-blue-100 text-blue-700 hover:bg-blue-200 inline-flex items-center gap-2">Custom Bid</button>
-									</div>
-								</div>
-							);
-						})
-					)}
-				</div>
-			) : (
-				<div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-					<div className="overflow-x-auto">
-						<table className="min-w-full divide-y divide-gray-200">
-							<thead className="bg-gray-50">
-								<tr>
-									<th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Watch</th>
-									<th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Auction</th>
-									<th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Route</th>
-									<th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-									<th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Current</th>
-									<th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ends In</th>
-									<th className="px-4 py-3" />
-								</tr>
-							</thead>
-							<tbody className="bg-white divide-y divide-gray-200">
-								{loading ? (
-									<tr><td className="px-4 py-6 text-center text-gray-500" colSpan={7}>Loading...</td></tr>
-								) : filtered.length === 0 ? (
-									<tr><td className="px-4 py-6 text-center text-gray-500" colSpan={7}>No auctions found</td></tr>
-								) : (
-									filtered.map((a) => (
-										<tr key={a.id}>
-											<td className="px-4 py-3">
-												<button onClick={() => toggleWatch(a)} className="text-yellow-500 hover:text-yellow-600" title={watchedIds.has(a.id) ? 'Unwatch' : 'Watch'}>
-													{watchedIds.has(a.id) ? <FaStar /> : <FaRegStar />}
-												</button>
-											</td>
-											<td className="px-4 py-3">
-												<div className="font-medium text-gray-900">{a?.load?.title || 'Untitled Load'}</div>
-												{getCargoOwnerName(a?.load) && (
-													<div className="text-xs text-gray-500 mt-0.5">
-														Owner: {getCargoOwnerName(a?.load)}
-													</div>
-												)}
-											</td>
-											<td className="px-4 py-3 text-gray-700">
-												{getLocationName(a?.load, 'PICKUP')} → {getLocationName(a?.load, 'DELIVERY')}
-											</td>
-											<td className="px-4 py-3">
-												<span className={`px-2 py-1 rounded-full text-xs font-medium bg-${biddingHelpers.getStatusColor(a.status)}-100 text-${biddingHelpers.getStatusColor(a.status)}-700`}>{a.status}</span>
-											</td>
-											<td className="px-4 py-3 text-gray-700">{a.currentBid ? biddingHelpers.formatCurrency(a.currentBid) : '—'}</td>
-											<td className="px-4 py-3 text-gray-700">
-												<div className="flex items-center gap-1">
-													<FaClock className="text-gray-400 text-xs" />
-													<span>{a.auctionEnd ? biddingHelpers.getTimeRemaining(a.auctionEnd) : '—'}</span>
-												</div>
-											</td>
-											<td className="px-4 py-3 text-right">
-												<div className="inline-flex items-center gap-2">
-													<button onClick={() => openQuickBidModal(a)} className="px-3 py-1 rounded bg-primary-600 text-white hover:bg-primary-700 text-sm">Quick Bid</button>
-													<button onClick={() => openBidModal(a)} className="px-3 py-1 rounded bg-blue-100 text-blue-700 hover:bg-blue-200 text-sm">Custom Bid</button>
-												</div>
-											</td>
-										</tr>
-									))
-								)}
-							</tbody>
-						</table>
-					</div>
-				</div>
-			)}
-
-			{/* Quick Bid Modal */}
-			{showQuickBidModal && selectedAuction && (
-				<div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-					<div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
-						<div className="p-6 border-b">
-							<div className="text-lg font-semibold text-gray-900">Quick Bid</div>
-							<div className="text-sm text-gray-600 mt-1">
-								{selectedAuction?.load?.title || 'Untitled Load'}
+						{/* Logo */}
+						<div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate('/dashboard/fleet')}>
+							<div className="size-10 bg-gradient-to-br from-blue-500 to-indigo-700 flex items-center justify-center rounded-xl shadow-lg shadow-blue-500/20">
+								<FaTruck className="size-5 text-white" />
 							</div>
-							{selectedAuction?.load?.cargoOwner && (
-								<div className="text-xs text-gray-500 mt-1">
-									Cargo Owner: {selectedAuction?.load?.cargoOwner?.profile?.firstName || selectedAuction?.load?.cargoOwner?.firstName || ''} {selectedAuction?.load?.cargoOwner?.profile?.lastName || selectedAuction?.load?.cargoOwner?.lastName || ''}
+							<h2 className="text-xl md:text-2xl font-black tracking-tighter text-white">UrutiX<span className="text-blue-400">.</span></h2>
+						</div>
+
+						{/* Desktop Navigation */}
+						<nav className="hidden lg:flex items-center gap-10">
+							<a className="text-white/60 hover:text-white text-sm font-semibold transition-all" href="/dashboard/fleet">Dashboard</a>
+							<a className="text-white/60 hover:text-white text-sm font-semibold transition-all" href="/fleet-manager">Fleet Assets</a>
+							<a className="text-white/60 hover:text-white text-sm font-semibold transition-all" href="/dashboard/fleet/drivers">Drivers</a>
+							<a className="text-white/60 hover:text-white text-sm font-semibold transition-all" href="/dashboard/fleet/maintenance">Maintenance</a>
+							<a className="text-white text-sm font-bold relative after:content-[''] after:absolute after:bottom-[-4px] after:left-0 after:w-full after:h-0.5 after:bg-blue-500" href="/dashboard/fleet/bids">Load Board</a>
+							<a className="text-white/60 hover:text-white text-sm font-semibold transition-all" href="/dashboard/fleet/reports">Reports</a>
+						</nav>
+
+						{/* Search Bar */}
+						<div className="hidden xl:flex items-center relative ml-8 group">
+							<Search className="absolute left-3 text-white/40 group-focus-within:text-blue-500 transition-colors" size={16} />
+							<input
+								type="text"
+								placeholder="Search loads, lanes, rates..."
+								className="bg-white/5 border border-white/10 rounded-full py-2 pl-10 pr-12 text-sm text-white focus:outline-none focus:border-blue-500/50 w-64 transition-all"
+							/>
+							<span className="absolute right-3 text-[10px] font-bold text-white/20 border border-white/10 rounded px-1.5 py-0.5">⌘K</span>
+						</div>
+					</div>
+
+					<div className="flex items-center gap-4 md:gap-6">
+						{/* Fleet Status Badge */}
+						<div className="hidden 2xl:flex items-center gap-2 px-4 py-1.5 bg-white/5 border border-white/10 rounded-full">
+							<span className="text-blue-400">⚡</span>
+							<span className="text-[10px] font-bold text-white/80 uppercase tracking-wider">Live Market</span>
+						</div>
+
+						{/* Quick Actions Button */}
+						<button
+							onClick={() => navigate('/dashboard/fleet/dispatch')}
+							className="hidden md:flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold rounded-lg shadow-lg shadow-blue-600/20 transition-all"
+						>
+							<Zap size={16} /> Dispatch
+						</button>
+
+						{/* Notification Bell */}
+						<button className="p-2 text-white/60 hover:text-white transition-all relative">
+							<Bell size={24} />
+							<span className="absolute top-2 right-2 size-2 bg-blue-500 rounded-full border-2 border-[#0f172a]"></span>
+						</button>
+
+						{/* User Profile with Dropdown */}
+						<div className="relative" ref={userMenuRef}>
+							<button
+								onClick={() => setShowUserMenu(!showUserMenu)}
+								className="flex items-center gap-3 pl-4 md:pl-6 border-l border-white/10 hover:opacity-80 transition-opacity cursor-pointer"
+							>
+								<div className="text-right hidden sm:block">
+									<p className="text-sm font-bold">{user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : user?.email || 'Fleet Manager'}</p>
+									<p className="text-[9px] font-bold text-blue-400 uppercase tracking-widest">Fleet Owner</p>
+								</div>
+								<div className="size-10 rounded-full bg-gradient-to-br from-blue-400 to-indigo-600 border-2 border-white/20 shadow-inner overflow-hidden">
+									<img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.email || 'Fleet'}`} alt="User" className="size-full" />
+								</div>
+							</button>
+
+							{/* Dropdown Menu */}
+							{showUserMenu && (
+								<div className="absolute top-full right-0 mt-2 w-56 bg-[#1e293b] rounded-lg shadow-2xl border border-white/10 z-[9999] overflow-hidden">
+									<div className="p-2">
+										<div className="px-3 py-2 border-b border-white/10">
+											<div className="text-sm font-semibold text-white">
+												{user?.firstName && user?.lastName
+													? `${user.firstName} ${user.lastName}`
+													: user?.firstName || user?.email || 'User'
+												}
+											</div>
+											<div className="text-xs text-gray-400 truncate">{user?.email}</div>
+										</div>
+										<button
+											onClick={() => {
+												setShowUserMenu(false);
+												navigate('/dashboard/fleet/settings');
+											}}
+											className="w-full text-left px-3 py-2 text-sm text-white hover:bg-white/10 rounded-md transition-colors flex items-center gap-2 mt-1"
+										>
+											<Settings size={16} />
+											Profile Settings
+										</button>
+										<div className="border-t border-white/10 my-1"></div>
+										<button
+											onClick={handleLogout}
+											className="w-full text-left px-3 py-2 text-sm text-red-400 hover:bg-red-500/10 rounded-md transition-colors flex items-center gap-2"
+										>
+											<LogOut size={16} />
+											Logout
+										</button>
+									</div>
 								</div>
 							)}
 						</div>
-						<div className="p-6 space-y-4">
-							<div>
-								<label className="block text-sm font-medium text-gray-700 mb-1">Bid Amount (USD) *</label>
-								<input
-									type="number"
-									min="0.01"
-									step="0.01"
-									value={quickBidAmount}
-									onChange={(e) => setQuickBidAmount(e.target.value)}
-									className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-									placeholder="Enter bid amount"
-									autoFocus
-								/>
-								<div className="text-xs text-gray-500 mt-1">
-									{selectedAuction.currentBid ? (
-										<>Current: {biddingHelpers.formatCurrency(selectedAuction.currentBid)} • Min increment: {selectedAuction.minimumBidIncrement || 0}</>
-									) : (
-										<>Reserve price: {selectedAuction.reservePrice ? biddingHelpers.formatCurrency(selectedAuction.reservePrice) : 'Not set'}</>
-									)}
-								</div>
-							</div>
-							<div>
-								<label className="flex items-center gap-2 mb-2">
-									<input
-										type="checkbox"
-										checked={quickRequireAdvancePayment}
-										onChange={(e) => {
-											setQuickRequireAdvancePayment(e.target.checked);
-											if (!e.target.checked) {
-												setQuickAdvancePaymentPercentage(''); // Clear percentage if not required
-											}
-										}}
-										className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
-									/>
-									<span className="text-sm font-medium text-gray-700">
-										Require advance payment before trip starts
-									</span>
-								</label>
-								{quickRequireAdvancePayment && (
-									<div className="mt-2">
-										<label className="block text-sm font-medium text-gray-700 mb-1">
-											Advance Payment Percentage (Optional)
-										</label>
-										<input
-											type="number"
-											min="0"
-											max="100"
-											step="0.1"
-											value={quickAdvancePaymentPercentage}
-											onChange={(e) => setQuickAdvancePaymentPercentage(e.target.value)}
-											className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-											placeholder="e.g., 70 (for 70% advance payment)"
-										/>
-										<div className="text-xs text-gray-500 mt-1">
-											Percentage of transportation fee to be paid before trip starts (0-100). Leave empty to use system default.
-										</div>
-									</div>
-								)}
-								{!quickRequireAdvancePayment && (
-									<div className="text-xs text-gray-500 mt-1">
-										Trip can start without advance payment. Payment will be processed after trip completion.
-									</div>
-								)}
-							</div>
+					</div>
+				</header>
 
-							{/* Delivery Schedule Section - Required */}
-							<div className="bg-gradient-to-r from-green-50 to-blue-50 p-4 rounded-lg border-2 border-primary-200">
-								<div className="flex items-center gap-2 mb-3">
-									<FaClock className="text-primary-600" />
-									<h4 className="text-sm font-semibold text-gray-900">Schedule Delivery</h4>
-								</div>
-								<div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-									<div>
-										<label className="block text-xs font-semibold text-gray-900 mb-1.5">
-											Pickup Date & Time <span className="text-red-500">*</span>
-										</label>
-										<input
-											type="datetime-local"
-											value={proposedPickupDate}
-											onChange={(e) => setProposedPickupDate(e.target.value)}
-											required
-											className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white text-sm"
-										/>
-									</div>
-									<div>
-										<label className="block text-xs font-semibold text-gray-900 mb-1.5">
-											Delivery Date & Time <span className="text-red-500">*</span>
-										</label>
-										<input
-											type="datetime-local"
-											value={proposedDeliveryDate}
-											onChange={(e) => setProposedDeliveryDate(e.target.value)}
-											required
-											min={proposedPickupDate || undefined}
-											className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white text-sm"
-										/>
-									</div>
-								</div>
+				{/* Mobile Nav Menu */}
+				{isMobileMenuOpen && (
+					<div className="lg:hidden absolute top-[120px] left-0 right-0 bg-[#0f172a] border-b border-white/10 p-4 z-50 shadow-xl">
+						<nav className="flex flex-col space-y-3 text-sm font-semibold text-gray-400">
+							<a href="/dashboard/fleet" className="hover:text-white px-3 py-2">Dashboard</a>
+							<a href="/fleet-manager" className="hover:text-white px-3 py-2">Fleet Manager</a>
+							<a href="/dashboard/fleet/drivers" className="hover:text-white px-3 py-2">Drivers</a>
+							<a href="/dashboard/fleet/maintenance" className="hover:text-white px-3 py-2">Maintenance</a>
+							<a href="/dashboard/fleet/bids" className="text-white px-3 py-2 bg-white/5 rounded-lg">Load Board</a>
+							<a href="/dashboard/fleet/reports" className="hover:text-white px-3 py-2">Reports</a>
+						</nav>
+					</div>
+				)}
+			</div>
+		</>
+	);
+
+	const Footer = () => (
+		<footer className="bg-[#0a101f] text-white pt-16 md:pt-20 pb-8 md:pb-10 border-t border-white/5 mt-auto">
+			<div className="max-w-[1536px] mx-auto px-4 md:px-8 lg:px-12 xl:px-20">
+				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-8 md:gap-12 mb-12 md:mb-16">
+					<div className="lg:col-span-4">
+						<div className="flex items-center gap-3 mb-6">
+							<div className="size-10 bg-gradient-to-br from-blue-500 to-indigo-700 flex items-center justify-center rounded-xl shadow-lg shadow-blue-500/20">
+								<FaTruck className="size-5 text-white" />
 							</div>
+							<h2 className="text-2xl font-black tracking-tighter text-white">UrutiX<span className="text-blue-400">.</span></h2>
 						</div>
-						<div className="p-6 border-t flex items-center justify-end gap-2">
+						<p className="text-slate-400 text-sm leading-relaxed mb-8 max-w-sm">
+							UrutiX Fleet Command is Africa's premier fleet management and logistics platform, empowering fleet owners to optimize operations and maximize profitability.
+						</p>
+					</div>
+					<div className="lg:col-span-2">
+						<h4 className="text-sm font-black uppercase tracking-widest text-white mb-4 md:mb-6">Fleet</h4>
+						<ul className="space-y-3 md:space-y-4">
+							<li><a className="text-slate-400 text-sm hover:text-blue-400 transition-colors" href="/dashboard/fleet/trucks">Manage Fleet</a></li>
+							<li><a className="text-slate-400 text-sm hover:text-blue-400 transition-colors" href="/dashboard/fleet/bids">Load Board</a></li>
+						</ul>
+					</div>
+				</div>
+				<div className="pt-6 md:pt-8 border-t border-white/5 flex flex-col lg:flex-row items-center justify-between gap-6 md:gap-8">
+					<p className="text-slate-500 text-xs font-bold uppercase tracking-widest text-center md:text-left">
+						© 2026 UrutiX Technologies Inc. All Rights Reserved.
+					</p>
+				</div>
+			</div>
+		</footer>
+	);
+
+	return (
+		<div className="min-h-screen bg-gray-50 text-gray-900 font-sans selection:bg-blue-500/30 flex flex-col">
+			<Header />
+
+			{/* Page Header */}
+			<div className="bg-white border-b border-gray-200 shadow-sm relative z-10">
+				<div className="max-w-[1536px] mx-auto px-4 md:px-8 lg:px-12 xl:px-20 py-6">
+					<div className="flex items-center justify-between">
+						<div>
+							<h1 className="text-2xl font-black tracking-tight text-gray-900">Load Board</h1>
+							<p className="text-gray-500 text-sm mt-0.5">Real-time marketplace for active shipments</p>
+						</div>
+						<button onClick={seedAuctions} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-900 text-white text-sm font-bold shadow-md hover:bg-black transition-all">
+							<FaPlus size={12} /> Seed Data
+						</button>
+					</div>
+				</div>
+			</div>
+
+			<main className="flex-1 px-4 md:px-8 lg:px-12 xl:px-20 py-8 max-w-[1536px] mx-auto w-full relative z-0">
+
+				{/* Control Bar */}
+				<div className="bg-white border border-gray-200 rounded-xl p-2 mb-6 shadow-sm flex flex-col md:flex-row items-center justify-between gap-3">
+					<div className="flex items-center gap-2 w-full md:w-auto overflow-x-auto pb-2 md:pb-0 no-scrollbar">
+						<button
+							onClick={() => { setStatus('all'); setPage(1); }}
+							className={`px-4 py-2 rounded-lg text-sm font-bold whitespace-nowrap transition-all ${status === 'all' ? 'bg-[#0f172a] text-white shadow-md' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'}`}
+						>
+							All Loads
+						</button>
+						<button
+							onClick={() => { setStatus('ACTIVE'); setPage(1); }}
+							className={`px-4 py-2 rounded-lg text-sm font-bold whitespace-nowrap transition-all flex items-center gap-2 ${status === 'ACTIVE' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'}`}
+						>
+							<Zap size={14} className={status === 'ACTIVE' ? 'text-yellow-300' : ''} /> Live Auctions
+						</button>
+						<button
+							onClick={() => { setStatus('SCHEDULED'); setPage(1); }}
+							className={`px-4 py-2 rounded-lg text-sm font-bold whitespace-nowrap transition-all ${status === 'SCHEDULED' ? 'bg-gray-100 text-gray-900 border border-gray-200' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'}`}
+						>
+							Scheduled
+						</button>
+						<button
+							onClick={() => { setShowWatchedOnly(!showWatchedOnly); }}
+							className={`px-4 py-2 rounded-lg text-sm font-bold whitespace-nowrap transition-all flex items-center gap-2 ${showWatchedOnly ? 'bg-yellow-50 text-yellow-700 border border-yellow-200' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'}`}
+						>
+							<FaStar className={showWatchedOnly ? 'text-yellow-500' : 'text-gray-400'} size={14} /> Watchlist
+						</button>
+					</div>
+
+					<div className="flex items-center gap-2 w-full md:w-auto">
+						<div className="relative flex-1 md:w-64">
+							<Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+							<input
+								value={search}
+								onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+								placeholder="Search routes, IDs..."
+								className="w-full pl-9 pr-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all"
+							/>
+						</div>
+						<div className="flex items-center gap-1 bg-gray-100 p-1 rounded-lg border border-gray-200">
 							<button
-								onClick={() => {
-									setShowQuickBidModal(false);
-									setSelectedAuction(null);
-									setQuickBidAmount('');
-									setProposedPickupDate('');
-									setProposedDeliveryDate('');
-								}}
-								className="px-4 py-2 rounded bg-gray-100 text-gray-700 hover:bg-gray-200"
+								onClick={() => setView('cards')}
+								className={`p-1.5 rounded-md transition-all ${view === 'cards' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
 							>
-								Cancel
+								<Grid size={16} />
 							</button>
 							<button
-								onClick={submitQuickBid}
-								disabled={!quickBidAmount || Number(quickBidAmount) <= 0 || !proposedPickupDate || !proposedDeliveryDate}
-								className="px-4 py-2 rounded bg-primary-600 text-white hover:bg-primary-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+								onClick={() => setView('table')}
+								className={`p-1.5 rounded-md transition-all ${view === 'table' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
 							>
-								Submit Bid
+								<Table size={16} />
 							</button>
 						</div>
 					</div>
 				</div>
-			)}
 
-			{showBidModal && selectedAuction && (
-				<div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-					<div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-						<div className="p-6 border-b bg-gradient-to-r from-primary-50 to-blue-50">
-							<div className="flex items-center justify-between">
-								<div>
-									<div className="text-xl font-bold text-gray-900 flex items-center gap-2">
-										<FaGavel className="text-primary-600" />
-										Place Your Bid
-									</div>
-									<div className="text-sm text-gray-600 mt-1.5">
-										{selectedAuction?.load?.title || 'Untitled Load'}
-									</div>
-									{selectedAuction?.load && (
-										<div className="text-xs text-gray-500 mt-1 flex items-center gap-2">
-											<FaMapMarkerAlt className="text-primary-500" />
-											<span>{getLocationName(selectedAuction.load, 'PICKUP')} → {getLocationName(selectedAuction.load, 'DELIVERY')}</span>
+				{view === 'cards' ? (
+					<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+						{loading ? (
+							<div className="col-span-full flex flex-col items-center justify-center py-20 text-gray-500">
+								<div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
+								<p className="font-medium">Searching specifically for high-value loads...</p>
+							</div>
+						) : filtered.length === 0 ? (
+							<div className="col-span-full flex flex-col items-center justify-center py-20 text-gray-500 bg-white border-2 border-dashed border-gray-200 rounded-2xl">
+								<div className="size-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
+									<Filter className="text-gray-400" size={32} />
+								</div>
+								<h3 className="text-lg font-bold text-gray-900">No loads found</h3>
+								<p className="text-sm">Try adjusting your filters or search criteria.</p>
+								<button onClick={() => { setSearch(''); setStatus('all'); }} className="mt-4 text-blue-600 font-bold text-sm hover:underline">Clear all filters</button>
+							</div>
+						) : (
+							filtered.map((a) => {
+								if (!a) return null;
+								const cargoOwnerName = getCargoOwnerName(a?.load);
+								const pickupLocation = getLocationName(a?.load, 'PICKUP');
+								const deliveryLocation = getLocationName(a?.load, 'DELIVERY');
+								const timeLeft = a.auctionEnd ? biddingHelpers.getTimeRemaining(a.auctionEnd) : '00:00:00';
+								const isUrgent = timeLeft.includes('m') && !timeLeft.includes('d') && !timeLeft.includes('h');
+
+								return (
+									<div key={a.id} className="group bg-white border border-gray-200 rounded-2xl p-0 hover:shadow-xl hover:shadow-blue-900/5 hover:border-blue-200 transition-all duration-300 flex flex-col relative overflow-hidden">
+										{/* Status Stripe */}
+										<div className={`absolute top-0 left-0 w-1 h-full transition-colors ${a.status === 'ACTIVE' ? 'bg-blue-500' : 'bg-gray-300'}`}></div>
+
+										<div className="p-5 flex-1">
+											<div className="flex justify-between items-start mb-4">
+												<div className="flex gap-3 items-center">
+													<div className="size-10 rounded-lg bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 font-bold shadow-sm">
+														<FaTruck />
+													</div>
+													<div>
+														<div className="flex items-center gap-2">
+															<span className="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-100 uppercase tracking-tighter">
+																{a.load?.referenceNumber || `LD-${a.id.slice(0, 4)}`}
+															</span>
+															{isUrgent && (
+																<span className="text-[10px] font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded-full border border-red-100 uppercase tracking-wide flex items-center gap-1 animate-pulse">
+																	<FaBolt size={10} /> Closing Soon
+																</span>
+															)}
+														</div>
+														<h3 className="font-bold text-gray-900 text-lg leading-tight mt-0.5 group-hover:text-blue-600 transition-colors line-clamp-1" title={a?.load?.title}>{a?.load?.title || 'Untitled Shipment'}</h3>
+													</div>
+												</div>
+												<button
+													onClick={(e) => { e.stopPropagation(); toggleWatch(a); }}
+													className={`p-2 rounded-full transition-all ${watchedIds.has(a.id) ? 'text-yellow-400 bg-yellow-50 hover:bg-yellow-100' : 'text-gray-300 hover:text-yellow-400 hover:bg-gray-50'}`}
+												>
+													{watchedIds.has(a.id) ? <FaStar size={16} /> : <FaRegStar size={16} />}
+												</button>
+											</div>
+
+											{/* Route Visual */}
+											<div className="relative py-4 my-2">
+												<div className="absolute left-[7px] top-6 bottom-6 w-0.5 bg-gray-200 border-l border-dashed border-gray-300"></div>
+												<div className="flex flex-col gap-4">
+													<div className="flex items-start gap-4 reltive z-10">
+														<div className="size-3.5 mt-1 rounded-full border-[3px] border-white ring-2 ring-emerald-500 bg-emerald-500 shadow-sm"></div>
+														<div>
+															<p className="text-xs font-bold text-gray-500 uppercase tracking-wide">Origin</p>
+															<p className="text-sm font-bold text-gray-900">{pickupLocation}</p>
+															<p className="text-xs text-gray-500">Jan 15, 08:00 AM</p>
+														</div>
+													</div>
+													<div className="flex items-start gap-4 relative z-10">
+														<div className="size-3.5 mt-1 rounded-full border-[3px] border-white ring-2 ring-blue-600 bg-blue-600 shadow-sm"></div>
+														<div>
+															<p className="text-xs font-bold text-gray-500 uppercase tracking-wide">Destination</p>
+															<p className="text-sm font-bold text-gray-900">{deliveryLocation}</p>
+															<p className="text-xs text-gray-500">Jan 17, 12:00 PM</p>
+														</div>
+													</div>
+												</div>
+											</div>
 										</div>
-									)}
-								</div>
-								<button
-									onClick={() => setShowBidModal(false)}
-									className="text-gray-400 hover:text-gray-600 transition-colors p-2 hover:bg-white rounded-lg"
-								>
-									<FaTimes className="w-5 h-5" />
-								</button>
-							</div>
-						</div>
-						<div className="p-6 space-y-5">
-							{/* Bid Amount */}
-							<div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-								<label className="block text-sm font-semibold text-gray-900 mb-2">
-									Bid Amount (USD) <span className="text-red-500">*</span>
-								</label>
-								<input
-									value={bidAmount}
-									onChange={(e) => setBidAmount(e.target.value)}
-									type="number"
-									min="0.01"
-									step="0.01"
-									className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-lg font-semibold"
-									placeholder="Enter your bid amount"
-								/>
-								<div className="flex items-center gap-4 mt-2 text-xs">
-									{selectedAuction.currentBid && (
-										<span className="text-gray-600">
-											Current: <span className="font-semibold text-gray-900">{biddingHelpers.formatCurrency(selectedAuction.currentBid)}</span>
-										</span>
-									)}
-									{selectedAuction.minimumBidIncrement && (
-										<span className="text-gray-600">
-											Min increment: <span className="font-semibold text-gray-900">{biddingHelpers.formatCurrency(selectedAuction.minimumBidIncrement)}</span>
-										</span>
-									)}
-								</div>
-							</div>
 
-							{/* Advance Payment Section */}
-							<div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-								<label className="flex items-center gap-3 mb-3 cursor-pointer">
+										{/* Stats Grid */}
+										<div className="grid grid-cols-2 border-t border-gray-100 divide-x divide-gray-100 bg-gray-50/50">
+											<div className="p-3 flex flex-col items-center justify-center text-center">
+												<p className="text-[10px] uppercase font-bold text-gray-400 tracking-wider mb-1">Current Bid</p>
+												<p className="text-lg font-black text-gray-900 tracking-tight flex items-baseline gap-0.5">
+													<span className="text-xs text-gray-500 font-bold">$</span>
+													{a.currentBid ? a.currentBid.toLocaleString() : '---'}
+												</p>
+											</div>
+											<div className="p-3 flex flex-col items-center justify-center text-center">
+												<p className="text-[10px] uppercase font-bold text-gray-400 tracking-wider mb-1">Time Left</p>
+												<p className={`text-sm font-bold flex items-center gap-1.5 ${isUrgent ? 'text-red-600' : 'text-gray-700'}`}>
+													<Clock size={14} className={isUrgent ? 'animate-pulse' : ''} />
+													{timeLeft}
+												</p>
+											</div>
+										</div>
+
+										{/* Actions */}
+										<div className="p-4 border-t border-gray-100 flex gap-2">
+											<button
+												onClick={() => openBidModal(a)}
+												className="flex-1 py-2.5 px-4 rounded-xl bg-white border border-gray-200 text-gray-700 font-bold text-sm shadow-sm hover:bg-gray-50 hover:border-gray-300 transition-all flex items-center justify-center gap-2"
+											>
+												Custom Bid
+											</button>
+											<button
+												onClick={() => openQuickBidModal(a)}
+												className="flex-1 py-2.5 px-4 rounded-xl bg-[#0f172a] text-white font-bold text-sm shadow-md shadow-gray-900/10 hover:bg-blue-600 hover:shadow-blue-600/20 transition-all flex items-center justify-center gap-2 group-hover:scale-[1.02] transform duration-200"
+											>
+												<Zap size={14} className="text-yellow-400" /> Quick Bid
+											</button>
+										</div>
+									</div>
+								);
+							})
+						)}
+					</div>
+				) : (
+					<div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+						<div className="overflow-x-auto">
+							<table className="min-w-full divide-y divide-gray-200">
+								<thead className="bg-gray-50">
+									<tr>
+										<th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Load Details</th>
+										<th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Route</th>
+										<th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
+										<th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Pricing</th>
+										<th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Time Remaining</th>
+										<th className="px-6 py-4"></th>
+									</tr>
+								</thead>
+								<tbody className="bg-white divide-y divide-gray-200">
+									{loading ? (
+										<tr><td className="px-6 py-12 text-center text-gray-500" colSpan={6}>Loading...</td></tr>
+									) : filtered.length === 0 ? (
+										<tr><td className="px-6 py-12 text-center text-gray-500" colSpan={6}>No auctions found matching your criteria.</td></tr>
+									) : (
+										filtered.map((a) => (
+											<tr key={a.id} className="hover:bg-blue-50/30 transition-colors group">
+												<td className="px-6 py-4">
+													<div className="flex items-center gap-3">
+														<button onClick={() => toggleWatch(a)} className={`transition-colors ${watchedIds.has(a.id) ? 'text-yellow-400' : 'text-gray-300 hover:text-yellow-400'}`}>
+															{watchedIds.has(a.id) ? <FaStar /> : <FaRegStar />}
+														</button>
+														<div>
+															<div className="font-bold text-gray-900">{a?.load?.title || 'Untitled Load'}</div>
+															<div className="text-xs text-gray-500 mt-0.5 flex items-center gap-1.5">
+																<FaUser size={10} /> {getCargoOwnerName(a?.load) || 'Unknown Owner'}
+															</div>
+														</div>
+													</div>
+												</td>
+												<td className="px-6 py-4">
+													<div className="flex items-center gap-2 text-sm text-gray-900 font-medium">
+														<span className="max-w-[100px] truncate" title={getLocationName(a?.load, 'PICKUP')}>{getLocationName(a?.load, 'PICKUP')}</span>
+														<FaArrowRight className="text-gray-300 text-xs flex-shrink-0" />
+														<span className="max-w-[100px] truncate" title={getLocationName(a?.load, 'DELIVERY')}>{getLocationName(a?.load, 'DELIVERY')}</span>
+													</div>
+												</td>
+												<td className="px-6 py-4">
+													<span className={`px-2.5 py-1 rounded-full text-xs font-bold border ${a.status === 'ACTIVE' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-gray-100 text-gray-700 border-gray-200'}`}>
+														{a.status}
+													</span>
+												</td>
+												<td className="px-6 py-4">
+													<div className="font-bold text-gray-900">{a.currentBid ? biddingHelpers.formatCurrency(a.currentBid) : '—'}</div>
+													<div className="text-xs text-gray-500">Current Bid</div>
+												</td>
+												<td className="px-6 py-4">
+													<div className="flex items-center gap-1.5 text-sm font-medium text-gray-700">
+														<Clock className="text-gray-400" size={14} />
+														{a.auctionEnd ? biddingHelpers.getTimeRemaining(a.auctionEnd) : '—'}
+													</div>
+												</td>
+												<td className="px-6 py-4 text-right">
+													<button
+														onClick={() => openBidModal(a)}
+														className="px-4 py-2 rounded-lg bg-[#0f172a] text-white text-xs font-bold hover:bg-blue-600 transition-colors shadow-sm opacity-0 group-hover:opacity-100"
+													>
+														Place Bid
+													</button>
+												</td>
+											</tr>
+										))
+									)}
+								</tbody>
+							</table>
+						</div>
+					</div>
+				)}
+
+				{/* Quick Bid Modal */}
+				{showQuickBidModal && selectedAuction && (
+					<div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+						<div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
+							<div className="p-6 border-b">
+								<div className="text-lg font-semibold text-gray-900">Quick Bid</div>
+								<div className="text-sm text-gray-600 mt-1">
+									{selectedAuction?.load?.title || 'Untitled Load'}
+								</div>
+								{selectedAuction?.load?.cargoOwner && (
+									<div className="text-xs text-gray-500 mt-1">
+										Cargo Owner: {selectedAuction?.load?.cargoOwner?.profile?.firstName || selectedAuction?.load?.cargoOwner?.firstName || ''} {selectedAuction?.load?.cargoOwner?.profile?.lastName || selectedAuction?.load?.cargoOwner?.lastName || ''}
+									</div>
+								)}
+							</div>
+							<div className="p-6 space-y-4">
+								<div>
+									<label className="block text-sm font-medium text-gray-700 mb-1">Bid Amount (USD) *</label>
 									<input
-										type="checkbox"
-										checked={requireAdvancePayment}
-										onChange={(e) => {
-											setRequireAdvancePayment(e.target.checked);
-											if (!e.target.checked) {
-												setAdvancePaymentPercentage(''); // Clear percentage if not required
-											}
-										}}
-										className="w-5 h-5 text-primary-600 border-gray-300 rounded focus:ring-primary-500 cursor-pointer"
+										type="number"
+										min="0.01"
+										step="0.01"
+										value={quickBidAmount}
+										onChange={(e) => setQuickBidAmount(e.target.value)}
+										className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+										placeholder="Enter bid amount"
+										autoFocus
 									/>
-									<div>
-										<span className="text-sm font-semibold text-gray-900">
+									<div className="text-xs text-gray-500 mt-1">
+										{selectedAuction.currentBid ? (
+											<>Current: {biddingHelpers.formatCurrency(selectedAuction.currentBid)} • Min increment: {selectedAuction.minimumBidIncrement || 0}</>
+										) : (
+											<>Reserve price: {selectedAuction.reservePrice ? biddingHelpers.formatCurrency(selectedAuction.reservePrice) : 'Not set'}</>
+										)}
+									</div>
+								</div>
+								<div>
+									<label className="flex items-center gap-2 mb-2">
+										<input
+											type="checkbox"
+											checked={quickRequireAdvancePayment}
+											onChange={(e) => {
+												setQuickRequireAdvancePayment(e.target.checked);
+												if (!e.target.checked) {
+													setQuickAdvancePaymentPercentage(''); // Clear percentage if not required
+												}
+											}}
+											className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
+										/>
+										<span className="text-sm font-medium text-gray-700">
 											Require advance payment before trip starts
 										</span>
-										<p className="text-xs text-gray-600 mt-0.5">
-											Enable this to require payment before the trip begins
-										</p>
-									</div>
-								</label>
-
-								{requireAdvancePayment && (
-									<div className="mt-4 pl-8 border-l-2 border-primary-200">
-										<label className="block text-sm font-medium text-gray-700 mb-2">
-											Advance Payment Percentage <span className="text-gray-500 font-normal">(Optional)</span>
-										</label>
-										<div className="relative">
+									</label>
+									{quickRequireAdvancePayment && (
+										<div className="mt-2">
+											<label className="block text-sm font-medium text-gray-700 mb-1">
+												Advance Payment Percentage (Optional)
+											</label>
 											<input
 												type="number"
 												min="0"
 												max="100"
 												step="0.1"
-												value={advancePaymentPercentage}
-												onChange={(e) => setAdvancePaymentPercentage(e.target.value)}
-												className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 pr-12"
-												placeholder="e.g., 70"
+												value={quickAdvancePaymentPercentage}
+												onChange={(e) => setQuickAdvancePaymentPercentage(e.target.value)}
+												className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+												placeholder="e.g., 70 (for 70% advance payment)"
 											/>
-											<span className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500 font-medium">%</span>
+											<div className="text-xs text-gray-500 mt-1">
+												Percentage of transportation fee to be paid before trip starts (0-100). Leave empty to use system default.
+											</div>
 										</div>
-										<div className="text-xs text-gray-500 mt-2 flex items-start gap-1">
-											<span className="text-blue-600">ℹ️</span>
-											<span>Percentage of transportation fee to be paid before trip starts (0-100). Leave empty to use system default (70%).</span>
-										</div>
-									</div>
-								)}
-
-								{!requireAdvancePayment && (
-									<div className="mt-3 pl-8">
-										<div className="text-xs text-amber-700 bg-amber-50 p-2 rounded border border-amber-200">
-											<span className="font-medium">Note:</span> Trip can start without advance payment. Payment will be processed after trip completion.
-										</div>
-									</div>
-								)}
-							</div>
-							{/* Delivery Schedule Section - Required */}
-							<div className="bg-gradient-to-r from-green-50 to-blue-50 p-5 rounded-lg border-2 border-primary-200">
-								<div className="flex items-center gap-2 mb-4">
-									<FaClock className="text-primary-600 text-lg" />
-									<h3 className="text-lg font-semibold text-gray-900">Schedule Delivery</h3>
-								</div>
-								<p className="text-sm text-gray-600 mb-4">
-									Specify when you will pick up the cargo and when you will deliver it. This helps the cargo owner plan their operations.
-								</p>
-								<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-									<div>
-										<label className="block text-sm font-semibold text-gray-900 mb-2">
-											Pickup Date & Time <span className="text-red-500">*</span>
-										</label>
-										<input
-											type="datetime-local"
-											value={proposedPickupDate}
-											onChange={(e) => setProposedPickupDate(e.target.value)}
-											required
-											className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white font-medium"
-										/>
-										<div className="text-xs text-gray-600 mt-1.5">
-											When will you pick up the cargo?
-										</div>
-									</div>
-									<div>
-										<label className="block text-sm font-semibold text-gray-900 mb-2">
-											Delivery Date & Time <span className="text-red-500">*</span>
-										</label>
-										<input
-											type="datetime-local"
-											value={proposedDeliveryDate}
-											onChange={(e) => setProposedDeliveryDate(e.target.value)}
-											required
-											min={proposedPickupDate || undefined}
-											className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white font-medium"
-										/>
-										<div className="text-xs text-gray-600 mt-1.5">
-											When will you deliver the cargo?
-										</div>
-									</div>
-								</div>
-								{proposedPickupDate && proposedDeliveryDate && (
-									<div className="mt-4 p-3 bg-white rounded-lg border border-primary-200">
-										<div className="flex items-center gap-2 text-sm">
-											<FaClock className="text-primary-600" />
-											<span className="font-medium text-gray-900">Estimated Duration: </span>
-											<span className="text-gray-700">
-												{(() => {
-													const pickup = new Date(proposedPickupDate);
-													const delivery = new Date(proposedDeliveryDate);
-													const diffMs = delivery.getTime() - pickup.getTime();
-													const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-													const diffDays = Math.floor(diffHours / 24);
-													const hours = diffHours % 24;
-													if (diffDays > 0) {
-														return `${diffDays} day${diffDays > 1 ? 's' : ''} ${hours} hour${hours !== 1 ? 's' : ''}`;
-													}
-													return `${diffHours} hour${diffHours !== 1 ? 's' : ''}`;
-												})()}
-											</span>
-										</div>
-									</div>
-								)}
-							</div>
-
-							{/* Truck Selection - Required */}
-							<div>
-								<label className="block text-sm font-medium text-gray-700 mb-2">
-									Select Truck <span className="text-red-500">*</span>
-								</label>
-								<select
-									value={selectedTruckId}
-									onChange={(e) => handleTruckSelection(e.target.value)}
-									className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white"
-									required
-								>
-									<option value="">— Select Truck —</option>
-									{trucks.map((t) => (
-										<option key={t.id} value={t.id}>
-											{t.plateNumber || t.name || t.id.slice(0, 8)} • {t.make} {t.model}
-										</option>
-									))}
-								</select>
-								<div className="text-xs text-gray-500 mt-1">
-									Select the truck you want to use for this cargo shipment
-								</div>
-							</div>
-
-							{/* Driver Selection - Only shown after truck is selected */}
-							{selectedTruckId && (
-								<div>
-									<label className="block text-sm font-medium text-gray-700 mb-2">
-										Select Driver <span className="text-gray-500 font-normal">(Optional)</span>
-									</label>
-									{loadingDrivers ? (
-										<div className="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-gray-50 flex items-center justify-center">
-											<span className="text-sm text-gray-500">Loading available drivers...</span>
-										</div>
-									) : (
-										<select
-											value={selectedDriverId}
-											onChange={(e) => setSelectedDriverId(e.target.value)}
-											className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white"
-										>
-											<option value="">— Select Driver (Optional) —</option>
-											{availableDrivers.length === 0 ? (
-												<option value="" disabled>No available drivers (all drivers are currently on trips)</option>
-											) : (
-												availableDrivers.map((d) => (
-													<option key={d.id} value={d.id}>
-														{d.firstName} {d.lastName} {d.licenseNumber ? `• ${d.licenseNumber}` : ''}
-													</option>
-												))
-											)}
-										</select>
 									)}
-									<div className="text-xs text-gray-500 mt-1">
-										{availableDrivers.length === 0
-											? 'No drivers are currently available (all drivers are on trips)'
-											: `Showing ${availableDrivers.length} available driver(s) (not currently on trips)`
-										}
+									{!quickRequireAdvancePayment && (
+										<div className="text-xs text-gray-500 mt-1">
+											Trip can start without advance payment. Payment will be processed after trip completion.
+										</div>
+									)}
+								</div>
+
+								{/* Delivery Schedule Section - Required */}
+								<div className="bg-gradient-to-r from-green-50 to-blue-50 p-4 rounded-lg border-2 border-primary-200">
+									<div className="flex items-center gap-2 mb-3">
+										<FaClock className="text-primary-600" />
+										<h4 className="text-sm font-semibold text-gray-900">Schedule Delivery</h4>
+									</div>
+									<div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+										<div>
+											<label className="block text-xs font-semibold text-gray-900 mb-1.5">
+												Pickup Date & Time <span className="text-red-500">*</span>
+											</label>
+											<input
+												type="datetime-local"
+												value={proposedPickupDate}
+												onChange={(e) => setProposedPickupDate(e.target.value)}
+												required
+												className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white text-sm"
+											/>
+										</div>
+										<div>
+											<label className="block text-xs font-semibold text-gray-900 mb-1.5">
+												Delivery Date & Time <span className="text-red-500">*</span>
+											</label>
+											<input
+												type="datetime-local"
+												value={proposedDeliveryDate}
+												onChange={(e) => setProposedDeliveryDate(e.target.value)}
+												required
+												min={proposedPickupDate || undefined}
+												className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white text-sm"
+											/>
+										</div>
 									</div>
 								</div>
-							)}
-
-							{/* Notes Section */}
-							<div>
-								<label className="block text-sm font-medium text-gray-700 mb-2">
-									Additional Notes <span className="text-gray-500 font-normal">(Optional)</span>
-								</label>
-								<textarea
-									value={bidNotes}
-									onChange={(e) => setBidNotes(e.target.value)}
-									className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 resize-none"
-									rows={4}
-									placeholder="Add any details about your offer, equipment, timing, special requirements, etc."
-								/>
-								<div className="text-xs text-gray-500 mt-1">
-									Provide any additional information that might help the cargo owner make a decision.
-								</div>
 							</div>
-						</div>
-						<div className="p-6 border-t bg-gray-50 flex items-center justify-between gap-3">
-							<button
-								onClick={() => setShowBidModal(false)}
-								className="px-5 py-2.5 rounded-lg bg-white border border-gray-300 text-gray-700 font-medium hover:bg-gray-50 transition-colors"
-							>
-								Cancel
-							</button>
-							<button
-								onClick={placeBid}
-								disabled={!bidAmount || Number(bidAmount) <= 0 || !selectedTruckId || !proposedPickupDate || !proposedDeliveryDate}
-								className="px-6 py-2.5 rounded-lg bg-primary-600 text-white font-semibold hover:bg-primary-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors shadow-sm"
-							>
-								Submit Bid
-							</button>
+							<div className="p-6 border-t flex items-center justify-end gap-2">
+								<button
+									onClick={() => {
+										setShowQuickBidModal(false);
+										setSelectedAuction(null);
+										setQuickBidAmount('');
+										setProposedPickupDate('');
+										setProposedDeliveryDate('');
+									}}
+									className="px-4 py-2 rounded bg-gray-100 text-gray-700 hover:bg-gray-200"
+								>
+									Cancel
+								</button>
+								<button
+									onClick={submitQuickBid}
+									disabled={!quickBidAmount || Number(quickBidAmount) <= 0 || !proposedPickupDate || !proposedDeliveryDate}
+									className="px-4 py-2 rounded bg-primary-600 text-white hover:bg-primary-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+								>
+									Submit Bid
+								</button>
+							</div>
 						</div>
 					</div>
-				</div>
-			)}
-		</div>
+				)}
+
+				{showBidModal && selectedAuction && (
+					<div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+						<div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+							<div className="p-6 border-b bg-gradient-to-r from-primary-50 to-blue-50">
+								<div className="flex items-center justify-between">
+									<div>
+										<div className="text-xl font-bold text-gray-900 flex items-center gap-2">
+											<FaGavel className="text-primary-600" />
+											Place Your Bid
+										</div>
+										<div className="text-sm text-gray-600 mt-1.5">
+											{selectedAuction?.load?.title || 'Untitled Load'}
+										</div>
+										{selectedAuction?.load && (
+											<div className="text-xs text-gray-500 mt-1 flex items-center gap-2">
+												<FaMapMarkerAlt className="text-primary-500" />
+												<span>{getLocationName(selectedAuction.load, 'PICKUP')} → {getLocationName(selectedAuction.load, 'DELIVERY')}</span>
+											</div>
+										)}
+									</div>
+									<button
+										onClick={() => setShowBidModal(false)}
+										className="text-gray-400 hover:text-gray-600 transition-colors p-2 hover:bg-white rounded-lg"
+									>
+										<FaTimes className="w-5 h-5" />
+									</button>
+								</div>
+							</div>
+							<div className="p-6 space-y-5">
+								{/* Bid Amount */}
+								<div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+									<label className="block text-sm font-semibold text-gray-900 mb-2">
+										Bid Amount (USD) <span className="text-red-500">*</span>
+									</label>
+									<input
+										value={bidAmount}
+										onChange={(e) => setBidAmount(e.target.value)}
+										type="number"
+										min="0.01"
+										step="0.01"
+										className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-lg font-semibold"
+										placeholder="Enter your bid amount"
+									/>
+									<div className="flex items-center gap-4 mt-2 text-xs">
+										{selectedAuction.currentBid && (
+											<span className="text-gray-600">
+												Current: <span className="font-semibold text-gray-900">{biddingHelpers.formatCurrency(selectedAuction.currentBid)}</span>
+											</span>
+										)}
+										{selectedAuction.minimumBidIncrement && (
+											<span className="text-gray-600">
+												Min increment: <span className="font-semibold text-gray-900">{biddingHelpers.formatCurrency(selectedAuction.minimumBidIncrement)}</span>
+											</span>
+										)}
+									</div>
+								</div>
+
+								{/* Advance Payment Section */}
+								<div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+									<label className="flex items-center gap-3 mb-3 cursor-pointer">
+										<input
+											type="checkbox"
+											checked={requireAdvancePayment}
+											onChange={(e) => {
+												setRequireAdvancePayment(e.target.checked);
+												if (!e.target.checked) {
+													setAdvancePaymentPercentage(''); // Clear percentage if not required
+												}
+											}}
+											className="w-5 h-5 text-primary-600 border-gray-300 rounded focus:ring-primary-500 cursor-pointer"
+										/>
+										<div>
+											<span className="text-sm font-semibold text-gray-900">
+												Require advance payment before trip starts
+											</span>
+											<p className="text-xs text-gray-600 mt-0.5">
+												Enable this to require payment before the trip begins
+											</p>
+										</div>
+									</label>
+
+									{requireAdvancePayment && (
+										<div className="mt-4 pl-8 border-l-2 border-primary-200">
+											<label className="block text-sm font-medium text-gray-700 mb-2">
+												Advance Payment Percentage <span className="text-gray-500 font-normal">(Optional)</span>
+											</label>
+											<div className="relative">
+												<input
+													type="number"
+													min="0"
+													max="100"
+													step="0.1"
+													value={advancePaymentPercentage}
+													onChange={(e) => setAdvancePaymentPercentage(e.target.value)}
+													className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 pr-12"
+													placeholder="e.g., 70"
+												/>
+												<span className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500 font-medium">%</span>
+											</div>
+											<div className="text-xs text-gray-500 mt-2 flex items-start gap-1">
+												<span className="text-blue-600">ℹ️</span>
+												<span>Percentage of transportation fee to be paid before trip starts (0-100). Leave empty to use system default (70%).</span>
+											</div>
+										</div>
+									)}
+
+									{!requireAdvancePayment && (
+										<div className="mt-3 pl-8">
+											<div className="text-xs text-amber-700 bg-amber-50 p-2 rounded border border-amber-200">
+												<span className="font-medium">Note:</span> Trip can start without advance payment. Payment will be processed after trip completion.
+											</div>
+										</div>
+									)}
+								</div>
+								{/* Delivery Schedule Section - Required */}
+								<div className="bg-gradient-to-r from-green-50 to-blue-50 p-5 rounded-lg border-2 border-primary-200">
+									<div className="flex items-center gap-2 mb-4">
+										<FaClock className="text-primary-600 text-lg" />
+										<h3 className="text-lg font-semibold text-gray-900">Schedule Delivery</h3>
+									</div>
+									<p className="text-sm text-gray-600 mb-4">
+										Specify when you will pick up the cargo and when you will deliver it. This helps the cargo owner plan their operations.
+									</p>
+									<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+										<div>
+											<label className="block text-sm font-semibold text-gray-900 mb-2">
+												Pickup Date & Time <span className="text-red-500">*</span>
+											</label>
+											<input
+												type="datetime-local"
+												value={proposedPickupDate}
+												onChange={(e) => setProposedPickupDate(e.target.value)}
+												required
+												className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white font-medium"
+											/>
+											<div className="text-xs text-gray-600 mt-1.5">
+												When will you pick up the cargo?
+											</div>
+										</div>
+										<div>
+											<label className="block text-sm font-semibold text-gray-900 mb-2">
+												Delivery Date & Time <span className="text-red-500">*</span>
+											</label>
+											<input
+												type="datetime-local"
+												value={proposedDeliveryDate}
+												onChange={(e) => setProposedDeliveryDate(e.target.value)}
+												required
+												min={proposedPickupDate || undefined}
+												className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white font-medium"
+											/>
+											<div className="text-xs text-gray-600 mt-1.5">
+												When will you deliver the cargo?
+											</div>
+										</div>
+									</div>
+									{proposedPickupDate && proposedDeliveryDate && (
+										<div className="mt-4 p-3 bg-white rounded-lg border border-primary-200">
+											<div className="flex items-center gap-2 text-sm">
+												<FaClock className="text-primary-600" />
+												<span className="font-medium text-gray-900">Estimated Duration: </span>
+												<span className="text-gray-700">
+													{(() => {
+														const pickup = new Date(proposedPickupDate);
+														const delivery = new Date(proposedDeliveryDate);
+														const diffMs = delivery.getTime() - pickup.getTime();
+														const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+														const diffDays = Math.floor(diffHours / 24);
+														const hours = diffHours % 24;
+														if (diffDays > 0) {
+															return `${diffDays} day${diffDays > 1 ? 's' : ''} ${hours} hour${hours !== 1 ? 's' : ''}`;
+														}
+														return `${diffHours} hour${diffHours !== 1 ? 's' : ''}`;
+													})()}
+												</span>
+											</div>
+										</div>
+									)}
+								</div>
+
+								{/* Truck Selection - Required */}
+								<div>
+									<label className="block text-sm font-medium text-gray-700 mb-2">
+										Select Truck <span className="text-red-500">*</span>
+									</label>
+									<select
+										value={selectedTruckId}
+										onChange={(e) => handleTruckSelection(e.target.value)}
+										className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white"
+										required
+									>
+										<option value="">— Select Truck —</option>
+										{trucks.map((t) => (
+											<option key={t.id} value={t.id}>
+												{t.plateNumber || t.name || t.id.slice(0, 8)} • {t.make} {t.model}
+											</option>
+										))}
+									</select>
+									<div className="text-xs text-gray-500 mt-1">
+										Select the truck you want to use for this cargo shipment
+									</div>
+								</div>
+
+								{/* Driver Selection - Only shown after truck is selected */}
+								{selectedTruckId && (
+									<div>
+										<label className="block text-sm font-medium text-gray-700 mb-2">
+											Select Driver <span className="text-gray-500 font-normal">(Optional)</span>
+										</label>
+										{loadingDrivers ? (
+											<div className="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-gray-50 flex items-center justify-center">
+												<span className="text-sm text-gray-500">Loading available drivers...</span>
+											</div>
+										) : (
+											<select
+												value={selectedDriverId}
+												onChange={(e) => setSelectedDriverId(e.target.value)}
+												className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white"
+											>
+												<option value="">— Select Driver (Optional) —</option>
+												{availableDrivers.length === 0 ? (
+													<option value="" disabled>No available drivers (all drivers are currently on trips)</option>
+												) : (
+													availableDrivers.map((d) => (
+														<option key={d.id} value={d.id}>
+															{d.firstName} {d.lastName} {d.licenseNumber ? `• ${d.licenseNumber}` : ''}
+														</option>
+													))
+												)}
+											</select>
+										)}
+										<div className="text-xs text-gray-500 mt-1">
+											{availableDrivers.length === 0
+												? 'No drivers are currently available (all drivers are on trips)'
+												: `Showing ${availableDrivers.length} available driver(s) (not currently on trips)`
+											}
+										</div>
+									</div>
+								)}
+
+								{/* Notes Section */}
+								<div>
+									<label className="block text-sm font-medium text-gray-700 mb-2">
+										Additional Notes <span className="text-gray-500 font-normal">(Optional)</span>
+									</label>
+									<textarea
+										value={bidNotes}
+										onChange={(e) => setBidNotes(e.target.value)}
+										className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 resize-none"
+										rows={4}
+										placeholder="Add any details about your offer, equipment, timing, special requirements, etc."
+									/>
+									<div className="text-xs text-gray-500 mt-1">
+										Provide any additional information that might help the cargo owner make a decision.
+									</div>
+								</div>
+							</div>
+							<div className="p-6 border-t bg-gray-50 flex items-center justify-between gap-3">
+								<button
+									onClick={() => setShowBidModal(false)}
+									className="px-5 py-2.5 rounded-lg bg-white border border-gray-300 text-gray-700 font-medium hover:bg-gray-50 transition-colors"
+								>
+									Cancel
+								</button>
+								<button
+									onClick={placeBid}
+									disabled={!bidAmount || Number(bidAmount) <= 0 || !selectedTruckId || !proposedPickupDate || !proposedDeliveryDate}
+									className="px-6 py-2.5 rounded-lg bg-primary-600 text-white font-semibold hover:bg-primary-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors shadow-sm"
+								>
+									Submit Bid
+								</button>
+							</div>
+						</div>
+					</div>
+				)}
+			</main>
+			<Footer />
+		</div >
 	);
 };
 
