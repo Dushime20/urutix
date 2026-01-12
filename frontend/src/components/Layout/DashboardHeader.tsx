@@ -38,29 +38,34 @@ const DashboardHeader = () => {
     };
   }, [showUserMenu, showMobileMenu]);
 
-  const handleLogout = async () => {
+
+  const handleLogout = () => {
+    console.log('🔴 handleLogout called - starting logout process');
     setShowUserMenu(false);
     try {
       if (logout && typeof logout === 'function') {
+        console.log('✅ Calling logout() from AuthContext');
         logout();
       } else {
+        console.log('⚠️ Using fallback logout - clearing localStorage');
         // Fallback logout
         localStorage.removeItem('accessToken');
         localStorage.removeItem('refreshToken');
+        localStorage.removeItem('user');
       }
-      // Redirect to auth page
-      setTimeout(() => {
-        window.location.href = '/auth';
-      }, 100);
+      // Navigate to auth page immediately
+      console.log('🔄 Navigating to /auth');
+      navigate('/auth');
     } catch (error) {
-      console.error('Logout error:', error);
-      window.location.href = '/auth';
+      console.error('❌ Logout error:', error);
+      navigate('/auth');
     }
   };
 
+
   // Role-based navigation items
   const getNavItems = () => {
-    const basePath = user?.role === 'CARGO_OWNER' ? '/cargo-owner' : '/dashboard';
+    const basePath = '/dashboard'; // Use /dashboard for all roles for consistency
 
     if (user?.role === 'CARGO_OWNER') {
       return [
@@ -586,7 +591,7 @@ const DashboardHeader = () => {
   // Determine active nav item based on current path
   const getActiveNavItem = () => {
     const path = location.pathname;
-    const basePath = user?.role === 'CARGO_OWNER' ? '/cargo-owner' : '/dashboard';
+    const basePath = '/dashboard'; // Use /dashboard for consistency
 
     // Dashboard paths
     if (path === basePath || path === `${basePath}/` ||

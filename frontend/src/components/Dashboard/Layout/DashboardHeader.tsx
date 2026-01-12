@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
-import { Bell, AlertTriangle, CheckCircle, Droplets, Fuel, X, Search } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Bell, AlertTriangle, CheckCircle, Droplets, Fuel, X, Search, User, Settings, LogOut } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../../contexts/AuthContext';
 import QuickActions from '../Widgets/QuickActions';
 
 interface DashboardHeaderProps {
@@ -8,6 +10,48 @@ interface DashboardHeaderProps {
 
 const DashboardHeader: React.FC<DashboardHeaderProps> = ({ onCreateClick }) => {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const [showUserMenu, setShowUserMenu] = useState(false);
+    const userMenuRef = useRef<HTMLDivElement>(null);
+    const navigate = useNavigate();
+    const { user, logout } = useAuth();
+
+    // Close user menu when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
+                setShowUserMenu(false);
+            }
+        };
+
+        if (showUserMenu) {
+            document.addEventListener('mousedown', handleClickOutside);
+        }
+
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [showUserMenu]);
+
+    const handleLogout = () => {
+        console.log('🔴 handleLogout called - starting logout process');
+        setShowUserMenu(false);
+        try {
+            if (logout && typeof logout === 'function') {
+                console.log('✅ Calling logout() from AuthContext');
+                logout();
+            } else {
+                console.log('⚠️ Using fallback logout - clearing localStorage');
+                localStorage.removeItem('accessToken');
+                localStorage.removeItem('refreshToken');
+                localStorage.removeItem('user');
+            }
+            console.log('🔄 Navigating to /auth');
+            navigate('/auth');
+        } catch (error) {
+            console.error('❌ Logout error:', error);
+            navigate('/auth');
+        }
+    };
 
     return (
         <>
@@ -61,7 +105,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ onCreateClick }) => {
                         <nav className="hidden lg:flex items-center gap-10">
                             <a className="text-white text-sm font-bold relative after:content-[''] after:absolute after:bottom-[-4px] after:left-0 after:w-full after:h-0.5 after:bg-teal-500" href="/dashboard">Dashboard</a>
                             <a className="text-white/60 hover:text-white text-sm font-semibold transition-all" href="/dashboard/cargos">Shipments</a>
-                            <a className="text-white/60 hover:text-white text-sm font-semibold transition-all" href="#">Financing</a>
+                            <a className="text-white/60 hover:text-white text-sm font-semibold transition-all" href="/dashboard/financing">Financing</a>
                             <a className="text-white/60 hover:text-white text-sm font-semibold transition-all" href="#">Wallet</a>
                             <a className="text-white/60 hover:text-white text-sm font-semibold transition-all" href="#">Reports</a>
                         </nav>
@@ -91,14 +135,65 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ onCreateClick }) => {
                             <span className="absolute top-2 right-2 size-2 bg-teal-500 rounded-full border-2 border-[#0f172a]"></span>
                         </button>
 
-                        <div className="flex items-center gap-3 pl-4 md:pl-6 border-l border-white/10">
-                            <div className="text-right hidden sm:block">
-                                <p className="text-sm font-bold">Kofi Annan</p>
-                                <p className="text-[9px] font-bold text-teal-400 uppercase tracking-widest">Premium Exporter</p>
-                            </div>
-                            <div className="size-10 rounded-full bg-gradient-to-br from-teal-400 to-emerald-600 border-2 border-white/20 shadow-inner overflow-hidden">
-                                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Kofi" alt="User" className="size-full" />
-                            </div>
+                        {/* User Profile with Dropdown */}
+                        <div className="relative" ref={userMenuRef}>
+                            <button
+                                onClick={() => setShowUserMenu(!showUserMenu)}
+                                className="flex items-center gap-3 pl-4 md:pl-6 border-l border-white/10 hover:opacity-80 transition-opacity cursor-pointer"
+                            >
+                                <div className="text-right hidden sm:block">
+                                    <p className="text-sm font-bold">{user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : user?.email || 'Kofi Annan'}</p>
+                                    <p className="text-[9px] font-bold text-teal-400 uppercase tracking-widest">Premium Exporter</p>
+                                </div>
+                                <div className="size-10 rounded-full bg-gradient-to-br from-teal-400 to-emerald-600 border-2 border-white/20 shadow-inner overflow-hidden">
+                                    <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Kofi" alt="User" className="size-full" />
+                                </div>
+                            </button>
+
+                            {/* Dropdown Menu */}
+                            {showUserMenu && (
+                                <div className="absolute top-full right-0 mt-2 w-56 bg-[#1e293b] rounded-lg shadow-2xl border border-white/10 z-[9999] overflow-hidden">
+                                    <div className="p-2">
+                                        <div className="px-3 py-2 border-b border-white/10">
+                                            <div className="text-sm font-semibold text-white">
+                                                {user?.firstName && user?.lastName
+                                                    ? `${user.firstName} ${user.lastName}`
+                                                    : user?.firstName || user?.email || 'User'
+                                                }
+                                            </div>
+                                            <div className="text-xs text-gray-400 truncate">{user?.email}</div>
+                                        </div>
+                                        <button
+                                            onClick={() => {
+                                                setShowUserMenu(false);
+                                                navigate('/dashboard/settings');
+                                            }}
+                                            className="w-full text-left px-3 py-2 text-sm text-white hover:bg-white/10 rounded-md transition-colors flex items-center gap-2 mt-1"
+                                        >
+                                            <Settings size={16} />
+                                            Profile Settings
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                setShowUserMenu(false);
+                                                navigate('/dashboard/settings');
+                                            }}
+                                            className="w-full text-left px-3 py-2 text-sm text-white hover:bg-white/10 rounded-md transition-colors flex items-center gap-2"
+                                        >
+                                            <User size={16} />
+                                            Account
+                                        </button>
+                                        <div className="border-t border-white/10 my-1"></div>
+                                        <button
+                                            onClick={handleLogout}
+                                            className="w-full text-left px-3 py-2 text-sm text-red-400 hover:bg-red-500/10 rounded-md transition-colors flex items-center gap-2"
+                                        >
+                                            <LogOut size={16} />
+                                            Logout
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </header>
@@ -109,7 +204,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ onCreateClick }) => {
                         <nav className="flex flex-col space-y-3 text-sm font-semibold text-gray-400">
                             <a href="/dashboard" className="text-white px-3 py-2 bg-white/5 rounded-lg">Dashboard</a>
                             <a href="/dashboard/cargos" className="hover:text-white px-3 py-2">Shipments</a>
-                            <a href="#" className="hover:text-white px-3 py-2">Financing</a>
+                            <a href="/dashboard/financing" className="hover:text-white px-3 py-2">Financing</a>
                             <a href="#" className="hover:text-white px-3 py-2">Wallet</a>
                             <a href="#" className="hover:text-white px-3 py-2">Reports</a>
                         </nav>
