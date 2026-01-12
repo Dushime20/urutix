@@ -22,7 +22,9 @@ import {
   Flame
 } from 'lucide-react';
 import { driverApi } from '../../services/driverApi';
+import { documentApi, type Document as CargoDocument } from '../../services/documents/documentApi';
 import toast from 'react-hot-toast';
+import DocumentPreviewModal from '../documents/DocumentPreviewModal';
 
 interface CargoDetailsProps {
   cargoId: string;
@@ -128,6 +130,9 @@ export const CargoDetails: React.FC<CargoDetailsProps> = ({
   const [activeTab, setActiveTab] = useState<'overview' | 'route' | 'handling' | 'compliance' | 'documents'>('overview');
   const [cargo, setCargo] = useState<CargoItem | null>(null);
   const [loading, setLoading] = useState(true);
+  const [documents, setDocuments] = useState<CargoDocument[]>([]);
+  const [loadingDocuments, setLoadingDocuments] = useState(false);
+  const [previewDoc, setPreviewDoc] = useState<{ id: string; title: string; fileName: string } | null>(null);
 
   // Helper function to format any value including location objects
   const formatValue = (loc: any, fallback: string = 'Not Available'): string => {
@@ -319,7 +324,37 @@ export const CargoDetails: React.FC<CargoDetailsProps> = ({
     };
 
     fetchCargoData();
+
+    // Fetch actual documents associated with the cargo
+    const fetchDocuments = async () => {
+      try {
+        setLoadingDocuments(true);
+        const docs = await documentApi.getDocumentsByEntity('CARGO', cargoId);
+        setDocuments(docs);
+      } catch (error) {
+        console.error('Error fetching documents:', error);
+      } finally {
+        setLoadingDocuments(false);
+      }
+    };
+
+    fetchDocuments();
   }, [cargoId]);
+
+  const handleDownload = async (doc: CargoDocument) => {
+    try {
+      const blob = await documentApi.downloadDocument(doc.id);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = doc.fileName;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      toast.error('Failed to download document');
+    }
+  };
 
   if (loading) {
     return (
@@ -399,21 +434,21 @@ export const CargoDetails: React.FC<CargoDetailsProps> = ({
       </div>
 
       {/* Navigation Tabs */}
-      <div className="border-b">
-        <nav className="flex space-x-8 px-6">
+      <div className="border-b overflow-x-auto scrollbar-hide">
+        <nav className="flex min-w-max px-6 gap-6 md:gap-10">
           {tabs.map((tab) => {
             const Icon = tab.icon;
             return (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
-                className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center space-x-2 ${
+                className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center space-x-2 transition-all whitespace-nowrap ${
                   activeTab === tab.id
                     ? 'border-blue-500 text-blue-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
               >
-                <Icon className="w-4 h-4" />
+                <Icon className="w-4 h-4 flex-shrink-0" />
                 <span>{tab.label}</span>
               </button>
             );
@@ -885,31 +920,57 @@ export const CargoDetails: React.FC<CargoDetailsProps> = ({
           <div className="space-y-6">
             <h3 className="text-lg font-semibold text-gray-900">Required Documents</h3>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {cargo.documents.length > 0 ? (
-                cargo.documents.map((doc, index) => (
-                  <div key={index} className="border rounded-lg p-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {loadingDocuments ? (
+                <div className="col-span-full py-8 text-center text-gray-500">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
+                  Loading documents...
+                </div>
+              ) : documents.length > 0 ? (
+                documents.map((doc) => (
+                  <div key={doc.id} className="border rounded-lg p-4 bg-white shadow-sm hover:shadow-md transition-shadow group">
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-3">
-                        <FileText className="w-6 h-6 text-blue-600" />
-                        <div>
-                          <h4 className="font-medium text-gray-900">{doc}</h4>
-                          <p className="text-sm text-gray-600">Required document</p>
+                      <div className="flex items-center space-x-3 overflow-hidden">
+                        <div className="p-2 bg-blue-50 rounded-lg flex-shrink-0">
+                          <FileText className="w-6 h-6 text-blue-600" />
+                        </div>
+                        <div className="overflow-hidden">
+                          <h4 className="font-medium text-gray-900 truncate" title={doc.title}>{doc.title}</h4>
+                          <p className="text-xs text-gray-500 truncate">{doc.fileName}</p>
                         </div>
                       </div>
-                      <div className="flex space-x-2">
-                        <button className="p-2 text-blue-600 hover:bg-blue-50 rounded">
+                      <div className="flex space-x-1">
+                        <button 
+                          onClick={() => setPreviewDoc({ id: doc.id, title: doc.title, fileName: doc.fileName })}
+                          className="p-1.5 text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                          title="View"
+                        >
                           <Eye className="w-4 h-4" />
                         </button>
-                        <button className="p-2 text-green-600 hover:bg-green-50 rounded">
+                        <button 
+                          onClick={() => handleDownload(doc)}
+                          className="p-1.5 text-green-600 hover:bg-green-50 rounded transition-colors"
+                          title="Download"
+                        >
                           <Download className="w-4 h-4" />
                         </button>
                       </div>
                     </div>
+                    <div className="mt-2 flex justify-between items-center">
+                      <span className="text-[10px] text-gray-400">
+                        {new Date(doc.createdAt).toLocaleDateString()}
+                      </span>
+                      <span className="text-[10px] font-medium text-blue-600 px-1.5 py-0.5 bg-blue-50 rounded">
+                        {doc.category}
+                      </span>
+                    </div>
                   </div>
                 ))
               ) : (
-                <p className="text-sm text-gray-500">No documents specified</p>
+                <div className="col-span-full py-8 text-center text-gray-500">
+                  <FileText className="w-12 h-12 text-gray-300 mx-auto mb-2" />
+                  <p>No documents found for this cargo</p>
+                </div>
               )}
             </div>
 
@@ -971,6 +1032,16 @@ export const CargoDetails: React.FC<CargoDetailsProps> = ({
             </div>
           </div>
         </div>
+      )}
+
+      {previewDoc && (
+        <DocumentPreviewModal
+          isOpen={!!previewDoc}
+          onClose={() => setPreviewDoc(null)}
+          documentId={previewDoc.id}
+          title={previewDoc.title}
+          fileName={previewDoc.fileName}
+        />
       )}
     </div>
   );

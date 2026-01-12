@@ -46,6 +46,7 @@ import type { Document } from '@/services/documents/documentApi';
 import toast from 'react-hot-toast';
 import { useConfirmDialog } from '@/hooks/useConfirmDialog';
 import DocumentPreviewModal from '@/components/documents/DocumentPreviewModal';
+import DocumentUploadModal from '@/components/documents/DocumentUploadModal';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface CargoDetailsModalProps {
@@ -62,6 +63,7 @@ const CargoDetailsModal = ({ isOpen, onClose, cargoId }: CargoDetailsModalProps)
   const [matchesError, setMatchesError] = useState<string | null>(null);
   const { confirm, DialogComponent } = useConfirmDialog();
   const [previewDoc, setPreviewDoc] = useState<{ id: string; title: string; fileName: string } | null>(null);
+  const [showUploadModal, setShowUploadModal] = useState(false);
 
   const { data: cargoResponse, isLoading, error } = useQuery({
     queryKey: ['cargo', cargoId],
@@ -349,8 +351,9 @@ const CargoDetailsModal = ({ isOpen, onClose, cargoId }: CargoDetailsModalProps)
   if (!isOpen) return null;
 
   return (
-    <div 
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+    <>
+      <div 
+        className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
       onClick={onClose}
     >
       <div 
@@ -910,7 +913,7 @@ const CargoDetailsModal = ({ isOpen, onClose, cargoId }: CargoDetailsModalProps)
                       </h3>
                       {(user?.role === 'CARGO_OWNER' || user?.role === 'BROKER' || user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN') && (
                         <button 
-                          onClick={() => {/* Trigger upload modal or logic */}}
+                          onClick={() => setShowUploadModal(true)}
                           className="btn btn-primary btn-sm flex items-center"
                         >
                           <Upload className="w-4 h-4 mr-2" />
@@ -1716,20 +1719,34 @@ const CargoDetailsModal = ({ isOpen, onClose, cargoId }: CargoDetailsModalProps)
             </div>
           )}
         </div>
-        {DialogComponent}
-
-        {previewDoc && (
-          <DocumentPreviewModal
-            isOpen={!!previewDoc}
-            onClose={() => setPreviewDoc(null)}
-            documentId={previewDoc.id}
-            title={previewDoc.title}
-            fileName={previewDoc.fileName}
-          />
-        )}
       </div>
     </div>
-  );
+
+    {/* Document Preview Modal */}
+    {previewDoc && (
+      <DocumentPreviewModal
+        isOpen={!!previewDoc}
+        onClose={() => setPreviewDoc(null)}
+        documentId={previewDoc!.id}
+        title={previewDoc!.title}
+        fileName={previewDoc!.fileName}
+      />
+    )}
+
+    {/* Document Upload Modal */}
+    <DocumentUploadModal
+      isOpen={showUploadModal}
+      onClose={() => setShowUploadModal(false)}
+      onSuccess={() => refetchDocuments()}
+      initialEntityType="CARGO"
+      initialEntityId={cargoId}
+      lockEntity={true}
+    />
+
+    {/* Confirmation Dialog */}
+    {DialogComponent}
+  </>
+);
 };
 
 export default CargoDetailsModal;
