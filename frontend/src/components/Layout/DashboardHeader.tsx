@@ -1,10 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Search, Bell, User, Menu, X, ChevronDown, Package, Gavel, MapPin, BarChart3, CreditCard, FileText, Settings, HelpCircle, Truck, Users, Route, Shield, TrendingUp, Wallet, AlertCircle, DollarSign, Home, Calendar, Mic, Camera, Zap, Sparkles, Clock, CheckCircle, Building, ClipboardList, AlertTriangle, Receipt, Percent, History, List, Star, ThumbsUp, Gift, Warehouse } from 'lucide-react';
+import { Search, Bell, User, Menu, X, ChevronDown, Package, Gavel, MapPin, BarChart3, CreditCard, FileText, Settings, HelpCircle, Truck, Users, Route, Shield, TrendingUp, Wallet, AlertCircle, DollarSign, Home, CheckCircle, Building, ClipboardList, Receipt } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useCargoOwnerNotifications } from '../../hooks/useCargoOwnerNotifications';
 import ContextualHelp from '../Help/ContextualHelp';
-import { useOnboardingStore } from '../../stores/onboardingStore';
 
 const DashboardHeader = () => {
   const { user, logout } = useAuth();
@@ -92,16 +91,6 @@ const DashboardHeader = () => {
           path: `${basePath}/tracking`,
           icon: MapPin
         },
-        {
-          label: 'Documents',
-          path: `${basePath}/documents`,
-          icon: FileText
-        },
-        {
-          label: 'Notifications',
-          path: `${basePath}/notifications`,
-          icon: Bell
-        },
       ];
     }
 
@@ -184,11 +173,6 @@ const DashboardHeader = () => {
           icon: BarChart3
         },
         {
-          label: 'Notifications',
-          path: '/dashboard/broker/notifications',
-          icon: Bell
-        },
-        {
           label: 'Profile',
           path: '/dashboard/broker/profile',
           icon: User
@@ -229,11 +213,6 @@ const DashboardHeader = () => {
           icon: Shield
         },
         {
-          label: 'Documents',
-          path: '/dashboard/driver/documents',
-          icon: FileText
-        },
-        {
           label: 'Live Tracking',
           path: '/dashboard/driver/tracking',
           icon: MapPin
@@ -242,11 +221,6 @@ const DashboardHeader = () => {
           label: 'Analytics',
           path: '/dashboard/driver/analytics',
           icon: BarChart3
-        },
-        {
-          label: 'Notifications',
-          path: '/dashboard/driver/notifications',
-          icon: Bell
         },
         {
           label: 'Profile',
@@ -302,11 +276,6 @@ const DashboardHeader = () => {
           label: 'Payments',
           path: '/dashboard/payments',
           icon: CreditCard
-        },
-        {
-          label: 'Notifications',
-          path: '/dashboard/notifications',
-          icon: Bell
         },
       ];
     }
@@ -382,11 +351,6 @@ const DashboardHeader = () => {
           label: 'Borrowers',
           path: '/admin/borrowers',
           icon: Users
-        },
-        {
-          label: 'Notifications',
-          path: '/dashboard/notifications',
-          icon: Bell
         },
       ];
     }
@@ -522,8 +486,6 @@ const DashboardHeader = () => {
       { label: 'Transactions', path: '/dashboard/payments', icon: CreditCard },
       { label: 'Analytics', path: '/dashboard/analytics', icon: BarChart3 },
       { label: 'Tracking', path: '/dashboard/tracking', icon: MapPin },
-      { label: 'Documents', path: '/dashboard/documents', icon: FileText },
-      { label: 'Notifications', path: '/dashboard/notifications', icon: Bell },
       { label: 'Settings', path: '/dashboard/settings', icon: Settings },
       { label: 'Support', path: '/dashboard/support', icon: HelpCircle },
     ];
@@ -710,7 +672,7 @@ const DashboardHeader = () => {
             </div>
 
             {/* Desktop Nav - Keep only most important items */}
-            <div className="hidden lg:flex items-center gap-1 sm:gap-2 ml-4 sm:ml-8 text-gray-500 text-sm font-medium overflow-x-auto max-w-full">
+            <div className="hidden lg:flex items-center gap-1 sm:gap-2 ml-4 sm:ml-8 text-gray-500 text-sm font-medium">
               {navItems.slice(0, 5).map(item => {
                 const hasSubItems = item.subItems && item.subItems.length > 0;
                 const isActive = activeNavItem === item.label ||
