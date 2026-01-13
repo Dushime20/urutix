@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Search, Bell, User, Menu, X, ChevronDown, Package, Gavel, MapPin, BarChart3, CreditCard, FileText, Settings, HelpCircle, Truck, Users, Route, Shield, TrendingUp, Wallet, AlertCircle, DollarSign, Home, CheckCircle, Building, ClipboardList, Receipt } from 'lucide-react';
+import { Search, Bell, User, Menu, X, ChevronDown, Package, Gavel, MapPin, BarChart3, CreditCard, FileText, Settings, HelpCircle, Truck, Users, Route, Shield, TrendingUp, Wallet, AlertCircle, DollarSign, Home, CheckCircle, Building, ClipboardList, Receipt, Fuel, AlertTriangle } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useCargoOwnerNotifications } from '../../hooks/useCargoOwnerNotifications.tsx';
 import ContextualHelp from '../Help/ContextualHelp';
@@ -318,6 +318,26 @@ const DashboardHeader = () => {
           label: 'Route Planning',
           path: '/dashboard/fleet/routes',
           icon: Route
+        },
+        {
+          label: 'Maintenance',
+          path: '/dashboard/fleet/maintenance',
+          icon: AlertTriangle
+        },
+        {
+          label: 'Fuel',
+          path: '/dashboard/fleet/fuel',
+          icon: Fuel
+        },
+        {
+          label: 'Maintenance',
+          path: '/dashboard/fleet/maintenance',
+          icon: AlertTriangle
+        },
+        {
+          label: 'Fuel',
+          path: '/dashboard/fleet/fuel',
+          icon: Fuel
         },
         {
           label: 'Safety Records',

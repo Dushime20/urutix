@@ -21,6 +21,8 @@ const SmartBookingsPage = lazy(() => import('./pages/SmartBookingsPage'));
 const NewFleetManager = lazy(() => import('./pages/NewFleetManager'));
 const DispatchPage = lazy(() => import('./pages/DispatchPage'));
 const MaintenancePage = lazy(() => import('./pages/MaintenancePage'));
+const FuelPage = lazy(() => import('./pages/FuelPage'));
+const FleetRoutesPage = lazy(() => import('./pages/FleetRoutesPage'));
 
 // Keep essential components that are needed immediately (layouts, auth, home)
 import CargoOwnerLayout from './components/Layout/CargoOwnerLayout';
@@ -295,9 +297,9 @@ function App() {
                   <Route path="drivers/create" element={<UnifiedDriverManagement />} />
                   <Route path="assignments" element={<UnifiedDriverManagement />} />
                   <Route path="maintenance" element={<MaintenancePage />} />
+                  <Route path="fuel" element={<FuelPage />} />
                   <Route path="payments" element={<FleetPaymentManagement />} />
-                  <Route path="payments" element={<FleetPaymentManagement />} />
-                  <Route path="routes" element={<RoutesPage />} />
+                  <Route path="routes" element={<FleetRoutesPage />} />
                   <Route path="tenant-dashboard" element={<TenantDashboardPage />} />
                   <Route path="profile" element={<FleetDashboard />} />
                   <Route path="settings" element={<FleetDashboard />} />

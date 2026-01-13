@@ -106,6 +106,8 @@ const FleetOwnerDashboard: React.FC = () => {
     }
   };
 
+  const [fuelStats, setFuelStats] = useState<any>(null);
+
   const loadDashboardData = useCallback(async () => {
     setLoading(true);
     try {
@@ -124,6 +126,14 @@ const FleetOwnerDashboard: React.FC = () => {
 
       const inspectionsData = await fleetApi.getSafetyInspections();
       setRecentInspections(inspectionsData.slice(0, 5)); // Get recent 5
+
+      // Fetch Fuel Stats
+      try {
+        const fuelData = await fleetApi.getFuelStats();
+        setFuelStats(fuelData);
+      } catch (e) {
+        console.warn('Failed to load fuel stats:', e);
+      }
 
       let tripsData: any[] = [];
       try {
@@ -267,6 +277,7 @@ const FleetOwnerDashboard: React.FC = () => {
               <a className="text-white/60 hover:text-white text-sm font-semibold transition-all" href="/fleet-manager">Fleet Manager</a>
               <a className="text-white/60 hover:text-white text-sm font-semibold transition-all" href="/dashboard/fleet/drivers">Drivers</a>
               <a className="text-white/60 hover:text-white text-sm font-semibold transition-all" href="/dashboard/fleet/maintenance">Maintenance</a>
+              <a className="text-white/60 hover:text-white text-sm font-semibold transition-all" href="/dashboard/fleet/fuel">Fuel</a>
               <a className="text-white/60 hover:text-white text-sm font-semibold transition-all" href="/dashboard/fleet/bids">Load Board</a>
               <a className="text-white/60 hover:text-white text-sm font-semibold transition-all" href="/dashboard/fleet/smart-bookings">Smart Bookings</a>
               <a className="text-white/60 hover:text-white text-sm font-semibold transition-all" href="/dashboard/fleet/reports">Reports</a>
@@ -377,6 +388,7 @@ const FleetOwnerDashboard: React.FC = () => {
               <a href="/fleet-manager" className="hover:text-white px-3 py-2">Fleet Manager</a>
               <a href="/dashboard/fleet/drivers" className="hover:text-white px-3 py-2">Drivers</a>
               <a href="/dashboard/fleet/maintenance" className="hover:text-white px-3 py-2">Maintenance</a>
+              <a href="/dashboard/fleet/fuel" className="hover:text-white px-3 py-2">Fuel</a>
               <a href="/dashboard/fleet/bids" className="hover:text-white px-3 py-2">Load Board</a>
               <a href="/dashboard/fleet/smart-bookings" className="hover:text-white px-3 py-2">Smart Bookings</a>
               <a href="/dashboard/fleet/reports" className="hover:text-white px-3 py-2">Reports</a>
@@ -510,16 +522,22 @@ const FleetOwnerDashboard: React.FC = () => {
               <Plus className="w-4 h-4" /> Add Truck
             </button>
             <button
-              onClick={() => navigate('/dashboard/fleet/status')}
+              onClick={() => navigate('/dashboard/fleet/trucks')}
               className="px-4 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg text-sm font-semibold text-white transition-all flex items-center gap-2"
             >
-              <FaChartLine className="text-slate-400" /> Fleet Status
+              <FaChartLine className="text-slate-400" /> Fleet Assets
             </button>
             <button
               onClick={() => navigate('/dashboard/fleet/smart-bookings')}
               className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-bold shadow-lg shadow-indigo-600/20 transition-all flex items-center gap-2"
             >
               <Zap className="w-4 h-4" /> SMART MATCHES
+            </button>
+            <button
+              onClick={() => navigate('/dashboard/fleet/fuel')}
+              className="px-4 py-2 bg-orange-600 hover:bg-orange-500 text-white rounded-lg text-sm font-bold shadow-lg shadow-orange-600/20 transition-all flex items-center gap-2"
+            >
+              <Fuel className="w-4 h-4" /> Log Fuel
             </button>
             <button
               onClick={() => navigate('/dashboard/fleet/dispatch')}
@@ -535,7 +553,7 @@ const FleetOwnerDashboard: React.FC = () => {
       <main className="flex-1 px-4 md:px-8 lg:px-12 xl:px-20 py-8 md:py-12 space-y-8 max-w-[1536px] mx-auto w-full">
 
         {/* Metric Cards - Light Theme */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
           {/* Live Status */}
           <div className="bg-white border border-gray-200 rounded-2xl p-5 relative overflow-hidden group hover:border-blue-300 hover:shadow-lg transition-all shadow-sm">
             <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
@@ -553,6 +571,20 @@ const FleetOwnerDashboard: React.FC = () => {
             <div className="flex justify-between text-[10px] mt-2 font-medium text-gray-500">
               <span className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div> In Transit ({stats.trucksInTransit})</span>
               <span className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div> Available ({stats.trucksAvailable})</span>
+            </div>
+          </div>
+
+          {/* Fuel Costs */}
+          <div className="bg-white border border-gray-200 rounded-2xl p-5 relative overflow-hidden group hover:border-orange-300 hover:shadow-lg transition-all shadow-sm">
+            <div className="absolute top-4 right-4 text-orange-500"><Fuel className="w-6 h-6" /></div>
+            <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Fuel Costs (MTD)</p>
+            <div className="flex items-end gap-3 mb-4">
+              <span className="text-3xl font-black text-gray-900">
+                ${fuelStats?.totalCost ? (fuelStats.totalCost / 1000).toFixed(1) + 'k' : '0'}
+              </span>
+            </div>
+            <div className={`flex items-center gap-1 text-xs px-2 py-1 rounded border ${fuelStats?.avgMpg > 6 ? 'text-emerald-600 bg-emerald-50 border-emerald-200' : 'text-orange-600 bg-orange-50 border-orange-200'}`}>
+              <Zap className="w-3 h-3" /> <strong>{fuelStats?.avgMpg || 0}</strong> MPG Avg
             </div>
           </div>
 

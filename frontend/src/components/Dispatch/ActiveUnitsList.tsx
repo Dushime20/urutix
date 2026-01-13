@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { FaSearch, FaCircle, FaGasPump, FaPlus } from 'react-icons/fa';
+import { FaSearch, FaCircle, FaGasPump, FaPlus, FaCheck } from 'react-icons/fa';
+import PODModal from './PODModal';
 
 interface Vehicle {
     id: string;
@@ -16,11 +17,16 @@ interface ActiveUnitsListProps {
     vehicles: Vehicle[];
     onSelectVehicle: (id: string) => void;
     onNewDispatch: () => void;
+    onRefresh?: () => void; // Callback to refresh parent data
 }
 
-const ActiveUnitsList: React.FC<ActiveUnitsListProps> = ({ vehicles, onSelectVehicle, onNewDispatch }) => {
+const ActiveUnitsList: React.FC<ActiveUnitsListProps> = ({ vehicles, onSelectVehicle, onNewDispatch, onRefresh }) => {
     const [filter, setFilter] = useState<'all' | 'moving' | 'idle'>('all');
     const [search, setSearch] = useState('');
+
+    // POD State
+    const [podModalOpen, setPodModalOpen] = useState(false);
+    const [selectedPodVehicle, setSelectedPodVehicle] = useState<{ id: string, name: string } | null>(null);
 
     const filteredVehicles = vehicles.filter(v => {
         const matchesSearch = v.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -32,6 +38,17 @@ const ActiveUnitsList: React.FC<ActiveUnitsListProps> = ({ vehicles, onSelectVeh
     const counts = {
         moving: vehicles.filter(v => v.status === 'moving').length,
         idle: vehicles.filter(v => v.status === 'idle').length
+    };
+
+    const handleCompleteTripClick = (e: React.MouseEvent, vehicle: Vehicle) => {
+        e.stopPropagation(); // Prevent row selection
+        setSelectedPodVehicle({ id: vehicle.id, name: vehicle.name });
+        setPodModalOpen(true);
+    };
+
+    const handlePodComplete = () => {
+        // Trigger refresh in parent if available
+        if (onRefresh) onRefresh();
     };
 
     return (
@@ -91,7 +108,7 @@ const ActiveUnitsList: React.FC<ActiveUnitsListProps> = ({ vehicles, onSelectVeh
                     <div
                         key={vehicle.id}
                         onClick={() => onSelectVehicle(vehicle.id)}
-                        className="p-4 border-b border-slate-50 hover:bg-slate-50 cursor-pointer transition-colors group"
+                        className="p-4 border-b border-slate-50 hover:bg-slate-50 cursor-pointer transition-colors group relative"
                     >
                         <div className="flex justify-between items-start mb-2">
                             <div>
@@ -122,6 +139,16 @@ const ActiveUnitsList: React.FC<ActiveUnitsListProps> = ({ vehicles, onSelectVeh
                             </div>
                         </div>
 
+                        {/* Complete Trip Action (Only for moving vehicles) */}
+                        {vehicle.status === 'moving' && (
+                            <button
+                                onClick={(e) => handleCompleteTripClick(e, vehicle)}
+                                className="mt-3 w-full py-2 flex items-center justify-center gap-2 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 rounded-lg text-xs font-bold transition-colors border border-emerald-100"
+                            >
+                                <FaCheck /> Complete Trip & Upload POD
+                            </button>
+                        )}
+
                         {vehicle.status === 'idle' && (
                             <div className="mt-3 flex items-center gap-2 text-xs text-amber-600 bg-amber-50 p-2 rounded">
                                 <FaGasPump />
@@ -147,6 +174,15 @@ const ActiveUnitsList: React.FC<ActiveUnitsListProps> = ({ vehicles, onSelectVeh
                     <FaPlus /> New Dispatch Trip
                 </button>
             </div>
+
+            {/* POD Modal */}
+            <PODModal
+                isOpen={podModalOpen}
+                onClose={() => setPodModalOpen(false)}
+                tripId={selectedPodVehicle?.id || ''} // Using truckID as tripID for now
+                vehicleName={selectedPodVehicle?.name || ''}
+                onComplete={handlePodComplete}
+            />
         </div>
     );
 };
