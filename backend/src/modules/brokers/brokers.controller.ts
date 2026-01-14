@@ -212,5 +212,16 @@ export class BrokersController {
     }
     return this.brokersService.getPayoutRequests(brokerId, tenantId, query);
   }
+
+  /**
+   * Get broker contracts
+   */
+  @Get('contracts')
+  @Roles(UserRole.TENANT_ADMIN, UserRole.ADMIN, UserRole.SUPER_ADMIN, UserRole.BROKER)
+  async getBrokerContracts(@Request() req: any) {
+    const tenantId = req.user.tenantId;
+    const brokerId = req.user.role === UserRole.BROKER ? req.user.userId : null;
+    return this.brokersService.getBrokerContracts(tenantId, brokerId);
+  }
 }
 

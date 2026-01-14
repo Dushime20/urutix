@@ -93,7 +93,7 @@ export class BrokersService {
 
     const defaultCommissionRate =
       createBrokerDto.defaultCommissionRate ??
-      (tenant?.brokerSettings as any)?.defaultCommissionRate ??
+      (tenant?.settings as any)?.defaultCommissionRate ??
       5.0; // Default 5%
 
     // Create broker user
@@ -661,6 +661,14 @@ export class BrokersService {
   ): Promise<any[]> {
     // This would query a PayoutRequest entity
     // For now, return empty array as placeholder
+    return [];
+  }
+
+  /**
+   * Get broker contracts
+   */
+  async getBrokerContracts(tenantId: string, brokerId?: string): Promise<any[]> {
+    // Return empty array for now - contracts feature to be implemented
     return [];
   }
 

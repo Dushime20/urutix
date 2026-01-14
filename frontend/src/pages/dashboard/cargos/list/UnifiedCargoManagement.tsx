@@ -33,7 +33,7 @@ import { loadStatusWebSocket } from "@/services/loadStatusWebSocket";
 import { AssignBrokerModal } from "@/components/CargoDashboard/AssignBrokerModal";
 import { getStatusColor, getStatusDisplayName } from "./utils";
 
-type TabType = "all" | "active" | "create" | "template" | "bidding";
+type TabType = "all" | "active" | "drafts" | "create" | "template" | "bidding";
 
 const UnifiedCargoManagement = () => {
   const { user } = useAuth();
@@ -47,6 +47,7 @@ const UnifiedCargoManagement = () => {
     const tabParam = searchParams.get("tab");
 
     if (tabParam === "template") return "template";
+    if (tabParam === "drafts") return "drafts";
     if (location.pathname.includes("/cargos/create")) return "create";
     if (location.pathname.includes("/cargos/active")) return "active";
     if (location.pathname.includes("/bidding")) return "bidding";
@@ -86,6 +87,8 @@ const UnifiedCargoManagement = () => {
       // Don't navigate, keep on current route
     } else if (tab === "active") {
       navigate(`${basePath}/cargos/active`, { replace: true });
+    } else if (tab === "drafts") {
+      navigate(`${basePath}/cargos/list?tab=drafts`, { replace: true });
     } else if (tab === "bidding") {
       navigate(`${basePath}/bidding`, { replace: true });
     } else {
@@ -278,9 +281,14 @@ const UnifiedCargoManagement = () => {
     );
   }, [loadsData]);
 
+  // Filter for drafts
+  const draftLoads = useMemo(() => {
+    return loadsData.filter((load: any) => load.status === "DRAFT");
+  }, [loadsData]);
+
   // Filter loads based on search and filters
   const filteredLoads = useMemo(() => {
-    let filtered = activeTab === "active" ? activeLoads : loadsData;
+    let filtered = activeTab === "active" ? activeLoads : activeTab === "drafts" ? draftLoads : loadsData.filter((load: any) => load.status !== "DRAFT");
 
     if (searchTerm && searchTerm.trim()) {
       const searchLower = searchTerm.toLowerCase().trim();
@@ -549,6 +557,7 @@ const UnifiedCargoManagement = () => {
         status: "DRAFT",
       });
       toast.success("Draft saved successfully");
+      refetch();
     } catch (error: any) {
       toast.error(error?.message || "Failed to save draft");
     }
@@ -566,6 +575,12 @@ const UnifiedCargoManagement = () => {
       label: "Active",
       icon: Activity,
       count: activeLoads.length,
+    },
+    {
+      id: "drafts" as TabType,
+      label: "Drafts",
+      icon: FileText,
+      count: draftLoads.length,
     },
     {
       id: "create" as TabType,
@@ -665,7 +680,7 @@ const UnifiedCargoManagement = () => {
           {/* Tab Content */}
           <div className="p-3 sm:p-4 md:p-6 pt-3 sm:pt-4 md:pt-6">
             {/* Filters - Only show for list views */}
-            {(activeTab === "all" || activeTab === "active") && (
+            {(activeTab === "all" || activeTab === "active" || activeTab === "drafts") && (
               <div className="mb-4 sm:mb-6">
                 <div className="flex flex-col gap-2 sm:gap-3 lg:flex-row lg:items-end">
                   <div className="relative flex-1 w-full">
@@ -749,8 +764,8 @@ const UnifiedCargoManagement = () => {
               </div>
             )}
 
-            {/* All Cargo / Active Tab */}
-            {(activeTab === "all" || activeTab === "active") && (
+            {/* All Cargo / Active / Drafts Tab */}
+            {(activeTab === "all" || activeTab === "active" || activeTab === "drafts") && (
               <div>
                 {isLoading ? (
                   <div className="text-center py-8 sm:py-12">
@@ -772,9 +787,11 @@ const UnifiedCargoManagement = () => {
                     <p className="text-sm sm:text-base text-gray-600 mb-4">
                       {activeTab === "active"
                         ? "No active shipments at the moment."
+                        : activeTab === "drafts"
+                        ? "No saved drafts. Start creating cargo to save drafts."
                         : "Create your first cargo shipment to get started."}
                     </p>
-                    {activeTab === "all" && (
+                    {(activeTab === "all" || activeTab === "drafts") && (
                       <button
                         onClick={() => setActiveTab("create")}
                         className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors touch-manipulation min-h-[44px] sm:min-h-0"

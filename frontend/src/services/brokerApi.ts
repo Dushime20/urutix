@@ -4,7 +4,7 @@ import api from './api';
 export const brokerAPI = {
   // Broker Management
   getBrokers: (params?: any) => 
-    api.get('/brokers', { params }),
+    api.get('/users', { params: { role: 'BROKER', ...params } }),
 
   getBroker: (brokerId: string) => 
     api.get(`/brokers/${brokerId}`),
@@ -29,10 +29,10 @@ export const brokerAPI = {
 
   // Load Assignment
   assignBrokerToLoad: (loadId: string, data: { brokerId: string; commissionRate?: number }) => 
-    api.post(`/brokers/loads/${loadId}/assign`, data),
+    api.patch(`/loads-v2/${loadId}`, { brokerId: data.brokerId, brokerCommissionRate: data.commissionRate }),
 
   unassignBrokerFromLoad: (loadId: string) => 
-    api.delete(`/brokers/loads/${loadId}/assign`),
+    api.patch(`/loads-v2/${loadId}`, { brokerId: null, brokerCommissionRate: null }),
 
   // Available Loads (for discovery)
   getAvailableLoads: (params?: any) => 

@@ -29,6 +29,7 @@ import AdminLayout from './components/Layout/AdminLayout';
 import TenantAdminLayout from './components/Layout/TenantAdminLayout';
 import LenderLayout from './components/Layout/LenderLayout';
 import BrokerLayout from './components/Layout/BrokerLayout';
+import BrokerRouteTest from './components/BrokerRouteTest';
 import RoleBasedLayout from './components/Layout/RoleBasedLayout';
 import Auth from './pages/Auth';
 import Home from './pages/Home';
@@ -118,8 +119,10 @@ const LenderSupportPage = lazy(() => import('./pages/LenderSupportPage'));
 const LenderTeamManagementPage = lazy(() => import('./pages/LenderTeamManagementPage'));
 
 // Broker Pages
+const SimpleBrokerDashboard = lazy(() => import('./pages/broker/SimpleBrokerDashboard'));
 const BrokerDashboard = lazy(() => import('./pages/broker/BrokerDashboard'));
 const BrokerProfile = lazy(() => import('./pages/broker/BrokerProfile'));
+const BrokerBidding = lazy(() => import('./pages/broker/BrokerBidding'));
 const CargoDiscovery = lazy(() => import('./pages/broker/CargoDiscovery'));
 const DealFacilitation = lazy(() => import('./pages/broker/DealFacilitation'));
 const CommissionsPage = lazy(() => import('./pages/broker/CommissionsPage'));
@@ -324,7 +327,7 @@ function App() {
 
             {/* Admin Routes */}
             <Route path="/admin" element={<AdminLayout />}>
-              <Route index element={<AdminDashboard />} />
+              <Route index element={<Navigate to="/admin/users" replace />} />
               <Route path="lenders/register" element={<AdminLenderRegistrationPage />} />
               <Route path="lenders" element={<Navigate to="lenders/register" replace />} />
               <Route path="borrowers" element={<AdminBorrowersPage />} />
@@ -342,6 +345,8 @@ function App() {
               <Route path="trips" element={<AdminTrips />} />
               <Route path="tenants" element={<AdminTenants />} />
               <Route path="routes" element={<AdminRoutes />} />
+              <Route path="reports" element={<Analytics />} />
+              <Route path="help" element={<Settings />} />
               <Route path="profile" element={<Profile />} />
               <Route path="settings" element={<Settings />} />
             </Route>
@@ -389,10 +394,13 @@ function App() {
 
             {/* Broker Routes */}
             <Route path="/dashboard/broker" element={<BrokerLayout />}>
-              <Route index element={<BrokerDashboard />} />
+              <Route index element={<SimpleBrokerDashboard />} />
+              <Route path="test" element={<BrokerRouteTest />} />
               <Route path="loads" element={<BrokerLoadsPage />} />
               <Route path="loads/:loadId" element={<BrokerLoadDetail />} />
               <Route path="loads/:loadId/tracking" element={<LoadTracking />} />
+              <Route path="bidding" element={<BrokerBidding />} />
+              <Route path="tracking" element={<LoadTracking />} />
               <Route path="discovery" element={<CargoDiscovery />} />
               <Route path="deals" element={<DealFacilitation />} />
               <Route path="commissions" element={<CommissionsPage />} />

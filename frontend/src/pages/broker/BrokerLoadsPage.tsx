@@ -56,13 +56,6 @@ const BrokerLoadsPage: React.FC = () => {
               View and manage loads assigned to you
             </p>
           </div>
-          <button
-            onClick={() => navigate('/dashboard/broker/discovery')}
-            className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 flex items-center space-x-2"
-          >
-            <Package className="w-4 h-4" />
-            <span>Find More Loads</span>
-          </button>
         </div>
       </div>
 
@@ -72,15 +65,8 @@ const BrokerLoadsPage: React.FC = () => {
           <Package className="w-16 h-16 text-gray-400 mx-auto mb-4" />
           <p className="text-gray-600 mb-2">No loads assigned yet</p>
           <p className="text-sm text-gray-500 mb-6">
-            Discover available cargo and get assigned to start earning commissions
+            Wait for cargo owners to assign loads to you to start earning commissions
           </p>
-          <button
-            onClick={() => navigate('/dashboard/broker/discovery')}
-            className="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 flex items-center space-x-2 mx-auto"
-          >
-            <ArrowRight className="w-4 h-4" />
-            <span>Discover Cargo</span>
-          </button>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

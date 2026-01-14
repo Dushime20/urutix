@@ -47,6 +47,7 @@ export class UsersService {
       UserRole.DRIVER,
       UserRole.AGENT,
       UserRole.LENDER,
+      UserRole.BROKER,
     ];
 
     return validTenantRoles.includes(role);
@@ -139,6 +140,19 @@ export class UsersService {
   ): Promise<User[]> {
     return this.userRepository.find({
       where: { tenantId, role },
+      relations: ['profile'],
+    });
+  }
+
+  async findUsersByRole(role: UserRole): Promise<User[]> {
+    return this.userRepository.find({
+      where: { role },
+      relations: ['profile'],
+    });
+  }
+
+  async findAll(): Promise<User[]> {
+    return this.userRepository.find({
       relations: ['profile'],
     });
   }

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Search, Bell, User, Menu, X, ChevronDown, Package, Gavel, MapPin, BarChart3, CreditCard, FileText, Settings, HelpCircle, Truck, Users, Route, Shield, TrendingUp, Wallet, AlertCircle, DollarSign, Home, CheckCircle, Building, ClipboardList, Receipt } from 'lucide-react';
+import { Search, Bell, User, Menu, X, ChevronDown, Package, Gavel, MapPin, BarChart3, CreditCard, FileText, Settings, HelpCircle, Truck, Users, Route, Shield, Wallet, DollarSign, Home, CheckCircle, ClipboardList, Receipt } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useCargoOwnerNotifications } from '../../hooks/useCargoOwnerNotifications';
 import ContextualHelp from '../Help/ContextualHelp';
@@ -102,65 +102,24 @@ const DashboardHeader = () => {
           icon: Home
         },
         {
-          label: 'My Loads',
+          label: 'Loads',
           path: '/dashboard/broker/loads',
-          icon: Package,
-          subItems: [
-            { label: 'All Loads', path: '/dashboard/broker/loads' },
-            { label: 'Active', path: '/dashboard/broker/loads?status=ACTIVE' },
-            { label: 'Completed', path: '/dashboard/broker/loads?status=COMPLETED' },
-          ]
+          icon: Package
         },
         {
-          label: 'Cargo Discovery',
-          path: '/dashboard/broker/discovery',
-          icon: Search
-        },
-        {
-          label: 'Deal Facilitation',
-          path: '/dashboard/broker/deals',
-          icon: TrendingUp
-        },
-        {
-          label: 'Smart Matching',
-          path: '/dashboard/broker/smart-matching',
+          label: 'Bidding',
+          path: '/dashboard/broker/bidding',
           icon: Gavel
         },
         {
-          label: 'Services',
+          label: 'Contracts',
           path: '/dashboard/broker/contracts',
-          icon: FileText,
-          subItems: [
-            { label: 'Contracts', path: '/dashboard/broker/contracts' },
-            { label: 'Insurance', path: '/dashboard/broker/insurance' },
-            { label: 'Escrow', path: '/dashboard/broker/escrow' },
-            { label: 'Documents', path: '/dashboard/broker/documents' },
-          ]
+          icon: FileText
         },
         {
-          label: 'Disputes',
-          path: '/dashboard/broker/disputes',
-          icon: AlertCircle
-        },
-        {
-          label: 'Market Intelligence',
-          path: '/dashboard/broker/market-intelligence',
-          icon: BarChart3
-        },
-        {
-          label: 'Credit Management',
-          path: '/dashboard/broker/credit-management',
-          icon: CreditCard
-        },
-        {
-          label: 'Multi-Stop',
-          path: '/dashboard/broker/multi-stop',
-          icon: Route
-        },
-        {
-          label: 'Performance Analytics',
-          path: '/dashboard/broker/performance',
-          icon: BarChart3
+          label: 'Tracking',
+          path: '/dashboard/broker/tracking',
+          icon: MapPin
         },
         {
           label: 'Commissions',
@@ -283,49 +242,9 @@ const DashboardHeader = () => {
     if (user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN') {
       return [
         {
-          label: 'Overview',
-          path: '/admin',
-          icon: Home
-        },
-        {
-          label: 'Monitoring',
-          path: '/admin/monitoring',
-          icon: BarChart3
-        },
-        {
-          label: 'Bidding',
-          path: '/admin/bidding',
-          icon: Gavel
-        },
-        {
-          label: 'Disputes',
-          path: '/admin/disputes',
-          icon: AlertCircle
-        },
-        {
-          label: 'Financial',
-          path: '/admin/financial',
-          icon: DollarSign
-        },
-        {
           label: 'Users',
           path: '/admin/users',
           icon: Users
-        },
-        {
-          label: 'Trucks',
-          path: '/admin/trucks',
-          icon: Truck
-        },
-        {
-          label: 'Loads',
-          path: '/admin/loads',
-          icon: Package
-        },
-        {
-          label: 'Trips',
-          path: '/admin/trips',
-          icon: Route
         },
         {
           label: 'Analytics',
@@ -333,24 +252,19 @@ const DashboardHeader = () => {
           icon: BarChart3
         },
         {
-          label: 'Tenants',
-          path: '/admin/tenants',
-          icon: Building
+          label: 'Settings',
+          path: '/admin/settings',
+          icon: Settings
         },
         {
-          label: 'Routes',
-          path: '/admin/routes',
-          icon: Route
+          label: 'Reports',
+          path: '/admin/reports',
+          icon: FileText
         },
         {
-          label: 'Lenders',
-          path: '/admin/lenders/register',
-          icon: DollarSign
-        },
-        {
-          label: 'Borrowers',
-          path: '/admin/borrowers',
-          icon: Users
+          label: 'Help',
+          path: '/admin/help',
+          icon: HelpCircle
         },
       ];
     }
@@ -524,7 +438,6 @@ const DashboardHeader = () => {
       path === '/dashboard/broker' || path === '/dashboard/broker/' ||
       path === '/dashboard/driver' || path === '/dashboard/driver/' ||
       path === '/dashboard/fleet' || path === '/dashboard/fleet/' ||
-      path === '/admin' || path === '/admin/' ||
       path === '/lender' || path === '/lender/' ||
       path === '/tenant-admin' || path === '/tenant-admin/') return 'Dashboard';
 
@@ -576,20 +489,11 @@ const DashboardHeader = () => {
 
     // Admin paths
     if (user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN') {
-      if (path.includes('/admin/monitoring')) return 'Monitoring';
-      if (path.includes('/admin/bidding')) return 'Bidding';
-      if (path.includes('/admin/disputes')) return 'Disputes';
-      if (path.includes('/admin/financial')) return 'Financial';
       if (path.includes('/admin/users')) return 'Users';
-      if (path.includes('/admin/trucks')) return 'Trucks';
-      if (path.includes('/admin/loads')) return 'Loads';
-      if (path.includes('/admin/trips')) return 'Trips';
       if (path.includes('/admin/analytics')) return 'Analytics';
-      if (path.includes('/admin/tenants')) return 'Tenants';
-      if (path.includes('/admin/routes')) return 'Routes';
-      if (path.includes('/admin/lenders')) return 'Lenders';
-      if (path.includes('/admin/borrowers')) return 'Borrowers';
-      if (path.includes('/notifications')) return 'Notifications';
+      if (path.includes('/admin/settings')) return 'Settings';
+      if (path.includes('/admin/reports')) return 'Reports';
+      if (path.includes('/admin/help')) return 'Help';
     }
 
     // Lender paths
@@ -637,18 +541,19 @@ const DashboardHeader = () => {
   const activeNavItem = getActiveNavItem();
 
   const handleNavClick = (path: string) => {
+    console.log('Navigating to:', path);
     navigate(path);
     setShowMobileMenu(false);
     setOpenDropdown(null);
   };
 
   return (
-    <div className="bg-white border-b border-gray-200 text-gray-900 px-4 pt-6 pb-3 sm:px-6 sm:pt-8 sm:pb-4 relative overflow-hidden z-40">
+    <div className="bg-white border-b border-gray-200 text-gray-900 px-4 pt-6 pb-3 sm:px-6 sm:pt-8 sm:pb-4 relative overflow-hidden z-10">
 
       {/* Custom Header inside Dark Section */}
-      <div className="max-w-7xl mx-auto px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8 relative z-40">
+      <div className="max-w-7xl mx-auto px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8 relative z-10">
         {/* Top Row: Logo, Mobile Menu, Search, Notifications, User */}
-        <div className="flex justify-between items-center relative z-40 gap-2 sm:gap-3 md:gap-4">
+        <div className="flex justify-between items-center relative z-10 gap-2 sm:gap-3 md:gap-4">
           <div className="flex items-center gap-2 sm:gap-3 md:gap-4 min-w-0 flex-1">
             {/* Mobile Menu Button */}
             <button
