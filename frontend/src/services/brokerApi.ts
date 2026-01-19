@@ -3,185 +3,189 @@ import api from './api';
 // Broker API Service
 export const brokerAPI = {
   // Broker Management
-  getBrokers: (params?: any) => 
+  getBrokers: (params?: any) =>
     api.get('/brokers', { params }),
 
-  getBroker: (brokerId: string) => 
+  getBroker: (brokerId: string) =>
     api.get(`/brokers/${brokerId}`),
 
-  updateBroker: (brokerId: string, data: any) => 
+  updateBroker: (brokerId: string, data: any) =>
     api.put(`/brokers/${brokerId}`, data),
 
   // Broker Loads
-  getBrokerLoads: (brokerId: string, params?: any) => 
+  getBrokerLoads: (brokerId: string, params?: any) =>
     api.get(`/brokers/${brokerId}/loads`, { params }),
 
   // Broker Commissions
-  getBrokerCommissions: (brokerId: string, params?: any) => 
+  getBrokerCommissions: (brokerId: string, params?: any) =>
     api.get(`/brokers/${brokerId}/commissions`, { params }),
 
-  updateCommissionStatus: (commissionId: string, data: { status: string; paymentReference?: string }) => 
+  updateCommissionStatus: (commissionId: string, data: { status: string; paymentReference?: string }) =>
     api.put(`/brokers/commissions/${commissionId}/status`, data),
 
   // Broker Statistics
-  getBrokerStatistics: (brokerId: string) => 
+  getBrokerStatistics: (brokerId: string) =>
     api.get(`/brokers/${brokerId}/statistics`),
 
   // Load Assignment
-  assignBrokerToLoad: (loadId: string, data: { brokerId: string; commissionRate?: number }) => 
+  assignBrokerToLoad: (loadId: string, data: { brokerId: string; commissionRate?: number }) =>
     api.post(`/brokers/loads/${loadId}/assign`, { brokerId: data.brokerId, commissionRate: data.commissionRate }),
 
-  unassignBrokerFromLoad: (loadId: string) => 
-    api.patch(`/loads-v2/${loadId}`, { brokerId: null, brokerCommissionRate: null }),
+  unassignBrokerFromLoad: (loadId: string) =>
+    api.put(`/brokers/loads/${loadId}/unassign`),
 
   // Available Loads (for discovery)
-  getAvailableLoads: (params?: any) => 
+  getAvailableLoads: (params?: any) =>
     api.get('/loads', { params }),
 
-  getLoad: (loadId: string) => 
+  getLoad: (loadId: string) =>
     api.get(`/loads/${loadId}`),
 
   // Transporter Search (for matching)
-  searchTransporters: (params?: any) => 
+  searchTransporters: (params?: any) =>
     api.get('/fleet/trucks', { params }),
 
-  getTransporterProfile: (truckOwnerId: string) => 
+  getTransporterProfile: (truckOwnerId: string) =>
     api.get(`/users/${truckOwnerId}`),
 
   // Commission Payout
-  requestPayout: (commissionId: string, data: any) => 
+  requestPayout: (commissionId: string, data: any) =>
     api.post(`/brokers/commissions/${commissionId}/payout`, data),
 
-  getPayoutRequests: (brokerId: string, params?: any) => 
+  getPayoutRequests: (brokerId: string, params?: any) =>
     api.get(`/brokers/${brokerId}/payouts`, { params }),
 
   // Load Tracking
-  getLoadTracking: (loadId: string) => 
-    api.get(`/loads/${loadId}/tracking`),
+  // Load Tracking
+  getLoadTracking: (brokerId: string, loadId: string) =>
+    api.get(`/brokers/${brokerId}/loads/${loadId}/tracking`),
 
   // ==================== CONTRACT MANAGEMENT ====================
-  createContract: (data: CreateContractData) => 
+  createContract: (data: CreateContractData) =>
     api.post('/brokers/contracts', data),
-  
-  getContracts: (params?: { status?: string; loadId?: string; transporterId?: string }) => 
+
+  getContracts: (params?: { status?: string; loadId?: string; transporterId?: string }) =>
     api.get('/brokers/contracts', { params }),
-  
-  getContract: (contractId: string) => 
+
+  getBrokerContracts: (brokerId: string, params?: { status?: string; loadId?: string }) =>
+    api.get(`/brokers/${brokerId}/contracts`, { params }),
+
+  getContract: (contractId: string) =>
     api.get(`/brokers/contracts/${contractId}`),
-  
-  signContract: (contractId: string, data: SignContractData) => 
+
+  signContract: (contractId: string, data: SignContractData) =>
     api.put(`/brokers/contracts/${contractId}/sign`, data),
 
-  acceptContract: (contractId: string) => 
+  acceptContract: (contractId: string) =>
     api.put(`/brokers/contracts/${contractId}/accept`),
 
   // ==================== INSURANCE VERIFICATION ====================
-  verifyInsurance: (data: VerifyInsuranceData) => 
+  verifyInsurance: (data: VerifyInsuranceData) =>
     api.post('/brokers/insurance/verify', data),
-  
-  getVerifications: (transporterId: string, loadId?: string) => 
+
+  getVerifications: (transporterId: string, loadId?: string) =>
     api.get(`/brokers/insurance/verify/${transporterId}`, { params: { loadId } }),
-  
-  checkCompliance: (transporterId: string, types: string[]) => 
+
+  checkCompliance: (transporterId: string, types: string[]) =>
     api.get(`/brokers/insurance/compliance/${transporterId}`, { params: { types: types.join(',') } }),
 
   // ==================== DISPUTE RESOLUTION ====================
-  createDispute: (data: CreateDisputeData) => 
+  createDispute: (data: CreateDisputeData) =>
     api.post('/brokers/disputes', data),
-  
-  getDisputes: (params?: { status?: string; category?: string; loadId?: string }) => 
+
+  getDisputes: (params?: { status?: string; category?: string; loadId?: string }) =>
     api.get('/brokers/disputes', { params }),
-  
-  getDispute: (disputeId: string) => 
+
+  getDispute: (disputeId: string) =>
     api.get(`/brokers/disputes/${disputeId}`),
-  
-  startMediation: (disputeId: string, notes?: string) => 
+
+  startMediation: (disputeId: string, notes?: string) =>
     api.put(`/brokers/disputes/${disputeId}/mediate`, { notes }),
-  
-  resolveDispute: (disputeId: string, data: ResolveDisputeData) => 
+
+  resolveDispute: (disputeId: string, data: ResolveDisputeData) =>
     api.put(`/brokers/disputes/${disputeId}/resolve`, data),
 
   // ==================== ESCROW MANAGEMENT ====================
-  createEscrow: (data: CreateEscrowData) => 
+  createEscrow: (data: CreateEscrowData) =>
     api.post('/brokers/escrow', data),
-  
-  getEscrows: (params?: { status?: string; loadId?: string }) => 
+
+  getEscrows: (params?: { status?: string; loadId?: string }) =>
     api.get('/brokers/escrow', { params }),
-  
-  getEscrow: (escrowId: string) => 
+
+  getEscrow: (escrowId: string) =>
     api.get(`/brokers/escrow/${escrowId}`),
-  
-  fundEscrow: (escrowId: string, data: FundEscrowData) => 
+
+  fundEscrow: (escrowId: string, data: FundEscrowData) =>
     api.put(`/brokers/escrow/${escrowId}/fund`, data),
-  
-  releaseEscrow: (escrowId: string, data: ReleaseEscrowData) => 
+
+  releaseEscrow: (escrowId: string, data: ReleaseEscrowData) =>
     api.put(`/brokers/escrow/${escrowId}/release`, data),
 
   // ==================== DOCUMENT MANAGEMENT ====================
-  uploadDocument: (data: CreateDocumentData) => 
+  uploadDocument: (data: CreateDocumentData) =>
     api.post('/brokers/documents', data),
-  
-  generateBOL: (loadId: string, data?: Record<string, any>) => 
+
+  generateBOL: (loadId: string, data?: Record<string, any>) =>
     api.post(`/brokers/documents/bol/${loadId}`, data || {}),
-  
-  generatePOD: (loadId: string, tripId: string, data?: Record<string, any>) => 
+
+  generatePOD: (loadId: string, tripId: string, data?: Record<string, any>) =>
     api.post(`/brokers/documents/pod/${loadId}`, data || {}, { params: { tripId } }),
-  
-  getLoadDocuments: (loadId: string, type?: string) => 
+
+  getLoadDocuments: (loadId: string, type?: string) =>
     api.get(`/brokers/documents/load/${loadId}`, { params: { type } }),
-  
-  verifyDocument: (documentId: string, notes?: string) => 
+
+  verifyDocument: (documentId: string, notes?: string) =>
     api.put(`/brokers/documents/${documentId}/verify`, { notes }),
 
   // ==================== BROKER INTELLIGENCE ====================
-  
+
   // Smart Matching
   generateRecommendations: (loadId: string, limit?: number) =>
     api.post('/brokers/intelligence/matching/generate', { loadId, limit }),
-  
+
   getRecommendations: (loadId: string) =>
     api.get(`/brokers/intelligence/matching/recommendations/${loadId}`),
-  
+
   acceptRecommendation: (recommendationId: string, notes?: string) =>
     api.put(`/brokers/intelligence/matching/recommendations/${recommendationId}/accept`, { notes }),
 
   // Market Intelligence
   analyzeMarketRate: (route: MarketRoute, loadId?: string) =>
     api.post('/brokers/intelligence/market/analyze', { route, loadId }),
-  
+
   getMarketHistory: (limit?: number) =>
     api.get('/brokers/intelligence/market/history', { params: { limit } }),
-  
+
   getMarketForecast: (route: MarketRoute) =>
     api.post('/brokers/intelligence/market/forecast', { route }),
 
   // Credit Management
   performCreditCheck: (transporterId: string) =>
     api.post('/brokers/intelligence/credit/check', { transporterId }),
-  
+
   getCreditRecords: (transporterId?: string, status?: string) =>
     api.get('/brokers/intelligence/credit/records', { params: { transporterId, status } }),
-  
+
   updatePaymentTerms: (creditId: string, data: UpdatePaymentTermsData) =>
     api.put(`/brokers/intelligence/credit/${creditId}/terms`, data),
 
   // Multi-Stop
   createMultiStopLoad: (data: CreateMultiStopLoadData) =>
     api.post('/brokers/intelligence/multi-stop', data),
-  
+
   getMultiStopLoad: (loadId: string) =>
     api.get(`/brokers/intelligence/multi-stop/${loadId}`),
-  
+
   updateMultiStopLoad: (multiStopId: string, data: UpdateMultiStopLoadData) =>
     api.put(`/brokers/intelligence/multi-stop/${multiStopId}`, data),
 
   // Performance Analytics
   calculatePerformance: (transporterId: string) =>
     api.post(`/brokers/intelligence/performance/calculate/${transporterId}`),
-  
+
   getTransporterPerformance: (transporterId: string) =>
     api.get(`/brokers/intelligence/performance/${transporterId}`),
-  
+
   getPerformanceRecords: (transporterId?: string, minReliabilityScore?: number) =>
     api.get('/brokers/intelligence/performance', { params: { transporterId, minReliabilityScore } }),
 };
@@ -226,12 +230,32 @@ export interface BrokerStatistics {
 export interface BrokerLoad {
   id: string;
   title: string;
+  description?: string;
   loadValue: number;
   currencyCode: string;
   status: string;
+  loadType?: string;
+  cargoType?: string;
+  weight?: number;
+  equipmentType?: string;
+  pickupLocation?: string;
+  deliveryLocation?: string;
+  pickupDate?: string;
+  deliveryDate?: string;
   brokerCommissionRate?: number;
   brokerCommissionAmount?: number;
   createdAt: string;
+  cargoOwner?: {
+    id: string;
+    email: string;
+    phone?: string;
+    profile?: {
+      firstName?: string;
+      lastName?: string;
+      companyName?: string;
+      phone?: string;
+    };
+  };
 }
 
 // ==================== BROKER INTELLIGENCE TYPES ====================
@@ -460,7 +484,7 @@ export interface LoadContract {
   cargoOwnerId: string;
   transporterId: string;
   contractType: 'LOAD_AGREEMENT' | 'TRANSPORT_AGREEMENT' | 'BROKER_AGREEMENT';
-  status: 'DRAFT' | 'PENDING_SIGNATURE' | 'PARTIALLY_SIGNED' | 'SIGNED' | 'ACTIVE' | 'COMPLETED' | 'CANCELLED' | 'EXPIRED';
+  status: 'DRAFT' | 'PENDING_SIGNATURE' | 'PARTIALLY_SIGNED' | 'SIGNED' | 'ACTIVE' | 'COMPLETED' | 'CANCELLED' | 'EXPIRED' | 'PENDING_BROKER_ACCEPTANCE';
   agreedRate: number;
   currencyCode: string;
   commissionRate: number;

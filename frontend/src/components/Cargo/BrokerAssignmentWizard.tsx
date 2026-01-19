@@ -4,7 +4,6 @@ import {
     ArrowRight, ArrowLeft, CheckCircle, FileText, Calendar
 } from 'lucide-react';
 import { brokerAPI } from '../../services/brokerApi';
-import api from '../../services/api';
 import toast from 'react-hot-toast';
 
 interface Broker {
@@ -145,19 +144,7 @@ export const BrokerAssignmentWizard: React.FC<BrokerAssignmentWizardProps> = ({
                 commissionRate: contractTerms.commissionRate
             });
 
-            // 2. Create Contract
-            console.log('🔄 Step 2: Creating contract...');
-            await api.post('/brokers/contracts', {
-                loadId,
-                brokerId: selectedBroker.id,
-                agreedRate: Number(contractTerms.agreedRate),
-                commissionRate: Number(contractTerms.commissionRate),
-                paymentTerms: contractTerms.paymentTerms,
-                pickupDate: contractTerms.pickupDate ? new Date(contractTerms.pickupDate) : undefined,
-                deliveryDate: contractTerms.deliveryDate ? new Date(contractTerms.deliveryDate) : undefined,
-                specialInstructions: contractTerms.specialInstructions,
-                contractType: 'BROKER_AGREEMENT'
-            });
+
 
             toast.success('Broker assigned and contract sent!');
 

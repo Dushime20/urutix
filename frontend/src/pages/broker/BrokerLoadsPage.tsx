@@ -2,15 +2,13 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { brokerAPI, type BrokerLoad, type LoadContract } from '../../services/brokerApi';
-import ContractAcceptanceModal from '../../components/Broker/ContractAcceptanceModal';
+import ContractAcceptanceModal from '../../components/broker/ContractAcceptanceModal';
 import FilterSelect from '../../components/common/FilterSelect';
-import { 
-  Package, 
-  MapPin, 
-  DollarSign, 
-  Calendar,
+import {
+  Package,
+  MapPin,
+  DollarSign,
   Eye,
-  TrendingUp,
   Loader2,
   FileText,
   CheckCircle,
@@ -35,7 +33,7 @@ const BrokerLoadsPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [selectedContract, setSelectedContract] = useState<LoadContract | null>(null);
   const [showContractModal, setShowContractModal] = useState(false);
-  
+
   // Filters and view mode
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
@@ -52,15 +50,15 @@ const BrokerLoadsPage: React.FC = () => {
     try {
       setLoading(true);
       console.log('Loading broker loads for user:', user!.id, 'email:', user!.email);
-      
+
       const [loadsResponse, contractsResponse] = await Promise.all([
         brokerAPI.getBrokerLoads(user!.id),
         brokerAPI.getContracts()
       ]);
-      
+
       console.log('Loads response:', loadsResponse);
       console.log('Loads data:', loadsResponse.data);
-      
+
       // Handle different response formats
       let loadsData: BrokerLoad[] = [];
       if (Array.isArray(loadsResponse.data)) {
@@ -70,10 +68,10 @@ const BrokerLoadsPage: React.FC = () => {
       } else if (loadsResponse.data && Array.isArray(loadsResponse.data)) {
         loadsData = loadsResponse.data;
       }
-      
+
       console.log('Processed loads:', loadsData.length, loadsData);
       setLoads(loadsData);
-      
+
       // Fetch contracts and map them by loadId
       const contractsData = contractsResponse.data || contractsResponse || [];
       const contractsMap = new Map<string, LoadContract>();
@@ -85,7 +83,7 @@ const BrokerLoadsPage: React.FC = () => {
         });
       }
       setContracts(contractsMap);
-      
+
       if (loadsData.length === 0) {
         console.warn('No loads found for broker. This might be expected if no loads have been assigned yet.');
       }
@@ -101,15 +99,15 @@ const BrokerLoadsPage: React.FC = () => {
   // Filter loads
   const filteredLoads = useMemo(() => {
     return loads.filter(load => {
-      const matchesSearch = 
+      const matchesSearch =
         load.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         load.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         load.id.toLowerCase().includes(searchTerm.toLowerCase());
-      
+
       const matchesStatus = !statusFilter || load.status === statusFilter;
-      
+
       const matchesCargoType = !cargoTypeFilter || load.cargoType === cargoTypeFilter;
-      
+
       return matchesSearch && matchesStatus && matchesCargoType;
     });
   }, [loads, searchTerm, statusFilter, cargoTypeFilter]);
@@ -153,7 +151,7 @@ const BrokerLoadsPage: React.FC = () => {
     try {
       console.log('Starting PDF download for contract:', contract.id);
       console.log('Using load data:', loadData);
-      
+
       // Fetch full contract details with relations
       let fullContract;
       try {
@@ -165,7 +163,7 @@ const BrokerLoadsPage: React.FC = () => {
         toast.error(`Failed to fetch contract: ${err.response?.data?.message || err.message}`);
         return;
       }
-      
+
       // Use contract data if available, otherwise use load data
       const loadInfo = fullContract.load || loadData;
 
@@ -173,25 +171,25 @@ const BrokerLoadsPage: React.FC = () => {
       const cargoOwnerName = fullContract.cargoOwner?.profile?.firstName && fullContract.cargoOwner?.profile?.lastName
         ? `${fullContract.cargoOwner.profile.firstName} ${fullContract.cargoOwner.profile.lastName}`
         : fullContract.cargoOwner?.email || 'Cargo Owner';
-      
+
       const cargoOwnerCompany = fullContract.cargoOwner?.profile?.companyName || 'N/A';
       const cargoOwnerEmail = fullContract.cargoOwner?.email || 'N/A';
       const cargoOwnerPhone = fullContract.cargoOwner?.phone || fullContract.cargoOwner?.profile?.phone || 'N/A';
 
-      const brokerName = user?.profile?.firstName && user?.profile?.lastName
-        ? `${user.profile.firstName} ${user.profile.lastName}`
+      const brokerName = (user as any)?.profile?.firstName && (user as any)?.profile?.lastName
+        ? `${(user as any).profile.firstName} ${(user as any).profile.lastName}`
         : user?.email || 'Broker';
-      const brokerCompany = user?.profile?.companyName || 'N/A';
+      const brokerCompany = (user as any)?.profile?.companyName || 'N/A';
       const brokerEmail = user?.email || 'N/A';
-      const brokerPhone = user?.phone || user?.profile?.phone || 'N/A';
+      const brokerPhone = (user as any)?.phone || (user as any)?.profile?.phone || 'N/A';
 
       // Get locations from load data or contract
-      const pickupLocation = loadInfo.locations?.find((loc: any) => loc.type === 'PICKUP')?.locationData?.address 
-        || loadInfo.pickupLocation 
+      const pickupLocation = loadInfo.locations?.find((loc: any) => loc.type === 'PICKUP')?.locationData?.address
+        || loadInfo.pickupLocation
         || loadData.pickupLocation
         || 'N/A';
-      const deliveryLocation = loadInfo.locations?.find((loc: any) => loc.type === 'DELIVERY')?.locationData?.address 
-        || loadInfo.deliveryLocation 
+      const deliveryLocation = loadInfo.locations?.find((loc: any) => loc.type === 'DELIVERY')?.locationData?.address
+        || loadInfo.deliveryLocation
         || loadData.deliveryLocation
         || 'N/A';
 
@@ -231,20 +229,20 @@ const BrokerLoadsPage: React.FC = () => {
           cargoType: loadData.cargoType || loadInfo.cargoType || 'GENERAL',
           pickupLocation,
           deliveryLocation,
-          pickupDate: fullContract.pickupDate 
+          pickupDate: fullContract.pickupDate
             ? new Date(fullContract.pickupDate).toISOString().split('T')[0]
-            : loadData.pickupDate 
-            ? new Date(loadData.pickupDate).toISOString().split('T')[0]
-            : loadInfo.pickupDate
-            ? new Date(loadInfo.pickupDate).toISOString().split('T')[0]
-            : new Date().toISOString().split('T')[0],
+            : loadData.pickupDate
+              ? new Date(loadData.pickupDate).toISOString().split('T')[0]
+              : loadInfo.pickupDate
+                ? new Date(loadInfo.pickupDate).toISOString().split('T')[0]
+                : new Date().toISOString().split('T')[0],
           deliveryDate: fullContract.deliveryDate
             ? new Date(fullContract.deliveryDate).toISOString().split('T')[0]
             : loadData.deliveryDate
-            ? new Date(loadData.deliveryDate).toISOString().split('T')[0]
-            : loadInfo.deliveryDate
-            ? new Date(loadInfo.deliveryDate).toISOString().split('T')[0]
-            : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+              ? new Date(loadData.deliveryDate).toISOString().split('T')[0]
+              : loadInfo.deliveryDate
+                ? new Date(loadInfo.deliveryDate).toISOString().split('T')[0]
+                : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
         },
         commission: {
           rate: fullContract.commissionRate || 0,
@@ -254,10 +252,10 @@ const BrokerLoadsPage: React.FC = () => {
         },
         contract: {
           id: fullContract.id || contract.id,
-          date: fullContract.createdAt 
+          date: fullContract.createdAt
             ? new Date(fullContract.createdAt).toISOString().split('T')[0]
             : new Date().toISOString().split('T')[0],
-          effectiveDate: fullContract.pickupDate 
+          effectiveDate: fullContract.pickupDate
             ? new Date(fullContract.pickupDate).toISOString().split('T')[0]
             : new Date().toISOString().split('T')[0],
           jurisdiction: 'Kenya'
@@ -300,7 +298,7 @@ const BrokerLoadsPage: React.FC = () => {
           }
           pdf.setFontSize(fontSize);
           pdf.setFont('helvetica', isBold ? 'bold' : 'normal');
-          
+
           const lines = pdf.splitTextToSize(text, maxWidth);
           lines.forEach((line: string) => {
             if (yPosition > pageHeight - 30) {
@@ -381,7 +379,7 @@ const BrokerLoadsPage: React.FC = () => {
           if (line.trim().startsWith('TERMS AND CONDITIONS')) return;
           if (line.trim().startsWith('SIGNATURES')) return;
           if (line.trim().startsWith('This contract')) return;
-          
+
           if (line.trim().match(/^\d+\./)) {
             addText(line.trim(), 11, true);
           } else if (line.trim().match(/^\d+\.\d+/)) {
@@ -525,7 +523,7 @@ const BrokerLoadsPage: React.FC = () => {
           <Package className="w-16 h-16 text-gray-400 mx-auto mb-4" />
           <p className="text-gray-600 mb-2">No loads found</p>
           <p className="text-sm text-gray-500 mb-6">
-            {loads.length === 0 
+            {loads.length === 0
               ? 'Wait for cargo owners to assign loads to you to start earning commissions'
               : 'Try adjusting your filters to see more results'}
           </p>
@@ -587,8 +585,8 @@ const BrokerLoadsPage: React.FC = () => {
                           contract.status === 'PENDING_BROKER_ACCEPTANCE'
                             ? 'bg-yellow-50 border-yellow-200'
                             : contract.status === 'ACTIVE'
-                            ? 'bg-green-50 border-green-200'
-                            : 'bg-gray-50 border-gray-200'
+                              ? 'bg-green-50 border-green-200'
+                              : 'bg-gray-50 border-gray-200'
                         )}>
                           <div className="flex items-center justify-between">
                             <div className="flex items-center space-x-2">
@@ -606,8 +604,8 @@ const BrokerLoadsPage: React.FC = () => {
                                   contract.status === 'PENDING_BROKER_ACCEPTANCE'
                                     ? 'text-yellow-700'
                                     : contract.status === 'ACTIVE'
-                                    ? 'text-green-700'
-                                    : 'text-gray-700'
+                                      ? 'text-green-700'
+                                      : 'text-gray-700'
                                 )}>
                                   {contract.status.replace('_', ' ')}
                                 </p>
@@ -687,7 +685,7 @@ const BrokerLoadsPage: React.FC = () => {
                         <tr key={load.id} className="hover:bg-gray-50 transition-colors">
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="flex items-center">
-                              <div className="flex-shrink-0 h-10 w-10 bg-gradient-to-br from-orange-500 to-rose-600 rounded-lg flex items-center justify-center">
+                              <div className="flex-shrink-0 h-10 w-10 rounded-lg flex items-center justify-center" style={{ background: '#345E85' }}>
                                 <Package className="h-5 w-5 text-white" />
                               </div>
                               <div className="ml-4">
@@ -738,8 +736,8 @@ const BrokerLoadsPage: React.FC = () => {
                                   contract.status === 'PENDING_BROKER_ACCEPTANCE'
                                     ? 'text-yellow-700'
                                     : contract.status === 'ACTIVE'
-                                    ? 'text-green-700'
-                                    : 'text-gray-700'
+                                      ? 'text-green-700'
+                                      : 'text-gray-700'
                                 )}>
                                   {contract.status.replace('_', ' ')}
                                 </span>

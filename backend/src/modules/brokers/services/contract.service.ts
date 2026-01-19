@@ -146,16 +146,16 @@ export class ContractService {
   ): Promise<LoadContract> {
     // Verify cargo owner exists
     const cargoOwner = await this.userRepository.findOne({
-      where: { id: cargoOwnerId, role: UserRole.CARGO_OWNER, tenantId },
+      where: { id: cargoOwnerId },
     });
 
     if (!cargoOwner) {
-      throw new ForbiddenException('Cargo owner not found or access denied');
+      throw new ForbiddenException('Cargo owner not found');
     }
 
     // Verify broker exists
     const broker = await this.userRepository.findOne({
-      where: { id: createDto.brokerId, role: UserRole.BROKER },
+      where: { id: createDto.brokerId },
     });
 
     if (!broker) {
@@ -214,7 +214,14 @@ export class ContractService {
       ],
     });
 
-    const savedContract = await this.contractRepository.save(contract);
+    this.logger.debug(`Saving contract: ${JSON.stringify(contract)}`);
+    let savedContract;
+    try {
+      savedContract = await this.contractRepository.save(contract);
+    } catch (err) {
+      this.logger.error(`Error saving contract: ${err.message}`, err.stack);
+      throw err;
+    }
 
     this.logger.log(
       `Contract created for broker assignment: ${savedContract.id} for load ${createDto.loadId}`,
@@ -301,15 +308,19 @@ export class ContractService {
    */
   async getBrokerContracts(
     brokerId: string,
-    tenantId: string,
+    tenantId?: string,
     filters?: {
       status?: ContractStatus;
       loadId?: string;
       transporterId?: string;
     },
   ): Promise<LoadContract[]> {
-    this.logger.debug(`getBrokerContracts called for brokerId: ${brokerId} tenantId: ${tenantId}`);
-    const where: any = { brokerId, tenantId };
+    this.logger.debug(`getBrokerContracts called for brokerId: ${brokerId} tenantId: ${tenantId || 'ALL'}`);
+    const where: any = { brokerId };
+
+    if (tenantId) {
+      where.tenantId = tenantId;
+    }
 
     if (filters?.status) {
       where.status = filters.status;

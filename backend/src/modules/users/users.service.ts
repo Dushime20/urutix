@@ -30,7 +30,7 @@ export class UsersService {
     private readonly userProfileRepository: Repository<UserProfile>,
     @InjectRepository(Tenant)
     private readonly tenantRepository: Repository<Tenant>,
-  ) {}
+  ) { }
 
   async create(payload: any) {
     // Implement user creation logic here
@@ -96,6 +96,10 @@ export class UsersService {
       tenantId: createUserDto.tenantId,
       emailVerifiedAt: new Date(), // Auto-verify for tenant users
       phone: createUserDto.phoneNumber,
+      // Set brokerTenantId for brokers so they can be queried by tenant
+      ...(createUserDto.role === UserRole.BROKER && {
+        brokerTenantId: createUserDto.tenantId,
+      }),
     });
 
     const savedUser = await this.userRepository.save(user);

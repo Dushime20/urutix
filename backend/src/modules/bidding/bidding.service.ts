@@ -5,7 +5,7 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, In } from 'typeorm';
 import { Bid, BidStatus } from '../../entities/bid.entity';
 import {
   Auction,
@@ -117,7 +117,7 @@ export class BiddingService {
     private readonly viewRepository: Repository<AuctionView>,
     @InjectRepository(LoadContract)
     private readonly contractRepository: Repository<LoadContract>,
-  ) {}
+  ) { }
 
   async createBid(
     createBidDto: CreateBidDto,
@@ -160,7 +160,7 @@ export class BiddingService {
     // Check if auction is active or if scheduled auction start time has passed
     const now = new Date();
     const auctionStart = auction.auctionStart ? new Date(auction.auctionStart) : null;
-    const isAuctionActive = auction.status === AuctionStatus.ACTIVE || 
+    const isAuctionActive = auction.status === AuctionStatus.ACTIVE ||
       (auction.status === AuctionStatus.SCHEDULED && auctionStart && auctionStart <= now);
 
     if (!isAuctionActive) {
@@ -207,7 +207,7 @@ export class BiddingService {
       if (
         currentHighestBid &&
         createBidDto.bidAmount <=
-          currentHighestBid + auction.minimumBidIncrement
+        currentHighestBid + auction.minimumBidIncrement
       ) {
         throw new BadRequestException(
           `Bid must be at least ${auction.minimumBidIncrement} more than current highest bid`,
@@ -225,10 +225,10 @@ export class BiddingService {
     }
 
     // If requireAdvancePayment is false, advancePaymentPercentage should be 0 or null
-    if (createBidDto.requireAdvancePayment === false && 
-        createBidDto.advancePaymentPercentage !== undefined && 
-        createBidDto.advancePaymentPercentage !== null &&
-        createBidDto.advancePaymentPercentage > 0) {
+    if (createBidDto.requireAdvancePayment === false &&
+      createBidDto.advancePaymentPercentage !== undefined &&
+      createBidDto.advancePaymentPercentage !== null &&
+      createBidDto.advancePaymentPercentage > 0) {
       throw new BadRequestException(
         'Cannot specify advance payment percentage when advance payment is not required',
       );
@@ -240,8 +240,8 @@ export class BiddingService {
       truckOwnerId,
       status: BidStatus.PENDING,
       bidCurrency: createBidDto.bidCurrency || 'USD',
-      requireAdvancePayment: createBidDto.requireAdvancePayment !== undefined 
-        ? createBidDto.requireAdvancePayment 
+      requireAdvancePayment: createBidDto.requireAdvancePayment !== undefined
+        ? createBidDto.requireAdvancePayment
         : true, // Default to true if not specified
     });
 
@@ -384,7 +384,7 @@ export class BiddingService {
 
     // Get truck ID from bid details
     const truckId = bid.bidDetails?.truckSpecifications?.truckId;
-    
+
     if (!truckId) {
       throw new BadRequestException('Bid must include a truck specification');
     }
@@ -502,12 +502,12 @@ export class BiddingService {
 
         // Use load pickup/delivery dates for planned start/end times
         // If not available, use bid proposed dates or default to reasonable times
-        const plannedStartTime = bid.load.pickupDate || 
-          bid.proposedPickupDate || 
+        const plannedStartTime = bid.load.pickupDate ||
+          bid.proposedPickupDate ||
           new Date(Date.now() + 24 * 60 * 60 * 1000); // Default to tomorrow
-        
-        const plannedEndTime = bid.load.deliveryDate || 
-          bid.proposedDeliveryDate || 
+
+        const plannedEndTime = bid.load.deliveryDate ||
+          bid.proposedDeliveryDate ||
           new Date(plannedStartTime.getTime() + 7 * 24 * 60 * 60 * 1000); // Default to 7 days after start
 
         // Use bid amount as agreed price, fallback to load offered price
@@ -566,8 +566,9 @@ export class BiddingService {
     tenantId: string,
     userRole?: UserRole,
   ): Promise<Auction> {
+    // 1. Fetch load without strict tenant filter first to check existence
     const load = await this.loadRepository.findOne({
-      where: { id: createAuctionDto.loadId, tenantId },
+      where: { id: createAuctionDto.loadId },
       relations: ['broker'],
     });
 
@@ -575,8 +576,15 @@ export class BiddingService {
       throw new NotFoundException('Load not found');
     }
 
-    // If cargo owner is trying to create auction, check if broker is assigned
+    // 2. Validate permissions based on role
+
+    // CASE A: Cargo Owner (or unspecified role, assumed owner)
     if (userRole === UserRole.CARGO_OWNER || !userRole) {
+      // Must belong to the same tenant
+      if (load.tenantId !== tenantId) {
+        throw new NotFoundException('Load not found'); // Hide existence across tenants
+      }
+
       // Check if load has a broker assigned
       if (load.brokerId) {
         // Check if there's an active broker contract
@@ -585,7 +593,7 @@ export class BiddingService {
           tenantId,
         );
 
-        if (hasActiveContract || load.brokerId) {
+        if (hasActiveContract) {
           throw new ForbiddenException(
             'Cannot create auction: Load is managed by a broker. The broker must create the auction.',
           );
@@ -597,20 +605,23 @@ export class BiddingService {
         throw new ForbiddenException('You do not have permission to create an auction for this load');
       }
     }
-
-    // If broker is creating auction, verify they are assigned to the load
-    if (userRole === UserRole.BROKER) {
+    // CASE B: Broker
+    else if (userRole === UserRole.BROKER) {
       // cargoOwnerId in this context is the broker's userId when called by broker
       if (!load.brokerId || load.brokerId !== cargoOwnerId) {
         throw new ForbiddenException(
           'Broker is not assigned to this load',
         );
       }
-      // Check if broker has an active contract
-      const hasActiveContract = await this.hasActiveBrokerContract(
-        createAuctionDto.loadId,
-        tenantId,
-      );
+
+      // Check if broker has an active contract - use load.tenantId for contract check
+      const hasActiveContract = await this.contractRepository.findOne({
+        where: {
+          loadId: createAuctionDto.loadId,
+          status: In([ContractStatus.ACTIVE, ContractStatus.SIGNED, ContractStatus.PENDING_SIGNATURE]),
+        },
+      });
+
       if (!hasActiveContract) {
         throw new ForbiddenException(
           'Broker must have an active contract to create auctions for this load',
@@ -618,9 +629,9 @@ export class BiddingService {
       }
     }
 
-    if (![LoadStatus.CREATED, LoadStatus.PUBLISHED].includes(load.status)) {
+    if (![LoadStatus.CREATED, LoadStatus.PUBLISHED, LoadStatus.ASSIGNED].includes(load.status)) {
       throw new BadRequestException(
-        'Load must be created or published to create an auction',
+        'Load must be created, published or assigned to create an auction',
       );
     }
 
@@ -635,11 +646,11 @@ export class BiddingService {
 
     // Determine auction status based on start time
     const now = new Date();
-    const auctionStart = createAuctionDto.auctionStart 
-      ? new Date(createAuctionDto.auctionStart) 
+    const auctionStart = createAuctionDto.auctionStart
+      ? new Date(createAuctionDto.auctionStart)
       : now;
-    const auctionStatus = auctionStart <= now 
-      ? AuctionStatus.ACTIVE 
+    const auctionStatus = auctionStart <= now
+      ? AuctionStatus.ACTIVE
       : AuctionStatus.SCHEDULED;
 
     const auction = this.auctionRepository.create({
@@ -670,15 +681,15 @@ export class BiddingService {
       .leftJoinAndSelect('load.cargoOwner', 'cargoOwner')
       .leftJoinAndSelect('cargoOwner.profile', 'profile')
       .where('load.tenantId = :tenantId', { tenantId });
-    
+
     if (status && status !== 'all') {
       queryBuilder.andWhere('auction.status = :status', { status });
     }
-    
+
     queryBuilder.orderBy('auction.createdAt', 'DESC');
-    
+
     const auctions = await queryBuilder.getMany();
-    
+
     // Log for debugging - check if profile data is loaded
     if (auctions.length > 0 && auctions[0].load) {
       const firstLoad = auctions[0].load;
@@ -736,7 +747,7 @@ export class BiddingService {
           });
         }
       }
-      
+
       // Enrich with viewer stats using watch count as unique viewers proxy
       try {
         const watchCount = await this.watchRepository.count({
@@ -750,7 +761,7 @@ export class BiddingService {
           uniqueViewers: viewCount,
           viewCount: Math.max(viewCount, (a.analytics as any)?.viewCount || 0),
         } as any;
-      } catch {}
+      } catch { }
     }
     return auctions;
   }

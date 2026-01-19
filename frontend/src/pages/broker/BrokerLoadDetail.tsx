@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { brokerAPI, type BrokerLoad } from '../../services/brokerApi';
-import { 
-  Package, 
-  MapPin, 
-  DollarSign, 
+import { brokerAPI, type BrokerLoad, type LoadContract } from '../../services/brokerApi';
+import {
+  Package,
+  MapPin,
+  DollarSign,
   Calendar,
   Truck,
   User,
@@ -20,13 +20,25 @@ import {
   Weight,
   Box
 } from 'lucide-react';
+import BrokerTrackingSection from './components/BrokerTrackingSection';
+import { CreateBrokerAuctionModal } from './components/CreateBrokerAuctionModal';
+import { MatchTransportersModal } from './components/MatchTransportersModal';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../components/ui/Dialog';
 
 const BrokerLoadDetail: React.FC = () => {
   const { loadId } = useParams<{ loadId: string }>();
   const { user } = useAuth();
   const navigate = useNavigate();
   const [load, setLoad] = useState<BrokerLoad | null>(null);
+  const [contract, setContract] = useState<LoadContract | null>(null);
+  const [trackingEvents, setTrackingEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [trackingLoading, setTrackingLoading] = useState(false);
+
+  // Modal states
+  const [showMatchModal, setShowMatchModal] = useState(false);
+  const [showAuctionModal, setShowAuctionModal] = useState(false);
+  const [showContactModal, setShowContactModal] = useState(false);
 
   useEffect(() => {
     if (loadId) {
@@ -39,11 +51,40 @@ const BrokerLoadDetail: React.FC = () => {
       setLoading(true);
       const response = await brokerAPI.getBrokerLoads(user!.id, { loadId });
       const loads = response.data || [];
-      setLoad(loads.find((l: BrokerLoad) => l.id === loadId) || null);
+      const foundLoad = loads.find((l: BrokerLoad) => l.id === loadId) || null;
+      setLoad(foundLoad);
+
+      if (foundLoad) {
+        try {
+          // Fetch contract for this load
+          const contractResponse = await brokerAPI.getBrokerContracts(user!.id, { loadId });
+          const contracts = contractResponse.data || [];
+          // We expect at most one active/pending contract for a specific load
+          setContract(contracts[0] || null);
+        } catch (contractErr) {
+          console.error('Failed to load contract:', contractErr);
+          // Don't fail the whole page load if contract fails
+        }
+
+        // Fetch tracking info
+        fetchTrackingInfo(foundLoad.id);
+      }
     } catch (err: any) {
       console.error('Failed to load details:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchTrackingInfo = async (id: string) => {
+    try {
+      setTrackingLoading(true);
+      const response = await brokerAPI.getLoadTracking(user!.id, id);
+      setTrackingEvents(response.data || []);
+    } catch (error) {
+      console.error('Failed to fetch tracking info:', error);
+    } finally {
+      setTrackingLoading(false);
     }
   };
 
@@ -86,7 +127,7 @@ const BrokerLoadDetail: React.FC = () => {
         </button>
 
         {/* Header */}
-        <div className="bg-gradient-to-r from-orange-500 to-rose-600 rounded-xl shadow-lg p-6 mb-6 text-white">
+        <div className="rounded-xl shadow-lg p-6 mb-6 text-white" style={{ background: '#345E85' }}>
           <div className="flex items-start justify-between">
             <div>
               <div className="flex items-center gap-3 mb-2">
@@ -95,13 +136,12 @@ const BrokerLoadDetail: React.FC = () => {
               </div>
               <p className="text-orange-100">Load ID: {load.id}</p>
             </div>
-            <span className={`px-4 py-2 rounded-full text-sm font-semibold ${
-              load.status === 'ACTIVE' 
-                ? 'bg-green-500 text-white'
-                : load.status === 'COMPLETED'
+            <span className={`px-4 py-2 rounded-full text-sm font-semibold ${load.status === 'ACTIVE'
+              ? 'bg-green-500 text-white'
+              : load.status === 'COMPLETED'
                 ? 'bg-blue-500 text-white'
                 : 'bg-gray-200 text-gray-800'
-            }`}>
+              }`}>
               {load.status}
             </span>
           </div>
@@ -145,7 +185,7 @@ const BrokerLoadDetail: React.FC = () => {
                   <label className="text-sm font-medium text-gray-500 block mb-2">Description</label>
                   <p className="text-gray-900">{load.description || 'No description provided'}</p>
                 </div>
-                
+
                 <div>
                   <label className="text-sm font-medium text-gray-500 block mb-2">Load Type</label>
                   <p className="text-gray-900">{load.loadType || 'N/A'}</p>
@@ -222,6 +262,15 @@ const BrokerLoadDetail: React.FC = () => {
                 </div>
               </div>
             )}
+
+            {/* Tracking Section */}
+            {(load.status === 'IN_TRANSIT' || load.status === 'DELIVERED' || trackingEvents.length > 0) && (
+              <BrokerTrackingSection
+                trackingEvents={trackingEvents}
+                onRefresh={() => fetchTrackingInfo(load.id)}
+                loading={trackingLoading}
+              />
+            )}
           </div>
 
           {/* Right Column - Quick Info & Actions */}
@@ -230,19 +279,75 @@ const BrokerLoadDetail: React.FC = () => {
             <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
               <div className="space-y-3">
-                <button className="w-full px-4 py-3 bg-gradient-to-r from-orange-500 to-rose-600 text-white rounded-lg hover:from-orange-600 hover:to-rose-700 transition-colors font-semibold flex items-center justify-center gap-2">
+                <button
+                  onClick={() => setShowMatchModal(true)}
+                  className="w-full px-4 py-3 text-white rounded-lg transition-colors font-semibold flex items-center justify-center gap-2"
+                  style={{ background: '#345E85' }}
+                  onMouseEnter={(e) => e.currentTarget.style.background = '#2a4d6b'}
+                  onMouseLeave={(e) => e.currentTarget.style.background = '#345E85'}
+                >
                   <Truck className="w-5 h-5" />
                   Find Carriers
                 </button>
-                <button className="w-full px-4 py-3 border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-semibold flex items-center justify-center gap-2">
+                <button
+                  onClick={() => setShowContactModal(true)}
+                  className="w-full px-4 py-3 border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-semibold flex items-center justify-center gap-2"
+                >
                   <Mail className="w-5 h-5" />
                   Contact Cargo Owner
                 </button>
-                <button className="w-full px-4 py-3 border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-semibold flex items-center justify-center gap-2">
-                  <FileText className="w-5 h-5" />
-                  Generate Quote
+                <button
+                  onClick={() => setShowAuctionModal(true)}
+                  className="w-full px-4 py-3 border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-semibold flex items-center justify-center gap-2"
+                >
+                  <TrendingUp className="w-5 h-5" />
+                  Create Auction
                 </button>
               </div>
+            </div>
+
+            {/* Contract Section */}
+            <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <FileText className="w-5 h-5 text-blue-600" />
+                Contract Status
+              </h3>
+              {contract ? (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600">Status</span>
+                    <span className={`px-2 py-1 text-xs rounded-full ${contract.status === 'ACTIVE'
+                      ? 'bg-green-100 text-green-800'
+                      : contract.status === 'SIGNED'
+                        ? 'bg-blue-100 text-blue-800'
+                        : 'bg-yellow-100 text-yellow-800'
+                      }`}>
+                      {contract.status}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600">Agreed Rate</span>
+                    <span className="font-medium">
+                      {contract.currencyCode} {contract.agreedRate.toLocaleString()}
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => navigate('/dashboard/broker/contracts')}
+                    className="w-full px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 text-sm font-medium transition-colors"
+                  >
+                    View Contract Details
+                  </button>
+                </div>
+              ) : (
+                <div className="text-center py-4">
+                  <p className="text-sm text-gray-500 mb-3">No contract found for this load</p>
+                  <button
+                    className="text-sm text-primary-600 hover:text-primary-700 font-medium"
+                  >
+                    Request Contract
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* Timeline */}
@@ -287,7 +392,11 @@ const BrokerLoadDetail: React.FC = () => {
                 <div className="space-y-3">
                   <div>
                     <p className="text-sm text-gray-500">Name</p>
-                    <p className="font-medium text-gray-900">{load.cargoOwner.name || 'N/A'}</p>
+                    <p className="font-medium text-gray-900">
+                      {load.cargoOwner.profile?.firstName && load.cargoOwner.profile?.lastName
+                        ? `${load.cargoOwner.profile.firstName} ${load.cargoOwner.profile.lastName}`
+                        : load.cargoOwner.email || 'N/A'}
+                    </p>
                   </div>
                   {load.cargoOwner.email && (
                     <div className="flex items-center gap-2 text-sm">
@@ -311,6 +420,64 @@ const BrokerLoadDetail: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Modals */}
+      {load && (
+        <>
+          <MatchTransportersModal
+            isOpen={showMatchModal}
+            onClose={() => setShowMatchModal(false)}
+            loadId={load.id}
+          />
+
+          <CreateBrokerAuctionModal
+            isOpen={showAuctionModal}
+            onClose={() => setShowAuctionModal(false)}
+            loadId={load.id}
+            loadTitle={load.title}
+            onSuccess={() => {
+              // Optionally refresh load details if auction status affects it
+              loadLoadDetails();
+            }}
+          />
+
+          <Dialog open={showContactModal} onOpenChange={setShowContactModal}>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle>Contact Cargo Owner</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
+                  <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center text-primary-600 font-bold text-xl">
+                    {(load.cargoOwner?.profile?.firstName || load.cargoOwner?.email || 'O').charAt(0).toUpperCase()}
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-gray-900">
+                      {load.cargoOwner?.profile?.firstName || 'Unknown'} {load.cargoOwner?.profile?.lastName || 'Owner'}
+                    </h3>
+                    <p className="text-sm text-gray-500">{load.cargoOwner?.profile?.companyName || 'Cargo Owner'}</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 text-gray-700">
+                  <Mail className="w-5 h-5 text-gray-400" />
+                  <a href={`mailto:${load.cargoOwner?.email}`} className="hover:text-primary-600 underline">
+                    {load.cargoOwner?.email || 'No email available'}
+                  </a>
+                </div>
+                {load.cargoOwner?.phone && (
+                  <div className="flex items-center gap-3 text-gray-700">
+                    <Phone className="w-5 h-5 text-gray-400" />
+                    <a href={`tel:${load.cargoOwner.phone}`} className="hover:text-primary-600 underline">
+                      {load.cargoOwner.phone}
+                    </a>
+                  </div>
+                )}
+              </div>
+            </DialogContent>
+          </Dialog>
+        </>
+      )}
     </div>
   );
 };

@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { brokerAPI, type LoadContract, type CreateContractData } from '../../services/brokerApi';
-import { FileText, Plus, Search, Filter, CheckCircle2, Clock, X, Loader2, Eye, PenTool, Download } from 'lucide-react';
+import { FileText, Plus, Search, CheckCircle2, X, Loader2, Eye, Download } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { generateBrokerContract, type BrokerContractData } from '../../templates/brokerContract';
+import { type BrokerContractData } from '../../templates/brokerContract';
 import jsPDF from 'jspdf';
 
 const ContractManagement: React.FC = () => {
@@ -32,13 +32,13 @@ const ContractManagement: React.FC = () => {
         status: filters.status || undefined,
       });
       console.log('Contracts API response:', response);
-      
+
       const contractsData = response.data || response || [];
       const contractsArray = Array.isArray(contractsData) ? contractsData : [];
-      
+
       console.log(`Found ${contractsArray.length} contracts`);
       setContracts(contractsArray);
-      
+
       if (contractsArray.length === 0) {
         console.log('No contracts found. This might be expected if no contracts have been assigned yet.');
       }
@@ -86,79 +86,56 @@ const ContractManagement: React.FC = () => {
   };
 
   const handleGenerateContract = (contract: LoadContract) => {
-    // Extract cargo owner details
-    const cargoOwnerName = contract.cargoOwner?.profile?.firstName && contract.cargoOwner?.profile?.lastName
-      ? `${contract.cargoOwner.profile.firstName} ${contract.cargoOwner.profile.lastName}`
-      : contract.cargoOwner?.email || 'Cargo Owner';
-    const cargoOwnerCompany = contract.cargoOwner?.profile?.companyName || 'N/A';
-    const cargoOwnerEmail = contract.cargoOwner?.email || 'N/A';
-    const cargoOwnerPhone = contract.cargoOwner?.phone || contract.cargoOwner?.profile?.phone || 'N/A';
-
-    // Extract broker details
-    const brokerName = user?.profile?.firstName && user?.profile?.lastName
-      ? `${user.profile.firstName} ${user.profile.lastName}`
+    // Extract broker details from current user
+    const brokerName = user?.firstName && user?.lastName
+      ? `${user.firstName} ${user.lastName}`
       : user?.email || 'Broker';
-    const brokerCompany = user?.profile?.companyName || 'N/A';
     const brokerEmail = user?.email || 'N/A';
-    const brokerPhone = user?.phone || user?.profile?.phone || 'N/A';
-
-    // Extract load details
-    const load = contract.load || {} as any;
-    const pickupLocation = load.locations?.find((loc: any) => loc.type === 'PICKUP')?.locationData?.address 
-      || load.pickupLocation 
-      || 'N/A';
-    const deliveryLocation = load.locations?.find((loc: any) => loc.type === 'DELIVERY')?.locationData?.address 
-      || load.deliveryLocation 
-      || 'N/A';
 
     const contractData: BrokerContractData = {
       cargoOwner: {
-        name: cargoOwnerName,
-        company: cargoOwnerCompany,
+        name: 'Cargo Owner',
+        company: 'N/A',
         address: 'N/A',
-        phone: cargoOwnerPhone,
-        email: cargoOwnerEmail
+        phone: 'N/A',
+        email: 'N/A'
       },
       broker: {
         name: brokerName,
-        company: brokerCompany,
+        company: 'N/A',
         address: 'N/A',
-        phone: brokerPhone,
+        phone: 'N/A',
         email: brokerEmail
       },
       load: {
-        id: contract.loadId || load.id,
-        title: load.title || `Load ${contract.loadId?.slice(0, 8) || 'N/A'}`,
-        description: load.description || 'Transportation service',
-        transportationFee: contract.agreedRate || load.loadValue || 0,
-        currency: contract.currencyCode || load.currencyCode || 'KES',
-        weight: load.weight,
-        cargoType: load.cargoType || 'GENERAL',
-        pickupLocation,
-        deliveryLocation,
-        pickupDate: contract.pickupDate 
+        id: contract.loadId,
+        title: `Load ${contract.loadId.slice(0, 8)}`,
+        description: 'Transportation service',
+        transportationFee: contract.agreedRate,
+        currency: contract.currencyCode,
+        weight: 0,
+        cargoType: 'GENERAL',
+        pickupLocation: 'N/A',
+        deliveryLocation: 'N/A',
+        pickupDate: contract.pickupDate
           ? new Date(contract.pickupDate).toISOString().split('T')[0]
-          : load.pickupDate 
-          ? new Date(load.pickupDate).toISOString().split('T')[0]
           : new Date().toISOString().split('T')[0],
         deliveryDate: contract.deliveryDate
           ? new Date(contract.deliveryDate).toISOString().split('T')[0]
-          : load.deliveryDate
-          ? new Date(load.deliveryDate).toISOString().split('T')[0]
           : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
       },
       commission: {
-        rate: contract.commissionRate || 0,
-        amount: contract.commissionAmount || 0,
+        rate: contract.commissionRate,
+        amount: contract.commissionAmount,
         paymentTerms: contract.paymentTerms || 'Net 30 days',
         paymentMethod: 'Bank Transfer'
       },
       contract: {
         id: contract.id,
-        date: contract.createdAt 
+        date: contract.createdAt
           ? new Date(contract.createdAt).toISOString().split('T')[0]
           : new Date().toISOString().split('T')[0],
-        effectiveDate: contract.pickupDate 
+        effectiveDate: contract.pickupDate
           ? new Date(contract.pickupDate).toISOString().split('T')[0]
           : new Date().toISOString().split('T')[0],
         jurisdiction: 'Kenya'
@@ -305,13 +282,13 @@ const ContractManagement: React.FC = () => {
 
     pdf.setFontSize(10);
     pdf.setFont('helvetica', 'normal');
-    
+
     terms.forEach(term => {
       if (yPosition > 250) {
         pdf.addPage();
         yPosition = 30;
       }
-      
+
       if (term.startsWith('   ')) {
         pdf.text(term, margin + 10, yPosition);
       } else if (term.match(/^\d+\./)) {
@@ -485,13 +462,8 @@ const ContractManagement: React.FC = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-900">
-                      {contract.load?.title || `Load ${contract.loadId.slice(0, 8)}`}
+                      Load {contract.loadId.slice(0, 8)}
                     </div>
-                    {contract.load?.cargoOwner && (
-                      <div className="text-xs text-gray-500">
-                        Owner: {contract.load.cargoOwner.profile?.firstName || contract.load.cargoOwner.email}
-                      </div>
-                    )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-900">
@@ -572,7 +544,7 @@ const CreateContractModal: React.FC<{
     loadId: '',
     transporterId: '',
     agreedRate: 0,
-    commissionRate: user?.defaultCommissionRate || 5.0,
+    commissionRate: 5.0,
     currencyCode: 'KES',
     paymentTerms: 'Net 30 days',
     pickupDate: '',
@@ -609,10 +581,10 @@ const CreateContractModal: React.FC<{
       const contractData: BrokerContractData = {
         cargoOwner: cargoOwnerDetails,
         broker: {
-          name: user?.name || 'Broker Name',
-          company: user?.company || 'Broker Company',
+          name: user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : 'Broker Name',
+          company: 'Broker Company',
           address: 'Broker Address',
-          phone: user?.phone || '+254700000000',
+          phone: '+254700000000',
           email: user?.email || 'broker@example.com'
         },
         load: {
@@ -620,7 +592,7 @@ const CreateContractModal: React.FC<{
           title: loadDetails.title,
           description: loadDetails.description,
           transportationFee: formData.agreedRate,
-          currency: formData.currencyCode,
+          currency: formData.currencyCode || 'KES',
           weight: loadDetails.weight,
           cargoType: loadDetails.cargoType,
           pickupLocation: loadDetails.pickupLocation,
@@ -794,13 +766,13 @@ const CreateContractModal: React.FC<{
 
       pdf.setFontSize(10);
       pdf.setFont('helvetica', 'normal');
-      
+
       terms.forEach(term => {
         if (yPosition > 250) {
           pdf.addPage();
           yPosition = 30;
         }
-        
+
         if (term.startsWith('SIGNATURES:')) {
           pdf.setFontSize(12);
           pdf.setFont('helvetica', 'bold');
@@ -819,10 +791,10 @@ const CreateContractModal: React.FC<{
 
       // Save PDF
       pdf.save(`new-broker-contract-${contractData.contract.id}.pdf`);
-      
+
       // Submit to API (will fail gracefully)
       await onSubmit(formData);
-      
+
       toast.success('Contract created and PDF generated successfully!');
     } catch (error) {
       console.error('Contract creation error:', error);
@@ -833,9 +805,9 @@ const CreateContractModal: React.FC<{
   };
 
   return (
-    <div 
-      className="bg-black bg-opacity-70 flex items-center justify-center p-4" 
-      style={{ 
+    <div
+      className="bg-black bg-opacity-70 flex items-center justify-center p-4"
+      style={{
         position: 'fixed',
         top: 0,
         left: 0,
@@ -1140,9 +1112,9 @@ const ViewContractModal: React.FC<{
   onSign: (id: string) => void;
 }> = ({ contract, onClose, onSign }) => {
   return (
-    <div 
-      className="bg-black bg-opacity-70 flex items-center justify-center p-4" 
-      style={{ 
+    <div
+      className="bg-black bg-opacity-70 flex items-center justify-center p-4"
+      style={{
         position: 'fixed',
         top: 0,
         left: 0,
@@ -1199,7 +1171,10 @@ const ViewContractModal: React.FC<{
             {(contract.status === 'DRAFT' || contract.status === 'PENDING_SIGNATURE') && (
               <button
                 onClick={() => onSign(contract.id)}
-                className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
+                className="px-4 py-2 text-white rounded-lg font-medium transition-colors"
+                style={{ background: '#345E85' }}
+                onMouseEnter={(e) => e.currentTarget.style.background = '#2a4d6b'}
+                onMouseLeave={(e) => e.currentTarget.style.background = '#345E85'}
               >
                 Sign Contract
               </button>

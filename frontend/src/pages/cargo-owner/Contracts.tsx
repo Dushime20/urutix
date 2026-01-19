@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { FileText, Eye, Download, CheckCircle, Clock, X } from 'lucide-react';
+import { FileText, Eye, X } from 'lucide-react';
 import toast from 'react-hot-toast';
-import jsPDF from 'jspdf';
 import api from '../../services/api';
 
 interface Contract {
@@ -31,7 +30,6 @@ interface Contract {
 const CargoOwnerContracts: React.FC = () => {
   const [contracts, setContracts] = useState<Contract[]>([]);
   const [selectedContract, setSelectedContract] = useState<Contract | null>(null);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchContracts();
@@ -39,14 +37,11 @@ const CargoOwnerContracts: React.FC = () => {
 
   const fetchContracts = async () => {
     try {
-      setLoading(true);
       const response = await api.get('/brokers/contracts');
       setContracts(response.data || []);
     } catch (error) {
       console.error('Error fetching contracts:', error);
       toast.error('Failed to load contracts');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -54,7 +49,7 @@ const CargoOwnerContracts: React.FC = () => {
   const hasContracts = contracts.length > 0;
 
   const handleSign = (contractId: string) => {
-    setContracts(prev => prev.map(c => 
+    setContracts(prev => prev.map(c =>
       c.id === contractId ? { ...c, status: 'SIGNED' as const } : c
     ));
     toast.success('Contract signed successfully');
@@ -64,7 +59,7 @@ const CargoOwnerContracts: React.FC = () => {
   const handleReject = (contractId: string) => {
     api.patch(`/brokers/contracts/${contractId}`, { status: 'REJECTED' })
       .then(() => {
-        setContracts(prev => prev.map(c => 
+        setContracts(prev => prev.map(c =>
           c.id === contractId ? { ...c, status: 'REJECTED' as const } : c
         ));
         toast.success('Contract rejected');
@@ -119,70 +114,70 @@ const CargoOwnerContracts: React.FC = () => {
         </div>
       ) : (
         <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Broker</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Load</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Transportation Fee</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Commission</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {contracts.map((contract) => (
-              <tr key={contract.id} className="hover:bg-gray-50">
-                <td className="px-6 py-4">
-                  <div className="text-sm font-medium text-gray-900">{getBrokerName(contract)}</div>
-                  <div className="text-sm text-gray-500">{getBrokerCompany(contract)}</div>
-                </td>
-                <td className="px-6 py-4">
-                  <div className="text-sm text-gray-900">{getLoadTitle(contract)}</div>
-                </td>
-                <td className="px-6 py-4">
-                  <div className="text-sm text-gray-900">
-                    {contract.agreedRate.toLocaleString()} {contract.currencyCode}
-                  </div>
-                </td>
-                <td className="px-6 py-4">
-                  <div className="text-sm text-gray-900">
-                    {contract.commissionAmount.toLocaleString()} ({contract.commissionRate}%)
-                  </div>
-                </td>
-                <td className="px-6 py-4">
-                  <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(contract.status)}`}>
-                    {contract.status.replace('_', ' ')}
-                  </span>
-                </td>
-                <td className="px-6 py-4">
-                  <button
-                    onClick={() => setSelectedContract(contract)}
-                    className="text-primary-600 hover:text-primary-900"
-                  >
-                    <Eye className="w-5 h-5" />
-                  </button>
-                </td>
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Broker</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Load</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Transportation Fee</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Commission</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {contracts.map((contract) => (
+                <tr key={contract.id} className="hover:bg-gray-50">
+                  <td className="px-6 py-4">
+                    <div className="text-sm font-medium text-gray-900">{getBrokerName(contract)}</div>
+                    <div className="text-sm text-gray-500">{getBrokerCompany(contract)}</div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="text-sm text-gray-900">{getLoadTitle(contract)}</div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="text-sm text-gray-900">
+                      {contract.agreedRate.toLocaleString()} {contract.currencyCode}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="text-sm text-gray-900">
+                      {contract.commissionAmount.toLocaleString()} ({contract.commissionRate}%)
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(contract.status)}`}>
+                      {contract.status.replace('_', ' ')}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4">
+                    <button
+                      onClick={() => setSelectedContract(contract)}
+                      className="text-primary-600 hover:text-primary-900"
+                    >
+                      <Eye className="w-5 h-5" />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
 
       {selectedContract && (
-        <div 
-          className="bg-black bg-opacity-70 flex items-center justify-center p-4" 
+        <div
+          className="bg-black bg-opacity-70 flex items-center justify-center p-4"
           style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, width: '100vw', height: '100vh', zIndex: 99999 }}
         >
           <div className="bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto" style={{ zIndex: 100000 }}>
-            <div className="p-6 border-b border-gray-200 flex justify-between items-center">
+            <div className="p-4 border-b border-gray-200 flex justify-between items-center">
               <h2 className="text-xl font-semibold text-gray-900">Contract Review</h2>
               <button onClick={() => setSelectedContract(null)} className="text-gray-400 hover:text-gray-600">
                 <X className="w-6 h-6" />
               </button>
             </div>
-            <div className="p-6 space-y-4">
+            <div className="p-4 space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm font-medium text-gray-500">Broker</label>
@@ -226,7 +221,10 @@ const CargoOwnerContracts: React.FC = () => {
                     </button>
                     <button
                       onClick={() => handleSign(selectedContract.id)}
-                      className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                      className="px-4 py-2 text-white rounded-lg font-medium transition-colors"
+                      style={{ background: '#345E85' }}
+                      onMouseEnter={(e) => e.currentTarget.style.background = '#2a4d6b'}
+                      onMouseLeave={(e) => e.currentTarget.style.background = '#345E85'}
                     >
                       Sign Contract
                     </button>
