@@ -18,6 +18,8 @@ import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
 import { UserRole } from '../../entities/user.entity';
 import { BrokersService } from './brokers.service';
+import { ContractService } from './services/contract.service';
+import { ContractStatus } from '../../entities/load-contract.entity';
 import { CreateBrokerDto } from './dto/create-broker.dto';
 import { UpdateBrokerDto } from './dto/update-broker.dto';
 import { AssignBrokerToLoadDto } from './dto/assign-broker-to-load.dto';
@@ -28,7 +30,41 @@ import { CreatePayoutRequestDto, UpdatePayoutRequestDto } from './dto/commission
 @Controller('brokers')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class BrokersController {
-  constructor(private readonly brokersService: BrokersService) {}
+  constructor(
+    private readonly brokersService: BrokersService,
+    private readonly contractService: ContractService,
+  ) { }
+
+  /**
+   * Get broker contracts (Must be before :brokerId)
+   */
+  @Get('contracts')
+  @Roles(UserRole.TENANT_ADMIN, UserRole.ADMIN, UserRole.SUPER_ADMIN, UserRole.BROKER, UserRole.CARGO_OWNER)
+  async getBrokerContracts(
+    @Request() req: any,
+    @Query('status') status?: ContractStatus,
+    @Query('loadId') loadId?: string,
+    @Query('transporterId') transporterId?: string,
+  ) {
+    const userId = req.user.userId;
+    const userRole = req.user.role;
+    const tenantId = req.user.tenantId;
+
+    if (userRole === UserRole.BROKER) {
+      return this.contractService.getBrokerContracts(userId, tenantId, {
+        status,
+        loadId,
+        transporterId,
+      });
+    } else if (userRole === UserRole.CARGO_OWNER) {
+      return this.contractService.getCargoOwnerContracts(userId, tenantId, {
+        status,
+        loadId,
+      });
+    }
+
+    return [];
+  }
 
   /**
    * Create a new broker (Tenant Admin only)
@@ -213,15 +249,6 @@ export class BrokersController {
     return this.brokersService.getPayoutRequests(brokerId, tenantId, query);
   }
 
-  /**
-   * Get broker contracts
-   */
-  @Get('contracts')
-  @Roles(UserRole.TENANT_ADMIN, UserRole.ADMIN, UserRole.SUPER_ADMIN, UserRole.BROKER)
-  async getBrokerContracts(@Request() req: any) {
-    const tenantId = req.user.tenantId;
-    const brokerId = req.user.role === UserRole.BROKER ? req.user.userId : null;
-    return this.brokersService.getBrokerContracts(tenantId, brokerId);
-  }
+
 }
 

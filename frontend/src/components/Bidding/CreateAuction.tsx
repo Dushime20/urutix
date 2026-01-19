@@ -12,6 +12,11 @@ interface Cargo {
   origin?: string;
   destination?: string;
   status?: string;
+  brokerId?: string;
+  broker?: {
+    id: string;
+    email: string;
+  };
 }
 
 const CreateAuction: React.FC = () => {
@@ -52,11 +57,14 @@ const CreateAuction: React.FC = () => {
       }
 
       // Filter cargos that can be auctioned (CREATED, PUBLISHED status)
+      // AND exclude cargos that have a broker assigned (broker manages those)
       const availableCargos = cargosList.filter(
         (cargo: Cargo) =>
-          cargo.status === 'CREATED' ||
+          (cargo.status === 'CREATED' ||
           cargo.status === 'PUBLISHED' ||
-          !cargo.status // Include cargos without status if needed
+          !cargo.status) && // Include cargos without status if needed
+          !cargo.brokerId && // Exclude cargos with broker assigned
+          !cargo.broker // Also check broker object
       );
 
       setCargos(availableCargos);
@@ -124,6 +132,13 @@ const CreateAuction: React.FC = () => {
   return (
     <div className="create-auction">
       <div className="bg-white rounded-lg shadow p-3 sm:p-4 md:p-6">
+        {cargos.length === 0 && !loadingCargos && (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+            <p className="text-yellow-800 text-sm">
+              No cargos available for auction creation. All your cargos either have brokers assigned or are not in a valid status.
+            </p>
+          </div>
+        )}
         <div className="mb-4 sm:mb-6">
           <h4 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2 flex items-center gap-2">
             <FaGavel className="text-gray-500 flex-shrink-0" />

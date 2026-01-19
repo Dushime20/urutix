@@ -4,7 +4,7 @@ import api from './api';
 export const brokerAPI = {
   // Broker Management
   getBrokers: (params?: any) => 
-    api.get('/users', { params: { role: 'BROKER', ...params } }),
+    api.get('/brokers', { params }),
 
   getBroker: (brokerId: string) => 
     api.get(`/brokers/${brokerId}`),
@@ -29,7 +29,7 @@ export const brokerAPI = {
 
   // Load Assignment
   assignBrokerToLoad: (loadId: string, data: { brokerId: string; commissionRate?: number }) => 
-    api.patch(`/loads-v2/${loadId}`, { brokerId: data.brokerId, brokerCommissionRate: data.commissionRate }),
+    api.post(`/brokers/loads/${loadId}/assign`, { brokerId: data.brokerId, commissionRate: data.commissionRate }),
 
   unassignBrokerFromLoad: (loadId: string) => 
     api.patch(`/loads-v2/${loadId}`, { brokerId: null, brokerCommissionRate: null }),
@@ -71,6 +71,9 @@ export const brokerAPI = {
   
   signContract: (contractId: string, data: SignContractData) => 
     api.put(`/brokers/contracts/${contractId}/sign`, data),
+
+  acceptContract: (contractId: string) => 
+    api.put(`/brokers/contracts/${contractId}/accept`),
 
   // ==================== INSURANCE VERIFICATION ====================
   verifyInsurance: (data: VerifyInsuranceData) => 

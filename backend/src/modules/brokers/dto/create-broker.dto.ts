@@ -18,6 +18,10 @@ export class CreateBrokerDto {
   phone?: string;
 
   @IsOptional()
+  @IsString()
+  companyName?: string;
+
+  @IsOptional()
   @IsNumber()
   @Min(0)
   @Max(100)

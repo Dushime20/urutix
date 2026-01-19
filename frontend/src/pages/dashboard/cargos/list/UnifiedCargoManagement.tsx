@@ -30,7 +30,7 @@ import { FaLayerGroup, FaBox } from "react-icons/fa";
 import logoUrutiX from "@/assets/logo-urutix.svg";
 import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 import { loadStatusWebSocket } from "@/services/loadStatusWebSocket";
-import { AssignBrokerModal } from "@/components/CargoDashboard/AssignBrokerModal";
+import { BrokerAssignmentWizard } from "@/components/Cargo/BrokerAssignmentWizard";
 import { getStatusColor, getStatusDisplayName } from "./utils";
 
 type TabType = "all" | "active" | "drafts" | "create" | "template" | "bidding";
@@ -437,7 +437,7 @@ const UnifiedCargoManagement = () => {
 
   const handleEditCargo = (load: any) => {
     // Transform the load data to match the form schema
-    const editData: Partial<CargoFormSchemaType> = {
+    const editData: any = {
       id: load.id,
       title: load.title,
       description: load.description,
@@ -500,7 +500,8 @@ const UnifiedCargoManagement = () => {
       requiresDeliveryInspection: load.requiresDeliveryInspection ?? false,
       requiresPhotographicDocumentation: load.requiresPhotographicDocumentation ?? false,
       // Transform locations if available
-      locations: load.locations || [],
+      // map locations safely if needed by the form, or omit if not part of schema
+      // locations: load.locations || [], // Commented out to fix TS error as it's not in schema
       pickupLocation: load.pickupLocation ? {
         name: load.pickupLocation.name || "",
         address: load.pickupLocation.address || "",
@@ -563,6 +564,11 @@ const UnifiedCargoManagement = () => {
     }
   };
 
+  // Check if any cargo has broker assigned
+  const hasBrokerAssigned = useMemo(() => {
+    return loadsData.some((load: any) => load.brokerId || load.broker);
+  }, [loadsData]);
+
   const tabs = [
     {
       id: "all" as TabType,
@@ -592,11 +598,12 @@ const UnifiedCargoManagement = () => {
       label: "Create from Template",
       icon: FileText,
     },
-    {
+    // Hide bidding tab if broker is assigned
+    ...(!hasBrokerAssigned ? [{
       id: "bidding" as TabType,
       label: "Bidding",
       icon: Gavel,
-    },
+    }] : []),
   ];
 
   return (
@@ -622,328 +629,328 @@ const UnifiedCargoManagement = () => {
         {/* Navigation Tabs - Hide for bidding tab */}
         {activeTab !== "bidding" && (
           <div className="bg-white rounded-lg border border-gray-200 mb-3 sm:mb-4 overflow-hidden">
-          <nav className="flex flex-wrap sm:flex-nowrap gap-1.5 sm:gap-1 sm:space-x-1 p-1.5 sm:p-1 sm:overflow-x-auto sm:scrollbar-hide sm:scroll-smooth">
-            {tabs.map((tab) => {
-              const Icon = tab.icon;
-              const isActive = activeTab === tab.id;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => handleTabChange(tab.id)}
-                  className={cn(
-                    "group px-2.5 sm:px-3 md:px-4 py-2 sm:py-2.5 rounded-md text-xs sm:text-sm font-medium flex items-center justify-center sm:justify-start gap-1.5 sm:gap-2 transition-all relative whitespace-nowrap flex-1 sm:flex-initial min-w-0 touch-manipulation min-h-[44px] sm:min-h-0",
-                    isActive
-                      ? "bg-gray-100 text-gray-900 border border-gray-300"
-                      : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
-                  )}
-                  title={tab.label}
-                >
-                  <Icon className={cn(
-                    "w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0",
-                    isActive ? "text-gray-700" : "text-gray-500"
-                  )} />
-                  <span className="hidden sm:inline truncate">{tab.label}</span>
-                  {/* Mobile tooltip - shows on hover/touch */}
-                  <span className="sm:hidden absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-gray-900 text-white text-xs font-medium rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 pointer-events-none z-50 whitespace-nowrap">
-                    {tab.label}
+            <nav className="flex flex-wrap sm:flex-nowrap gap-1.5 sm:gap-1 sm:space-x-1 p-1.5 sm:p-1 sm:overflow-x-auto sm:scrollbar-hide sm:scroll-smooth">
+              {tabs.map((tab) => {
+                const Icon = tab.icon;
+                const isActive = activeTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => handleTabChange(tab.id)}
+                    className={cn(
+                      "group px-2.5 sm:px-3 md:px-4 py-2 sm:py-2.5 rounded-md text-xs sm:text-sm font-medium flex items-center justify-center sm:justify-start gap-1.5 sm:gap-2 transition-all relative whitespace-nowrap flex-1 sm:flex-initial min-w-0 touch-manipulation min-h-[44px] sm:min-h-0",
+                      isActive
+                        ? "bg-gray-100 text-gray-900 border border-gray-300"
+                        : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                    )}
+                    title={tab.label}
+                  >
+                    <Icon className={cn(
+                      "w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0",
+                      isActive ? "text-gray-700" : "text-gray-500"
+                    )} />
+                    <span className="hidden sm:inline truncate">{tab.label}</span>
+                    {/* Mobile tooltip - shows on hover/touch */}
+                    <span className="sm:hidden absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-gray-900 text-white text-xs font-medium rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 pointer-events-none z-50 whitespace-nowrap">
+                      {tab.label}
+                      {tab.count !== undefined && (
+                        <span className="ml-1.5 px-1.5 py-0.5 bg-white/20 text-white text-[10px] font-semibold rounded-full">
+                          {tab.count}
+                        </span>
+                      )}
+                      {/* Tooltip arrow */}
+                      <span className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-gray-900"></span>
+                    </span>
                     {tab.count !== undefined && (
-                      <span className="ml-1.5 px-1.5 py-0.5 bg-white/20 text-white text-[10px] font-semibold rounded-full">
+                      <span
+                        className={cn(
+                          "hidden sm:inline ml-1 px-1.5 sm:px-2 py-0.5 text-[10px] sm:text-xs font-semibold rounded-full flex-shrink-0",
+                          isActive
+                            ? "bg-gray-200 text-gray-700"
+                            : "bg-gray-100 text-gray-600"
+                        )}
+                      >
                         {tab.count}
                       </span>
                     )}
-                    {/* Tooltip arrow */}
-                    <span className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-gray-900"></span>
-                  </span>
-                  {tab.count !== undefined && (
-                    <span
-                      className={cn(
-                        "hidden sm:inline ml-1 px-1.5 sm:px-2 py-0.5 text-[10px] sm:text-xs font-semibold rounded-full flex-shrink-0",
-                        isActive
-                          ? "bg-gray-200 text-gray-700"
-                          : "bg-gray-100 text-gray-600"
-                      )}
-                    >
-                      {tab.count}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
-          </nav>
-        </div>
+                  </button>
+                );
+              })}
+            </nav>
+          </div>
         )}
 
         {/* Content Container - Hide for bidding tab */}
         {activeTab !== "bidding" && (
           <div className="bg-white rounded-lg border border-gray-200 mb-4 sm:mb-6">
 
-          {/* Tab Content */}
-          <div className="p-3 sm:p-4 md:p-6 pt-3 sm:pt-4 md:pt-6">
-            {/* Filters - Only show for list views */}
-            {(activeTab === "all" || activeTab === "active" || activeTab === "drafts") && (
-              <div className="mb-4 sm:mb-6">
-                <div className="flex flex-col gap-2 sm:gap-3 lg:flex-row lg:items-end">
-                  <div className="relative flex-1 w-full">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 transform text-gray-400 w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                    <input
-                      type="text"
-                      placeholder="Search cargo by name..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="w-full rounded-lg sm:rounded-xl border border-transparent bg-white px-3 sm:px-4 py-2.5 sm:py-3 pl-9 sm:pl-11 text-sm text-gray-700 shadow-inner transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100 touch-manipulation min-h-[44px] sm:min-h-0"
-                      aria-label="Search cargo by name"
-                    />
+            {/* Tab Content */}
+            <div className="p-3 sm:p-4 md:p-6 pt-3 sm:pt-4 md:pt-6">
+              {/* Filters - Only show for list views */}
+              {(activeTab === "all" || activeTab === "active" || activeTab === "drafts") && (
+                <div className="mb-4 sm:mb-6">
+                  <div className="flex flex-col gap-2 sm:gap-3 lg:flex-row lg:items-end">
+                    <div className="relative flex-1 w-full">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 transform text-gray-400 w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                      <input
+                        type="text"
+                        placeholder="Search cargo by name..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="w-full rounded-lg sm:rounded-xl border border-transparent bg-white px-3 sm:px-4 py-2.5 sm:py-3 pl-9 sm:pl-11 text-sm text-gray-700 shadow-inner transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100 touch-manipulation min-h-[44px] sm:min-h-0"
+                        aria-label="Search cargo by name"
+                      />
+                    </div>
+                    <div className="w-full sm:w-auto">
+                      <FilterSelect
+                        label="Status"
+                        icon={<FaLayerGroup className="text-gray-500" />}
+                        value={statusFilter}
+                        placeholder="All Status"
+                        options={[
+                          { value: "DRAFT", label: "Draft" },
+                          { value: "PUBLISHED", label: "Published" },
+                          { value: "ASSIGNED", label: "Assigned" },
+                          { value: "IN_TRANSIT", label: "In Transit" },
+                          { value: "DELIVERED", label: "Delivered" },
+                          { value: "COMPLETED", label: "Completed" },
+                          { value: "CANCELLED", label: "Cancelled" },
+                        ]}
+                        onChange={setStatusFilter}
+                        className="w-full sm:min-w-[180px]"
+                      />
+                    </div>
+                    <div className="w-full sm:w-auto">
+                      <FilterSelect
+                        label="Cargo Type"
+                        icon={<FaBox className="text-gray-500" />}
+                        value={cargoTypeFilter}
+                        placeholder="All Types"
+                        options={[
+                          { value: "GENERAL", label: "General" },
+                          { value: "FRAGILE", label: "Fragile" },
+                          { value: "HAZARDOUS", label: "Hazardous" },
+                          { value: "REFRIGERATED", label: "Refrigerated" },
+                          { value: "LIQUID", label: "Liquid" },
+                          { value: "OVERSIZED", label: "Oversized" },
+                          { value: "VALUABLE", label: "Valuable" },
+                        ]}
+                        onChange={setCargoTypeFilter}
+                        className="w-full sm:min-w-[180px]"
+                      />
+                    </div>
                   </div>
-                  <div className="w-full sm:w-auto">
-                    <FilterSelect
-                      label="Status"
-                      icon={<FaLayerGroup className="text-gray-500" />}
-                      value={statusFilter}
-                      placeholder="All Status"
-                      options={[
-                        { value: "DRAFT", label: "Draft" },
-                        { value: "PUBLISHED", label: "Published" },
-                        { value: "ASSIGNED", label: "Assigned" },
-                        { value: "IN_TRANSIT", label: "In Transit" },
-                        { value: "DELIVERED", label: "Delivered" },
-                        { value: "COMPLETED", label: "Completed" },
-                        { value: "CANCELLED", label: "Cancelled" },
-                      ]}
-                      onChange={setStatusFilter}
-                      className="w-full sm:min-w-[180px]"
-                    />
-                  </div>
-                  <div className="w-full sm:w-auto">
-                    <FilterSelect
-                      label="Cargo Type"
-                      icon={<FaBox className="text-gray-500" />}
-                      value={cargoTypeFilter}
-                      placeholder="All Types"
-                      options={[
-                        { value: "GENERAL", label: "General" },
-                        { value: "FRAGILE", label: "Fragile" },
-                        { value: "HAZARDOUS", label: "Hazardous" },
-                        { value: "REFRIGERATED", label: "Refrigerated" },
-                        { value: "LIQUID", label: "Liquid" },
-                        { value: "OVERSIZED", label: "Oversized" },
-                        { value: "VALUABLE", label: "Valuable" },
-                      ]}
-                      onChange={setCargoTypeFilter}
-                      className="w-full sm:min-w-[180px]"
-                    />
+
+                  {/* View Mode Toggle */}
+                  <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-lg p-1">
+                    <button
+                      onClick={() => setViewMode('card')}
+                      className={cn(
+                        "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors",
+                        viewMode === 'card'
+                          ? "bg-gray-900 text-white"
+                          : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                      )}
+                    >
+                      <Grid className="w-3.5 h-3.5" />
+                      <span className="hidden sm:inline">Cards</span>
+                    </button>
+                    <button
+                      onClick={() => setViewMode('table')}
+                      className={cn(
+                        "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors",
+                        viewMode === 'table'
+                          ? "bg-gray-900 text-white"
+                          : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                      )}
+                    >
+                      <Table className="w-3.5 h-3.5" />
+                      <span className="hidden sm:inline">Table</span>
+                    </button>
                   </div>
                 </div>
+              )}
 
-                {/* View Mode Toggle */}
-                <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-lg p-1">
-                  <button
-                    onClick={() => setViewMode('card')}
-                    className={cn(
-                      "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors",
-                      viewMode === 'card'
-                        ? "bg-gray-900 text-white"
-                        : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
-                    )}
-                  >
-                    <Grid className="w-3.5 h-3.5" />
-                    <span className="hidden sm:inline">Cards</span>
-                  </button>
-                  <button
-                    onClick={() => setViewMode('table')}
-                    className={cn(
-                      "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors",
-                      viewMode === 'table'
-                        ? "bg-gray-900 text-white"
-                        : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
-                    )}
-                  >
-                    <Table className="w-3.5 h-3.5" />
-                    <span className="hidden sm:inline">Table</span>
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* All Cargo / Active / Drafts Tab */}
-            {(activeTab === "all" || activeTab === "active" || activeTab === "drafts") && (
-              <div>
-                {isLoading ? (
-                  <div className="text-center py-8 sm:py-12">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                    <p className="mt-2 text-xs sm:text-sm text-gray-600">Loading...</p>
-                  </div>
-                ) : error ? (
-                  <div className="bg-red-50 border border-red-200 rounded-lg p-3 sm:p-4">
-                    <p className="text-xs sm:text-sm text-red-700 break-words">
-                      {error?.message || "Error loading cargo"}
-                    </p>
-                  </div>
-                ) : filteredLoads.length === 0 ? (
-                  <div className="text-center py-8 sm:py-12 px-3 sm:px-4">
-                    <Package className="w-10 h-10 sm:w-12 sm:h-12 text-gray-400 mx-auto mb-3 sm:mb-4" />
-                    <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-2">
-                      No cargo found
-                    </h3>
-                    <p className="text-sm sm:text-base text-gray-600 mb-4">
-                      {activeTab === "active"
-                        ? "No active shipments at the moment."
-                        : activeTab === "drafts"
-                        ? "No saved drafts. Start creating cargo to save drafts."
-                        : "Create your first cargo shipment to get started."}
-                    </p>
-                    {(activeTab === "all" || activeTab === "drafts") && (
-                      <button
-                        onClick={() => setActiveTab("create")}
-                        className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors touch-manipulation min-h-[44px] sm:min-h-0"
-                      >
-                        <Plus className="w-4 h-4" />
-                        Create Cargo
-                      </button>
-                    )}
-                  </div>
-                ) : (
-                  <>
-                    {viewMode === 'card' ? (
-                      <div className="space-y-2 sm:space-y-3 w-full overflow-hidden">
-                        {filteredLoads.map((load: any) => (
-                          <LoadItem
-                            key={load.id}
-                            load={load}
-                            handleViewClick={handleViewClick}
-                            handleConfirmLoading={handleConfirmLoading}
-                            handleDeleteCargo={handleDeleteCargo}
-                            handleEditCargo={handleEditCargo}
-                            handleAssignBroker={handleAssignBroker}
-                            handleUnassignBroker={handleUnassignBroker}
-                          />
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
-                        <div className="overflow-x-auto">
-                          <table className="min-w-full divide-y divide-gray-200">
-                            <thead className="bg-gray-50">
-                              <tr>
-                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cargo</th>
-                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Route</th>
-                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Details</th>
-                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Value</th>
-                                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                              </tr>
-                            </thead>
-                            <tbody className="bg-white divide-y divide-gray-200">
-                              {filteredLoads.map((load: any) => (
-                                <tr key={load.id} className="hover:bg-gray-50 transition-colors">
-                                  <td className="px-4 py-3 whitespace-nowrap">
-                                    <div className="flex items-center">
-                                      <div className="flex-shrink-0 h-10 w-10 bg-gray-100 rounded-lg flex items-center justify-center">
-                                        <Package className="h-5 w-5 text-gray-600" />
-                                      </div>
-                                      <div className="ml-3">
-                                        <div className="text-sm font-medium text-gray-900">{load.title || 'Untitled'}</div>
-                                        <div className="text-xs text-gray-500">{load.cargoType}</div>
-                                      </div>
-                                    </div>
-                                  </td>
-                                  <td className="px-4 py-3">
-                                    <div className="text-xs text-gray-900">
-                                      {load.pickupLocation?.city || load.pickupLocation?.address || 'N/A'}
-                                    </div>
-                                    <div className="text-xs text-gray-500">→</div>
-                                    <div className="text-xs text-gray-900">
-                                      {load.deliveryLocation?.city || load.deliveryLocation?.address || 'N/A'}
-                                    </div>
-                                  </td>
-                                  <td className="px-4 py-3 whitespace-nowrap">
-                                    <div className="text-xs text-gray-900">{load.weight ? `${load.weight} kg` : 'N/A'}</div>
-                                    <div className="text-xs text-gray-500">{load.volume ? `${load.volume} L` : ''}</div>
-                                  </td>
-                                  <td className="px-4 py-3 whitespace-nowrap">
-                                    <span className={cn(
-                                      "px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full",
-                                      getStatusColor(load.status)
-                                    )}>
-                                      {getStatusDisplayName(load.status)}
-                                    </span>
-                                  </td>
-                                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                                    {load.offeredPrice ? `$${load.offeredPrice.toLocaleString()}` : 'N/A'}
-                                  </td>
-                                  <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
-                                    <div className="flex items-center justify-end gap-2">
-                                      <button
-                                        onClick={() => handleViewClick(load)}
-                                        className="text-blue-600 hover:text-blue-900 transition-colors"
-                                        title="View Details"
-                                      >
-                                        <Eye className="w-4 h-4" />
-                                      </button>
-                                    </div>
-                                  </td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
+              {/* All Cargo / Active / Drafts Tab */}
+              {(activeTab === "all" || activeTab === "active" || activeTab === "drafts") && (
+                <div>
+                  {isLoading ? (
+                    <div className="text-center py-8 sm:py-12">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                      <p className="mt-2 text-xs sm:text-sm text-gray-600">Loading...</p>
+                    </div>
+                  ) : error ? (
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-3 sm:p-4">
+                      <p className="text-xs sm:text-sm text-red-700 break-words">
+                        {error?.message || "Error loading cargo"}
+                      </p>
+                    </div>
+                  ) : filteredLoads.length === 0 ? (
+                    <div className="text-center py-8 sm:py-12 px-3 sm:px-4">
+                      <Package className="w-10 h-10 sm:w-12 sm:h-12 text-gray-400 mx-auto mb-3 sm:mb-4" />
+                      <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-2">
+                        No cargo found
+                      </h3>
+                      <p className="text-sm sm:text-base text-gray-600 mb-4">
+                        {activeTab === "active"
+                          ? "No active shipments at the moment."
+                          : activeTab === "drafts"
+                            ? "No saved drafts. Start creating cargo to save drafts."
+                            : "Create your first cargo shipment to get started."}
+                      </p>
+                      {(activeTab === "all" || activeTab === "drafts") && (
+                        <button
+                          onClick={() => setActiveTab("create")}
+                          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors touch-manipulation min-h-[44px] sm:min-h-0"
+                        >
+                          <Plus className="w-4 h-4" />
+                          Create Cargo
+                        </button>
+                      )}
+                    </div>
+                  ) : (
+                    <>
+                      {viewMode === 'card' ? (
+                        <div className="space-y-2 sm:space-y-3 w-full overflow-hidden">
+                          {filteredLoads.map((load: any) => (
+                            <LoadItem
+                              key={load.id}
+                              load={load}
+                              handleViewClick={handleViewClick}
+                              handleConfirmLoading={handleConfirmLoading}
+                              handleDeleteCargo={handleDeleteCargo}
+                              handleEditCargo={handleEditCargo}
+                              handleAssignBroker={handleAssignBroker}
+                              handleUnassignBroker={handleUnassignBroker}
+                            />
+                          ))}
                         </div>
-                      </div>
-                    )}
-                  </>
-                )}
-              </div>
-            )}
-
-            {/* Create Tab */}
-            {activeTab === "create" && (
-              <div>
-                <div className="mb-4 sm:mb-6">
-                  <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">
-                    Create Cargo
-                  </h2>
-                  <p className="text-xs sm:text-sm text-gray-600">
-                    {selectedTemplate
-                      ? "Edit the template details below to create your cargo shipment"
-                      : "Fill in the form below to create a new cargo shipment"}
-                  </p>
+                      ) : (
+                        <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+                          <div className="overflow-x-auto">
+                            <table className="min-w-full divide-y divide-gray-200">
+                              <thead className="bg-gray-50">
+                                <tr>
+                                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cargo</th>
+                                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Route</th>
+                                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Details</th>
+                                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Value</th>
+                                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                </tr>
+                              </thead>
+                              <tbody className="bg-white divide-y divide-gray-200">
+                                {filteredLoads.map((load: any) => (
+                                  <tr key={load.id} className="hover:bg-gray-50 transition-colors">
+                                    <td className="px-4 py-3 whitespace-nowrap">
+                                      <div className="flex items-center">
+                                        <div className="flex-shrink-0 h-10 w-10 bg-gray-100 rounded-lg flex items-center justify-center">
+                                          <Package className="h-5 w-5 text-gray-600" />
+                                        </div>
+                                        <div className="ml-3">
+                                          <div className="text-sm font-medium text-gray-900">{load.title || 'Untitled'}</div>
+                                          <div className="text-xs text-gray-500">{load.cargoType}</div>
+                                        </div>
+                                      </div>
+                                    </td>
+                                    <td className="px-4 py-3">
+                                      <div className="text-xs text-gray-900">
+                                        {load.pickupLocation?.city || load.pickupLocation?.address || 'N/A'}
+                                      </div>
+                                      <div className="text-xs text-gray-500">→</div>
+                                      <div className="text-xs text-gray-900">
+                                        {load.deliveryLocation?.city || load.deliveryLocation?.address || 'N/A'}
+                                      </div>
+                                    </td>
+                                    <td className="px-4 py-3 whitespace-nowrap">
+                                      <div className="text-xs text-gray-900">{load.weight ? `${load.weight} kg` : 'N/A'}</div>
+                                      <div className="text-xs text-gray-500">{load.volume ? `${load.volume} L` : ''}</div>
+                                    </td>
+                                    <td className="px-4 py-3 whitespace-nowrap">
+                                      <span className={cn(
+                                        "px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full",
+                                        getStatusColor(load.status)
+                                      )}>
+                                        {getStatusDisplayName(load.status)}
+                                      </span>
+                                    </td>
+                                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                                      {load.offeredPrice ? `$${load.offeredPrice.toLocaleString()}` : 'N/A'}
+                                    </td>
+                                    <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
+                                      <div className="flex items-center justify-end gap-2">
+                                        <button
+                                          onClick={() => handleViewClick(load)}
+                                          className="text-blue-600 hover:text-blue-900 transition-colors"
+                                          title="View Details"
+                                        >
+                                          <Eye className="w-4 h-4" />
+                                        </button>
+                                      </div>
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  )}
                 </div>
-                <EnhancedCargoForm
-                  isOpen={true}
-                  onClose={() => {
-                    setActiveTab("all");
-                    setSelectedTemplate(null);
-                  }}
-                  onSubmit={handleCargoSubmit}
-                  mode="create"
-                  initialData={selectedTemplate}
-                  showTruckSelection={false}
-                  onSaveDraft={handleSaveDraft}
-                />
-              </div>
-            )}
+              )}
 
-            {/* Template Tab - Shows template selection modal */}
-            {activeTab === "template" && (
-              <div>
-                <div className="mb-4 sm:mb-6">
-                  <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">
-                    Create from Template
-                  </h2>
-                  <p className="text-xs sm:text-sm text-gray-600">
-                    Select a template to quickly create cargo with pre-filled information
-                  </p>
+              {/* Create Tab */}
+              {activeTab === "create" && (
+                <div>
+                  <div className="mb-4 sm:mb-6">
+                    <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">
+                      Create Cargo
+                    </h2>
+                    <p className="text-xs sm:text-sm text-gray-600">
+                      {selectedTemplate
+                        ? "Edit the template details below to create your cargo shipment"
+                        : "Fill in the form below to create a new cargo shipment"}
+                    </p>
+                  </div>
+                  <EnhancedCargoForm
+                    isOpen={true}
+                    onClose={() => {
+                      setActiveTab("all");
+                      setSelectedTemplate(null);
+                    }}
+                    onSubmit={handleCargoSubmit}
+                    mode="create"
+                    initialData={selectedTemplate}
+                    showTruckSelection={false}
+                    onSaveDraft={handleSaveDraft}
+                  />
                 </div>
-                <TemplateSelectionModal
-                  isOpen={showTemplateModal}
-                  onClose={() => {
-                    setShowTemplateModal(false);
-                    setActiveTab("all");
-                  }}
-                  onTemplateSelected={handleTemplateSelected}
-                />
-              </div>
-            )}
+              )}
+
+              {/* Template Tab - Shows template selection modal */}
+              {activeTab === "template" && (
+                <div>
+                  <div className="mb-4 sm:mb-6">
+                    <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">
+                      Create from Template
+                    </h2>
+                    <p className="text-xs sm:text-sm text-gray-600">
+                      Select a template to quickly create cargo with pre-filled information
+                    </p>
+                  </div>
+                  <TemplateSelectionModal
+                    isOpen={showTemplateModal}
+                    onClose={() => {
+                      setShowTemplateModal(false);
+                      setActiveTab("all");
+                    }}
+                    onTemplateSelected={handleTemplateSelected}
+                  />
+                </div>
+              )}
+            </div>
           </div>
-        </div>
         )}
 
         {/* Bidding Tab - Outside the container */}
@@ -985,9 +992,17 @@ const UnifiedCargoManagement = () => {
         isLoadConfirmationOpen && selectedCargoForConfirmation && (
           <CargoLoadConfirmation
             cargo={selectedCargoForConfirmation}
-            isOpen={isLoadConfirmationOpen}
-            onClose={handleCloseLoadConfirmation}
-            onConfirm={() => {
+            trip={{
+              id: selectedCargoForConfirmation.tripId || 'pending',
+              driverName: selectedCargoForConfirmation.driver?.name || 'Assigned Driver',
+              driverPhone: selectedCargoForConfirmation.driver?.phone || 'N/A',
+              truckPlateNumber: selectedCargoForConfirmation.truck?.plateNumber || 'TBD',
+              estimatedDuration: 'Calculated upon start',
+              route: `${selectedCargoForConfirmation.pickupLocation?.name || 'Origin'} to ${selectedCargoForConfirmation.deliveryLocation?.name || 'Destination'}`
+            }}
+            // isOpen prop is not required by CargoLoadConfirmation, it's controlled by conditional rendering
+            onCancel={handleCloseLoadConfirmation}
+            onConfirmLoaded={() => {
               handleCloseLoadConfirmation();
               refetch();
             }}
@@ -998,8 +1013,8 @@ const UnifiedCargoManagement = () => {
       {/* Assign Broker Modal */}
       {
         selectedLoadForBroker && (
-          <AssignBrokerModal
-            key={`broker-modal-${selectedLoadForBroker.id}-${selectedLoadForBroker.brokerId || 'none'}`}
+          <BrokerAssignmentWizard
+            key={`broker-wizard-${selectedLoadForBroker.id}-${selectedLoadForBroker.brokerId || 'none'}`}
             isOpen={showAssignBrokerModal}
             onClose={async () => {
               // Refresh data when closing to get latest broker assignment
@@ -1017,7 +1032,6 @@ const UnifiedCargoManagement = () => {
             loadId={selectedLoadForBroker.id}
             loadTitle={selectedLoadForBroker.title}
             loadValue={selectedLoadForBroker.loadValue}
-            currentBrokerId={selectedLoadForBroker.brokerId || selectedLoadForBroker.broker?.id}
             onSuccess={handleBrokerAssignmentSuccess}
           />
         )

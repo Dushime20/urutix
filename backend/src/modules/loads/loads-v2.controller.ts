@@ -362,8 +362,8 @@ export class LoadsV2Controller {
     @Request() req,
   ): Promise<LoadResponseV2Dto> {
     try {
-      if (!req.user) {
-        throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
+      if (!req.user || !req.user.id) {
+        throw new HttpException('Unauthorized - User not authenticated', HttpStatus.UNAUTHORIZED);
       }
       const user = req.user as User;
       return await this.loadsV2Service.update(id, updateLoadDto, user);

@@ -27,60 +27,38 @@ const ContractManagement: React.FC = () => {
     if (!user?.id) return;
     setLoading(true);
     try {
+      console.log('Fetching contracts for broker:', user.id, 'with filters:', filters);
       const response = await brokerAPI.getContracts({
         status: filters.status || undefined,
       });
-      // Handle different response structures
+      console.log('Contracts API response:', response);
+      
       const contractsData = response.data || response || [];
-      setContracts(Array.isArray(contractsData) ? contractsData : []);
+      const contractsArray = Array.isArray(contractsData) ? contractsData : [];
+      
+      console.log(`Found ${contractsArray.length} contracts`);
+      setContracts(contractsArray);
+      
+      if (contractsArray.length === 0) {
+        console.log('No contracts found. This might be expected if no contracts have been assigned yet.');
+      }
     } catch (err: any) {
-      console.log('API Error:', err.response?.status, err.response?.data?.message);
-      
-      // If 404 or any error, show sample data for demonstration
-      const sampleContracts = [
-        {
-          id: 'contract-001',
-          loadId: 'load-001',
-          contractType: 'BROKER_SERVICE',
-          agreedRate: 50000,
-          commissionRate: 5.5,
-          commissionAmount: 2750,
-          currencyCode: 'KES',
-          status: 'SIGNED',
-          paymentTerms: 'Net 30 days',
-          contractContent: 'Sample broker service agreement content...'
-        },
-        {
-          id: 'contract-002', 
-          loadId: 'load-002',
-          contractType: 'BROKER_SERVICE',
-          agreedRate: 75000,
-          commissionRate: 6.0,
-          commissionAmount: 4500,
-          currencyCode: 'KES',
-          status: 'PENDING_SIGNATURE',
-          paymentTerms: 'Net 30 days',
-          contractContent: 'Sample broker service agreement content...'
-        },
-        {
-          id: 'contract-003',
-          loadId: 'load-003', 
-          contractType: 'BROKER_SERVICE',
-          agreedRate: 120000,
-          commissionRate: 7.0,
-          commissionAmount: 8400,
-          currencyCode: 'KES',
-          status: 'DRAFT',
-          paymentTerms: 'Net 30 days',
-          contractContent: 'Sample broker service agreement content...'
-        }
-      ];
-      
-      setContracts(sampleContracts);
-      // Don't show error toast for demo purposes
-      // toast.error(err.response?.data?.message || 'Failed to fetch contracts');
+      console.error('API Error:', err.response?.status, err.response?.data?.message);
+      console.error('Full error:', err);
+      toast.error(err.response?.data?.message || 'Failed to fetch contracts');
+      setContracts([]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleAcceptContract = async (contractId: string) => {
+    try {
+      await brokerAPI.acceptContract(contractId);
+      toast.success('Contract accepted successfully');
+      fetchContracts();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to accept contract');
     }
   };
 
@@ -108,43 +86,81 @@ const ContractManagement: React.FC = () => {
   };
 
   const handleGenerateContract = (contract: LoadContract) => {
+    // Extract cargo owner details
+    const cargoOwnerName = contract.cargoOwner?.profile?.firstName && contract.cargoOwner?.profile?.lastName
+      ? `${contract.cargoOwner.profile.firstName} ${contract.cargoOwner.profile.lastName}`
+      : contract.cargoOwner?.email || 'Cargo Owner';
+    const cargoOwnerCompany = contract.cargoOwner?.profile?.companyName || 'N/A';
+    const cargoOwnerEmail = contract.cargoOwner?.email || 'N/A';
+    const cargoOwnerPhone = contract.cargoOwner?.phone || contract.cargoOwner?.profile?.phone || 'N/A';
+
+    // Extract broker details
+    const brokerName = user?.profile?.firstName && user?.profile?.lastName
+      ? `${user.profile.firstName} ${user.profile.lastName}`
+      : user?.email || 'Broker';
+    const brokerCompany = user?.profile?.companyName || 'N/A';
+    const brokerEmail = user?.email || 'N/A';
+    const brokerPhone = user?.phone || user?.profile?.phone || 'N/A';
+
+    // Extract load details
+    const load = contract.load || {} as any;
+    const pickupLocation = load.locations?.find((loc: any) => loc.type === 'PICKUP')?.locationData?.address 
+      || load.pickupLocation 
+      || 'N/A';
+    const deliveryLocation = load.locations?.find((loc: any) => loc.type === 'DELIVERY')?.locationData?.address 
+      || load.deliveryLocation 
+      || 'N/A';
+
     const contractData: BrokerContractData = {
       cargoOwner: {
-        name: 'Cargo Owner Name',
-        company: 'Cargo Owner Company',
-        address: 'Cargo Owner Address',
-        phone: '+254700000000',
-        email: 'cargoowner@example.com'
+        name: cargoOwnerName,
+        company: cargoOwnerCompany,
+        address: 'N/A',
+        phone: cargoOwnerPhone,
+        email: cargoOwnerEmail
       },
       broker: {
-        name: user?.name || 'Broker Name',
-        company: user?.company || 'Broker Company',
-        address: 'Broker Address',
-        phone: '+254700000000',
-        email: user?.email || 'broker@example.com'
+        name: brokerName,
+        company: brokerCompany,
+        address: 'N/A',
+        phone: brokerPhone,
+        email: brokerEmail
       },
       load: {
-        id: contract.loadId,
-        title: `Load ${contract.loadId.slice(0, 8)}`,
-        description: 'Load transportation service',
-        value: contract.agreedRate,
-        currency: contract.currencyCode,
-        cargoType: 'General Cargo',
-        pickupLocation: 'Pickup Location',
-        deliveryLocation: 'Delivery Location',
-        pickupDate: new Date().toISOString().split('T')[0],
-        deliveryDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+        id: contract.loadId || load.id,
+        title: load.title || `Load ${contract.loadId?.slice(0, 8) || 'N/A'}`,
+        description: load.description || 'Transportation service',
+        transportationFee: contract.agreedRate || load.loadValue || 0,
+        currency: contract.currencyCode || load.currencyCode || 'KES',
+        weight: load.weight,
+        cargoType: load.cargoType || 'GENERAL',
+        pickupLocation,
+        deliveryLocation,
+        pickupDate: contract.pickupDate 
+          ? new Date(contract.pickupDate).toISOString().split('T')[0]
+          : load.pickupDate 
+          ? new Date(load.pickupDate).toISOString().split('T')[0]
+          : new Date().toISOString().split('T')[0],
+        deliveryDate: contract.deliveryDate
+          ? new Date(contract.deliveryDate).toISOString().split('T')[0]
+          : load.deliveryDate
+          ? new Date(load.deliveryDate).toISOString().split('T')[0]
+          : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
       },
       commission: {
-        rate: contract.commissionRate,
-        amount: contract.commissionAmount,
+        rate: contract.commissionRate || 0,
+        amount: contract.commissionAmount || 0,
         paymentTerms: contract.paymentTerms || 'Net 30 days',
         paymentMethod: 'Bank Transfer'
       },
       contract: {
         id: contract.id,
-        date: new Date().toISOString().split('T')[0],
-        effectiveDate: new Date().toISOString().split('T')[0],
+        date: contract.createdAt 
+          ? new Date(contract.createdAt).toISOString().split('T')[0]
+          : new Date().toISOString().split('T')[0],
+        effectiveDate: contract.pickupDate 
+          ? new Date(contract.pickupDate).toISOString().split('T')[0]
+          : new Date().toISOString().split('T')[0],
         jurisdiction: 'Kenya'
       }
     };
@@ -218,7 +234,7 @@ const ContractManagement: React.FC = () => {
     yPosition += 8;
     pdf.text(`Cargo Type: ${contractData.load.cargoType}`, margin, yPosition);
     yPosition += 8;
-    pdf.text(`Load Value: ${contractData.load.currency} ${contractData.load.value.toLocaleString()}`, margin, yPosition);
+    pdf.text(`Transportation Fee: ${contractData.load.currency} ${contractData.load.transportationFee.toLocaleString()}`, margin, yPosition);
     yPosition += 8;
     pdf.text(`Route: ${contractData.load.pickupLocation} → ${contractData.load.deliveryLocation}`, margin, yPosition);
     yPosition += 8;
@@ -351,16 +367,22 @@ const ContractManagement: React.FC = () => {
       case 'ACTIVE':
         return 'bg-green-100 text-green-800';
       case 'PENDING_SIGNATURE':
+      case 'PENDING_BROKER_ACCEPTANCE':
       case 'PARTIALLY_SIGNED':
         return 'bg-yellow-100 text-yellow-800';
       case 'DRAFT':
         return 'bg-gray-100 text-gray-800';
       case 'CANCELLED':
       case 'EXPIRED':
+      case 'REJECTED':
         return 'bg-red-100 text-red-800';
       default:
         return 'bg-blue-100 text-blue-800';
     }
+  };
+
+  const canAcceptContract = (status: string) => {
+    return status === 'PENDING_SIGNATURE' || status === 'PENDING_BROKER_ACCEPTANCE';
   };
 
   return (
@@ -401,11 +423,14 @@ const ContractManagement: React.FC = () => {
         >
           <option value="">All Status</option>
           <option value="DRAFT">Draft</option>
+          <option value="PENDING_BROKER_ACCEPTANCE">Pending Broker Acceptance</option>
           <option value="PENDING_SIGNATURE">Pending Signature</option>
           <option value="PARTIALLY_SIGNED">Partially Signed</option>
           <option value="SIGNED">Signed</option>
           <option value="ACTIVE">Active</option>
           <option value="COMPLETED">Completed</option>
+          <option value="CANCELLED">Cancelled</option>
+          <option value="REJECTED">Rejected</option>
         </select>
       </div>
 
@@ -438,7 +463,7 @@ const ContractManagement: React.FC = () => {
                   Load
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Rate
+                  Transportation Fee
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Commission
@@ -459,7 +484,14 @@ const ContractManagement: React.FC = () => {
                     <div className="text-sm text-gray-500">{contract.contractType.replace('_', ' ')}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">Load {contract.loadId.slice(0, 8)}</div>
+                    <div className="text-sm text-gray-900">
+                      {contract.load?.title || `Load ${contract.loadId.slice(0, 8)}`}
+                    </div>
+                    {contract.load?.cargoOwner && (
+                      <div className="text-xs text-gray-500">
+                        Owner: {contract.load.cargoOwner.profile?.firstName || contract.load.cargoOwner.email}
+                      </div>
+                    )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-900">
@@ -492,13 +524,13 @@ const ContractManagement: React.FC = () => {
                       >
                         <Download className="w-5 h-5" />
                       </button>
-                      {(contract.status === 'DRAFT' || contract.status === 'PENDING_SIGNATURE') && (
+                      {canAcceptContract(contract.status) && (
                         <button
-                          onClick={() => handleSignContract(contract.id)}
+                          onClick={() => handleAcceptContract(contract.id)}
                           className="text-green-600 hover:text-green-900"
-                          title="Sign Contract"
+                          title="Accept Contract"
                         >
-                          <PenTool className="w-5 h-5" />
+                          <CheckCircle2 className="w-5 h-5" />
                         </button>
                       )}
                     </div>
@@ -574,7 +606,6 @@ const CreateContractModal: React.FC<{
     e.preventDefault();
     setSubmitting(true);
     try {
-      // Create the contract data
       const contractData: BrokerContractData = {
         cargoOwner: cargoOwnerDetails,
         broker: {
@@ -588,7 +619,7 @@ const CreateContractModal: React.FC<{
           id: formData.loadId,
           title: loadDetails.title,
           description: loadDetails.description,
-          value: formData.agreedRate,
+          transportationFee: formData.agreedRate,
           currency: formData.currencyCode,
           weight: loadDetails.weight,
           cargoType: loadDetails.cargoType,
@@ -611,7 +642,7 @@ const CreateContractModal: React.FC<{
         }
       };
 
-      // Generate PDF immediately
+      // Generate PDF and send notification to cargo owner
       const pdf = new jsPDF();
       const pageWidth = pdf.internal.pageSize.getWidth();
       const margin = 20;
@@ -699,7 +730,7 @@ const CreateContractModal: React.FC<{
         pdf.text(`Weight: ${contractData.load.weight} kg`, margin, yPosition);
         yPosition += 8;
       }
-      pdf.text(`Load Value: ${contractData.load.currency} ${contractData.load.value.toLocaleString()}`, margin, yPosition);
+      pdf.text(`Transportation Fee: ${contractData.load.currency} ${contractData.load.transportationFee.toLocaleString()}`, margin, yPosition);
       yPosition += 8;
       pdf.text(`Route: ${contractData.load.pickupLocation} → ${contractData.load.deliveryLocation}`, margin, yPosition);
       yPosition += 8;
@@ -1000,7 +1031,7 @@ const CreateContractModal: React.FC<{
             <h3 className="text-lg font-medium text-gray-900 mb-3">Financial Terms</h3>
             <div className="grid grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Agreed Rate</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Transportation Fee</label>
                 <input
                   type="number"
                   required
@@ -1136,7 +1167,7 @@ const ViewContractModal: React.FC<{
               <p className="text-gray-900">{contract.status}</p>
             </div>
             <div>
-              <label className="text-sm font-medium text-gray-500">Agreed Rate</label>
+              <label className="text-sm font-medium text-gray-500">Transportation Fee</label>
               <p className="text-gray-900">
                 {contract.agreedRate.toLocaleString()} {contract.currencyCode}
               </p>

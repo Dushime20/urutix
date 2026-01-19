@@ -20,9 +20,15 @@ interface Bid {
   requireAdvancePayment?: boolean;
   createdAt: string;
   load: {
+    id: string;
     title: string;
     weight: number;
     loadValue: number;
+    brokerId?: string;
+    broker?: {
+      id: string;
+      email: string;
+    };
   };
   auction?: {
     id: string;
@@ -527,11 +533,20 @@ const BidHistory: React.FC<BidHistoryProps> = ({ userRole }) => {
                           <FaTrash className="h-3.5 w-3.5" />
                         </button>
                       )}
-                      {bid.status === 'PENDING' && userRole === 'CARGO_OWNER' && (
+                      {bid.status === 'PENDING' && userRole === 'CARGO_OWNER' && !bid.load.brokerId && !bid.load.broker && (
                         <button
                           onClick={() => handleAcceptBid(bid.id)}
                           className="px-3 py-2 text-xs font-medium text-green-600 bg-green-50 border border-green-200 rounded-lg hover:bg-green-100 transition-colors touch-manipulation min-h-[44px] flex items-center justify-center"
                           title="Accept Bid"
+                        >
+                          <FaCheck className="h-3.5 w-3.5" />
+                        </button>
+                      )}
+                      {bid.status === 'PENDING' && userRole === 'CARGO_OWNER' && (bid.load.brokerId || bid.load.broker) && (
+                        <button
+                          disabled
+                          className="px-3 py-2 text-xs font-medium text-gray-400 bg-gray-100 border border-gray-200 rounded-lg cursor-not-allowed touch-manipulation min-h-[44px] flex items-center justify-center"
+                          title="This load is managed by a broker. The broker must accept bids."
                         >
                           <FaCheck className="h-3.5 w-3.5" />
                         </button>

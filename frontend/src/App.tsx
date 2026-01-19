@@ -40,6 +40,7 @@ import ReceiverPasswordSetup from './pages/ReceiverPasswordSetup';
 
 // Lazy load all page components to reduce initial bundle size
 const CargoList = lazy(() => import('./pages/dashboard/cargos/list'));
+const CargoOwnerContracts = lazy(() => import('./pages/cargo-owner/Contracts'));
 const EnhancedJourneyFlow = lazy(() => import('./components/CargoOwnerJourney/EnhancedJourneyFlow'));
 const EnhancedCargoDemo = lazy(() => import('./pages/EnhancedCargoDemo'));
 const TrucksListPage = lazy(() => import('./pages/TrucksListPage'));
@@ -192,6 +193,7 @@ function App() {
               <Route path="cargos/enhanced-demo/:cargoId" element={<EnhancedCargoDemo />} />
               <Route path="bidding" element={<CargoList />} />
               <Route path="my-bids" element={<MyBidsPage />} />
+              <Route path="contracts" element={<CargoOwnerContracts />} />
               <Route path="journey" element={<EnhancedJourneyFlow />} />
               <Route path="tenant-dashboard" element={<TenantDashboardPage />} />
               <Route path="analytics" element={<UnifiedAnalyticsManagement />} />
@@ -239,6 +241,7 @@ function App() {
               <Route path="cargos/enhanced-demo/:cargoId" element={<EnhancedCargoDemo />} />
               <Route path="bidding" element={<CargoList />} />
               <Route path="my-bids" element={<MyBidsPage />} />
+              <Route path="contracts" element={<CargoOwnerContracts />} />
               <Route path="journey" element={<EnhancedJourneyFlow />} />
               <Route path="tenant-dashboard" element={<TenantDashboardPage />} />
               <Route path="analytics" element={<UnifiedAnalyticsManagement />} />

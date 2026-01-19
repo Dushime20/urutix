@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaTruck, FaCheck, FaRocket, FaBookmark } from "react-icons/fa";
 import JourneySelectionModal from "@/components/CargoOwnerJourney/JourneySelectionModal";
+import BrokerAssignmentStep from "@/components/CargoOwnerJourney/BrokerAssignmentStep";
 import PhotoUploadModal from "@/components/CargoDashboard/PhotoUploadModal";
 import TemplateSelectionModal from "./components/TemplateSelectionModal";
 import AISuggestionsModal from "@/components/CargoDashboard/AISuggestionsModal";
@@ -30,6 +31,8 @@ const CargoCreatePage: React.FC = () => {
   const [aiSuggestions, setAiSuggestions] = useState<any>(null);
   const [drafts, setDrafts] = useState<any[]>([]);
   const [showDraftModal, setShowDraftModal] = useState(false);
+  const [showBrokerAssignment, setShowBrokerAssignment] = useState(false);
+  const [assignedBrokerId, setAssignedBrokerId] = useState<string | null>(null);
 
   // Fetch drafts on mount
   useEffect(() => {
@@ -147,12 +150,15 @@ const CargoCreatePage: React.FC = () => {
       const response = await loadsAPI.create(submissionData);
 
       // console.log("Cargo saved successfully:", response);
+      const createdLoadId = response?.id || response?.data?.id || response?.load?.id;
       setCargoData({
         ...submissionData,
-        id: response?.id,
+        id: createdLoadId,
       });
       setShowEnhancedForm(false);
-      setShowJourneySelection(true);
+      
+      // Show broker assignment step before journey selection
+      setShowBrokerAssignment(true);
 
       return response;
     } catch (error) {
@@ -164,6 +170,24 @@ const CargoCreatePage: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleBrokerAssigned = (brokerId: string, contractId?: string) => {
+    setAssignedBrokerId(brokerId);
+    setShowBrokerAssignment(false);
+    // If broker is assigned, skip journey selection and go directly to cargo list
+    // The broker will handle the journey
+    toast.success("Broker assigned! The broker will manage this load.");
+    navigate("/dashboard/cargos/list", {
+      state: {
+        message: "Cargo created and broker assigned successfully!",
+      },
+    });
+  };
+
+  const handleSkipBrokerAssignment = () => {
+    setShowBrokerAssignment(false);
+    setShowJourneySelection(true);
   };
 
   const handleJourneySelection = async (
@@ -304,8 +328,24 @@ const CargoCreatePage: React.FC = () => {
           aiSuggestions={aiSuggestions}
         />
 
+        {/* Broker Assignment Step */}
+        {showBrokerAssignment && cargoData?.id && (
+          <BrokerAssignmentStep
+            isOpen={showBrokerAssignment}
+            onClose={() => {
+              setShowBrokerAssignment(false);
+              setShowJourneySelection(true);
+            }}
+            loadId={cargoData.id}
+            loadTitle={cargoData.title}
+            loadValue={cargoData.loadValue}
+            onBrokerAssigned={handleBrokerAssigned}
+            onSkip={handleSkipBrokerAssignment}
+          />
+        )}
+
         {/* Journey Selection Modal */}
-        {showJourneySelection && (
+        {showJourneySelection && !assignedBrokerId && (
           <JourneySelectionModal
             isOpen={showJourneySelection}
             onClose={() => setShowJourneySelection(false)}

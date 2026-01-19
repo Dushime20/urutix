@@ -520,15 +520,30 @@ export default function LoadItem({
                 </div>
               </div>
 
+              {/* Broker Management Notice */}
+              {load.broker && (
+                <div className="mb-4 p-3 bg-purple-50 border border-purple-200 rounded-lg">
+                  <div className="flex items-center gap-2 text-purple-800">
+                    <Briefcase className="w-4 h-4" />
+                    <span className="text-sm font-medium">Managed by Broker</span>
+                  </div>
+                  <p className="text-xs text-purple-600 mt-1">
+                    This load is being managed by a broker. Contact your broker for changes.
+                  </p>
+                </div>
+              )}
+
               {/* Action Buttons - Mobile */}
               <div className="flex flex-wrap gap-2 pt-3 border-t border-gray-200">
-                <button
-                  className="flex-1 min-w-[120px] px-4 py-2.5 bg-white text-gray-700 border border-gray-300 rounded-lg font-medium text-sm hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 touch-manipulation min-h-[44px]"
-                  onClick={() => handleEditClick()}
-                >
-                  <Edit className="w-4 h-4" />
-                  Edit
-                </button>
+                {!load.broker && (
+                  <button
+                    className="flex-1 min-w-[120px] px-4 py-2.5 bg-white text-gray-700 border border-gray-300 rounded-lg font-medium text-sm hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 touch-manipulation min-h-[44px]"
+                    onClick={() => handleEditClick()}
+                  >
+                    <Edit className="w-4 h-4" />
+                    Edit
+                  </button>
+                )}
                 {handleAssignBroker && !load.broker && (
                   <button
                     className="flex-1 min-w-[120px] px-4 py-2.5 bg-white text-purple-600 border border-purple-300 rounded-lg font-medium text-sm hover:bg-purple-50 transition-colors flex items-center justify-center gap-2 touch-manipulation min-h-[44px]"
@@ -549,13 +564,15 @@ export default function LoadItem({
                     <span className="xs:hidden">Unassign</span>
                   </button>
                 )}
-                <button
-                  className="flex-1 min-w-[120px] px-4 py-2.5 bg-white text-red-600 border border-red-300 rounded-lg font-medium text-sm hover:bg-red-50 transition-colors flex items-center justify-center gap-2 touch-manipulation min-h-[44px]"
-                  onClick={() => handleDeleteCargo(load)}
-                >
-                  <Trash2 className="w-4 h-4" />
-                  Delete
-                </button>
+                {!load.broker && (
+                  <button
+                    className="flex-1 min-w-[120px] px-4 py-2.5 bg-white text-red-600 border border-red-300 rounded-lg font-medium text-sm hover:bg-red-50 transition-colors flex items-center justify-center gap-2 touch-manipulation min-h-[44px]"
+                    onClick={() => handleDeleteCargo(load)}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    Delete
+                  </button>
+                )}
               </div>
             </div>
           </>
@@ -844,6 +861,19 @@ export default function LoadItem({
             </div>
           )}
 
+          {/* Broker Management Notice - Desktop */}
+          {load.broker && (
+            <div className="mb-4 sm:mb-6 p-4 bg-purple-50 border border-purple-200 rounded-lg">
+              <div className="flex items-center gap-2 text-purple-800 mb-2">
+                <Briefcase className="w-5 h-5" />
+                <span className="text-sm font-semibold">Managed by Broker</span>
+              </div>
+              <p className="text-sm text-purple-700">
+                This load is being managed by a broker. Editing and deletion are restricted. Contact your broker for any changes or unassign the broker to regain full control.
+              </p>
+            </div>
+          )}
+
           {/* Additional Info - Desktop */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between text-xs sm:text-sm text-gray-500 pt-3 sm:pt-4 border-t border-gray-200 gap-2 sm:gap-0">
             <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6">
@@ -887,20 +917,24 @@ export default function LoadItem({
                 <CheckCircle className="w-4 h-4" />
               </button>
             )}
-            <button
-              className="p-3 bg-white text-gray-400 hover:text-primary-600 hover:bg-primary-50 rounded-xl transition-all duration-200 shadow-sm hover:shadow-md"
-              title="Edit Cargo"
-              onClick={handleEditClick}
-            >
-              <Edit className="w-4 h-4" />
-            </button>
-            <button
-              className="p-3 bg-white text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all duration-200 shadow-sm hover:shadow-md"
-              title="Delete Cargo"
-              onClick={() => handleDeleteCargo(load)}
-            >
-              <Trash2 className="w-4 h-4" />
-            </button>
+            {!load.broker && (
+              <button
+                className="p-3 bg-white text-gray-400 hover:text-primary-600 hover:bg-primary-50 rounded-xl transition-all duration-200 shadow-sm hover:shadow-md"
+                title="Edit Cargo"
+                onClick={handleEditClick}
+              >
+                <Edit className="w-4 h-4" />
+              </button>
+            )}
+            {!load.broker && (
+              <button
+                className="p-3 bg-white text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all duration-200 shadow-sm hover:shadow-md"
+                title="Delete Cargo"
+                onClick={() => handleDeleteCargo(load)}
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            )}
             {handleAssignBroker && !load.broker && (
               <button
                 className="p-3 bg-white text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded-xl transition-all duration-200 shadow-sm hover:shadow-md"

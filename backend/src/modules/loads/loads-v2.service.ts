@@ -1076,7 +1076,7 @@ export class LoadsV2Service {
 
   private async validateUpdatePermissions(load: Load, user: User, isMetadataOnly: boolean = false, updateLoadDto?: UpdateLoadV2Dto): Promise<void> {
     this.logger.debug(
-      `validateUpdatePermissions - UserId: ${user.id}, Role: ${user.role}, ` +
+      `validateUpdatePermissions - UserId: ${user?.id}, Role: ${user?.role}, ` +
       `LoadId: ${load.id}, CargoOwnerId: ${load.cargoOwnerId}, ` +
       `IsMetadataOnly: ${isMetadataOnly}, AssignedTruckId: ${load.assignedTruckId}`
     );
@@ -1138,12 +1138,15 @@ export class LoadsV2Service {
       );
     }
 
-    if (load.cargoOwnerId !== user.id) {
-      throw new HttpException(
-        'You can only update your own loads',
-        HttpStatus.FORBIDDEN,
-      );
+    // Cargo owners can update their own loads
+    if (user.role === 'CARGO_OWNER' && load.cargoOwnerId === user.id) {
+      return;
     }
+
+    throw new HttpException(
+      'You can only update your own loads',
+      HttpStatus.FORBIDDEN,
+    );
   }
 
   private validateDates(pickupDate: string, deliveryDate: string): void {

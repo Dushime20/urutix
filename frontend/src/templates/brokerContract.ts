@@ -23,7 +23,7 @@ export interface BrokerContractData {
     id: string;
     title: string;
     description: string;
-    value: number;
+    transportationFee: number;
     currency: string;
     weight?: number;
     cargoType: string;
@@ -83,7 +83,7 @@ Load ID: ${data.load.id}
 Description: ${data.load.title}
 Cargo Type: ${data.load.cargoType}
 ${data.load.weight ? `Weight: ${data.load.weight} kg` : ''}
-Load Value: ${data.load.currency} ${data.load.value.toLocaleString()}
+Transportation Fee: ${data.load.currency} ${data.load.transportationFee.toLocaleString()}
 
 Route:
 From: ${data.load.pickupLocation}

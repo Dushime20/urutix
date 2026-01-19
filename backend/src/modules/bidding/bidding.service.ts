@@ -20,6 +20,7 @@ import { Driver } from '../../entities/driver.entity';
 import { Trip, TripStatus } from '../../entities/trip.entity';
 import { AuctionWatch } from '../../entities/auction-watch.entity';
 import { AuctionView } from '../../entities/auction-view.entity';
+import { LoadContract, ContractStatus } from '../../entities/load-contract.entity';
 
 export interface CreateBidDto {
   loadId: string;
@@ -114,6 +115,8 @@ export class BiddingService {
     private readonly watchRepository: Repository<AuctionWatch>,
     @InjectRepository(AuctionView)
     private readonly viewRepository: Repository<AuctionView>,
+    @InjectRepository(LoadContract)
+    private readonly contractRepository: Repository<LoadContract>,
   ) {}
 
   async createBid(
@@ -330,6 +333,7 @@ export class BiddingService {
     bidId: string,
     cargoOwnerId: string,
     tenantId: string,
+    userRole?: UserRole,
   ): Promise<Bid> {
     const bid = await this.bidRepository.findOne({
       where: { id: bidId },
@@ -340,8 +344,35 @@ export class BiddingService {
       throw new NotFoundException('Bid not found');
     }
 
-    if (bid.load.cargoOwnerId !== cargoOwnerId) {
-      throw new ForbiddenException('Only the cargo owner can accept bids');
+    // Check if load has an active broker contract
+    const hasActiveContract = await this.hasActiveBrokerContract(bid.loadId, tenantId);
+
+    // If cargo owner is trying to accept bid, check if broker is assigned
+    if (userRole === UserRole.CARGO_OWNER || !userRole) {
+      if (bid.load.brokerId && hasActiveContract) {
+        throw new ForbiddenException(
+          'Cannot accept bid: Load is managed by a broker. The broker must accept bids.',
+        );
+      }
+
+      if (bid.load.cargoOwnerId !== cargoOwnerId) {
+        throw new ForbiddenException('Only the cargo owner can accept bids');
+      }
+    }
+
+    // If broker is accepting bid, verify they are assigned to the load
+    if (userRole === UserRole.BROKER) {
+      // cargoOwnerId in this context is the broker's userId when called by broker
+      if (!bid.load.brokerId || bid.load.brokerId !== cargoOwnerId) {
+        throw new ForbiddenException(
+          'Broker is not assigned to this load',
+        );
+      }
+      if (!hasActiveContract) {
+        throw new ForbiddenException(
+          'Broker must have an active contract to accept bids for this load',
+        );
+      }
     }
 
     if (bid.status !== BidStatus.PENDING) {
@@ -515,17 +546,76 @@ export class BiddingService {
     return acceptedBid;
   }
 
+  /**
+   * Check if load has an active broker contract that prevents cargo owner actions
+   */
+  private async hasActiveBrokerContract(loadId: string, tenantId: string): Promise<boolean> {
+    const contract = await this.contractRepository.findOne({
+      where: {
+        loadId,
+        tenantId,
+        status: ContractStatus.ACTIVE,
+      },
+    });
+    return !!contract;
+  }
+
   async createAuction(
     createAuctionDto: CreateAuctionDto,
     cargoOwnerId: string,
     tenantId: string,
+    userRole?: UserRole,
   ): Promise<Auction> {
     const load = await this.loadRepository.findOne({
-      where: { id: createAuctionDto.loadId, cargoOwnerId, tenantId },
+      where: { id: createAuctionDto.loadId, tenantId },
+      relations: ['broker'],
     });
 
     if (!load) {
       throw new NotFoundException('Load not found');
+    }
+
+    // If cargo owner is trying to create auction, check if broker is assigned
+    if (userRole === UserRole.CARGO_OWNER || !userRole) {
+      // Check if load has a broker assigned
+      if (load.brokerId) {
+        // Check if there's an active broker contract
+        const hasActiveContract = await this.hasActiveBrokerContract(
+          createAuctionDto.loadId,
+          tenantId,
+        );
+
+        if (hasActiveContract || load.brokerId) {
+          throw new ForbiddenException(
+            'Cannot create auction: Load is managed by a broker. The broker must create the auction.',
+          );
+        }
+      }
+
+      // Verify cargo owner owns the load
+      if (load.cargoOwnerId !== cargoOwnerId) {
+        throw new ForbiddenException('You do not have permission to create an auction for this load');
+      }
+    }
+
+    // If broker is creating auction, verify they are assigned to the load
+    if (userRole === UserRole.BROKER) {
+      // cargoOwnerId in this context is the broker's userId when called by broker
+      if (!load.brokerId || load.brokerId !== cargoOwnerId) {
+        throw new ForbiddenException(
+          'Broker is not assigned to this load',
+        );
+      }
+      // Check if broker has an active contract
+      const hasActiveContract = await this.hasActiveBrokerContract(
+        createAuctionDto.loadId,
+        tenantId,
+      );
+      if (!hasActiveContract) {
+        throw new ForbiddenException(
+          'Broker must have an active contract to create auctions for this load',
+        );
+      }
     }
 
     if (![LoadStatus.CREATED, LoadStatus.PUBLISHED].includes(load.status)) {

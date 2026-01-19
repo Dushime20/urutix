@@ -47,6 +47,7 @@ import UnifiedNotificationManagement from './dashboard/notifications/UnifiedNoti
 import UnifiedTrackingManagement from './dashboard/tracking/UnifiedTrackingManagement';
 import UnifiedAccountManagement from './dashboard/account/UnifiedAccountManagement';
 import CargoHelpSupport from './CargoHelpSupport';
+import CargoOwnerContracts from './cargo-owner/Contracts';
 import DashboardHeader from '../components/Layout/DashboardHeader';
 import DashboardFooter from '../components/Layout/DashboardFooter';
 import QuickCreateModal from '../components/Cargo/QuickCreateModal';
@@ -940,6 +941,7 @@ const CargoOwnerDashboard = () => {
             {[
               { id: 'Overview', label: 'Overview', icon: Activity },
               { id: 'All Cargos', label: 'Cargos', icon: Package },
+              ...(cargos.some(c => c.brokerId) ? [{ id: 'Contracts', label: 'Contracts', icon: FileText }] : []),
               { id: 'Transactions', label: 'Financials', icon: Wallet },
               { id: 'Analytics', label: 'Analytics', icon: BarChart3 },
               { id: 'Documents', label: 'Documents', icon: FileText },
@@ -969,6 +971,7 @@ const CargoOwnerDashboard = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {activeTab === 'Overview' && renderOverview()}
         {activeTab === 'All Cargos' && <UnifiedCargoManagement />}
+        {activeTab === 'Contracts' && <CargoOwnerContracts />}
         {activeTab === 'Transactions' && <UnifiedFinancialManagement />}
         {activeTab === 'Analytics' && <UnifiedAnalyticsManagement />}
         {activeTab === 'Tracking' && <UnifiedTrackingManagement />}

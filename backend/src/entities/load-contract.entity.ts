@@ -1,12 +1,14 @@
 import {
   Entity,
-  PrimaryGeneratedColumn,
+  PrimaryColumn,
   Column,
+  PrimaryGeneratedColumn,
   CreateDateColumn,
   UpdateDateColumn,
   ManyToOne,
   JoinColumn,
   Index,
+  BeforeInsert,
 } from 'typeorm';
 import { User } from './user.entity';
 import { Load } from './load.entity';
@@ -16,12 +18,14 @@ import { Tenant } from './tenant.entity';
 export enum ContractStatus {
   DRAFT = 'DRAFT',
   PENDING_SIGNATURE = 'PENDING_SIGNATURE',
+  PENDING_BROKER_ACCEPTANCE = 'PENDING_BROKER_ACCEPTANCE',
   PARTIALLY_SIGNED = 'PARTIALLY_SIGNED',
   SIGNED = 'SIGNED',
   ACTIVE = 'ACTIVE',
   COMPLETED = 'COMPLETED',
   CANCELLED = 'CANCELLED',
   EXPIRED = 'EXPIRED',
+  REJECTED = 'REJECTED',
 }
 
 export enum ContractType {
@@ -37,6 +41,8 @@ export enum ContractType {
 export class LoadContract {
   @PrimaryGeneratedColumn('uuid')
   id: string;
+
+
 
   @Column('uuid')
   tenantId: string;
