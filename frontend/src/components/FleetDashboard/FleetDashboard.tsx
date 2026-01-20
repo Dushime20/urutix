@@ -1,13 +1,14 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import { Icon } from 'leaflet';
-import { FaSync, FaExclamationTriangle, FaTruck, FaUser, FaRoute, FaDollarSign, FaChartBar } from 'react-icons/fa';
+import { FaSync, FaExclamationTriangle, FaTruck, FaUser, FaRoute, FaDollarSign, FaChartBar, FaBell } from 'react-icons/fa';
 import { FiGrid, FiList } from 'react-icons/fi';
 import { CheckCircle, Activity, Settings, AlertCircle, ArrowUpRight } from 'lucide-react';
 import { FleetFilters } from './FleetFilters';
 import { FleetModal } from './FleetModal';
 import { FleetSkeleton } from './FleetSkeleton';
 import { FleetTable } from './FleetTable';
+import { TruckMatches } from './TruckMatches';
 import { ErrorBoundary } from '../ErrorBoundary';
 import FleetFormStepper from './FleetFormStepper';
 import { SafetyManagement } from './SafetyManagement';
@@ -67,8 +68,9 @@ export const FleetDashboard: React.FC = () => {
   const isSafetyRoute = location.pathname.includes('/safety');
   const isFinancialRoute = location.pathname.includes('/financial');
   const isRoutesRoute = location.pathname.includes('/routes');
+  const isMatchesRoute = location.pathname.includes('/matches');
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'trucks' | 'drivers' | 'analytics' | 'safety' | 'financial' | 'routes'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'trucks' | 'drivers' | 'analytics' | 'safety' | 'financial' | 'routes' | 'matches'>('overview');
   
   const observer = useRef<IntersectionObserver | null>(null);
   const [showForm, setShowForm] = useState(false);
@@ -106,6 +108,8 @@ export const FleetDashboard: React.FC = () => {
       setShowForm(true);
       setFormMode('create');
       setEditingFleetItem(null);
+    } else if (location.pathname.includes('/matches')) {
+      setActiveTab('matches');
     }
   }, [location.pathname]);
 
@@ -443,6 +447,17 @@ export const FleetDashboard: React.FC = () => {
                 <FaRoute className="w-4 h-4" />
                 <span className="text-sm"><TranslatedText text="Routes" /></span>
               </button>
+              <button
+                onClick={() => setActiveTab('matches')}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-all whitespace-nowrap ${
+                  activeTab === 'matches'
+                    ? 'bg-primary-50 text-primary-700'
+                    : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                }`}
+              >
+                <FaBell className="w-4 h-4" />
+                <span className="text-sm"><TranslatedText text="Matches" /></span>
+              </button>
             </div>
           </div>
         </div>
@@ -644,9 +659,11 @@ export const FleetDashboard: React.FC = () => {
                 </div>
               </section>
             </div>
+          ) : activeTab === 'matches' ? (
+             <TruckMatches />
           ) : (
             <>
-              <FleetFilters filters={filters} setFilters={setFilters} search={search} setSearch={setSearch} activeTab={activeTab} />
+              <FleetFilters filters={filters} setFilters={setFilters} search={search} setSearch={setSearch} activeTab={activeTab as any} />
 
               {error && (
                 <div className="bg-red-100 text-red-700 p-4 rounded flex items-center gap-2 mb-4" role="alert">
@@ -669,17 +686,18 @@ export const FleetDashboard: React.FC = () => {
                   fleetItems={fleetItems.filter(item => activeTab === 'trucks' ? item.type === 'truck' : item.type === 'driver')}
                   lastFleetItemRef={lastFleetItemRef}
                   view={view}
-                  activeTab={activeTab}
+                  activeTab={activeTab as any}
                   onRowClick={setSelectedFleetItem}
                   onBulkAction={handleBulkAction}
                   onEditFleetItem={handleEditFleetItem}
                   onDeleteFleetItem={handleDeleteFleetItem}
+                  onRefresh={() => loadFleetItems(true)}
                 />
               )}
             </>
           )}
 
-          <FleetModal fleetItem={selectedFleetItem} onClose={()=>setSelectedFleetItem(null)} activeTab={activeTab} />
+          <FleetModal fleetItem={selectedFleetItem} onClose={()=>setSelectedFleetItem(null)} activeTab={activeTab as any} />
 
           <FleetFormStepper
             isOpen={showForm}

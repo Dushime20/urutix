@@ -978,6 +978,8 @@ export class AIMatchingEngineService {
       capacityScore: scores.capacityScore,
       distanceScore: scores.proximityScore,
       equipmentScore: scores.fuelScore, // Map as appropriate
+      gpsTrackingScore: truck.hasGps ? 0.8 : 0.2, // NEW: GPS tracking score
+      availabilityScore: 1.0, // NEW: Assume available
       ratingScore: scores.performanceScore,
       priceScore: scores.priceScore,
       distanceKm: distance,

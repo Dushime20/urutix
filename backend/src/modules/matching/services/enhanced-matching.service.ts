@@ -243,13 +243,15 @@ export class EnhancedMatchingService {
           marketContext,
         );
         if (s.overallScore >= (request.minCompatibilityScore || 0.3)) {
-          matches.push({
+           matches.push({
             truckId: truck.id,
             loadId: load.id,
             overallScore: s.overallScore,
             capacityScore: s.capacityScore,
             distanceScore: s.proximityScore,
             equipmentScore: s.equipmentCompatibilityScore || 0,
+            gpsTrackingScore: truck.hasGps || truck.securityFeatures?.hasGps ? 0.8 : 0.2, // NEW
+            availabilityScore: 1.0, // NEW: Assume available
             ratingScore: truck.averageRating || 0,
             priceScore: s.priceScore,
             distanceKm: s.distance,

@@ -1,6 +1,8 @@
-import React from 'react';
-import { FaTimes, FaTruck, FaUser, FaMapMarkerAlt, FaPhone, FaEnvelope, FaBox, FaShieldAlt, FaTools, FaCertificate, FaRoute, FaDollarSign } from 'react-icons/fa';
+import React, { useState, useEffect } from 'react';
+import { FaTimes, FaTruck, FaUser, FaMapMarkerAlt, FaPhone, FaEnvelope, FaBox, FaShieldAlt, FaTools, FaCertificate, FaRoute, FaDollarSign, FaFileAlt, FaDownload, FaExternalLinkAlt } from 'react-icons/fa';
 import type { FleetItem } from '../../types/fleet';
+import { documentApi, type Document } from '../../services/documents/documentApi';
+import toast from 'react-hot-toast';
 
 interface FleetModalProps {
   fleetItem: FleetItem | null;
@@ -13,6 +15,60 @@ const FleetModalComp: React.FC<FleetModalProps> = ({
   onClose,
   activeTab,
 }) => {
+  const [driverDocuments, setDriverDocuments] = useState<Document[]>([]);
+  const [loadingDocs, setLoadingDocs] = useState(false);
+
+  // Fetch documents when viewing a driver
+  useEffect(() => {
+    if (!fleetItem || activeTab !== 'drivers') {
+      setDriverDocuments([]);
+      return;
+    }
+
+    let cancelled = false;
+    const fetchDocuments = async () => {
+      setLoadingDocs(true);
+      try {
+        const docs = await documentApi.getDocumentsByEntity('DRIVER', fleetItem.id);
+        if (!cancelled) {
+          setDriverDocuments(docs);
+        }
+      } catch (error: any) {
+        if (!cancelled) {
+          console.error('Error fetching driver documents:', error);
+          setDriverDocuments([]);
+        }
+      } finally {
+        if (!cancelled) {
+          setLoadingDocs(false);
+        }
+      }
+    };
+
+    fetchDocuments();
+    return () => {
+      cancelled = true;
+    };
+  }, [fleetItem, activeTab]);
+
+  const handleDownloadDocument = async (doc: Document) => {
+    try {
+      const blob = await documentApi.downloadDocument(doc.id);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = doc.originalFileName;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      toast.success('Document downloaded successfully');
+    } catch (error: any) {
+      console.error('Error downloading document:', error);
+      toast.error('Failed to download document');
+    }
+  };
+
   if (!fleetItem) return null;
 
   const getStatusColor = (status: string) => {
@@ -389,8 +445,98 @@ const FleetModalComp: React.FC<FleetModalProps> = ({
                 {renderCargoCapabilities()}
                 {renderLoadingCapabilities()}
                 {renderSecurityFeatures()}
+              </div>
+            )}
+
+            {/* Driver Documents */}
+            {activeTab === 'drivers' && (
+              <div className="space-y-4 mt-6 border-t border-gray-200 pt-6">
+                <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                  <FaFileAlt className="w-5 h-5 text-primary-600" />
+                  Documents
+                </h3>
+                {loadingDocs ? (
+                  <div className="text-center py-8">
+                    <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mx-auto mb-3"></div>
+                    <p className="text-gray-500">Loading documents...</p>
+                  </div>
+                ) : driverDocuments.length === 0 ? (
+                  <div className="text-center py-8 bg-gray-50 rounded-lg">
+                    <FaFileAlt className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                    <p className="text-gray-600">No documents uploaded for this driver</p>
+                  </div>
+                ) : (
+                  <div className="grid gap-3">
+                    {driverDocuments.map((doc) => (
+                      <div key={doc.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-start gap-3 flex-1">
+                            <div className="p-2 bg-blue-50 rounded-lg">
+                              <FaFileAlt className="w-5 h-5 text-blue-600" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <h4 className="text-sm font-semibold text-gray-900 mb-1">{doc.title}</h4>
+                              {doc.description && (
+                                <p className="text-xs text-gray-600 mb-2">{doc.description}</p>
+                              )}
+                              <div className="flex flex-wrap items-center gap-2 text-xs text-gray-500">
+                                <span>{doc.originalFileName}</span>
+                                <span>•</span>
+                                <span>{documentApi.formatFileSize(doc.fileSize)}</span>
+                                <span>•</span>
+                                <span className="capitalize">{doc.documentType.replace(/_/g, ' ').toLowerCase()}</span>
+                              </div>
+                              <div className="flex flex-wrap items-center gap-2 mt-2">
+                                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                  doc.status === 'VERIFIED' ? 'bg-green-100 text-green-700' :
+                                  doc.status === 'PENDING' ? 'bg-yellow-100 text-yellow-700' :
+                                  doc.status === 'REJECTED' ? 'bg-red-100 text-red-700' :
+                                  doc.status === 'EXPIRED' ? 'bg-orange-100 text-orange-700' :
+                                  'bg-gray-100 text-gray-700'
+                                }`}>
+                                  {doc.status}
+                                </span>
+                                {doc.expiryDate && (
+                                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                    documentApi.isDocumentExpiringSoon(doc, 30)
+                                      ? 'bg-orange-100 text-orange-700'
+                                      : doc.isExpired
+                                      ? 'bg-red-100 text-red-700'
+                                      : 'bg-gray-100 text-gray-700'
+                                  }`}>
+                                    {doc.isExpired
+                                      ? 'Expired'
+                                      : documentApi.isDocumentExpiringSoon(doc, 30)
+                                      ? 'Expiring Soon'
+                                      : `Expires ${new Date(doc.expiryDate).toLocaleDateString()}`}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2 ml-3">
+                            <button
+                              onClick={() => window.open(documentApi.getDocumentViewUrl(doc.id), '_blank')}
+                              className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                              title="View document"
+                            >
+                              <FaExternalLinkAlt className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => handleDownloadDocument(doc)}
+                              className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                              title="Download document"
+                            >
+                              <FaDownload className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 )}
+              </div>
+            )}
           </div>
         </div>
       </div>

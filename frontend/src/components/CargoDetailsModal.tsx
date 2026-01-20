@@ -43,6 +43,7 @@ import { loadsAPI } from '@/services/load';
 import { matchingAPI } from '@/services/api';
 import { documentApi } from '@/services/documents/documentApi';
 import type { Document } from '@/services/documents/documentApi';
+import { enhancedMatchingApi } from '@/services/enhancedMatchingApi';
 import toast from 'react-hot-toast';
 import { useConfirmDialog } from '@/hooks/useConfirmDialog';
 import DocumentPreviewModal from '@/components/documents/DocumentPreviewModal';
@@ -1607,12 +1608,30 @@ const CargoDetailsModal = ({ isOpen, onClose, cargoId }: CargoDetailsModalProps)
                               )}
                               
                               {/* Action Buttons */}
-                              <div className="flex items-center space-x-2 pt-3 border-t border-gray-200">
-                                <button className="flex-1 btn btn-primary btn-sm">
+                              <div className="grid grid-cols-2 gap-2 pt-3 border-t border-gray-200">
+                                <button 
+                                  className="col-span-2 btn btn-primary btn-sm flex items-center justify-center"
+                                  onClick={async (e) => {
+                                    e.stopPropagation();
+                                    try {
+                                      toast.loading('Sending request...', { id: 'request-match' });
+                                      await enhancedMatchingApi.requestMatch(cargo.id, match.truckId);
+                                      toast.success('Request sent to truck owner!', { id: 'request-match' });
+                                    } catch (err: any) {
+                                      console.error(err);
+                                      const msg = err.response?.data?.message || 'Failed to send request';
+                                      toast.error(msg, { id: 'request-match' });
+                                    }
+                                  }}
+                                >
+                                  <CheckCircle className="w-4 h-4 mr-2" />
+                                  Request Truck
+                                </button>
+                                <button className="btn btn-outline btn-sm flex items-center justify-center">
                                   <MessageSquare className="w-4 h-4 mr-2" />
                                   Contact Driver
                                 </button>
-                                <button className="flex-1 btn btn-outline btn-sm">
+                                <button className="btn btn-outline btn-sm flex items-center justify-center">
                                   <Eye className="w-4 h-4 mr-2" />
                                   View Full Details
                                 </button>

@@ -42,6 +42,7 @@ import { InsuranceVerification } from '../entities/insurance-verification.entity
 import { BrokerDispute } from '../entities/broker-dispute.entity';
 import { EscrowAccount } from '../entities/escrow-account.entity';
 import { LoadDocument } from '../entities/load-document.entity';
+import { LoadMatch } from '../entities/load-match.entity';
 import {
   BrokerMatchRecommendation,
   BrokerMarketIntelligence,
@@ -150,6 +151,8 @@ export const databaseConfig: TypeOrmModuleOptions = {
     BrokerTransporterCredit,
     BrokerMultiStopLoad,
     BrokerTransporterPerformance,
+    // Matching entities
+    LoadMatch,
   ],
   synchronize: false,
   autoLoadEntities: false,
@@ -237,6 +240,8 @@ export const testDatabaseConfig: TypeOrmModuleOptions = {
     BrokerTransporterCredit,
     BrokerMultiStopLoad,
     BrokerTransporterPerformance,
+    // Matching entities
+    LoadMatch,
   ],
   synchronize: true,
   autoLoadEntities: false,

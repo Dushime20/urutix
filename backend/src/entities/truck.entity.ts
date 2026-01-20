@@ -658,6 +658,9 @@ export class Truck {
   })
   currentLocation?: object;
 
+  @Column({ name: 'current_address', nullable: true })
+  currentAddress?: string;
+
   @Column({ nullable: true })
   locationUpdatedAt?: Date;
 
