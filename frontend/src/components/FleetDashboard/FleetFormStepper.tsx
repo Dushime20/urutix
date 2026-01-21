@@ -1,13 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { 
-  FaTruck, 
-  FaCog, 
-  FaShieldAlt, 
-  FaUser, 
+import {
+  FaTruck,
+  FaCog,
+  FaShieldAlt,
+  FaUser,
   FaCheck,
   FaArrowLeft,
   FaArrowRight,
-  FaTimes,
   FaBox,
   FaTools,
   FaCertificate,
@@ -81,7 +80,7 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
     }
     return false;
   });
-  
+
   // Driver creation mode: 'new' or 'existing'
   const [driverCreationMode, setDriverCreationMode] = useState<'new' | 'existing'>('new');
   const [existingDriverSearch, setExistingDriverSearch] = useState('');
@@ -124,7 +123,7 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
     queryKey: ['all-available-drivers-fleet', existingDriverSearch],
     queryFn: async () => {
       try {
-        const data = await driverApi.getDrivers({ 
+        const data = await driverApi.getDrivers({
           search: existingDriverSearch,
           status: 'ACTIVE'
         });
@@ -146,7 +145,7 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
         { id: 3, title: 'Review & Submit', description: 'Review all information and submit', icon: <FaCheck className="w-5 h-5" /> },
       ];
     }
-    
+
     // Default truck steps
     return [
       { id: 1, title: 'Basic Information', description: 'Vehicle details and identification', icon: <FaTruck className="w-5 h-5" /> },
@@ -296,7 +295,7 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
         equipmentList: initialData.equipmentList || [],
         // Nested objects
         loadingCapabilities: loadingCapabilities,
-        cargoCapabilities: initialData.cargoCapabilities || {},
+        // cargoCapabilities removed (not in type)
         securityFeatures: initialData.securityFeatures || {},
         // Driver fields
         firstName: initialData.firstName || '',
@@ -440,7 +439,6 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
         equipmentList: [],
         // Nested objects - initialize empty
         loadingCapabilities: {},
-        cargoCapabilities: {},
         securityFeatures: {},
         // Driver fields
         firstName: '',
@@ -547,12 +545,12 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
     if (!date || date === '' || date === null || date === undefined) {
       return undefined;
     }
-    
+
     // If it's already an ISO string, return it
     if (typeof date === 'string' && date.includes('T')) {
       return date;
     }
-    
+
     // If it's a date string in YYYY-MM-DD format (from HTML date input), convert to ISO
     if (typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
       // Create date at midnight UTC to avoid timezone issues
@@ -560,7 +558,7 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
       console.log(`📅 Converted date "${date}" to ISO: "${isoDate}"`);
       return isoDate;
     }
-    
+
     // If it's a Date object, convert to ISO
     if (date instanceof Date) {
       if (isNaN(date.getTime())) {
@@ -569,13 +567,13 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
       }
       return date.toISOString();
     }
-    
+
     // Try to parse as date
     const parsed = new Date(date);
     if (!isNaN(parsed.getTime())) {
       return parsed.toISOString();
     }
-    
+
     console.warn(`⚠️ Could not parse date:`, date, typeof date);
     return undefined;
   };
@@ -584,8 +582,6 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
     // Normalize driver payload to backend CreateDriverDto if submitting a driver
     if (activeTab === 'drivers') {
       const d: any = data || {};
-      const nowIso = new Date().toISOString();
-      const twoYearsIso = new Date(new Date().setFullYear(new Date().getFullYear() + 2)).toISOString();
 
       // Log raw date values for debugging
       console.log('📅 Raw date values from form:', {
@@ -661,7 +657,7 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
     const d: any = data || {};
     const oneYearFromNow = new Date();
     oneYearFromNow.setFullYear(oneYearFromNow.getFullYear() + 1);
-    
+
     // Helper function to convert date string to ISO format
     const formatDate = (dateValue: any): string | undefined => {
       if (!dateValue) return undefined;
@@ -855,15 +851,15 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
     console.log('🚀 handleSubmit called!');
     console.log('Event:', e);
     console.log('Event type:', e.type);
-    
+
     e.preventDefault();
-    
+
     // Prevent double submissions
     if (loading) {
       console.log('⚠️ Already submitting, skipping duplicate request');
       return;
     }
-    
+
     // Check if user is authenticated
     const token = localStorage.getItem('accessToken');
     if (!token) {
@@ -871,27 +867,27 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
       toast.error('Please login first to submit the form.');
       return;
     }
-    
+
     // Handle existing driver selection
     if (activeTab === 'drivers' && mode === 'create' && driverCreationMode === 'existing') {
       if (!selectedExistingDriver) {
         toast.error('Please select a driver to add');
         return;
       }
-      
+
       setLoading(true);
       const loadingToast = toast.loading('Adding driver...');
-      
+
       try {
         await fleetApi.updateDriver(selectedExistingDriver.id, {
           status: 'ACTIVE',
           availabilityStatus: 'AVAILABLE',
         });
-        
+
         toast.dismiss(loadingToast);
         toast.success('Driver added successfully');
         onClose();
-        
+
         // Reset form
         setSelectedExistingDriver(null);
         setExistingDriverSearch('');
@@ -903,30 +899,30 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
       }
       return;
     }
-    
+
     console.log('✅ Token found, proceeding with submission');
     console.log('📝 Setting loading to true...');
     setLoading(true);
-    
+
     // Show loading toast
     const loadingToast = toast.loading(`Creating ${activeTab === 'drivers' ? 'driver' : 'truck'}...`);
-    
+
     try {
       console.log('📤 Submitting form data:', formData);
       const convertedData = convertFormDataForSubmission(formData);
       console.log('📦 Converted data for submission:', convertedData);
       await onSubmit(convertedData);
       console.log('✅ Form submitted successfully');
-      
+
       // Dismiss loading toast (success toast is handled by parent component)
       toast.dismiss(loadingToast);
       onClose();
     } catch (error: any) {
       console.error('❌ Error submitting form:', error);
-      
+
       // Show user-friendly error message
       let errorMessage = 'Failed to submit form.';
-      
+
       if (error.response) {
         // Server responded with error status
         if (error.response.status === 401) {
@@ -956,7 +952,7 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
         // Other error
         errorMessage = error.message || 'Unknown error occurred.';
       }
-      
+
       // Show error toast notification
       toast.error(errorMessage);
     } finally {
@@ -970,13 +966,13 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
   // Manual submit function as backup
   const handleManualSubmit = async () => {
     console.log('🔧 Manual submit triggered!');
-    
+
     // Prevent double submissions
     if (loading) {
       console.log('⚠️ Already submitting, skipping duplicate request');
       return;
     }
-    
+
     // Check if user is authenticated
     const token = localStorage.getItem('accessToken');
     if (!token) {
@@ -984,30 +980,30 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
       toast.error('Please login first to submit the form.');
       return;
     }
-    
+
     console.log('✅ Token found, proceeding with manual submission');
-    console.log('�� Setting loading to true (manual)...');
+    console.log(' Setting loading to true (manual)...');
     setLoading(true);
-    
+
     // Show loading toast
     const loadingToast = toast.loading(`Creating ${activeTab === 'drivers' ? 'driver' : 'truck'}...`);
-    
+
     try {
       console.log('📤 Submitting form data manually:', formData);
       const convertedData = convertFormDataForSubmission(formData);
       console.log('📦 Converted data for submission:', convertedData);
       await onSubmit(convertedData);
       console.log('✅ Form submitted successfully');
-      
+
       // Dismiss loading toast (success toast is handled by parent component)
       toast.dismiss(loadingToast);
       onClose();
     } catch (error: any) {
       console.error('❌ Error submitting form:', error);
-      
+
       // Show user-friendly error message
       let errorMessage = 'Failed to submit form.';
-      
+
       if (error.response) {
         // Server responded with error status
         if (error.response.status === 401) {
@@ -1037,7 +1033,7 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
         // Other error
         errorMessage = error.message || 'Unknown error occurred.';
       }
-      
+
       // Show error toast notification
       toast.error(errorMessage);
     } finally {
@@ -1053,73 +1049,73 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
     if (activeTab === 'drivers') {
       switch (currentStep) {
         case 1:
-          return <DriverInformationStep 
-            formData={formData} 
+          return <DriverInformationStep
+            formData={formData}
             handleInputChange={handleInputChange}
           />;
         case 2:
-          return <CertificationsStep 
-            formData={formData} 
+          return <CertificationsStep
+            formData={formData}
             handleInputChange={handleInputChange}
           />;
         case 3:
-          return <ReviewSubmitStep 
-            formData={formData} 
+          return <ReviewSubmitStep
+            formData={formData}
             activeTab="drivers"
           />;
         default:
-          return <DriverInformationStep 
-            formData={formData} 
+          return <DriverInformationStep
+            formData={formData}
             handleInputChange={handleInputChange}
           />;
       }
     }
-    
+
     // Default truck steps
     switch (currentStep) {
       case 1:
-        return <BasicInformationStep 
-          formData={formData} 
+        return <BasicInformationStep
+          formData={formData}
           handleInputChange={handleInputChange}
         />;
       case 2:
-        return <SpecificationsStep 
-          formData={formData} 
+        return <SpecificationsStep
+          formData={formData}
           handleInputChange={handleInputChange}
         />;
       case 3:
-        return <CargoCapabilitiesStep 
-          formData={formData} 
+        return <CargoCapabilitiesStep
+          formData={formData}
           handleInputChange={handleInputChange}
         />;
       case 4:
-        return <LoadingEquipmentStep 
-          formData={formData} 
+        return <LoadingEquipmentStep
+          formData={formData}
           handleInputChange={handleInputChange}
         />;
       case 5:
-        return <SecurityMonitoringStep 
-          formData={formData} 
+        return <SecurityMonitoringStep
+          formData={formData}
           handleInputChange={handleInputChange}
         />;
       case 6:
-        return <CertificationsStep 
-          formData={formData} 
+        return <CertificationsStep
+          formData={formData}
           handleInputChange={handleInputChange}
         />;
       case 7:
-        return <RouteCapabilitiesStep 
-          formData={formData} 
+        return <RouteCapabilitiesStep
+          formData={formData}
           handleInputChange={handleInputChange}
         />;
       case 8:
-        return <CostStructureStep 
-          formData={formData} 
+        return <CostStructureStep
+          formData={formData}
           handleInputChange={handleInputChange}
         />;
       default:
-        return <BasicInformationStep 
-          formData={formData} 
+        return <BasicInformationStep
+          formData={formData}
           handleInputChange={handleInputChange}
         />;
     }
@@ -1137,8 +1133,8 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
         <DialogHeader className="flex-shrink-0 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 p-3 sm:p-4 border-b border-gray-200">
           <div className="flex-1 min-w-0">
             <DialogTitle className="text-base sm:text-lg font-semibold text-gray-900">
-              {mode === 'create' 
-                ? `Create ${activeTab === 'drivers' ? 'Driver' : 'Truck'}` 
+              {mode === 'create'
+                ? `Create ${activeTab === 'drivers' ? 'Driver' : 'Truck'}`
                 : `Edit ${activeTab === 'drivers' ? 'Driver' : 'Truck'}`
               }
             </DialogTitle>
@@ -1212,72 +1208,70 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
 
           {/* Vertical Sidebar Navigation */}
           {!(activeTab === 'drivers' && mode === 'create' && driverCreationMode === 'existing') && (
-          <div className={`${sidebarOpen ? 'block' : 'hidden'} lg:block w-full lg:w-56 bg-gray-50 border-r border-gray-200 overflow-y-auto flex-shrink-0 lg:relative fixed inset-y-0 left-0 z-50 lg:z-auto`}>
-            <nav className="p-2 sm:p-3 space-y-1">
-              {steps.map((step) => {
-                const isActive = currentStep === step.id;
-                const isCompleted = isStepComplete(step.id);
-                const StepIcon = step.icon;
-                
-                return (
-                  <button
-                    key={step.id}
-                    type="button"
-                    onClick={() => {
-                      setCurrentStep(step.id);
-                      setSidebarOpen(false); // Close sidebar on mobile after selection
-                    }}
-                    className={`w-full flex items-center space-x-2 px-2 sm:px-3 py-2 rounded-md text-left transition-colors ${
-                      isActive
+            <div className={`${sidebarOpen ? 'block' : 'hidden'} lg:block w-full lg:w-56 bg-gray-50 border-r border-gray-200 overflow-y-auto flex-shrink-0 lg:relative fixed inset-y-0 left-0 z-50 lg:z-auto`}>
+              <nav className="p-2 sm:p-3 space-y-1">
+                {steps.map((step) => {
+                  const isActive = currentStep === step.id;
+                  const isCompleted = isStepComplete(step.id);
+                  // StepIcon removed (unused)
+
+                  return (
+                    <button
+                      key={step.id}
+                      type="button"
+                      onClick={() => {
+                        setCurrentStep(step.id);
+                        setSidebarOpen(false); // Close sidebar on mobile after selection
+                      }}
+                      className={`w-full flex items-center space-x-2 px-2 sm:px-3 py-2 rounded-md text-left transition-colors ${isActive
                         ? "bg-gray-100 text-gray-900 border border-gray-300"
                         : "text-gray-600 hover:bg-gray-50"
-                    }`}
-                    title={
-                      isCompleted
-                        ? "Step complete"
-                        : isActive
-                        ? "Current step"
-                        : "Step incomplete"
-                    }
-                  >
-                    <div className="flex items-center justify-center flex-shrink-0">
-                      <div className="w-3.5 h-3.5 flex items-center justify-center">
-                        {React.cloneElement(step.icon, { 
-                          className: "w-3.5 h-3.5 text-gray-500"
-                        })}
+                        }`}
+                      title={
+                        isCompleted
+                          ? "Step complete"
+                          : isActive
+                            ? "Current step"
+                            : "Step incomplete"
+                      }
+                    >
+                      <div className="flex items-center justify-center flex-shrink-0">
+                        <div className="w-3.5 h-3.5 flex items-center justify-center">
+                          {React.cloneElement(step.icon, {
+                            className: "w-3.5 h-3.5 text-gray-500"
+                          })}
+                        </div>
                       </div>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className={`text-xs font-medium truncate ${
-                        isActive ? 'text-gray-900' : 'text-gray-600'
-                      }`}>
-                        {step.title}
-                      </p>
-                    </div>
-                    {isCompleted ? (
-                      <span className="ml-auto text-gray-600 flex-shrink-0 text-xs" title="Complete">
-                        &#10003;
-                      </span>
-                    ) : (
-                      <span
-                        className="ml-auto text-gray-300 flex-shrink-0 text-xs"
-                        title="Incomplete"
-                      >
-                        &#9675;
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-            </nav>
-          </div>
+                      <div className="flex-1 min-w-0">
+                        <p className={`text-xs font-medium truncate ${isActive ? 'text-gray-900' : 'text-gray-600'
+                          }`}>
+                          {step.title}
+                        </p>
+                      </div>
+                      {isCompleted ? (
+                        <span className="ml-auto text-gray-600 flex-shrink-0 text-xs" title="Complete">
+                          &#10003;
+                        </span>
+                      ) : (
+                        <span
+                          className="ml-auto text-gray-300 flex-shrink-0 text-xs"
+                          title="Incomplete"
+                        >
+                          &#9675;
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </nav>
+            </div>
           )}
 
           {/* Form Content - Responsive */}
           <div className="flex-1 overflow-y-auto min-h-0">
             <div className="p-3 sm:p-4">
-              <form 
-                onSubmit={handleSubmit} 
+              <form
+                onSubmit={handleSubmit}
                 id="fleet-form-stepper"
               >
                 <div ref={stepContentRef} className="max-w-3xl mx-auto w-full min-w-0">
@@ -1313,12 +1307,16 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
                                 <div
                                   key={driver.id}
                                   onClick={() => {
-                                    setSelectedExistingDriver(driver);
+                                    setSelectedExistingDriver({
+                                      ...driver,
+                                      experience: (driver as any).experience || 0,
+                                      createdAt: (driver as any).createdAt || new Date().toISOString(),
+                                      updatedAt: (driver as any).updatedAt || new Date().toISOString()
+                                    } as any);
                                     setExistingDriverSearch(`${driver.firstName} ${driver.lastName} - ${driver.email}`);
                                   }}
-                                  className={`p-3 cursor-pointer hover:bg-blue-50 transition-colors ${
-                                    selectedExistingDriver?.id === driver.id ? 'bg-blue-100 border-l-4 border-blue-600' : ''
-                                  }`}
+                                  className={`p-3 cursor-pointer hover:bg-blue-50 transition-colors ${selectedExistingDriver?.id === driver.id ? 'bg-blue-100 border-l-4 border-blue-600' : ''
+                                    }`}
                                 >
                                   <div className="flex items-center justify-between">
                                     <div>
@@ -1377,11 +1375,10 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
             type="button"
             onClick={prevStep}
             disabled={currentStep === 1}
-                className={`flex items-center justify-center px-3 py-2 rounded-md border text-xs sm:text-sm ${
-              currentStep === 1
-                ? 'border-gray-300 text-gray-400 cursor-not-allowed'
-                : 'border-gray-300 text-gray-700 hover:bg-gray-100'
-            }`}
+            className={`flex items-center justify-center px-3 py-2 rounded-md border text-xs sm:text-sm ${currentStep === 1
+              ? 'border-gray-300 text-gray-400 cursor-not-allowed'
+              : 'border-gray-300 text-gray-700 hover:bg-gray-100'
+              }`}
           >
             <FaArrowLeft className="w-3 h-3 mr-1.5" />
             <span>Previous</span>
@@ -1395,7 +1392,7 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
             >
               Cancel
             </button>
-            
+
             {activeTab === 'drivers' && mode === 'create' && driverCreationMode === 'existing' ? (
               <button
                 type="submit"
@@ -1431,32 +1428,32 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
               <button
                 type="submit"
                 disabled={loading}
-                onClick={(e) => {
+                onClick={() => {
                   console.log('Submit button clicked!');
                   console.log('Form data:', formData);
                   console.log('Loading state:', loading);
                   console.log('Current step:', currentStep, 'Total steps:', steps.length);
-                  
+
                   // Check if we're on the final step
                   if (currentStep !== steps.length) {
                     console.log('❌ Not on final step, cannot submit');
                     return;
                   }
-                  
+
                   // Check form validation
                   const form = document.getElementById('fleet-form-stepper') as HTMLFormElement;
                   if (form) {
                     console.log('📋 Form validation check...');
                     const isValid = form.checkValidity();
                     console.log('✅ Form is valid:', isValid);
-                    
+
                     if (!isValid) {
                       console.log('❌ Form validation failed, showing validation errors');
                       form.reportValidity();
                       return;
                     }
                   }
-                  
+
                   // Submit the form
                   console.log('🚀 Triggering form submission...');
                   handleManualSubmit();

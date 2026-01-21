@@ -1,5 +1,6 @@
 import React from 'react';
-import { FaSearch, FaFilter, FaMapMarkerAlt } from 'react-icons/fa';
+import { FaSearch, FaMapMarkerAlt } from 'react-icons/fa';
+import { LayoutGrid, List } from 'lucide-react';
 import { TranslatedText } from '../translated-text';
 import type { FleetFilters as FleetFiltersType } from '../../types/fleet';
 
@@ -9,6 +10,8 @@ interface FleetFiltersProps {
   search: string;
   setSearch: (search: string) => void;
   activeTab: 'trucks' | 'drivers' | 'analytics' | 'safety' | 'financial' | 'routes';
+  viewMode?: 'grid' | 'list';
+  setViewMode?: (mode: 'grid' | 'list') => void;
 }
 
 // Local status constants to match backend enum values
@@ -24,11 +27,10 @@ const FleetFiltersComp: React.FC<FleetFiltersProps> = ({
   setFilters,
   search,
   setSearch,
-  activeTab
+  activeTab,
+  viewMode,
+  setViewMode
 }) => {
-  // Debug logging
-  console.log('FleetFilters component rendering');
-  
   const statusOptions = [
     { value: '', label: 'All Status' },
     { value: FLEET_STATUS.AVAILABLE, label: 'Available' },
@@ -36,7 +38,7 @@ const FleetFiltersComp: React.FC<FleetFiltersProps> = ({
     { value: FLEET_STATUS.MAINTENANCE, label: 'Maintenance' },
     { value: FLEET_STATUS.OUT_OF_SERVICE, label: 'Out of Service' }
   ];
-  
+
   // Translate status labels (simplified - just return the label)
   const getTranslatedLabel = (label: string) => label;
 
@@ -54,10 +56,7 @@ const FleetFiltersComp: React.FC<FleetFiltersProps> = ({
     });
   };
 
-  const clearFilters = () => {
-    setFilters({});
-    setSearch('');
-  };
+  const showViewToggle = (activeTab === 'trucks' || activeTab === 'drivers') && viewMode && setViewMode;
 
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-4">
@@ -105,14 +104,27 @@ const FleetFiltersComp: React.FC<FleetFiltersProps> = ({
           </div>
         </div>
 
-        {/* Clear Filters */}
-        <button
-          onClick={clearFilters}
-          className="px-4 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors flex items-center gap-2"
-        >
-          <FaFilter className="w-4 h-4" />
-          <TranslatedText text="Clear Filters" />
-        </button>
+        {/* View Toggle - Only show for trucks and drivers */}
+        {showViewToggle && (
+          <div className="flex items-center gap-2 bg-gray-100 rounded-lg p-1 shadow-sm border border-gray-200">
+            <button
+              onClick={() => setViewMode('grid')}
+              className={`px-3 py-2 rounded transition-all flex items-center gap-1.5 text-sm font-medium ${viewMode === 'grid' ? 'bg-white shadow text-[#345e85]' : 'text-gray-600 hover:text-gray-900'}`}
+              title="Card View"
+            >
+              <LayoutGrid className="w-4 h-4" />
+              <span className="hidden sm:inline">Cards</span>
+            </button>
+            <button
+              onClick={() => setViewMode('list')}
+              className={`px-3 py-2 rounded transition-all flex items-center gap-1.5 text-sm font-medium ${viewMode === 'list' ? 'bg-white shadow text-[#345e85]' : 'text-gray-600 hover:text-gray-900'}`}
+              title="Table View"
+            >
+              <List className="w-4 h-4" />
+              <span className="hidden sm:inline">Table</span>
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Active Filters Display */}

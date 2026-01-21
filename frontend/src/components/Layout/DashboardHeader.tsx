@@ -1,17 +1,21 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Search, Bell, User, Menu, X, ChevronDown, Package, Gavel, MapPin, BarChart3, CreditCard, FileText, Settings, HelpCircle, Truck, Users, Route, Shield, Wallet, DollarSign, Home, CheckCircle, ClipboardList, Receipt } from 'lucide-react';
+import { Bell, User, Menu, X, ChevronDown, Package, Gavel, MapPin, BarChart3, CreditCard, FileText, Settings, HelpCircle, Truck, Users, Route, Shield, Wallet, DollarSign, Home, CheckCircle, ClipboardList, Receipt } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useCargoOwnerNotifications } from '../../hooks/useCargoOwnerNotifications';
 import ContextualHelp from '../Help/ContextualHelp';
 
-const DashboardHeader = () => {
+interface DashboardHeaderProps {
+  children?: React.ReactNode;
+}
+
+const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
-  const [showMobileSearch, setShowMobileSearch] = useState(false);
+
   const userMenuRef = useRef<HTMLDivElement>(null);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
 
@@ -197,44 +201,34 @@ const DashboardHeader = () => {
           icon: Home
         },
         {
-          label: 'Drivers',
+          label: 'Fleet Management',
           path: '/dashboard/fleet/drivers',
-          icon: Users
+          icon: Truck,
+          subItems: [
+            { label: 'Drivers', path: '/dashboard/fleet/drivers' },
+            { label: 'Trucks', path: '/dashboard/fleet/trucks' },
+            { label: 'Safety Records', path: '/dashboard/fleet/safety' },
+          ]
         },
         {
-          label: 'Trips',
+          label: 'Operations',
           path: '/dashboard/trips',
-          icon: Route
+          icon: Route,
+          subItems: [
+            { label: 'Trips', path: '/dashboard/trips' },
+            { label: 'Bids', path: '/dashboard/fleet/bids' },
+            { label: 'Route Planning', path: '/dashboard/fleet/routes' },
+          ]
         },
         {
-          label: 'Bids',
-          path: '/dashboard/fleet/bids',
-          icon: Gavel
-        },
-        {
-          label: 'Fleet Analytics',
-          path: '/dashboard/fleet/analytics',
-          icon: BarChart3
-        },
-        {
-          label: 'Route Planning',
-          path: '/dashboard/fleet/routes',
-          icon: Route
-        },
-        {
-          label: 'Safety Records',
-          path: '/dashboard/fleet/safety',
-          icon: Shield
-        },
-        {
-          label: 'Financial Management',
+          label: 'Financial',
           path: '/dashboard/fleet/financial',
-          icon: DollarSign
-        },
-        {
-          label: 'Payments',
-          path: '/dashboard/payments',
-          icon: CreditCard
+          icon: DollarSign,
+          subItems: [
+            { label: 'Financial Management', path: '/dashboard/fleet/financial' },
+            { label: 'Payments', path: '/dashboard/payments' },
+            { label: 'Analytics', path: '/dashboard/fleet/analytics' },
+          ]
         },
       ];
     }
@@ -476,14 +470,9 @@ const DashboardHeader = () => {
 
     // Truck Owner/Fleet Owner paths
     if (user?.role === 'TRUCK_OWNER') {
-      if (path.includes('/fleet/drivers')) return 'Drivers';
-      if (path.includes('/trips')) return 'Trips';
-      if (path.includes('/fleet/bids')) return 'Bids';
-      if (path.includes('/fleet/routes')) return 'Route Planning';
-      if (path.includes('/fleet/safety')) return 'Safety Records';
-      if (path.includes('/fleet/financial')) return 'Financial Management';
-      if (path.includes('/fleet/analytics')) return 'Fleet Analytics';
-      if (path.includes('/payments')) return 'Payments';
+      if (path.includes('/fleet/drivers') || path.includes('/fleet/trucks') || path.includes('/fleet/safety')) return 'Fleet Management';
+      if (path.includes('/trips') || path.includes('/fleet/bids') || path.includes('/fleet/routes')) return 'Operations';
+      if (path.includes('/fleet/financial') || path.includes('/payments') || path.includes('/fleet/analytics')) return 'Financial';
       if (path.includes('/notifications')) return 'Notifications';
     }
 
@@ -541,17 +530,16 @@ const DashboardHeader = () => {
   const activeNavItem = getActiveNavItem();
 
   const handleNavClick = (path: string) => {
-    console.log('Navigating to:', path);
     navigate(path);
     setShowMobileMenu(false);
     setOpenDropdown(null);
   };
 
   return (
-    <div className="bg-white border-b border-gray-200 text-gray-900 px-4 pt-6 pb-3 sm:px-6 sm:pt-8 sm:pb-4 relative overflow-hidden z-10">
+    <div className="bg-white border-b border-gray-200 text-gray-900 px-4 pt-6 pb-3 sm:px-6 sm:pt-8 sm:pb-4 relative overflow-visible z-50">
 
       {/* Custom Header inside Dark Section */}
-      <div className="max-w-7xl mx-auto px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8 relative z-10">
+      <div className="max-w-7xl mx-auto px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8 relative z-50">
         {/* Top Row: Logo, Mobile Menu, Search, Notifications, User */}
         <div className="flex justify-between items-center relative z-10 gap-2 sm:gap-3 md:gap-4">
           <div className="flex items-center gap-2 sm:gap-3 md:gap-4 min-w-0 flex-1">
@@ -577,8 +565,8 @@ const DashboardHeader = () => {
             </div>
 
             {/* Desktop Nav - Keep only most important items */}
-            <div className="hidden lg:flex items-center gap-1 sm:gap-2 ml-4 sm:ml-8 text-gray-500 text-sm font-medium">
-              {navItems.slice(0, 5).map(item => {
+            <div className="hidden lg:flex items-center gap-3 ml-8 text-gray-500 text-sm font-medium">
+              {navItems.map(item => {
                 const hasSubItems = item.subItems && item.subItems.length > 0;
                 const isActive = activeNavItem === item.label ||
                   (hasSubItems && item.subItems?.some(sub => location.pathname.includes(sub.path.split('/').pop() || '')));
@@ -599,7 +587,7 @@ const DashboardHeader = () => {
                           handleNavClick(item.path);
                         }
                       }}
-                      className={`px-3 py-1.5 rounded-full whitespace-nowrap transition-all touch-manipulation flex items-center gap-1 ${isActive
+                      className={`px-4 py-2 rounded-full whitespace-nowrap transition-all touch-manipulation flex items-center gap-1.5 ${isActive
                         ? 'text-navy-600 bg-navy-50'
                         : 'hover:text-gray-900 hover:bg-gray-100'
                         }`}
@@ -613,7 +601,7 @@ const DashboardHeader = () => {
 
                     {/* Dropdown Menu */}
                     {hasSubItems && openDropdown === item.label && (
-                      <div className="absolute top-full left-0 mt-1 w-48 bg-white rounded-lg shadow-xl border border-gray-200 z-50">
+                      <div className="absolute top-full left-0 mt-1 w-48 bg-white rounded-lg shadow-xl border border-gray-200 z-[100]">
                         <div className="py-1">
                           {item.subItems?.map(subItem => (
                             <button
@@ -621,7 +609,7 @@ const DashboardHeader = () => {
                               onClick={() => handleNavClick(subItem.path)}
                               className={`w-full text-left px-4 py-2 text-sm transition-colors ${location.pathname === subItem.path || location.pathname.startsWith(subItem.path + '/')
                                 ? 'bg-navy-50 text-navy-700 font-medium'
-                                : 'text-gray-700 hover:bg-gray-50'
+                                : 'text-gray-700 hover:bg-navy-50 hover:text-navy-700'
                                 }`}
                             >
                               {subItem.label}
@@ -637,23 +625,9 @@ const DashboardHeader = () => {
           </div>
 
           <div className="flex items-center gap-1.5 sm:gap-2 md:gap-4 flex-shrink-0">
-            {/* Mobile Search Button */}
-            <button
-              onClick={() => setShowMobileSearch(!showMobileSearch)}
-              className="lg:hidden p-2 bg-gray-50 rounded-full hover:bg-gray-100 active:bg-gray-200 transition-colors relative touch-manipulation min-w-[44px] min-h-[44px] flex items-center justify-center text-gray-600"
-              aria-label="Search"
-            >
-              <Search className="w-4 h-4 sm:w-5 sm:h-5" />
-            </button>
-
-            {/* Desktop Search */}
-            <div className="hidden md:flex relative">
-              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search anything here"
-                className="bg-gray-50 border border-gray-200 rounded-full pl-10 pr-4 py-2 text-sm text-gray-900 placeholder-gray-400 focus:bg-white focus:ring-2 focus:ring-navy-500 outline-none w-48 lg:w-64"
-              />
+            {/* Desktop Actions (Moved from Search) */}
+            <div className="hidden md:flex items-center gap-2 mr-4">
+              {children}
             </div>
 
             {/* Help & Support */}
@@ -741,20 +715,7 @@ const DashboardHeader = () => {
           </div>
         </div>
 
-        {/* Mobile Search Bar */}
-        {showMobileSearch && (
-          <div className="mb-4 md:hidden">
-            <div className="relative">
-              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search anything here"
-                className="w-full bg-white/10 border-none rounded-full pl-10 pr-4 py-2.5 text-sm text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 outline-none"
-                autoFocus
-              />
-            </div>
-          </div>
-        )}
+
 
         {/* Mobile Navigation Menu */}
         {showMobileMenu && (

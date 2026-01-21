@@ -97,14 +97,14 @@ export const fleetApi = {
 
       const url = `/fleet/trucks${params.toString() ? `?${params.toString()}` : ''}`;
       console.log('🔑 Request URL:', url);
-      
+
       const response = await api.get(url);
       console.log('✅ Trucks fetch successful - Full response:', response);
       console.log('✅ Trucks fetch - response.data:', response.data);
       console.log('✅ Trucks fetch - response.data.trucks:', response.data?.trucks);
       console.log('✅ Trucks fetch - response.data.trucks is array?', Array.isArray(response.data?.trucks));
       console.log('✅ Trucks fetch - response.data.trucks length:', response.data?.trucks?.length);
-      
+
       // Backend returns { message, trucks }
       const trucks = response.data?.trucks || response.data || [];
       console.log('✅ Returning trucks:', Array.isArray(trucks) ? trucks.length : 'Not an array');
@@ -314,7 +314,7 @@ export const fleetApi = {
     console.log('🔗 Making request to /fleet/routes');
     console.log('🔗 Full URL will be: http://localhost:3000/api/fleet/routes');
     console.log('🔗 About to make API call...');
-    
+
     try {
       const response = await api.get('/fleet/routes');
       console.log('✅ Routes response received!');
@@ -323,7 +323,7 @@ export const fleetApi = {
       console.log('✅ Routes response keys:', Object.keys(response.data));
       console.log('✅ Routes count:', response.data.routes?.length || 0);
       console.log('✅ Direct routes array:', Array.isArray(response.data) ? response.data.length : 'Not an array');
-      
+
       // Check if response.data is directly an array of routes
       if (Array.isArray(response.data)) {
         console.log('✅ Response is direct array of routes');
@@ -333,13 +333,16 @@ export const fleetApi = {
           origin: r.origin,
           destination: r.destination,
           distance: r.distance ?? 0,
-          estimatedDuration: r.estimatedDuration ?? r.estimatedTime ?? r.estimatedHours ?? 0,
+          estimatedTime: r.estimatedDuration ?? r.estimatedTime ?? r.estimatedHours ?? 0,
           status: r.status ?? 'active',
           assignedDrivers: Array.isArray(r.assignedDrivers) ? r.assignedDrivers : [],
           assignedTrucks: Array.isArray(r.assignedTrucks) ? r.assignedTrucks : [],
+          isActive: r.isActive ?? true,
+          createdAt: r.createdAt ?? new Date().toISOString(),
+          updatedAt: r.updatedAt ?? new Date().toISOString(),
         } as Route));
       }
-      
+
       // Check if response.data has a routes property
       if (response.data.routes && Array.isArray(response.data.routes)) {
         console.log('✅ Response has routes property with array');
@@ -349,13 +352,16 @@ export const fleetApi = {
           origin: r.origin,
           destination: r.destination,
           distance: r.distance ?? 0,
-          estimatedDuration: r.estimatedDuration ?? r.estimatedTime ?? r.estimatedHours ?? 0,
+          estimatedTime: r.estimatedDuration ?? r.estimatedTime ?? r.estimatedHours ?? 0,
           status: r.status ?? 'active',
           assignedDrivers: Array.isArray(r.assignedDrivers) ? r.assignedDrivers : [],
           assignedTrucks: Array.isArray(r.assignedTrucks) ? r.assignedTrucks : [],
+          isActive: r.isActive ?? true,
+          createdAt: r.createdAt ?? new Date().toISOString(),
+          updatedAt: r.updatedAt ?? new Date().toISOString(),
         } as Route));
       }
-      
+
       // Check if response.data has a data property (nested response)
       if (response.data.data && Array.isArray(response.data.data)) {
         console.log('✅ Response has data property with array');
@@ -365,13 +371,16 @@ export const fleetApi = {
           origin: r.origin,
           destination: r.destination,
           distance: r.distance ?? 0,
-          estimatedDuration: r.estimatedDuration ?? r.estimatedTime ?? r.estimatedHours ?? 0,
+          estimatedTime: r.estimatedDuration ?? r.estimatedTime ?? r.estimatedHours ?? 0,
           status: r.status ?? 'active',
           assignedDrivers: Array.isArray(r.assignedDrivers) ? r.assignedDrivers : [],
           assignedTrucks: Array.isArray(r.assignedTrucks) ? r.assignedTrucks : [],
+          isActive: r.isActive ?? true,
+          createdAt: r.createdAt ?? new Date().toISOString(),
+          updatedAt: r.updatedAt ?? new Date().toISOString(),
         } as Route));
       }
-      
+
       console.log('⚠️ No valid routes array found in response');
       console.log('⚠️ Response structure:', JSON.stringify(response.data, null, 2));
       console.log('⚠️ Returning empty array');
@@ -454,12 +463,12 @@ export const fleetApi = {
       console.error('❌ Error response data:', error.response?.data);
       console.error('❌ Error response status:', error.response?.status);
       console.error('❌ Error message:', error.message);
-      
+
       // Re-throw with enhanced error info
       const enhancedError = new Error(
-        error.response?.data?.message || 
-        error.response?.data?.error || 
-        error.message || 
+        error.response?.data?.message ||
+        error.response?.data?.error ||
+        error.message ||
         'Failed to assign driver to truck'
       );
       (enhancedError as any).response = error.response;
@@ -485,9 +494,9 @@ export const fleetApi = {
   async assignRouteToTruck(truckId: string, routeId: string, assignmentData?: { notes?: string }): Promise<boolean> {
     try {
       console.log('🛣️ Assigning route:', routeId, 'to truck:', truckId);
-      
+
       const response = await api.post(`/fleet/routes/${routeId}/assign-truck/${truckId}`, assignmentData || {});
-      
+
       console.log('✅ Route assignment successful:', response.data);
       return true;
     } catch (error: any) {
@@ -500,9 +509,9 @@ export const fleetApi = {
   async unassignRouteFromTruck(truckId: string, routeId: string): Promise<boolean> {
     try {
       console.log('🚫 Unassigning route:', routeId, 'from truck:', truckId);
-      
+
       const response = await api.delete(`/fleet/routes/${routeId}/unassign-truck/${truckId}`);
-      
+
       console.log('✅ Route unassignment successful:', response.data);
       return true;
     } catch (error: any) {
@@ -515,9 +524,9 @@ export const fleetApi = {
   async getTruckRoutes(truckId: string): Promise<Route[]> {
     try {
       console.log('📋 Fetching routes for truck:', truckId);
-      
+
       const response = await api.get(`/fleet/trucks/${truckId}/routes`);
-      
+
       console.log('✅ Truck routes fetch successful:', response.data);
       const raw = response.data.routes || [];
       // Normalize to Route shape expected by UI
@@ -546,9 +555,9 @@ export const fleetApi = {
   async getRouteAssignments(routeId: string): Promise<any[]> {
     try {
       console.log('� Fetching assignments for route:', routeId);
-      
+
       const response = await api.get(`/fleet/routes/${routeId}/assignments`);
-      
+
       console.log('✅ Route assignments fetch successful:', response.data);
       return response.data.assignments || [];
     } catch (error: any) {
@@ -561,9 +570,9 @@ export const fleetApi = {
   async bulkAssignRoutes(assignments: { routeId: string; truckId: string }[]): Promise<any> {
     try {
       console.log('📦 Bulk assigning routes:', assignments);
-      
+
       const response = await api.post('/fleet/routes/bulk-assign', { assignments });
-      
+
       console.log('✅ Bulk route assignment successful:', response.data);
       return response.data;
     } catch (error: any) {
@@ -1199,7 +1208,7 @@ export const fleetApi = {
   async subscribeFleetUpdates(callback: (update: Partial<FleetItem>) => void): Promise<() => void> {
     try {
       console.log('🔌 Setting up fleet updates subscription');
-      
+
       // For now, we'll use a polling approach since WebSocket isn't implemented yet
       // In a real implementation, this would connect to a WebSocket or use Server-Sent Events
       const intervalId = setInterval(async () => {
@@ -1224,7 +1233,7 @@ export const fleetApi = {
     } catch (error) {
       console.error('❌ Error setting up fleet subscription:', error);
       // Return a no-op unsubscribe function
-      return () => {};
+      return () => { };
     }
   },
 
@@ -1232,7 +1241,7 @@ export const fleetApi = {
   async subscribeTruckUpdates(truckId: string, callback: (update: Partial<FleetItem>) => void): Promise<() => void> {
     try {
       console.log('🔌 Setting up truck updates subscription for:', truckId);
-      
+
       const intervalId = setInterval(async () => {
         try {
           const response = await api.get(`/fleet/trucks/${truckId}/updates`);
@@ -1250,7 +1259,7 @@ export const fleetApi = {
       };
     } catch (error) {
       console.error('❌ Error setting up truck subscription:', error);
-      return () => {};
+      return () => { };
     }
   },
 
@@ -1258,7 +1267,7 @@ export const fleetApi = {
   async subscribeDriverUpdates(driverId: string, callback: (update: Partial<Driver>) => void): Promise<() => void> {
     try {
       console.log('🔌 Setting up driver updates subscription for:', driverId);
-      
+
       const intervalId = setInterval(async () => {
         try {
           const response = await api.get(`/fleet/drivers/${driverId}/updates`);
@@ -1276,7 +1285,7 @@ export const fleetApi = {
       };
     } catch (error) {
       console.error('❌ Error setting up driver subscription:', error);
-      return () => {};
+      return () => { };
     }
   },
 
