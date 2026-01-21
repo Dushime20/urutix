@@ -186,7 +186,8 @@ const TruckLocationModal: React.FC<TruckLocationModalProps> = ({
     }
   };
 
-  // In return JSX, update the content container
+  if (!isOpen) return null;
+
   return createPortal(
     <div 
       className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4"

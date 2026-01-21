@@ -55,6 +55,43 @@ export class OpenStreetMapLocationService {
 
   constructor(private configService: ConfigService) {}
 
+   /**
+   * Get coordinates from address string using Nominatim
+   */
+  async getCoordinatesFromAddress(address: string): Promise<{ latitude: number; longitude: number } | null> {
+    const cacheKey = `osm_address_${address.toLowerCase().trim()}`;
+    const cached = this.getFromCache(cacheKey);
+    if (cached) return cached;
+
+    try {
+      const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
+        address,
+      )}&limit=1`;
+      
+      const response = await axios.get(url, {
+        headers: {
+          'User-Agent': 'CargoAIMatching/1.0',
+          'Accept-Language': 'en',
+        },
+        timeout: 10000,
+      });
+
+      if (response.status === 200 && response.data && response.data.length > 0) {
+        const result = response.data[0];
+        const coordinates = {
+          latitude: parseFloat(result.lat),
+          longitude: parseFloat(result.lon),
+        };
+        this.setCache(cacheKey, coordinates);
+        return coordinates;
+      }
+      return null;
+    } catch (error) {
+      this.logger.error(`Error geocoding address "${address}":`, error);
+      return null;
+    }
+  }
+
   /**
    * Get real geocoding data from OpenStreetMap Nominatim
    */

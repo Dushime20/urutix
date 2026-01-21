@@ -184,33 +184,27 @@ const QuickCreateModal: React.FC<QuickCreateModalProps> = ({ isOpen, onClose, on
         locations: [
           {
             type: 'PICKUP',
-            address: {
-              street: formData.pickupLocation,
-              city: formData.pickupLocation,
-              state: '',
-              country: '',
-              postalCode: '',
-              latitude: pickupCoords?.lat || 0,
-              longitude: pickupCoords?.lng || 0,
-            },
-            contactName: '',
-            contactPhone: '',
             sequence: 0,
+            locationData: {
+              name: formData.pickupLocation,
+              address: formData.pickupLocation,
+              coordinates: {
+                latitude: pickupCoords?.lat || 0,
+                longitude: pickupCoords?.lng || 0,
+              },
+            },
           },
           {
             type: 'DELIVERY',
-            address: {
-              street: formData.deliveryLocation,
-              city: formData.deliveryLocation,
-              state: '',
-              country: '',
-              postalCode: '',
-              latitude: deliveryCoords?.lat || 0,
-              longitude: deliveryCoords?.lng || 0,
-            },
-            contactName: '',
-            contactPhone: '',
             sequence: 1,
+            locationData: {
+              name: formData.deliveryLocation,
+              address: formData.deliveryLocation,
+              coordinates: {
+                latitude: deliveryCoords?.lat || 0,
+                longitude: deliveryCoords?.lng || 0,
+              },
+            },
           },
         ],
         pickupDate: formData.pickupDate,

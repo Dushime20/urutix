@@ -169,6 +169,13 @@ export class OSMLocationEnrichmentService {
   ) {}
 
   /**
+   * Get coordinates for an address string
+   */
+  async getCoordinates(address: string): Promise<{ latitude: number; longitude: number } | null> {
+    return this.osmLocationService.getCoordinatesFromAddress(address);
+  }
+
+  /**
    * Enrich cargo locations using OpenStreetMap data
    */
   async enrichCargoLocations(load: Load): Promise<EnrichedLocation[]> {

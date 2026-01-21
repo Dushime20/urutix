@@ -358,6 +358,53 @@ export class LoadsService {
         locationsCount: loadData.locations?.length || 0,
       });
 
+
+      // Ensure locations have valid coordinates (Geocoding fallback for Quick Create)
+      if (
+        loadData.locations &&
+        Array.isArray(loadData.locations) &&
+        this.locationEnrichmentService
+      ) {
+        this.logger.log('Validating location coordinates before creation...');
+        for (const loc of loadData.locations) {
+          const data = loc.locationData;
+          if (data && data.coordinates) {
+            const { latitude, longitude } = data.coordinates;
+            // Check if coordinates are essentially 0 (Null Island) or missing
+            if (
+              Math.abs(Number(latitude)) < 0.0001 &&
+              Math.abs(Number(longitude)) < 0.0001
+            ) {
+              // Try to geocode from address or name
+              const addressStr = data.address || data.name;
+              if (addressStr) {
+                this.logger.log(
+                  `Geocoding location "${addressStr}" due to missing coordinates`,
+                );
+                try {
+                  const coords = await this.locationEnrichmentService.getCoordinates(
+                    addressStr,
+                  );
+                  if (coords) {
+                    data.coordinates = coords;
+                    this.logger.log(
+                      `Updated coordinates for ${addressStr}: ${coords.latitude}, ${coords.longitude}`,
+                    );
+                  } else {
+                    this.logger.warn(`Could not geocode address: ${addressStr}`);
+                  }
+                } catch (err) {
+                  this.logger.error(
+                    `Error geocoding address ${addressStr}:`,
+                    err,
+                  );
+                }
+              }
+            }
+          }
+        }
+      }
+
       const load = this.loadRepository.create(loadData as any);
       this.logger.log('Load object created, saving...');
       
