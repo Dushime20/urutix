@@ -1,5 +1,5 @@
 import React from 'react';
-import { FaTruck, FaUser, FaMapMarkerAlt, FaPhone, FaEnvelope, FaEdit, FaTrash, FaEye } from 'react-icons/fa';
+import { FaTruck, FaUser, FaMapMarkerAlt, FaPhone, FaEnvelope, FaEdit, FaTrash } from 'react-icons/fa';
 import type { FleetItem } from '../../types/fleet';
 import { TranslatedText } from '../translated-text';
 import { useTranslation } from '../../hooks/useTranslation';
@@ -10,7 +10,6 @@ interface FleetTableProps {
   view: 'grid' | 'list';
   activeTab: 'trucks' | 'drivers' | 'analytics' | 'safety' | 'financial' | 'routes';
   onRowClick: (item: FleetItem) => void;
-  onBulkAction: (action: 'delete' | 'export' | 'update', selectedIds: string[]) => void;
   onEditFleetItem: (item: FleetItem) => void;
   onDeleteFleetItem: (itemId: string) => void;
 }
@@ -21,7 +20,6 @@ const FleetTableComp: React.FC<FleetTableProps> = ({
   view,
   activeTab,
   onRowClick,
-  onBulkAction,
   onEditFleetItem,
   onDeleteFleetItem
 }) => {
@@ -41,7 +39,7 @@ const FleetTableComp: React.FC<FleetTableProps> = ({
   };
 
   const { tSync } = useTranslation();
-  
+
   const getStatusText = (status: string) => {
     switch (status) {
       case 'AVAILABLE':
@@ -124,7 +122,7 @@ const FleetTableComp: React.FC<FleetTableProps> = ({
                     <div className="text-sm text-gray-600">
                       <span className="font-medium">Cargo Types:</span>
                       <div className="flex flex-wrap gap-1 mt-1">
-                        {item.cargoCapabilities.supportedCargoTypes?.map((type, idx) => (
+                        {item.cargoCapabilities.supportedCargoTypes?.map((type: string, idx: number) => (
                           <span key={idx} className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded">
                             {type}
                           </span>

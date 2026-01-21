@@ -548,10 +548,10 @@ const DashboardHeader = () => {
   };
 
   return (
-    <div className="bg-white border-b border-gray-200 text-gray-900 px-4 pt-6 pb-3 sm:px-6 sm:pt-8 sm:pb-4 relative overflow-hidden z-10">
+    <div className="bg-white border-b border-gray-200 text-gray-900 pt-6 pb-3 sm:pt-8 sm:pb-4 relative overflow-hidden z-10">
 
       {/* Custom Header inside Dark Section */}
-      <div className="max-w-7xl mx-auto px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8 relative z-10">
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 relative z-10">
         {/* Top Row: Logo, Mobile Menu, Search, Notifications, User */}
         <div className="flex justify-between items-center relative z-10 gap-2 sm:gap-3 md:gap-4">
           <div className="flex items-center gap-2 sm:gap-3 md:gap-4 min-w-0 flex-1">
