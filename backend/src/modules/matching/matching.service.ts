@@ -1,12 +1,14 @@
-// --- Added for controller compatibility ---
+// --- Consolidated Enhanced Matching Service ---
+// Integrates features from AIMatchingEngineService and EnhancedMatchingService
 import {
   Injectable,
   NotFoundException,
   BadRequestException,
   InternalServerErrorException,
+  Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, In } from 'typeorm';
+import { Repository, In, Not } from 'typeorm';
 import {
   Load,
   LoadStatus,
@@ -21,6 +23,7 @@ import {
 } from '../../entities/truck.entity';
 import { Driver, DriverStatus } from '../../entities/driver.entity';
 import { Location } from '../../entities/location.entity';
+import { LoadMatch, MatchStatus } from '../../entities/load-match.entity';
 import { MatchRequestDto } from './dto/match-request.dto';
 import { MatchResultDto } from './dto/match-result.dto';
 
@@ -28,6 +31,70 @@ import { MatchResultDto } from './dto/match-result.dto';
 import { HungarianAlgorithm } from './algorithms/hungarian.algorithm';
 import { GeneticAlgorithm } from './algorithms/genetic.algorithm';
 import { TopsisAlgorithm } from './algorithms/topsis.algorithm';
+
+// Enhanced services for consolidated matching
+import { CacheService } from './services/cache.service';
+import { MarketIntelligenceService } from './services/market-intelligence.service';
+import { MLPredictionService } from './services/ml-prediction.service';
+
+// =====================================================
+// CONSOLIDATED MATCHING INTERFACES
+// =====================================================
+
+/** ML-based predictions for match quality */
+export interface MLPrediction {
+  successProbability: number;
+  estimatedDeliveryTime: number;
+  riskScore: number;
+  recommendedPrice: number;
+  confidence: number;
+}
+
+/** Metrics tracking for matching performance */
+export interface MatchingMetrics {
+  totalMatches: number;
+  averageScore: number;
+  matchRate: number;
+  responseTime: number;
+  cacheHitRate: number;
+  algorithmVersion: string;
+}
+
+/** Environmental impact assessment */
+export interface EnvironmentalImpact {
+  co2Emissions: number;
+  fuelConsumption: number;
+  ecoScore: number;
+}
+
+/** Risk assessment for matches */
+export interface RiskAssessment {
+  overallRisk: number;
+  equipmentRisk: number;
+  capacityRisk: number;
+  ratingRisk: number;
+  availabilityRisk: number;
+  costRisk: number;
+  riskFactors: string[];
+  mitigationStrategies: string[];
+}
+
+/** Route optimization results */
+export interface RouteOptimization {
+  totalDistance: number;
+  estimatedTime: number;
+  fuelConsumption: number;
+  costSavings: number;
+}
+
+/** Market context for dynamic pricing and scoring */
+export interface MarketContext {
+  currentDemand: number;
+  averageCost: number;
+  capacityUtilization: number;
+  seasonalMultiplier: number;
+  marketBalance: 'BALANCED' | 'TRUCK_SURPLUS' | 'LOAD_SURPLUS';
+}
 
 export enum MatchingAlgorithm {
   WEIGHTED_SCORE = 'WEIGHTED_SCORE',
@@ -37,41 +104,54 @@ export enum MatchingAlgorithm {
   HYBRID = 'HYBRID',
 }
 
+// =====================================================
+// SIMPLIFIED MATCHING CRITERIA (5 Core Factors)
+// 1. Capacity - Weight/volume matching
+// 2. Equipment - Required equipment compatibility  
+// 3. Distance/Route - Proximity and route optimization
+// 4. GPS Tracking - GPS availability for monitoring
+// 5. Availability - Truck availability status
+// =====================================================
+
 export interface MatchingFactors {
-  distanceScore: number;
-  capacityScore: number;
-  equipmentScore: number;
-  temperatureScore: number;
-  securityScore: number;
-  routeScore: number;
-  timeScore: number;
-  ratingScore: number;
-  costScore: number;
-  experienceScore: number;
-  availabilityScore: number;
-  specialRequirementsScore: number;
+  capacityScore: number;      // Weight & volume utilization
+  equipmentScore: number;     // Required equipment compatibility
+  distanceScore: number;      // Proximity to pickup location
+  gpsTrackingScore: number;   // GPS availability for monitoring
+  availabilityScore: number;  // Truck availability status
 }
 
 export interface DynamicWeights {
-  distance: number;
-  capacity: number;
-  equipment: number;
-  temperature: number;
-  security: number;
-  route: number;
-  time: number;
-  rating: number;
-  cost: number;
-  experience: number;
-  availability: number;
-  specialRequirements: number;
+  capacity: number;         // Default: 30%
+  equipment: number;        // Default: 25%
+  distance: number;         // Default: 20%
+  gpsTracking: number;      // Default: 10%
+  availability: number;     // Default: 15%
 }
 
 @Injectable()
 export class MatchingService {
+  private readonly logger = new Logger(MatchingService.name);
   private readonly hungarianAlgorithm: HungarianAlgorithm;
   private geneticAlgorithm: GeneticAlgorithm;
   private readonly topsisAlgorithm: TopsisAlgorithm;
+
+  // =====================================================
+  // CONSOLIDATED FEATURES FROM AI & ENHANCED SERVICES
+  // =====================================================
+  
+  /** In-memory cache for fast repeated lookups */
+  private readonly memoryCache = new Map<string, { data: any; expiry: number }>();
+  
+  /** Matching performance metrics */
+  private readonly metrics: MatchingMetrics = {
+    totalMatches: 0,
+    averageScore: 0,
+    matchRate: 0,
+    responseTime: 0,
+    cacheHitRate: 0,
+    algorithmVersion: 'v3.0-consolidated',
+  };
 
   constructor(
     @InjectRepository(Load)
@@ -82,10 +162,17 @@ export class MatchingService {
     private readonly driverRepository: Repository<Driver>,
     @InjectRepository(Location)
     private readonly locationRepository: Repository<Location>,
+    @InjectRepository(LoadMatch)
+    private readonly loadMatchRepository: Repository<LoadMatch>,
+    // Enhanced services for consolidated matching
+    private readonly cacheService: CacheService,
+    private readonly marketIntelligence: MarketIntelligenceService,
+    private readonly mlPrediction: MLPredictionService,
   ) {
     this.hungarianAlgorithm = new HungarianAlgorithm();
     this.geneticAlgorithm = new GeneticAlgorithm([], []);
     this.topsisAlgorithm = new TopsisAlgorithm();
+    this.logger.log('🚀 Consolidated MatchingService initialized (v3.0)');
   }
 
   async findMatches(
@@ -325,7 +412,16 @@ export class MatchingService {
       matches = this.applyPostProcessingFilters(matches, matchRequestDto);
 
       // Sort by overall score and limit results
+      // Sort by overall score and limit results
       matches.sort((a, b) => b.overallScore - a.overallScore);
+
+      // Persist top matches for Truck Owners to view
+      if (matches.length > 0) {
+        // Run in background to not block response
+        this.persistMatchesForTruckOwners(matches, matchRequestDto.loadId, tenantId).catch(err => 
+            this.logger.error('Background match persistence failed', err)
+        );
+      }
 
       const limit = matchRequestDto.limit || 10;
       return matches.slice(0, limit);
@@ -345,6 +441,110 @@ export class MatchingService {
         error: error.message || 'An unexpected error occurred',
       });
     }
+  }
+
+
+
+  private async persistMatchesForTruckOwners(
+    matches: MatchResultDto[],
+    loadId: string,
+    tenantId: string,
+  ): Promise<void> {
+    try {
+      // Filter for high quality matches (e.g. > 0.6)
+      const highQualityMatches = matches.filter((m) => m.overallScore >= 0.6);
+      
+      this.logger.debug(`Persisting ${highQualityMatches.length} matches for Load ${loadId}`);
+
+      for (const match of highQualityMatches) {
+        const existing = await this.loadMatchRepository.findOne({
+          where: { loadId, truckId: match.truckId },
+        });
+
+        if (!existing) {
+          const entity = this.loadMatchRepository.create({
+            tenantId,
+            loadId,
+            truckId: match.truckId,
+            score: match.overallScore,
+            matchDetails: match,
+            status: MatchStatus.POTENTIAL,
+          });
+          await this.loadMatchRepository.save(entity);
+        } else {
+            // Update score if changed significantly
+            if (Math.abs(existing.score - match.overallScore) > 0.01) {
+                existing.score = match.overallScore;
+                existing.matchDetails = match;
+                await this.loadMatchRepository.save(existing);
+            }
+        }
+      }
+    } catch (err) {
+      this.logger.error(`Failed to persist matches for load ${loadId}`, err);
+    }
+  }
+
+  /**
+   * Get all persisted matches for a truck owner's fleet
+   */
+  async getMatchesForOwner(ownerId: string): Promise<LoadMatch[]> {
+    try {
+      // 1. Find all trucks for this owner
+      const trucks = await this.truckRepository.find({
+        where: { owner: { id: ownerId } },
+        select: ['id'],
+      });
+
+      if (trucks.length === 0) {
+        return [];
+      }
+
+      const truckIds = trucks.map((t) => t.id);
+
+      // 2. Find matches for these trucks
+      return this.loadMatchRepository.find({
+        where: { 
+            truckId: In(truckIds),
+            status: Not(MatchStatus.POTENTIAL)
+        },
+        relations: ['load'],
+        order: { createdAt: 'DESC', score: 'DESC' },
+        take: 50, // Limit to recent matches
+      });
+    } catch (error) {
+      this.logger.error(`Error finding matches for owner ${ownerId}`, error);
+      throw error;
+    }
+  }
+
+  async requestMatch(loadId: string, truckId: string, tenantId: string): Promise<LoadMatch> {
+    let match = await this.loadMatchRepository.findOne({
+      where: { loadId, truckId },
+    });
+
+    if (!match) {
+      match = this.loadMatchRepository.create({
+        loadId,
+        truckId,
+        tenantId,
+        score: 1.0, // Manual selection implies high relevance
+        status: MatchStatus.REQUESTED,
+      });
+    } else {
+      match.status = MatchStatus.REQUESTED;
+    }
+    return this.loadMatchRepository.save(match);
+  }
+
+  async respondToMatch(matchId: string, status: MatchStatus): Promise<LoadMatch> {
+    const match = await this.loadMatchRepository.findOne({ where: { id: matchId } });
+    if (!match) {
+        throw new NotFoundException(`Match ${matchId} not found`);
+    }
+    
+    match.status = status;
+    return this.loadMatchRepository.save(match);
   }
 
   private async getAvailableTrucks(
@@ -687,90 +887,106 @@ export class MatchingService {
     criteria: MatchRequestDto,
   ): Promise<MatchResultDto | null> {
     try {
-      // Basic capacity check
-      // Convert to numbers for proper comparison (handles string/decimal issues)
-      // Both truck capacity and cargo weight are in kg
+      // =====================================================
+      // SIMPLIFIED MATCHING - 5 CORE CRITERIA ONLY
+      // 1. Capacity, 2. Equipment, 3. Distance, 4. GPS, 5. Availability
+      // =====================================================
+
+      // =====================================================
+      // HARD CONSTRAINTS CHECK (All must pass)
+      // =====================================================
+
+      // 1. CAPACITY CONSTRAINT
       const truckCapacityKg = Number(truck.capacityWeight);
       const loadWeight = Number(load.weight);
+      
+      this.logger.debug(`🔍 Checking constraints for truck ${truck.plateNumber}`);
 
-      console.log(`🔍 Capacity check for truck ${truck.plateNumber}:`, {
-        truckCapacityKg: truckCapacityKg,
-        loadWeight: loadWeight,
-        comparison: `${loadWeight} > ${truckCapacityKg} = ${loadWeight > truckCapacityKg}`,
-        canCarry: loadWeight <= truckCapacityKg,
-      });
-
-      // Use >= instead of > to allow exact matches (200kg truck can carry 200kg load)
       if (!truckCapacityKg || !loadWeight || loadWeight > truckCapacityKg) {
-        console.log(
-          `❌ Truck ${truck.plateNumber} rejected: capacity check failed`,
-          {
-            truckCapacityKg,
-            loadWeight,
-            canCarry: loadWeight <= truckCapacityKg,
-            reason: !truckCapacityKg
-              ? 'No truck capacity'
-              : !loadWeight
-                ? 'No load weight'
-                : 'Load too heavy',
-          },
-        );
-        return null; // Truck cannot carry this load
+        this.logger.debug(`❌ Rejected: Capacity insufficient (${loadWeight}kg > ${truckCapacityKg}kg)`);
+        return null; 
       }
 
-      console.log(`✅ Truck ${truck.plateNumber} passed capacity check:`, {
-        truckCapacityKg,
-        loadWeight,
-        utilization: ((loadWeight / truckCapacityKg) * 100).toFixed(2) + '%',
-      });
+      // 2. AVAILABILITY CONSTRAINT
+      if (truck.status !== VehicleStatus.AVAILABLE) {
+        // Exception: If truck is incoming and will be available soon (within 2 hours)
+        const isIncoming = truck.status === VehicleStatus.IN_TRANSIT && 
+                          truck.estimatedAvailableTime && 
+                          (new Date(truck.estimatedAvailableTime).getTime() - Date.now()) < 2 * 60 * 60 * 1000;
+        
+        if (!isIncoming) {
+          this.logger.debug(`❌ Rejected: Status is ${truck.status}`);
+          return null;
+        }
+      }
 
-      // FULL AI MATCHING: Calculate all scoring factors
-      const capacityScore = this.calculateCapacityScore(truck, load);
+      // 3. EQUIPMENT CONSTRAINT
+      if (load.requiresRefrigeration && !truck.hasRefrigeration) {
+        this.logger.debug(`❌ Rejected: Missing refrigeration`);
+        return null;
+      }
+      if (load.isHazardous && !truck.hasHazmatPermit) {
+        this.logger.debug(`❌ Rejected: Missing hazmat permit`);
+        return null;
+      }
+
+      // 4. SECURITY CONSTRAINT (GPS)
+      if (load.requiresGpsMonitoring && !truck.hasGps && !truck.securityFeatures?.hasGps) {
+        this.logger.debug(`❌ Rejected: Missing required GPS/Tracking`);
+        return null;
+      }
+
+      // 5. ROUTE/DISTANCE CONSTRAINT
+      // Calculate distance between load pickup and truck current location
       const distanceKm = this.calculateDistance(load, truck);
-      const distanceScore = this.calculateDistanceScore(load, truck, criteria);
+      
+      // If truck has max distance constraint
+      if (truck.routeCapabilities?.maxDistance && distanceKm > truck.routeCapabilities.maxDistance) {
+         this.logger.debug(`❌ Rejected: Outside max operating distance`);
+         return null;
+      }
+
+      // =====================================================
+      // CALCULATE 5 CORE SCORING FACTORS
+      // =====================================================
+
+      // 1. CAPACITY SCORE - Weight & volume utilization (30%)
+      const capacityScore = this.calculateCapacityScore(truck, load);
+
+      // 2. EQUIPMENT SCORE - Required equipment compatibility (25%)
       const equipmentScore = this.calculateEquipmentScore(truck, load);
-      const ratingScore = this.calculateRatingScore(truck);
-      const priceScore = this.calculateCostScore(truck, load);
-      const temperatureScore = this.calculateTemperatureScore(truck, load);
-      const securityScore = this.calculateSecurityScore(truck, load);
-      const routeScore = this.calculateRouteScore(truck, load);
-      const timeScore = this.calculateTimeScore(truck, load);
+
+      // 3. DISTANCE SCORE - Proximity to pickup location (20%)
+      // distanceKm is already calculated above in constraints check
+      const distanceScore = this.calculateDistanceScore(load, truck, criteria);
+
+      // 4. GPS TRACKING SCORE - GPS availability for monitoring (10%)
+      const gpsTrackingScore = this.calculateGpsTrackingScore(truck, load);
+
+      // 5. AVAILABILITY SCORE - Truck availability status (15%)
       const availabilityScore = this.calculateAvailabilityScore(truck);
-      const specialRequirementsScore = this.calculateSpecialRequirementsScore(truck, load);
 
       // Get dynamic weights based on load requirements
       const weights = this.getDynamicWeights(load);
 
-      // Calculate weighted overall score using all factors
+      // Calculate weighted overall score using 5 core factors
       const overallScore = 
         capacityScore * weights.capacity +
-        distanceScore * weights.distance +
         equipmentScore * weights.equipment +
-        ratingScore * weights.rating +
-        priceScore * weights.cost + // Use 'cost' from DynamicWeights interface
-        temperatureScore * (weights.temperature || 0.05) +
-        securityScore * (weights.security || 0.05) +
-        routeScore * (weights.route || 0.05) +
-        timeScore * (weights.time || 0.05) +
-        availabilityScore * (weights.availability || 0.05) +
-        specialRequirementsScore * (weights.specialRequirements || 0.1);
+        distanceScore * weights.distance +
+        gpsTrackingScore * weights.gpsTracking +
+        availabilityScore * weights.availability;
 
-      // Calculate cost estimates
+      // Calculate supporting metrics
       const estimatedCost = this.estimateCost(distanceKm, loadWeight, truck);
       const estimatedRevenue = this.estimateRevenue(distanceKm, loadWeight);
       const profitMargin = estimatedRevenue > 0 
         ? ((estimatedRevenue - estimatedCost) / estimatedRevenue) 
         : 0;
-
-      // Calculate estimated delivery time
       const estimatedDeliveryTime = this.estimateDeliveryTime(distanceKm, load);
-
-      // Calculate risk score (inverse of overall score for risk assessment)
       const riskScore = Math.max(0, 1 - overallScore);
-
-      // Calculate recommended price (market average with margin)
       const marketAverage = this.getMarketAverageCost(load);
-      const recommendedPrice = marketAverage * 1.1; // 10% margin
+      const recommendedPrice = marketAverage * 1.1;
 
       // Get driver info if requested
       let driverInfo = {};
@@ -788,42 +1004,27 @@ export class MatchingService {
         }
       }
 
-      // Generate comprehensive match reason
+      // Generate match reason based on 5 core factors
       const utilization = ((loadWeight / truckCapacityKg) * 100).toFixed(1);
-      const matchReason = this.generateComprehensiveMatchReason(
-        truck,
-        load,
-        {
-          capacityScore,
-          distanceScore,
-          equipmentScore,
-          ratingScore,
-          priceScore,
-          temperatureScore,
-          securityScore,
-          routeScore,
-          timeScore,
-          overallScore,
-          utilization,
-          distanceKm,
-        }
+      const matchReason = this.generateSimplifiedMatchReason(
+        truck, load, capacityScore, equipmentScore, distanceScore, 
+        gpsTrackingScore, availabilityScore, distanceKm, utilization
       );
 
-      // Calculate confidence based on how well all criteria are met
-      const confidence = Math.min(overallScore * 1.1, 1.0); // Slight boost for confidence
-      const successProbability = overallScore; // Success probability equals overall score
+      const confidence = Math.min(overallScore * 1.1, 1.0);
+      const successProbability = overallScore;
 
       return {
         truckId: truck.id,
         loadId: load.id,
-        overallScore: Math.min(overallScore, 1.0), // Cap at 1.0
+        overallScore: Math.min(overallScore, 1.0),
         capacityScore,
-        distanceScore,
         equipmentScore,
-        ratingScore,
-        priceScore,
-        distanceKm: Math.round(distanceKm * 10) / 10, // Round to 1 decimal
-        estimatedCost: Math.round(estimatedCost * 100) / 100, // Round to 2 decimals
+        distanceScore,
+        gpsTrackingScore,
+        availabilityScore,
+        distanceKm: Math.round(distanceKm * 10) / 10,
+        estimatedCost: Math.round(estimatedCost * 100) / 100,
         estimatedRevenue: Math.round(estimatedRevenue * 100) / 100,
         profitMargin: Math.round(profitMargin * 100) / 100,
         truckMake: truck.make || 'Unknown',
@@ -836,6 +1037,7 @@ export class MatchingService {
         hasRefrigeration: truck.hasRefrigeration || false,
         hasLiftGate: truck.hasLiftGate || false,
         hasHazmatPermit: truck.hasHazmatPermit || false,
+        hasGps: truck.hasGps || false,
         matchReason,
         confidence,
         successProbability,
@@ -861,12 +1063,7 @@ export class MatchingService {
         ...driverInfo,
       } as MatchResultDto;
     } catch (error) {
-      console.error('Error in scoreTruck:', error);
-      console.error('Truck ID:', truck?.id);
-      console.error('Load ID:', load?.id);
-      console.error('Error message:', error.message);
-      console.error('Error stack:', error.stack);
-      // Return null instead of throwing to allow other trucks to be scored
+      this.logger.error(`Error scoring truck ${truck?.id}: ${error.message}`);
       return null;
     }
   }
@@ -877,39 +1074,29 @@ export class MatchingService {
     criteria: MatchRequestDto,
   ): Promise<MatchingFactors> {
     try {
-      // SIMPLIFIED: Only calculate capacity score for weight-based matching
+      // SIMPLIFIED: Calculate 5 core scoring factors
       const capacityScore = this.calculateCapacityScore(truck, load);
+      const equipmentScore = this.calculateEquipmentScore(truck, load);
+      const distanceScore = this.calculateDistanceScore(load, truck, criteria);
+      const gpsTrackingScore = this.calculateGpsTrackingScore(truck, load);
+      const availabilityScore = this.calculateAvailabilityScore(truck);
 
       return {
-        distanceScore: 0, // Not used in weight-only matching
         capacityScore: capacityScore || 0,
-        equipmentScore: 0, // Not used in weight-only matching
-        temperatureScore: 0, // Not used in weight-only matching
-        securityScore: 0, // Not used in weight-only matching
-        routeScore: 0, // Not used in weight-only matching
-        timeScore: 0, // Not used in weight-only matching
-        ratingScore: 0, // Not used in weight-only matching
-        costScore: 0, // Not used in weight-only matching
-        experienceScore: 0, // Not used in weight-only matching
-        availabilityScore: 0, // Not used in weight-only matching
-        specialRequirementsScore: 0, // Not used in weight-only matching
+        equipmentScore: equipmentScore || 0,
+        distanceScore: distanceScore || 0,
+        gpsTrackingScore: gpsTrackingScore || 0,
+        availabilityScore: availabilityScore || 0,
       };
     } catch (error) {
-      console.error('Error in calculateMatchingFactors:', error);
+      this.logger.error('Error in calculateMatchingFactors:', error);
       // Return default scores if calculation fails
       return {
-        distanceScore: 0,
         capacityScore: 0,
         equipmentScore: 0,
-        temperatureScore: 0,
-        securityScore: 0,
-        routeScore: 0,
-        timeScore: 0,
-        ratingScore: 0,
-        costScore: 0,
-        experienceScore: 0,
+        distanceScore: 0,
+        gpsTrackingScore: 0,
         availabilityScore: 0,
-        specialRequirementsScore: 0,
       };
     }
   }
@@ -923,11 +1110,14 @@ export class MatchingService {
     const maxDistance = criteria.maxDistance || 200;
 
     if (distance > maxDistance) return 0;
-    if (distance <= 25) return 1.0;
-    if (distance <= 50) return 0.9;
-    if (distance <= 100) return 0.7;
-    if (distance <= 150) return 0.5;
-    return 0.3;
+    
+    // Aggressive scoring for "same city" / nearby matching
+    if (distance <= 10) return 1.0;  // Extremely close / same neighborhood
+    if (distance <= 25) return 0.9;  // Same city/area
+    if (distance <= 50) return 0.7;  // Surrounding area
+    if (distance <= 100) return 0.4; // Regional
+    if (distance <= 150) return 0.2; // Further away
+    return 0.1; // Barely within max distance
   }
 
   private calculateCapacityScore(truck: Truck, load: Load): number {
@@ -1186,6 +1376,127 @@ export class MatchingService {
     return 0.2;
   }
 
+  // =====================================================
+  // GPS TRACKING SCORE (Core Criteria #4)
+  // Evaluates GPS availability for cargo monitoring
+  // =====================================================
+  private calculateGpsTrackingScore(truck: Truck, load: Load): number {
+    let score = 0;
+
+    // Check if truck has GPS
+    if (truck.hasGps) {
+      score += 0.5; // Base score for having GPS
+    }
+
+    // Check for real-time tracking capability
+    if (truck.securityFeatures?.hasGps) {
+      score += 0.2;
+    }
+
+    // Check for cargo monitoring
+    if (truck.securityFeatures?.hasCargoMonitoring) {
+      score += 0.15;
+    }
+
+    // Check for temperature alerts (important for refrigerated cargo)
+    if (load.requiresRefrigeration && truck.securityFeatures?.hasTemperatureAlerts) {
+      score += 0.15;
+    }
+
+    // Check for geofencing
+    if (truck.securityFeatures?.hasGeofencing) {
+      score += 0.1;
+    }
+
+    // If load requires GPS monitoring, score is 0 without GPS
+    if (load.requiresGpsMonitoring && !truck.hasGps && !truck.securityFeatures?.hasGps) {
+      return 0;
+    }
+
+    // Normalize to 0-1 range
+    return Math.min(score, 1.0);
+  }
+
+  // =====================================================
+  // SIMPLIFIED MATCH REASON GENERATOR
+  // Generates human-readable match explanation based on 5 core criteria
+  // =====================================================
+  private generateSimplifiedMatchReason(
+    truck: Truck,
+    load: Load,
+    capacityScore: number,
+    equipmentScore: number,
+    distanceScore: number,
+    gpsTrackingScore: number,
+    availabilityScore: number,
+    distanceKm: number,
+    utilization: string,
+  ): string {
+    const reasons: string[] = [];
+
+    // 1. Capacity assessment
+    if (capacityScore >= 0.9) {
+      reasons.push(`Excellent capacity match (${utilization}% utilization)`);
+    } else if (capacityScore >= 0.7) {
+      reasons.push(`Good capacity match (${utilization}% utilization)`);
+    } else if (capacityScore >= 0.5) {
+      reasons.push(`Adequate capacity`);
+    }
+
+    // 2. Equipment compatibility
+    if (equipmentScore >= 0.9) {
+      reasons.push('Perfect equipment match');
+    } else if (equipmentScore >= 0.7) {
+      reasons.push('Good equipment compatibility');
+    } else if (equipmentScore >= 0.5) {
+      reasons.push('Basic equipment available');
+    }
+
+    // 3. Distance/proximity
+    if (distanceScore >= 0.9) {
+      reasons.push(`Very close (${distanceKm.toFixed(0)}km)`);
+    } else if (distanceScore >= 0.7) {
+      reasons.push(`Close proximity (${distanceKm.toFixed(0)}km)`);
+    } else if (distanceScore >= 0.5) {
+      reasons.push(`Moderate distance (${distanceKm.toFixed(0)}km)`);
+    } else {
+      reasons.push(`Distance: ${distanceKm.toFixed(0)}km`);
+    }
+
+    // 4. GPS tracking
+    if (gpsTrackingScore >= 0.8) {
+      reasons.push('Full GPS tracking available');
+    } else if (gpsTrackingScore >= 0.5) {
+      reasons.push('GPS tracking enabled');
+    } else if (gpsTrackingScore > 0) {
+      reasons.push('Basic GPS available');
+    }
+
+    // 5. Availability
+    if (availabilityScore >= 1.0) {
+      reasons.push('Immediately available');
+    } else if (availabilityScore >= 0.8) {
+      reasons.push('Available soon');
+    } else if (availabilityScore >= 0.5) {
+      reasons.push('Available within hours');
+    }
+
+    // Add special equipment mentions
+    if (truck.hasRefrigeration && load.requiresRefrigeration) {
+      reasons.push('Refrigeration available');
+    }
+    if (truck.hasHazmatPermit && load.isHazardous) {
+      reasons.push('Hazmat certified');
+    }
+    if (truck.hasLiftGate && (load.requiresForklift || load.requiresCrane)) {
+      reasons.push('Lift gate available');
+    }
+
+    return reasons.length > 0
+      ? reasons.join(' • ')
+      : 'Match found';
+  }
+
   private calculateSpecialRequirementsScore(truck: Truck, load: Load): number {
     let score = 1.0;
     let requirements = 0;
@@ -1221,81 +1532,72 @@ export class MatchingService {
     return Math.max(score, 0);
   }
 
+  // =====================================================
+  // SIMPLIFIED DYNAMIC WEIGHTS (5 Core Criteria)
+  // =====================================================
   private getDynamicWeights(load: Load): DynamicWeights {
+    // Base weights for 5 core criteria (must sum to 1.0)
     const baseWeights: DynamicWeights = {
-      distance: 0.15,
-      capacity: 0.2,
-      equipment: 0.25,
-      temperature: 0.1,
-      security: 0.1,
-      route: 0.05,
-      time: 0.05,
-      rating: 0.03,
-      cost: 0.02,
-      experience: 0.02,
-      availability: 0.02,
-      specialRequirements: 0.01,
+      capacity: 0.25,      // 25% - Can truck carry the load? (Hard filter already applied)
+      equipment: 0.25,     // 25% - Required equipment for cargo type
+      distance: 0.25,      // 25% - Proximity to pickup location (Increased importance)
+      gpsTracking: 0.10,   // 10% - GPS availability for tracking
+      availability: 0.15,  // 15% - Is truck available now?
     };
 
     // Adjust weights based on cargo characteristics
     if (load.isHazardous) {
-      baseWeights.equipment += 0.1;
-      baseWeights.security += 0.05;
-      baseWeights.specialRequirements += 0.05;
-    }
-
-    if (load.isTimeCritical) {
-      baseWeights.time += 0.1;
-      baseWeights.distance += 0.05;
-      baseWeights.availability += 0.05;
-    }
-
-    if (load.isFragile) {
-      baseWeights.equipment += 0.05;
-      baseWeights.security += 0.03;
-      baseWeights.experience += 0.02;
+      // Hazardous cargo: Equipment becomes more critical
+      baseWeights.equipment += 0.10;
+      baseWeights.gpsTracking += 0.05; // Need GPS for hazmat tracking
+      baseWeights.capacity -= 0.10;
+      baseWeights.distance -= 0.05;
     }
 
     if (load.requiresRefrigeration) {
-      baseWeights.temperature += 0.1;
-      baseWeights.equipment += 0.05;
+      // Refrigerated cargo: Equipment is critical
+      baseWeights.equipment += 0.10;
+      baseWeights.capacity -= 0.05;
+      baseWeights.distance -= 0.05;
     }
 
-    if (load.urgencyLevel === UrgencyLevel.CRITICAL) {
-      baseWeights.time += 0.15;
-      baseWeights.distance += 0.1;
-      baseWeights.availability += 0.05;
+    if (load.isTimeCritical || load.urgencyLevel === UrgencyLevel.CRITICAL) {
+      // Time-critical: Availability and distance matter more
+      baseWeights.availability += 0.10;
+      baseWeights.distance += 0.05;
+      baseWeights.capacity -= 0.10;
+      baseWeights.equipment -= 0.05;
     }
 
-    // Normalize weights to sum to 1
-    const totalWeight = Object.values(baseWeights).reduce(
-      (sum, weight) => sum + weight,
-      0,
-    );
+    if (load.requiresGpsMonitoring) {
+      // GPS monitoring required: GPS score becomes more important
+      baseWeights.gpsTracking += 0.10;
+      baseWeights.distance -= 0.05;
+      baseWeights.capacity -= 0.05;
+    }
+
+    // Normalize weights to sum to 1.0
+    const totalWeight = Object.values(baseWeights).reduce((sum, w) => sum + w, 0);
     Object.keys(baseWeights).forEach((key) => {
-      baseWeights[key] = baseWeights[key] / totalWeight;
+      baseWeights[key as keyof DynamicWeights] = baseWeights[key as keyof DynamicWeights] / totalWeight;
     });
 
     return baseWeights;
   }
 
+  // =====================================================
+  // SIMPLIFIED WEIGHTED SCORE CALCULATION
+  // =====================================================
   private calculateWeightedScore(
     factors: MatchingFactors,
     weights: DynamicWeights,
   ): number {
     return (
-      factors.distanceScore * weights.distance +
       factors.capacityScore * weights.capacity +
       factors.equipmentScore * weights.equipment +
-      factors.temperatureScore * weights.temperature +
-      factors.securityScore * weights.security +
-      factors.routeScore * weights.route +
-      factors.timeScore * weights.time +
-      factors.ratingScore * weights.rating +
-      factors.costScore * weights.cost +
-      factors.experienceScore * weights.experience +
-      factors.availabilityScore * weights.availability +
-      factors.specialRequirementsScore * weights.specialRequirements
+      factors.distanceScore * weights.distance +
+      factors.gpsTrackingScore * weights.gpsTracking +
+      factors.availabilityScore * weights.availability
     );
   }
 
@@ -1330,16 +1632,16 @@ export class MatchingService {
   ): number {
     let probability = 0.7; // Base probability
 
-    // Adjust based on factors
-    if (factors.equipmentScore >= 0.9) probability += 0.1;
-    if (factors.capacityScore >= 0.8) probability += 0.05;
-    if (factors.ratingScore >= 0.8) probability += 0.05;
+    // Adjust based on 5 core factors
+    if (factors.capacityScore >= 0.9) probability += 0.1;
+    if (factors.equipmentScore >= 0.8) probability += 0.1;
+    if (factors.distanceScore >= 0.8) probability += 0.05;
+    if (factors.gpsTrackingScore >= 0.7) probability += 0.05;
     if (factors.availabilityScore >= 0.9) probability += 0.05;
 
     // Penalize for risk factors
     if (load.isHazardous && !truck.hasHazmatPermit) probability -= 0.3;
-    if (load.requiresRefrigeration && !truck.hasRefrigeration)
-      probability -= 0.3;
+    if (load.requiresRefrigeration && !truck.hasRefrigeration) probability -= 0.3;
 
     return Math.max(0.1, Math.min(1.0, probability));
   }
@@ -1349,15 +1651,17 @@ export class MatchingService {
     load: Load,
     factors: MatchingFactors,
   ): number {
-    let risk = 0.3; // Base risk
+    let risk = 0.2; // Base risk
 
-    // Increase risk for mismatches
-    if (factors.equipmentScore < 0.5) risk += 0.3;
+    // Increase risk for low scores on core criteria
     if (factors.capacityScore < 0.5) risk += 0.2;
-    if (factors.ratingScore < 0.5) risk += 0.2;
+    if (factors.equipmentScore < 0.5) risk += 0.25;
+    if (factors.distanceScore < 0.3) risk += 0.1;
+    if (factors.gpsTrackingScore < 0.3) risk += 0.1;
+    if (factors.availabilityScore < 0.5) risk += 0.15;
 
     // Special cargo risks
-    if (load.isHazardous) risk += 0.2;
+    if (load.isHazardous) risk += 0.15;
     if (load.isFragile) risk += 0.1;
     if (load.requiresRefrigeration) risk += 0.1;
 
@@ -1392,11 +1696,72 @@ export class MatchingService {
   }
 
   private calculateDistance(load: Load, truck: Truck): number {
-    // Simplified distance calculation
-    // In real implementation, use PostGIS spatial functions
-    const baseDistance = 100; // km
-    const randomFactor = Math.random() * 0.5 + 0.5; // 0.5 to 1.0
-    return baseDistance * randomFactor;
+    // Check if truck has location
+    if (!truck.currentLocation) {
+      console.log('⚠️ Truck has no location, returning max distance');
+      return 10000; // Return large distance if location is unknown
+    }
+
+    // Check if load has pickup location
+    const pickupLocation = load.pickupLocation;
+    if (!pickupLocation?.locationData?.coordinates) {
+      console.log('⚠️ Load has no pickup coordinates, returning max distance');
+      return 10000;
+    }
+
+    try {
+      // Parse truck coordinates - handle PostGIS GeoJSON Point format
+      // GeoJSON Point: { type: "Point", coordinates: [longitude, latitude] }
+      let truckLat: number, truckLon: number;
+      
+      const loc = truck.currentLocation as any;
+      if (loc.coordinates && Array.isArray(loc.coordinates)) {
+        [truckLon, truckLat] = loc.coordinates;
+      } else if (loc.latitude && loc.longitude) {
+        // Handle potential object format { latitude: x, longitude: y }
+        truckLat = Number(loc.latitude);
+        truckLon = Number(loc.longitude);
+      } else {
+        console.warn('⚠️ Unknown truck location format:', truck.currentLocation);
+        return 10000;
+      }
+
+      const loadLat = pickupLocation.locationData.coordinates.latitude;
+      const loadLon = pickupLocation.locationData.coordinates.longitude;
+
+      if (!truckLat || !truckLon || !loadLat || !loadLon) {
+        return 10000;
+      }
+
+      return this.calculateHaversineDistance(truckLat, truckLon, loadLat, loadLon);
+    } catch (error) {
+      console.error('Error calculating distance:', error);
+      return 10000;
+    }
+  }
+
+  private calculateHaversineDistance(
+    lat1: number,
+    lon1: number,
+    lat2: number,
+    lon2: number,
+  ): number {
+    const R = 6371; // Radius of the earth in km
+    const dLat = this.deg2rad(lat2 - lat1);
+    const dLon = this.deg2rad(lon2 - lon1);
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(this.deg2rad(lat1)) *
+        Math.cos(this.deg2rad(lat2)) *
+        Math.sin(dLon / 2) *
+        Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    const d = R * c; // Distance in km
+    return d;
+  }
+
+  private deg2rad(deg: number): number {
+    return deg * (Math.PI / 180);
   }
 
   private estimateCost(
@@ -1827,14 +2192,655 @@ export class MatchingService {
   }
 
   async clearAllCaches(): Promise<void> {
-    // No-op: implement cache clearing if you use caching
-    // For now, just log or do nothing
-    return;
+    this.memoryCache.clear();
+    await this.cacheService.clear();
+    this.logger.log('🧹 All matching caches cleared');
   }
 
   async getAllTrucks(tenantId: string): Promise<Truck[]> {
     return await this.truckRepository.find({
       where: { tenantId, isActive: true },
     });
+  }
+
+  // =====================================================
+  // CONSOLIDATED ENHANCED MATCHING METHODS
+  // From AIMatchingEngineService & EnhancedMatchingService
+  // =====================================================
+
+  /**
+   * Enhanced matching with all consolidated features
+   * Includes: ML predictions, market intelligence, caching, environmental impact
+   */
+  async findEnhancedMatches(
+    matchRequestDto: MatchRequestDto,
+    tenantId: string,
+  ): Promise<MatchResultDto[]> {
+    const startTime = Date.now();
+
+    try {
+      // Check cache first
+      const cacheKey = this.generateCacheKey(matchRequestDto, tenantId);
+      const cached = await this.getCachedResult(cacheKey);
+      if (cached && !matchRequestDto.includeDetailedScoring) {
+        this.updateCacheMetrics(true);
+        return cached;
+      }
+      this.updateCacheMetrics(false);
+
+      // Get market context for dynamic weight adjustment
+      const marketContext = await this.getMarketContext(tenantId);
+
+      // Get base matches using existing algorithm
+      let matches = await this.findMatches(matchRequestDto, tenantId);
+
+      // Apply enhanced enrichments
+      if (matchRequestDto.includeDetailedScoring) {
+        matches = await this.enrichMatchesWithMLPredictions(matches, tenantId);
+      }
+
+      if (matchRequestDto.includeEnvironmentalImpact) {
+        matches = await this.enrichMatchesWithEnvironmentalImpact(matches);
+      }
+
+      if (matchRequestDto.includeRiskAnalysis) {
+        matches = await this.enrichMatchesWithRiskAssessment(matches, tenantId);
+      }
+
+      if (matchRequestDto.includeRouteOptimization) {
+        matches = await this.applyRouteOptimization(matches);
+      }
+
+      // Apply market-aware scoring adjustments
+      matches = this.applyMarketAwareScoring(matches, marketContext);
+
+      // Cache results
+      await this.cacheResult(cacheKey, matches, 300);
+
+      // Update metrics
+      this.updateMatchingMetrics(startTime, matches.length);
+
+      return matches;
+    } catch (error) {
+      this.logger.error(`Enhanced matching failed: ${error.message}`, error.stack);
+      throw error;
+    }
+  }
+
+  // =====================================================
+  // MARKET INTELLIGENCE (from EnhancedMatchingService)
+  // =====================================================
+
+  /**
+   * Get real-time market context for dynamic weight adjustment
+   */
+  private async getMarketContext(tenantId: string): Promise<MarketContext> {
+    try {
+      const conditions = await this.marketIntelligence.getCurrentConditions(tenantId);
+      
+      // Calculate market balance
+      const publishedLoads = await this.loadRepository.count({
+        where: { tenantId, status: In([LoadStatus.CREATED, LoadStatus.PUBLISHED]) },
+      });
+      const availableTrucks = await this.truckRepository.count({
+        where: { tenantId, status: VehicleStatus.AVAILABLE },
+      });
+
+      let marketBalance: 'BALANCED' | 'TRUCK_SURPLUS' | 'LOAD_SURPLUS' = 'BALANCED';
+      const ratio = availableTrucks / Math.max(publishedLoads, 1);
+      if (ratio > 1.2) marketBalance = 'TRUCK_SURPLUS';
+      else if (ratio < 0.8) marketBalance = 'LOAD_SURPLUS';
+
+      return {
+        currentDemand: conditions?.currentDemand || 0.5,
+        averageCost: conditions?.averageRates?.perLoad || 100,
+        capacityUtilization: conditions?.capacityUtilization || 0.7,
+        seasonalMultiplier: this.getSeasonalMultiplier(),
+        marketBalance,
+      };
+    } catch (error) {
+      this.logger.warn(`Failed to get market context: ${error.message}`);
+      return {
+        currentDemand: 0.5,
+        averageCost: 100,
+        capacityUtilization: 0.7,
+        seasonalMultiplier: 1.0,
+        marketBalance: 'BALANCED',
+      };
+    }
+  }
+
+  /**
+   * Calculate seasonal demand multiplier
+   */
+  private getSeasonalMultiplier(): number {
+    const month = new Date().getMonth();
+    // Peak seasons: Q4 (Oct-Dec) and Q2 (Apr-Jun)
+    if (month >= 9 && month <= 11) return 1.2; // Q4 peak
+    if (month >= 3 && month <= 5) return 1.1; // Q2 moderate
+    if (month === 0 || month === 1) return 0.9; // Jan-Feb slow
+    return 1.0;
+  }
+
+  /**
+   * Apply market-aware scoring adjustments
+   */
+  private applyMarketAwareScoring(
+    matches: MatchResultDto[],
+    marketContext: MarketContext,
+  ): MatchResultDto[] {
+    return matches.map(match => {
+      let adjustedScore = match.overallScore;
+
+      // Adjust based on market conditions
+      if (marketContext.marketBalance === 'LOAD_SURPLUS') {
+        // More loads than trucks - premium trucks get bonus
+        if (match.truckRating >= 4.5) adjustedScore *= 1.05;
+      } else if (marketContext.marketBalance === 'TRUCK_SURPLUS') {
+        // More trucks than loads - competitive pricing matters
+        if (match.priceScore >= 0.8) adjustedScore *= 1.05;
+      }
+
+      // Apply seasonal multiplier
+      adjustedScore *= marketContext.seasonalMultiplier;
+
+      return {
+        ...match,
+        overallScore: Math.min(adjustedScore, 1.0),
+        marketContext: marketContext as any,
+      };
+    });
+  }
+
+  // =====================================================
+  // ML PREDICTIONS (from AIMatchingEngineService)
+  // =====================================================
+
+  /**
+   * Enrich matches with ML-based predictions
+   */
+  private async enrichMatchesWithMLPredictions(
+    matches: MatchResultDto[],
+    tenantId: string,
+  ): Promise<MatchResultDto[]> {
+    const enriched: MatchResultDto[] = [];
+
+    for (const match of matches) {
+      try {
+        const load = await this.loadRepository.findOne({ where: { id: match.loadId } });
+        const truck = await this.truckRepository.findOne({ where: { id: match.truckId } });
+
+        if (load && truck) {
+          const prediction = await this.runMLPrediction(match, load, truck);
+          enriched.push({
+            ...match,
+            successProbability: prediction.successProbability,
+            confidence: prediction.confidence,
+            riskScore: prediction.riskScore,
+            recommendedPrice: prediction.recommendedPrice,
+            // Adjust overall score based on ML prediction
+            overallScore: this.blendScoreWithML(match.overallScore, prediction),
+          });
+        } else {
+          enriched.push(match);
+        }
+      } catch (error) {
+        this.logger.warn(`ML enrichment failed for match ${match.truckId}: ${error.message}`);
+        enriched.push(match);
+      }
+    }
+
+    return enriched;
+  }
+
+  /**
+   * Run ML prediction for a match
+   */
+  private async runMLPrediction(
+    match: MatchResultDto,
+    load: Load,
+    truck: Truck,
+  ): Promise<MLPrediction> {
+    try {
+      // Try to use the ML prediction service
+      const mlResult = await this.mlPrediction.predictSuccessProbability(load, truck);
+      
+      return {
+        successProbability: mlResult || 0.85 + match.overallScore * 0.1,
+        estimatedDeliveryTime: match.estimatedDeliveryTime || match.distanceKm / 60,
+        riskScore: this.calculateRiskFromFactors(match, load, truck),
+        recommendedPrice: match.recommendedPrice || match.estimatedCost * 1.15,
+        confidence: 0.8 + match.overallScore * 0.15,
+      };
+    } catch (error) {
+      // Fallback to algorithmic prediction
+      return {
+        successProbability: 0.85 + match.overallScore * 0.1,
+        estimatedDeliveryTime: match.distanceKm / 60,
+        riskScore: 1 - match.overallScore,
+        recommendedPrice: match.estimatedCost * 1.15,
+        confidence: 0.75,
+      };
+    }
+  }
+
+  /**
+   * Calculate risk score from various factors
+   */
+  private calculateRiskFromFactors(
+    match: MatchResultDto,
+    load: Load,
+    truck: Truck,
+  ): number {
+    let risk = 0.2; // Base risk
+
+    // Equipment risk
+    if (load.requiresRefrigeration && !truck.hasRefrigeration) risk += 0.3;
+    if (load.isHazardous && !truck.hasHazmatPermit) risk += 0.4;
+
+    // Rating risk
+    if ((truck.averageRating || 0) < 3.5) risk += 0.15;
+
+    // Capacity risk
+    const utilization = load.weight / truck.capacityWeight;
+    if (utilization > 0.95) risk += 0.1;
+
+    // Distance risk
+    if (match.distanceKm > 500) risk += 0.1;
+
+    return Math.min(risk, 1.0);
+  }
+
+  /**
+   * Blend traditional score with ML prediction
+   */
+  private blendScoreWithML(baseScore: number, prediction: MLPrediction): number {
+    // 70% traditional algorithm, 30% ML
+    const blendedScore = 
+      baseScore * 0.7 +
+      prediction.successProbability * 0.2 +
+      (1 - prediction.riskScore) * 0.1;
+    
+    return Math.min(Math.max(blendedScore, 0), 1.0);
+  }
+
+  // =====================================================
+  // ENVIRONMENTAL IMPACT (from EnhancedMatchingService)
+  // =====================================================
+
+  /**
+   * Enrich matches with environmental impact assessment
+   */
+  private async enrichMatchesWithEnvironmentalImpact(
+    matches: MatchResultDto[],
+  ): Promise<MatchResultDto[]> {
+    return Promise.all(matches.map(async match => {
+      const truck = await this.truckRepository.findOne({ where: { id: match.truckId } });
+      const load = await this.loadRepository.findOne({ where: { id: match.loadId } });
+
+      if (!truck || !load) return match;
+
+      const environmentalImpact = this.calculateEnvironmentalImpact(truck, load, match.distanceKm);
+
+      return {
+        ...match,
+        environmentalImpact: environmentalImpact as any,
+      };
+    }));
+  }
+
+  /**
+   * Calculate environmental impact metrics
+   */
+  private calculateEnvironmentalImpact(
+    truck: Truck,
+    load: Load,
+    distanceKm: number,
+  ): EnvironmentalImpact {
+    const fuelEfficiency = truck.fuelEfficiency || 6.5; // L/100km
+    const fuelConsumption = (distanceKm / 100) * fuelEfficiency;
+    
+    // CO2 emissions: ~2.31 kg CO2 per liter of diesel
+    const co2Emissions = fuelConsumption * 2.31;
+    
+    // Eco score: Based on fuel efficiency and electric options
+    let ecoScore = Math.min(1.0, fuelEfficiency / 10);
+    if (truck.fuelType === FuelType.ELECTRIC) ecoScore = 0.95;
+    else if (truck.fuelType === FuelType.HYBRID) ecoScore = 0.85;
+
+    return {
+      co2Emissions: Math.round(co2Emissions * 100) / 100,
+      fuelConsumption: Math.round(fuelConsumption * 100) / 100,
+      ecoScore: Math.round(ecoScore * 100) / 100,
+    };
+  }
+
+  // =====================================================
+  // RISK ASSESSMENT (from EnhancedMatchingService)
+  // =====================================================
+
+  /**
+   * Enrich matches with risk assessment
+   */
+  private async enrichMatchesWithRiskAssessment(
+    matches: MatchResultDto[],
+    tenantId: string,
+  ): Promise<MatchResultDto[]> {
+    return Promise.all(matches.map(async match => {
+      const truck = await this.truckRepository.findOne({ where: { id: match.truckId } });
+      const load = await this.loadRepository.findOne({ where: { id: match.loadId } });
+      const driver = match.driverId 
+        ? await this.driverRepository.findOne({ where: { id: match.driverId } })
+        : null;
+
+      if (!truck || !load) return match;
+
+      const riskAssessment = this.assessMatchRisk(truck, load, driver);
+
+      return {
+        ...match,
+        riskAssessment: riskAssessment as any,
+      };
+    }));
+  }
+
+  /**
+   * Comprehensive risk assessment for a match
+   */
+  private assessMatchRisk(
+    truck: Truck,
+    load: Load,
+    driver: Driver | null,
+  ): RiskAssessment {
+    const riskFactors: string[] = [];
+    let overallRisk = 0.1; // Base risk
+
+    // Equipment risk
+    let equipmentRisk = 0;
+    if (load.requiresRefrigeration && !truck.hasRefrigeration) {
+      equipmentRisk = 0.8;
+      riskFactors.push('Missing refrigeration equipment');
+    }
+    if (load.isHazardous && !truck.hasHazmatPermit) {
+      equipmentRisk = Math.max(equipmentRisk, 0.9);
+      riskFactors.push('Missing hazmat certification');
+    }
+
+    // Capacity risk
+    const utilization = load.weight / truck.capacityWeight;
+    let capacityRisk = 0;
+    if (utilization > 0.95) {
+      capacityRisk = 0.3;
+      riskFactors.push('Near maximum capacity');
+    } else if (utilization > 0.9) {
+      capacityRisk = 0.15;
+    }
+
+    // Rating risk
+    let ratingRisk = 0;
+    if ((truck.averageRating || 0) < 3.0) {
+      ratingRisk = 0.4;
+      riskFactors.push('Low truck rating');
+    } else if ((truck.averageRating || 0) < 3.5) {
+      ratingRisk = 0.2;
+      riskFactors.push('Below average truck rating');
+    }
+
+    // Availability risk
+    let availabilityRisk = 0;
+    if (truck.status !== VehicleStatus.AVAILABLE) {
+      availabilityRisk = 0.3;
+      riskFactors.push('Truck not immediately available');
+    }
+
+    // Cost risk
+    let costRisk = 0.1; // Base
+
+    // Driver risk
+    if (driver) {
+      if (driver.hireDate) {
+        const yearsExperience = (Date.now() - new Date(driver.hireDate).getTime()) / (365 * 24 * 60 * 60 * 1000);
+        if (yearsExperience < 1) {
+          overallRisk += 0.1;
+          riskFactors.push('Inexperienced driver');
+        }
+      }
+    }
+
+    // Cargo-specific risks
+    if (load.isHazardous) {
+      overallRisk += 0.15;
+      riskFactors.push('Hazardous cargo handling');
+    }
+    if (load.isFragile) {
+      overallRisk += 0.1;
+      riskFactors.push('Fragile cargo handling');
+    }
+
+    // Vehicle age risk
+    if (truck.year && truck.year < 2015) {
+      overallRisk += 0.1;
+      riskFactors.push('Older vehicle');
+    }
+
+    // Calculate total risk
+    overallRisk = Math.min(1.0, 
+      overallRisk + 
+      equipmentRisk * 0.3 + 
+      capacityRisk * 0.2 + 
+      ratingRisk * 0.2 + 
+      availabilityRisk * 0.15 + 
+      costRisk * 0.15
+    );
+
+    return {
+      overallRisk: Math.round(overallRisk * 100) / 100,
+      equipmentRisk: Math.round(equipmentRisk * 100) / 100,
+      capacityRisk: Math.round(capacityRisk * 100) / 100,
+      ratingRisk: Math.round(ratingRisk * 100) / 100,
+      availabilityRisk: Math.round(availabilityRisk * 100) / 100,
+      costRisk: Math.round(costRisk * 100) / 100,
+      riskFactors,
+      mitigationStrategies: this.getMitigationStrategies(riskFactors),
+    };
+  }
+
+  /**
+   * Get mitigation strategies for identified risks
+   */
+  private getMitigationStrategies(riskFactors: string[]): string[] {
+    const strategies: string[] = [];
+
+    if (riskFactors.includes('Missing refrigeration equipment')) {
+      strategies.push('Source alternative refrigerated vehicle');
+    }
+    if (riskFactors.includes('Missing hazmat certification')) {
+      strategies.push('Ensure proper hazmat training and certification before transport');
+    }
+    if (riskFactors.includes('Near maximum capacity')) {
+      strategies.push('Consider splitting load or using larger vehicle');
+    }
+    if (riskFactors.includes('Low truck rating')) {
+      strategies.push('Monitor closely and ensure quality checkpoints');
+    }
+    if (riskFactors.includes('Inexperienced driver')) {
+      strategies.push('Provide additional supervision or assign experienced co-driver');
+    }
+    if (riskFactors.includes('Hazardous cargo handling')) {
+      strategies.push('Follow all safety protocols and have emergency response plan');
+    }
+    if (riskFactors.includes('Fragile cargo handling')) {
+      strategies.push('Use appropriate packaging and careful loading procedures');
+    }
+    if (riskFactors.includes('Older vehicle')) {
+      strategies.push('Conduct thorough pre-trip inspection');
+    }
+
+    return strategies;
+  }
+
+  // =====================================================
+  // ROUTE OPTIMIZATION (from AIMatchingEngineService)
+  // =====================================================
+
+  /**
+   * Apply route optimization to matches
+   */
+  private async applyRouteOptimization(
+    matches: MatchResultDto[],
+  ): Promise<MatchResultDto[]> {
+    return matches.map(match => {
+      const optimization = this.calculateRouteOptimization(match);
+      
+      return {
+        ...match,
+        routeOptimization: optimization as any,
+        // Adjust score based on route optimization potential
+        overallScore: match.overallScore * (1 + optimization.costSavings),
+      };
+    });
+  }
+
+  /**
+   * Calculate route optimization metrics
+   */
+  private calculateRouteOptimization(match: MatchResultDto): RouteOptimization {
+    const baseDistance = match.distanceKm;
+    const optimizedDistance = baseDistance * 0.95; // Assume 5% optimization possible
+    const estimatedTime = optimizedDistance / 60; // hours at 60 km/h average
+    const fuelConsumption = (optimizedDistance / 100) * 6.5; // L/100km average
+    const costSavings = (baseDistance - optimizedDistance) / baseDistance;
+
+    return {
+      totalDistance: Math.round(optimizedDistance * 100) / 100,
+      estimatedTime: Math.round(estimatedTime * 100) / 100,
+      fuelConsumption: Math.round(fuelConsumption * 100) / 100,
+      costSavings: Math.round(costSavings * 1000) / 1000,
+    };
+  }
+
+  // =====================================================
+  // CACHING UTILITIES
+  // =====================================================
+
+  /**
+   * Generate cache key for matching request
+   */
+  private generateCacheKey(request: MatchRequestDto, tenantId: string): string {
+    return `matching:${tenantId}:${request.loadId}:${request.algorithm || 'DEFAULT'}:${request.limit || 10}`;
+  }
+
+  /**
+   * Get cached result if available and not expired
+   */
+  private async getCachedResult(cacheKey: string): Promise<MatchResultDto[] | null> {
+    // Check memory cache first
+    const memoryCached = this.memoryCache.get(cacheKey);
+    if (memoryCached && memoryCached.expiry > Date.now()) {
+      return memoryCached.data;
+    }
+
+    // Check distributed cache
+    try {
+      return await this.cacheService.get(cacheKey);
+    } catch (error) {
+      return null;
+    }
+  }
+
+  /**
+   * Cache matching results
+   */
+  private async cacheResult(cacheKey: string, data: MatchResultDto[], ttlSeconds: number): Promise<void> {
+    // Memory cache
+    this.memoryCache.set(cacheKey, {
+      data,
+      expiry: Date.now() + ttlSeconds * 1000,
+    });
+
+    // Distributed cache
+    try {
+      await this.cacheService.set(cacheKey, data, ttlSeconds);
+    } catch (error) {
+      this.logger.warn(`Failed to set distributed cache: ${error.message}`);
+    }
+  }
+
+  // =====================================================
+  // METRICS & MONITORING
+  // =====================================================
+
+  /**
+   * Update cache hit/miss metrics
+   */
+  private updateCacheMetrics(isHit: boolean): void {
+    const decay = 0.95;
+    this.metrics.cacheHitRate = this.metrics.cacheHitRate * decay + (isHit ? 0.05 : 0);
+  }
+
+  /**
+   * Update matching performance metrics
+   */
+  private updateMatchingMetrics(startTime: number, matchCount: number): void {
+    const responseTime = Date.now() - startTime;
+    
+    this.metrics.totalMatches += matchCount;
+    this.metrics.responseTime = this.metrics.responseTime * 0.9 + responseTime * 0.1;
+    
+    if (matchCount > 0) {
+      this.metrics.matchRate = this.metrics.matchRate * 0.9 + 0.1;
+    } else {
+      this.metrics.matchRate = this.metrics.matchRate * 0.9;
+    }
+  }
+
+  /**
+   * Get current matching metrics
+   */
+  getMatchingMetrics(): MatchingMetrics {
+    return { ...this.metrics };
+  }
+
+  /**
+   * Get comprehensive market and matching analytics
+   */
+  async getEnhancedMarketInsights(tenantId: string): Promise<any> {
+    const [basicInsights, marketContext] = await Promise.all([
+      this.getMarketInsights(tenantId),
+      this.getMarketContext(tenantId),
+    ]);
+
+    return {
+      ...basicInsights,
+      marketContext,
+      matchingMetrics: this.getMatchingMetrics(),
+      seasonalTrend: this.getSeasonalMultiplier() > 1 ? 'HIGH' : 'NORMAL',
+      recommendations: this.generateMarketRecommendations(marketContext),
+    };
+  }
+
+  /**
+   * Generate market-based recommendations
+   */
+  private generateMarketRecommendations(context: MarketContext): string[] {
+    const recommendations: string[] = [];
+
+    if (context.marketBalance === 'LOAD_SURPLUS') {
+      recommendations.push('High demand period - consider premium pricing');
+      recommendations.push('Prioritize high-rated trucks for better service');
+    } else if (context.marketBalance === 'TRUCK_SURPLUS') {
+      recommendations.push('Competitive market - focus on cost efficiency');
+      recommendations.push('Consider offering discounts for repeat customers');
+    }
+
+    if (context.seasonalMultiplier > 1.1) {
+      recommendations.push('Peak season - ensure adequate capacity planning');
+    }
+
+    if (context.capacityUtilization < 0.5) {
+      recommendations.push('Low utilization - consider backhaul opportunities');
+    }
+
+    return recommendations;
   }
 }

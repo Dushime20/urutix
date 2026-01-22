@@ -24,6 +24,7 @@ import {
 } from "react-icons/fa";
 import MatchingInterface from "../MatchingInterface/MatchingInterface";
 import FilterSelect from "@/components/common/FilterSelect";
+import { enhancedMatchingApi } from "../../services/enhancedMatchingApi";
 // import { Cargo } from '../../types/cargo';
 
 // Temporary local interface to bypass module resolution issue
@@ -1006,10 +1007,14 @@ const EnhancedCargoDashboard: React.FC<EnhancedCargoDashboardProps> = ({
                   <div className="bg-gray-50 rounded-lg p-4">
                     <MatchingInterface
                       loadId={selectedCargoForMatching}
-                      onMatchSelect={(match) => {
-                        console.log('Selected match:', match);
-                        // Handle match selection - could open a modal, navigate to booking, etc.
-                        alert(`Match selected for ${cargos.find(c => c.id === selectedCargoForMatching)?.title}! Truck: ${match.truck.licensePlate}`);
+                      onMatchSelect={async (match) => {
+                        try {
+                          await enhancedMatchingApi.requestMatch(selectedCargoForMatching, match.truckId);
+                          alert('Request sent to Truck Owner! Wait for acceptance.');
+                        } catch (error) {
+                          console.error('Error requesting match:', error);
+                          alert('Failed to send request. Please try again.');
+                        }
                       }}
                       showAdvancedFeatures={true}
                     />

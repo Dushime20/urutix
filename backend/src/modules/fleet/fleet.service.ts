@@ -494,6 +494,32 @@ export class FleetService {
     await this.truckRepository.remove(truck);
   }
 
+  async updateTruckLocation(
+    id: string,
+    latitude: number,
+    longitude: number,
+    address: string | undefined,
+    tenantId: string,
+    userId: string,
+  ): Promise<Truck> {
+    const truck = await this.findOneTruck(id, tenantId, userId);
+
+    // Update location
+    truck.currentLocation = {
+      type: 'Point',
+      coordinates: [longitude, latitude],
+    };
+    
+    // Update address if provided
+    if (address !== undefined) {
+      truck.currentAddress = address;
+    }
+    
+    truck.locationUpdatedAt = new Date();
+
+    return this.truckRepository.save(truck);
+  }
+
   // Driver operations
   async createDriver(
     createDriverDto: CreateFleetDriverDto,

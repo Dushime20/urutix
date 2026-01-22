@@ -110,4 +110,37 @@ export const enhancedMatchingApi = {
       throw error;
     }
   },
+  
+  // Get matches for Truck Owner
+  getTruckOwnerMatches: async (): Promise<any> => {
+    try {
+      const response = await api.get('/matching/truck-owner/matches');
+      return response.data;
+    } catch (error) {
+      console.error('Error getting truck owner matches:', error);
+      throw error;
+    }
+  },
+
+  // Respond to a match
+  respondToMatch: async (matchId: string, status: 'ACCEPTED' | 'REJECTED'): Promise<any> => {
+    try {
+      const response = await api.patch(`/matching/${matchId}/respond`, { status });
+      return response.data;
+    } catch (error) {
+       console.error('Error responding to match:', error);
+       throw error;
+    }
+  },
+
+  // Request a match (Cargo Owner)
+  requestMatch: async (loadId: string, truckId: string): Promise<any> => {
+    try {
+      const response = await api.post('/matching/request', { loadId, truckId });
+      return response.data;
+    } catch (error) {
+      console.error('Error requesting match:', error);
+      throw error;
+    }
+  }
 };
