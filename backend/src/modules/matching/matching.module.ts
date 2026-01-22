@@ -7,6 +7,7 @@ import { Truck } from '../../entities/truck.entity';
 import { Driver } from '../../entities/driver.entity';
 import { Location } from '../../entities/location.entity';
 import { Trip } from '../../entities/trip.entity';
+import { LoadMatch } from '../../entities/load-match.entity';
 import { RateLimit } from './entities/rate-limit.entity';
 import { MatchingService } from './matching.service';
 import { MatchingController } from './matching.controller';
@@ -24,7 +25,7 @@ import { MLPredictionService } from './services/ml-prediction.service';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Truck, Load, Driver, Location, Trip, RateLimit]),
+    TypeOrmModule.forFeature([Truck, Load, Driver, Location, Trip, RateLimit, LoadMatch]),
     EventEmitterModule.forRoot(),
     ConfigModule,
   ],

@@ -241,11 +241,18 @@ export class FleetController {
       );
 
       console.log('✅ Controller - Trucks retrieved successfully:', trucks.length);
-      console.log('✅ Controller - Returning trucks:', trucks.map(t => ({ id: t.id, plateNumber: t.plateNumber })));
       
+      const mappedTrucks = trucks.map(t => ({
+        ...t,
+        currentLocation: {
+          ...(typeof t.currentLocation === 'object' ? t.currentLocation : {}),
+          address: t.currentAddress,
+        }
+      }));
+
       return {
         message: 'Trucks retrieved successfully',
-        trucks: trucks || [], // Ensure we always return an array
+        trucks: mappedTrucks || [], 
       };
     } catch (error) {
       console.error('❌ Fleet Controller - Error in findAllTrucks:', error);
@@ -330,6 +337,98 @@ export class FleetController {
     return {
       message: 'Truck deleted successfully',
     };
+  }
+
+  @Patch('trucks/:id/location')
+  @ApiOperation({
+    summary: 'Update truck location',
+    description: 'Updates the current location of a truck using coordinates from a map',
+  })
+  @ApiParam({ name: 'id', description: 'Truck ID (UUID)' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        latitude: { type: 'number', description: 'Latitude coordinate' },
+        longitude: { type: 'number', description: 'Longitude coordinate' },
+        address: { type: 'string', description: 'Human-readable address (optional)' },
+      },
+      required: ['latitude', 'longitude'],
+    },
+    description: 'Location data',
+  })
+  @ApiResponse({ status: 200, description: 'Truck location updated successfully' })
+  @ApiResponse({ status: 404, description: 'Truck not found' })
+  @ApiResponse({ status: 400, description: 'Invalid location data' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async updateTruckLocation(
+    @Param('id', ParseUUIDPipe) truckId: string,
+    @Body() locationDto: { latitude: number; longitude: number; address?: string },
+    @Request() req,
+  ) {
+    try {
+      console.log('📍 Update Truck Location Request:', {
+        truckId,
+        latitude: locationDto.latitude,
+        longitude: locationDto.longitude,
+        address: locationDto.address,
+        userId: req.user?.userId,
+        tenantId: req.user?.tenantId,
+      });
+
+      // Validate user authentication
+      if (!req.user) {
+        throw new UnauthorizedException('User not authenticated. Please log in.');
+      }
+
+      if (!req.user.tenantId) {
+        throw new BadRequestException('Tenant ID not found. User must be associated with a tenant.');
+      }
+
+      // Validate coordinates
+      if (
+        typeof locationDto.latitude !== 'number' ||
+        typeof locationDto.longitude !== 'number' ||
+        locationDto.latitude < -90 ||
+        locationDto.latitude > 90 ||
+        locationDto.longitude < -180 ||
+        locationDto.longitude > 180
+      ) {
+        throw new BadRequestException('Invalid coordinates provided. Latitude must be between -90 and 90, longitude between -180 and 180.');
+      }
+
+      const truck = await this.fleetService.updateTruckLocation(
+        truckId,
+        locationDto.latitude,
+        locationDto.longitude,
+        locationDto.address,
+        req.user.tenantId,
+        req.user.userId,
+      );
+
+      return {
+        message: 'Truck location updated successfully',
+        truck: {
+          id: truck.id,
+          plateNumber: truck.plateNumber,
+          currentLocation: {
+            ...(typeof truck.currentLocation === 'object' ? truck.currentLocation : {}),
+            address: truck.currentAddress,
+          },
+          locationUpdatedAt: truck.locationUpdatedAt,
+        },
+      };
+    } catch (error) {
+      console.error('❌ Error in updateTruckLocation controller:', error);
+      
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
+      throw new InternalServerErrorException(
+        `Failed to update truck location: ${error.message || 'An unexpected error occurred'}`,
+      );
+    }
   }
 
   // Driver assignment endpoints

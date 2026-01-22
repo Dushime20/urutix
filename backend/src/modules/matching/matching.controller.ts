@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Post,
+  Patch,
   Body,
   Param,
   Query,
@@ -25,6 +26,7 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { MatchingService, MatchingAlgorithm } from './matching.service';
 import { MatchRequestDto } from './dto/match-request.dto';
 import { MatchResultDto } from './dto/match-result.dto';
+import { LoadMatch, MatchStatus } from '../../entities/load-match.entity';
 import { GetTenant } from '../auth/decorators/tenant.decorator';
 import { EnhancedTruckMatchingService } from './services/enhanced-truck-matching.service';
 import { AIMatchingEngineService } from './services/ai-matching-engine.service';
@@ -285,6 +287,86 @@ export class MatchingController {
           process.env.NODE_ENV === 'development' ? error.stack : undefined,
       });
     }
+  }
+
+  @Get('truck-owner/matches')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({
+    summary: 'Get recommended load matches for my trucks',
+    description: 'Returns loads that have been matched to the logged-in user\'s trucks.',
+  })
+  async getMatchesForTruckOwner(@Request() req) {
+    try {
+      const userId = req.user.id || req.user.sub || req.user.userId;
+      this.logger.log(`👤 Getting matches for Truck Owner: ${userId}`);
+      
+      if (!userId) {
+        throw new BadRequestException('User ID not found in token');
+      }
+
+      const matches = await this.matchingService.getMatchesForOwner(userId);
+      
+      return {
+        message: 'Matches retrieved successfully',
+        data: matches,
+        count: matches.length
+      };
+    } catch (error) {
+      this.logger.error('Error in getMatchesForTruckOwner', error);
+      throw new InternalServerErrorException('Failed to retrieve matches');
+    }
+  }
+
+  @Post('request')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Request a specific truck match (Cargo Owner)' })
+  async requestMatch(@Body() body: { loadId: string; truckId: string }, @Request() req) {
+    this.logger.log('📥 requestMatch called with:', { loadId: body.loadId, truckId: body.truckId });
+    this.logger.log('👤 User info:', JSON.stringify(req.user, null, 2));
+    
+    // Validate request body
+    if (!body.loadId || !body.truckId) {
+      throw new BadRequestException('loadId and truckId are required');
+    }
+    
+    // Get tenantId from request user or headers (same pattern as findMatches)
+    let tenantId: string;
+    if (req.user?.tenantId) {
+      tenantId = req.user.tenantId;
+      this.logger.log('✅ Using tenantId from req.user:', tenantId);
+    } else if (req.headers['x-tenant-id']) {
+      tenantId = req.headers['x-tenant-id'] as string;
+      this.logger.log('✅ Using tenantId from headers:', tenantId);
+    } else {
+      this.logger.error('❌ No tenantId found in request');
+      throw new BadRequestException('Tenant ID is required. Please ensure you are authenticated.');
+    }
+    
+    try {
+      const result = await this.matchingService.requestMatch(body.loadId, body.truckId, tenantId);
+      this.logger.log('✅ Match requested successfully:', result.id);
+      return {
+        success: true,
+        message: 'Match request sent successfully',
+        data: result,
+      };
+    } catch (error) {
+      this.logger.error('❌ Error in requestMatch:', error);
+      if (error instanceof BadRequestException || error instanceof NotFoundException) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Failed to request match');
+    }
+  }
+
+  @Patch(':matchId/respond')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Accept or Reject a match (Truck Owner)' })
+  async respondToMatch(
+    @Param('matchId') matchId: string,
+    @Body() body: { status: MatchStatus },
+  ) {
+    return this.matchingService.respondToMatch(matchId, body.status);
   }
 
   @Post('find-matches/hungarian')

@@ -1,15 +1,60 @@
-import React from 'react';
-import { FaUser, FaIdCard, FaPhone, FaEnvelope } from 'react-icons/fa';
+import React, { useState } from 'react';
+import { FaUser, FaIdCard, FaPhone, FaEnvelope, FaFileUpload, FaTrash, FaFile } from 'react-icons/fa';
 
 interface DriverInformationStepProps {
   formData: any;
   handleInputChange: (field: string, value: any) => void;
 }
 
+interface DriverDocument {
+  file: File;
+  documentType: string;
+  title: string;
+  description?: string;
+  expiryDate?: string;
+}
+
 const DriverInformationStep: React.FC<DriverInformationStepProps> = ({
   formData,
   handleInputChange
 }) => {
+  // Initialize documents from formData if available
+  const [documents, setDocuments] = useState<DriverDocument[]>(formData.documents || []);
+
+  const handleAddDocument = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    const newDocs: DriverDocument[] = Array.from(files).map(file => ({
+      file,
+      documentType: 'DRIVER_LICENSE',
+      title: file.name,
+      description: '',
+      expiryDate: ''
+    }));
+
+    const updatedDocs = [...documents, ...newDocs];
+    setDocuments(updatedDocs);
+    handleInputChange('documents', updatedDocs);
+    
+    // Reset the input
+    e.target.value = '';
+  };
+
+  const handleRemoveDocument = (index: number) => {
+    const updatedDocs = documents.filter((_, i) => i !== index);
+    setDocuments(updatedDocs);
+    handleInputChange('documents', updatedDocs);
+  };
+
+  const handleDocumentFieldChange = (index: number, field: keyof DriverDocument, value: any) => {
+    const updatedDocs = documents.map((doc, i) => 
+      i === index ? { ...doc, [field]: value } : doc
+    );
+    setDocuments(updatedDocs);
+    handleInputChange('documents', updatedDocs);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center space-x-3 mb-6">
@@ -362,6 +407,114 @@ const DriverInformationStep: React.FC<DriverInformationStepProps> = ({
             />
           </div>
         </div>
+      </div>
+
+      {/* Documents Section */}
+      <div className="space-y-4">
+        <h4 className="text-lg font-medium text-gray-800 flex items-center">
+          <FaFileUpload className="w-5 h-5 mr-2 text-gray-600" />
+          Driver Documents
+        </h4>
+        <p className="text-sm text-gray-600">
+          Upload relevant documents such as driver's license, medical certificate, insurance, etc.
+        </p>
+
+        {/* File Upload */}
+        <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 hover:border-gray-400 transition-colors">
+          <label className="flex flex-col items-center cursor-pointer">
+            <FaFileUpload className="w-12 h-12 text-gray-400 mb-2" />
+            <span className="text-sm font-medium text-gray-700 mb-1">Click to upload documents</span>
+            <span className="text-xs text-gray-500">PDF, JPG, PNG up to 10MB</span>
+            <input
+              type="file"
+              onChange={handleAddDocument}
+              className="hidden"
+              multiple
+              accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+            />
+          </label>
+        </div>
+
+        {/* Document List */}
+        {documents.length > 0 && (
+          <div className="space-y-3">
+            <h5 className="text-sm font-medium text-gray-700">Uploaded Documents ({documents.length})</h5>
+            {documents.map((doc, index) => (
+              <div key={index} className="border border-gray-200 rounded-lg p-4 space-y-3 bg-gray-50">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-2 flex-1">
+                    <FaFile className="w-4 h-4 text-gray-500" />
+                    <div className="flex-1">
+                      <input
+                        type="text"
+                        value={doc.title}
+                        onChange={(e) => handleDocumentFieldChange(index, 'title', e.target.value)}
+                        className="w-full px-2 py-1 text-sm font-medium text-gray-900 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-gray-500"
+                        placeholder="Document title"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">
+                        {doc.file.name} ({(doc.file.size / 1024).toFixed(2)} KB)
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveDocument(index)}
+                    className="ml-2 p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded"
+                  >
+                    <FaTrash className="w-4 h-4" />
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                      Document Type
+                    </label>
+                    <select
+                      value={doc.documentType}
+                      onChange={(e) => handleDocumentFieldChange(index, 'documentType', e.target.value)}
+                      className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-gray-500"
+                    >
+                      <option value="DRIVER_LICENSE">Driver License</option>
+                      <option value="DRIVER_MEDICAL_CERT">Medical Certificate</option>
+                      <option value="DRIVER_DRUG_TEST">Drug Test</option>
+                      <option value="DRIVER_BACKGROUND_CHECK">Background Check</option>
+                      <option value="DRIVER_TRAINING_CERT">Training Certificate</option>
+                      <option value="DRIVER_INSURANCE">Insurance</option>
+                      <option value="OTHER">Other</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                      Expiry Date (Optional)
+                    </label>
+                    <input
+                      type="date"
+                      value={doc.expiryDate || ''}
+                      onChange={(e) => handleDocumentFieldChange(index, 'expiryDate', e.target.value)}
+                      className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-gray-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                      Description (Optional)
+                    </label>
+                    <input
+                      type="text"
+                      value={doc.description || ''}
+                      onChange={(e) => handleDocumentFieldChange(index, 'description', e.target.value)}
+                      placeholder="Brief description"
+                      className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-gray-500"
+                    />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
