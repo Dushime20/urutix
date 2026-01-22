@@ -414,11 +414,12 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
     };
 
     if (openDropdown) {
-      document.addEventListener('mousedown', handleClickOutside);
+      // Use 'click' instead of 'mousedown' to let onClick handlers fire first
+      document.addEventListener('click', handleClickOutside);
     }
 
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('click', handleClickOutside);
     };
   }, [openDropdown]);
 
@@ -580,7 +581,8 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
                 return (
                   <div key={item.label} className="relative" ref={setRef}>
                     <button
-                      onClick={() => {
+                      onClick={(e) => {
+                        e.stopPropagation();
                         if (hasSubItems) {
                           setOpenDropdown(openDropdown === item.label ? null : item.label);
                         } else {
@@ -601,13 +603,18 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
 
                     {/* Dropdown Menu */}
                     {hasSubItems && openDropdown === item.label && (
-                      <div className="absolute top-full left-0 mt-1 w-48 bg-white rounded-lg shadow-xl border border-gray-200 z-[100]">
+                      <div className="absolute top-full left-0 mt-1 w-48 bg-white rounded-lg shadow-xl border border-gray-200 z-[100] pointer-events-auto">
                         <div className="py-1">
                           {item.subItems?.map(subItem => (
                             <button
                               key={subItem.path}
-                              onClick={() => handleNavClick(subItem.path)}
-                              className={`w-full text-left px-4 py-2 text-sm transition-colors ${location.pathname === subItem.path || location.pathname.startsWith(subItem.path + '/')
+                              type="button"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleNavClick(subItem.path);
+                              }}
+                              className={`w-full text-left px-4 py-2 text-sm transition-colors pointer-events-auto cursor-pointer ${location.pathname === subItem.path || location.pathname.startsWith(subItem.path + '/')
                                 ? 'bg-navy-50 text-navy-700 font-medium'
                                 : 'text-gray-700 hover:bg-navy-50 hover:text-navy-700'
                                 }`}
@@ -733,7 +740,8 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
                 return (
                   <div key={item.label}>
                     <button
-                      onClick={() => {
+                      onClick={(e) => {
+                        e.stopPropagation();
                         if (hasSubItems) {
                           setOpenDropdown(isSubMenuOpen ? null : item.label);
                         } else {
@@ -756,12 +764,17 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
 
                     {/* Mobile Sub-menu */}
                     {hasSubItems && isSubMenuOpen && (
-                      <div className="ml-4 mt-1 space-y-1 border-l-2 border-white/10 pl-4">
+                      <div className="ml-4 mt-1 space-y-1 border-l-2 border-white/10 pl-4 pointer-events-auto">
                         {item.subItems?.map(subItem => (
                           <button
                             key={subItem.path}
-                            onClick={() => handleNavClick(subItem.path)}
-                            className={`w-full text-left px-4 py-2 rounded-lg transition-all touch-manipulation min-h-[44px] text-sm ${location.pathname === subItem.path || location.pathname.startsWith(subItem.path + '/')
+                            type="button"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              handleNavClick(subItem.path);
+                            }}
+                            className={`w-full text-left px-4 py-2 rounded-lg transition-all touch-manipulation min-h-[44px] text-sm pointer-events-auto cursor-pointer ${location.pathname === subItem.path || location.pathname.startsWith(subItem.path + '/')
                               ? 'text-white bg-white/10 font-medium'
                               : 'text-gray-300 hover:text-white hover:bg-white/5'
                               }`}

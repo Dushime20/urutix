@@ -301,11 +301,15 @@ function App() {
                   <Route path="smart-bookings" element={<SmartBookingRequests />} />
                   <Route path="fuel" element={<FuelManagement />} />
                   <Route path="routes" element={<RoutesPage />} />
-                  <Route path="bids" element={<TruckBidsPage />} />
                   <Route path="assignments" element={<UnifiedDriverManagement />} />
                   <Route path="ratings" element={<UnifiedReputationManagement />} />
                   <Route path="rewards" element={<UnifiedReputationManagement />} />
                   <Route path="scoring" element={<UnifiedReputationManagement />} />
+                </Route>
+
+                {/* Payments Route for Truck Owner */}
+                <Route path="/dashboard/payments" element={<FleetOwnerLayout />}>
+                  <Route index element={<FleetPaymentManagement />} />
                 </Route>
 
                 {/* Trips Route */}
