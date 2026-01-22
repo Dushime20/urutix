@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { X, Upload, FileText } from 'lucide-react';
 import { documentApi } from '../../services/documents/documentApi';
@@ -149,10 +150,39 @@ const DocumentUploadModal: React.FC<DocumentUploadModalProps> = ({
     });
   };
 
+  // Hide header when modal is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.classList.add('modal-open');
+      document.body.style.overflow = 'hidden';
+      
+      // Add a style tag to hide the header
+      const styleTag = document.createElement('style');
+      styleTag.id = 'document-upload-modal-style';
+      styleTag.innerHTML = `
+        .modal-open [data-header="dashboard-header"],
+        .modal-open header,
+        .modal-open nav {
+          display: none !important;
+        }
+      `;
+      document.head.appendChild(styleTag);
+      
+      return () => {
+        document.body.classList.remove('modal-open');
+        document.body.style.overflow = '';
+        const existingStyle = document.getElementById('document-upload-modal-style');
+        if (existingStyle) {
+          existingStyle.remove();
+        }
+      };
+    }
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
-  return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
+  return createPortal(
+    <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[10000] p-4">
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg flex flex-col max-h-[90vh]">
         <div className="flex items-center justify-between p-4 border-b">
           <h2 className="text-lg font-bold text-gray-800">Upload New Document</h2>
@@ -274,19 +304,64 @@ const DocumentUploadModal: React.FC<DocumentUploadModalProps> = ({
                 }}
                 className="w-full border border-gray-300 rounded-lg p-1.5 text-sm"
               >
-                <optgroup label="Cargo Documents">
-                  <option value="CARGO_MANIFEST">Cargo Manifest</option>
-                  <option value="CARGO_INSURANCE">Cargo Insurance</option>
-                  <option value="CARGO_CUSTOMS">Cargo Customs</option>
-                  <option value="CARGO_WEIGHT_CERT">Cargo Weight Certificate</option>
-                </optgroup>
+                {uploadForm.entityType === 'DRIVER' && (
+                  <>
+                    <optgroup label="Driver Documents">
+                      <option value="DRIVER_LICENSE">Driver License</option>
+                      <option value="DRIVER_ID">Driver ID</option>
+                      <option value="DRIVER_MEDICAL_CERT">Medical Certificate</option>
+                      <option value="DRIVER_TRAINING_CERT">Training Certificate</option>
+                      <option value="DRIVER_BACKGROUND_CHECK">Background Check</option>
+                      <option value="DRIVER_DRUG_TEST">Drug Test Results</option>
+                      <option value="DRIVER_CONTRACT">Employment Contract</option>
+                      <option value="DRIVER_PHOTO">Driver Photo</option>
+                    </optgroup>
+                  </>
+                )}
+                {uploadForm.entityType === 'VEHICLE' && (
+                  <>
+                    <optgroup label="Vehicle Documents">
+                      <option value="VEHICLE_REGISTRATION">Vehicle Registration</option>
+                      <option value="VEHICLE_INSURANCE">Vehicle Insurance</option>
+                      <option value="VEHICLE_INSPECTION">Vehicle Inspection</option>
+                      <option value="VEHICLE_PERMIT">Operating Permit</option>
+                      <option value="VEHICLE_MAINTENANCE">Maintenance Record</option>
+                      <option value="VEHICLE_TITLE">Vehicle Title</option>
+                      <option value="VEHICLE_PHOTO">Vehicle Photo</option>
+                    </optgroup>
+                  </>
+                )}
+                {uploadForm.entityType === 'CARGO' && (
+                  <>
+                    <optgroup label="Cargo Documents">
+                      <option value="CARGO_MANIFEST">Cargo Manifest</option>
+                      <option value="CARGO_INSURANCE">Cargo Insurance</option>
+                      <option value="CARGO_CUSTOMS">Cargo Customs</option>
+                      <option value="CARGO_WEIGHT_CERT">Cargo Weight Certificate</option>
+                      <option value="CARGO_PACKING_LIST">Packing List</option>
+                      <option value="CARGO_COMMERCIAL_INVOICE">Commercial Invoice</option>
+                    </optgroup>
+                  </>
+                )}
+                {uploadForm.entityType === 'TRIP' && (
+                  <>
+                    <optgroup label="Trip Documents">
+                      <option value="POD">Proof of Delivery (POD)</option>
+                      <option value="TRIP_LOG">Trip Log</option>
+                      <option value="TRIP_EXPENSE">Trip Expense Receipt</option>
+                      <option value="TRIP_FUEL">Fuel Receipt</option>
+                      <option value="TRIP_TOLL">Toll Receipt</option>
+                    </optgroup>
+                  </>
+                )}
                 <optgroup label="Financial Documents">
                   <option value="INVOICE">Invoice</option>
                   <option value="RECEIPT">Receipt</option>
                   <option value="PAYMENT_PROOF">Payment Proof</option>
                 </optgroup>
                 <optgroup label="Other">
-                  <option value="POD">Proof of Delivery (POD)</option>
+                  <option value="CONTRACT">Contract</option>
+                  <option value="AGREEMENT">Agreement</option>
                   <option value="OTHER">Other</option>
                 </optgroup>
               </select>
@@ -325,7 +400,8 @@ const DocumentUploadModal: React.FC<DocumentUploadModalProps> = ({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 

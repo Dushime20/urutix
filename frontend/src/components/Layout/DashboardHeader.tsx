@@ -537,7 +537,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
   };
 
   return (
-    <div className="bg-white border-b border-gray-200 text-gray-900 px-4 pt-6 pb-3 sm:px-6 sm:pt-8 sm:pb-4 relative overflow-visible z-50">
+    <div data-header="dashboard-header" className="bg-white border-b border-gray-200 text-gray-900 px-4 pt-6 pb-3 sm:px-6 sm:pt-8 sm:pb-4 relative overflow-visible z-50">
 
       {/* Custom Header inside Dark Section */}
       <div className="max-w-7xl mx-auto px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8 relative z-50">
