@@ -49,6 +49,7 @@ import {
   BrokerMultiStopLoad,
   BrokerTransporterPerformance,
 } from '../entities/broker-intelligence.entity';
+import { FuelLog } from '../entities/fuel-log.entity';
 
 // Financial entities
 import {
@@ -150,6 +151,8 @@ export const databaseConfig: TypeOrmModuleOptions = {
     BrokerTransporterCredit,
     BrokerMultiStopLoad,
     BrokerTransporterPerformance,
+    // Fuel entities
+    FuelLog,
   ],
   synchronize: false,
   autoLoadEntities: false,
@@ -237,6 +240,8 @@ export const testDatabaseConfig: TypeOrmModuleOptions = {
     BrokerTransporterCredit,
     BrokerMultiStopLoad,
     BrokerTransporterPerformance,
+    // Fuel entities
+    FuelLog,
   ],
   synchronize: true,
   autoLoadEntities: false,

@@ -350,6 +350,16 @@ export const FleetDashboard: React.FC = () => {
                   Add New Truck
                 </button>
                 <button
+                  onClick={() => {/* Implement Smart Matches */ }}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-white hover:bg-indigo-50 text-indigo-600 hover:text-indigo-700 rounded-lg transition-all font-medium shadow-sm border border-indigo-200 hover:border-indigo-300 hover:shadow"
+                >
+                  <FiZap className="w-4 h-4" />
+                  <span>Smart Matches</span>
+                </button>
+
+                <button
+                  onClick={() => navigate('/dashboard/fleet/fuel')}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-white hover:bg-orange-50 text-orange-600 hover:text-orange-700 rounded-lg transition-all font-medium shadow-sm border border-orange-200 hover:border-orange-300 hover:shadow"
                   onClick={handleCreateDriver}
                   className="inline-flex items-center gap-2 px-6 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors font-medium shadow-sm"
                 >
