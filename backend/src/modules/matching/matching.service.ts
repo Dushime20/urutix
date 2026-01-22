@@ -642,6 +642,7 @@ export class MatchingService {
       // Execute the query
       const trucks = await queryBuilder
         .leftJoinAndSelect('truck.owner', 'owner')
+        .leftJoinAndSelect('owner.profile', 'ownerProfile')
         .getMany();
 
       // Log the raw SQL that was actually executed
@@ -651,6 +652,8 @@ export class MatchingService {
 
       // Log details of each truck found
       trucks.forEach((truck, index) => {
+        const owner = (truck as any).owner;
+        const profile = owner?.profile;
         console.log(`🚛 Truck ${index + 1}:`, {
           id: truck.id,
           plateNumber: truck.plateNumber,
@@ -658,6 +661,13 @@ export class MatchingService {
           status: truck.status,
           isActive: truck.isActive,
           tenantId: truck.tenantId,
+          ownerId: truck.ownerId,
+          ownerLoaded: !!owner,
+          ownerEmail: owner?.email,
+          profileLoaded: !!profile,
+          ownerFirstName: profile?.firstName,
+          ownerLastName: profile?.lastName,
+          ownerCompany: profile?.companyName,
         });
       });
 
@@ -1034,6 +1044,22 @@ export class MatchingService {
         estimatedDeliveryTime,
         riskScore,
         recommendedPrice: Math.round(recommendedPrice * 100) / 100,
+        // Owner information
+        ownerId: truck.ownerId || null,
+        ownerName: (truck as any).owner?.profile 
+          ? `${(truck as any).owner.profile.firstName || ''} ${(truck as any).owner.profile.lastName || ''}`.trim() || (truck as any).owner.profile.companyName || 'Unknown Carrier'
+          : 'Unknown Carrier',
+        ownerEmail: (truck as any).owner?.email || null,
+        ownerRating: (truck as any).owner?.profile?.rating || truck.averageRating || 0,
+        ownerVerified: (truck as any).owner?.status === 'ACTIVE',
+        ownerCompany: (truck as any).owner?.profile?.companyName || null,
+        // Additional scoring factors
+        temperatureScore,
+        securityScore,
+        routeScore,
+        timeScore,
+        availabilityScore,
+        specialRequirementsScore,
         ...driverInfo,
       } as MatchResultDto;
     } catch (error) {

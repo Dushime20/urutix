@@ -16,6 +16,7 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { UserRole } from '../../entities/user.entity';
 import { ContractService } from './services/contract.service';
+import { BrokersService } from './brokers.service';
 import { InsuranceVerificationService } from './services/insurance-verification.service';
 import { DisputeService } from './services/dispute.service';
 import { EscrowService } from './services/escrow.service';
@@ -37,38 +38,58 @@ import { VerificationType } from '../../entities/insurance-verification.entity';
 export class BrokersEnhancedController {
   constructor(
     private readonly contractService: ContractService,
+    private readonly brokersService: BrokersService,
     private readonly insuranceVerificationService: InsuranceVerificationService,
     private readonly disputeService: DisputeService,
     private readonly escrowService: EscrowService,
     private readonly documentService: DocumentService,
-  ) {}
+  ) { }
 
   // ==================== CONTRACT MANAGEMENT ====================
 
   @Post('contracts')
-  @Roles(UserRole.BROKER, UserRole.TENANT_ADMIN)
+  @Roles(UserRole.BROKER, UserRole.CARGO_OWNER, UserRole.TENANT_ADMIN, UserRole.ADMIN, UserRole.SUPER_ADMIN)
   @HttpCode(HttpStatus.CREATED)
   async createContract(@Request() req: any, @Body() createDto: CreateContractDto) {
+    const userId = req.user.userId;
+    const tenantId = req.user.tenantId;
+    return this.contractService.createContract(userId, tenantId, createDto);
+  }
+
+  @Put('contracts/:contractId/accept')
+  @Roles(UserRole.BROKER)
+  async acceptContract(@Request() req: any, @Param('contractId') contractId: string) {
     const brokerId = req.user.userId;
     const tenantId = req.user.tenantId;
-    return this.contractService.createContract(brokerId, tenantId, createDto);
+    return this.contractService.acceptContract(contractId, brokerId, tenantId);
   }
 
   @Get('contracts')
-  @Roles(UserRole.BROKER, UserRole.TENANT_ADMIN)
+  @Roles(UserRole.BROKER, UserRole.CARGO_OWNER, UserRole.TENANT_ADMIN, UserRole.ADMIN, UserRole.SUPER_ADMIN)
   async getContracts(
     @Request() req: any,
     @Query('status') status?: ContractStatus,
     @Query('loadId') loadId?: string,
     @Query('transporterId') transporterId?: string,
   ) {
-    const brokerId = req.user.userId;
+    const userId = req.user.userId;
+    const userRole = req.user.role;
     const tenantId = req.user.tenantId;
-    return this.contractService.getBrokerContracts(brokerId, tenantId, {
-      status,
-      loadId,
-      transporterId,
-    });
+
+    if (userRole === UserRole.BROKER) {
+      return this.contractService.getBrokerContracts(userId, tenantId, {
+        status,
+        loadId,
+        transporterId,
+      });
+    } else if (userRole === UserRole.CARGO_OWNER) {
+      return this.contractService.getCargoOwnerContracts(userId, tenantId, {
+        status,
+        loadId,
+      });
+    }
+
+    return [];
   }
 
   @Get('contracts/:contractId')

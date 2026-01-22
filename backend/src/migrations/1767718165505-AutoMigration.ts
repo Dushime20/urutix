@@ -104,7 +104,14 @@ export class AutoMigration1767718165505 implements MigrationInterface {
         await queryRunner.query(`ALTER TABLE "safety_incidents" DROP CONSTRAINT "safety_incidents_status_check"`);
         await queryRunner.query(`ALTER TABLE "safety_incidents" DROP CONSTRAINT "safety_incidents_type_check"`);
         await queryRunner.query(`COMMENT ON TABLE "safety_trainings" IS NULL`);
-        await queryRunner.query(`CREATE TYPE "public"."broker_commissions_status_enum" AS ENUM('PENDING', 'APPROVED', 'PAID', 'CANCELLED')`);
+        await queryRunner.query(`
+            DO $$
+            BEGIN
+                IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'broker_commissions_status_enum') THEN
+                    CREATE TYPE "public"."broker_commissions_status_enum" AS ENUM('PENDING', 'APPROVED', 'PAID', 'CANCELLED');
+                END IF;
+            END $$;
+        `);
         await queryRunner.query(`CREATE TABLE "broker_commissions" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "tenantId" uuid NOT NULL, "brokerId" uuid NOT NULL, "loadId" uuid NOT NULL, "tripId" uuid, "loadAmount" numeric(15,2) NOT NULL, "commissionRate" numeric(5,2) NOT NULL, "commissionAmount" numeric(15,2) NOT NULL, "status" "public"."broker_commissions_status_enum" NOT NULL DEFAULT 'PENDING', "paidAt" TIMESTAMP, "paymentReference" character varying, "metadata" jsonb NOT NULL DEFAULT '{}', "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_fd2db57b1ad746870b601b61d20" PRIMARY KEY ("id"))`);
         await queryRunner.query(`CREATE INDEX "IDX_d95069b15600948519407df98b" ON "broker_commissions" ("status", "createdAt") `);
         await queryRunner.query(`CREATE INDEX "IDX_022f74b4dc17cf37766f0658e1" ON "broker_commissions" ("tenantId", "createdAt") `);

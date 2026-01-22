@@ -1,7 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaTruck, FaCheck, FaRocket, FaBookmark } from "react-icons/fa";
 import JourneySelectionModal from "@/components/CargoOwnerJourney/JourneySelectionModal";
+import BrokerAssignmentStep from "@/components/CargoOwnerJourney/BrokerAssignmentStep";
 import PhotoUploadModal from "@/components/CargoDashboard/PhotoUploadModal";
 import TemplateSelectionModal from "./components/TemplateSelectionModal";
 import AISuggestionsModal from "@/components/CargoDashboard/AISuggestionsModal";
@@ -11,6 +12,7 @@ import EnhancedCargoForm from "./components/form";
 import ActionCard from "./components/ActionCard";
 import { loadsAPI } from "@/services/load";
 import type { ICargoBody } from "./types/cargo";
+import { FileText, X } from "lucide-react";
 
 const CargoCreatePage: React.FC = () => {
   const navigate = useNavigate();
@@ -27,9 +29,43 @@ const CargoCreatePage: React.FC = () => {
   const [selectedTemplate, setSelectedTemplate] = useState<any>(null);
   const [uploadedPhotos, setUploadedPhotos] = useState<string[]>([]);
   const [aiSuggestions, setAiSuggestions] = useState<any>(null);
+  const [drafts, setDrafts] = useState<any[]>([]);
+  const [showDraftModal, setShowDraftModal] = useState(false);
+  const [showBrokerAssignment, setShowBrokerAssignment] = useState(false);
+  const [assignedBrokerId, setAssignedBrokerId] = useState<string | null>(null);
+
+  // Fetch drafts on mount
+  useEffect(() => {
+    fetchDrafts();
+  }, []);
+
+  const fetchDrafts = async () => {
+    try {
+      const response = await loadsAPI.getAll({ status: "DRAFT" });
+      const draftsData = response?.data?.cargos || response?.data?.items || response?.data || [];
+      setDrafts(Array.isArray(draftsData) ? draftsData : []);
+    } catch (error) {
+      console.error("Failed to fetch drafts:", error);
+    }
+  };
 
   // Quick action handlers
   const handleQuickCreate = () => {
+    if (drafts.length > 0) {
+      setShowDraftModal(true);
+    } else {
+      setShowEnhancedForm(true);
+    }
+  };
+
+  const handleContinueDraft = (draft: any) => {
+    setSelectedTemplate(draft);
+    setShowDraftModal(false);
+    setShowEnhancedForm(true);
+  };
+
+  const handleCreateNew = () => {
+    setShowDraftModal(false);
     setShowEnhancedForm(true);
   };
 
@@ -40,19 +76,38 @@ const CargoCreatePage: React.FC = () => {
   const handleSaveDraft = async (formData: any) => {
     setLoading(true);
     try {
-      // Save draft to backend using axios
-      const response = await loadsAPI.saveDraft({
+      // Helper function to safely convert to ISO date
+      const toISODate = (date: any): string => {
+        if (!date) return new Date().toISOString();
+        const d = new Date(date);
+        return isNaN(d.getTime()) ? new Date().toISOString() : d.toISOString();
+      };
+
+      // Ensure dates are in ISO format
+      const sanitizedData = {
         ...formData,
         status: "DRAFT",
         photos: uploadedPhotos,
-      });
+        pickupDate: toISODate(formData.pickupDate),
+        deliveryDate: toISODate(formData.deliveryDate),
+        // Sanitize locations dates
+        locations: formData.locations?.map((loc: any) => ({
+          ...loc,
+          scheduledDate: toISODate(loc.scheduledDate),
+        })) || [],
+      };
+
+      const response = await loadsAPI.saveDraft(sanitizedData);
 
       if (response.status >= 200 && response.status < 300) {
         setDraftSaved(true);
         setTimeout(() => setDraftSaved(false), 3000);
+        toast.success("Draft saved successfully!");
+        fetchDrafts();
       }
     } catch (error) {
       console.error("Failed to save draft:", error);
+      toast.error("Failed to save draft");
     } finally {
       setLoading(false);
     }
@@ -95,12 +150,15 @@ const CargoCreatePage: React.FC = () => {
       const response = await loadsAPI.create(submissionData);
 
       // console.log("Cargo saved successfully:", response);
+      const createdLoadId = response?.id || response?.data?.id || response?.load?.id;
       setCargoData({
         ...submissionData,
-        id: response?.id,
+        id: createdLoadId,
       });
       setShowEnhancedForm(false);
-      setShowJourneySelection(true);
+      
+      // Show broker assignment step before journey selection
+      setShowBrokerAssignment(true);
 
       return response;
     } catch (error) {
@@ -112,6 +170,24 @@ const CargoCreatePage: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleBrokerAssigned = (brokerId: string, contractId?: string) => {
+    setAssignedBrokerId(brokerId);
+    setShowBrokerAssignment(false);
+    // If broker is assigned, skip journey selection and go directly to cargo list
+    // The broker will handle the journey
+    toast.success("Broker assigned! The broker will manage this load.");
+    navigate("/dashboard/cargos/list", {
+      state: {
+        message: "Cargo created and broker assigned successfully!",
+      },
+    });
+  };
+
+  const handleSkipBrokerAssignment = () => {
+    setShowBrokerAssignment(false);
+    setShowJourneySelection(true);
   };
 
   const handleJourneySelection = async (
@@ -202,14 +278,42 @@ const CargoCreatePage: React.FC = () => {
         )}
 
         {/* Recent Drafts */}
-        <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            Recent Drafts
-          </h3>
-          <div className="text-gray-600 text-sm">
-            No recent drafts found. Start creating your cargo above.
+        {drafts.length > 0 && (
+          <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              Recent Drafts ({drafts.length})
+            </h3>
+            <div className="space-y-3">
+              {drafts.slice(0, 3).map((draft: any) => (
+                <div
+                  key={draft.id}
+                  className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:border-blue-300 transition-colors"
+                >
+                  <div className="flex-1">
+                    <h4 className="font-medium text-gray-900">{draft.title || "Untitled Draft"}</h4>
+                    <p className="text-sm text-gray-500 mt-1">
+                      Last updated: {new Date(draft.updatedAt).toLocaleDateString()}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => handleContinueDraft(draft)}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    Continue
+                  </button>
+                </div>
+              ))}
+            </div>
+            {drafts.length > 3 && (
+              <button
+                onClick={() => navigate("/cargo-owner/cargos/list?tab=drafts")}
+                className="mt-4 text-blue-600 hover:text-blue-700 text-sm font-medium"
+              >
+                View all {drafts.length} drafts →
+              </button>
+            )}
           </div>
-        </div>
+        )}
 
         {/* Enhanced Cargo Form Modal */}
         <EnhancedCargoForm
@@ -224,8 +328,24 @@ const CargoCreatePage: React.FC = () => {
           aiSuggestions={aiSuggestions}
         />
 
+        {/* Broker Assignment Step */}
+        {showBrokerAssignment && cargoData?.id && (
+          <BrokerAssignmentStep
+            isOpen={showBrokerAssignment}
+            onClose={() => {
+              setShowBrokerAssignment(false);
+              setShowJourneySelection(true);
+            }}
+            loadId={cargoData.id}
+            loadTitle={cargoData.title}
+            loadValue={cargoData.loadValue}
+            onBrokerAssigned={handleBrokerAssigned}
+            onSkip={handleSkipBrokerAssignment}
+          />
+        )}
+
         {/* Journey Selection Modal */}
-        {showJourneySelection && (
+        {showJourneySelection && !assignedBrokerId && (
           <JourneySelectionModal
             isOpen={showJourneySelection}
             onClose={() => setShowJourneySelection(false)}
@@ -261,6 +381,70 @@ const CargoCreatePage: React.FC = () => {
             onClose={() => setShowAISuggestions(false)}
             onSuggestionsReceived={handleAISuggestionsReceived}
           />
+        )}
+
+        {/* Draft Selection Modal */}
+        {showDraftModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-2xl font-bold text-gray-900">Continue with Draft?</h2>
+                  <button
+                    onClick={() => setShowDraftModal(false)}
+                    className="text-gray-400 hover:text-gray-600"
+                  >
+                    <X className="w-6 h-6" />
+                  </button>
+                </div>
+                <p className="text-gray-600 mb-6">
+                  You have {drafts.length} saved draft{drafts.length > 1 ? "s" : ""}. Would you like to continue with one of them or create a new cargo?
+                </p>
+
+                <div className="space-y-3 mb-6">
+                  {drafts.map((draft: any) => (
+                    <button
+                      key={draft.id}
+                      onClick={() => handleContinueDraft(draft)}
+                      className="w-full text-left p-4 border-2 border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-all"
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <FileText className="w-5 h-5 text-gray-400" />
+                            <h3 className="font-semibold text-gray-900">{draft.title || "Untitled Draft"}</h3>
+                          </div>
+                          {draft.description && (
+                            <p className="text-sm text-gray-600 mb-2">{draft.description}</p>
+                          )}
+                          <div className="flex items-center gap-4 text-xs text-gray-500">
+                            <span>Last updated: {new Date(draft.updatedAt).toLocaleDateString()}</span>
+                            {draft.weight && <span>Weight: {draft.weight} kg</span>}
+                            {draft.cargoType && <span>Type: {draft.cargoType}</span>}
+                          </div>
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+
+                <div className="flex gap-3">
+                  <button
+                    onClick={handleCreateNew}
+                    className="flex-1 px-4 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+                  >
+                    Create New Cargo
+                  </button>
+                  <button
+                    onClick={() => setShowDraftModal(false)}
+                    className="px-4 py-3 text-gray-600 hover:text-gray-800 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
         )}
       </div>
     </div>

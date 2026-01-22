@@ -10,6 +10,7 @@ import { Repository, FindOptionsWhere, Between } from 'typeorm';
 import { User, UserRole, UserStatus } from '../../entities/user.entity';
 import { UserProfile } from '../../entities/user-profile.entity';
 import { Load } from '../../entities/load.entity';
+import { TrackingEvent } from '../../entities/tracking-event.entity';
 import { BrokerCommission, CommissionStatus } from '../../entities/broker-commission.entity';
 import { Tenant } from '../../entities/tenant.entity';
 import { PasswordResetToken } from '../../entities/password-reset-token.entity';
@@ -23,6 +24,8 @@ import { AssignBrokerToLoadDto } from './dto/assign-broker-to-load.dto';
 import { UpdateCommissionStatusDto } from './dto/update-commission-status.dto';
 import { CommissionQueryDto } from './dto/commission-query.dto';
 import { CreatePayoutRequestDto, UpdatePayoutRequestDto } from './dto/commission-payout.dto';
+import { ContractService } from './services/contract.service';
+import { LoadContract, ContractStatus, ContractType } from '../../entities/load-contract.entity';
 
 @Injectable()
 export class BrokersService {
@@ -39,11 +42,14 @@ export class BrokersService {
     private readonly brokerCommissionRepository: Repository<BrokerCommission>,
     @InjectRepository(Tenant)
     private readonly tenantRepository: Repository<Tenant>,
+    @InjectRepository(TrackingEvent)
+    private readonly trackingEventRepository: Repository<TrackingEvent>,
     @InjectRepository(PasswordResetToken)
     private readonly passwordResetTokenRepository: Repository<PasswordResetToken>,
     private readonly emailService: EmailService,
     private readonly configService: ConfigService,
-  ) {}
+    private readonly contractService: ContractService,
+  ) { }
 
   /**
    * Create a new broker for a tenant
@@ -93,7 +99,7 @@ export class BrokersService {
 
     const defaultCommissionRate =
       createBrokerDto.defaultCommissionRate ??
-      (tenant?.brokerSettings as any)?.defaultCommissionRate ??
+      (tenant?.settings as any)?.defaultCommissionRate ??
       5.0; // Default 5%
 
     // Create broker user
@@ -117,6 +123,7 @@ export class BrokersService {
       tenantId: tenantAdmin.tenantId,
       firstName: createBrokerDto.firstName,
       lastName: createBrokerDto.lastName,
+      companyName: createBrokerDto.companyName,
     });
 
     await this.userProfileRepository.save(profile);
@@ -179,14 +186,36 @@ export class BrokersService {
    * Get all brokers for a tenant
    */
   async getBrokersByTenant(tenantId: string): Promise<User[]> {
+    this.logger.log(`🔍 Fetching brokers for tenant: ${tenantId}`);
+
+    // Query brokers by brokerTenantId OR tenantId (for backward compatibility)
+    // This handles cases where brokers might have been created with only tenantId set
     const brokers = await this.userRepository.find({
-      where: {
-        brokerTenantId: tenantId,
-        role: UserRole.BROKER,
-      },
+      where: [
+        {
+          brokerTenantId: tenantId,
+          role: UserRole.BROKER,
+        },
+        {
+          tenantId: tenantId,
+          role: UserRole.BROKER,
+          brokerTenantId: null as any, // Only match if brokerTenantId is explicitly null
+        },
+      ],
       relations: ['profile'],
       order: { createdAt: 'DESC' },
     });
+
+    this.logger.log(`✅ Found ${brokers.length} broker(s) for tenant ${tenantId}`);
+
+    if (brokers.length === 0) {
+      this.logger.warn(`⚠️ No brokers found for tenant ${tenantId}. Brokers may need to be created through the admin interface.`);
+    } else {
+      // Log broker details for debugging
+      brokers.forEach((broker, index) => {
+        this.logger.log(`  ${index + 1}. ${broker.email} (${broker.profile?.firstName || 'No name'} ${broker.profile?.lastName || ''})`);
+      });
+    }
 
     return brokers;
   }
@@ -195,7 +224,8 @@ export class BrokersService {
    * Get a single broker by ID
    */
   async getBrokerById(brokerId: string, tenantId: string): Promise<User> {
-    const broker = await this.userRepository.findOne({
+    // Try to find broker by brokerTenantId first (preferred)
+    let broker = await this.userRepository.findOne({
       where: {
         id: brokerId,
         brokerTenantId: tenantId,
@@ -204,8 +234,42 @@ export class BrokersService {
       relations: ['profile'],
     });
 
+    // If not found, try by tenantId (broker might belong to the tenant directly)
     if (!broker) {
-      throw new NotFoundException('Broker not found');
+      broker = await this.userRepository.findOne({
+        where: {
+          id: brokerId,
+          tenantId: tenantId,
+          role: UserRole.BROKER,
+        },
+        relations: ['profile'],
+      });
+    }
+
+    // If still not found, try without tenant restriction (for cross-tenant scenarios)
+    // but verify the broker exists and has BROKER role
+    if (!broker) {
+      broker = await this.userRepository.findOne({
+        where: {
+          id: brokerId,
+          role: UserRole.BROKER,
+        },
+        relations: ['profile'],
+      });
+
+      // If found but tenant doesn't match, log a warning but allow it
+      // This handles cases where brokers might work across tenants
+      if (broker && broker.tenantId !== tenantId && broker.brokerTenantId !== tenantId) {
+        this.logger.warn(
+          `Broker ${brokerId} found but tenant mismatch. Broker tenant: ${broker.tenantId}, Request tenant: ${tenantId}`,
+        );
+      }
+    }
+
+    if (!broker) {
+      throw new NotFoundException(
+        `Broker not found with ID ${brokerId} for tenant ${tenantId}`,
+      );
     }
 
     return broker;
@@ -315,6 +379,29 @@ export class BrokersService {
     // Create commission record
     await this.createCommissionRecord(load, broker, commissionRate, commissionAmount);
 
+    // Automatically create broker contract with PENDING_BROKER_ACCEPTANCE status
+    try {
+      const contract = await this.contractService.createContractForBrokerAssignment(
+        load.cargoOwnerId,
+        tenantId,
+        {
+          brokerId: broker.id,
+          loadId: load.id,
+          agreedRate: load.offeredPrice || load.loadValue,
+          currencyCode: load.currencyCode || 'KES',
+          commissionRate,
+          paymentTerms: load.paymentTerms || 'Net 30',
+          pickupDate: load.pickupDate ? load.pickupDate.toISOString() : undefined,
+          deliveryDate: load.deliveryDate ? load.deliveryDate.toISOString() : undefined,
+          contractType: ContractType.BROKER_AGREEMENT,
+        },
+      );
+      this.logger.log(`✅ Broker contract created: ${contract.id} with status PENDING_BROKER_ACCEPTANCE`);
+    } catch (error) {
+      this.logger.error(`Failed to create broker contract: ${error.message}`);
+      // Don't fail the assignment if contract creation fails, but log it
+    }
+
     // Send email notification to broker
     if (broker.email) {
       try {
@@ -354,7 +441,9 @@ export class BrokersService {
     load.brokerCommissionRate = null;
     load.brokerCommissionAmount = null;
 
+    this.logger.debug(`Unassigning broker from load ${loadId}. Setting brokerId to null.`);
     await this.loadRepository.save(load);
+    this.logger.debug(`Load ${loadId} saved. Broker should be unassigned.`);
 
     // Cancel any pending commissions for this load
     await this.brokerCommissionRepository.update(
@@ -371,14 +460,32 @@ export class BrokersService {
    * Get all loads assigned to a broker
    */
   async getLoadsByBroker(brokerId: string, tenantId: string): Promise<Load[]> {
-    // Verify broker belongs to tenant
-    await this.getBrokerById(brokerId, tenantId);
+    this.logger.log(`Getting loads for broker ${brokerId}`);
 
+    // Verify broker exists
+    const broker = await this.userRepository.findOne({
+      where: { id: brokerId, role: UserRole.BROKER },
+    });
+
+    if (!broker) {
+      throw new NotFoundException('Broker not found');
+    }
+
+    // Get loads assigned to this broker across ALL tenants
+    // Brokers can work for multiple tenants via brokerTenantId
     const loads = await this.loadRepository.find({
-      where: { brokerId, tenantId },
-      relations: ['cargoOwner', 'broker'],
+      where: { brokerId },
+      relations: ['cargoOwner', 'cargoOwner.profile', 'broker', 'broker.profile'],
       order: { createdAt: 'DESC' },
     });
+
+    this.logger.log(`Found ${loads.length} loads for broker ${brokerId} across all tenants`);
+
+    if (loads.length > 0) {
+      this.logger.log(`Load IDs: ${loads.map(l => l.id).join(', ')}`);
+      const tenantIds = [...new Set(loads.map(l => l.tenantId))];
+      this.logger.log(`Loads from tenants: ${tenantIds.join(', ')}`);
+    }
 
     return loads;
   }
@@ -545,7 +652,7 @@ export class BrokersService {
     const averageCommissionRate =
       commissions.length > 0
         ? commissions.reduce((sum, c) => sum + (c.commissionRate || 0), 0) /
-          commissions.length
+        commissions.length
         : 0;
 
     return {
@@ -665,6 +772,34 @@ export class BrokersService {
   }
 
   /**
+   * Get broker contracts
+   */
+  async getBrokerContracts(
+    tenantId: string,
+    brokerId?: string,
+    filters?: {
+      status?: any;
+      loadId?: string;
+      transporterId?: string;
+    },
+  ): Promise<LoadContract[]> {
+    this.logger.log(`Getting contracts for broker ${brokerId}`);
+
+    if (!brokerId) {
+      this.logger.warn('No brokerId provided to getBrokerContracts');
+      return [];
+    }
+
+    // Use the contract service to get contracts for this broker
+    // We don't pass tenantId to get contracts across all tenants
+    const contracts = await this.contractService.getBrokerContracts(brokerId, undefined, filters);
+
+    this.logger.log(`Found ${contracts.length} contracts for broker ${brokerId} across all tenants`);
+
+    return contracts;
+  }
+
+  /**
    * Send email notification when commission status changes
    */
   async sendCommissionStatusEmail(
@@ -705,6 +840,28 @@ export class BrokersService {
         this.logger.error(`Failed to send commission status email: ${error.message}`);
       }
     }
+  }
+  /**
+   * Get load tracking history for a broker
+   */
+  async getLoadTracking(brokerId: string, loadId: string): Promise<TrackingEvent[]> {
+    // Verify load exists and is assigned to this broker
+    // We don't filter by tenantId because brokers can work across tenants
+    const load = await this.loadRepository.findOne({
+      where: { id: loadId, brokerId },
+    });
+
+    if (!load) {
+      throw new NotFoundException('Load not found or not assigned to this broker');
+    }
+
+    // Fetch tracking events
+    const events = await this.trackingEventRepository.find({
+      where: { loadId },
+      order: { timestamp: 'DESC' },
+    });
+
+    return events;
   }
 }
 

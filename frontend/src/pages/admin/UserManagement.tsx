@@ -134,6 +134,7 @@ const UserManagement: React.FC = () => {
       case 'CARGO_OWNER': return 'bg-blue-100 text-blue-800';
       case 'TRUCK_OWNER': return 'bg-green-100 text-green-800';
       case 'DRIVER': return 'bg-yellow-100 text-yellow-800';
+      case 'BROKER': return 'bg-orange-100 text-orange-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -266,6 +267,7 @@ const UserManagement: React.FC = () => {
             <option value="CARGO_OWNER">Cargo Owner</option>
             <option value="TRUCK_OWNER">Truck Owner</option>
             <option value="DRIVER">Driver</option>
+            <option value="BROKER">Broker</option>
           </select>
           <select
             value={filterStatus}

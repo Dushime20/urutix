@@ -75,7 +75,7 @@ export class EnhancedAuthService {
     private emailService: EmailService,
     private rateLimitGuard: EnhancedRateLimitGuard,
     private tenantService: TenantService,
-  ) {}
+  ) { }
 
   async register(
     registerDto: RegisterDto,
@@ -97,7 +97,7 @@ export class EnhancedAuthService {
 
     try {
       console.log('registerDto', registerDto);
-      
+
       this.logger.log(
         `Registration attempt for email: ${normalizedEmail} (original: ${email}) from IP: ${clientIp}`,
       );
@@ -200,10 +200,10 @@ export class EnhancedAuthService {
   ): Promise<User | null> {
     // Normalize email: trim whitespace and convert to lowercase
     const normalizedEmail = email?.trim().toLowerCase() || email;
-    
+
     try {
       this.logger.debug(`Validating user: ${normalizedEmail} (original: ${email})`);
-      
+
       // Try exact match first with normalized email
       let user = await this.userRepository.findOne({
         where: { email: normalizedEmail },
@@ -217,7 +217,7 @@ export class EnhancedAuthService {
           where: { email: ILike(normalizedEmail) },
           relations: ['profile'],
         });
-        
+
         // If found with case-insensitive search, log a warning and update the email to normalized version
         if (user) {
           this.logger.warn(
@@ -236,7 +236,7 @@ export class EnhancedAuthService {
       }
 
       this.logger.debug(`User found: ${user.id}, status: ${user.status}, email verified: ${!!user.emailVerifiedAt}`);
-      
+
       // Enhanced diagnostic logging
       this.logger.debug(`Login diagnostic for ${normalizedEmail}:`, {
         userId: user.id,
@@ -261,17 +261,17 @@ export class EnhancedAuthService {
         (user.role === UserRole.DRIVER || user.role === UserRole.TENANT_ADMIN || user.role === UserRole.LENDER) &&
         user.status === UserStatus.PENDING_VERIFICATION
       ) {
-        const roleName = 
-          user.role === UserRole.DRIVER ? 'driver' : 
-          user.role === UserRole.TENANT_ADMIN ? 'tenant admin' : 
-          'lender';
+        const roleName =
+          user.role === UserRole.DRIVER ? 'driver' :
+            user.role === UserRole.TENANT_ADMIN ? 'tenant admin' :
+              'lender';
         this.logger.warn(
           `Login attempt for ${roleName} with pending verification: ${normalizedEmail} from IP: ${clientIp}. ${roleName} needs to set password first via email link.`,
         );
-        const accountType = 
-          user.role === UserRole.DRIVER ? 'driver' : 
-          user.role === UserRole.TENANT_ADMIN ? 'tenant' : 
-          'lender';
+        const accountType =
+          user.role === UserRole.DRIVER ? 'driver' :
+            user.role === UserRole.TENANT_ADMIN ? 'tenant' :
+              'lender';
         throw new UnauthorizedException(
           `Your ${accountType} account is pending password setup. Please check your email and click the link to set up your password first.`,
         );
@@ -349,23 +349,23 @@ export class EnhancedAuthService {
   ): Promise<LoginResponseDto> {
     // Normalize email: trim whitespace and convert to lowercase
     const normalizedEmail = loginDto.email?.trim().toLowerCase() || loginDto.email;
-    
+
     try {
       this.logger.log(
         `Login attempt for email: ${normalizedEmail} (original: ${loginDto.email}) from IP: ${clientIp}`,
       );
-      
+
       // First check if user exists to provide better error messages
       let userExists = false;
       let existingUser: User | null = null;
-      
+
       try {
         // Try exact match first
         existingUser = await this.userRepository.findOne({
           where: { email: normalizedEmail },
           relations: ['profile'],
         });
-        
+
         // If not found, try case-insensitive search
         if (!existingUser) {
           existingUser = await this.userRepository.findOne({
@@ -373,7 +373,7 @@ export class EnhancedAuthService {
             relations: ['profile'],
           });
         }
-        
+
         userExists = !!existingUser;
       } catch (dbError) {
         this.logger.error(`Database error checking user existence: ${dbError.message}`);
@@ -396,7 +396,7 @@ export class EnhancedAuthService {
         if (clientIp) {
           this.rateLimitGuard.recordFailedAttempt(clientIp);
         }
-        
+
         // Provide more helpful error message if user exists but password is wrong
         if (userExists && existingUser) {
           if (existingUser.status !== UserStatus.ACTIVE && existingUser.status !== UserStatus.PENDING_VERIFICATION) {
@@ -413,7 +413,7 @@ export class EnhancedAuthService {
             );
           }
         }
-        
+
         throw new UnauthorizedException(
           'Invalid email or password. Please check your credentials and try again.',
         );
@@ -1437,18 +1437,19 @@ export class EnhancedAuthService {
     // console.log('--refreshExpiryTime: ', refreshExpiryTime);
     // console.log('--refreshDefaultExpiryTime: ', refreshDefaultExpiryTime);
 
-    const accessTokenExpiry: number = accessExpiryTime * 60;
+    // Fix: Don't multiply by 60 for minutes
+    // const accessTokenExpiry: number = accessExpiryTime * 60;
     const refreshTokenExpiry: number = rememberMe
       ? refreshExpiryTime * 24 * 60 * 60
       : refreshDefaultExpiryTime * 24 * 60 * 60;
 
     const [accessToken, refreshToken] = await Promise.all([
       this.jwtService.signAsync(payload, {
-        secret: this.configService.get('JWT_SECRET'),
-        expiresIn: `${accessTokenExpiry}m`,
+        secret: this.configService.get('JWT_SECRET') || 'your-secret-key',
+        expiresIn: `${accessExpiryTime}m`, // Fix: use accessExpiryTime directly (minutes)
       }),
       this.jwtService.signAsync(payload, {
-        secret: this.configService.get('JWT_REFRESH_SECRET'),
+        secret: this.configService.get('JWT_REFRESH_SECRET') || 'your-refresh-secret',
         expiresIn: `${refreshTokenExpiry}m`,
       }),
     ]);

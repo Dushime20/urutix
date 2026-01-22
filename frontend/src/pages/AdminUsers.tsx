@@ -24,7 +24,7 @@ interface User {
   id: string;
   email: string;
   phone?: string;
-  role: 'SUPER_ADMIN' | 'ADMIN' | 'TENANT_ADMIN' | 'CARGO_OWNER' | 'TRUCK_OWNER' | 'DRIVER' | 'AGENT' | 'LENDER';
+  role: 'SUPER_ADMIN' | 'ADMIN' | 'TENANT_ADMIN' | 'CARGO_OWNER' | 'TRUCK_OWNER' | 'DRIVER' | 'BROKER' | 'AGENT' | 'LENDER';
   status: 'ACTIVE' | 'INACTIVE' | 'PENDING_VERIFICATION' | 'SUSPENDED';
   tenantId: string;
   tenantName?: string;
@@ -79,7 +79,7 @@ const AdminUsers: React.FC = () => {
   const [lastName, setLastName] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [companyName, setCompanyName] = useState('');
-  const [role, setRole] = useState<'CARGO_OWNER' | 'TRUCK_OWNER' | 'DRIVER' | 'AGENT' | 'LENDER' | 'TENANT_ADMIN'>('CARGO_OWNER');
+  const [role, setRole] = useState<'CARGO_OWNER' | 'TRUCK_OWNER' | 'DRIVER' | 'AGENT' | 'LENDER' | 'TENANT_ADMIN' | 'BROKER'>('CARGO_OWNER');
   
   // Edit form state
   const [editEmail, setEditEmail] = useState('');
@@ -337,6 +337,7 @@ const AdminUsers: React.FC = () => {
       case 'CARGO_OWNER': return 'bg-green-100 text-green-800';
       case 'TRUCK_OWNER': return 'bg-orange-100 text-orange-800';
       case 'DRIVER': return 'bg-yellow-100 text-yellow-800';
+      case 'BROKER': return 'bg-teal-100 text-teal-800';
       case 'AGENT': return 'bg-pink-100 text-pink-800';
       case 'LENDER': return 'bg-cyan-100 text-cyan-800';
       default: return 'bg-gray-100 text-gray-800';
@@ -441,6 +442,7 @@ const AdminUsers: React.FC = () => {
             <option value="CARGO_OWNER">Cargo Owner</option>
             <option value="TRUCK_OWNER">Truck Owner</option>
             <option value="DRIVER">Driver</option>
+            <option value="BROKER">Broker</option>
             <option value="AGENT">Agent</option>
             <option value="LENDER">Lender</option>
           </select>
@@ -712,6 +714,7 @@ const AdminUsers: React.FC = () => {
                     <option value="CARGO_OWNER">Cargo Owner</option>
                     <option value="TRUCK_OWNER">Truck Owner</option>
                     <option value="DRIVER">Driver</option>
+                    <option value="BROKER">Broker</option>
                     <option value="AGENT">Agent</option>
                     <option value="LENDER">Lender</option>
                     <option value="TENANT_ADMIN">Tenant Admin</option>
@@ -943,6 +946,7 @@ const AdminUsers: React.FC = () => {
                     <option value="CARGO_OWNER">Cargo Owner</option>
                     <option value="TRUCK_OWNER">Truck Owner</option>
                     <option value="DRIVER">Driver</option>
+                    <option value="BROKER">Broker</option>
                     <option value="AGENT">Agent</option>
                     <option value="LENDER">Lender</option>
                   </select>

@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import { Icon } from 'leaflet';
-import { FaSync, FaExclamationTriangle, FaTruck, FaUser, FaRoute, FaDollarSign, FaChartBar, FaBell } from 'react-icons/fa';
-import { FiGrid, FiList } from 'react-icons/fi';
-import { CheckCircle, Activity, Settings, AlertCircle, ArrowUpRight } from 'lucide-react';
+import { FaExclamationTriangle, FaTruck, FaUser, FaDollarSign, FaGasPump, FaBolt, FaMapMarkedAlt, FaStar } from 'react-icons/fa';
+import { FiLayers, FiZap, FiNavigation, FiTrendingUp } from 'react-icons/fi';
+import { CheckCircle } from 'lucide-react';
 import { FleetFilters } from './FleetFilters';
 import { FleetModal } from './FleetModal';
 import { FleetSkeleton } from './FleetSkeleton';
@@ -26,9 +26,8 @@ import { FleetStatus } from '../../types/fleet';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { TruckAnalytics } from './TruckAnalytics';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
-import { TranslatedText } from '../translated-text';
+
 import { useCargoOwnerLayout } from '../../contexts/CargoOwnerLayoutContext';
-import TruckBidsPage from '../../pages/TruckBidsPage';
 
 // Fix default marker icon for Leaflet in React
 import iconUrl from 'leaflet/dist/images/marker-icon.png';
@@ -56,26 +55,28 @@ export const FleetDashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedFleetItem, setSelectedFleetItem] = useState<LocalFleetItem | null>(null);
-  const [view, setView] = useState<'grid' | 'list'>('list');
   const [filters, setFilters] = useState<FleetFiltersType>({ status: FleetStatus.IN_TRANSIT });
   const [search, setSearch] = useState('');
-  const [hasMore, setHasMore] = useState(true);
-  const [page, setPage] = useState(1);
-  
-  const isTrucksRoute = location.pathname.includes('/trucks');
-  const isDriversRoute = location.pathname.includes('/drivers');
-  const isAnalyticsRoute = location.pathname.includes('/analytics');
-  const isSafetyRoute = location.pathname.includes('/safety');
-  const isFinancialRoute = location.pathname.includes('/financial');
-  const isRoutesRoute = location.pathname.includes('/routes');
-  const isMatchesRoute = location.pathname.includes('/matches');
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'trucks' | 'drivers' | 'analytics' | 'safety' | 'financial' | 'routes' | 'matches'>('overview');
-  
+  const [activeTab, setActiveTab] = useState<'overview' | 'trucks' | 'drivers' | 'analytics' | 'safety' | 'financial' | 'routes'>('overview');
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
+
   const observer = useRef<IntersectionObserver | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [formMode, setFormMode] = useState<'create' | 'edit'>('create');
   const [editingFleetItem, setEditingFleetItem] = useState<LocalFleetItem | null>(null);
+
+  // Sync activeTab with URL
+  useEffect(() => {
+    const path = location.pathname;
+    if (path.includes('/fleet/trucks')) setActiveTab('trucks');
+    else if (path.includes('/fleet/drivers')) setActiveTab('drivers');
+    else if (path.includes('/fleet/analytics')) setActiveTab('analytics');
+    else if (path.includes('/fleet/safety')) setActiveTab('safety');
+    else if (path.includes('/fleet/financial')) setActiveTab('financial');
+    else if (path.includes('/fleet/routes')) setActiveTab('routes');
+    else if (path.includes('/dashboard/fleet')) setActiveTab('overview');
+  }, [location.pathname]);
 
   useEffect(() => {
     if (setHideHeader) {
@@ -89,10 +90,10 @@ export const FleetDashboard: React.FC = () => {
       navigate('/auth');
       return;
     }
-    
+
     if (!authLoading && user && accessToken) {
       authAPI.testAuth()
-        .then(() => loadFleetItems(true))
+        .then(() => loadFleetItems())
         .catch(() => navigate('/auth'));
     }
   }, [authLoading, user, accessToken, navigate]);
@@ -151,7 +152,7 @@ export const FleetDashboard: React.FC = () => {
     } as LocalFleetItem;
   };
 
-  const loadFleetItems = useCallback(async (reset = false) => {
+  const loadFleetItems = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -167,39 +168,17 @@ export const FleetDashboard: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    loadFleetItems(true);
+    loadFleetItems();
   }, []);
 
   const lastFleetItemRef = useCallback((node: HTMLElement | null) => {
     if (loading) return;
     if (observer.current) observer.current.disconnect();
-    observer.current = new IntersectionObserver(entries => {
-      if (entries[0].isIntersecting && hasMore) {
-        loadFleetItems();
-      }
+    observer.current = new IntersectionObserver(_entries => {
+      // Logic for infinite scroll can be re-enabled here if needed
     });
     if (node) observer.current.observe(node);
-  }, [loading, hasMore, loadFleetItems]);
-
-  const handleExport = () => {
-    const exportFilters: any = {};
-    if (search) exportFilters.search = search;
-    if (filters.status) exportFilters.status = filters.status;
-    fleetApi.exportFleetData('csv', exportFilters)
-      .then((blob: Blob) => {
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'fleet-export.csv';
-        a.click();
-        window.URL.revokeObjectURL(url);
-      })
-      .catch((err: unknown) => console.error('Export failed:', err));
-  };
-
-  const handleBulkAction = (action: 'delete' | 'export' | 'update', selectedIds: string[]) => {
-    if (action === 'export') handleExport();
-  };
+  }, [loading]);
 
   const handleCreateFleetItem = useCallback(async (fleetData: any) => {
     try {
@@ -213,7 +192,7 @@ export const FleetDashboard: React.FC = () => {
       } else {
         throw new Error('Unsupported fleet type');
       }
-      
+
       setFleetItems(prev => [newFleetItem, ...prev]);
       setShowForm(false);
       if (location.pathname.includes('/create')) {
@@ -227,7 +206,7 @@ export const FleetDashboard: React.FC = () => {
 
   const handleUpdateFleetItem = useCallback(async (fleetData: any) => {
     if (!editingFleetItem) return;
-    
+
     try {
       let updatedFleetItem: LocalFleetItem;
       if (activeTab === 'trucks') {
@@ -239,8 +218,8 @@ export const FleetDashboard: React.FC = () => {
       } else {
         throw new Error('Unsupported fleet type');
       }
-      
-      setFleetItems(prev => prev.map(item => 
+
+      setFleetItems(prev => prev.map(item =>
         item.id === editingFleetItem.id ? updatedFleetItem : item
       ));
       setShowForm(false);
@@ -260,7 +239,7 @@ export const FleetDashboard: React.FC = () => {
       variant: 'danger',
     });
     if (!confirmed) return;
-    
+
     try {
       const item = fleetItems.find(i => i.id === fleetItemId);
       if (item?.type === 'truck') {
@@ -268,7 +247,7 @@ export const FleetDashboard: React.FC = () => {
       } else if (item?.type === 'driver') {
         await fleetApi.deleteDriver(fleetItemId);
       }
-      
+
       setFleetItems(prev => prev.filter(item => item.id !== fleetItemId));
     } catch (error: any) {
       console.error('Error deleting fleet item:', error);
@@ -282,21 +261,10 @@ export const FleetDashboard: React.FC = () => {
     setShowForm(true);
   }, []);
 
-  const handleCreateNew = useCallback(() => {
-    setEditingFleetItem(null);
-    setFormMode('create');
-    setShowForm(true);
-  }, []);
+
 
   const handleCreateTruck = useCallback(() => {
     setActiveTab('trucks');
-    setEditingFleetItem(null);
-    setFormMode('create');
-    setShowForm(true);
-  }, []);
-
-  const handleCreateDriver = useCallback(() => {
-    setActiveTab('drivers');
     setEditingFleetItem(null);
     setFormMode('create');
     setShowForm(true);
@@ -319,351 +287,317 @@ export const FleetDashboard: React.FC = () => {
   }, [selectedFleetItem]);
 
   const trucks = fleetItems.filter(item => item.type === 'truck');
-  const drivers = fleetItems.filter(item => item.type === 'driver');
+
+
   const availableTrucks = trucks.filter(item => item.status === 'AVAILABLE').length;
-  const availableDrivers = drivers.filter(item => item.status === 'AVAILABLE').length;
   const inTransit = fleetItems.filter(item => item.status === 'IN_TRANSIT').length;
   const utilization = trucks.length > 0 ? Math.round((inTransit / trucks.length) * 100) : 0;
 
   return (
     <ErrorBoundary>
       <div className="min-h-screen bg-gray-50">
+
+
         <DashboardHeader />
 
-        <div className="bg-white shadow-sm">
+
+        <div className="bg-gradient-to-br from-white via-gray-50 to-blue-50/30 shadow-sm border-b border-gray-100">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900">
-                  {(() => {
-                    const hour = new Date().getHours();
-                    const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
-                    return `${greeting}, ${user?.firstName || 'User'}`;
-                  })()}
-                </h1>
-                <p className="mt-1 text-gray-600">
-                  {trucks.length} trucks • {drivers.length} drivers
-                </p>
+            <div className="flex flex-col gap-6">
+              {/* Header Section */}
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                  <h1 className="text-3xl font-bold text-gray-900 mb-1">
+                    Welcome back, Fleet Manager
+                  </h1>
+                  <p className="text-sm text-gray-600">Manage your fleet operations efficiently</p>
+                </div>
+
+                {/* Primary Actions */}
+                <div className="flex flex-wrap items-center gap-3">
+                  <button
+                    onClick={handleCreateTruck}
+                    className="inline-flex items-center gap-2 px-5 py-3 bg-[#345e85] hover:bg-[#2a4d6d] text-white rounded-xl transition-all font-semibold shadow-lg shadow-[#345e85]/30 hover:shadow-xl hover:shadow-[#345e85]/40 active:transform active:scale-95"
+                  >
+                    <FaTruck className="w-4 h-4" />
+                    <span>Add Truck</span>
+                  </button>
+
+                  <button
+                    onClick={() => setActiveTab('drivers')}
+                    className="inline-flex items-center gap-2 px-5 py-3 bg-[#345e85] hover:bg-[#2a4d6d] text-white rounded-xl transition-all font-semibold shadow-lg shadow-[#345e85]/30 hover:shadow-xl hover:shadow-[#345e85]/40 active:transform active:scale-95"
+                  >
+                    <FaUser className="w-4 h-4" />
+                    <span>Add Driver</span>
+                  </button>
+                </div>
               </div>
-              <div className="flex items-center gap-3">
+
+              {/* Quick Actions Bar */}
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider mr-2">Quick Actions:</span>
+
                 <button
-                  onClick={handleCreateTruck}
-                  className="inline-flex items-center gap-2 px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-medium shadow-sm"
+                  onClick={() => setActiveTab('trucks')}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-white hover:bg-gray-50 text-gray-700 hover:text-gray-900 rounded-lg transition-all font-medium shadow-sm border border-gray-200 hover:border-gray-300 hover:shadow"
                 >
-                  <FaTruck className="w-4 h-4" />
-                  Add New Truck
+                  <FiLayers className="w-4 h-4" />
+                  <span>Fleet Assets</span>
                 </button>
+
                 <button
-                  onClick={handleCreateDriver}
-                  className="inline-flex items-center gap-2 px-6 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors font-medium shadow-sm"
+                  onClick={() => {/* Implement Smart Matches */ }}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-white hover:bg-indigo-50 text-indigo-600 hover:text-indigo-700 rounded-lg transition-all font-medium shadow-sm border border-indigo-200 hover:border-indigo-300 hover:shadow"
                 >
-                  <FaUser className="w-4 h-4" />
-                  Add New Driver
+                  <FiZap className="w-4 h-4" />
+                  <span>Smart Matches</span>
                 </button>
+
+                <button
+                  onClick={() => {/* Implement Log Fuel */ }}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-white hover:bg-orange-50 text-orange-600 hover:text-orange-700 rounded-lg transition-all font-medium shadow-sm border border-orange-200 hover:border-orange-300 hover:shadow"
+                >
+                  <FaGasPump className="w-4 h-4" />
+                  <span>Log Fuel</span>
+                </button>
+
                 <button
                   onClick={() => setActiveTab('routes')}
-                  className="inline-flex items-center gap-2 px-6 py-3 bg-white text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-medium shadow-sm"
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-white hover:bg-blue-50 text-blue-600 hover:text-blue-700 rounded-lg transition-all font-medium shadow-sm border border-blue-200 hover:border-blue-300 hover:shadow"
                 >
-                  <FaRoute className="w-4 h-4" />
-                  Manage Routes
+                  <FiNavigation className="w-4 h-4" />
+                  <span>Dispatch</span>
                 </button>
               </div>
-            </div>
-
-            <div className="mt-8 flex gap-1 overflow-x-auto scrollbar-hide">
-              <button
-                onClick={() => setActiveTab('overview')}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-all whitespace-nowrap ${
-                  activeTab === 'overview'
-                    ? 'bg-primary-50 text-primary-700'
-                    : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-                }`}
-              >
-                <FaChartBar className="w-4 h-4" />
-                <span className="text-sm"><TranslatedText text="Overview" /></span>
-              </button>
-              <button
-                onClick={() => setActiveTab('trucks')}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-all whitespace-nowrap ${
-                  activeTab === 'trucks'
-                    ? 'bg-primary-50 text-primary-700'
-                    : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-                }`}
-              >
-                <FaTruck className="w-4 h-4" />
-                <span className="text-sm"><TranslatedText text="Trucks" /></span>
-              </button>
-              <button
-                onClick={() => setActiveTab('drivers')}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-all whitespace-nowrap ${
-                  activeTab === 'drivers'
-                    ? 'bg-primary-50 text-primary-700'
-                    : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-                }`}
-              >
-                <FaUser className="w-4 h-4" />
-                <span className="text-sm"><TranslatedText text="Drivers" /></span>
-              </button>
-              <button
-                onClick={() => setActiveTab('analytics')}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-all whitespace-nowrap ${
-                  activeTab === 'analytics'
-                    ? 'bg-primary-50 text-primary-700'
-                    : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-                }`}
-              >
-                <FaChartBar className="w-4 h-4" />
-                <span className="text-sm"><TranslatedText text="Analytics" /></span>
-              </button>
-              <button
-                onClick={() => setActiveTab('safety')}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-all whitespace-nowrap ${
-                  activeTab === 'safety'
-                    ? 'bg-primary-50 text-primary-700'
-                    : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-                }`}
-              >
-                <span className="text-sm"><TranslatedText text="Safety" /></span>
-              </button>
-              <button
-                onClick={() => setActiveTab('financial')}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-all whitespace-nowrap ${
-                  activeTab === 'financial'
-                    ? 'bg-primary-50 text-primary-700'
-                    : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-                }`}
-              >
-                <FaDollarSign className="w-4 h-4" />
-                <span className="text-sm"><TranslatedText text="Financial" /></span>
-              </button>
-              <button
-                onClick={() => setActiveTab('routes')}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-all whitespace-nowrap ${
-                  activeTab === 'routes'
-                    ? 'bg-primary-50 text-primary-700'
-                    : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-                }`}
-              >
-                <FaRoute className="w-4 h-4" />
-                <span className="text-sm"><TranslatedText text="Routes" /></span>
-              </button>
-              <button
-                onClick={() => setActiveTab('matches')}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-all whitespace-nowrap ${
-                  activeTab === 'matches'
-                    ? 'bg-primary-50 text-primary-700'
-                    : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-                }`}
-              >
-                <FaBell className="w-4 h-4" />
-                <span className="text-sm"><TranslatedText text="Matches" /></span>
-              </button>
             </div>
           </div>
         </div>
+
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {activeTab === 'overview' ? (
             <div className="space-y-8">
               {/* Fleet Statistics - Larger cards with more detail */}
-              <section>
-                <h2 className="text-xl font-bold text-gray-900 mb-6">Fleet Overview</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                  <button
-                    onClick={() => setActiveTab('trucks')}
-                    className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100 hover:shadow-md transition-shadow text-left cursor-pointer"
-                  >
-                    <div className="flex items-center justify-between mb-6">
-                      <div className="p-4 bg-primary-50 rounded-xl">
-                        <FaTruck className="w-8 h-8 text-primary-600" />
-                      </div>
+              {/* Fleet Statistics Row - New Design */}
+              <section className="mt-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+                  {/* Card 1: Fleet Live Status */}
+                  <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-100 flex flex-col justify-between h-40 relative overflow-hidden group hover:shadow-md transition-shadow">
+                    <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                      <FaTruck className="w-16 h-16 text-primary-600 transform -rotate-12" />
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-gray-500 mb-2">Total Trucks</p>
-                      <h3 className="text-4xl font-bold text-gray-900 mb-3">{trucks.length}</h3>
-                      <div className="flex items-center gap-2 text-sm">
-                        <span className="text-emerald-600 font-semibold">{availableTrucks} available</span>
-                        <span className="text-gray-400">•</span>
-                        <span className="text-gray-600">{trucks.length - availableTrucks} in use</span>
-                      </div>
-                    </div>
-                  </button>
-
-                  <button
-                    onClick={() => setActiveTab('drivers')}
-                    className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100 hover:shadow-md transition-shadow text-left cursor-pointer"
-                  >
-                    <div className="flex items-center justify-between mb-6">
-                      <div className="p-4 bg-blue-50 rounded-xl">
-                        <FaUser className="w-8 h-8 text-blue-600" />
-                      </div>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-500 mb-2">Total Drivers</p>
-                      <h3 className="text-4xl font-bold text-gray-900 mb-3">{drivers.length}</h3>
-                      <div className="flex items-center gap-2 text-sm">
-                        <span className="text-emerald-600 font-semibold">{availableDrivers} available</span>
-                        <span className="text-gray-400">•</span>
-                        <span className="text-gray-600">{drivers.length - availableDrivers} assigned</span>
-                      </div>
-                    </div>
-                  </button>
-
-                  <button
-                    onClick={() => setActiveTab('routes')}
-                    className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100 hover:shadow-md transition-shadow text-left cursor-pointer"
-                  >
-                    <div className="flex items-center justify-between mb-6">
-                      <div className="p-4 bg-violet-50 rounded-xl">
-                        <FaRoute className="w-8 h-8 text-violet-600" />
-                      </div>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-500 mb-2">Active Routes</p>
-                      <h3 className="text-4xl font-bold text-gray-900 mb-3">{inTransit}</h3>
-                      <div className="flex items-center gap-2 text-sm">
-                        <div className="flex items-center gap-1.5">
-                          <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
-                          <span className="text-emerald-600 font-semibold">Live tracking</span>
+                      <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">FLEET LIVE STATUS</h3>
+                      <div className="flex items-baseline gap-2">
+                        <span className="text-3xl font-bold text-gray-900">{trucks.length}</span>
+                        <div className="flex items-center gap-1 text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded text-xs font-medium">
+                          <CheckCircle className="w-3 h-3" />
+                          <span>All Systems</span>
                         </div>
                       </div>
                     </div>
-                  </button>
-
-                  <button
-                    onClick={() => navigate('/dashboard/fleet/analytics')}
-                    className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100 hover:shadow-md transition-shadow text-left cursor-pointer"
-                  >
-                    <div className="flex items-center justify-between mb-6">
-                      <div className="p-4 bg-amber-50 rounded-xl">
-                        <FaDollarSign className="w-8 h-8 text-amber-600" />
+                    <div className="flex items-center justify-between text-xs mt-4 pt-4 border-t border-gray-50">
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                        <span className="text-gray-600">In Transit ({inTransit})</span>
                       </div>
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
+                        <span className="text-gray-600">Available ({availableTrucks})</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Card 2: Fuel Costs (Mock Data) */}
+                  <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-100 flex flex-col justify-between h-40 relative overflow-hidden group hover:shadow-md transition-shadow">
+                    <div className="absolute top-4 right-4 text-orange-500 bg-orange-50 p-2 rounded-lg">
+                      <FaGasPump className="w-5 h-5" />
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-gray-500 mb-2">Fleet Utilization</p>
-                      <h3 className="text-4xl font-bold text-gray-900 mb-3">{utilization}%</h3>
-                      <div className="w-full bg-gray-100 rounded-full h-2.5 mt-2">
-                        <div 
-                          className="bg-gradient-to-r from-primary-500 to-primary-600 h-2.5 rounded-full transition-all duration-500" 
-                          style={{ width: `${utilization}%` }}
-                        ></div>
+                      <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">FUEL COSTS (MTD)</h3>
+                      <span className="text-3xl font-bold text-gray-900">$12.4k</span>
+                    </div>
+                    <div className="mt-auto">
+                      <div className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 px-2 py-1 rounded text-xs font-medium">
+                        <FiZap className="w-3 h-3" />
+                        <span>6.2 MPG Avg</span>
                       </div>
                     </div>
-                  </button>
+                  </div>
+
+                  {/* Card 3: Fleet Reputation (Mock Data to match image) */}
+                  <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-100 flex flex-col justify-between h-40 relative overflow-hidden group hover:shadow-md transition-shadow">
+                    <div className="absolute top-4 right-4 text-amber-500">
+                      <FaStar className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">FLEET REPUTATION</h3>
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-3xl font-bold text-gray-900">4.82</span>
+                        <span className="text-sm text-gray-400 font-medium">/5</span>
+                      </div>
+                    </div>
+                    <div className="mt-auto">
+                      <div className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 px-2 py-1 rounded text-xs font-medium">
+                        <FiTrendingUp className="w-3 h-3" />
+                        <span>+0.2 avg driver rating</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Card 4: Driver Utilization */}
+                  <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-100 flex flex-col justify-between h-40 relative overflow-hidden group hover:shadow-md transition-shadow">
+                    <div className="absolute top-4 right-4 text-emerald-500">
+                      <FaUser className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">DRIVER UTILIZATION</h3>
+                      <span className="text-3xl font-bold text-gray-900">{utilization}%</span>
+                    </div>
+                    <div className="mt-auto">
+                      <div className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 px-2 py-1 rounded text-xs font-medium">
+                        <FiTrendingUp className="w-3 h-3" />
+                        <span>+2% efficiency</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Card 5: Revenue (Mock Data) */}
+                  <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-100 flex flex-col justify-between h-40 relative overflow-hidden group hover:shadow-md transition-shadow">
+                    <div className="absolute top-4 right-4 text-amber-500">
+                      <FaDollarSign className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">REVENUE (MTD)</h3>
+                      <span className="text-3xl font-bold text-gray-900">KES 2.4M</span>
+                    </div>
+                    <div className="mt-auto">
+                      <div className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 px-2 py-1 rounded text-xs font-medium">
+                        <FiTrendingUp className="w-3 h-3" />
+                        <span>+12% monthly growth</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </section>
 
               {/* Fleet Status Breakdown */}
-              <section>
-                <h2 className="text-xl font-bold text-gray-900 mb-6">Fleet Status</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                  <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-                    <div className="flex items-center gap-4">
-                      <div className="p-3 bg-emerald-50 rounded-lg">
-                        <CheckCircle className="w-6 h-6 text-emerald-600" />
-                      </div>
-                      <div>
-                        <p className="text-sm text-gray-500 mb-1">Available</p>
-                        <p className="text-2xl font-bold text-gray-900">{fleetItems.filter(item => item.status === 'AVAILABLE').length}</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-                    <div className="flex items-center gap-4">
-                      <div className="p-3 bg-blue-50 rounded-lg">
-                        <Activity className="w-6 h-6 text-blue-600" />
-                      </div>
-                      <div>
-                        <p className="text-sm text-gray-500 mb-1">In Transit</p>
-                        <p className="text-2xl font-bold text-gray-900">{inTransit}</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-                    <div className="flex items-center gap-4">
-                      <div className="p-3 bg-amber-50 rounded-lg">
-                        <Settings className="w-6 h-6 text-amber-600" />
-                      </div>
-                      <div>
-                        <p className="text-sm text-gray-500 mb-1">Maintenance</p>
-                        <p className="text-2xl font-bold text-gray-900">{fleetItems.filter(item => item.status === 'MAINTENANCE').length}</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-                    <div className="flex items-center gap-4">
-                      <div className="p-3 bg-gray-100 rounded-lg">
-                        <AlertCircle className="w-6 h-6 text-gray-600" />
-                      </div>
-                      <div>
-                        <p className="text-sm text-gray-500 mb-1">Inactive</p>
-                        <p className="text-2xl font-bold text-gray-900">{fleetItems.filter(item => item.status === 'INACTIVE').length}</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </section>
-
-              {/* Recent Activity */}
-              <section>
-                <h2 className="text-xl font-bold text-gray-900 mb-6">Recent Activity</h2>
-                <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                  <div className="p-6">
-                    {fleetItems.length === 0 ? (
-                      <div className="text-center py-12">
-                        <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-100 rounded-full mb-4">
-                          <FaTruck className="w-8 h-8 text-gray-400" />
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8">
+                {/* Left Column: Interactive Dispatch Map */}
+                <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                  <div className="p-4 border-b border-gray-100 flex items-center justify-between">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <div className="p-1.5 bg-blue-50 rounded-lg text-blue-600">
+                          <FaMapMarkedAlt className="w-4 h-4" />
                         </div>
-                        <p className="text-gray-500 mb-2">No fleet activity yet</p>
-                        <p className="text-sm text-gray-400">Start by adding trucks and drivers to your fleet</p>
+                        <h3 className="font-bold text-gray-900">Interactive Dispatch Map</h3>
                       </div>
-                    ) : (
-                      <div className="space-y-4">
-                        {fleetItems.slice(0, 5).map((item, index) => (
-                          <div key={item.id} className="flex items-center gap-4 p-4 rounded-lg hover:bg-gray-50 transition-colors">
-                            <div className={`p-3 rounded-lg ${
-                              item.type === 'truck' ? 'bg-primary-50' : 'bg-blue-50'
-                            }`}>
-                              {item.type === 'truck' ? (
-                                <FaTruck className={`w-5 h-5 ${
-                                  item.type === 'truck' ? 'text-primary-600' : 'text-blue-600'
-                                }`} />
-                              ) : (
-                                <FaUser className="w-5 h-5 text-blue-600" />
-                              )}
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="bg-orange-100 text-orange-700 text-xs px-2 py-1 rounded font-bold uppercase tracking-wide">
+                        3 Pending Requests
+                      </span>
+                      <button className="flex items-center gap-1 text-sm font-medium text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg transition-colors">
+                        <FaBolt className="w-3.5 h-3.5" />
+                        Quick Assign Nearest
+                      </button>
+                    </div>
+                  </div>
+                  <div className="h-[400px] relative">
+                    <MapContainer
+                      center={[-1.2921, 36.8219]}
+                      zoom={13}
+                      style={{ height: '100%', width: '100%' }}
+                      zoomControl={false}
+                    >
+                      <TileLayer
+                        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                      />
+                      {fleetItems.filter(i => i.currentLocation).map(item => (
+                        <Marker
+                          key={item.id}
+                          position={[
+                            item.currentLocation!.coordinates.coordinates[1],
+                            item.currentLocation!.coordinates.coordinates[0]
+                          ]}
+                          icon={fleetIcon}
+                        >
+                          <Popup>
+                            <div className="p-2">
+                              <p className="font-bold">{item.name}</p>
+                              <p className="text-xs text-gray-500">{item.status}</p>
                             </div>
-                            <div className="flex-1">
-                              <p className="font-semibold text-gray-900">{item.name}</p>
-                              <p className="text-sm text-gray-500">
-                                {item.type === 'truck' ? `Plate: ${item.plateNumber || 'N/A'}` : `License: ${item.licenseNumber || 'N/A'}`}
-                              </p>
-                            </div>
-                            <div className="text-right">
-                              <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
-                                item.status === 'AVAILABLE' ? 'bg-emerald-50 text-emerald-700' :
-                                item.status === 'IN_TRANSIT' ? 'bg-blue-50 text-blue-700' :
-                                item.status === 'MAINTENANCE' ? 'bg-amber-50 text-amber-700' :
-                                'bg-gray-100 text-gray-700'
-                              }`}>
-                                {item.status}
-                              </span>
-                            </div>
-                          </div>
-                        ))}
+                          </Popup>
+                        </Marker>
+                      ))}
+                    </MapContainer>
+                    {/* Floating Controls Placeholder */}
+                    <div className="absolute top-4 left-4 flex flex-col gap-2 z-[400]">
+                      <div className="bg-white p-1 rounded shadow-md border border-gray-200">
+                        <button className="w-8 h-8 flex items-center justify-center hover:bg-gray-50 font-bold text-gray-700">+</button>
+                        <div className="h-px bg-gray-200"></div>
+                        <button className="w-8 h-8 flex items-center justify-center hover:bg-gray-50 font-bold text-gray-700">-</button>
                       </div>
-                    )}
+                    </div>
                   </div>
                 </div>
-              </section>
+
+                {/* Right Column: Top Rated Driver */}
+                <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex flex-col">
+                  <div className="flex items-center gap-2 mb-6">
+                    <FaStar className="text-amber-400 w-5 h-5" />
+                    <h3 className="font-bold text-gray-500 uppercase text-xs tracking-wider">TOP RATED DRIVER</h3>
+                  </div>
+
+                  <div className="flex items-start gap-4 mb-6">
+                    <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center border-2 border-white shadow-sm">
+                      <FaUser className="w-8 h-8 text-gray-400" />
+                    </div>
+                    <div>
+                      <h4 className="text-lg font-bold text-gray-900">Samuel Karanja</h4>
+                      <div className="inline-block bg-amber-400 text-black text-[10px] font-bold px-2 py-0.5 rounded mb-1">
+                        GOLD STAR
+                      </div>
+                      <div className="flex items-center gap-1 text-sm text-gray-600">
+                        <FaStar className="w-3.5 h-3.5 text-amber-400" />
+                        <span className="font-bold text-gray-900">4.96</span>
+                        <span className="text-gray-400">/5.0</span>
+                        <span className="text-gray-400 text-xs ml-1">(242 Trips)</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <button className="w-full py-2.5 border border-gray-200 rounded-lg text-blue-600 font-medium hover:bg-blue-50 transition-colors mb-6 text-sm">
+                    View Performance Profile
+                  </button>
+
+                  <div className="mt-auto pt-6 border-t border-gray-100">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs font-bold text-gray-400 uppercase">DRIVER PERFORMANCE</span>
+                      <button className="text-xs text-blue-600 hover:underline">View All</button>
+                    </div>
+                    {/* Placeholder for small stats */}
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-gray-600">On-Time Delivery</span>
+                        <span className="font-medium text-emerald-600">98%</span>
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-gray-600">Safety Score</span>
+                        <span className="font-medium text-emerald-600">99/100</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           ) : activeTab === 'matches' ? (
              <TruckMatches />
           ) : (
             <>
-              <FleetFilters filters={filters} setFilters={setFilters} search={search} setSearch={setSearch} activeTab={activeTab as any} />
+              <FleetFilters filters={filters} setFilters={setFilters} search={search} setSearch={setSearch} activeTab={activeTab} viewMode={viewMode} setViewMode={setViewMode} />
 
               {error && (
                 <div className="bg-red-100 text-red-700 p-4 rounded flex items-center gap-2 mb-4" role="alert">
@@ -685,10 +619,9 @@ export const FleetDashboard: React.FC = () => {
                 <FleetTable
                   fleetItems={fleetItems.filter(item => activeTab === 'trucks' ? item.type === 'truck' : item.type === 'driver')}
                   lastFleetItemRef={lastFleetItemRef}
-                  view={view}
-                  activeTab={activeTab as any}
+                  view={viewMode}
+                  activeTab={activeTab as 'trucks' | 'drivers'}
                   onRowClick={setSelectedFleetItem}
-                  onBulkAction={handleBulkAction}
                   onEditFleetItem={handleEditFleetItem}
                   onDeleteFleetItem={handleDeleteFleetItem}
                   onRefresh={() => loadFleetItems(true)}
@@ -697,7 +630,7 @@ export const FleetDashboard: React.FC = () => {
             </>
           )}
 
-          <FleetModal fleetItem={selectedFleetItem} onClose={()=>setSelectedFleetItem(null)} activeTab={activeTab as any} />
+          <FleetModal fleetItem={selectedFleetItem} onClose={() => setSelectedFleetItem(null)} activeTab={activeTab === 'overview' ? 'trucks' : activeTab as any} />
 
           <FleetFormStepper
             isOpen={showForm}
@@ -710,8 +643,8 @@ export const FleetDashboard: React.FC = () => {
         </div>
 
         <DashboardFooter />
-      </div>
+      </div >
       {DialogComponent}
-    </ErrorBoundary>
+    </ErrorBoundary >
   );
 }; 

@@ -32,6 +32,7 @@ import {
   BrokerMultiStopLoad,
   BrokerTransporterPerformance,
 } from '../../entities/broker-intelligence.entity';
+import { TrackingEvent } from '../../entities/tracking-event.entity';
 import { Tenant } from '../../entities/tenant.entity';
 import { PasswordResetToken } from '../../entities/password-reset-token.entity';
 import { EmailService } from '../auth/email.service';
@@ -56,6 +57,7 @@ import { EnhancedAuthModule } from '../auth/enhanced-auth.module';
       BrokerTransporterCredit,
       BrokerMultiStopLoad,
       BrokerTransporterPerformance,
+      TrackingEvent,
       Tenant,
       PasswordResetToken,
     ]),
@@ -93,5 +95,5 @@ import { EnhancedAuthModule } from '../auth/enhanced-auth.module';
     PerformanceAnalyticsService,
   ],
 })
-export class BrokersModule {}
+export class BrokersModule { }
 

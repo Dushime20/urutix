@@ -6,6 +6,7 @@ import {
   UpdateDateColumn,
   DeleteDateColumn,
   ManyToOne,
+  JoinColumn,
   Index,
 } from 'typeorm';
 import { User } from './user.entity';
@@ -762,5 +763,6 @@ export class Truck {
 
   // Relations
   @ManyToOne('User', 'trucks')
+  @JoinColumn({ name: 'ownerId' })
   owner: User;
 }

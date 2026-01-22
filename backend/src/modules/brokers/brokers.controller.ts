@@ -18,6 +18,8 @@ import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
 import { UserRole } from '../../entities/user.entity';
 import { BrokersService } from './brokers.service';
+import { ContractService } from './services/contract.service';
+import { ContractStatus } from '../../entities/load-contract.entity';
 import { CreateBrokerDto } from './dto/create-broker.dto';
 import { UpdateBrokerDto } from './dto/update-broker.dto';
 import { AssignBrokerToLoadDto } from './dto/assign-broker-to-load.dto';
@@ -28,7 +30,41 @@ import { CreatePayoutRequestDto, UpdatePayoutRequestDto } from './dto/commission
 @Controller('brokers')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class BrokersController {
-  constructor(private readonly brokersService: BrokersService) {}
+  constructor(
+    private readonly brokersService: BrokersService,
+    private readonly contractService: ContractService,
+  ) { }
+
+  /**
+   * Get broker contracts (Must be before :brokerId)
+   */
+  @Get('contracts')
+  @Roles(UserRole.TENANT_ADMIN, UserRole.ADMIN, UserRole.SUPER_ADMIN, UserRole.BROKER, UserRole.CARGO_OWNER)
+  async getBrokerContracts(
+    @Request() req: any,
+    @Query('status') status?: ContractStatus,
+    @Query('loadId') loadId?: string,
+    @Query('transporterId') transporterId?: string,
+  ) {
+    const userId = req.user.userId;
+    const userRole = req.user.role;
+    const tenantId = req.user.tenantId;
+
+    if (userRole === UserRole.BROKER) {
+      return this.contractService.getBrokerContracts(userId, tenantId, {
+        status,
+        loadId,
+        transporterId,
+      });
+    } else if (userRole === UserRole.CARGO_OWNER) {
+      return this.contractService.getCargoOwnerContracts(userId, tenantId, {
+        status,
+        loadId,
+      });
+    }
+
+    return [];
+  }
 
   /**
    * Create a new broker (Tenant Admin only)
@@ -156,16 +192,7 @@ export class BrokersController {
     return this.brokersService.assignBrokerToLoad(loadId, tenantId, assignDto);
   }
 
-  /**
-   * Unassign broker from load
-   */
-  @Delete('loads/:loadId/assign')
-  @HttpCode(HttpStatus.NO_CONTENT)
-  @Roles(UserRole.TENANT_ADMIN, UserRole.ADMIN, UserRole.SUPER_ADMIN, UserRole.CARGO_OWNER)
-  async unassignBrokerFromLoad(@Request() req: any, @Param('loadId') loadId: string) {
-    const tenantId = req.user.tenantId;
-    await this.brokersService.unassignBrokerFromLoad(loadId, tenantId);
-  }
+
 
   /**
    * Update commission status
@@ -212,5 +239,49 @@ export class BrokersController {
     }
     return this.brokersService.getPayoutRequests(brokerId, tenantId, query);
   }
+
+  @Put('loads/:loadId/unassign')
+  @Roles(UserRole.TENANT_ADMIN, UserRole.ADMIN, UserRole.SUPER_ADMIN, UserRole.BROKER, UserRole.CARGO_OWNER)
+  async unassignBrokerFromLoad(
+    @Request() req: any,
+    @Param('loadId') loadId: string,
+  ) {
+    const tenantId = req.user.tenantId;
+    return this.brokersService.unassignBrokerFromLoad(loadId, tenantId);
+  }
+
+  /**
+   * Get broker contracts
+   */
+  @Get(':brokerId/contracts')
+  @Roles(UserRole.TENANT_ADMIN, UserRole.ADMIN, UserRole.SUPER_ADMIN, UserRole.BROKER)
+  async getContractsForBroker(
+    @Request() req: any,
+    @Param('brokerId') brokerId: string,
+    @Query() query: { status?: any; loadId?: string },
+  ) {
+    const tenantId = req.user.tenantId;
+    // If broker is viewing their own contracts, allow it
+    if (req.user.role === UserRole.BROKER && req.user.userId !== brokerId) {
+      return this.brokersService.getBrokerContracts(tenantId, req.user.userId, query);
+    }
+    return this.brokersService.getBrokerContracts(tenantId, brokerId, query);
+  }
+
+
+  @Get(':brokerId/loads/:loadId/tracking')
+  @Roles(UserRole.TENANT_ADMIN, UserRole.ADMIN, UserRole.SUPER_ADMIN, UserRole.BROKER)
+  async getLoadTracking(
+    @Request() req: any,
+    @Param('brokerId') brokerId: string,
+    @Param('loadId') loadId: string,
+  ) {
+    // If broker is viewing their own load tracking, allow it
+    if (req.user.role === UserRole.BROKER && req.user.userId !== brokerId) {
+      return this.brokersService.getLoadTracking(req.user.userId, loadId);
+    }
+    return this.brokersService.getLoadTracking(brokerId, loadId);
+  }
+
 }
 

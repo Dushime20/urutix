@@ -1059,6 +1059,14 @@ export class LoadsService {
 
       // Update load
       Object.assign(load, sanitizedUpdate);
+      
+      // Auto-publish draft if it has complete information
+      if (load.status === LoadStatus.DRAFT && this.isDraftComplete(load)) {
+        load.status = LoadStatus.PUBLISHED;
+        load.publishedAt = new Date();
+        this.logger.log(`Auto-publishing draft ${id} as it now has complete information`);
+      }
+      
       const updatedLoad = await this.loadRepository.save(load);
 
       // Recalculate broker commission if load value changed and broker is assigned
@@ -3488,12 +3496,22 @@ export class LoadsService {
       }
       const tenantId = user.tenantId;
 
+      // Helper to safely parse dates
+      const parseDate = (date: any): Date => {
+        if (!date) return new Date();
+        const parsed = new Date(date);
+        return isNaN(parsed.getTime()) ? new Date() : parsed;
+      };
+
       // Create draft load with minimal validation
       const loadData = {
         ...createLoadDto,
         tenantId,
         cargoOwnerId: userId,
         status: LoadStatus.DRAFT,
+        // Ensure dates are valid
+        pickupDate: parseDate(createLoadDto.pickupDate),
+        deliveryDate: parseDate(createLoadDto.deliveryDate),
         // Set default values for required fields to allow partial saves
         urgencyLevel: createLoadDto.urgencyLevel || UrgencyLevel.NORMAL,
         cargoType: createLoadDto.cargoType || CargoType.GENERAL,
@@ -3550,13 +3568,17 @@ export class LoadsService {
       this.logger.log(`Draft load ${savedLoad.id} saved successfully`);
 
       // Create audit event
-      await this.createAuditEvent({
-        loadId: savedLoad.id,
-        entityType: AuditEntityType.LOAD,
-        action: AuditAction.CREATE,
-        actorId: userId,
-        description: 'Cargo saved as draft',
-      });
+      try {
+        await this.createAuditEvent({
+          loadId: savedLoad.id,
+          entityType: AuditEntityType.LOAD,
+          action: AuditAction.CREATE,
+          actorId: userId,
+          description: 'Cargo saved as draft',
+        });
+      } catch (error) {
+        this.logger.warn('Failed to create audit event:', error.message);
+      }
 
       return this.transformLoadToResponse(savedLoad);
     } catch (error) {
@@ -4059,6 +4081,19 @@ export class LoadsService {
       this.logger.error('Error notifying truck owners:', error);
       // Don't fail the publish operation if notifications fail
     }
+  }
+
+  /**
+   * Check if a draft has complete information to be published
+   */
+  private isDraftComplete(load: Load): boolean {
+    return !!(
+      load.title?.trim() &&
+      load.pickupDate &&
+      load.deliveryDate &&
+      load.pickupLocation &&
+      load.deliveryLocation
+    );
   }
 
   /**

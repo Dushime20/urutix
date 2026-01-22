@@ -194,7 +194,16 @@ export const loadsAPI = {
   update: (id: string, data: any) => 
     api.patch(`/loads/${id}`, sanitizeCargoPayload(data)).then((res) => res.data),
   delete: (id: string) => api.delete(`/loads/${id}`),
-  saveDraft: (data: any) => api.post("/loads/draft", data),
+  saveDraft: (data: any) => {
+    // Ensure all dates are valid ISO strings
+    const sanitizedData = {
+      ...data,
+      pickupDate: data.pickupDate || new Date().toISOString(),
+      deliveryDate: data.deliveryDate || new Date().toISOString(),
+      status: 'DRAFT',
+    };
+    return api.post("/loads/draft", sanitizedData);
+  },
 
   // Enriched locations from OSM
   getLoadsWithEnrichedLocations: () => api.get("/loads/enriched-locations"),

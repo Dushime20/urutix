@@ -28,6 +28,7 @@ import { Bid } from '../../entities/bid.entity';
 import { Auction } from '../../entities/auction.entity';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { errorMessage } from 'src/utils/error';
+import { UserRole } from '../../entities/user.entity';
 
 @ApiTags('Bidding & Auctions')
 @ApiBearerAuth('JWT-auth')
@@ -363,18 +364,13 @@ export class BiddingController {
   @ApiResponse({ status: 404, description: 'Bid not found' })
   async acceptBid(
     @Param('bidId') bidId: string,
-    @Request()
-    req = {
-      user: {
-        userId: '701a9079-6100-4b47-a3b9-f9b070bfa7c6',
-        tenantId: '00000000-0000-0000-0000-000000000001',
-      },
-    },
+    @Request() req: any,
   ): Promise<Bid> {
     return this.biddingService.acceptBid(
       bidId,
       req.user?.userId || '701a9079-6100-4b47-a3b9-f9b070bfa7c6',
       req.user?.tenantId || '00000000-0000-0000-0000-000000000001',
+      req.user?.role as UserRole,
     );
   }
 
@@ -543,13 +539,7 @@ export class BiddingController {
   @ApiResponse({ status: 404, description: 'Load not found' })
   async createAuction(
     @Body() createAuctionDto: CreateAuctionDto,
-    @Request()
-    req = {
-      user: {
-        userId: '83f1b7e4-8313-4ca5-959a-fbf98f68b548',
-        tenantId: '00000000-0000-0000-0000-000000000001',
-      },
-    },
+    @Request() req: any,
   ): Promise<Auction> {
     console.log('Creating auction with data:', createAuctionDto);
     console.log('User info:', req.user);
@@ -557,6 +547,7 @@ export class BiddingController {
       createAuctionDto,
       req.user?.userId || '83f1b7e4-8313-4ca5-959a-fbf98f68b548',
       req.user?.tenantId || '00000000-0000-0000-0000-000000000001',
+      req.user?.role as UserRole,
     );
   }
 

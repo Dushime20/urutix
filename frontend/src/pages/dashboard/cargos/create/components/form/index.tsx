@@ -722,7 +722,7 @@ const EnhancedCargoForm: React.FC<EnhancedCargoFormProps> = ({
           </button>
         </DialogHeader>
 
-        <div className="flex flex-col lg:flex-row h-[calc(90vh-120px)] min-h-0">
+        <div className="flex flex-col lg:flex-row h-[calc(90vh-180px)] min-h-0">
           {/* Sidebar Navigation */}
           <div className={`${sidebarOpen ? 'block' : 'hidden'} lg:block w-full lg:w-56 bg-gray-50 border-r border-gray-200 overflow-y-auto lg:sticky lg:top-0 flex-shrink-0`}>
             <nav className="p-2 sm:p-3 space-y-1.5">

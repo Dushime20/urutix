@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Package, 
-  DollarSign, 
-  CreditCard, 
-  Smartphone, 
+import {
+  Package,
+  DollarSign,
+  CreditCard,
+  Smartphone,
   FileText,
   CheckCircle,
   Clock,
@@ -21,9 +21,9 @@ import { loanRequestService } from '../../services/loanRequestService';
 import toast from 'react-hot-toast';
 import FinancialInformation from './FinancialInformation';
 import type { AdvancePaymentCalculation } from '../../utils/paymentCalculations';
-import { 
-  formatCurrency, 
-  formatPercentage 
+import {
+  formatCurrency,
+  formatPercentage
 } from '../../utils/paymentCalculations';
 
 interface Load {
@@ -60,6 +60,12 @@ interface Lender {
   interestRate?: number;
   metadata?: {
     integrationType?: string;
+    isLoanOfficer?: boolean;
+    isExternalSystemLender?: boolean;
+    parentLenderId?: string;
+    loanOfficerId?: string;
+    parentLenderName?: string;
+    specialization?: string;
   };
 }
 
@@ -121,18 +127,18 @@ const CargoOwnerPayment: React.FC = () => {
       hasSelectedLenderData: !!selectedLenderData,
       lendersCount: lenders.length,
     });
-    
+
     if (selectedLender) {
       const selectedItem = lenders.find(l => l.id === selectedLender);
       const isLoanOfficer = selectedItem?.metadata?.isLoanOfficer === true;
-      
+
       console.log('[useEffect] Selected item:', {
         id: selectedItem?.id,
         name: selectedItem?.name,
         isLoanOfficer,
         metadata: selectedItem?.metadata,
       });
-      
+
       if (isLoanOfficer) {
         // If it's already a loan officer, no need to fetch more
         console.log('[useEffect] Selected item is already a loan officer, skipping fetch');
@@ -140,15 +146,15 @@ const CargoOwnerPayment: React.FC = () => {
         setSelectedLoanOfficer(null);
       } else if (selectedLenderData) {
         // Regular lender - check if it uses external system
-        const usesExternalSystem = 
+        const usesExternalSystem =
           selectedLenderData.metadata?.integrationType === 'uruti_lending_platform' ||
           selectedLenderData.metadata?.integrationType === 'external_lending_system';
-        
+
         console.log('[useEffect] Checking external system:', {
           usesExternalSystem,
           integrationType: selectedLenderData.metadata?.integrationType,
         });
-        
+
         if (usesExternalSystem) {
           console.log('[useEffect] Fetching loan officers for external system lender');
           fetchLoanOfficers(selectedLender);
@@ -179,11 +185,11 @@ const CargoOwnerPayment: React.FC = () => {
           page: 1,
         },
       });
-      
+
       // Handle paginated response
       const responseData = response.data;
       let loadsData: Load[] = [];
-      
+
       if (responseData?.data && Array.isArray(responseData.data)) {
         // Paginated response
         loadsData = responseData.data;
@@ -194,7 +200,7 @@ const CargoOwnerPayment: React.FC = () => {
         // Alternative paginated format
         loadsData = responseData.items;
       }
-      
+
       setLoads(loadsData);
     } catch (error: any) {
       console.error('Error fetching loads:', error);
@@ -215,10 +221,10 @@ const CargoOwnerPayment: React.FC = () => {
         // Fetch truck details
         const truckResponse = await api.get(`/fleet/trucks/${load.assignedTruckId}`);
         const truck = truckResponse.data?.data || truckResponse.data;
-        
+
         if (truck?.ownerId) {
           setTruckOwnerId(truck.ownerId);
-          
+
           // Fetch truck owner profile for name and phone number
           try {
             const ownerResponse = await api.get(`/users/${truck.ownerId}/profile`);
@@ -227,7 +233,7 @@ const CargoOwnerPayment: React.FC = () => {
               ? `${owner.profile.firstName} ${owner.profile.lastName}`
               : owner?.profile?.companyName || owner?.email?.split('@')[0] || 'Truck Owner';
             setTruckOwnerName(ownerName);
-            
+
             // Get truck owner's phone number for receiver
             const ownerPhone = owner?.phone || owner?.profile?.preferences?.paymentInfo?.phoneNumber;
             if (ownerPhone) {
@@ -252,7 +258,7 @@ const CargoOwnerPayment: React.FC = () => {
           return;
         }
       }
-      
+
       // Try to get from trip if available
       try {
         const tripsResponse = await api.get('/trips', {
@@ -262,14 +268,14 @@ const CargoOwnerPayment: React.FC = () => {
         if (trips.length > 0 && trips[0].truck?.ownerId) {
           const trip = trips[0];
           setTruckOwnerId(trip.truck.ownerId);
-          
+
           // Set trip ID for advance payment calculation
           if (trip.id) {
             setTripId(trip.id);
             // Fetch advance payment calculation
             await fetchAdvancePaymentCalculation(trip.id, load);
           }
-          
+
           // Fetch truck owner profile for name and phone number
           try {
             const ownerResponse = await api.get(`/users/${trip.truck.ownerId}/profile`);
@@ -278,7 +284,7 @@ const CargoOwnerPayment: React.FC = () => {
               ? `${owner.profile.firstName} ${owner.profile.lastName}`
               : owner?.profile?.companyName || owner?.email?.split('@')[0] || 'Truck Owner';
             setTruckOwnerName(ownerName);
-            
+
             // Get truck owner's phone number for receiver
             const ownerPhone = owner?.phone || owner?.profile?.preferences?.paymentInfo?.phoneNumber;
             if (ownerPhone) {
@@ -307,7 +313,7 @@ const CargoOwnerPayment: React.FC = () => {
         setTripId(null);
         setAdvancePaymentCalculation(null);
       }
-      
+
       // Reset if no truck owner found
       setTruckOwnerId(null);
       setTruckOwnerName('');
@@ -327,7 +333,7 @@ const CargoOwnerPayment: React.FC = () => {
     try {
       setLoadingAdvanceCalculation(true);
       const response = await paymentsAPI.getAdvancePaymentCalculation(tripIdParam);
-      
+
       if (response.data?.success && response.data?.data) {
         // Ensure all numeric values are properly converted
         const calculation = response.data.data;
@@ -341,7 +347,7 @@ const CargoOwnerPayment: React.FC = () => {
           currency: calculation.currency || 'USD',
         };
         setAdvancePaymentCalculation(normalizedCalculation);
-        
+
         // Pre-fill payment amount with advance amount if advance payment is required
         if (normalizedCalculation.requireAdvancePayment && normalizedCalculation.advanceAmount > 0) {
           setPaymentAmount(normalizedCalculation.advanceAmount.toString());
@@ -371,33 +377,33 @@ const CargoOwnerPayment: React.FC = () => {
       // Fetch Lender entities for the tenant
       // Try the tenant/lenders endpoint first (for tenant admins), then fallback to users with LENDER role
       let lendersList: Lender[] = [];
-      
+
       try {
         console.log('[fetchLenders] Fetching lenders from /lending/tenant/lenders');
         const response = await api.get('/lending/tenant/lenders');
         const lendersData = response.data?.data || response.data || [];
         console.log('[fetchLenders] Received lenders data:', lendersData);
-        
-        lendersList = Array.isArray(lendersData) 
+
+        lendersList = Array.isArray(lendersData)
           ? lendersData.map((l: any) => {
-              const isLoanOfficer = l.metadata?.isLoanOfficer === true;
-              console.log(`[fetchLenders] Processing ${isLoanOfficer ? 'loan officer' : 'lender'}:`, l.name || l.id);
-              
-              return {
-                id: l.id,
-                firstName: l.first_name || l.firstName,
-                lastName: l.last_name || l.lastName,
-                name: l.name || l.contact_email || 'Unknown Lender',
-                email: l.contact_email || l.email,
-                phone: l.contact_phone || l.phone,
-                companyName: l.name,
-                availableCredit: l.available_credit || 0,
-                interestRate: l.interest_rate || 0,
-                metadata: l.metadata || {},
-              };
-            })
+            const isLoanOfficer = l.metadata?.isLoanOfficer === true;
+            console.log(`[fetchLenders] Processing ${isLoanOfficer ? 'loan officer' : 'lender'}:`, l.name || l.id);
+
+            return {
+              id: l.id,
+              firstName: l.first_name || l.firstName,
+              lastName: l.last_name || l.lastName,
+              name: l.name || l.contact_email || 'Unknown Lender',
+              email: l.contact_email || l.email,
+              phone: l.contact_phone || l.phone,
+              companyName: l.name,
+              availableCredit: l.available_credit || 0,
+              interestRate: l.interest_rate || 0,
+              metadata: l.metadata || {},
+            };
+          })
           : [];
-        
+
         console.log(`[fetchLenders] Processed ${lendersList.length} lenders/loan officers`);
         const loanOfficersCount = lendersList.filter(l => l.metadata?.isLoanOfficer).length;
         console.log(`[fetchLenders] Found ${loanOfficersCount} loan officers in the list`);
@@ -406,24 +412,24 @@ const CargoOwnerPayment: React.FC = () => {
         console.warn('Could not fetch from /lending/tenant/lenders, trying users endpoint:', lenderError);
         const response = await api.get(`/users/tenant/${user.tenantId}/role/LENDER`);
         const usersData = response.data?.data || response.data || [];
-        lendersList = Array.isArray(usersData) 
+        lendersList = Array.isArray(usersData)
           ? usersData.map((u: any) => ({
-              id: u.id, // This will be the user ID, we'll need to map it to lender ID
-              firstName: u.profile?.firstName,
-              lastName: u.profile?.lastName,
-              name: u.profile?.firstName && u.profile?.lastName
-                ? `${u.profile.firstName} ${u.profile.lastName}`
-                : u.profile?.companyName || u.email || 'Unknown',
-              email: u.email,
-              phone: u.phone || u.profile?.phone,
-              companyName: u.profile?.companyName,
-              availableCredit: u.availableCredit || 0,
-              interestRate: u.interestRate || 0,
-              metadata: {},
-            }))
+            id: u.id, // This will be the user ID, we'll need to map it to lender ID
+            firstName: u.profile?.firstName,
+            lastName: u.profile?.lastName,
+            name: u.profile?.firstName && u.profile?.lastName
+              ? `${u.profile.firstName} ${u.profile.lastName}`
+              : u.profile?.companyName || u.email || 'Unknown',
+            email: u.email,
+            phone: u.phone || u.profile?.phone,
+            companyName: u.profile?.companyName,
+            availableCredit: u.availableCredit || 0,
+            interestRate: u.interestRate || 0,
+            metadata: {},
+          }))
           : [];
       }
-      
+
       console.log(`[fetchLenders] Setting ${lendersList.length} lenders/loan officers`);
       setLenders(lendersList);
     } catch (error: any) {
@@ -440,20 +446,20 @@ const CargoOwnerPayment: React.FC = () => {
   const fetchLoanOfficers = async (lenderId: string) => {
     setLoadingLoanOfficers(true);
     setSelectedLoanOfficer(null);
-    
+
     try {
       console.log(`[fetchLoanOfficers] Fetching loan officers for lender: ${lenderId}`);
       const response = await api.get(`/lending/external/loan-officers/${lenderId}`);
       console.log(`[fetchLoanOfficers] Response:`, response.data);
-      
+
       const officersData = response.data?.loanOfficers || response.data || [];
-      
+
       if (Array.isArray(officersData)) {
         console.log(`[fetchLoanOfficers] Found ${officersData.length} loan officers`);
         setLoanOfficers(officersData);
         if (officersData.length === 0) {
           console.warn(`[fetchLoanOfficers] No loan officers returned for lender ${lenderId}`);
-          toast.info('No loan officers available for this lender');
+          toast.success('No loan officers available for this lender');
         }
       } else {
         console.warn(`[fetchLoanOfficers] Invalid response format:`, officersData);
@@ -467,9 +473,9 @@ const CargoOwnerPayment: React.FC = () => {
         statusText: error.response?.statusText,
         data: error.response?.data,
       });
-      
+
       if (error.response?.status === 404) {
-        toast.warning('Loan officers endpoint not implemented in external system yet');
+        toast.error('Loan officers endpoint not implemented in external system yet');
       } else {
         toast.error('Failed to load loan officers. Check console for details.');
       }
@@ -515,7 +521,7 @@ const CargoOwnerPayment: React.FC = () => {
         }
 
         // Use the tripId we already fetched (if available)
-        const tripIdToUse = tripId || undefined;
+
 
         // Use the entered receiver phone number (should be pre-filled with truck owner's phone if available)
         const finalReceiverPhone = receiverPhoneNumber.trim();
@@ -533,12 +539,12 @@ const CargoOwnerPayment: React.FC = () => {
             loadId: selectedLoad.id,
           },
         };
-        
+
         // Only include tripId if it exists
         if (tripId) {
           paymentPayload.tripId = tripId;
         }
-        
+
         const response = await api.post('/payments/mobile-money/send', paymentPayload);
 
         toast.dismiss();
@@ -579,14 +585,14 @@ const CargoOwnerPayment: React.FC = () => {
       // Check if selected "lender" is actually a loan officer
       const selectedItem = lenders.find(l => l.id === selectedLender);
       const isLoanOfficer = selectedItem?.metadata?.isLoanOfficer === true;
-      
+
       let requestData: any = {};
 
       if (isLoanOfficer) {
         // If it's a loan officer, use the parent lender ID and include officer ID
         const parentLenderId = selectedItem?.metadata?.parentLenderId;
         const loanOfficerId = selectedItem?.metadata?.loanOfficerId;
-        
+
         if (!parentLenderId) {
           toast.error('Invalid loan officer configuration');
           return;
@@ -600,10 +606,10 @@ const CargoOwnerPayment: React.FC = () => {
         };
       } else {
         // Regular lender - check if it uses external system and requires loan officer
-        const usesExternalSystem = 
+        const usesExternalSystem =
           selectedLenderData?.metadata?.integrationType === 'uruti_lending_platform' ||
           selectedLenderData?.metadata?.integrationType === 'external_lending_system';
-        
+
         if (usesExternalSystem && loanOfficers.length > 0 && !selectedLoanOfficer) {
           toast.error('Please select a loan officer');
           return;
@@ -638,12 +644,12 @@ const CargoOwnerPayment: React.FC = () => {
   };
 
   const filteredLoads = loads.filter(load => {
-    const matchesSearch = searchTerm === '' || 
+    const matchesSearch = searchTerm === '' ||
       load.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       load.id.toLowerCase().includes(searchTerm.toLowerCase());
-    
+
     const matchesStatus = filterStatus === 'all' || load.status === filterStatus;
-    
+
     return matchesSearch && matchesStatus;
   });
 
@@ -768,7 +774,7 @@ const CargoOwnerPayment: React.FC = () => {
               <p className="text-lg font-semibold text-gray-900 mt-2">
                 Transportation Amount: {selectedLoad.currencyCode || selectedLoad.currency || 'USD'} {selectedLoad.offeredPrice?.toLocaleString() || '0'}
               </p>
-              
+
               {/* Advance Payment Calculation Display */}
               {loadingAdvanceCalculation ? (
                 <div className="mt-3 flex items-center gap-2 text-sm text-gray-600">
@@ -820,7 +826,7 @@ const CargoOwnerPayment: React.FC = () => {
               {!paymentMode ? (
                 <div className="space-y-4">
                   <h4 className="font-semibold text-gray-900 mb-4">Select Payment Method</h4>
-                  
+
                   <button
                     onClick={() => setPaymentMode('direct')}
                     className="w-full p-4 border-2 border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-all text-left"
@@ -865,7 +871,7 @@ const CargoOwnerPayment: React.FC = () => {
                   >
                     ← Back
                   </button>
-                  
+
                   {/* Truck Owner Payment Information */}
                   {truckOwnerId && (
                     <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
@@ -876,24 +882,23 @@ const CargoOwnerPayment: React.FC = () => {
                       <p className="text-sm text-gray-600 mb-3">
                         Use the payment information below to make payment to the truck owner:
                       </p>
-                      <FinancialInformation 
-                        userId={truckOwnerId} 
+                      <FinancialInformation
+                        userId={truckOwnerId}
                         userName={truckOwnerName}
                         readOnly={true}
                         showTitle={false}
                       />
                     </div>
                   )}
-                  
+
                   <h4 className="font-semibold text-gray-900 mb-4">Select Payment Method</h4>
-                  
+
                   <button
                     onClick={() => setDirectPaymentMethod('momo')}
-                    className={`w-full p-4 border-2 rounded-lg transition-all text-left ${
-                      directPaymentMethod === 'momo'
-                        ? 'border-blue-500 bg-blue-50'
-                        : 'border-gray-200 hover:border-blue-300'
-                    }`}
+                    className={`w-full p-4 border-2 rounded-lg transition-all text-left ${directPaymentMethod === 'momo'
+                      ? 'border-blue-500 bg-blue-50'
+                      : 'border-gray-200 hover:border-blue-300'
+                      }`}
                   >
                     <div className="flex items-center gap-3">
                       <Smartphone className="w-6 h-6 text-blue-600" />
@@ -913,7 +918,7 @@ const CargoOwnerPayment: React.FC = () => {
                           Payment Amount <span className="text-red-500">*</span>
                         </label>
                         <p className="text-xs text-gray-500 mb-3">
-                          {advancePaymentCalculation?.requireAdvancePayment 
+                          {advancePaymentCalculation?.requireAdvancePayment
                             ? `Enter the advance payment amount. Recommended: ${formatCurrency(advancePaymentCalculation.advanceAmount, advancePaymentCalculation.currency || selectedLoad?.currencyCode || 'USD')} (${formatPercentage(advancePaymentCalculation.advancePaymentPercentage)} of total).`
                             : 'Enter the amount you want to pay. Default amount is pre-filled from the cargo transportation fee.'}
                         </p>
@@ -933,8 +938,8 @@ const CargoOwnerPayment: React.FC = () => {
                             onBlur={(e) => {
                               // If empty, reset to default (advance amount if available, otherwise full amount)
                               if (!e.target.value || parseFloat(e.target.value) <= 0) {
-                                const defaultAmount = advancePaymentCalculation?.requireAdvancePayment 
-                                  ? advancePaymentCalculation.advanceAmount 
+                                const defaultAmount = advancePaymentCalculation?.requireAdvancePayment
+                                  ? advancePaymentCalculation.advanceAmount
                                   : (selectedLoad?.offeredPrice || 0);
                                 setPaymentAmount(defaultAmount.toString());
                               }
@@ -983,11 +988,10 @@ const CargoOwnerPayment: React.FC = () => {
 
                   <button
                     onClick={() => setDirectPaymentMethod('card')}
-                    className={`w-full p-4 border-2 rounded-lg transition-all text-left ${
-                      directPaymentMethod === 'card'
-                        ? 'border-blue-500 bg-blue-50'
-                        : 'border-gray-200 hover:border-blue-300'
-                    }`}
+                    className={`w-full p-4 border-2 rounded-lg transition-all text-left ${directPaymentMethod === 'card'
+                      ? 'border-blue-500 bg-blue-50'
+                      : 'border-gray-200 hover:border-blue-300'
+                      }`}
                   >
                     <div className="flex items-center gap-3">
                       <CreditCard className="w-6 h-6 text-blue-600" />
@@ -1002,11 +1006,10 @@ const CargoOwnerPayment: React.FC = () => {
                     <button
                       onClick={handleDirectPayment}
                       disabled={directPaymentMethod === 'momo' && !receiverPhoneNumber.trim()}
-                      className={`w-full mt-6 px-4 py-3 rounded-lg transition-colors font-semibold ${
-                        directPaymentMethod === 'momo' && !receiverPhoneNumber.trim()
-                          ? 'bg-gray-400 cursor-not-allowed text-white'
-                          : 'bg-blue-600 text-white hover:bg-blue-700'
-                      }`}
+                      className={`w-full mt-6 px-4 py-3 rounded-lg transition-colors font-semibold ${directPaymentMethod === 'momo' && !receiverPhoneNumber.trim()
+                        ? 'bg-gray-400 cursor-not-allowed text-white'
+                        : 'bg-blue-600 text-white hover:bg-blue-700'
+                        }`}
                     >
                       Proceed to Payment
                     </button>
@@ -1025,28 +1028,28 @@ const CargoOwnerPayment: React.FC = () => {
                   >
                     ← Back
                   </button>
-                  
+
                   <h4 className="font-semibold text-gray-900 mb-4">Select a Lender</h4>
-                  
+
                   {/* Lender Type Selection Tabs */}
                   {(() => {
                     const usesExternalSystem = (lender: Lender) =>
                       lender.metadata?.integrationType === 'uruti_lending_platform' ||
                       lender.metadata?.integrationType === 'external_lending_system' ||
                       lender.metadata?.isExternalSystemLender === true;
-                    
+
                     const isLoanOfficer = (lender: Lender) =>
                       lender.metadata?.isLoanOfficer === true;
-                    
+
                     const internalLendersCount = lenders.filter(
                       (l) => !usesExternalSystem(l) && !isLoanOfficer(l)
                     ).length;
-                    
+
                     // External lending system shows loan officers
                     const externalLendersCount = lenders.filter(
                       (l) => isLoanOfficer(l)
                     ).length;
-                    
+
                     return (
                       <div className="flex gap-2 mb-4 border-b border-gray-200">
                         <button
@@ -1057,19 +1060,17 @@ const CargoOwnerPayment: React.FC = () => {
                             setLoanOfficers([]);
                             setSelectedLoanOfficer(null);
                           }}
-                          className={`px-4 py-2 font-medium transition-colors border-b-2 ${
-                            lenderType === 'internal'
-                              ? 'border-blue-600 text-blue-600'
-                              : 'border-transparent text-gray-500 hover:text-gray-700'
-                          }`}
+                          className={`px-4 py-2 font-medium transition-colors border-b-2 ${lenderType === 'internal'
+                            ? 'border-blue-600 text-blue-600'
+                            : 'border-transparent text-gray-500 hover:text-gray-700'
+                            }`}
                         >
                           Internal Lenders
                           {internalLendersCount > 0 && (
-                            <span className={`ml-2 px-2 py-0.5 rounded-full text-xs ${
-                              lenderType === 'internal'
-                                ? 'bg-blue-100 text-blue-700'
-                                : 'bg-gray-100 text-gray-600'
-                            }`}>
+                            <span className={`ml-2 px-2 py-0.5 rounded-full text-xs ${lenderType === 'internal'
+                              ? 'bg-blue-100 text-blue-700'
+                              : 'bg-gray-100 text-gray-600'
+                              }`}>
                               {internalLendersCount}
                             </span>
                           )}
@@ -1082,19 +1083,17 @@ const CargoOwnerPayment: React.FC = () => {
                             setLoanOfficers([]);
                             setSelectedLoanOfficer(null);
                           }}
-                          className={`px-4 py-2 font-medium transition-colors border-b-2 ${
-                            lenderType === 'external'
-                              ? 'border-blue-600 text-blue-600'
-                              : 'border-transparent text-gray-500 hover:text-gray-700'
-                          }`}
+                          className={`px-4 py-2 font-medium transition-colors border-b-2 ${lenderType === 'external'
+                            ? 'border-blue-600 text-blue-600'
+                            : 'border-transparent text-gray-500 hover:text-gray-700'
+                            }`}
                         >
                           External Lending System
                           {externalLendersCount > 0 && (
-                            <span className={`ml-2 px-2 py-0.5 rounded-full text-xs ${
-                              lenderType === 'external'
-                                ? 'bg-blue-100 text-blue-700'
-                                : 'bg-gray-100 text-gray-600'
-                            }`}>
+                            <span className={`ml-2 px-2 py-0.5 rounded-full text-xs ${lenderType === 'external'
+                              ? 'bg-blue-100 text-blue-700'
+                              : 'bg-gray-100 text-gray-600'
+                              }`}>
                               {externalLendersCount}
                             </span>
                           )}
@@ -1102,17 +1101,17 @@ const CargoOwnerPayment: React.FC = () => {
                       </div>
                     );
                   })()}
-                  
+
                   {/* Filter lenders based on selected type */}
                   {(() => {
                     const usesExternalSystem = (lender: Lender) =>
                       lender.metadata?.integrationType === 'uruti_lending_platform' ||
                       lender.metadata?.integrationType === 'external_lending_system' ||
                       lender.metadata?.isExternalSystemLender === true;
-                    
+
                     const isLoanOfficer = (lender: Lender) =>
                       lender.metadata?.isLoanOfficer === true;
-                    
+
                     const filteredLenders = lenders.filter((lender) => {
                       if (lenderType === 'internal') {
                         // Show only internal lenders (not external system, not loan officers)
@@ -1123,7 +1122,7 @@ const CargoOwnerPayment: React.FC = () => {
                         return isLoanOfficer(lender);
                       }
                     });
-                    
+
                     return filteredLenders.length === 0 ? (
                       <div className="text-center py-8">
                         <AlertCircle className="w-12 h-12 text-gray-400 mx-auto mb-2" />
@@ -1148,12 +1147,12 @@ const CargoOwnerPayment: React.FC = () => {
                     ) : (
                       <div className="space-y-3 max-h-64 overflow-y-auto">
                         {filteredLenders.map((lender) => {
-                          const usesExternalSystem = 
+                          const usesExternalSystem =
                             lender.metadata?.integrationType === 'uruti_lending_platform' ||
                             lender.metadata?.integrationType === 'external_lending_system' ||
                             lender.metadata?.isExternalSystemLender === true;
                           const isLoanOfficer = lender.metadata?.isLoanOfficer === true;
-                          
+
                           return (
                             <button
                               key={lender.id}
@@ -1161,11 +1160,10 @@ const CargoOwnerPayment: React.FC = () => {
                                 setSelectedLender(lender.id);
                                 setSelectedLenderData(lender);
                               }}
-                              className={`w-full p-4 border-2 rounded-lg transition-all text-left ${
-                                selectedLender === lender.id
-                                  ? 'border-green-500 bg-green-50'
-                                  : 'border-gray-200 hover:border-green-300'
-                              }`}
+                              className={`w-full p-4 border-2 rounded-lg transition-all text-left ${selectedLender === lender.id
+                                ? 'border-green-500 bg-green-50'
+                                : 'border-gray-200 hover:border-green-300'
+                                }`}
                             >
                               <div className="flex items-center justify-between">
                                 <div className="flex-1">
@@ -1217,78 +1215,76 @@ const CargoOwnerPayment: React.FC = () => {
                   })()}
 
                   {/* Loan Officers Selection - No longer needed since loan officers are displayed directly in External tab */}
-                  {false && selectedLender && 
-                   selectedLenderData && 
-                   !selectedLenderData.metadata?.isLoanOfficer &&
-                   (selectedLenderData.metadata?.integrationType === 'uruti_lending_platform' ||
-                    selectedLenderData.metadata?.integrationType === 'external_lending_system') && (
-                    <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                      <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                        <User className="w-5 h-5 text-blue-600" />
-                        Select Loan Officer
-                        <span className="ml-2 text-xs text-gray-500 font-normal">(Required)</span>
-                      </h4>
-                      {loadingLoanOfficers ? (
-                        <div className="flex items-center justify-center py-4">
-                          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-                          <span className="ml-2 text-sm text-gray-600">Loading loan officers...</span>
-                        </div>
-                      ) : loanOfficers.length > 0 ? (
-                        <div className="space-y-2 max-h-48 overflow-y-auto">
-                          {loanOfficers.map((officer) => (
-                            <button
-                              key={officer.id}
-                              onClick={() => setSelectedLoanOfficer(officer.id)}
-                              className={`w-full p-3 border-2 rounded-lg transition-all text-left ${
-                                selectedLoanOfficer === officer.id
+                  {false && selectedLender &&
+                    selectedLenderData &&
+                    !selectedLenderData?.metadata?.isLoanOfficer &&
+                    (selectedLenderData?.metadata?.integrationType === 'uruti_lending_platform' ||
+                      selectedLenderData?.metadata?.integrationType === 'external_lending_system') && (
+                      <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                        <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                          <User className="w-5 h-5 text-blue-600" />
+                          Select Loan Officer
+                          <span className="ml-2 text-xs text-gray-500 font-normal">(Required)</span>
+                        </h4>
+                        {loadingLoanOfficers ? (
+                          <div className="flex items-center justify-center py-4">
+                            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                            <span className="ml-2 text-sm text-gray-600">Loading loan officers...</span>
+                          </div>
+                        ) : loanOfficers.length > 0 ? (
+                          <div className="space-y-2 max-h-48 overflow-y-auto">
+                            {loanOfficers.map((officer) => (
+                              <button
+                                key={officer.id}
+                                onClick={() => setSelectedLoanOfficer(officer.id)}
+                                className={`w-full p-3 border-2 rounded-lg transition-all text-left ${selectedLoanOfficer === officer.id
                                   ? 'border-blue-500 bg-blue-100'
                                   : 'border-gray-200 hover:border-blue-300 bg-white'
-                              }`}
-                            >
-                              <div className="flex items-center justify-between">
-                                <div>
-                                  <h5 className="font-medium text-gray-900">{officer.name}</h5>
-                                  {officer.email && (
-                                    <p className="text-xs text-gray-600 mt-1">{officer.email}</p>
-                                  )}
-                                  {officer.specialization && (
-                                    <p className="text-xs text-gray-500 mt-1">
-                                      {officer.specialization}
-                                    </p>
+                                  }`}
+                              >
+                                <div className="flex items-center justify-between">
+                                  <div>
+                                    <h5 className="font-medium text-gray-900">{officer.name}</h5>
+                                    {officer.email && (
+                                      <p className="text-xs text-gray-600 mt-1">{officer.email}</p>
+                                    )}
+                                    {officer.specialization && (
+                                      <p className="text-xs text-gray-500 mt-1">
+                                        {officer.specialization}
+                                      </p>
+                                    )}
+                                  </div>
+                                  {selectedLoanOfficer === officer.id && (
+                                    <CheckCircle className="w-5 h-5 text-blue-600" />
                                   )}
                                 </div>
-                                {selectedLoanOfficer === officer.id && (
-                                  <CheckCircle className="w-5 h-5 text-blue-600" />
-                                )}
-                              </div>
-                            </button>
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="py-4 text-center">
-                          <p className="text-sm text-gray-600 mb-2">
-                            No loan officers available for this lender.
-                          </p>
-                          <p className="text-xs text-gray-500">
-                            This might mean the external system hasn't implemented the loan officers endpoint yet.
-                          </p>
-                          <p className="text-xs text-gray-500 mt-1">
-                            Check browser console for details.
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  )}
+                              </button>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="py-4 text-center">
+                            <p className="text-sm text-gray-600 mb-2">
+                              No loan officers available for this lender.
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              This might mean the external system hasn't implemented the loan officers endpoint yet.
+                            </p>
+                            <p className="text-xs text-gray-500 mt-1">
+                              Check browser console for details.
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    )}
 
                   {selectedLender && (
                     <button
                       onClick={handleLoanRequest}
                       disabled={loanOfficers.length > 0 && !selectedLoanOfficer && !selectedLenderData?.metadata?.isLoanOfficer}
-                      className={`w-full mt-6 px-4 py-3 rounded-lg transition-colors font-semibold ${
-                        loanOfficers.length > 0 && !selectedLoanOfficer && !selectedLenderData?.metadata?.isLoanOfficer
-                          ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
-                          : 'bg-green-600 text-white hover:bg-green-700'
-                      }`}
+                      className={`w-full mt-6 px-4 py-3 rounded-lg transition-colors font-semibold ${loanOfficers.length > 0 && !selectedLoanOfficer && !selectedLenderData?.metadata?.isLoanOfficer
+                        ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
+                        : 'bg-green-600 text-white hover:bg-green-700'
+                        }`}
                     >
                       Submit Loan Request
                     </button>

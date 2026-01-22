@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { FaTruck, FaUser, FaMapMarkerAlt, FaPhone, FaEnvelope, FaEdit, FaTrash, FaEye, FaPlus, FaFileAlt, FaTimes, FaDownload, FaExternalLinkAlt } from 'react-icons/fa';
+import React from 'react';
+import { FaTruck, FaUser, FaMapMarkerAlt, FaPhone, FaEnvelope, FaEdit, FaTrash } from 'react-icons/fa';
 import type { FleetItem } from '../../types/fleet';
 import { TranslatedText } from '../translated-text';
 import { useTranslation } from '../../hooks/useTranslation';
@@ -15,7 +15,6 @@ interface FleetTableProps {
   view: 'grid' | 'list';
   activeTab: 'trucks' | 'drivers' | 'analytics' | 'safety' | 'financial' | 'routes';
   onRowClick: (item: FleetItem) => void;
-  onBulkAction: (action: 'delete' | 'export' | 'update', selectedIds: string[]) => void;
   onEditFleetItem: (item: FleetItem) => void;
   onDeleteFleetItem: (itemId: string) => void;
   onRefresh?: () => void;
@@ -27,7 +26,6 @@ const FleetTableComp: React.FC<FleetTableProps> = ({
   view,
   activeTab,
   onRowClick,
-  onBulkAction,
   onEditFleetItem,
   onDeleteFleetItem,
   onRefresh
@@ -149,7 +147,7 @@ const FleetTableComp: React.FC<FleetTableProps> = ({
   };
 
   const { tSync } = useTranslation();
-  
+
   const getStatusText = (status: string) => {
     switch (status) {
       case 'AVAILABLE':
@@ -419,13 +417,17 @@ const FleetTableComp: React.FC<FleetTableProps> = ({
                       <label className="text-sm font-medium text-gray-500">License Number</label>
                       <p className="text-base text-gray-900 mt-1">{viewingDriver.licenseNumber || '-'}</p>
                     </div>
-                    {viewingDriver.contactInfo?.email && (
-                      <div>
-                        <label className="text-sm font-medium text-gray-500">Email</label>
-                        <p className="text-base text-gray-900 mt-1 flex items-center gap-2">
-                          <FaEnvelope className="text-gray-400" />
-                          {viewingDriver.contactInfo.email}
-                        </p>
+                  )}
+                  {/* Cargo Capabilities Display */}
+                  {item.cargoCapabilities && (
+                    <div className="text-sm text-gray-600">
+                      <span className="font-medium">Cargo Types:</span>
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {item.cargoCapabilities.supportedCargoTypes?.map((type: string, idx: number) => (
+                          <span key={idx} className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded">
+                            {type}
+                          </span>
+                        ))}
                       </div>
                     )}
                     {viewingDriver.contactInfo?.phone && (
@@ -559,9 +561,97 @@ const FleetTableComp: React.FC<FleetTableProps> = ({
     );
   }
 
+  // Table view - responsive: hidden on mobile, shown on desktop
   return (
     <>
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+      {/* Mobile Card View - Always show on mobile regardless of view preference */}
+      <div className="md:hidden">
+        <div className="grid grid-cols-1 gap-4">
+          {fleetItems.map((item, index) => (
+            <div
+              key={item.id}
+              ref={index === fleetItems.length - 1 ? lastFleetItemRef : null}
+              className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow cursor-pointer"
+              onClick={() => onRowClick(item)}
+            >
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  {activeTab === 'trucks' ? (
+                    <FaTruck className="w-4 h-4 text-primary-600" />
+                  ) : (
+                    <FaUser className="w-4 h-4 text-primary-600" />
+                  )}
+                  <h3 className="font-semibold text-gray-900 text-sm">{item.name}</h3>
+                </div>
+                <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(item.status)}`}>
+                  {getStatusText(item.status)}
+                </span>
+              </div>
+
+              <div className="space-y-2 text-sm">
+                {activeTab === 'trucks' ? (
+                  <>
+                    {item.plateNumber && (
+                      <div className="text-gray-600">
+                        <span className="font-medium">Plate:</span> {item.plateNumber}
+                      </div>
+                    )}
+                    {item.make && item.model && (
+                      <div className="text-gray-600">
+                        <span className="font-medium">Vehicle:</span> {item.make} {item.model}
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    {item.licenseNumber && (
+                      <div className="text-gray-600">
+                        <span className="font-medium">License:</span> {item.licenseNumber}
+                      </div>
+                    )}
+                    {item.experience && (
+                      <div className="text-gray-600">
+                        <span className="font-medium">Experience:</span> {item.experience} years
+                      </div>
+                    )}
+                  </>
+                )}
+
+                {item.currentLocation?.address && (
+                  <div className="flex items-center gap-2 text-gray-600">
+                    <FaMapMarkerAlt className="w-3 h-3" />
+                    <span className="text-xs">{item.currentLocation.address}</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex items-center justify-end gap-2 mt-3 pt-3 border-t border-gray-100">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onEditFleetItem(item);
+                  }}
+                  className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  <FaEdit className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDeleteFleetItem(item.id);
+                  }}
+                  className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                >
+                  <FaTrash className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Desktop Table View - Only show on desktop */}
+      <div className="hidden md:block bg-white rounded-lg shadow-sm border border-gray-200">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
@@ -572,7 +662,9 @@ const FleetTableComp: React.FC<FleetTableProps> = ({
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   <TranslatedText text="Status" />
                 </th>
-
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <TranslatedText text="Location" />
+                </th>
                 {activeTab === 'trucks' ? (
                   <>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -590,7 +682,9 @@ const FleetTableComp: React.FC<FleetTableProps> = ({
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       <TranslatedText text="License Number" />
                     </th>
-
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <TranslatedText text="Experience" />
+                    </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       <TranslatedText text="Assigned Truck" />
                     </th>
@@ -621,6 +715,7 @@ const FleetTableComp: React.FC<FleetTableProps> = ({
                       )}
                       <div>
                         <div className="text-sm font-medium text-gray-900">{item.name}</div>
+                        <div className="text-sm text-gray-500">ID: {item.id}</div>
                       </div>
                     </div>
                   </td>
@@ -629,7 +724,12 @@ const FleetTableComp: React.FC<FleetTableProps> = ({
                       {getStatusText(item.status)}
                     </span>
                   </td>
-
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex items-center text-sm text-gray-900">
+                      <FaMapMarkerAlt className="w-4 h-4 text-gray-400 mr-2" />
+                      {item.currentLocation?.address || 'Unknown location'}
+                    </div>
+                  </td>
                   {activeTab === 'trucks' ? (
                     <>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
@@ -647,7 +747,9 @@ const FleetTableComp: React.FC<FleetTableProps> = ({
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         {item.licenseNumber || '-'}
                       </td>
-
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {item.experience ? `${item.experience} years` : '-'}
+                      </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         {item.currentTruck?.licensePlate || 'No truck assigned'}
                       </td>
@@ -675,42 +777,6 @@ const FleetTableComp: React.FC<FleetTableProps> = ({
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div className="flex items-center justify-end gap-2">
-                      {activeTab === 'trucks' && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setTruckLocationState(item);
-                          }}
-                          className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                          title="Set truck location"
-                        >
-                          <FaMapMarkerAlt className="w-4 h-4" />
-                        </button>
-                      )}
-                      {activeTab === 'drivers' && (
-                        <>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleViewDriver(item);
-                            }}
-                            className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                            title="View driver details"
-                          >
-                            <FaEye className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleAddDocument(item);
-                            }}
-                            className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
-                            title="Add document"
-                          >
-                            <FaPlus className="w-4 h-4" />
-                          </button>
-                        </>
-                      )}
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
@@ -737,192 +803,6 @@ const FleetTableComp: React.FC<FleetTableProps> = ({
           </table>
         </div>
       </div>
-
-      {/* Driver Details Modal */}
-      {viewingDriver && activeTab === 'drivers' && createPortal(
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4" onClick={() => setViewingDriver(null)}>
-          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between p-6 border-b border-gray-200 sticky top-0 bg-white z-10">
-              <div>
-                <h2 className="text-2xl font-bold text-gray-900">Driver Details</h2>
-                <p className="text-sm text-gray-600 mt-1">{viewingDriver.name}</p>
-              </div>
-              <button onClick={() => setViewingDriver(null)} className="text-gray-400 hover:text-gray-600">
-                <FaTimes className="w-6 h-6" />
-              </button>
-            </div>
-
-            <div className="p-6 space-y-6">
-              {/* Driver Information */}
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Personal Information</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-sm font-medium text-gray-500">Full Name</label>
-                    <p className="text-base text-gray-900 mt-1">{viewingDriver.name}</p>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-gray-500">License Number</label>
-                    <p className="text-base text-gray-900 mt-1">{viewingDriver.licenseNumber || '-'}</p>
-                  </div>
-                  {viewingDriver.contactInfo?.email && (
-                    <div>
-                      <label className="text-sm font-medium text-gray-500">Email</label>
-                      <p className="text-base text-gray-900 mt-1 flex items-center gap-2">
-                        <FaEnvelope className="text-gray-400" />
-                        {viewingDriver.contactInfo.email}
-                      </p>
-                    </div>
-                  )}
-                  {viewingDriver.contactInfo?.phone && (
-                    <div>
-                      <label className="text-sm font-medium text-gray-500">Phone</label>
-                      <p className="text-base text-gray-900 mt-1 flex items-center gap-2">
-                        <FaPhone className="text-gray-400" />
-                        {viewingDriver.contactInfo.phone}
-                      </p>
-                    </div>
-                  )}
-                  <div>
-                    <label className="text-sm font-medium text-gray-500">Status</label>
-                    <div className="mt-1">
-                      <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(viewingDriver.status)}`}>
-                        {getStatusText(viewingDriver.status)}
-                      </span>
-                    </div>
-                  </div>
-                  {viewingDriver.currentTruck && (
-                    <div>
-                      <label className="text-sm font-medium text-gray-500">Assigned Truck</label>
-                      <p className="text-base text-gray-900 mt-1 flex items-center gap-2">
-                        <FaTruck className="text-gray-400" />
-                        {viewingDriver.currentTruck.licensePlate || viewingDriver.currentTruck.name || '-'}
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Driver Documents */}
-              <div className="border-t border-gray-200 pt-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Documents</h3>
-                {loadingDocs ? (
-                  <div className="text-center py-8">
-                    <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mx-auto mb-3"></div>
-                    <p className="text-gray-500">Loading documents...</p>
-                  </div>
-                ) : driverDocuments.length === 0 ? (
-                  <div className="text-center py-8 bg-gray-50 rounded-lg">
-                    <FaFileAlt className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                    <p className="text-gray-600">No documents uploaded for this driver</p>
-                  </div>
-                ) : (
-                  <div className="grid gap-3">
-                    {driverDocuments.map((doc) => (
-                      <div key={doc.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-                        <div className="flex items-start justify-between">
-                          <div className="flex items-start gap-3 flex-1">
-                            <div className="p-2 bg-blue-50 rounded-lg">
-                              <FaFileAlt className="w-5 h-5 text-blue-600" />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <h4 className="text-sm font-semibold text-gray-900 mb-1">{doc.title}</h4>
-                              {doc.description && (
-                                <p className="text-xs text-gray-600 mb-2">{doc.description}</p>
-                              )}
-                              <div className="flex flex-wrap items-center gap-2 text-xs text-gray-500">
-                                <span>{doc.originalFileName}</span>
-                                <span>•</span>
-                                <span>{documentApi.formatFileSize(doc.fileSize)}</span>
-                                <span>•</span>
-                                <span className="capitalize">{doc.documentType.replace(/_/g, ' ').toLowerCase()}</span>
-                              </div>
-                              <div className="flex flex-wrap items-center gap-2 mt-2">
-                                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                  doc.status === 'VERIFIED' ? 'bg-green-100 text-green-700' :
-                                  doc.status === 'PENDING' ? 'bg-yellow-100 text-yellow-700' :
-                                  doc.status === 'REJECTED' ? 'bg-red-100 text-red-700' :
-                                  doc.status === 'EXPIRED' ? 'bg-orange-100 text-orange-700' :
-                                  'bg-gray-100 text-gray-700'
-                                }`}>
-                                  {doc.status}
-                                </span>
-                                {doc.expiryDate && (
-                                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                    documentApi.isDocumentExpiringSoon(doc, 30)
-                                      ? 'bg-orange-100 text-orange-700'
-                                      : doc.isExpired
-                                      ? 'bg-red-100 text-red-700'
-                                      : 'bg-gray-100 text-gray-700'
-                                  }`}>
-                                    {doc.isExpired
-                                      ? 'Expired'
-                                      : documentApi.isDocumentExpiringSoon(doc, 30)
-                                      ? 'Expiring Soon'
-                                      : `Expires ${new Date(doc.expiryDate).toLocaleDateString()}`}
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2 ml-3">
-                            <button
-                              onClick={() => window.open(documentApi.getDocumentViewUrl(doc.id), '_blank')}
-                              className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                              title="View document"
-                            >
-                              <FaExternalLinkAlt className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => handleDownloadDocument(doc)}
-                              className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
-                              title="Download document"
-                            >
-                              <FaDownload className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-3 p-6 border-t border-gray-200 sticky bottom-0 bg-white">
-              <button 
-                onClick={() => setViewingDriver(null)} 
-                className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>,
-        document.body
-      )}
-
-      {/* Document Upload Modal */}
-      {uploadingDocFor && (
-        <DocumentUploadModal
-          isOpen={true}
-          onClose={() => setUploadingDocFor(null)}
-          onSuccess={handleDocumentUploadSuccess}
-          initialEntityType="DRIVER"
-          initialEntityId={uploadingDocFor.id}
-          lockEntity={true}
-        />
-      )}
-
-      {/* Truck Location Modal */}
-      <TruckLocationModal
-        isOpen={!!truckLocationState}
-        onClose={() => setTruckLocationState(null)}
-        truck={truckLocationState}
-        onLocationUpdated={() => {
-          onRefresh?.();
-        }}
-      />
     </>
   );
 };
