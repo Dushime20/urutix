@@ -924,7 +924,7 @@ export class LoadsController {
         );
       }
 
-      const result = await this.loadsService.findAll(tenantId, userId, query);
+      const result = await this.loadsService.findAll(tenantId, userId, query, req.user.role);
 
       // The service already transforms the loads, so we can return them directly
       // But we'll ensure broker data is included by checking if it needs transformation

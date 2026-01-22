@@ -59,8 +59,8 @@ export class LoadContract {
   @Column('uuid')
   cargoOwnerId: string;
 
-  @Column('uuid')
-  transporterId: string;
+  @Column('uuid', { nullable: true })
+  transporterId?: string;
 
   @Column({
     type: 'enum',

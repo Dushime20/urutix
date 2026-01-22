@@ -672,15 +672,21 @@ export class BiddingService {
     });
   }
 
-  async getAuctions(tenantId: string, status?: string): Promise<Auction[]> {
+  async getAuctions(tenantId: string, status?: string, userId?: string, role?: string): Promise<Auction[]> {
     // Build query to filter by tenantId through load relationship and include cargo owner with profile
     // Note: Using relation name directly without alias to ensure proper mapping
     const queryBuilder = this.auctionRepository
       .createQueryBuilder('auction')
       .leftJoinAndSelect('auction.load', 'load')
       .leftJoinAndSelect('load.cargoOwner', 'cargoOwner')
-      .leftJoinAndSelect('cargoOwner.profile', 'profile')
-      .where('load.tenantId = :tenantId', { tenantId });
+      .leftJoinAndSelect('cargoOwner.profile', 'profile');
+
+    if ((role === UserRole.BROKER || role === 'BROKER') && userId) {
+       // Brokers see auctions in their tenant OR auctions for loads they manage
+       queryBuilder.where('(load.tenantId = :tenantId OR load.brokerId = :userId)', { tenantId, userId });
+    } else {
+       queryBuilder.where('load.tenantId = :tenantId', { tenantId });
+    }
 
     if (status && status !== 'all') {
       queryBuilder.andWhere('auction.status = :status', { status });
@@ -882,6 +888,81 @@ export class BiddingService {
       .andWhere('load.tenantId = :tenantId', { tenantId })
       .orderBy('bid.createdAt', 'DESC')
       .getMany();
+  }
+
+  async getDashboardStats(userId: string, tenantId: string, role?: string) {
+    if (role === UserRole.TRUCK_OWNER || role === 'TRUCK_OWNER') {
+       // Truck Owner Stats
+       const myBids = await this.bidRepository.find({
+         where: { truckOwnerId: userId },
+         relations: ['load'],
+       });
+
+       const totalBids = myBids.length;
+       const activeBids = myBids.filter(b => b.status === BidStatus.PENDING).length;
+       const wonBids = myBids.filter(b => b.status === BidStatus.ACCEPTED).length;
+       const totalValue = myBids
+         .filter(b => b.status === BidStatus.ACCEPTED || b.status === BidStatus.PENDING)
+         .reduce((sum, b) => sum + (b.bidAmount || 0), 0);
+       
+       const successRate = totalBids > 0 ? Math.round((wonBids / totalBids) * 100) : 0;
+       
+       // For truck owners, 'totalAuctions' implies auctions they participated in
+       const uniqueAuctions = new Set(myBids.map(b => b.loadId)).size;
+
+       return {
+         totalAuctions: uniqueAuctions,
+         activeBids,
+         totalValue,
+         successRate
+       };
+    } else {
+       // Broker / Cargo Owner Stats
+       // They manage auctions
+       // Find loads where they are owner (for Cargo Owner) or Broker
+       
+       const loads = await this.loadRepository.find({
+         where: role === UserRole.BROKER || role === 'BROKER' 
+           ? { brokerId: userId, tenantId }
+           : { cargoOwnerId: userId, tenantId }
+       });
+       
+       const loadIds = loads.map(l => l.id);
+       
+       if (loadIds.length === 0) {
+         return {
+           totalAuctions: 0,
+           activeBids: 0,
+           totalValue: 0,
+           successRate: 0
+         };
+       }
+
+       const auctions = await this.auctionRepository.find({
+         where: { loadId: In(loadIds) }
+       });
+
+       // Active bids on these auctions
+       const bids = await this.bidRepository.find({
+         where: { loadId: In(loadIds) }
+       });
+
+       const activeBids = bids.filter(b => b.status === BidStatus.PENDING).length;
+       const totalValue = loads.reduce((sum, l) => sum + (l.loadValue || 0), 0);
+       
+       // Success rate for owners: Auctions that resulted in a match (CLOSED with winningBidId)
+       const closedAndWon = auctions.filter(a => a.status === AuctionStatus.CLOSED && a.winningBidId).length;
+       const totalClosed = auctions.filter(a => a.status === AuctionStatus.CLOSED).length;
+       
+       const successRate = totalClosed > 0 ? Math.round((closedAndWon / totalClosed) * 100) : 0;
+
+       return {
+         totalAuctions: auctions.length,
+         activeBids,
+         totalValue,
+         successRate
+       };
+    }
   }
 
   private async getCurrentHighestBid(loadId: string): Promise<number | null> {

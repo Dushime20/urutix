@@ -28,16 +28,24 @@ const BrokerBidding: React.FC = () => {
     try {
       const response = await biddingAPI.getDashboardStats();
       setStats(response.data);
-    } catch (error) {
-      setError('Failed to load dashboard statistics - using demo data');
+    } catch (error: any) {
       console.error('Dashboard stats error:', error);
-      
-      setStats({
-        totalAuctions: 8,
-        activeBids: 5,
-        totalValue: 32000,
-        successRate: 68,
-      });
+      if (error?.response?.status === 401) {
+        // Session expired
+         // We can't use toast here easily as it's not imported, or maybe it is globally?
+         // The other file used toast.
+         // Let's use setError for now or assume toast is available if I import it?
+         // I don't see toast imported in Step 603 file view.
+         setError('Session expired. Please login again.');
+      } else {
+         setError('Failed to load dashboard statistics - using demo data');
+         setStats({
+          totalAuctions: 8,
+          activeBids: 5,
+          totalValue: 32000,
+          successRate: 68,
+        });
+      }
     } finally {
       setLoading(false);
     }

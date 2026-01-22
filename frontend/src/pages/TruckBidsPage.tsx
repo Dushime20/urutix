@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import { biddingAPI, biddingHelpers } from '../services/biddingApi';
 import { fleetApi } from '../services/fleetApi';
-import { FaSearch, FaGavel, FaDollarSign, FaClock, FaPlus, FaStar, FaRegStar, FaMapMarkerAlt, FaTimes } from 'react-icons/fa';
+import { FaSearch, FaGavel, FaDollarSign, FaClock, FaPlus, FaStar, FaRegStar, FaMapMarkerAlt, FaTimes, FaHistory, FaCheckCircle, FaHourglass } from 'react-icons/fa';
 import { Grid, Table } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -32,6 +32,12 @@ const TruckBidsPage: React.FC = () => {
 	const [watchedIds, setWatchedIds] = useState<Set<string>>(new Set());
 	const [showWatchedOnly, setShowWatchedOnly] = useState(false);
 	const [view, setView] = useState<'cards' | 'table'>('cards');
+	
+	// Track user's past bids to prevent re-bidding
+	const [myBids, setMyBids] = useState<any[]>([]);
+	const [myBidLoadIds, setMyBidLoadIds] = useState<Set<string>>(new Set());
+	const [loadingMyBids, setLoadingMyBids] = useState(false);
+	const [activeTab, setActiveTab] = useState<'auctions' | 'my-bids'>('auctions');
 
 	// Helper function to get location name from load locations array
 	const getLocationName = (load: any, type: 'PICKUP' | 'DELIVERY'): string => {
@@ -91,6 +97,39 @@ const TruckBidsPage: React.FC = () => {
 		return fullName;
 	};
 
+	// Load user's past bids to prevent re-bidding
+	const loadMyBids = useCallback(async () => {
+		setLoadingMyBids(true);
+		try {
+			const response = await biddingAPI.getMyBids();
+			let bidsList: any[] = [];
+			if (Array.isArray(response?.data)) {
+				bidsList = response.data;
+			} else if (Array.isArray(response?.data?.bids)) {
+				bidsList = response.data.bids;
+			} else if (Array.isArray(response?.data?.data)) {
+				bidsList = response.data.data;
+			}
+			
+			setMyBids(bidsList);
+			// Create a set of loadIds that user has already bid on
+			const loadIds = new Set(bidsList.map((bid: any) => bid.loadId || bid.load?.id));
+			setMyBidLoadIds(loadIds);
+			console.log('📋 My bids loaded:', bidsList.length, 'Load IDs:', Array.from(loadIds));
+		} catch (e: any) {
+			console.error('Error loading my bids:', e);
+			if (e?.response?.status === 401) {
+				toast.error('Session expired. Please login again.');
+				// Optional: Redirect to login or triggering a global auth event
+				// window.location.href = '/login'; 
+			}
+			setMyBids([]);
+			setMyBidLoadIds(new Set());
+		} finally {
+			setLoadingMyBids(false);
+		}
+	}, []);
+
 	const loadAuctions = useCallback(async () => {
 		setLoading(true);
 		try {
@@ -112,25 +151,7 @@ const TruckBidsPage: React.FC = () => {
 				auctionsList = response;
 			}
 
-			console.log('📦 Full API response:', JSON.stringify(response, null, 2));
 			console.log('📦 Auctions loaded:', auctionsList.length);
-			if (auctionsList.length > 0) {
-				const firstAuction = auctionsList[0];
-				console.log('📦 First auction sample:', JSON.stringify(firstAuction, null, 2));
-				if (firstAuction?.load) {
-					console.log('📦 Load data:', JSON.stringify(firstAuction.load, null, 2));
-					console.log('📦 Cargo owner:', JSON.stringify(firstAuction.load.cargoOwner, null, 2));
-					console.log('📦 Cargo owner profile:', JSON.stringify(firstAuction.load.cargoOwner?.profile, null, 2));
-					console.log('📦 Cargo owner keys:', firstAuction.load.cargoOwner ? Object.keys(firstAuction.load.cargoOwner) : 'no cargo owner');
-					if (firstAuction.load.cargoOwner?.profile) {
-						console.log('📦 Profile keys:', Object.keys(firstAuction.load.cargoOwner.profile));
-						console.log('📦 Profile firstName:', firstAuction.load.cargoOwner.profile.firstName);
-						console.log('📦 Profile lastName:', firstAuction.load.cargoOwner.profile.lastName);
-					}
-				} else {
-					console.warn('⚠️ First auction has no load data');
-				}
-			}
 			setAuctions(auctionsList);
 
 			// Record views for loaded auctions (best-effort)
@@ -150,7 +171,12 @@ const TruckBidsPage: React.FC = () => {
 			} catch { }
 		} catch (e: any) {
 			console.error('Error loading auctions:', e);
-			toast.error('Failed to load auctions. Please try again.');
+			if (e?.response?.status === 401) {
+				toast.error('Session expired. Please login again.');
+				// window.location.href = '/login';
+			} else {
+				toast.error('Failed to load auctions.');
+			}
 			setAuctions([]);
 		} finally {
 			setLoading(false);
@@ -244,7 +270,8 @@ const TruckBidsPage: React.FC = () => {
 
 	useEffect(() => {
 		loadAuctions();
-	}, [status, page, limit]);
+		loadMyBids(); // Load user's past bids
+	}, [status, page, limit, loadMyBids]);
 
 	// Auto-refresh auctions every 30 seconds to see new bids from cargo owners
 	useEffect(() => {
@@ -256,6 +283,11 @@ const TruckBidsPage: React.FC = () => {
 			return () => clearInterval(interval);
 		}
 	}, [status, loadAuctions]);
+
+	// Helper function to check if user has already bid on an auction
+	const hasUserBidOnAuction = useCallback((auction: any) => {
+		return myBidLoadIds.has(auction?.loadId) || myBidLoadIds.has(auction?.load?.id);
+	}, [myBidLoadIds]);
 
 	const filtered = useMemo(() => {
 		const q = search.trim().toLowerCase();
@@ -270,6 +302,16 @@ const TruckBidsPage: React.FC = () => {
 			(a?.load?.destination || '').toLowerCase().includes(q)
 		);
 	}, [auctions, search, showWatchedOnly, watchedIds]);
+
+	// Auctions user has NOT bid on yet (available for bidding)
+	const availableAuctions = useMemo(() => {
+		return filtered.filter(a => !hasUserBidOnAuction(a));
+	}, [filtered, hasUserBidOnAuction]);
+
+	// Auctions user has already bid on
+	const biddedAuctions = useMemo(() => {
+		return filtered.filter(a => hasUserBidOnAuction(a));
+	}, [filtered, hasUserBidOnAuction]);
 
 	const toggleWatch = async (auction: any) => {
 		const isWatched = watchedIds.has(auction.id);
@@ -361,7 +403,7 @@ const TruckBidsPage: React.FC = () => {
 					truckSpecifications: {},
 				},
 			});
-			toast.success('Bid submitted successfully!');
+			toast.success('Bid submitted successfully! View it in My Bids tab.');
 			setShowQuickBidModal(false);
 			setSelectedAuction(null);
 			setQuickBidAmount('');
@@ -369,8 +411,9 @@ const TruckBidsPage: React.FC = () => {
 			setQuickRequireAdvancePayment(true);
 			setProposedPickupDate('');
 			setProposedDeliveryDate('');
-			// Refresh auctions to show updated bid information
-			await loadAuctions();
+			// Refresh auctions and myBids, then switch to My Bids tab
+			await Promise.all([loadAuctions(), loadMyBids()]);
+			setActiveTab('my-bids'); // Switch to My Bids tab to show the submitted bid
 		} catch (e: any) {
 			toast.error(e?.response?.data?.message || 'Failed to submit bid');
 		}
@@ -505,10 +548,11 @@ const TruckBidsPage: React.FC = () => {
 					driverInfo: selectedDriverId ? { driverId: selectedDriverId } : undefined,
 				},
 			});
-			toast.success('Bid submitted successfully!');
+			toast.success('Bid submitted successfully! View it in My Bids tab.');
 			setShowBidModal(false);
-			// Refresh auctions to show updated bid information
-			await loadAuctions();
+			// Refresh auctions and myBids, then switch to My Bids tab
+			await Promise.all([loadAuctions(), loadMyBids()]);
+			setActiveTab('my-bids'); // Switch to My Bids tab to show the submitted bid
 		} catch (e: any) {
 			toast.error(e?.response?.data?.message || 'Failed to submit bid');
 		}
@@ -556,146 +600,236 @@ const TruckBidsPage: React.FC = () => {
 				</div>
 			</div>
 
-			<div className="bg-white border border-gray-200 rounded-lg p-4 mb-4">
-				<div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-					<div className="relative">
-						<FaSearch className="absolute left-3 top-3 text-gray-400" />
-						<input value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} placeholder="Search load, origin, destination..." className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+			{/* Tabs */}
+			<div className="flex border-b border-gray-200 mb-6">
+				<button
+					onClick={() => setActiveTab('auctions')}
+					className={`py-2 px-4 text-sm font-medium border-b-2 transition-colors ${activeTab === 'auctions'
+						? 'border-primary-600 text-primary-600'
+						: 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+						}`}
+				>
+					<div className="flex items-center gap-2">
+						<FaGavel />
+						Available Auctions
+						<span className="bg-gray-100 text-gray-600 py-0.5 px-2 rounded-full text-xs">
+							{availableAuctions.length}
+						</span>
 					</div>
-					<select value={status} onChange={(e) => { setStatus(e.target.value); setPage(1); }} className="w-full px-3 py-2 border border-gray-300 rounded-lg">
-						<option value="all">All Statuses</option>
-						<option value="ACTIVE">Active</option>
-						<option value="SCHEDULED">Scheduled</option>
-						<option value="CLOSED">Closed</option>
-					</select>
-					<div className="flex items-center text-sm text-gray-600">Total: {filtered.length}</div>
-				</div>
+				</button>
+				<button
+					onClick={() => setActiveTab('my-bids')}
+					className={`py-2 px-4 text-sm font-medium border-b-2 transition-colors ${activeTab === 'my-bids'
+						? 'border-primary-600 text-primary-600'
+						: 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+						}`}
+				>
+					<div className="flex items-center gap-2">
+						<FaHistory />
+						My Past Bids
+						<span className="bg-gray-100 text-gray-600 py-0.5 px-2 rounded-full text-xs">
+							{myBids.length}
+						</span>
+					</div>
+				</button>
 			</div>
 
-			{view === 'cards' ? (
-				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-					{loading ? (
-						<div className="col-span-full text-center py-8 text-gray-500">Loading...</div>
-					) : filtered.length === 0 ? (
-						<div className="col-span-full text-center py-8 text-gray-500">No auctions found</div>
-					) : (
-						filtered.map((a) => {
-							if (!a) return null;
+			{activeTab === 'auctions' ? (
+				<>
+					<div className="bg-white border border-gray-200 rounded-lg p-4 mb-4">
+						<div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+							<div className="relative">
+								<FaSearch className="absolute left-3 top-3 text-gray-400" />
+								<input value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} placeholder="Search load, origin, destination..." className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+							</div>
+							<select value={status} onChange={(e) => { setStatus(e.target.value); setPage(1); }} className="w-full px-3 py-2 border border-gray-300 rounded-lg">
+								<option value="all">All Statuses</option>
+								<option value="ACTIVE">Active</option>
+								<option value="SCHEDULED">Scheduled</option>
+								<option value="CLOSED">Closed</option>
+							</select>
+							<div className="flex items-center text-sm text-gray-600">Total: {availableAuctions.length}</div>
+						</div>
+					</div>
 
-							// Debug logging for each auction (only log first few to avoid spam)
-							if (filtered.indexOf(a) < 2) {
-								console.log(`🔍 Auction ${filtered.indexOf(a)}:`, {
-									id: a.id,
-									hasLoad: !!a.load,
-									loadTitle: a?.load?.title,
-									hasCargoOwner: !!a?.load?.cargoOwner,
-									cargoOwnerName: getCargoOwnerName(a?.load),
-									hasLocations: !!a?.load?.locations,
-									locationsCount: a?.load?.locations?.length,
-								});
-							}
+					{view === 'cards' ? (
+						<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+							{loading ? (
+								<div className="col-span-full text-center py-8 text-gray-500">Loading...</div>
+							) : availableAuctions.length === 0 ? (
+								<div className="col-span-full text-center py-8 text-gray-500">No available auctions found. Check your past bids or try different filters.</div>
+							) : (
+								availableAuctions.map((a) => {
+									if (!a) return null;
+									const cargoOwnerName = getCargoOwnerName(a?.load);
+									const pickupLocation = getLocationName(a?.load, 'PICKUP');
+									const deliveryLocation = getLocationName(a?.load, 'DELIVERY');
+									const alreadyBidded = hasUserBidOnAuction(a);
 
-							const cargoOwnerName = getCargoOwnerName(a?.load);
-							const pickupLocation = getLocationName(a?.load, 'PICKUP');
-							const deliveryLocation = getLocationName(a?.load, 'DELIVERY');
-
-							return (
-								<div key={a.id} className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-									<div className="flex items-start justify-between">
-										<div className="flex-1 min-w-0">
-											<div className="font-semibold text-gray-900 truncate">{a?.load?.title || 'Untitled Load'}</div>
-											{cargoOwnerName ? (
-												<div className="text-xs text-gray-500 mt-0.5">
-													Owner: {cargoOwnerName}
+									return (
+										<div key={a.id} className={`bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow ${alreadyBidded ? 'opacity-75 bg-gray-50' : ''}`}>
+											<div className="flex items-start justify-between">
+												<div className="flex-1 min-w-0">
+													<div className="font-semibold text-gray-900 truncate">{a?.load?.title || 'Untitled Load'}</div>
+													{cargoOwnerName ? (
+														<div className="text-xs text-gray-500 mt-0.5">Owner: {cargoOwnerName}</div>
+													) : (
+														<div className="text-xs text-gray-400 mt-0.5 italic">Owner: Not available</div>
+													)}
+													<div className="text-sm text-gray-600 mt-1.5 flex items-center gap-1">
+														<FaMapMarkerAlt className="text-gray-400 text-xs flex-shrink-0" />
+														<span className="truncate">{pickupLocation} → {deliveryLocation}</span>
+													</div>
 												</div>
-											) : (
-												<div className="text-xs text-gray-400 mt-0.5 italic">Owner: Not available</div>
-											)}
-											<div className="text-sm text-gray-600 mt-1.5 flex items-center gap-1">
-												<FaMapMarkerAlt className="text-gray-400 text-xs flex-shrink-0" />
-												<span className="truncate">{pickupLocation} → {deliveryLocation}</span>
+												<div className="flex items-center gap-2">
+													<button onClick={() => toggleWatch(a)} className="text-yellow-500 hover:text-yellow-600" title={watchedIds.has(a.id) ? 'Unwatch' : 'Watch'}>
+														{watchedIds.has(a.id) ? <FaStar /> : <FaRegStar />}
+													</button>
+													<span className={`px-2 py-1 rounded-full text-xs font-medium bg-${biddingHelpers.getStatusColor(a.status)}-100 text-${biddingHelpers.getStatusColor(a.status)}-700`}>{a.status}</span>
+												</div>
+											</div>
+											<div className="mt-3 grid grid-cols-2 gap-3 text-sm">
+												<div className="flex items-center gap-2 text-gray-700">
+													<FaDollarSign className="text-gray-400" />
+													<span>Current: {a.currentBid ? biddingHelpers.formatCurrency(a.currentBid) : '—'}</span>
+												</div>
+												<div className="flex items-center gap-2 text-gray-700">
+													<FaClock className="text-gray-400" />
+													<span>Ends in: {a.auctionEnd ? biddingHelpers.getTimeRemaining(a.auctionEnd) : '—'}</span>
+												</div>
+											</div>
+											<div className="mt-4 flex items-center justify-between">
+												{alreadyBidded ? (
+													<div className="w-full py-2 px-3 bg-gray-100 text-gray-500 rounded text-sm text-center font-medium flex items-center justify-center gap-2">
+														<FaCheckCircle className="text-green-500" /> Bid Submitted
+													</div>
+												) : (
+													<>
+														<button onClick={() => openQuickBidModal(a)} className="px-3 py-2 rounded bg-primary-600 text-white hover:bg-primary-700 inline-flex items-center gap-2"><FaPlus /> Quick Bid</button>
+														<button onClick={() => openBidModal(a)} className="px-3 py-2 rounded bg-blue-100 text-blue-700 hover:bg-blue-200 inline-flex items-center gap-2">Custom Bid</button>
+													</>
+												)}
 											</div>
 										</div>
-										<div className="flex items-center gap-2">
-											<button onClick={() => toggleWatch(a)} className="text-yellow-500 hover:text-yellow-600" title={watchedIds.has(a.id) ? 'Unwatch' : 'Watch'}>
-												{watchedIds.has(a.id) ? <FaStar /> : <FaRegStar />}
-											</button>
-											<span className={`px-2 py-1 rounded-full text-xs font-medium bg-${biddingHelpers.getStatusColor(a.status)}-100 text-${biddingHelpers.getStatusColor(a.status)}-700`}>{a.status}</span>
-										</div>
-									</div>
-									<div className="mt-3 grid grid-cols-2 gap-3 text-sm">
-										<div className="flex items-center gap-2 text-gray-700">
-											<FaDollarSign className="text-gray-400" />
-											<span>Current: {a.currentBid ? biddingHelpers.formatCurrency(a.currentBid) : '—'}</span>
-										</div>
-										<div className="flex items-center gap-2 text-gray-700">
-											<FaClock className="text-gray-400" />
-											<span>Ends in: {a.auctionEnd ? biddingHelpers.getTimeRemaining(a.auctionEnd) : '—'}</span>
-										</div>
-									</div>
-									<div className="mt-4 flex items-center justify-between">
-										<button onClick={() => openQuickBidModal(a)} className="px-3 py-2 rounded bg-primary-600 text-white hover:bg-primary-700 inline-flex items-center gap-2"><FaPlus /> Quick Bid</button>
-										<button onClick={() => openBidModal(a)} className="px-3 py-2 rounded bg-blue-100 text-blue-700 hover:bg-blue-200 inline-flex items-center gap-2">Custom Bid</button>
-									</div>
-								</div>
-							);
-						})
+									);
+								})
+							)}
+						</div>
+					) : (
+						<div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+							<div className="overflow-x-auto">
+								<table className="min-w-full divide-y divide-gray-200">
+									<thead className="bg-gray-50">
+										<tr>
+											<th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Watch</th>
+											<th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Auction</th>
+											<th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Route</th>
+											<th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+											<th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Current</th>
+											<th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ends In</th>
+											<th className="px-4 py-3" />
+										</tr>
+									</thead>
+									<tbody className="bg-white divide-y divide-gray-200">
+										{loading ? (
+											<tr><td className="px-4 py-6 text-center text-gray-500" colSpan={7}>Loading...</td></tr>
+										) : availableAuctions.length === 0 ? (
+											<tr><td className="px-4 py-6 text-center text-gray-500" colSpan={7}>No available auctions found</td></tr>
+										) : (
+											availableAuctions.map((a) => {
+												const alreadyBidded = hasUserBidOnAuction(a);
+												return (
+													<tr key={a.id} className={alreadyBidded ? 'bg-gray-50' : ''}>
+														<td className="px-4 py-3">
+															<button onClick={() => toggleWatch(a)} className="text-yellow-500 hover:text-yellow-600" title={watchedIds.has(a.id) ? 'Unwatch' : 'Watch'}>
+																{watchedIds.has(a.id) ? <FaStar /> : <FaRegStar />}
+															</button>
+														</td>
+														<td className="px-4 py-3">
+															<div className="font-medium text-gray-900">{a?.load?.title || 'Untitled Load'}</div>
+															{getCargoOwnerName(a?.load) && (
+																<div className="text-xs text-gray-500 mt-0.5">Owner: {getCargoOwnerName(a?.load)}</div>
+															)}
+														</td>
+														<td className="px-4 py-3 text-gray-700">
+															{getLocationName(a?.load, 'PICKUP')} → {getLocationName(a?.load, 'DELIVERY')}
+														</td>
+														<td className="px-4 py-3">
+															<span className={`px-2 py-1 rounded-full text-xs font-medium bg-${biddingHelpers.getStatusColor(a.status)}-100 text-${biddingHelpers.getStatusColor(a.status)}-700`}>{a.status}</span>
+														</td>
+														<td className="px-4 py-3 text-gray-700">{a.currentBid ? biddingHelpers.formatCurrency(a.currentBid) : '—'}</td>
+														<td className="px-4 py-3 text-gray-700">
+															<div className="flex items-center gap-1">
+																<FaClock className="text-gray-400 text-xs" />
+																<span>{a.auctionEnd ? biddingHelpers.getTimeRemaining(a.auctionEnd) : '—'}</span>
+															</div>
+														</td>
+														<td className="px-4 py-3 text-right">
+															{alreadyBidded ? (
+																<span className="text-xs font-medium text-green-600 inline-flex items-center gap-1">
+																	<FaCheckCircle /> Bid Placed
+																</span>
+															) : (
+																<div className="inline-flex items-center gap-2">
+																	<button onClick={() => openQuickBidModal(a)} className="px-3 py-1 rounded bg-primary-600 text-white hover:bg-primary-700 text-sm">Quick Bid</button>
+																	<button onClick={() => openBidModal(a)} className="px-3 py-1 rounded bg-blue-100 text-blue-700 hover:bg-blue-200 text-sm">Custom Bid</button>
+																</div>
+															)}
+														</td>
+													</tr>
+												);
+											})
+										)}
+									</tbody>
+								</table>
+							</div>
+						</div>
 					)}
-				</div>
+				</>
 			) : (
+				// My Bids Tab Content
 				<div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
 					<div className="overflow-x-auto">
 						<table className="min-w-full divide-y divide-gray-200">
 							<thead className="bg-gray-50">
 								<tr>
-									<th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Watch</th>
-									<th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Auction</th>
-									<th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Route</th>
-									<th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-									<th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Current</th>
-									<th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ends In</th>
-									<th className="px-4 py-3" />
+									<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Load / Auction</th>
+									<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">My Bid Amount</th>
+									<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bid Status</th>
+									<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Submitted On</th>
+									<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bid Notes</th>
 								</tr>
 							</thead>
 							<tbody className="bg-white divide-y divide-gray-200">
-								{loading ? (
-									<tr><td className="px-4 py-6 text-center text-gray-500" colSpan={7}>Loading...</td></tr>
-								) : filtered.length === 0 ? (
-									<tr><td className="px-4 py-6 text-center text-gray-500" colSpan={7}>No auctions found</td></tr>
+								{loadingMyBids ? (
+									<tr><td className="px-6 py-8 text-center text-gray-500" colSpan={5}>Loading your bids...</td></tr>
+								) : myBids.length === 0 ? (
+									<tr><td className="px-6 py-8 text-center text-gray-500" colSpan={5}>You haven't placed any bids yet.</td></tr>
 								) : (
-									filtered.map((a) => (
-										<tr key={a.id}>
-											<td className="px-4 py-3">
-												<button onClick={() => toggleWatch(a)} className="text-yellow-500 hover:text-yellow-600" title={watchedIds.has(a.id) ? 'Unwatch' : 'Watch'}>
-													{watchedIds.has(a.id) ? <FaStar /> : <FaRegStar />}
-												</button>
-											</td>
-											<td className="px-4 py-3">
-												<div className="font-medium text-gray-900">{a?.load?.title || 'Untitled Load'}</div>
-												{getCargoOwnerName(a?.load) && (
-													<div className="text-xs text-gray-500 mt-0.5">
-														Owner: {getCargoOwnerName(a?.load)}
-													</div>
-												)}
-											</td>
-											<td className="px-4 py-3 text-gray-700">
-												{getLocationName(a?.load, 'PICKUP')} → {getLocationName(a?.load, 'DELIVERY')}
-											</td>
-											<td className="px-4 py-3">
-												<span className={`px-2 py-1 rounded-full text-xs font-medium bg-${biddingHelpers.getStatusColor(a.status)}-100 text-${biddingHelpers.getStatusColor(a.status)}-700`}>{a.status}</span>
-											</td>
-											<td className="px-4 py-3 text-gray-700">{a.currentBid ? biddingHelpers.formatCurrency(a.currentBid) : '—'}</td>
-											<td className="px-4 py-3 text-gray-700">
-												<div className="flex items-center gap-1">
-													<FaClock className="text-gray-400 text-xs" />
-													<span>{a.auctionEnd ? biddingHelpers.getTimeRemaining(a.auctionEnd) : '—'}</span>
+									myBids.map((bid) => (
+										<tr key={bid.id}>
+											<td className="px-6 py-4">
+												<div className="text-sm font-medium text-gray-900">{bid.load?.title || 'Unknown Load'}</div>
+												<div className="text-xs text-gray-500 mt-0.5">
+													{getLocationName(bid.load, 'PICKUP')} → {getLocationName(bid.load, 'DELIVERY')}
 												</div>
 											</td>
-											<td className="px-4 py-3 text-right">
-												<div className="inline-flex items-center gap-2">
-													<button onClick={() => openQuickBidModal(a)} className="px-3 py-1 rounded bg-primary-600 text-white hover:bg-primary-700 text-sm">Quick Bid</button>
-													<button onClick={() => openBidModal(a)} className="px-3 py-1 rounded bg-blue-100 text-blue-700 hover:bg-blue-200 text-sm">Custom Bid</button>
-												</div>
+											<td className="px-6 py-4 text-sm font-bold text-gray-900">
+												{biddingHelpers.formatCurrency(bid.amount || bid.bidAmount)}
+											</td>
+											<td className="px-6 py-4">
+												<span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full 
+													${bid.status === 'ACCEPTED' ? 'bg-green-100 text-green-800' :
+														bid.status === 'REJECTED' ? 'bg-red-100 text-red-800' :
+															'bg-yellow-100 text-yellow-800'}`}>
+													{bid.status || 'PENDING'}
+												</span>
+											</td>
+											<td className="px-6 py-4 text-sm text-gray-500">
+												{new Date(bid.createdAt).toLocaleDateString()} {new Date(bid.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+											</td>
+											<td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate" title={bid.notes || bid.bidNotes}>
+												{bid.notes || bid.bidNotes || '-'}
 											</td>
 										</tr>
 									))

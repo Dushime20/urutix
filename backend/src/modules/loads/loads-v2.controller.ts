@@ -42,6 +42,7 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 @ApiTags('loads-v2')
 @Controller('loads-v2')
 @ApiBearerAuth()
+@UseGuards(JwtAuthGuard)
 @UseInterceptors(ClassSerializerInterceptor)
 @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
 export class LoadsV2Controller {
@@ -76,16 +77,12 @@ export class LoadsV2Controller {
   @ApiProduces('application/json')
   async create(
     @Body() createLoadDto: CreateLoadV2Dto,
-    @Request()
-    req = {
-      user: {
-        id: '701a9079-6100-4b47-a3b9-f9b070bfa7c6',
-        tenantId: '00000000-0000-0000-0000-000000000001',
-        role: 'CARGO_OWNER',
-      },
-    },
+    @Request() req,
   ): Promise<LoadResponseV2Dto> {
     try {
+      if (!req.user) {
+        throw new HttpException('Unauthorized - User not authenticated', HttpStatus.UNAUTHORIZED);
+      }
       const user = req.user as User;
       return await this.loadsV2Service.create(createLoadDto, user);
     } catch (error) {
@@ -136,16 +133,12 @@ export class LoadsV2Controller {
   })
   async findAll(
     @Query() queryDto: LoadQueryV2Dto,
-    @Request()
-    req = {
-      user: {
-        id: '701a9079-6100-4b47-a3b9-f9b070bfa7c6',
-        tenantId: '00000000-0000-0000-0000-000000000001',
-        role: 'CARGO_OWNER',
-      },
-    },
+    @Request() req,
   ): Promise<PaginatedResponseV2<LoadResponseV2Dto>> {
     try {
+      if (!req.user) {
+        throw new HttpException('Unauthorized - User not authenticated', HttpStatus.UNAUTHORIZED);
+      }
       const user = req.user as User;
       return await this.loadsV2Service.findAll(queryDto, user);
     } catch (error) {

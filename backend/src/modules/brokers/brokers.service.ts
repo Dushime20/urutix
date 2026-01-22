@@ -399,7 +399,9 @@ export class BrokersService {
       this.logger.log(`✅ Broker contract created: ${contract.id} with status PENDING_BROKER_ACCEPTANCE`);
     } catch (error) {
       this.logger.error(`Failed to create broker contract: ${error.message}`);
-      // Don't fail the assignment if contract creation fails, but log it
+      // Re-throw so the assignment fails if contract creation fails.
+      // We want to ensure a Load always has a Contract if assigned.
+      throw new ConflictException(`Broker assigned, but contract creation failed: ${error.message}`);
     }
 
     // Send email notification to broker

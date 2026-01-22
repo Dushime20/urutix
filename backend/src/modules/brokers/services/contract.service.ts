@@ -318,9 +318,11 @@ export class ContractService {
     this.logger.debug(`getBrokerContracts called for brokerId: ${brokerId} tenantId: ${tenantId || 'ALL'}`);
     const where: any = { brokerId };
 
-    if (tenantId) {
-      where.tenantId = tenantId;
-    }
+    // We do NOT filter by tenantId for brokers, because they may have contracts
+    // from Cargo Owners in different tenants. The brokerId filter is sufficient/secure.
+    // if (tenantId) {
+    //   where.tenantId = tenantId;
+    // }
 
     if (filters?.status) {
       where.status = filters.status;

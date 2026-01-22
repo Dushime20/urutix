@@ -57,15 +57,23 @@ const CreateAuction: React.FC = () => {
       }
 
       // Filter cargos that can be auctioned (CREATED, PUBLISHED status)
-      // AND exclude cargos that have a broker assigned (broker manages those)
-      const availableCargos = cargosList.filter(
-        (cargo: Cargo) =>
-          (cargo.status === 'CREATED' ||
-          cargo.status === 'PUBLISHED' ||
-          !cargo.status) && // Include cargos without status if needed
-          !cargo.brokerId && // Exclude cargos with broker assigned
-          !cargo.broker // Also check broker object
-      );
+      // Logic depends on user role:
+      // - Brokers should see loads assigned to them
+      // - Cargo Owners should see loads NOT assigned to a broker (broker manages those)
+      const availableCargos = cargosList.filter((cargo: Cargo) => {
+        const validStatus = cargo.status === 'CREATED' || cargo.status === 'PUBLISHED' || !cargo.status;
+        
+        if (!validStatus) return false;
+
+        // Check user role (assuming 'BROKER' is the value)
+        if (user?.role === 'BROKER') {
+           // Broker sees loads where they are the assigned broker
+           return cargo.brokerId === user.id || cargo.broker?.id === user.id;
+        } else {
+           // Cargo Owner (or others) sees loads NOT assigned to a broker
+           return !cargo.brokerId && !cargo.broker;
+        }
+      });
 
       setCargos(availableCargos);
     } catch (err: any) {

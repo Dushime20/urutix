@@ -795,6 +795,7 @@ export class LoadsService {
     tenantId: string,
     userId?: string,
     query: LoadsQueryDto = {},
+    role?: string,
   ): Promise<LoadsPaginatedResponse> {
     this.logger.log(`Finding loads for tenant ${tenantId}, user ${userId}`);
 
@@ -807,7 +808,7 @@ export class LoadsService {
         ...filters
       } = query;
 
-      const queryBuilder = this.buildLoadsQuery(tenantId, userId, filters);
+      const queryBuilder = this.buildLoadsQuery(tenantId, userId, filters, role);
 
       // Apply sorting
       queryBuilder.orderBy(`load.${sortBy}`, sortOrder);
@@ -2301,6 +2302,7 @@ export class LoadsService {
     tenantId: string,
     userId?: string,
     filters: any = {},
+    role?: string,
   ) {
     const queryBuilder = this.loadRepository
       .createQueryBuilder('load')
@@ -2311,7 +2313,11 @@ export class LoadsService {
 
     // Apply user filter
     if (userId) {
-      queryBuilder.andWhere('load.cargoOwnerId = :userId', { userId });
+      if (role === 'BROKER' || role === UserRole.BROKER) {
+        queryBuilder.andWhere('load.brokerId = :userId', { userId });
+      } else {
+        queryBuilder.andWhere('load.cargoOwnerId = :userId', { userId });
+      }
     }
 
     // Apply filters
