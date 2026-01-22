@@ -1,5 +1,5 @@
 import React from 'react';
-import { FaTools, FaTruck, FaCog, FaClock } from 'react-icons/fa';
+import { FaTools, FaClock } from 'react-icons/fa';
 
 interface LoadingEquipmentStepProps {
   formData: any;

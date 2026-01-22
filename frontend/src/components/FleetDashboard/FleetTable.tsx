@@ -274,159 +274,249 @@ const FleetTableComp: React.FC<FleetTableProps> = ({
     );
   }
 
+  // Table view - responsive: hidden on mobile, shown on desktop
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-      <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                {activeTab === 'trucks' ? <TranslatedText text="Truck" /> : <TranslatedText text="Driver" />}
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                <TranslatedText text="Status" />
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                <TranslatedText text="Location" />
-              </th>
-              {activeTab === 'trucks' ? (
-                <>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    <TranslatedText text="License Plate" />
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    <TranslatedText text="Vehicle" />
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    <TranslatedText text="Driver" />
-                  </th>
-                </>
-              ) : (
-                <>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    <TranslatedText text="License Number" />
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    <TranslatedText text="Experience" />
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    <TranslatedText text="Assigned Truck" />
-                  </th>
-                </>
-              )}
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                <TranslatedText text="Contact" />
-              </th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                <TranslatedText text="Actions" />
-              </th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {fleetItems.map((item, index) => (
-              <tr
-                key={item.id}
-                ref={index === fleetItems.length - 1 ? lastFleetItemRef : null}
-                className="hover:bg-gray-50 transition-colors cursor-pointer"
-                onClick={() => onRowClick(item)}
-              >
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="flex items-center">
-                    {activeTab === 'trucks' ? (
-                      <FaTruck className="w-5 h-5 text-primary-600 mr-3" />
-                    ) : (
-                      <FaUser className="w-5 h-5 text-primary-600 mr-3" />
-                    )}
-                    <div>
-                      <div className="text-sm font-medium text-gray-900">{item.name}</div>
-                      <div className="text-sm text-gray-500">ID: {item.id}</div>
-                    </div>
-                  </div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(item.status)}`}>
-                    {getStatusText(item.status)}
-                  </span>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="flex items-center text-sm text-gray-900">
-                    <FaMapMarkerAlt className="w-4 h-4 text-gray-400 mr-2" />
-                    {item.currentLocation?.address || 'Unknown location'}
-                  </div>
-                </td>
+    <>
+      {/* Mobile Card View - Always show on mobile regardless of view preference */}
+      <div className="md:hidden">
+        <div className="grid grid-cols-1 gap-4">
+          {fleetItems.map((item, index) => (
+            <div
+              key={item.id}
+              ref={index === fleetItems.length - 1 ? lastFleetItemRef : null}
+              className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow cursor-pointer"
+              onClick={() => onRowClick(item)}
+            >
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  {activeTab === 'trucks' ? (
+                    <FaTruck className="w-4 h-4 text-primary-600" />
+                  ) : (
+                    <FaUser className="w-4 h-4 text-primary-600" />
+                  )}
+                  <h3 className="font-semibold text-gray-900 text-sm">{item.name}</h3>
+                </div>
+                <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(item.status)}`}>
+                  {getStatusText(item.status)}
+                </span>
+              </div>
+
+              <div className="space-y-2 text-sm">
                 {activeTab === 'trucks' ? (
                   <>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {item.licensePlate || '-'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {item.make && item.model ? `${item.make} ${item.model}` : '-'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {item.primaryDriver?.name || 'No driver assigned'}
-                    </td>
+                    {item.plateNumber && (
+                      <div className="text-gray-600">
+                        <span className="font-medium">Plate:</span> {item.plateNumber}
+                      </div>
+                    )}
+                    {item.make && item.model && (
+                      <div className="text-gray-600">
+                        <span className="font-medium">Vehicle:</span> {item.make} {item.model}
+                      </div>
+                    )}
                   </>
                 ) : (
                   <>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {item.licenseNumber || '-'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {item.experience ? `${item.experience} years` : '-'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {item.currentTruck?.licensePlate || 'No truck assigned'}
-                    </td>
+                    {item.licenseNumber && (
+                      <div className="text-gray-600">
+                        <span className="font-medium">License:</span> {item.licenseNumber}
+                      </div>
+                    )}
+                    {item.experience && (
+                      <div className="text-gray-600">
+                        <span className="font-medium">Experience:</span> {item.experience} years
+                      </div>
+                    )}
                   </>
                 )}
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  {item.contactInfo ? (
-                    <div className="space-y-1">
-                      {item.contactInfo.phone && (
-                        <div className="flex items-center gap-1">
-                          <FaPhone className="w-3 h-3 text-gray-400" />
-                          <span>{item.contactInfo.phone}</span>
-                        </div>
-                      )}
-                      {item.contactInfo.email && (
-                        <div className="flex items-center gap-1">
-                          <FaEnvelope className="w-3 h-3 text-gray-400" />
-                          <span>{item.contactInfo.email}</span>
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    '-'
-                  )}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                  <div className="flex items-center justify-end gap-2">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onEditFleetItem(item);
-                      }}
-                      className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-                    >
-                      <FaEdit className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onDeleteFleetItem(item.id);
-                      }}
-                      className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                    >
-                      <FaTrash className="w-4 h-4" />
-                    </button>
+
+                {item.currentLocation?.address && (
+                  <div className="flex items-center gap-2 text-gray-600">
+                    <FaMapMarkerAlt className="w-3 h-3" />
+                    <span className="text-xs">{item.currentLocation.address}</span>
                   </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                )}
+              </div>
+
+              <div className="flex items-center justify-end gap-2 mt-3 pt-3 border-t border-gray-100">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onEditFleetItem(item);
+                  }}
+                  className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  <FaEdit className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDeleteFleetItem(item.id);
+                  }}
+                  className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                >
+                  <FaTrash className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
-    </div>
+
+      {/* Desktop Table View - Only show on desktop */}
+      <div className="hidden md:block bg-white rounded-lg shadow-sm border border-gray-200">
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  {activeTab === 'trucks' ? <TranslatedText text="Truck" /> : <TranslatedText text="Driver" />}
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <TranslatedText text="Status" />
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <TranslatedText text="Location" />
+                </th>
+                {activeTab === 'trucks' ? (
+                  <>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <TranslatedText text="License Plate" />
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <TranslatedText text="Vehicle" />
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <TranslatedText text="Driver" />
+                    </th>
+                  </>
+                ) : (
+                  <>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <TranslatedText text="License Number" />
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <TranslatedText text="Experience" />
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <TranslatedText text="Assigned Truck" />
+                    </th>
+                  </>
+                )}
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <TranslatedText text="Contact" />
+                </th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <TranslatedText text="Actions" />
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {fleetItems.map((item, index) => (
+                <tr
+                  key={item.id}
+                  ref={index === fleetItems.length - 1 ? lastFleetItemRef : null}
+                  className="hover:bg-gray-50 transition-colors cursor-pointer"
+                  onClick={() => onRowClick(item)}
+                >
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex items-center">
+                      {activeTab === 'trucks' ? (
+                        <FaTruck className="w-5 h-5 text-primary-600 mr-3" />
+                      ) : (
+                        <FaUser className="w-5 h-5 text-primary-600 mr-3" />
+                      )}
+                      <div>
+                        <div className="text-sm font-medium text-gray-900">{item.name}</div>
+                        <div className="text-sm text-gray-500">ID: {item.id}</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(item.status)}`}>
+                      {getStatusText(item.status)}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex items-center text-sm text-gray-900">
+                      <FaMapMarkerAlt className="w-4 h-4 text-gray-400 mr-2" />
+                      {item.currentLocation?.address || 'Unknown location'}
+                    </div>
+                  </td>
+                  {activeTab === 'trucks' ? (
+                    <>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {item.licensePlate || '-'}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {item.make && item.model ? `${item.make} ${item.model}` : '-'}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {item.primaryDriver?.name || 'No driver assigned'}
+                      </td>
+                    </>
+                  ) : (
+                    <>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {item.licenseNumber || '-'}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {item.experience ? `${item.experience} years` : '-'}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {item.currentTruck?.licensePlate || 'No truck assigned'}
+                      </td>
+                    </>
+                  )}
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {item.contactInfo ? (
+                      <div className="space-y-1">
+                        {item.contactInfo.phone && (
+                          <div className="flex items-center gap-1">
+                            <FaPhone className="w-3 h-3 text-gray-400" />
+                            <span>{item.contactInfo.phone}</span>
+                          </div>
+                        )}
+                        {item.contactInfo.email && (
+                          <div className="flex items-center gap-1">
+                            <FaEnvelope className="w-3 h-3 text-gray-400" />
+                            <span>{item.contactInfo.email}</span>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      '-'
+                    )}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <div className="flex items-center justify-end gap-2">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onEditFleetItem(item);
+                        }}
+                        className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                      >
+                        <FaEdit className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onDeleteFleetItem(item.id);
+                        }}
+                        className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                      >
+                        <FaTrash className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </>
   );
 };
 

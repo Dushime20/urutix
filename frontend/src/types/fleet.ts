@@ -488,9 +488,37 @@ export interface FleetItem {
   hasInsulated?: boolean;
   hasHumidityMonitoring?: boolean;
 
+  // Added for form compatibility (top-level overrides)
+  hasForklift?: boolean;
+  hasCrane?: boolean;
+  hasLoadingDock?: boolean;
+  maxLoadingTime?: string | number;
+  maxUnloadingTime?: string | number;
+  isActive?: boolean;
+  maxLength?: number;
+  maxWidth?: number;
+  maxHeight?: number;
+
   // Equipment list
   equipmentList?: string[];
 
+  loadingCapabilities?: {
+    hasForklift?: boolean;
+    hasCrane?: boolean;
+    hasTailLift?: boolean;
+    hasSideLift?: boolean;
+    hasLoadingDock?: boolean;
+    maxLoadingTime?: string | number;
+    maxUnloadingTime?: string | number;
+    [key: string]: any;
+  };
+  securityFeatures?: {
+    hasGps?: boolean;
+    hasTracking?: boolean;
+    hasTemperatureAlerts?: boolean;
+    hasCargoMonitoring?: boolean;
+    [key: string]: boolean | undefined;
+  };
   // Multiple assignments
   assignedDrivers?: DriverAssignment[];
   primaryDriver?: {
@@ -525,6 +553,14 @@ export interface FleetItem {
     phone?: string;
     email?: string;
   };
+  dateOfBirth?: string | Date;
+  address?: string;
+  licenseIssueDate?: string | Date;
+  licenseExpiry?: string | Date;
+  licenseState?: string;
+  licenseCountry?: string;
+  employmentType?: string;
+  hireDate?: string | Date;
   trips?: TripRecord[];
 }
 
