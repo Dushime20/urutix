@@ -177,26 +177,6 @@ export const FleetDashboard: React.FC = () => {
     if (node) observer.current.observe(node);
   }, [loading]);
 
-  const handleExport = () => {
-    const exportFilters: any = {};
-    if (search) exportFilters.search = search;
-    if (filters.status) exportFilters.status = filters.status;
-    fleetApi.exportFleetData('csv', exportFilters)
-      .then((blob: Blob) => {
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'fleet-export.csv';
-        a.click();
-        window.URL.revokeObjectURL(url);
-      })
-      .catch((err: unknown) => console.error('Export failed:', err));
-  };
-
-  const handleBulkAction = (action: 'delete' | 'export' | 'update') => {
-    if (action === 'export') handleExport();
-  };
-
   const handleCreateFleetItem = useCallback(async (fleetData: any) => {
     try {
       let newFleetItem: LocalFleetItem;
@@ -637,7 +617,6 @@ export const FleetDashboard: React.FC = () => {
                   view={viewMode}
                   activeTab={activeTab as 'trucks' | 'drivers'}
                   onRowClick={setSelectedFleetItem}
-                  onBulkAction={handleBulkAction}
                   onEditFleetItem={handleEditFleetItem}
                   onDeleteFleetItem={handleDeleteFleetItem}
                 />

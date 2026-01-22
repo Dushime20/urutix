@@ -377,24 +377,6 @@ export interface FleetItem {
     };
   };
 
-  loadingCapabilities?: {
-    hasForklift?: boolean;
-    hasCrane?: boolean;
-    hasTailLift?: boolean;
-    hasSideLift?: boolean;
-    hasRamp?: boolean;
-    hasDockLeveler?: boolean;
-  };
-
-  securityFeatures?: {
-    hasGps?: boolean;
-    hasTracking?: boolean;
-    hasTemperatureAlerts?: boolean;
-    hasCargoMonitoring?: boolean;
-    hasAlarmSystem?: boolean;
-    hasCCTV?: boolean;
-    hasImmobilizer?: boolean;
-  };
   hasSideRails?: boolean;
   hasTarps?: boolean;
   hasStraps?: boolean;
