@@ -1,5 +1,5 @@
-import React from 'react';
-import { FaTruck, FaUser, FaMapMarkerAlt, FaPhone, FaEnvelope, FaEdit, FaTrash } from 'react-icons/fa';
+import React, { useState, useEffect } from 'react';
+import { FaTruck, FaUser, FaMapMarkerAlt, FaPhone, FaEnvelope, FaEdit, FaTrash, FaPlus, FaTimes, FaFileAlt, FaExternalLinkAlt, FaDownload } from 'react-icons/fa';
 import type { FleetItem } from '../../types/fleet';
 import { TranslatedText } from '../translated-text';
 import { useTranslation } from '../../hooks/useTranslation';
@@ -35,6 +35,30 @@ const FleetTableComp: React.FC<FleetTableProps> = ({
   const [loadingDocs, setLoadingDocs] = useState(false);
   const [uploadingDocFor, setUploadingDocFor] = useState<FleetItem | null>(null);
   const [truckLocationState, setTruckLocationState] = useState<FleetItem | null>(null);
+
+  // Helper function to safely extract address string from various possible structures
+  const getAddressString = (item: FleetItem): string => {
+    if (!item.currentLocation) return 'Unknown location';
+    
+    const loc = item.currentLocation;
+    
+    // If address is a string, return it
+    if (typeof loc.address === 'string') {
+      return loc.address;
+    }
+    
+    // If address is an object with its own address property
+    if (loc.address && typeof loc.address === 'object' && 'address' in (loc.address as any)) {
+      return String((loc.address as any).address) || 'Unknown location';
+    }
+    
+    // If currentLocation itself is the address string (edge case)
+    if (typeof loc === 'string') {
+      return loc;
+    }
+    
+    return 'Unknown location';
+  };
 
   // Fetch documents when viewing a driver
   useEffect(() => {
@@ -332,10 +356,10 @@ const FleetTableComp: React.FC<FleetTableProps> = ({
                   </>
                 )}
 
-                {item.currentLocation?.address && (
+                {item.currentLocation && (
                   <div className="flex items-center gap-2 text-sm text-gray-600">
                     <FaMapMarkerAlt className="w-4 h-4" />
-                    <span>{item.currentLocation.address}</span>
+                    <span>{getAddressString(item)}</span>
                   </div>
                 )}
 
@@ -417,19 +441,6 @@ const FleetTableComp: React.FC<FleetTableProps> = ({
                       <label className="text-sm font-medium text-gray-500">License Number</label>
                       <p className="text-base text-gray-900 mt-1">{viewingDriver.licenseNumber || '-'}</p>
                     </div>
-                  )}
-                  {/* Cargo Capabilities Display */}
-                  {item.cargoCapabilities && (
-                    <div className="text-sm text-gray-600">
-                      <span className="font-medium">Cargo Types:</span>
-                      <div className="flex flex-wrap gap-1 mt-1">
-                        {item.cargoCapabilities.supportedCargoTypes?.map((type: string, idx: number) => (
-                          <span key={idx} className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded">
-                            {type}
-                          </span>
-                        ))}
-                      </div>
-                    )}
                     {viewingDriver.contactInfo?.phone && (
                       <div>
                         <label className="text-sm font-medium text-gray-500">Phone</label>
@@ -452,7 +463,7 @@ const FleetTableComp: React.FC<FleetTableProps> = ({
                         <label className="text-sm font-medium text-gray-500">Assigned Truck</label>
                         <p className="text-base text-gray-900 mt-1 flex items-center gap-2">
                           <FaTruck className="text-gray-400" />
-                          {viewingDriver.currentTruck.licensePlate || viewingDriver.currentTruck.name || '-'}
+                          {viewingDriver.currentTruck.licensePlate || '-'}
                         </p>
                       </div>
                     )}
@@ -617,10 +628,10 @@ const FleetTableComp: React.FC<FleetTableProps> = ({
                   </>
                 )}
 
-                {item.currentLocation?.address && (
+                {item.currentLocation && (
                   <div className="flex items-center gap-2 text-gray-600">
                     <FaMapMarkerAlt className="w-3 h-3" />
-                    <span className="text-xs">{item.currentLocation.address}</span>
+                    <span className="text-xs">{getAddressString(item)}</span>
                   </div>
                 )}
               </div>
@@ -727,7 +738,7 @@ const FleetTableComp: React.FC<FleetTableProps> = ({
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center text-sm text-gray-900">
                       <FaMapMarkerAlt className="w-4 h-4 text-gray-400 mr-2" />
-                      {item.currentLocation?.address || 'Unknown location'}
+                      {getAddressString(item)}
                     </div>
                   </td>
                   {activeTab === 'trucks' ? (
