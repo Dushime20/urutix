@@ -57,7 +57,7 @@ export const FleetDashboard: React.FC = () => {
   const [filters, setFilters] = useState<FleetFiltersType>({ status: FleetStatus.IN_TRANSIT });
   const [search, setSearch] = useState('');
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'trucks' | 'drivers' | 'analytics' | 'safety' | 'financial' | 'routes'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'trucks' | 'drivers' | 'analytics' | 'safety' | 'financial' | 'routes' | 'matches'>('overview');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
 
   const observer = useRef<IntersectionObserver | null>(null);
@@ -119,7 +119,12 @@ export const FleetDashboard: React.FC = () => {
       type: 'truck',
       name,
       status,
-      currentLocation: t.currentLocation ? { coordinates: { coordinates: [] }, address: t.currentLocation } : undefined,
+      currentLocation: t.currentLocation ? { 
+        coordinates: { coordinates: [] }, 
+        address: typeof t.currentLocation === 'string' 
+          ? t.currentLocation 
+          : (t.currentLocation as any)?.address || 'Unknown'
+      } : undefined,
       createdAt: new Date(t.createdAt),
       updatedAt: new Date(t.updatedAt),
       licensePlate: t.plateNumber,
@@ -512,7 +517,14 @@ export const FleetDashboard: React.FC = () => {
                         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                       />
-                      {fleetItems.filter(i => i.currentLocation).map(item => (
+                      {fleetItems
+                        .filter(i => {
+                          const coords = i.currentLocation?.coordinates?.coordinates;
+                          return coords && coords.length >= 2 && 
+                            typeof coords[0] === 'number' && 
+                            typeof coords[1] === 'number';
+                        })
+                        .map(item => (
                         <Marker
                           key={item.id}
                           position={[
@@ -619,6 +631,7 @@ export const FleetDashboard: React.FC = () => {
                   onRowClick={setSelectedFleetItem}
                   onEditFleetItem={handleEditFleetItem}
                   onDeleteFleetItem={handleDeleteFleetItem}
+                  onRefresh={() => loadFleetItems(true)}
                 />
               )}
             </>

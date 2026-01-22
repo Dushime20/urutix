@@ -1053,13 +1053,6 @@ export class MatchingService {
         ownerRating: (truck as any).owner?.profile?.rating || truck.averageRating || 0,
         ownerVerified: (truck as any).owner?.status === 'ACTIVE',
         ownerCompany: (truck as any).owner?.profile?.companyName || null,
-        // Additional scoring factors
-        temperatureScore,
-        securityScore,
-        routeScore,
-        timeScore,
-        availabilityScore,
-        specialRequirementsScore,
         ...driverInfo,
       } as MatchResultDto;
     } catch (error) {
