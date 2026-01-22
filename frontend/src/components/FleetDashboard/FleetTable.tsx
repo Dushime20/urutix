@@ -1,13 +1,12 @@
-import React from 'react';
-import { FaTruck, FaUser, FaMapMarkerAlt, FaPhone, FaEnvelope, FaEdit, FaTrash } from 'react-icons/fa';
+import React, { useState, useEffect } from 'react';
+import { FaTruck, FaUser, FaMapMarkerAlt, FaPhone, FaEnvelope, FaEdit, FaTrash, FaTimes, FaFileAlt, FaExternalLinkAlt, FaDownload } from 'react-icons/fa';
 import type { FleetItem } from '../../types/fleet';
 import { TranslatedText } from '../translated-text';
 import { useTranslation } from '../../hooks/useTranslation';
 import { documentApi, type Document } from '../../services/documents/documentApi';
 import toast from 'react-hot-toast';
 import { createPortal } from 'react-dom';
-import DocumentUploadModal from '../documents/DocumentUploadModal';
-import TruckLocationModal from './TruckLocationModal';
+
 
 interface FleetTableProps {
   fleetItems: FleetItem[];
@@ -17,7 +16,6 @@ interface FleetTableProps {
   onRowClick: (item: FleetItem) => void;
   onEditFleetItem: (item: FleetItem) => void;
   onDeleteFleetItem: (itemId: string) => void;
-  onRefresh?: () => void;
 }
 
 const FleetTableComp: React.FC<FleetTableProps> = ({
@@ -27,14 +25,11 @@ const FleetTableComp: React.FC<FleetTableProps> = ({
   activeTab,
   onRowClick,
   onEditFleetItem,
-  onDeleteFleetItem,
-  onRefresh
+  onDeleteFleetItem
 }) => {
   const [viewingDriver, setViewingDriver] = useState<FleetItem | null>(null);
   const [driverDocuments, setDriverDocuments] = useState<Document[]>([]);
   const [loadingDocs, setLoadingDocs] = useState(false);
-  const [uploadingDocFor, setUploadingDocFor] = useState<FleetItem | null>(null);
-  const [truckLocationState, setTruckLocationState] = useState<FleetItem | null>(null);
 
   // Fetch documents when viewing a driver
   useEffect(() => {
@@ -81,37 +76,8 @@ const FleetTableComp: React.FC<FleetTableProps> = ({
     };
   }, [viewingDriver, activeTab]);
 
-  useEffect(() => {
-    setTruckLocationState(null);
-  }, [activeTab]);
 
 
-  const handleViewDriver = (driver: FleetItem) => {
-    if (activeTab === 'drivers') {
-      setViewingDriver(driver);
-    }
-  };
-
-  const handleAddDocument = (driver: FleetItem) => {
-    setUploadingDocFor(driver);
-  };
-
-  const handleDocumentUploadSuccess = () => {
-    // Refresh documents if viewing the same driver
-    if (viewingDriver && uploadingDocFor && viewingDriver.id === uploadingDocFor.id) {
-      const fetchDocs = async () => {
-        try {
-          const docs = await documentApi.getDocumentsByEntity('DRIVER', viewingDriver.id);
-          setDriverDocuments(docs);
-        } catch (error: any) {
-          console.error('Error refreshing documents:', error);
-        }
-      };
-      fetchDocs();
-    }
-    setUploadingDocFor(null);
-    toast.success('Document uploaded successfully');
-  };
 
   const handleDownloadDocument = async (doc: Document) => {
     try {
@@ -391,13 +357,6 @@ const FleetTableComp: React.FC<FleetTableProps> = ({
                   <p className="text-sm text-gray-600 mt-1">{viewingDriver.name}</p>
                 </div>
                 <div className="flex items-center gap-3">
-                  <button 
-                    onClick={() => handleAddDocument(viewingDriver)}
-                    className="flex items-center gap-2 px-3 py-1.5 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors"
-                  >
-                    <FaPlus className="w-3 h-3" />
-                    Add New
-                  </button>
                   <button onClick={() => setViewingDriver(null)} className="text-gray-400 hover:text-gray-600">
                     <FaTimes className="w-6 h-6" />
                   </button>
@@ -417,19 +376,6 @@ const FleetTableComp: React.FC<FleetTableProps> = ({
                       <label className="text-sm font-medium text-gray-500">License Number</label>
                       <p className="text-base text-gray-900 mt-1">{viewingDriver.licenseNumber || '-'}</p>
                     </div>
-                  )}
-                  {/* Cargo Capabilities Display */}
-                  {item.cargoCapabilities && (
-                    <div className="text-sm text-gray-600">
-                      <span className="font-medium">Cargo Types:</span>
-                      <div className="flex flex-wrap gap-1 mt-1">
-                        {item.cargoCapabilities.supportedCargoTypes?.map((type: string, idx: number) => (
-                          <span key={idx} className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded">
-                            {type}
-                          </span>
-                        ))}
-                      </div>
-                    )}
                     {viewingDriver.contactInfo?.phone && (
                       <div>
                         <label className="text-sm font-medium text-gray-500">Phone</label>
@@ -452,7 +398,7 @@ const FleetTableComp: React.FC<FleetTableProps> = ({
                         <label className="text-sm font-medium text-gray-500">Assigned Truck</label>
                         <p className="text-base text-gray-900 mt-1 flex items-center gap-2">
                           <FaTruck className="text-gray-400" />
-                          {viewingDriver.currentTruck.licensePlate || viewingDriver.currentTruck.name || '-'}
+                          {viewingDriver.currentTruck.licensePlate || '-'}
                         </p>
                       </div>
                     )}

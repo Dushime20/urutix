@@ -8,7 +8,6 @@ import { FleetFilters } from './FleetFilters';
 import { FleetModal } from './FleetModal';
 import { FleetSkeleton } from './FleetSkeleton';
 import { FleetTable } from './FleetTable';
-import { TruckMatches } from './TruckMatches';
 import { ErrorBoundary } from '../ErrorBoundary';
 import FleetFormStepper from './FleetFormStepper';
 import { SafetyManagement } from './SafetyManagement';
@@ -109,8 +108,6 @@ export const FleetDashboard: React.FC = () => {
       setShowForm(true);
       setFormMode('create');
       setEditingFleetItem(null);
-    } else if (location.pathname.includes('/matches')) {
-      setActiveTab('matches');
     }
   }, [location.pathname]);
 
@@ -593,8 +590,6 @@ export const FleetDashboard: React.FC = () => {
                 </div>
               </div>
             </div>
-          ) : activeTab === 'matches' ? (
-             <TruckMatches />
           ) : (
             <>
               <FleetFilters filters={filters} setFilters={setFilters} search={search} setSearch={setSearch} activeTab={activeTab} viewMode={viewMode} setViewMode={setViewMode} />
@@ -624,7 +619,6 @@ export const FleetDashboard: React.FC = () => {
                   onRowClick={setSelectedFleetItem}
                   onEditFleetItem={handleEditFleetItem}
                   onDeleteFleetItem={handleDeleteFleetItem}
-                  onRefresh={() => loadFleetItems(true)}
                 />
               )}
             </>
