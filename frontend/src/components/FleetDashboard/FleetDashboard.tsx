@@ -57,7 +57,7 @@ export const FleetDashboard: React.FC = () => {
   const [filters, setFilters] = useState<FleetFiltersType>({ status: FleetStatus.IN_TRANSIT });
   const [search, setSearch] = useState('');
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'trucks' | 'drivers' | 'analytics' | 'safety' | 'financial' | 'routes' | 'matches'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'trucks' | 'drivers' | 'analytics' | 'safety' | 'financial' | 'routes'>('overview');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
 
   const observer = useRef<IntersectionObserver | null>(null);
@@ -631,7 +631,6 @@ export const FleetDashboard: React.FC = () => {
                   onRowClick={setSelectedFleetItem}
                   onEditFleetItem={handleEditFleetItem}
                   onDeleteFleetItem={handleDeleteFleetItem}
-                  onRefresh={() => loadFleetItems(true)}
                 />
               )}
             </>
