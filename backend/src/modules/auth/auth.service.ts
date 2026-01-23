@@ -532,7 +532,7 @@ export class AuthService {
       tenantId: user.tenantId,
     };
 
-    const accessTokenExpiry = '15m';
+    const accessTokenExpiry = '24h'; // 24 hours session duration
     const refreshTokenExpiry = rememberMe ? '30d' : '7d';
 
     const [accessToken, refreshToken] = await Promise.all([
@@ -561,7 +561,7 @@ export class AuthService {
     return {
       accessToken,
       refreshToken,
-      expiresIn: 15 * 60, // 15 minutes in seconds
+      expiresIn: 24 * 60 * 60, // 24 hours in seconds
     };
   }
 

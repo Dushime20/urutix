@@ -1427,7 +1427,7 @@ export class EnhancedAuthService {
     };
 
     const accessExpiryTime: number =
-      this.configService.get('JWT_ACCESS_TOKEN_EXPIRY') || 15;
+      this.configService.get('JWT_ACCESS_TOKEN_EXPIRY') || 1440; // 1440 minutes = 24 hours
     const refreshExpiryTime: number =
       this.configService.get('JWT_REFRESH_TOKEN_EXPIRY') || 30;
     const refreshDefaultExpiryTime: number =
@@ -1489,7 +1489,7 @@ export class EnhancedAuthService {
           return {
             accessToken,
             refreshToken: newRefreshToken,
-            expiresIn: 15 * 60, // 15 minutes in seconds
+            expiresIn: 24 * 60 * 60, // 24 hours in seconds
           };
         } else {
           // Token doesn't exist, save it
@@ -1506,7 +1506,7 @@ export class EnhancedAuthService {
           return {
             accessToken,
             refreshToken,
-            expiresIn: 15 * 60, // 15 minutes in seconds
+            expiresIn: 24 * 60 * 60, // 24 hours in seconds
           };
         }
       } catch (error) {

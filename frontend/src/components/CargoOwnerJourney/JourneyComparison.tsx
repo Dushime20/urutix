@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import {
   Zap,
   Users,
@@ -352,8 +353,8 @@ export const JourneyComparison: React.FC<JourneyComparisonProps> = ({
     </div>
   );
 
-  return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
+  return createPortal(
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[99999] flex items-center justify-center p-4 overflow-y-auto">
       <div className="bg-white rounded-2xl shadow-2xl max-w-6xl w-full my-8">
         {/* Header */}
         <div className="p-6 border-b border-gray-100">
@@ -416,7 +417,8 @@ export const JourneyComparison: React.FC<JourneyComparisonProps> = ({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 

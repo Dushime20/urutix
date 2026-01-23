@@ -167,11 +167,15 @@ const EnhancedCargoForm: React.FC<EnhancedCargoFormProps> = ({
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Apply template data when initialData changes (for editing)
+  // Apply template data when initialData changes (for editing or continuing drafts)
   useEffect(() => {
-    console.log("🔄 Form useEffect triggered:", { isOpen, mode, hasInitialData: !!initialData });
-    if (initialData && mode === "edit") {
-      console.log("📝 Applying edit data to form:", initialData);
+    console.log("🔄 Form useEffect triggered:", { isOpen, mode, hasInitialData: !!initialData, initialDataId: initialData?.id });
+    
+    // Full data population for: edit mode OR create mode with existing cargo/draft (has id)
+    const shouldFullyPopulate = initialData && (mode === "edit" || initialData.id);
+    
+    if (shouldFullyPopulate) {
+      console.log("📝 Applying full cargo/draft data to form:", initialData);
       // Transform and apply all cargo data to form
       const transformedData: any = {
         ...initialData,
@@ -230,26 +234,6 @@ const EnhancedCargoForm: React.FC<EnhancedCargoFormProps> = ({
           longitude: initialData.deliveryLocation.longitude || 0,
         });
       }
-
-      // Apply AI suggestions if available
-      if (aiSuggestions) {
-        setSuggestions(aiSuggestions);
-        applyAISuggestions(aiSuggestions);
-      }
-    } else if (initialData && mode === "create") {
-      // For create mode with template (like from loadItem)
-      setFormData((prev) => ({
-        ...prev,
-        ...initialData,
-        loadType: initialData.loadType || prev.loadType,
-        equipmentType: initialData.equipmentType || prev.equipmentType,
-        visibility: initialData.visibility || prev.visibility,
-        unitsRequired:
-          initialData.unitsRequired !== undefined
-            ? initialData.unitsRequired
-            : prev.unitsRequired,
-        paymentTerms: initialData.paymentTerms || prev.paymentTerms,
-      }));
 
       // Apply AI suggestions if available
       if (aiSuggestions) {
@@ -580,7 +564,6 @@ const EnhancedCargoForm: React.FC<EnhancedCargoFormProps> = ({
     { id: "security", label: "Security & Insurance", icon: FaShieldAlt },
     { id: "route", label: "Route & Access", icon: FaLocationArrow },
     { id: "urgency", label: "Urgency & Timing", icon: FaClock },
-    { id: "matching", label: "Matching Criteria", icon: FaCogs },
     { id: "quality", label: "Quality & Inspection", icon: FaCameraRetro },
   ];
 
@@ -645,7 +628,9 @@ const EnhancedCargoForm: React.FC<EnhancedCargoFormProps> = ({
     }
   }, [formData, pickupLocation, deliveryLocation, onSaveDraft, mode]);
 
-  // Debounced auto-save
+  // Auto-save disabled - drafts are only saved when user clicks "Save Draft" button
+  // To re-enable auto-save, uncomment the useEffect below:
+  /*
   useEffect(() => {
     if (autoSaveTimeoutRef.current) {
       clearTimeout(autoSaveTimeoutRef.current);
@@ -665,6 +650,7 @@ const EnhancedCargoForm: React.FC<EnhancedCargoFormProps> = ({
       }
     };
   }, [formData, pickupLocation, deliveryLocation, handleAutoSave, mode, onSaveDraft]);
+  */
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -694,19 +680,14 @@ const EnhancedCargoForm: React.FC<EnhancedCargoFormProps> = ({
                 />
               </div>
               <div className="flex items-center justify-between text-xs text-gray-500">
-                {isAutoSaving ? (
-                  <span className="flex items-center gap-1">
-                    <div className="animate-spin rounded-full h-2.5 w-2.5 border-b border-primary-600"></div>
-                    Auto-saving...
-                  </span>
-                ) : draftSaved ? (
+                {draftSaved ? (
                   <span className="text-green-600 flex items-center gap-1">
                     <FaCheck className="w-2.5 h-2.5" />
                     Draft saved
                   </span>
                 ) : lastSaved ? (
                   <span>Last saved: {lastSaved.toLocaleTimeString()}</span>
-                ) : null}
+                ) : <span></span>}
                 <span>{sections.filter(s => completedSections[s.id]).length} of {sections.length} sections complete</span>
               </div>
             </div>

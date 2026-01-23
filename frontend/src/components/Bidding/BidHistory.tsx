@@ -198,12 +198,7 @@ const BidHistory: React.FC<BidHistoryProps> = ({ userRole }) => {
     );
   };
 
-  const formatCurrency = (amount: number, currency: string = 'USD') => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency,
-    }).format(amount);
-  };
+
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -404,7 +399,7 @@ const BidHistory: React.FC<BidHistoryProps> = ({ userRole }) => {
                           )}
                           <td className="px-4 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
                             <div className="text-xs sm:text-sm font-medium text-gray-900">
-                              {formatCurrency(bid.bidAmount, bid.bidCurrency)}
+                              {formatCurrencyUtil(bid.bidAmount, bid.bidCurrency)}
                             </div>
                             {bid.successProbability && (
                               <div className="text-xs sm:text-sm text-gray-500">
@@ -502,7 +497,7 @@ const BidHistory: React.FC<BidHistoryProps> = ({ userRole }) => {
                     <div className="flex items-center justify-between mb-2 pt-2 border-t border-gray-100">
                       <div>
                         <div className="text-xs text-gray-500">Bid Amount</div>
-                        <div className="text-sm font-semibold text-gray-900">{formatCurrency(bid.bidAmount, bid.bidCurrency)}</div>
+                        <div className="text-sm font-semibold text-gray-900">{formatCurrencyUtil(bid.bidAmount, bid.bidCurrency)}</div>
                         {bid.successProbability && (
                           <div className="text-xs text-gray-500">{bid.successProbability}% success</div>
                         )}
@@ -588,7 +583,7 @@ const BidHistory: React.FC<BidHistoryProps> = ({ userRole }) => {
                   <div>
                     <label className="block text-xs sm:text-sm font-medium text-gray-700">Bid Amount</label>
                     <p className="text-base sm:text-lg font-semibold text-gray-900 break-words">
-                      {formatCurrency(selectedBid.bidAmount, selectedBid.bidCurrency)}
+                      {formatCurrencyUtil(selectedBid.bidAmount, selectedBid.bidCurrency)}
                     </p>
                   </div>
                   <div>

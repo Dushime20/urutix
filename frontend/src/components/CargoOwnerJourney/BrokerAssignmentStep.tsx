@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X, User, DollarSign, Building2, Mail, CheckCircle, AlertCircle } from 'lucide-react';
 import { brokerAPI } from '@/services/brokerApi';
 import toast from 'react-hot-toast';
@@ -88,7 +89,7 @@ const BrokerAssignmentStep: React.FC<BrokerAssignmentStepProps> = ({
 
     setAssigning(true);
     try {
-      const response = await brokerAPI.assignBrokerToLoad(loadId, {
+      await brokerAPI.assignBrokerToLoad(loadId, {
         brokerId: selectedBrokerId,
         commissionRate,
       });
@@ -150,8 +151,8 @@ const BrokerAssignmentStep: React.FC<BrokerAssignmentStepProps> = ({
   if (!isOpen) return null;
 
   if (showConfirmation) {
-    return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[10000]">
+    return createPortal(
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[99999]">
         <div 
           className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto"
           onClick={(e) => e.stopPropagation()}
@@ -244,12 +245,13 @@ const BrokerAssignmentStep: React.FC<BrokerAssignmentStepProps> = ({
             </div>
           </div>
         </div>
-      </div>
+      </div>,
+      document.body
     );
   }
 
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[10000]" onClick={onClose}>
+  return createPortal(
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[99999]" onClick={onClose}>
       <div 
         className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
@@ -460,7 +462,8 @@ const BrokerAssignmentStep: React.FC<BrokerAssignmentStepProps> = ({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 

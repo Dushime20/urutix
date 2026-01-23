@@ -31,7 +31,6 @@ import {
   Target,
   Search,
   Filter,
-  Heart,
   MessageSquare,
   Award,
   CheckCircle,
@@ -49,6 +48,20 @@ import { useConfirmDialog } from '@/hooks/useConfirmDialog';
 import DocumentPreviewModal from '@/components/documents/DocumentPreviewModal';
 import DocumentUploadModal from '@/components/documents/DocumentUploadModal';
 import { useAuth } from '@/contexts/AuthContext';
+import {
+  getCargoTypeIcon,
+  getStatusColor,
+  getStatusDisplayName,
+  getCargoTypeDisplayName,
+  formatWeight,
+  formatVolume,
+  formatCurrency,
+  getUrgencyColor,
+  getSpecialRequirements,
+  getEnrichedLocationDetails,
+  getLocationNameFromCoordinates,
+  getAddressDisplay
+} from '@/pages/dashboard/cargos/list/utils';
 
 interface CargoDetailsModalProps {
   isOpen: boolean;
@@ -56,311 +69,71 @@ interface CargoDetailsModalProps {
   cargoId: string | null;
 }
 
+import { createPortal } from 'react-dom';
+
 const CargoDetailsModal = ({ isOpen, onClose, cargoId }: CargoDetailsModalProps) => {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState<'overview' | 'tracking' | 'documents' | 'history' | 'matching'>('overview');
-  const [matches, setMatches] = useState<any[]>([]);
-  const [matchesLoading, setMatchesLoading] = useState(false);
-  const [matchesError, setMatchesError] = useState<string | null>(null);
   const { confirm, DialogComponent } = useConfirmDialog();
-  const [previewDoc, setPreviewDoc] = useState<{ id: string; title: string; fileName: string } | null>(null);
+  const [activeTab, setActiveTab] = useState('overview');
   const [showUploadModal, setShowUploadModal] = useState(false);
+  const [previewDoc, setPreviewDoc] = useState<{id: string, title: string, fileName: string} | null>(null);
 
-  const { data: cargoResponse, isLoading, error } = useQuery({
+  const { data: response, isLoading, error } = useQuery({
     queryKey: ['cargo', cargoId],
+    queryFn: () => loadsAPI.getById(cargoId!),
+    enabled: !!cargoId,
+  });
+  const cargo = response?.data;
+
+  const { data: documents = [], isLoading: documentsLoading, refetch: refetchDocuments } = useQuery({
+    queryKey: ['documents', cargoId],
     queryFn: async () => {
-      try {
-        // Try to get enriched location data first
-        const enrichedResponse = await loadsAPI.getCargoWithEnrichedLocations(cargoId!);
-        console.log('📦 Enriched cargo data:', enrichedResponse);
-        return enrichedResponse;
-      } catch (error) {
-        console.log('⚠️ Enriched data not available, falling back to regular cargo data');
-        // Fallback to regular cargo data
-        return loadsAPI.getById(cargoId!);
-      }
-    },
-    enabled: !!cargoId && isOpen,
-  });
-
-  // Extract cargo from response - handle both enriched and regular response structures
-  type CargoWithEnriched = Cargo & { enrichedLocations?: any[] };
-  const cargo: CargoWithEnriched | null = (() => {
-    if (!cargoResponse?.data) return null;
-    
-    const responseData = cargoResponse.data;
-    
-    if (responseData.cargo) {
-      return { ...responseData.cargo, enrichedLocations: responseData.enrichedLocations };
-    }
-    if (responseData.load) {
-      return { ...responseData.load, enrichedLocations: responseData.enrichedLocations };
-    }
-    if (responseData.id) {
-      // Direct cargo object
-      return { ...responseData, enrichedLocations: responseData.enrichedLocations };
-    }
-    return null;
-  })();
-
-  // Fetch matches when matching tab is active and cargo is loaded
-  useEffect(() => {
-    const fetchMatches = async () => {
-      if (activeTab === 'matching' && cargo?.id && !matchesLoading) {
-        setMatchesLoading(true);
-        setMatchesError(null);
+        if (!cargoId) return [];
         try {
-          console.log('🔍 Fetching matches for cargo:', cargo.id);
-          const response = await matchingAPI.findMatches({
-            loadId: cargo.id,
-            algorithm: 'WEIGHTED_SCORE',
-            maxDistance: 1000, // 1000km max distance
-            minRating: 0.0, // No minimum rating requirement
-            limit: 20, // Top 20 matches
-            includeDrivers: true,
-          });
-          
-          console.log('✅ Matches received:', response.data);
-          // Handle both response formats: { data: [...] } or { matches: [...] }
-          const matchesData = response.data?.data || response.data?.matches || response.data || [];
-          setMatches(matchesData);
-        } catch (error: any) {
-          console.error('❌ Error fetching matches:', error);
-          console.error('❌ Error response:', error.response);
-          console.error('❌ Error response data:', error.response?.data);
-          console.error('❌ Error response status:', error.response?.status);
-          console.error('❌ Error message:', error.message);
-          console.error('❌ Full error:', JSON.stringify(error, null, 2));
-          
-          // Check if it's a "not found" or "no matches" scenario vs actual error
-          const status = error.response?.status;
-          const errorData = error.response?.data;
-          
-          // If it's a 404 (load not found) or empty matches array, treat as no matches
-          if (status === 404 || (status === 200 && Array.isArray(errorData?.data) && errorData.data.length === 0)) {
-            console.log('ℹ️ No matches found (not an error)');
-            setMatches([]);
-            setMatchesError(null); // Clear error, show "no matches" message instead
-          } else {
-            // Actual error occurred
-            const errorMessage = errorData?.message || 
-                                errorData?.error || 
-                                error.message || 
-                                'Failed to fetch truck matches. Please try again.';
-            setMatchesError(errorMessage);
-            setMatches([]);
-          }
-        } finally {
-          setMatchesLoading(false);
+            // Check if documentApi exists and has getDocuments
+            if (documentApi && typeof documentApi.getDocuments === 'function') {
+                return await documentApi.getDocuments(cargoId);
+            }
+            return [];
+        } catch (e) {
+            console.error(e);
+            return [];
         }
-      }
-    };
-
-    fetchMatches();
-  }, [activeTab, cargo?.id]);
-
-  // Fetch documents for the cargo
-  const { data: documentsData, isLoading: documentsLoading, refetch: refetchDocuments } = useQuery({
-    queryKey: ['cargoDocuments', cargoId],
-    queryFn: () => documentApi.getDocumentsByEntity('CARGO', cargoId!),
-    enabled: !!cargoId && isOpen && activeTab === 'documents',
+    },
+    enabled: !!cargoId,
   });
 
-  const documents = (documentsData as unknown as Document[]) || [];
-
-  const getStatusColor = (status: string) => {
-    if (!status) return 'bg-gray-100 text-gray-800';
-    
-    const statusStr = String(status).toUpperCase();
-    
-    switch (statusStr) {
-      case 'PUBLISHED':
-        return 'bg-blue-100 text-blue-800';
-      case 'ASSIGNED':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'IN_TRANSIT':
-        return 'bg-purple-100 text-purple-800';
-      case 'DELIVERED':
-        return 'bg-green-100 text-green-800';
-      case 'COMPLETED':
-        return 'bg-green-100 text-green-800';
-      case 'CANCELLED':
-        return 'bg-red-100 text-red-800';
-      case 'DRAFT':
-        return 'bg-gray-100 text-gray-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getStatusDisplayName = (status: string) => {
-    if (!status) return 'Unknown';
-    
-    const statusStr = String(status).toUpperCase();
-    
-    switch (statusStr) {
-      case 'PUBLISHED':
-        return 'Published';
-      case 'ASSIGNED':
-        return 'Assigned';
-      case 'IN_TRANSIT':
-        return 'In Transit';
-      case 'DELIVERED':
-        return 'Delivered';
-      case 'COMPLETED':
-        return 'Completed';
-      case 'CANCELLED':
-        return 'Cancelled';
-      case 'DRAFT':
-        return 'Draft';
-      default:
-        return String(status) || 'Unknown';
-    }
-  };
-
-  const getCargoTypeIcon = (cargoType: string) => {
-    if (!cargoType) return <Package className="w-5 h-5 text-gray-500" />;
-    
-    const cargoTypeStr = String(cargoType).toUpperCase();
-    
-    switch (cargoTypeStr) {
-      case 'FRAGILE':
-        return <AlertTriangle className="w-5 h-5 text-orange-500" />;
-      case 'HAZARDOUS':
-        return <Shield className="w-5 h-5 text-red-500" />;
-      case 'REFRIGERATED':
-        return <Thermometer className="w-5 h-5 text-blue-500" />;
-      case 'LIQUID':
-        return <Package className="w-5 h-5 text-purple-500" />;
-      case 'OVERSIZED':
-        return <Truck className="w-5 h-5 text-indigo-500" />;
-      case 'VALUABLE':
-        return <Star className="w-5 h-5 text-yellow-500" />;
-      default:
-        return <Package className="w-5 h-5 text-gray-500" />;
-    }
-  };
-
-  const getCargoTypeDisplayName = (cargoType: string) => {
-    if (!cargoType) return 'General Cargo';
-    
-    const cargoTypeStr = String(cargoType).toUpperCase();
-    
-    switch (cargoTypeStr) {
-      case 'GENERAL':
-        return 'General Cargo';
-      case 'FRAGILE':
-        return 'Fragile Items';
-      case 'HAZARDOUS':
-        return 'Hazardous Materials';
-      case 'REFRIGERATED':
-        return 'Refrigerated Goods';
-      case 'LIQUID':
-        return 'Liquid Cargo';
-      case 'OVERSIZED':
-        return 'Oversized Load';
-      case 'VALUABLE':
-        return 'Valuable Items';
-      default:
-        return 'General Cargo';
-    }
-  };
-
-  const formatCurrency = (amount: number | string, currency: string = 'USD') => {
-    const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
-    if (isNaN(numAmount)) return '$0';
-    
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: currency,
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(numAmount);
-  };
-
-  const formatWeight = (weight: number | string) => {
-    const numWeight = typeof weight === 'string' ? parseFloat(weight) : weight;
-    if (isNaN(numWeight)) return '0 kg';
-    
-    if (numWeight >= 1000) {
-      return `${(numWeight / 1000).toFixed(1)} tons`;
-    }
-    return `${numWeight} kg`;
-  };
-
-  const formatVolume = (volume: number | string) => {
-    const numVolume = typeof volume === 'string' ? parseFloat(volume) : volume;
-    if (isNaN(numVolume)) return '0 L';
-    
-    if (numVolume >= 1000) {
-      return `${(numVolume / 1000).toFixed(1)} m³`;
-    }
-    return `${numVolume} L`;
-  };
-
-  const getSpecialRequirements = (cargo: Cargo) => {
-    const requirements = [];
-    
-    if (cargo.isFragile) requirements.push('Fragile');
-    if (cargo.isHazardous) requirements.push('Hazardous');
-    if (cargo.requiresRefrigeration) requirements.push('Refrigerated');
-    if (cargo.requiresForklift) requirements.push('Forklift');
-    if (cargo.requiresCrane) requirements.push('Crane');
-    if (cargo.requiresLoadingDock) requirements.push('Loading Dock');
-    if (cargo.isTimeCritical) requirements.push('Time Critical');
-    if (cargo.requiresGpsMonitoring) requirements.push('GPS Monitoring');
-    if (cargo.requiresTemperatureMonitoring) requirements.push('Temperature Monitoring');
-    if (cargo.requiresEscortVehicle) requirements.push('Escort Vehicle');
-    if (cargo.requiresLowClearanceRoute) requirements.push('Low Clearance Route');
-    
-    return requirements;
-  };
-
-  const getEnrichedLocationDetails = (cargo: CargoWithEnriched) => {
-    if (!cargo.enrichedLocations || cargo.enrichedLocations.length === 0) {
-      return null;
-    }
-
-    const pickupLocation = cargo.enrichedLocations.find((loc: any) => loc.type === 'PICKUP');
-    const deliveryLocation = cargo.enrichedLocations.find((loc: any) => loc.type === 'DELIVERY');
-
-    return {
-      pickup: pickupLocation?.locationData || null,
-      delivery: deliveryLocation?.locationData || null
-    };
-  };
-
-  const getUrgencyColor = (urgencyLevel: string) => {
-    if (!urgencyLevel) return 'bg-gray-100 text-gray-800';
-    
-    const urgencyStr = String(urgencyLevel).toUpperCase();
-    
-    switch (urgencyStr) {
-      case 'CRITICAL':
-        return 'bg-red-100 text-red-800';
-      case 'HIGH':
-        return 'bg-orange-100 text-orange-800';
-      case 'NORMAL':
-        return 'bg-blue-100 text-blue-800';
-      case 'LOW':
-        return 'bg-green-100 text-green-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
+  const { data: matches = [], isLoading: matchesLoading } = useQuery({
+    queryKey: ['matches', cargoId],
+    queryFn: async () => {
+        if (!cargoId) return [];
+        try {
+            // Use matchingAPI if available
+            if (matchingAPI && typeof matchingAPI.findMatches === 'function') {
+                 const res = await matchingAPI.findMatches({ loadId: cargoId });
+                 return res.data || [];
+            }
+            return [];
+        } catch (e) {
+            console.error(e);
+            return [];
+        }
+    },
+    enabled: !!cargoId && activeTab === 'matching',
+  });
 
   if (!isOpen) return null;
 
-  return (
+  return createPortal(
     <>
       <div 
-        className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
-      onClick={onClose}
-    >
-      <div 
-        className="bg-white rounded-lg shadow-xl max-w-6xl w-full max-h-[90vh] overflow-hidden"
-        onClick={(e) => e.stopPropagation()}
+        className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[99999] p-4"
+        onClick={onClose}
       >
+        <div 
+          className="bg-white rounded-lg shadow-xl max-w-6xl w-full max-h-[90vh] overflow-hidden"
+          onClick={(e) => e.stopPropagation()}
+        >
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50">
           <div className="flex items-center space-x-4">
@@ -1764,7 +1537,8 @@ const CargoDetailsModal = ({ isOpen, onClose, cargoId }: CargoDetailsModalProps)
 
     {/* Confirmation Dialog */}
     {DialogComponent}
-  </>
+  </>,
+  document.body
 );
 };
 

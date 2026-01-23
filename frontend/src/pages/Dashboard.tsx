@@ -57,6 +57,7 @@ import OnboardingTour from '../components/Onboarding/OnboardingTour';
 import { useOnboardingStore, useShouldShowOnboarding } from '../stores/onboardingStore';
 import VoiceCargoInput from '../components/VoiceInput/VoiceCargoInput';
 import CameraDocumentScanner from '../components/Camera/CameraDocumentScanner';
+import { formatNumber, formatCurrency } from '../utils/formatNumber';
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -111,6 +112,18 @@ const CargoOwnerDashboard = () => {
   // Advanced features state
   const [showVoiceInput, setShowVoiceInput] = useState(false);
   const [showDocumentScanner, setShowDocumentScanner] = useState(false);
+
+
+  // Handle cargo row click - view if CREATED, edit if DRAFT
+  const handleCargoRowClick = (cargo: any) => {
+    if (cargo.status === 'DRAFT') {
+      // Navigate to edit the draft
+      navigate(`/dashboard/cargos/create`, { state: { editCargo: cargo } });
+    } else if (cargo.status === 'CREATED') {
+      // Navigate to view the cargo
+      navigate(`/dashboard/cargos/list?view=${cargo.id}`);
+    }
+  };
 
   // Bidding and matching data
   const [biddingData, setBiddingData] = useState({
@@ -381,11 +394,12 @@ const CargoOwnerDashboard = () => {
       }));
   }, [cargos]);
 
-  // Get recent cargo activity for "transactions" section
+  // Get recent cargo activity for "transactions" section - filter for CREATED and DRAFT only
   const recentCargoActivity = useMemo(() => {
     return cargos
+      .filter(c => c.status === 'CREATED' || c.status === 'DRAFT')
       .sort((a, b) => new Date(b.updatedAt || b.createdAt).getTime() - new Date(a.updatedAt || a.createdAt).getTime())
-      .slice(0, 4)
+      .slice(0, 6)
       .map((cargo) => {
         const date = new Date(cargo.updatedAt || cargo.createdAt);
         const statusColors: Record<string, string> = {
@@ -393,6 +407,7 @@ const CargoOwnerDashboard = () => {
           'IN_TRANSIT': 'bg-blue-100 text-blue-700',
           'ASSIGNED': 'bg-purple-100 text-purple-700',
           'PUBLISHED': 'bg-yellow-100 text-yellow-700',
+          'CREATED': 'bg-blue-100 text-blue-700',
           'DRAFT': 'bg-gray-100 text-gray-700',
         };
         return {
@@ -405,6 +420,7 @@ const CargoOwnerDashboard = () => {
           status: cargo.status || 'DRAFT',
           logo: cargo.title?.[0]?.toUpperCase() || 'C',
           statusColor: statusColors[cargo.status] || 'bg-gray-100 text-gray-700',
+          fullCargo: cargo, // Store full cargo data for click handlers
         };
       });
   }, [cargos]);
@@ -482,7 +498,158 @@ const CargoOwnerDashboard = () => {
 
   const renderOverview = () => (
     <div className="space-y-6 md:space-y-8">
-      {/* 1. Advanced Features Section - Premium Styling */}
+      {/* 1. Performance Overview - MOVED TO TOP */}
+      <section>
+        <div className="flex items-center gap-2 mb-4">
+          <Activity className="w-5 h-5 text-gray-600" />
+          <h2 className="text-lg font-bold text-gray-900">Performance Overview</h2>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Total Cargos */}
+          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+            <div className="flex justify-between items-start mb-4">
+              <div>
+                <p className="text-sm font-medium text-gray-500">Total Cargos</p>
+                <h3 className="text-2xl font-bold text-gray-900 mt-1">{stats.totalCargos}</h3>
+              </div>
+              <div className="p-2 bg-gray-50 rounded-lg">
+                <Package className="w-5 h-5 text-gray-600" />
+              </div>
+            </div>
+            {stats.growthRate > 0 && (
+              <div className="flex items-center text-sm text-green-600 font-medium">
+                <TrendingUpIcon className="w-4 h-4 mr-1" />
+                <span>+{formatNumber(stats.growthRate)}% growth</span>
+              </div>
+            )}
+          </div>
+
+          {/* Active Cargos */}
+          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+            <div className="flex justify-between items-start mb-4">
+              <div>
+                <p className="text-sm font-medium text-gray-500">Active Cargos</p>
+                <h3 className="text-2xl font-bold text-gray-900 mt-1">{stats.activeCargos}</h3>
+              </div>
+              <div className="p-2 bg-gray-50 rounded-lg">
+                <Truck className="w-5 h-5 text-gray-600" />
+              </div>
+            </div>
+            <div className="flex items-center text-sm text-sky-600 font-medium">
+              <Activity className="w-4 h-4 mr-1" />
+              <span>Live Operations</span>
+            </div>
+          </div>
+
+          {/* Completed Cargos */}
+          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+            <div className="flex justify-between items-start mb-4">
+              <div>
+                <p className="text-sm font-medium text-gray-500">Completed</p>
+                <h3 className="text-2xl font-bold text-gray-900 mt-1">{stats.completedCargos}</h3>
+              </div>
+              <div className="p-2 bg-gray-50 rounded-lg">
+                <CheckCircle className="w-5 h-5 text-gray-600" />
+              </div>
+            </div>
+            <div className="w-full bg-gray-100 rounded-full h-1.5 mt-2">
+              <div className="bg-green-500 h-1.5 rounded-full" style={{ width: stats.totalCargos > 0 ? `${(stats.completedCargos / stats.totalCargos) * 100}% ` : '0%' }}></div>
+            </div>
+            <p className="text-xs text-gray-500 mt-2">{formatNumber(stats.completionRate)}% completion rate</p>
+          </div>
+
+          {/* Total Value */}
+          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+            <div className="flex justify-between items-start mb-4">
+              <div>
+                <p className="text-sm font-medium text-gray-500">Total Value</p>
+                <h3 className="text-2xl font-bold text-gray-900 mt-1">
+                  {loading ? '...' : formatCurrency(stats.totalValue)}
+                </h3>
+              </div>
+              <div className="p-2 bg-gray-50 rounded-lg">
+                <DollarSign className="w-5 h-5 text-gray-600" />
+              </div>
+            </div>
+            <div className="flex items-center text-sm text-emerald-600 font-medium">
+              <Wallet className="w-4 h-4 mr-1" />
+              <span>Revenue</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 2. Recent Activity - MOVED TO SECOND */}
+      <section className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+        <div className="p-6 border-b border-gray-100 flex justify-between items-center">
+          <div className="flex items-center gap-2">
+            <h3 className="font-bold text-gray-900">Recent Activity</h3>
+            <div className="p-2 rounded-lg bg-gray-50">
+              <Clock className="w-5 h-5 text-gray-600" />
+            </div>
+          </div>
+          <button onClick={() => setActiveTab('All Cargos')} className="text-sm text-violet-600 hover:text-violet-700 font-medium">View All</button>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm text-left">
+            <thead className="bg-gray-50 text-gray-500 font-medium border-b border-gray-100">
+              <tr>
+                <th className="px-6 py-3">Cargo</th>
+                <th className="px-6 py-3">Type</th>
+                <th className="px-6 py-3">Date</th>
+                <th className="px-6 py-3">Amount</th>
+                <th className="px-6 py-3">Status</th>
+                <th className="px-6 py-3">Action</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {recentCargoActivity.length === 0 ? (
+                <tr><td colSpan={6} className="px-6 py-8 text-center text-gray-400">No drafts or created cargos yet</td></tr>
+              ) : (
+                recentCargoActivity.map(tx => (
+                  <tr 
+                    key={tx.id} 
+                    className="hover:bg-blue-50 transition-colors cursor-pointer group"
+                    onClick={() => handleCargoRowClick(tx.fullCargo)}
+                  >
+                    <td className="px-6 py-4 font-medium text-gray-900 group-hover:text-blue-700">{tx.name}</td>
+                    <td className="px-6 py-4 text-gray-500">{tx.type}</td>
+                    <td className="px-6 py-4 text-gray-500">{tx.date}</td>
+                    <td className="px-6 py-4 font-medium text-gray-900">{formatCurrency(tx.amount)}</td>
+                    <td className="px-6 py-4">
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${tx.statusColor}`}>
+                        {tx.status}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="text-sm text-blue-600 group-hover:text-blue-800 font-medium flex items-center gap-1">
+                        {tx.status === 'DRAFT' ? (
+                          <>
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
+                            Continue
+                          </>
+                        ) : (
+                          <>
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
+                            View
+                          </>
+                        )}
+                      </span>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      {/* 3. Advanced Features Section - Premium Styling */}
       <section aria-label="Advanced Features">
         <div className="flex items-center gap-3 mb-6">
           <h2 className="text-xl md:text-2xl font-black text-[#0f172a] tracking-tight">Advanced Features</h2>
@@ -624,88 +791,6 @@ const CargoOwnerDashboard = () => {
         </section>
       )}
 
-
-      {/* 4. Key Performance Indicators */}
-      <section>
-        <div className="flex items-center gap-2 mb-4">
-          <Activity className="w-5 h-5 text-gray-600" />
-          <h2 className="text-lg font-bold text-gray-900">Performance Overview</h2>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {/* Total Cargos */}
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-            <div className="flex justify-between items-start mb-4">
-              <div>
-                <p className="text-sm font-medium text-gray-500">Total Cargos</p>
-                <h3 className="text-2xl font-bold text-gray-900 mt-1">{stats.totalCargos}</h3>
-              </div>
-              <div className="p-2 bg-gray-50 rounded-lg">
-                <Package className="w-5 h-5 text-gray-600" />
-              </div>
-            </div>
-            {stats.growthRate > 0 && (
-              <div className="flex items-center text-sm text-green-600 font-medium">
-                <TrendingUpIcon className="w-4 h-4 mr-1" />
-                <span>+{stats.growthRate}% growth</span>
-              </div>
-            )}
-          </div>
-
-          {/* Active Cargos */}
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-            <div className="flex justify-between items-start mb-4">
-              <div>
-                <p className="text-sm font-medium text-gray-500">Active Cargos</p>
-                <h3 className="text-2xl font-bold text-gray-900 mt-1">{stats.activeCargos}</h3>
-              </div>
-              <div className="p-2 bg-gray-50 rounded-lg">
-                <Truck className="w-5 h-5 text-gray-600" />
-              </div>
-            </div>
-            <div className="flex items-center text-sm text-sky-600 font-medium">
-              <Activity className="w-4 h-4 mr-1" />
-              <span>Live Operations</span>
-            </div>
-          </div>
-
-          {/* Completed Cargos */}
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-            <div className="flex justify-between items-start mb-4">
-              <div>
-                <p className="text-sm font-medium text-gray-500">Completed</p>
-                <h3 className="text-2xl font-bold text-gray-900 mt-1">{stats.completedCargos}</h3>
-              </div>
-              <div className="p-2 bg-gray-50 rounded-lg">
-                <CheckCircle className="w-5 h-5 text-gray-600" />
-              </div>
-            </div>
-            <div className="w-full bg-gray-100 rounded-full h-1.5 mt-2">
-              <div className="bg-green-500 h-1.5 rounded-full" style={{ width: stats.totalCargos > 0 ? `${(stats.completedCargos / stats.totalCargos) * 100}% ` : '0%' }}></div>
-            </div>
-            <p className="text-xs text-gray-500 mt-2">{Math.round(stats.completionRate)}% completion rate</p>
-          </div>
-
-          {/* Total Value */}
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-            <div className="flex justify-between items-start mb-4">
-              <div>
-                <p className="text-sm font-medium text-gray-500">Total Value</p>
-                <h3 className="text-2xl font-bold text-gray-900 mt-1">
-                  {loading ? '...' : `$${(Number(stats.totalValue) || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })} `}
-                </h3>
-              </div>
-              <div className="p-2 bg-gray-50 rounded-lg">
-                <DollarSign className="w-5 h-5 text-gray-600" />
-              </div>
-            </div>
-            <div className="flex items-center text-sm text-emerald-600 font-medium">
-              <Wallet className="w-4 h-4 mr-1" />
-              <span>Revenue</span>
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* 3. Main Activity Area */}
       <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Chart */}
@@ -782,7 +867,7 @@ const CargoOwnerDashboard = () => {
               </div>
               <div className="mt-2 text-xs text-gray-600 flex justify-between">
                 <span>Pending: {biddingData.pendingBids}</span>
-                <span>Avg: ${Math.round(biddingData.averageBidAmount)}</span>
+                <span>Avg: {formatCurrency(biddingData.averageBidAmount)}</span>
               </div>
             </div>
 
@@ -797,7 +882,7 @@ const CargoOwnerDashboard = () => {
                 <span className="text-xs text-gray-500">new</span>
               </div>
               <div className="mt-2 text-xs text-gray-600 flex justify-between">
-                <span>Success: {Math.round(matchingData.matchSuccessRate)}%</span>
+                <span>Success: {formatNumber(matchingData.matchSuccessRate)}%</span>
               </div>
             </div>
           </div>
@@ -821,7 +906,7 @@ const CargoOwnerDashboard = () => {
               <div className="text-xl font-bold text-gray-900 truncate">
                 {(() => {
                   const balance = (Number(stats.totalValue) || 0) * 0.15;
-                  return `$${balance.toLocaleString(undefined, { maximumFractionDigits: 0 })} `;
+                  return formatCurrency(balance);
                 })()}
               </div>
             </div>
@@ -834,57 +919,12 @@ const CargoOwnerDashboard = () => {
               </div>
               <div className="text-xl font-bold text-gray-900">{paymentData.pendingPayments}</div>
               <div className="mt-2 text-xs text-gray-600">
-                Total: ${paymentData.totalAmount.toLocaleString()}
+                Total: {formatCurrency(paymentData.totalAmount)}
               </div>
             </div>
           </div>
         </section>
       </div>
-
-      {/* 5. Recent Transactions */}
-      <section className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-        <div className="p-6 border-b border-gray-100 flex justify-between items-center">
-          <div className="flex items-center gap-2">
-            <h3 className="font-bold text-gray-900">Recent Activity</h3>
-            <div className="p-2 rounded-lg bg-gray-50">
-              <Clock className="w-5 h-5 text-gray-600" />
-            </div>
-          </div>
-          <button onClick={() => setActiveTab('All Cargos')} className="text-sm text-violet-600 hover:text-violet-700 font-medium">View All</button>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm text-left">
-            <thead className="bg-gray-50 text-gray-500 font-medium border-b border-gray-100">
-              <tr>
-                <th className="px-6 py-3">Cargo</th>
-                <th className="px-6 py-3">Type</th>
-                <th className="px-6 py-3">Date</th>
-                <th className="px-6 py-3">Amount</th>
-                <th className="px-6 py-3">Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {recentCargoActivity.length === 0 ? (
-                <tr><td colSpan={5} className="px-6 py-8 text-center text-gray-400">No recent activity</td></tr>
-              ) : (
-                recentCargoActivity.map(tx => (
-                  <tr key={tx.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-4 font-medium text-gray-900">{tx.name}</td>
-                    <td className="px-6 py-4 text-gray-500">{tx.type}</td>
-                    <td className="px-6 py-4 text-gray-500">{tx.date}</td>
-                    <td className="px-6 py-4 font-medium text-gray-900">${Number(tx.amount).toLocaleString()}</td>
-                    <td className="px-6 py-4">
-                      <span className={`px - 2 py - 1 rounded - full text - xs font - medium ${tx.statusColor} `}>
-                        {tx.status}
-                      </span>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </section>
     </div>
   );
 

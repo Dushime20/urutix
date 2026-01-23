@@ -24,7 +24,6 @@ const QuickActionFlow: React.FC<QuickActionFlowProps> = ({ isOpen, onClose, onCo
   const handleCargoCreated = (cargoId: string) => {
     setCreatedCargoId(cargoId);
     setCurrentStep('choose-journey');
-    toast.success('Cargo created! Now choose your journey.');
   };
 
   const handleJourneySelection = async (journey: 'smart' | 'bid') => {

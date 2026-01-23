@@ -1,14 +1,13 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import {
   HelpCircle,
-  TrendingUp,
   Clock,
   DollarSign,
   Target,
   Users,
   CheckCircle,
   XCircle,
-  AlertCircle,
   ArrowRight,
   ArrowLeft,
   Zap,
@@ -205,8 +204,8 @@ export const JourneyDecisionHelper: React.FC<JourneyDecisionHelperProps> = ({
     const recommendation = calculateRecommendation();
     const JourneyIcon = recommendation.journey === 'smart-matching' ? Zap : Users;
 
-    return (
-      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    return createPortal(
+      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[99999] flex items-center justify-center p-4">
         <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
           {/* Header */}
           <div className="bg-gradient-to-r from-violet-600 to-purple-600 p-6 text-white rounded-t-2xl">
@@ -314,14 +313,15 @@ export const JourneyDecisionHelper: React.FC<JourneyDecisionHelperProps> = ({
             </button>
           </div>
         </div>
-      </div>
+      </div>,
+      document.body
     );
   }
 
   const Icon = currentQuestion.icon;
 
-  return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+  return createPortal(
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[99999] flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="p-6 border-b border-gray-100">
@@ -418,7 +418,8 @@ export const JourneyDecisionHelper: React.FC<JourneyDecisionHelperProps> = ({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 

@@ -1,3 +1,5 @@
+import { formatCurrency as formatCurrencyUtil } from './formatNumber';
+
 /**
  * Payment calculation utilities for advance payments
  */
@@ -70,13 +72,12 @@ export function calculateAdvancePayment(
 /**
  * Format currency amount
  */
+
+/**
+ * Format currency amount
+ */
 export function formatCurrency(amount: number, currency: string = 'USD'): string {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency,
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(amount);
+  return formatCurrencyUtil(amount, currency);
 }
 
 /**

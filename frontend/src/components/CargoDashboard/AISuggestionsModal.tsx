@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { FaTimes, FaLightbulb, FaBox, FaRoute, FaTruck, FaThermometerHalf, FaShieldAlt, FaClock, FaDollarSign, FaCheck } from 'react-icons/fa';
+import { createPortal } from 'react-dom';
+import { FaTimes, FaLightbulb, FaBox, FaRoute, FaTruck, FaClock, FaDollarSign, FaCheck } from 'react-icons/fa';
 
 interface AISuggestion {
   id: string;
@@ -169,8 +170,8 @@ const AISuggestionsModal: React.FC<AISuggestionsModalProps> = ({
 
   if (!isOpen) return null;
 
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+  return createPortal(
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[99999] p-4">
       <div className="bg-white rounded-2xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="p-6 border-b border-gray-100">
@@ -336,7 +337,8 @@ const AISuggestionsModal: React.FC<AISuggestionsModalProps> = ({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 

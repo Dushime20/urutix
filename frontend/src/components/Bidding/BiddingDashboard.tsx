@@ -6,6 +6,8 @@ import BidHistory from './BidHistory';
 import CreateAuction from './CreateAuction';
 import BidAnalytics from './BidAnalytics';
 
+import { formatCurrency } from '../../utils/formatNumber';
+
 interface BiddingDashboardProps {
   userRole: 'CARGO_OWNER' | 'TRUCK_OWNER';
 }
@@ -76,12 +78,7 @@ const BiddingDashboard: React.FC<BiddingDashboardProps> = ({ userRole }) => {
             <FaDollarSign className="text-white" size={16} />
           </div>
           <h5 className="text-lg sm:text-xl font-bold text-gray-900 mb-0.5 break-words">
-            {(() => {
-              const value = stats.totalValue;
-              if (value >= 1000000) return `$${(value / 1000000).toFixed(1)}M`;
-              if (value >= 1000) return `$${(value / 1000).toFixed(1)}K`;
-              return `$${value.toLocaleString()}`;
-            })()}
+            {formatCurrency(stats.totalValue)}
           </h5>
           <p className="text-xs text-gray-600">Total Value</p>
         </div>

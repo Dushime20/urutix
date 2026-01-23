@@ -44,6 +44,25 @@ const CreateAuction: React.FC = () => {
     setLoadingCargos(true);
     try {
       const response = await loadsAPI.getAll();
+      
+      // Fetch existing auctions to filter out cargos that are already being auctioned
+      let activeAuctionLoadIds = new Set<string>();
+      try {
+        const auctionsResponse = await biddingAPI.getAuctions({ limit: 1000 });
+        const auctions = auctionsResponse.data || [];
+        // Filter for auctions that are active, scheduled, or paused
+        // We assume CLOSED or CANCELLED auctions allow the cargo to be re-auctioned if the load status permits
+        auctions.forEach((auction: any) => {
+          if (['ACTIVE', 'SCHEDULED', 'PAUSED'].includes(auction.status)) {
+            activeAuctionLoadIds.add(auction.loadId);
+          }
+        });
+      } catch (err) {
+        console.error('Error loading auctions for filtering:', err);
+        // Continue without filtering if auctions fail to load, or handle error?
+        // Ideally we should warn, but for now we proceed.
+      }
+
       // Handle different response structures
       let cargosList: Cargo[] = [];
       if (response.data?.items) {
@@ -61,6 +80,9 @@ const CreateAuction: React.FC = () => {
       // - Brokers should see loads assigned to them
       // - Cargo Owners should see loads NOT assigned to a broker (broker manages those)
       const availableCargos = cargosList.filter((cargo: Cargo) => {
+        // First check if cargo is already being auctioned
+        if (activeAuctionLoadIds.has(cargo.id)) return false;
+
         const validStatus = cargo.status === 'CREATED' || cargo.status === 'PUBLISHED' || !cargo.status;
         
         if (!validStatus) return false;
