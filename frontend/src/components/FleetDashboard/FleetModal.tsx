@@ -149,31 +149,30 @@ const FleetModalComp: React.FC<FleetModalProps> = ({
         </div>
 
         {/* Dimensional Capacities */}
-        {/* Dimensional Capacities */}
-        {(fleetItem.cargoCapabilities.maxDimensions?.length || fleetItem.cargoCapabilities.maxDimensions?.width ||
-          fleetItem.cargoCapabilities.maxDimensions?.height || fleetItem.cargoCapabilities.maxVolume) && (
+        {(fleetItem.cargoCapabilities?.maxDimensions?.length || fleetItem.cargoCapabilities?.maxDimensions?.width ||
+          fleetItem.cargoCapabilities?.maxDimensions?.height || fleetItem.cargoCapabilities?.maxVolume) && (
             <div>
               <h4 className="text-sm font-medium text-gray-700 mb-2">Dimensional Capacities</h4>
               <div className="grid grid-cols-2 gap-4 text-sm">
-                {fleetItem.cargoCapabilities.maxDimensions?.length && (
+                {fleetItem.cargoCapabilities?.maxDimensions?.length && (
                   <div>
                     <span className="text-gray-600">Max Length:</span>
                     <span className="ml-2 font-medium">{fleetItem.cargoCapabilities.maxDimensions.length}m</span>
                   </div>
                 )}
-                {fleetItem.cargoCapabilities.maxDimensions?.width && (
+                {fleetItem.cargoCapabilities?.maxDimensions?.width && (
                   <div>
                     <span className="text-gray-600">Max Width:</span>
                     <span className="ml-2 font-medium">{fleetItem.cargoCapabilities.maxDimensions.width}m</span>
                   </div>
                 )}
-                {fleetItem.cargoCapabilities.maxDimensions?.height && (
+                {fleetItem.cargoCapabilities?.maxDimensions?.height && (
                   <div>
                     <span className="text-gray-600">Max Height:</span>
                     <span className="ml-2 font-medium">{fleetItem.cargoCapabilities.maxDimensions.height}m</span>
                   </div>
                 )}
-                {fleetItem.cargoCapabilities.maxVolume && (
+                {fleetItem.cargoCapabilities?.maxVolume && (
                   <div>
                     <span className="text-gray-600">Max Volume:</span>
                     <span className="ml-2 font-medium">{fleetItem.cargoCapabilities.maxVolume}m³</span>

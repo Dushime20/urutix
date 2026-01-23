@@ -12,7 +12,7 @@ export class RolesGuard implements CanActivate {
     const user = req.user;
     if (
       !user ||
-      !['SUPER_ADMIN', 'ADMIN', 'TENANT_ADMIN'].includes(user.role)
+      !['SUPER_ADMIN', 'ADMIN', 'TENANT_ADMIN', 'TRUCK_OWNER', 'CARGO_OWNER'].includes(user.role)
     ) {
       throw new ForbiddenException('Access denied: Admins only');
     }

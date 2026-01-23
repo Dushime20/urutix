@@ -439,6 +439,7 @@ function App() {
         <Toaster
           position="bottom-right"
           toastOptions={{ duration: 2000 }}
+          containerClassName="!z-[99999]"
         />
       </I18nProvider>
     </QueryClientProvider>

@@ -2,13 +2,14 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import { Icon } from 'leaflet';
 import { FaExclamationTriangle, FaTruck, FaUser, FaDollarSign, FaGasPump, FaBolt, FaMapMarkedAlt, FaStar } from 'react-icons/fa';
+import { DetailedErrorBoundary } from '../DetailedErrorBoundary';
 import { FiLayers, FiZap, FiNavigation, FiTrendingUp } from 'react-icons/fi';
 import { CheckCircle } from 'lucide-react';
 import { FleetFilters } from './FleetFilters';
 import { FleetModal } from './FleetModal';
 import { FleetSkeleton } from './FleetSkeleton';
 import { FleetTable } from './FleetTable';
-import { ErrorBoundary } from '../ErrorBoundary';
+
 import FleetFormStepper from './FleetFormStepper';
 import { SafetyManagement } from './SafetyManagement';
 import { FinancialManagement } from './FinancialManagement';
@@ -44,6 +45,8 @@ const fleetIcon = new Icon({
   popupAnchor: [1, -34],
   shadowSize: [41, 41],
 });
+
+
 
 export const FleetDashboard: React.FC = () => {
   const location = useLocation();
@@ -298,12 +301,9 @@ export const FleetDashboard: React.FC = () => {
   const utilization = trucks.length > 0 ? Math.round((inTransit / trucks.length) * 100) : 0;
 
   return (
-    <ErrorBoundary>
+    <DetailedErrorBoundary>
       <div className="min-h-screen bg-gray-50">
-
-
         <DashboardHeader />
-
 
         <div className="bg-gradient-to-br from-white via-gray-50 to-blue-50/30 shadow-sm border-b border-gray-100">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -657,6 +657,6 @@ export const FleetDashboard: React.FC = () => {
         <DashboardFooter />
       </div >
       {DialogComponent}
-    </ErrorBoundary >
+    </DetailedErrorBoundary >
   );
 }; 

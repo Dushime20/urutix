@@ -125,7 +125,7 @@ const ContractAcceptanceModal: React.FC<ContractAcceptanceModalProps> = ({
 
   const cargoOwnerName = contract.cargoOwner?.profile?.companyName ||
     (contract.cargoOwner?.profile?.firstName && contract.cargoOwner?.profile?.lastName
-      ? `${contract.cargoOwner.profile.firstName} ${contract.cargoOwner.profile.lastName}`
+      ? `${contract.cargoOwner?.profile?.firstName} ${contract.cargoOwner?.profile?.lastName}`
       : contract.cargoOwner?.email || 'Cargo Owner');
 
   return (
@@ -174,7 +174,7 @@ const ContractAcceptanceModal: React.FC<ContractAcceptanceModalProps> = ({
               </h3>
               <p className="text-sm text-gray-700">{cargoOwnerName}</p>
               {contract.cargoOwner?.email && (
-                <p className="text-xs text-gray-500 mt-1">{contract.cargoOwner.email}</p>
+                <p className="text-xs text-gray-500 mt-1">{contract.cargoOwner?.email}</p>
               )}
             </div>
 

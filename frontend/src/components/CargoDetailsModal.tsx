@@ -709,7 +709,7 @@ const CargoDetailsModal = ({ isOpen, onClose, cargoId }: CargoDetailsModalProps)
                                   
                                   {cargo.pickupLocation?.coordinates && (
                                     <div className="text-xs text-gray-500">
-                                      Coordinates: {cargo.pickupLocation.coordinates.latitude.toFixed(4)}, {cargo.pickupLocation.coordinates.longitude.toFixed(4)}
+                                      Coordinates: {cargo.pickupLocation?.coordinates?.latitude?.toFixed(4)}, {cargo.pickupLocation?.coordinates?.longitude?.toFixed(4)}
                                     </div>
                                   )}
                                 </div>
@@ -739,7 +739,7 @@ const CargoDetailsModal = ({ isOpen, onClose, cargoId }: CargoDetailsModalProps)
                                   
                                   {cargo.deliveryLocation?.coordinates && (
                                     <div className="text-xs text-gray-500">
-                                      Coordinates: {cargo.deliveryLocation.coordinates.latitude.toFixed(4)}, {cargo.deliveryLocation.coordinates.longitude.toFixed(4)}
+                                      Coordinates: {cargo.deliveryLocation?.coordinates?.latitude?.toFixed(4)}, {cargo.deliveryLocation?.coordinates?.longitude?.toFixed(4)}
                                     </div>
                                   )}
                                 </div>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { FaUser, FaPlus, FaList, FaUserCheck, FaSpinner, FaThumbsUp, FaGift, FaChartLine, FaSync } from 'react-icons/fa';
+import { FaUser, FaPlus, FaList, FaUserCheck, FaThumbsUp, FaGift, FaChartLine, FaSync } from 'react-icons/fa';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { fleetApi } from '../services/fleetApi';
@@ -70,11 +70,7 @@ const UnifiedDriverManagement: React.FC = () => {
     setActiveTab('add-driver');
   };
 
-  const handleEditDriver = useCallback((driver: Driver) => {
-    setEditingDriver(driver);
-    setShowDriverForm(true);
-    setActiveTab('add-driver');
-  }, []);
+
 
   const handleDriverFormClose = () => {
     setShowDriverForm(false);
@@ -87,7 +83,7 @@ const UnifiedDriverManagement: React.FC = () => {
   const handleDriverFormSubmit = async (data: any) => {
     try {
       let driverId: string;
-      
+
       if (editingDriver) {
         await fleetApi.updateDriver(editingDriver.id, data);
         driverId = editingDriver.id;
@@ -101,7 +97,7 @@ const UnifiedDriverManagement: React.FC = () => {
       // Upload documents if any are provided
       if (data.documents && Array.isArray(data.documents) && data.documents.length > 0) {
         toast.loading(`Uploading ${data.documents.length} document(s)...`);
-        
+
         for (const doc of data.documents) {
           try {
             await documentApi.createDocument(
@@ -109,7 +105,7 @@ const UnifiedDriverManagement: React.FC = () => {
                 entityType: 'DRIVER',
                 entityId: driverId,
                 documentType: doc.documentType,
-                category: 'DRIVER',
+                category: 'LICENSE',
                 title: doc.title,
                 description: doc.description || '',
                 expiryDate: doc.expiryDate || undefined,
@@ -122,7 +118,7 @@ const UnifiedDriverManagement: React.FC = () => {
             toast.error(`Failed to upload ${doc.title}`);
           }
         }
-        
+
         toast.dismiss();
         toast.success('All documents uploaded successfully!');
       }
@@ -458,52 +454,59 @@ const UnifiedDriverManagement: React.FC = () => {
       <div className="bg-white rounded-lg border border-gray-200">
         {/* Tab Content */}
         <div className="p-6">
-        {activeTab === 'add-driver' && (
-          <div>
-            {!showDriverForm ? (
-              <div className="text-center py-12">
-                <FaUser className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                <h3 className="mb-2">Add New Driver</h3>
-                <p className="text-gray-600 mb-6">Click the button below to start adding a new driver to your fleet</p>
-                <button
-                  onClick={handleCreateDriver}
-                  className="px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors flex items-center gap-2 mx-auto"
-                >
-                  <FaPlus className="w-4 h-4" />
-                  Add Driver
-                </button>
-              </div>
-            ) : null}
-            <FleetFormStepper
-              isOpen={showDriverForm}
-              onClose={handleDriverFormClose}
-              onSubmit={handleDriverFormSubmit}
-              initialData={editingDriver}
-              mode={editingDriver ? 'edit' : 'create'}
-              activeTab="drivers"
-            />
-          </div>
-        )}
+          {activeTab === 'add-driver' && (
+            <div>
+              {!showDriverForm ? (
+                <div className="text-center py-12">
+                  <FaUser className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                  <h3 className="mb-2">Add New Driver</h3>
+                  <p className="text-gray-600 mb-6">Click the button below to start adding a new driver to your fleet</p>
+                  <button
+                    onClick={handleCreateDriver}
+                    className="px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors flex items-center gap-2 mx-auto"
+                  >
+                    <FaPlus className="w-4 h-4" />
+                    Add Driver
+                  </button>
+                </div>
+              ) : null}
+              <FleetFormStepper
+                isOpen={showDriverForm}
+                onClose={handleDriverFormClose}
+                onSubmit={handleDriverFormSubmit}
+                initialData={editingDriver ? {
+                  ...editingDriver,
+                  type: 'driver',
+                  name: `${editingDriver.firstName} ${editingDriver.lastName}`.trim() || 'Unknown Driver',
+                  status: editingDriver.status || 'AVAILABLE',
+                  createdAt: new Date(), // Fallback
+                  updatedAt: new Date() // Fallback
+                } as any : undefined}
+                mode={editingDriver ? 'edit' : 'create'}
+                activeTab="drivers"
+              />
+            </div>
+          )}
 
-        {activeTab === 'my-drivers' && (
-          <DriversList onAddDriver={handleCreateDriver} refreshTrigger={driversListRefreshKey} />
-        )}
+          {activeTab === 'my-drivers' && (
+            <DriversList onAddDriver={handleCreateDriver} refreshTrigger={driversListRefreshKey} />
+          )}
 
-        {activeTab === 'assignments' && (
-          <DriverAssignments />
-        )}
+          {activeTab === 'assignments' && (
+            <DriverAssignments />
+          )}
 
-        {activeTab === 'ratings' && (
-          <UserRatings />
-        )}
+          {activeTab === 'ratings' && (
+            <UserRatings />
+          )}
 
-        {activeTab === 'rewards' && (
-          <UserRewards />
-        )}
+          {activeTab === 'rewards' && (
+            <UserRewards />
+          )}
 
-        {activeTab === 'scoring' && (
-          <UserScoring />
-        )}
+          {activeTab === 'scoring' && (
+            <UserScoring />
+          )}
         </div>
       </div>
 
@@ -513,7 +516,14 @@ const UnifiedDriverManagement: React.FC = () => {
           isOpen={showDriverForm}
           onClose={handleDriverFormClose}
           onSubmit={handleDriverFormSubmit}
-          initialData={editingDriver}
+          initialData={editingDriver ? {
+            ...editingDriver,
+            type: 'driver',
+            name: `${editingDriver.firstName} ${editingDriver.lastName}`.trim() || 'Unknown Driver',
+            status: editingDriver.status || 'AVAILABLE',
+            createdAt: new Date(), // Fallback
+            updatedAt: new Date() // Fallback
+          } as any : undefined}
           mode={editingDriver ? 'edit' : 'create'}
           activeTab="drivers"
         />

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { FaTruck, FaPlus, FaRoute, FaList, FaSpinner, FaEye, FaMapMarkerAlt, FaTimesCircle, FaSync, FaSearch } from 'react-icons/fa';
+import { FaTruck, FaPlus, FaRoute, FaList, FaSpinner, FaEye, FaMapMarkerAlt, FaSync, FaSearch } from 'react-icons/fa';
 import { TrucksList } from '../components/FleetDashboard/TrucksList';
 import FleetFormStepper from '../components/FleetDashboard/FleetFormStepper';
 import { fleetApi } from '../services/fleetApi';
@@ -7,9 +7,10 @@ import { tripsAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import toast from 'react-hot-toast';
 import { cn } from '../utils/cn';
+import { DetailedErrorBoundary } from '../components/DetailedErrorBoundary';
 
 const UnifiedFleetManagement: React.FC = () => {
-  const { user } = useAuth();
+  const { user: _user } = useAuth(); // Keep for potential future use or context check
   const [activeTab, setActiveTab] = useState<'add-truck' | 'my-trucks' | 'active-trips' | 'view-trucks'>('my-trucks');
   const [showTruckForm, setShowTruckForm] = useState(false);
   const [editingTruck, setEditingTruck] = useState<any>(null);
@@ -19,6 +20,9 @@ const UnifiedFleetManagement: React.FC = () => {
   const [loadingTrucks, setLoadingTrucks] = useState(false);
   const [trucksListRefreshKey, setTrucksListRefreshKey] = useState(0);
   const [viewTrucksSearch, setViewTrucksSearch] = useState('');
+
+  // ... (rest of the file)
+
 
   // Load active trips
   const loadActiveTrips = useCallback(async () => {
@@ -35,23 +39,23 @@ const UnifiedFleetManagement: React.FC = () => {
           console.warn('Active trips endpoint not available (404), using fallback with status filter');
           try {
             // Try with IN_PROGRESS status first
-            const response = await tripsAPI.getAll({ 
+            const response = await tripsAPI.getAll({
               status: 'IN_PROGRESS',
-              limit: 100 
+              limit: 100
             });
             let allTrips = response.data?.data || response.data?.trips || response.data || [];
-            
+
             // If response is paginated, extract trips array
             if (allTrips && !Array.isArray(allTrips) && allTrips.trips) {
               allTrips = allTrips.trips;
             }
-            
+
             // Filter for active statuses (handle various status formats)
-            const activeTripsData = Array.isArray(allTrips) 
+            const activeTripsData = Array.isArray(allTrips)
               ? allTrips.filter((trip: any) => {
-                  const status = (trip.status || '').toUpperCase().replace(/\s+/g, '_');
-                  return ['IN_PROGRESS', 'IN_TRANSIT', 'ACTIVE', 'ONGOING', 'IN_TRANSIT'].includes(status);
-                })
+                const status = (trip.status || '').toUpperCase().replace(/\s+/g, '_');
+                return ['IN_PROGRESS', 'IN_TRANSIT', 'ACTIVE', 'ONGOING', 'IN_TRANSIT'].includes(status);
+              })
               : [];
             setActiveTrips(activeTripsData);
           } catch (fallbackError: any) {
@@ -114,11 +118,7 @@ const UnifiedFleetManagement: React.FC = () => {
     setActiveTab('add-truck');
   };
 
-  const handleEditTruck = (truck: any) => {
-    setEditingTruck(truck);
-    setShowTruckForm(true);
-    setActiveTab('add-truck');
-  };
+
 
   const handleTruckFormClose = () => {
     setShowTruckForm(false);
@@ -420,243 +420,245 @@ const UnifiedFleetManagement: React.FC = () => {
       )}
 
       {activeTab === 'my-trucks' && (
-        <TrucksList onAddTruck={handleCreateTruck} refreshTrigger={trucksListRefreshKey} />
+        <DetailedErrorBoundary>
+          <TrucksList onAddTruck={handleCreateTruck} refreshTrigger={trucksListRefreshKey} />
+        </DetailedErrorBoundary>
       )}
 
       {activeTab === 'view-trucks' && (
         <div>
-              <div className="mb-4 flex items-center justify-between gap-4">
-                <h2>View Trucks</h2>
-                <div className="flex items-center gap-3">
-                  {/* Search Box */}
-                  <div className="relative">
-                    <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                    <input
-                      type="text"
-                      placeholder="Search by plate number..."
-                      value={viewTrucksSearch}
-                      onChange={(e) => setViewTrucksSearch(e.target.value)}
-                      className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent w-64"
-                    />
-                  </div>
-                  <button
-                    onClick={loadTrucks}
-                    className="px-5 py-2.5 bg-primary-600 text-white rounded-lg hover:bg-primary-700 active:bg-primary-800 transition-all duration-200 flex items-center gap-2.5 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-md font-medium text-sm"
-                    disabled={loadingTrucks}
-                  >
-                    {loadingTrucks ? (
-                      <>
-                        <FaSpinner className="w-4 h-4 animate-spin" />
-                        <span>Refreshing...</span>
-                      </>
-                    ) : (
-                      <>
-                        <FaSync className="w-4 h-4" />
-                        <span>Refresh</span>
-                      </>
-                    )}
-                  </button>
-                </div>
+          <div className="mb-4 flex items-center justify-between gap-4">
+            <h2>View Trucks</h2>
+            <div className="flex items-center gap-3">
+              {/* Search Box */}
+              <div className="relative">
+                <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <input
+                  type="text"
+                  placeholder="Search by plate number..."
+                  value={viewTrucksSearch}
+                  onChange={(e) => setViewTrucksSearch(e.target.value)}
+                  className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent w-64"
+                />
               </div>
+              <button
+                onClick={loadTrucks}
+                className="px-5 py-2.5 bg-primary-600 text-white rounded-lg hover:bg-primary-700 active:bg-primary-800 transition-all duration-200 flex items-center gap-2.5 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-md font-medium text-sm"
+                disabled={loadingTrucks}
+              >
+                {loadingTrucks ? (
+                  <>
+                    <FaSpinner className="w-4 h-4 animate-spin" />
+                    <span>Refreshing...</span>
+                  </>
+                ) : (
+                  <>
+                    <FaSync className="w-4 h-4" />
+                    <span>Refresh</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
 
-              {loadingTrucks ? (
-                <div className="text-center py-12">
-                  <FaSpinner className="w-8 h-8 text-primary-600 animate-spin mx-auto mb-4" />
-                  <p className="text-gray-600">Loading trucks...</p>
-                </div>
-              ) : trucks.length === 0 ? (
-                <div className="text-center py-12 bg-gray-50 rounded-lg">
-                  <FaTruck className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">No Trucks Found</h3>
-                  <p className="text-gray-600">You don't have any trucks in your fleet yet</p>
-                </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="border-b border-gray-200">
-                        <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Plate Number</th>
-                        <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Truck Type</th>
-                        <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Max Weight</th>
-                        <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Current Location</th>
+          {loadingTrucks ? (
+            <div className="text-center py-12">
+              <FaSpinner className="w-8 h-8 text-primary-600 animate-spin mx-auto mb-4" />
+              <p className="text-gray-600">Loading trucks...</p>
+            </div>
+          ) : trucks.length === 0 ? (
+            <div className="text-center py-12 bg-gray-50 rounded-lg">
+              <FaTruck className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">No Trucks Found</h3>
+              <p className="text-gray-600">You don't have any trucks in your fleet yet</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-gray-200">
+                    <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Plate Number</th>
+                    <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Truck Type</th>
+                    <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Max Weight</th>
+                    <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Current Location</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {trucks
+                    .filter((truck) => {
+                      if (!viewTrucksSearch) return true;
+                      const searchLower = viewTrucksSearch.toLowerCase();
+                      return (
+                        truck.plateNumber?.toLowerCase().includes(searchLower) ||
+                        truck.truckType?.toLowerCase().includes(searchLower) ||
+                        truck.capacityWeight?.toString().includes(searchLower) ||
+                        (typeof truck.currentLocation === 'string'
+                          ? truck.currentLocation.toLowerCase().includes(searchLower)
+                          : truck.currentLocation?.address?.toLowerCase().includes(searchLower))
+                      );
+                    })
+                    .map((truck) => (
+                      <tr
+                        key={truck.id}
+                        className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
+                      >
+                        <td className="py-3 px-4">
+                          <div className="flex items-center gap-2">
+                            <FaTruck className="w-4 h-4 text-gray-400" />
+                            <span className="font-medium text-gray-900">{truck.plateNumber || 'N/A'}</span>
+                          </div>
+                        </td>
+                        <td className="py-3 px-4">
+                          <span className="text-gray-700">
+                            {truck.truckType ? truck.truckType.replace(/_/g, ' ') : 'N/A'}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4">
+                          <span className="text-gray-700">
+                            {truck.capacityWeight
+                              ? `${Number(truck.capacityWeight).toLocaleString()} kg`
+                              : 'N/A'}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4">
+                          <div className="flex items-center gap-2">
+                            <FaMapMarkerAlt className="w-4 h-4 text-gray-400" />
+                            <span className="text-gray-700">
+                              {truck.currentLocation
+                                ? (typeof truck.currentLocation === 'string'
+                                  ? truck.currentLocation
+                                  : truck.currentLocation.address || 'N/A')
+                                : 'Not specified'}
+                            </span>
+                          </div>
+                        </td>
                       </tr>
-                    </thead>
-                    <tbody>
-                      {trucks
-                        .filter((truck) => {
-                          if (!viewTrucksSearch) return true;
-                          const searchLower = viewTrucksSearch.toLowerCase();
-                          return (
-                            truck.plateNumber?.toLowerCase().includes(searchLower) ||
-                            truck.truckType?.toLowerCase().includes(searchLower) ||
-                            truck.capacityWeight?.toString().includes(searchLower) ||
-                            (typeof truck.currentLocation === 'string' 
-                              ? truck.currentLocation.toLowerCase().includes(searchLower)
-                              : truck.currentLocation?.address?.toLowerCase().includes(searchLower))
-                          );
-                        })
-                        .map((truck) => (
-                        <tr
-                          key={truck.id}
-                          className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
-                        >
-                          <td className="py-3 px-4">
-                            <div className="flex items-center gap-2">
-                              <FaTruck className="w-4 h-4 text-gray-400" />
-                              <span className="font-medium text-gray-900">{truck.plateNumber || 'N/A'}</span>
-                            </div>
-                          </td>
-                          <td className="py-3 px-4">
-                            <span className="text-gray-700">
-                              {truck.truckType ? truck.truckType.replace(/_/g, ' ') : 'N/A'}
-                            </span>
-                          </td>
-                          <td className="py-3 px-4">
-                            <span className="text-gray-700">
-                              {truck.capacityWeight 
-                                ? `${Number(truck.capacityWeight).toLocaleString()} kg`
-                                : 'N/A'}
-                            </span>
-                          </td>
-                          <td className="py-3 px-4">
-                            <div className="flex items-center gap-2">
-                              <FaMapMarkerAlt className="w-4 h-4 text-gray-400" />
-                              <span className="text-gray-700">
-                                {truck.currentLocation 
-                                  ? (typeof truck.currentLocation === 'string' 
-                                      ? truck.currentLocation 
-                                      : truck.currentLocation.address || 'N/A')
-                                  : 'Not specified'}
-                              </span>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                      {trucks.filter((truck) => {
-                        if (!viewTrucksSearch) return true;
-                        const searchLower = viewTrucksSearch.toLowerCase();
-                        return (
-                          truck.plateNumber?.toLowerCase().includes(searchLower) ||
-                          truck.truckType?.toLowerCase().includes(searchLower) ||
-                          truck.capacityWeight?.toString().includes(searchLower) ||
-                          (typeof truck.currentLocation === 'string' 
-                            ? truck.currentLocation.toLowerCase().includes(searchLower)
-                            : truck.currentLocation?.address?.toLowerCase().includes(searchLower))
-                        );
-                      }).length === 0 && viewTrucksSearch && (
-                        <tr>
-                          <td colSpan={4} className="py-8 text-center text-gray-500">
-                            No trucks found matching "{viewTrucksSearch}"
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              )}
+                    ))}
+                  {trucks.filter((truck) => {
+                    if (!viewTrucksSearch) return true;
+                    const searchLower = viewTrucksSearch.toLowerCase();
+                    return (
+                      truck.plateNumber?.toLowerCase().includes(searchLower) ||
+                      truck.truckType?.toLowerCase().includes(searchLower) ||
+                      truck.capacityWeight?.toString().includes(searchLower) ||
+                      (typeof truck.currentLocation === 'string'
+                        ? truck.currentLocation.toLowerCase().includes(searchLower)
+                        : truck.currentLocation?.address?.toLowerCase().includes(searchLower))
+                    );
+                  }).length === 0 && viewTrucksSearch && (
+                      <tr>
+                        <td colSpan={4} className="py-8 text-center text-gray-500">
+                          No trucks found matching "{viewTrucksSearch}"
+                        </td>
+                      </tr>
+                    )}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       )}
 
       {activeTab === 'active-trips' && (
-            <div>
-              <div className="mb-4 flex items-center justify-between">
-                <h2>Active Trips</h2>
-                <button
-                  onClick={loadActiveTrips}
-                  className="px-4 py-2.5 bg-primary-600 text-white rounded-lg hover:bg-primary-700 active:bg-primary-800 transition-all duration-200 flex items-center gap-2 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-md font-medium text-sm"
-                  disabled={loadingTrips}
-                >
-                  {loadingTrips ? (
-                    <>
-                      <FaSpinner className="w-4 h-4 animate-spin" />
-                      <span>Refreshing...</span>
-                    </>
-                  ) : (
-                    <>
-                      <FaSync className="w-4 h-4" />
-                      <span>Refresh</span>
-                    </>
-                  )}
-                </button>
-              </div>
-
+        <div>
+          <div className="mb-4 flex items-center justify-between">
+            <h2>Active Trips</h2>
+            <button
+              onClick={loadActiveTrips}
+              className="px-4 py-2.5 bg-primary-600 text-white rounded-lg hover:bg-primary-700 active:bg-primary-800 transition-all duration-200 flex items-center gap-2 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-md font-medium text-sm"
+              disabled={loadingTrips}
+            >
               {loadingTrips ? (
-                <div className="text-center py-12">
-                  <FaSpinner className="w-8 h-8 text-primary-600 animate-spin mx-auto mb-4" />
-                  <p className="text-gray-600">Loading active trips...</p>
-                </div>
-              ) : activeTrips.length === 0 ? (
-                <div className="text-center py-12 bg-gray-50 rounded-lg">
-                  <FaRoute className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">No Active Trips</h3>
-                  <p className="text-gray-600">You don't have any active trips at the moment</p>
-                </div>
+                <>
+                  <FaSpinner className="w-4 h-4 animate-spin" />
+                  <span>Refreshing...</span>
+                </>
               ) : (
-                <div className="space-y-4">
-                  {activeTrips.map((trip: any) => (
-                    <div
-                      key={trip.id}
-                      className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow"
-                    >
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-3 mb-3">
-                            <h3 className="text-lg font-semibold text-gray-900">
-                              {trip.tripNumber || `Trip ${trip.id?.substring(0, 8)}`}
-                            </h3>
-                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${getTripStatusColor(trip.status)}`}>
-                              {trip.status || 'IN_PROGRESS'}
+                <>
+                  <FaSync className="w-4 h-4" />
+                  <span>Refresh</span>
+                </>
+              )}
+            </button>
+          </div>
+
+          {loadingTrips ? (
+            <div className="text-center py-12">
+              <FaSpinner className="w-8 h-8 text-primary-600 animate-spin mx-auto mb-4" />
+              <p className="text-gray-600">Loading active trips...</p>
+            </div>
+          ) : activeTrips.length === 0 ? (
+            <div className="text-center py-12 bg-gray-50 rounded-lg">
+              <FaRoute className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">No Active Trips</h3>
+              <p className="text-gray-600">You don't have any active trips at the moment</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {activeTrips.map((trip: any) => (
+                <div
+                  key={trip.id}
+                  className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow"
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-3">
+                        <h3 className="text-lg font-semibold text-gray-900">
+                          {trip.tripNumber || `Trip ${trip.id?.substring(0, 8)}`}
+                        </h3>
+                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${getTripStatusColor(trip.status)}`}>
+                          {trip.status || 'IN_PROGRESS'}
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                        {trip.origin && (
+                          <div className="flex items-start gap-2">
+                            <span className="text-gray-500 min-w-[80px]">Origin:</span>
+                            <span className="text-gray-900">{trip.origin}</span>
+                          </div>
+                        )}
+                        {trip.destination && (
+                          <div className="flex items-start gap-2">
+                            <span className="text-gray-500 min-w-[80px]">Destination:</span>
+                            <span className="text-gray-900">{trip.destination}</span>
+                          </div>
+                        )}
+                        {trip.agreedPrice && (
+                          <div className="flex items-start gap-2">
+                            <span className="text-gray-500 min-w-[80px]">Price:</span>
+                            <span className="text-gray-900 font-semibold">${trip.agreedPrice.toLocaleString()}</span>
+                          </div>
+                        )}
+                        {trip.truckId && (
+                          <div className="flex items-start gap-2">
+                            <span className="text-gray-500 min-w-[80px]">Truck ID:</span>
+                            <span className="text-gray-900">{trip.truckId.substring(0, 8)}...</span>
+                          </div>
+                        )}
+                        {trip.startDate && (
+                          <div className="flex items-start gap-2">
+                            <span className="text-gray-500 min-w-[80px]">Start Date:</span>
+                            <span className="text-gray-900">
+                              {new Date(trip.startDate).toLocaleDateString()}
                             </span>
                           </div>
-
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                            {trip.origin && (
-                              <div className="flex items-start gap-2">
-                                <span className="text-gray-500 min-w-[80px]">Origin:</span>
-                                <span className="text-gray-900">{trip.origin}</span>
-                              </div>
-                            )}
-                            {trip.destination && (
-                              <div className="flex items-start gap-2">
-                                <span className="text-gray-500 min-w-[80px]">Destination:</span>
-                                <span className="text-gray-900">{trip.destination}</span>
-                              </div>
-                            )}
-                            {trip.agreedPrice && (
-                              <div className="flex items-start gap-2">
-                                <span className="text-gray-500 min-w-[80px]">Price:</span>
-                                <span className="text-gray-900 font-semibold">${trip.agreedPrice.toLocaleString()}</span>
-                              </div>
-                            )}
-                            {trip.truckId && (
-                              <div className="flex items-start gap-2">
-                                <span className="text-gray-500 min-w-[80px]">Truck ID:</span>
-                                <span className="text-gray-900">{trip.truckId.substring(0, 8)}...</span>
-                              </div>
-                            )}
-                            {trip.startDate && (
-                              <div className="flex items-start gap-2">
-                                <span className="text-gray-500 min-w-[80px]">Start Date:</span>
-                                <span className="text-gray-900">
-                                  {new Date(trip.startDate).toLocaleDateString()}
-                                </span>
-                              </div>
-                            )}
-                            {trip.estimatedArrival && (
-                              <div className="flex items-start gap-2">
-                                <span className="text-gray-500 min-w-[80px]">ETA:</span>
-                                <span className="text-gray-900">
-                                  {new Date(trip.estimatedArrival).toLocaleDateString()}
-                                </span>
-                              </div>
-                            )}
+                        )}
+                        {trip.estimatedArrival && (
+                          <div className="flex items-start gap-2">
+                            <span className="text-gray-500 min-w-[80px]">ETA:</span>
+                            <span className="text-gray-900">
+                              {new Date(trip.estimatedArrival).toLocaleDateString()}
+                            </span>
                           </div>
-                        </div>
+                        )}
                       </div>
                     </div>
-                  ))}
+                  </div>
                 </div>
-              )}
+              ))}
+            </div>
+          )}
         </div>
       )}
 

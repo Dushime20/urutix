@@ -1,19 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  FaTruck, FaFileAlt, FaTools, FaShieldAlt, FaGasPump, FaTachometerAlt, 
-  FaUserGraduate, FaExclamationTriangle, FaCheckCircle, FaClock, FaCalendarAlt,
-  FaDownload, FaUpload, FaEye, FaEdit, FaTrash, FaPlus, FaSearch, FaFilter,
-  FaRoute, FaUsers, FaCog, FaChartLine, FaBell, FaCertificate, FaClipboardCheck,
-  FaCamera, FaFileImage, FaTimesCircle, FaTimes
+import {
+  FaTruck, FaFileAlt, FaTools, FaShieldAlt, FaGasPump, FaTachometerAlt,
+  FaExclamationTriangle, FaDownload, FaUpload, FaEye, FaEdit, FaTrash, FaPlus,
+  FaCertificate, FaClipboardCheck, FaCamera, FaTimes, FaTimesCircle
 } from 'react-icons/fa';
-import type { FleetItem, TruckDocument, MaintenanceRecord, InspectionRecord, InsuranceRecord, FuelRecord, TireRecord, ComplianceRecord, DriverQualification } from '../../types/fleet';
+import type { FleetItem, MaintenanceRecord, InspectionRecord, InsuranceRecord, FuelRecord, TireRecord, ComplianceRecord } from '../../types/fleet';
 import { OcrDocumentUpload } from '../OCR/OcrDocumentUpload';
-import type { OcrExtractionResult } from '../../services/ocrApi';
 import { DocumentApiService, type Document, type CreateDocumentRequest } from '../../services/documents/documentApi';
 import { useAuth } from '../../contexts/AuthContext';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../ui';
 import toast from 'react-hot-toast';
 import { fleetApi } from '../../services/fleetApi';
-import { MaintenanceType, InspectionType } from '../../types/fleet';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 
 interface TruckRecordsProps {
@@ -21,14 +18,13 @@ interface TruckRecordsProps {
 }
 
 export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
-  const { user } = useAuth();
+  useAuth();
   const { confirm, DialogComponent } = useConfirmDialog();
   const [truck, setTruck] = useState<FleetItem | null>(null);
   const [activeTab, setActiveTab] = useState('overview');
   const [loading, setLoading] = useState(true);
   const [showOcrUpload, setShowOcrUpload] = useState(false);
   const [ocrDocumentType, setOcrDocumentType] = useState('general');
-  const [ocrResult, setOcrResult] = useState<OcrExtractionResult | null>(null);
   const [showAddDocument, setShowAddDocument] = useState(false);
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loadingDocuments, setLoadingDocuments] = useState(false);
@@ -227,7 +223,7 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
     id: truckId,
     type: 'truck',
     name: 'Truck 001',
-    status: 'available',
+    status: 'AVAILABLE',
     licensePlate: 'ABC-123',
     make: 'Volvo',
     model: 'FH16',
@@ -259,7 +255,9 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
         isRequired: true,
         complianceStatus: 'compliant',
         cost: 150,
-        vendor: 'NY DMV'
+        vendor: 'NY DMV',
+        uploadedAt: new Date('2024-01-01'),
+        lastModified: new Date('2024-01-01')
       },
       {
         id: 'doc-2',
@@ -273,7 +271,9 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
         isRequired: true,
         complianceStatus: 'compliant',
         cost: 2500,
-        vendor: 'Progressive'
+        vendor: 'Progressive',
+        uploadedAt: new Date('2024-01-01'),
+        lastModified: new Date('2024-01-01')
       }
     ],
     maintenance: [
@@ -315,21 +315,21 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
     insurance: [
       {
         id: 'ins-1',
-        type: 'liability',
+        policyType: 'liability',
         policyNumber: 'POL-2024-001',
         insuranceCompany: 'Progressive Insurance',
         coverageAmount: 1000000,
         premium: 2500,
         startDate: new Date('2024-01-01'),
         endDate: new Date('2024-12-31'),
-        status: 'active',
+        status: 'valid',
         deductible: 1000,
-        policyHolder: 'Fleet Company LLC',
         agent: 'John Doe',
         claims: [
           {
             id: 'claim-1',
-            date: new Date('2024-02-15'),
+            incidentDate: new Date('2024-02-15'),
+            claimDate: new Date('2024-02-16'),
             amount: 5000,
             description: 'Minor accident repair',
             status: 'settled',
@@ -338,24 +338,23 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
         ]
       }
     ],
-    fuel: [
+    fuelRecords: [
       {
         id: 'fuel-1',
         date: new Date('2024-01-20'),
-        gallons: 150,
-        costPerGallon: 3.50,
-        totalCost: 525,
-        fuelType: 'Diesel',
+        fuelType: 'diesel',
+        quantity: 150,
+        cost: 525,
+        mileage: 46000,
         location: 'Fleet Fuel Station',
-        odometerReading: 46000,
         driver: 'Mike Johnson',
-        receiptNumber: 'RCP-2024-001'
+        receipt: 'RCP-2024-001'
       }
     ],
-    tires: [
+    tireRecords: [
       {
         id: 'tire-1',
-        position: 'Front Left',
+        position: 'front_left',
         brand: 'Michelin',
         model: 'XZA2',
         size: '295/80R22.5',
@@ -376,9 +375,8 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
         status: 'compliant',
         dueDate: new Date('2025-01-15'),
         responsibleParty: 'Fleet Manager',
-        lastReviewDate: new Date('2024-01-15'),
-        nextReviewDate: new Date('2025-01-15'),
-        complianceStatus: 'compliant'
+        lastChecked: new Date('2024-01-15'),
+        nextCheck: new Date('2025-01-15')
       }
     ],
     assignedDrivers: [],
@@ -431,7 +429,7 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
   };
 
   console.log('TruckRecords render - loading:', loading, 'truck:', truck);
-  
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -565,11 +563,10 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`py-2 px-1 border-b-2 font-medium text-sm flex items-center gap-2 ${
-                activeTab === tab.id
-                  ? 'border-primary-500 text-primary-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
+              className={`py-2 px-1 border-b-2 font-medium text-sm flex items-center gap-2 ${activeTab === tab.id
+                ? 'border-primary-500 text-primary-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
             >
               <tab.icon className="w-4 h-4" />
               {tab.label}
@@ -634,7 +631,7 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-semibold text-gray-900">Documents</h2>
               <div className="flex items-center gap-2">
-                <button 
+                <button
                   onClick={() => {
                     setOcrDocumentType('general');
                     setShowOcrUpload(true);
@@ -644,7 +641,7 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
                   <FaCamera className="w-3 h-3" />
                   OCR Upload
                 </button>
-                <button 
+                <button
                   onClick={() => setShowAddDocument(true)}
                   className="px-3 py-1 bg-primary-600 text-white rounded text-sm hover:bg-primary-700 flex items-center gap-1"
                 >
@@ -690,7 +687,7 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
                                 setViewingDocument(doc);
                                 setLoadingDocumentView(true);
                                 setDocumentViewUrl(null);
-                                
+
                                 try {
                                   // Fetch file as blob with authentication
                                   const blob = await documentApi.downloadDocument(doc.id);
@@ -716,7 +713,7 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
                           </div>
                         )}
                         <div className="relative group">
-                          <button 
+                          <button
                             onClick={async () => {
                               try {
                                 await documentApi.deleteDocument(doc.id);
@@ -774,7 +771,7 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-semibold text-gray-900">Maintenance Records</h2>
               <div className="flex items-center gap-2">
-                <button 
+                <button
                   onClick={() => {
                     setOcrDocumentType('maintenance_record');
                     setShowOcrUpload(true);
@@ -784,7 +781,7 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
                   <FaCamera className="w-3 h-3" />
                   OCR Upload
                 </button>
-                <button 
+                <button
                   onClick={() => setShowScheduleMaintenance(true)}
                   className="px-3 py-1 bg-primary-600 text-white rounded text-sm hover:bg-primary-700 flex items-center gap-1"
                 >
@@ -805,88 +802,88 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
                 </div>
               ) : (
                 (maintenanceRecords.length > 0 ? maintenanceRecords : truck.maintenance || []).map(record => (
-                <div key={record.id} className="border border-gray-200 rounded-lg p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <FaTools className="w-6 h-6 text-orange-600" />
-                      <div>
-                        <h3 className="font-medium text-gray-900">{record.title}</h3>
-                        <p className="text-sm text-gray-500">{record.description}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(record.status)}`}>
-                        {record.status}
-                      </span>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getPriorityColor(record.priority)}`}>
-                        {record.priority}
-                      </span>
-                      <div className="relative group">
-                        <button
-                          onClick={() => setEditingMaintenance(record)}
-                          className="text-gray-400 hover:text-gray-600"
-                        >
-                          <FaEdit className="w-4 h-4" />
-                        </button>
-                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-white text-gray-900 text-xs font-medium rounded-md shadow-lg border border-gray-200 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
-                          Edit Maintenance
-                          <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-white"></div>
+                  <div key={record.id} className="border border-gray-200 rounded-lg p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <FaTools className="w-6 h-6 text-orange-600" />
+                        <div>
+                          <h3 className="font-medium text-gray-900">{record.title}</h3>
+                          <p className="text-sm text-gray-500">{record.description}</p>
                         </div>
                       </div>
-                      <div className="relative group">
-                        <button
-                          onClick={async () => {
-                            const confirmed = await confirm({
-                              title: 'Delete Maintenance Record',
-                              message: 'Are you sure you want to delete this maintenance record? This action cannot be undone.',
-                              confirmText: 'Delete',
-                              cancelText: 'Cancel',
-                              variant: 'danger',
-                            });
-                            if (confirmed) {
-                              try {
-                                await fleetApi.deleteMaintenance(truckId, record.id);
-                                toast.success('Maintenance record deleted successfully');
-                                loadMaintenanceRecords();
-                              } catch (error: any) {
-                                toast.error(error.response?.data?.message || 'Failed to delete maintenance record');
+                      <div className="flex items-center gap-2">
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(record.status)}`}>
+                          {record.status}
+                        </span>
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getPriorityColor(record.priority)}`}>
+                          {record.priority}
+                        </span>
+                        <div className="relative group">
+                          <button
+                            onClick={() => setEditingMaintenance(record)}
+                            className="text-gray-400 hover:text-gray-600"
+                          >
+                            <FaEdit className="w-4 h-4" />
+                          </button>
+                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-white text-gray-900 text-xs font-medium rounded-md shadow-lg border border-gray-200 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                            Edit Maintenance
+                            <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-white"></div>
+                          </div>
+                        </div>
+                        <div className="relative group">
+                          <button
+                            onClick={async () => {
+                              const confirmed = await confirm({
+                                title: 'Delete Maintenance Record',
+                                message: 'Are you sure you want to delete this maintenance record? This action cannot be undone.',
+                                confirmText: 'Delete',
+                                cancelText: 'Cancel',
+                                variant: 'danger',
+                              });
+                              if (confirmed) {
+                                try {
+                                  await fleetApi.deleteMaintenance(truckId, record.id);
+                                  toast.success('Maintenance record deleted successfully');
+                                  loadMaintenanceRecords();
+                                } catch (error: any) {
+                                  toast.error(error.response?.data?.message || 'Failed to delete maintenance record');
+                                }
                               }
-                            }
-                          }}
-                          className="text-gray-400 hover:text-red-600"
-                        >
-                          <FaTrash className="w-4 h-4" />
-                        </button>
-                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-white text-gray-900 text-xs font-medium rounded-md shadow-lg border border-gray-200 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
-                          Delete Maintenance
-                          <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-white"></div>
+                            }}
+                            className="text-gray-400 hover:text-red-600"
+                          >
+                            <FaTrash className="w-4 h-4" />
+                          </button>
+                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-white text-gray-900 text-xs font-medium rounded-md shadow-lg border border-gray-200 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                            Delete Maintenance
+                            <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-white"></div>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                  <div className="mt-3 grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <span className="text-gray-500">Date:</span>
-                      <span className="ml-2">{new Date(record.date).toLocaleDateString()}</span>
-                    </div>
-                    <div>
-                      <span className="text-gray-500">Cost:</span>
-                      <span className="ml-2">${record.cost}</span>
-                    </div>
-                    {record.location && (
+                    <div className="mt-3 grid grid-cols-2 gap-4 text-sm">
                       <div>
-                        <span className="text-gray-500">Garage:</span>
-                        <span className="ml-2">{record.location}</span>
+                        <span className="text-gray-500">Date:</span>
+                        <span className="ml-2">{new Date(record.date).toLocaleDateString()}</span>
                       </div>
-                    )}
-                    {record.mileage && (
                       <div>
-                        <span className="text-gray-500">Mileage:</span>
-                        <span className="ml-2">{record.mileage.toLocaleString()}</span>
+                        <span className="text-gray-500">Cost:</span>
+                        <span className="ml-2">${record.cost}</span>
                       </div>
-                    )}
+                      {record.location && (
+                        <div>
+                          <span className="text-gray-500">Garage:</span>
+                          <span className="ml-2">{record.location}</span>
+                        </div>
+                      )}
+                      {record.mileage && (
+                        <div>
+                          <span className="text-gray-500">Mileage:</span>
+                          <span className="ml-2">{record.mileage.toLocaleString()}</span>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
                 ))
               )}
             </div>
@@ -898,7 +895,7 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-semibold text-gray-900">Inspection Records</h2>
               <div className="flex items-center gap-2">
-                <button 
+                <button
                   onClick={() => {
                     setOcrDocumentType('inspection_report');
                     setShowOcrUpload(true);
@@ -908,7 +905,7 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
                   <FaCamera className="w-3 h-3" />
                   OCR Upload
                 </button>
-                <button 
+                <button
                   onClick={() => setShowScheduleInspection(true)}
                   className="px-3 py-1 bg-primary-600 text-white rounded text-sm hover:bg-primary-700 flex items-center gap-1"
                 >
@@ -929,92 +926,92 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
                 </div>
               ) : (
                 (inspectionRecords.length > 0 ? inspectionRecords : truck.inspections || []).map(record => (
-                <div key={record.id} className="border border-gray-200 rounded-lg p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <FaShieldAlt className="w-6 h-6 text-green-600" />
-                      <div>
-                        <h3 className="font-medium text-gray-900">{record.title}</h3>
-                        <p className="text-sm text-gray-500">Inspector: {record.inspector}</p>
+                  <div key={record.id} className="border border-gray-200 rounded-lg p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <FaShieldAlt className="w-6 h-6 text-green-600" />
+                        <div>
+                          <h3 className="font-medium text-gray-900">{record.title}</h3>
+                          <p className="text-sm text-gray-500">Inspector: {record.inspector}</p>
+                        </div>
                       </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(record.status)}`}>
-                        {record.status}
-                      </span>
-                      {record.score !== undefined && (
-                        <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                          Score: {record.score}
+                      <div className="flex items-center gap-2">
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(record.status)}`}>
+                          {record.status}
                         </span>
-                      )}
-                      <div className="relative group">
-                        <button
-                          onClick={() => setEditingInspection(record)}
-                          className="text-gray-400 hover:text-gray-600"
-                        >
-                          <FaEdit className="w-4 h-4" />
-                        </button>
-                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-white text-gray-900 text-xs font-medium rounded-md shadow-lg border border-gray-200 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
-                          Edit Inspection
-                          <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-white"></div>
+                        {record.score !== undefined && (
+                          <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                            Score: {record.score}
+                          </span>
+                        )}
+                        <div className="relative group">
+                          <button
+                            onClick={() => setEditingInspection(record)}
+                            className="text-gray-400 hover:text-gray-600"
+                          >
+                            <FaEdit className="w-4 h-4" />
+                          </button>
+                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-white text-gray-900 text-xs font-medium rounded-md shadow-lg border border-gray-200 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                            Edit Inspection
+                            <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-white"></div>
+                          </div>
                         </div>
-                      </div>
-                      <div className="relative group">
-                        <button
-                          onClick={async () => {
-                            const confirmed = await confirm({
-                              title: 'Delete Inspection Record',
-                              message: 'Are you sure you want to delete this inspection record? This action cannot be undone.',
-                              confirmText: 'Delete',
-                              cancelText: 'Cancel',
-                              variant: 'danger',
-                            });
-                            if (confirmed) {
-                              try {
-                                await fleetApi.deleteInspection(truckId, record.id);
-                                toast.success('Inspection record deleted successfully');
-                                loadInspectionRecords();
-                              } catch (error: any) {
-                                toast.error(error.response?.data?.message || 'Failed to delete inspection record');
+                        <div className="relative group">
+                          <button
+                            onClick={async () => {
+                              const confirmed = await confirm({
+                                title: 'Delete Inspection Record',
+                                message: 'Are you sure you want to delete this inspection record? This action cannot be undone.',
+                                confirmText: 'Delete',
+                                cancelText: 'Cancel',
+                                variant: 'danger',
+                              });
+                              if (confirmed) {
+                                try {
+                                  await fleetApi.deleteInspection(truckId, record.id);
+                                  toast.success('Inspection record deleted successfully');
+                                  loadInspectionRecords();
+                                } catch (error: any) {
+                                  toast.error(error.response?.data?.message || 'Failed to delete inspection record');
+                                }
                               }
-                            }
-                          }}
-                          className="text-gray-400 hover:text-red-600"
-                        >
-                          <FaTrash className="w-4 h-4" />
-                        </button>
-                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-white text-gray-900 text-xs font-medium rounded-md shadow-lg border border-gray-200 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
-                          Delete Inspection
-                          <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-white"></div>
+                            }}
+                            className="text-gray-400 hover:text-red-600"
+                          >
+                            <FaTrash className="w-4 h-4" />
+                          </button>
+                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-white text-gray-900 text-xs font-medium rounded-md shadow-lg border border-gray-200 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                            Delete Inspection
+                            <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-white"></div>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                  <div className="mt-3 grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <span className="text-gray-500">Date:</span>
-                      <span className="ml-2">{new Date(record.inspectionDate).toLocaleDateString()}</span>
+                    <div className="mt-3 grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <span className="text-gray-500">Date:</span>
+                        <span className="ml-2">{new Date(record.inspectionDate).toLocaleDateString()}</span>
+                      </div>
+                      {record.location && (
+                        <div>
+                          <span className="text-gray-500">Location:</span>
+                          <span className="ml-2">{record.location}</span>
+                        </div>
+                      )}
+                      {record.cost !== undefined && (
+                        <div>
+                          <span className="text-gray-500">Cost:</span>
+                          <span className="ml-2">${record.cost}</span>
+                        </div>
+                      )}
+                      {record.mileage && (
+                        <div>
+                          <span className="text-gray-500">Mileage:</span>
+                          <span className="ml-2">{record.mileage.toLocaleString()}</span>
+                        </div>
+                      )}
                     </div>
-                    {record.location && (
-                      <div>
-                        <span className="text-gray-500">Location:</span>
-                        <span className="ml-2">{record.location}</span>
-                      </div>
-                    )}
-                    {record.cost !== undefined && (
-                      <div>
-                        <span className="text-gray-500">Cost:</span>
-                        <span className="ml-2">${record.cost}</span>
-                      </div>
-                    )}
-                    {record.mileage && (
-                      <div>
-                        <span className="text-gray-500">Mileage:</span>
-                        <span className="ml-2">{record.mileage.toLocaleString()}</span>
-                      </div>
-                    )}
                   </div>
-                </div>
                 ))
               )}
             </div>
@@ -1026,7 +1023,7 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-semibold text-gray-900">Insurance Records</h2>
               <div className="flex items-center gap-2">
-                <button 
+                <button
                   onClick={() => {
                     setOcrDocumentType('insurance_policy');
                     setShowOcrUpload(true);
@@ -1036,7 +1033,7 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
                   <FaCamera className="w-3 h-3" />
                   OCR Upload
                 </button>
-                <button 
+                <button
                   onClick={() => setShowAddInsurance(true)}
                   className="px-3 py-1 bg-primary-600 text-white rounded text-sm hover:bg-primary-700 flex items-center gap-1"
                 >
@@ -1057,97 +1054,97 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
                 </div>
               ) : (
                 (insuranceRecords.length > 0 ? insuranceRecords : truck.insurance || []).map(record => (
-                <div key={record.id} className="border border-gray-200 rounded-lg p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <FaShieldAlt className="w-6 h-6 text-blue-600" />
-                      <div>
-                        <h3 className="font-medium text-gray-900">{record.policyType || record.type} Insurance</h3>
-                        <p className="text-sm text-gray-500">Policy: {record.policyNumber}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(record.status)}`}>
-                        {record.status}
-                      </span>
-                      <div className="relative group">
-                        <button
-                          onClick={() => setEditingInsurance(record)}
-                          className="text-gray-400 hover:text-gray-600"
-                        >
-                          <FaEdit className="w-4 h-4" />
-                        </button>
-                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-white text-gray-900 text-xs font-medium rounded-md shadow-lg border border-gray-200 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
-                          Edit Insurance
-                          <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-white"></div>
+                  <div key={record.id} className="border border-gray-200 rounded-lg p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <FaShieldAlt className="w-6 h-6 text-blue-600" />
+                        <div>
+                          <h3 className="font-medium text-gray-900">{record.policyType} Insurance</h3>
+                          <p className="text-sm text-gray-500">Policy: {record.policyNumber}</p>
                         </div>
                       </div>
-                      <div className="relative group">
-                        <button
-                          onClick={async () => {
-                            const confirmed = await confirm({
-                              title: 'Delete Insurance Record',
-                              message: 'Are you sure you want to delete this insurance record? This action cannot be undone.',
-                              confirmText: 'Delete',
-                              cancelText: 'Cancel',
-                              variant: 'danger',
-                            });
-                            if (confirmed) {
-                              try {
-                                await fleetApi.deleteInsurance(truckId, record.id);
-                                toast.success('Insurance record deleted successfully');
-                                loadInsuranceRecords();
-                              } catch (error: any) {
-                                toast.error(error.response?.data?.message || 'Failed to delete insurance record');
+                      <div className="flex items-center gap-2">
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(record.status)}`}>
+                          {record.status}
+                        </span>
+                        <div className="relative group">
+                          <button
+                            onClick={() => setEditingInsurance(record)}
+                            className="text-gray-400 hover:text-gray-600"
+                          >
+                            <FaEdit className="w-4 h-4" />
+                          </button>
+                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-white text-gray-900 text-xs font-medium rounded-md shadow-lg border border-gray-200 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                            Edit Insurance
+                            <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-white"></div>
+                          </div>
+                        </div>
+                        <div className="relative group">
+                          <button
+                            onClick={async () => {
+                              const confirmed = await confirm({
+                                title: 'Delete Insurance Record',
+                                message: 'Are you sure you want to delete this insurance record? This action cannot be undone.',
+                                confirmText: 'Delete',
+                                cancelText: 'Cancel',
+                                variant: 'danger',
+                              });
+                              if (confirmed) {
+                                try {
+                                  await fleetApi.deleteInsurance(truckId, record.id);
+                                  toast.success('Insurance record deleted successfully');
+                                  loadInsuranceRecords();
+                                } catch (error: any) {
+                                  toast.error(error.response?.data?.message || 'Failed to delete insurance record');
+                                }
                               }
-                            }
-                          }}
-                          className="text-gray-400 hover:text-red-600"
-                        >
-                          <FaTrash className="w-4 h-4" />
-                        </button>
-                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-white text-gray-900 text-xs font-medium rounded-md shadow-lg border border-gray-200 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
-                          Delete Insurance
-                          <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-white"></div>
+                            }}
+                            className="text-gray-400 hover:text-red-600"
+                          >
+                            <FaTrash className="w-4 h-4" />
+                          </button>
+                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-white text-gray-900 text-xs font-medium rounded-md shadow-lg border border-gray-200 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                            Delete Insurance
+                            <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-white"></div>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                  <div className="mt-3 grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <span className="text-gray-500">Company:</span>
-                      <span className="ml-2">{record.insuranceCompany}</span>
+                    <div className="mt-3 grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <span className="text-gray-500">Company:</span>
+                        <span className="ml-2">{record.insuranceCompany}</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-500">Coverage:</span>
+                        <span className="ml-2">${record.coverageAmount?.toLocaleString() || '0'}</span>
+                      </div>
+                      {record.premium !== undefined && (
+                        <div>
+                          <span className="text-gray-500">Premium:</span>
+                          <span className="ml-2">${record.premium}</span>
+                        </div>
+                      )}
+                      {record.deductible !== undefined && (
+                        <div>
+                          <span className="text-gray-500">Deductible:</span>
+                          <span className="ml-2">${record.deductible}</span>
+                        </div>
+                      )}
+                      {record.startDate && (
+                        <div>
+                          <span className="text-gray-500">Start Date:</span>
+                          <span className="ml-2">{new Date(record.startDate).toLocaleDateString()}</span>
+                        </div>
+                      )}
+                      {record.endDate && (
+                        <div>
+                          <span className="text-gray-500">End Date:</span>
+                          <span className="ml-2">{new Date(record.endDate).toLocaleDateString()}</span>
+                        </div>
+                      )}
                     </div>
-                    <div>
-                      <span className="text-gray-500">Coverage:</span>
-                      <span className="ml-2">${record.coverageAmount?.toLocaleString() || '0'}</span>
-                    </div>
-                    {record.premium !== undefined && (
-                      <div>
-                        <span className="text-gray-500">Premium:</span>
-                        <span className="ml-2">${record.premium}</span>
-                      </div>
-                    )}
-                    {record.deductible !== undefined && (
-                      <div>
-                        <span className="text-gray-500">Deductible:</span>
-                        <span className="ml-2">${record.deductible}</span>
-                      </div>
-                    )}
-                    {record.startDate && (
-                      <div>
-                        <span className="text-gray-500">Start Date:</span>
-                        <span className="ml-2">{new Date(record.startDate).toLocaleDateString()}</span>
-                      </div>
-                    )}
-                    {record.endDate && (
-                      <div>
-                        <span className="text-gray-500">End Date:</span>
-                        <span className="ml-2">{new Date(record.endDate).toLocaleDateString()}</span>
-                      </div>
-                    )}
                   </div>
-                </div>
                 ))
               )}
             </div>
@@ -1539,9 +1536,8 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
             <OcrDocumentUpload
               documentType={ocrDocumentType}
               onExtractionComplete={async (result) => {
-                setOcrResult(result);
                 console.log('OCR Result:', result);
-                
+
                 // Optionally save the document after OCR extraction
                 if (result.file && result.extractedData) {
                   try {
@@ -1554,12 +1550,12 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
                       'inspection_report': 'VEHICLE_INSPECTION',
                       'general': 'OTHER',
                     };
-                    
+
                     const docType = documentTypeMap[ocrDocumentType] || 'OTHER';
-                    const title = result.extractedData.title || 
-                                 result.extractedData.documentNumber || 
-                                 `Document - ${new Date().toLocaleDateString()}`;
-                    
+                    const title = result.extractedData.title ||
+                      result.extractedData.documentNumber ||
+                      `Document - ${new Date().toLocaleDateString()}`;
+
                     // Create document from OCR result
                     const createRequest: CreateDocumentRequest = {
                       entityType: 'TRUCK',
@@ -1574,7 +1570,7 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
                       priority: 'NORMAL',
                       metadata: { ocrData: result.extractedData },
                     };
-                    
+
                     await documentApi.createDocument(createRequest, result.file);
                     toast.success('Document uploaded and saved successfully');
                     loadDocuments();
@@ -1586,7 +1582,6 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
               }}
               onClose={() => {
                 setShowOcrUpload(false);
-                setOcrResult(null);
               }}
             />
           </div>
@@ -1645,24 +1640,24 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
                     <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-white"></div>
                   </div>
                 </div>
-              <div className="relative group">
-                <button
-                  onClick={() => {
-                    if (documentViewUrl) {
-                      URL.revokeObjectURL(documentViewUrl);
-                    }
-                    setViewingDocument(null);
-                    setDocumentViewUrl(null);
-                  }}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  <FaTimesCircle className="w-6 h-6" />
-                </button>
-                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-white text-gray-900 text-xs font-medium rounded-md shadow-lg border border-gray-200 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
-                  Close
-                  <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-white"></div>
+                <div className="relative group">
+                  <button
+                    onClick={() => {
+                      if (documentViewUrl) {
+                        URL.revokeObjectURL(documentViewUrl);
+                      }
+                      setViewingDocument(null);
+                      setDocumentViewUrl(null);
+                    }}
+                    className="text-gray-400 hover:text-gray-600"
+                  >
+                    <FaTimesCircle className="w-6 h-6" />
+                  </button>
+                  <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-white text-gray-900 text-xs font-medium rounded-md shadow-lg border border-gray-200 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                    Close
+                    <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-white"></div>
+                  </div>
                 </div>
-              </div>
               </div>
             </div>
 
@@ -4147,7 +4142,7 @@ interface AddDocumentModalProps {
 }
 
 const AddDocumentModal: React.FC<AddDocumentModalProps> = ({ truckId, onClose, onSuccess }) => {
-  const { user } = useAuth();
+  useAuth();
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -4165,9 +4160,6 @@ const AddDocumentModal: React.FC<AddDocumentModalProps> = ({ truckId, onClose, o
 
   const documentTypes = [
     { value: 'VEHICLE_REGISTRATION', label: 'Vehicle Registration' },
-    { value: 'VEHICLE_INSURANCE', label: 'Vehicle Insurance' },
-    { value: 'VEHICLE_INSPECTION', label: 'Vehicle Inspection' },
-    { value: 'VEHICLE_MAINTENANCE', label: 'Vehicle Maintenance' },
     { value: 'VEHICLE_PERMIT', label: 'Vehicle Permit' },
     { value: 'SAFETY_CERT', label: 'Safety Certificate' },
     { value: 'ENVIRONMENTAL_CERT', label: 'Environmental Certificate' },
@@ -4208,7 +4200,7 @@ const AddDocumentModal: React.FC<AddDocumentModalProps> = ({ truckId, onClose, o
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!file) {
       toast.error('Please select a file to upload');
       return;
@@ -4247,9 +4239,15 @@ const AddDocumentModal: React.FC<AddDocumentModalProps> = ({ truckId, onClose, o
     e.preventDefault();
   };
 
+  const isOpen = true;
+
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]">
-      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader className="hidden">
+          <DialogTitle>Add Document</DialogTitle>
+          <DialogDescription>Upload a new document for this truck</DialogDescription>
+        </DialogHeader>
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <div className="flex items-center gap-3">
             <FaFileAlt className="w-6 h-6 text-primary-600" />
@@ -4374,9 +4372,8 @@ const AddDocumentModal: React.FC<AddDocumentModalProps> = ({ truckId, onClose, o
                 Document File *
               </label>
               <div
-                className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
-                  file ? 'border-green-300 bg-green-50' : 'border-gray-300 hover:border-primary-400'
-                }`}
+                className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${file ? 'border-green-300 bg-green-50' : 'border-gray-300 hover:border-primary-400'
+                  }`}
                 onDrop={handleDrop}
                 onDragOver={handleDragOver}
               >
@@ -4387,7 +4384,7 @@ const AddDocumentModal: React.FC<AddDocumentModalProps> = ({ truckId, onClose, o
                   onChange={handleFileSelect}
                   className="hidden"
                 />
-                
+
                 {!file ? (
                   <div>
                     <FaUpload className="w-12 h-12 text-gray-400 mx-auto mb-4" />
@@ -4466,7 +4463,7 @@ const AddDocumentModal: React.FC<AddDocumentModalProps> = ({ truckId, onClose, o
             </div>
           </form>
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }; 

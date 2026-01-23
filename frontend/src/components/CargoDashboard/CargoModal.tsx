@@ -161,7 +161,7 @@ export const CargoModal: React.FC<CargoModalProps> = ({ cargo, onClose }) => {
                   {cargo.pickupLocation?.coordinates && (
                     <InfoRow 
                       label="Coordinates" 
-                      value={`${cargo.pickupLocation.coordinates.latitude}, ${cargo.pickupLocation.coordinates.longitude}`}
+                      value={`${cargo.pickupLocation?.coordinates?.latitude}, ${cargo.pickupLocation?.coordinates?.longitude}`}
                       icon={Navigation}
                     />
                   )}
@@ -179,7 +179,7 @@ export const CargoModal: React.FC<CargoModalProps> = ({ cargo, onClose }) => {
                   {cargo.deliveryLocation?.coordinates && (
                     <InfoRow 
                       label="Coordinates" 
-                      value={`${cargo.deliveryLocation.coordinates.latitude}, ${cargo.deliveryLocation.coordinates.longitude}`}
+                      value={`${cargo.deliveryLocation?.coordinates?.latitude}, ${cargo.deliveryLocation?.coordinates?.longitude}`}
                       icon={Navigation}
                     />
                   )}
@@ -291,14 +291,14 @@ export const CargoModal: React.FC<CargoModalProps> = ({ cargo, onClose }) => {
             {cargo.contactInfo && (
               <InfoSection icon={User} title="Contact Information">
                 <dl className="space-y-0">
-                  {cargo.contactInfo.contactPerson && (
-                    <InfoRow label="Contact Person" value={cargo.contactInfo.contactPerson} icon={User} />
+                  {cargo.contactInfo?.contactPerson && (
+                    <InfoRow label="Contact Person" value={cargo.contactInfo?.contactPerson} icon={User} />
                   )}
-                  {cargo.contactInfo.contactPhone && (
-                    <InfoRow label="Phone" value={cargo.contactInfo.contactPhone} icon={Phone} />
+                  {cargo.contactInfo?.contactPhone && (
+                    <InfoRow label="Phone" value={cargo.contactInfo?.contactPhone} icon={Phone} />
                   )}
-                  {cargo.contactInfo.contactEmail && (
-                    <InfoRow label="Email" value={cargo.contactInfo.contactEmail} icon={Mail} />
+                  {cargo.contactInfo?.contactEmail && (
+                    <InfoRow label="Email" value={cargo.contactInfo?.contactEmail} icon={Mail} />
                   )}
                 </dl>
               </InfoSection>
@@ -310,12 +310,12 @@ export const CargoModal: React.FC<CargoModalProps> = ({ cargo, onClose }) => {
                 <dl className="space-y-0">
                   <InfoRow 
                     label="Broker Name" 
-                    value={cargo.broker.profile?.firstName && cargo.broker.profile?.lastName
-                      ? `${cargo.broker.profile.firstName} ${cargo.broker.profile.lastName}`
-                      : cargo.broker.profile?.companyName || 'N/A'
+                    value={cargo.broker?.profile?.firstName && cargo.broker?.profile?.lastName
+                      ? `${cargo.broker?.profile?.firstName} ${cargo.broker?.profile?.lastName}`
+                      : cargo.broker?.profile?.companyName || 'N/A'
                     }
                   />
-                  <InfoRow label="Email" value={cargo.broker.email} icon={Mail} />
+                  <InfoRow label="Email" value={cargo.broker?.email} icon={Mail} />
                 </dl>
               </InfoSection>
             )}

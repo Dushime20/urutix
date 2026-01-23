@@ -44,7 +44,7 @@ import { UserRole } from '../../entities/user.entity';
 @Controller('fleet')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class FleetController {
-  constructor(private readonly fleetService: FleetService) {}
+  constructor(private readonly fleetService: FleetService) { }
 
   // Truck endpoints
   @Post('trucks')
@@ -216,7 +216,7 @@ export class FleetController {
     console.log('User role:', req.user?.role);
     console.log('Tenant ID:', req.user?.tenantId);
     console.log('Query params:', { search, status, location, page, limit });
-    
+
     // Log the exact tenant ID being used
     if (req.user?.tenantId) {
       console.log(`🔍 Searching for trucks with tenantId: "${req.user.tenantId}"`);
@@ -231,17 +231,33 @@ export class FleetController {
     try {
       const tenantId = req.user.tenantId;
       console.log(`🔍 Controller - Calling findAllTrucks with tenantId: "${tenantId}"`);
-      console.log(`🔍 Controller - TenantId type: ${typeof tenantId}`);
-      console.log(`🔍 Controller - TenantId length: ${tenantId?.length}`);
-      
+
+      // Determine if we should filter by user ID (ownership)
+      // Admins should see ALL trucks in the tenant
+      const isAdmin = [
+        UserRole.SUPER_ADMIN,
+        UserRole.ADMIN,
+        UserRole.TENANT_ADMIN
+      ].includes(req.user.role);
+
+      // If admin, pass undefined for userId to show ALL trucks
+      // If not admin, pass userId to show ONLY owned trucks
+      const filterUserId = isAdmin ? undefined : req.user.userId;
+
+      if (isAdmin) {
+        console.log('✅ User is Admin - showing all trucks in tenant');
+      } else {
+        console.log(`🔒 User is ${req.user.role} - showing only owned trucks`);
+      }
+
       const trucks = await this.fleetService.findAllTrucks(
         tenantId,
-        req.user.userId,
+        filterUserId,
         { search, status, location, page, limit },
       );
 
       console.log('✅ Controller - Trucks retrieved successfully:', trucks.length);
-      
+
       const mappedTrucks = trucks.map(t => ({
         ...t,
         currentLocation: {
@@ -252,7 +268,7 @@ export class FleetController {
 
       return {
         message: 'Trucks retrieved successfully',
-        trucks: mappedTrucks || [], 
+        trucks: mappedTrucks || [],
       };
     } catch (error) {
       console.error('❌ Fleet Controller - Error in findAllTrucks:', error);
@@ -420,7 +436,7 @@ export class FleetController {
       };
     } catch (error) {
       console.error('❌ Error in updateTruckLocation controller:', error);
-      
+
       if (error instanceof HttpException) {
         throw error;
       }

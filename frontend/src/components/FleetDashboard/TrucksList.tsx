@@ -53,33 +53,33 @@ interface EditTruckFormProps {
 
 const EditTruckForm: React.FC<EditTruckFormProps> = ({ truck, onSave, onCancel }) => {
   const [formData, setFormData] = useState({
-    plateNumber: truck.plateNumber || '',
-    make: truck.make || '',
-    model: truck.model || '',
-    year: truck.year || new Date().getFullYear(),
-    color: truck.color || '',
-    vin: truck.vin || '',
-    capacityWeight: truck.capacityWeight || 0,
-    capacityVolume: truck.capacityVolume || 0,
-    maxLength: truck.maxLength ? String(truck.maxLength) : '',
-    maxWidth: truck.maxWidth ? String(truck.maxWidth) : '',
-    maxHeight: truck.maxHeight ? String(truck.maxHeight) : '',
-    truckType: truck.truckType || 'FLATBED',
-    trailerType: truck.trailerType || '',
-    fuelType: truck.fuelType || 'DIESEL',
-    status: truck.status || 'AVAILABLE',
-    mileage: truck.mileage || 0,
-    fuelEfficiency: truck.fuelEfficiency ? String(truck.fuelEfficiency) : '',
-    registrationNumber: truck.registrationNumber || '',
-    registrationExpiry: truck.registrationExpiry ? new Date(truck.registrationExpiry).toISOString().split('T')[0] : '',
-    insurancePolicy: truck.insurancePolicy || '',
-    insuranceExpiry: truck.insuranceExpiry ? new Date(truck.insuranceExpiry).toISOString().split('T')[0] : '',
-    roadworthyCertExpiry: truck.roadworthyCertExpiry ? new Date(truck.roadworthyCertExpiry).toISOString().split('T')[0] : '',
-    hasRefrigeration: truck.hasRefrigeration || false,
-    hasLiftGate: truck.hasLiftGate || false,
-    hasGps: truck.hasGps || truck.hasGPS || false,
-    hasHazmatPermit: truck.hasHazmatPermit || false,
-    isActive: truck.isActive !== undefined ? truck.isActive : true,
+    plateNumber: truck?.plateNumber || '',
+    make: truck?.make || '',
+    model: truck?.model || '',
+    year: truck?.year || new Date().getFullYear(),
+    color: truck?.color || '',
+    vin: truck?.vin || '',
+    capacityWeight: truck?.capacityWeight || 0,
+    capacityVolume: truck?.capacityVolume || 0,
+    maxLength: truck?.maxLength ? String(truck.maxLength) : '',
+    maxWidth: truck?.maxWidth ? String(truck.maxWidth) : '',
+    maxHeight: truck?.maxHeight ? String(truck.maxHeight) : '',
+    truckType: truck?.truckType || 'FLATBED',
+    trailerType: truck?.trailerType || '',
+    fuelType: truck?.fuelType || 'DIESEL',
+    status: truck?.status || 'AVAILABLE',
+    mileage: truck?.mileage || 0,
+    fuelEfficiency: truck?.fuelEfficiency ? String(truck.fuelEfficiency) : '',
+    registrationNumber: truck?.registrationNumber || '',
+    registrationExpiry: truck?.registrationExpiry ? new Date(truck.registrationExpiry).toISOString().split('T')[0] : '',
+    insurancePolicy: truck?.insurancePolicy || '',
+    insuranceExpiry: truck?.insuranceExpiry ? new Date(truck.insuranceExpiry).toISOString().split('T')[0] : '',
+    roadworthyCertExpiry: truck?.roadworthyCertExpiry ? new Date(truck.roadworthyCertExpiry).toISOString().split('T')[0] : '',
+    hasRefrigeration: truck?.hasRefrigeration || false,
+    hasLiftGate: truck?.hasLiftGate || false,
+    hasGps: truck?.hasGps || truck?.hasGPS || false,
+    hasHazmatPermit: truck?.hasHazmatPermit || false,
+    isActive: truck?.isActive !== undefined ? truck.isActive : true,
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -558,11 +558,11 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
         (trucksData || []).map(async (truck) => {
           try {
             const truckRouteObjs = await fleetApi.getTruckRoutes(truck.id);
-            const assignedRoutes = (truckRouteObjs || []).map((r: any) => ({
+            const assignedRoutes = (truckRouteObjs || []).filter((r: any) => r).map((r: any) => ({
               routeId: r.id,
-              routeName: r.name,
+              routeName: r?.name || 'Unknown Route',
               assignmentDate: new Date().toISOString(),
-              status: r.status || 'active',
+              status: r?.status || 'active',
             }));
             return { ...truck, assignedRoutes, assignedRouteDetails: truckRouteObjs };
           } catch (err) {
@@ -602,6 +602,30 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
     }
   }, [user, accessToken, search, statusFilter]);
 
+  // Enrich trucks with route details from the routes list
+  const enrichedTrucks = React.useMemo(() => {
+    return (trucks || []).map(truck => {
+      if (!truck) return null;
+
+      const assignedRouteDetails = Array.isArray(truck.assignedRoutes)
+        ? truck.assignedRoutes.map((ar: any) => {
+          if (!ar) return null;
+          // ar might be just an ID string or an object with routeId
+          const routeId = typeof ar === 'string' ? ar : (ar.routeId || ar.id);
+          if (!routeId) return null;
+
+          const fullRoute = routes.find(r => r && r.id === routeId);
+          return fullRoute ? { ...fullRoute, ...ar } : null; // Merge assignment details with full route
+        }).filter(Boolean)
+        : [];
+
+      return {
+        ...truck,
+        assignedRouteDetails
+      };
+    }).filter(Boolean);
+  }, [trucks, routes]);
+
   // Debug useEffect - runs on every render
   useEffect(() => {
     console.log('🔍 Debug useEffect - Component rendered at:', new Date().toISOString());
@@ -632,15 +656,56 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
 
     setLoading(true);
     setError(null);
+
     try {
       console.log('🚛 Fetching trucks...');
       const trucksData = await fleetApi.getTrucks({});
       console.log('✅ Trucks data received:', trucksData);
+      setTrucks(trucksData || []);
+    } catch (e: any) {
+      console.error('❌ Error loading trucks:', e);
+      console.error('❌ Error status:', e.response?.status);
+      console.error('❌ Error data:', e.response?.data);
+      console.error('❌ Error message:', e.response?.data?.message);
 
+      if (e.response?.status === 403) {
+        const errorMessage = e.response?.data?.message || 'Access denied. You may not have permission to view trucks.';
+        console.error('🔒 403 Forbidden Error Details:');
+        console.error('User Role:', user.role);
+        console.error('User Tenant ID:', user.tenantId);
+        console.error('User ID:', user.id);
+
+        setError(errorMessage);
+        toast.error(errorMessage);
+        setLoading(false);
+        return;
+      } else if (e.response?.status === 401) {
+        setError('Authentication required. Please log in again.');
+        toast.error('Session expired. Please log in again.');
+        setLoading(false);
+        return;
+      } else {
+        setError('Failed to load trucks.');
+        toast.error('Failed to load trucks.');
+        setLoading(false);
+        return;
+      }
+    }
+
+    try {
       console.log('👥 Fetching drivers...');
       const driversData = await fleetApi.getDrivers({});
       console.log('✅ Drivers data received:', driversData);
+      setDrivers(driversData || []);
+    } catch (e: any) {
+      console.error('❌ Error fetching drivers:', e);
+      // Don't fail on driver error - just log it
+      console.warn('Continuing without drivers data');
+      setDrivers([]);
+    }
 
+    // Load routes separately - don't fail if routes fail
+    try {
       console.log('🛣️ Fetching routes...');
       console.log('🛣️ About to call fleetApi.fetchRoutes()...');
       console.log('🛣️ Current time:', new Date().toISOString());
@@ -681,37 +746,14 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
         routesData = []; // Set empty array on error
       }
 
-      setTrucks(trucksData || []);
-      setDrivers(driversData || []);
       setRoutes(routesData || []);
     } catch (e: any) {
-      console.error('❌ Error loading fleet data:', e);
-      console.error('❌ Error status:', e.response?.status);
-      console.error('❌ Error data:', e.response?.data);
-      console.error('❌ Error message:', e.response?.data?.message);
-
-      if (e.response?.status === 403) {
-        const errorMessage = e.response?.data?.message || 'Access denied. You may not have permission to view fleet data.';
-        console.error('🔒 403 Forbidden Error Details:');
-        console.error('User Role:', user.role);
-        console.error('User Tenant ID:', user.tenantId);
-        console.error('User ID:', user.id);
-        console.error('Request URL:', e.config?.url);
-        console.error('Request Method:', e.config?.method);
-        console.error('Request Headers:', e.config?.headers);
-
-        setError(errorMessage);
-        toast.error(errorMessage);
-      } else if (e.response?.status === 401) {
-        setError('Authentication required. Please log in again.');
-        toast.error('Session expired. Please log in again.');
-      } else {
-        setError('Failed to load fleet data.');
-        toast.error('Failed to load fleet data.');
-      }
-    } finally {
-      setLoading(false);
+      console.error('❌ Error in routes section:', e);
+      // Don't fail the entire page if routes fail
+      setRoutes([]);
     }
+
+    setLoading(false);
   }, [user, accessToken, authLoading]);
 
   // Load initial data when auth is ready or refreshTrigger changes
@@ -951,13 +993,13 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
 
   // Pagination
   const paginatedTrucks = () => {
-    const filtered = filterTrucks(trucks);
+    const filtered = filterTrucks(enrichedTrucks);
     const sorted = sortTrucks(filtered);
     const startIndex = (currentPage - 1) * itemsPerPage;
     return sorted.slice(startIndex, startIndex + itemsPerPage);
   };
 
-  const totalPages = Math.ceil(filterTrucks(trucks).length / itemsPerPage);
+  const totalPages = Math.ceil(filterTrucks(enrichedTrucks).length / itemsPerPage);
 
 
   // Get available drivers (ACTIVE and not currently assigned to ANY truck)
@@ -1018,7 +1060,7 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
 
   // Get available routes (not already assigned to the given truck)
   const getAvailableRoutes = (truckId: string) => {
-    const truck = trucks.find(t => t.id === truckId);
+    const truck = enrichedTrucks.find(t => t.id === truckId);
     const alreadyAssignedIds = new Set(
       Array.isArray(truck?.assignedRoutes) ? truck!.assignedRoutes.map((r: any) => r.routeId) : []
     );
@@ -1479,7 +1521,7 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
         {/* Results Summary */}
         <div className="flex items-center justify-between mb-4">
           <div className="text-sm text-gray-600">
-            Showing {paginatedTrucks().length} of {filterTrucks(trucks).length} trucks
+            Showing {paginatedTrucks().length} of {filterTrucks(enrichedTrucks).length} trucks
             {search && ` matching "${search}"`}
           </div>
           <div className="flex items-center gap-2">
@@ -1552,7 +1594,7 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
                     <span className="text-gray-500">Capacity:</span>
                     <span className="text-gray-900">{truck.capacityWeight?.toLocaleString()} kg</span>
                   </div>
-                  {truck.currentLocation && (
+                  {truck.currentLocation && truck.currentLocation.address && (
                     <div className="flex items-center gap-2 text-sm">
                       <FaMapMarkerAlt className="w-3 h-3 text-gray-400" />
                       <span className="text-gray-900">{truck.currentLocation.address}</span>
@@ -1576,7 +1618,7 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
                     </button>
                   </div>
 
-                  {truck.assignedDrivers && truck.assignedDrivers.length > 0 ? (
+                  {Array.isArray(truck.assignedDrivers) && truck.assignedDrivers.length > 0 ? (
                     <div className="space-y-2">
                       {truck.assignedDrivers.map((assignment: any, index: number) => (
                         <div key={assignment.id || `driver-${index}`} className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
@@ -1966,7 +2008,7 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
             <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
               <div className="p-6">
                 <div className="flex items-center justify-between mb-4">
-                  <h3>Assign Driver to {selectedTruck.name}</h3>
+                  <h3>Assign Driver to {selectedTruck?.name || selectedTruck?.plateNumber}</h3>
                   <button
                     onClick={() => {
                       setShowAssignDriver(false);
@@ -1991,13 +2033,13 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
                       {availableDrivers.map((driver, index) => (
                         <button
                           key={driver.id || `available-driver-${index}`}
-                          onClick={() => handleAssignDriver(selectedTruck.id, driver.id)}
+                          onClick={() => handleAssignDriver(selectedTruck?.id, driver.id)}
                           className="w-full p-3 text-left border border-gray-200 rounded-lg hover:bg-gray-50 flex items-center gap-3"
                         >
                           <FaUser className="w-4 h-4 text-[#345E85]" />
                           <div>
-                            <p className="font-medium text-gray-900">{driver.firstName ? `${driver.firstName} ${driver.lastName || ''}`.trim() : (driver.name || 'Unnamed')}</p>
-                            <p className="text-sm text-gray-500">{driver.licenseNumber} • {driver.experience} years experience</p>
+                            <p className="font-medium text-gray-900">{driver?.firstName ? `${driver.firstName} ${driver.lastName || ''}`.trim() : (driver?.name || 'Unnamed')}</p>
+                            <p className="text-sm text-gray-500">{driver?.licenseNumber} • {driver?.experience} years experience</p>
                           </div>
                         </button>
                       ))}
@@ -2015,7 +2057,7 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
             <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
               <div className="p-6">
                 <div className="flex items-center justify-between mb-4">
-                  <h3>Assign Route to {selectedTruck.name}</h3>
+                  <h3>Assign Route to {selectedTruck?.name || selectedTruck?.plateNumber}</h3>
                   <button
                     onClick={() => {
                       setShowAssignRoute(false);
@@ -2034,11 +2076,11 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
                   <div className="bg-gray-50 p-3 rounded-lg text-xs text-gray-600">
                     <p><strong>Debug Info:</strong></p>
                     <p>Total routes in system: {routes.length}</p>
-                    <p>Available routes for this truck: {getAvailableRoutes(selectedTruck.id).length}</p>
-                    <p>Truck ID: {selectedTruck.id}</p>
+                    <p>Available routes for this truck: {getAvailableRoutes(selectedTruck?.id).length}</p>
+                    <p>Truck ID: {selectedTruck?.id}</p>
                   </div>
 
-                  {getAvailableRoutes(selectedTruck.id).length === 0 ? (
+                  {getAvailableRoutes(selectedTruck?.id).length === 0 ? (
                     <div className="text-center py-4">
                       <FaRoute className="w-8 h-8 text-gray-400 mx-auto mb-2" />
                       <p className="text-gray-500">No available routes</p>
@@ -2051,16 +2093,16 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
                     </div>
                   ) : (
                     <div className="space-y-2 max-h-60 overflow-y-auto">
-                      {getAvailableRoutes(selectedTruck.id).map((route, index) => (
+                      {getAvailableRoutes(selectedTruck?.id).map((route, index) => (
                         <button
                           key={route.id || `available-route-${index}`}
-                          onClick={() => handleAssignRoute(selectedTruck.id, route.id)}
+                          onClick={() => handleAssignRoute(selectedTruck?.id, route.id)}
                           className="w-full p-3 text-left border border-gray-200 rounded-lg hover:bg-gray-50 flex items-center gap-3"
                         >
                           <FaRoute className="w-4 h-4 text-[#345E85]" />
                           <div>
-                            <p className="font-medium text-gray-900">{route.name}</p>
-                            <p className="text-sm text-gray-500">{route.origin} to {route.destination}</p>
+                            <p className="font-medium text-gray-900">{route?.name || 'Unknown Route'}</p>
+                            <p className="text-sm text-gray-500">{route?.origin} to {route?.destination}</p>
                           </div>
                         </button>
                       ))}
@@ -2079,15 +2121,15 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
             <div className="w-full max-w-md bg-white h-full shadow-xl overflow-y-auto">
               <div className="p-6 border-b">
                 <div className="flex items-center justify-between">
-                  <h3>Routes for {selectedTruck.name || selectedTruck.plateNumber}</h3>
+                  <h3>Routes for {selectedTruck?.name || selectedTruck?.plateNumber}</h3>
                   <button className="text-gray-400 hover:text-gray-600" onClick={() => { setShowTruckRoutes(false); setSelectedTruck(null); }}>
                     <FaTimesCircle className="w-5 h-5" />
                   </button>
                 </div>
               </div>
               <div className="p-6 space-y-3">
-                {Array.isArray(selectedTruck.assignedRouteDetails) && selectedTruck.assignedRouteDetails.length > 0 ? (
-                  selectedTruck.assignedRouteDetails.map((r: any) => (
+                {Array.isArray(selectedTruck?.assignedRouteDetails) && selectedTruck?.assignedRouteDetails?.length > 0 ? (
+                  selectedTruck?.assignedRouteDetails?.map((r: any) => (
                     <div key={r.id} className="border rounded-lg p-4 flex items-start justify-between">
                       <div>
                         <div className="font-medium text-gray-900">{r.name}</div>
@@ -2096,7 +2138,7 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
                       </div>
                       <div className="flex items-center gap-2">
                         <button
-                          onClick={() => handleUnassignRoute(selectedTruck.id, r.id)}
+                          onClick={() => handleUnassignRoute(selectedTruck?.id, r.id)}
                           className="text-red-600 hover:text-red-800 text-xs"
                         >
                           Unassign
@@ -2130,7 +2172,7 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
           <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
             <DialogHeader className="hidden">
               <DialogTitle>Truck Details</DialogTitle>
-              <DialogDescription>Details for {selectedTruck?.name}</DialogDescription>
+              <DialogDescription>Details for {selectedTruck?.name || selectedTruck?.plateNumber}</DialogDescription>
             </DialogHeader>
             <div className="p-6">
               <div className="flex items-center justify-between mb-6">
@@ -2144,24 +2186,24 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
                   <div className="space-y-3">
                     <div className="flex justify-between">
                       <span className="text-gray-600">Name:</span>
-                      <span className="font-medium">{selectedTruck.name || 'N/A'}</span>
+                      <span className="font-medium">{selectedTruck?.name || selectedTruck?.plateNumber || 'N/A'}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">Plate Number:</span>
-                      <span className="font-medium">{selectedTruck.plateNumber || 'N/A'}</span>
+                      <span className="font-medium">{selectedTruck?.plateNumber || 'N/A'}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">Make/Model:</span>
-                      <span className="font-medium">{selectedTruck.make} {selectedTruck.model}</span>
+                      <span className="font-medium">{selectedTruck?.make} {selectedTruck?.model}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">Year:</span>
-                      <span className="font-medium">{selectedTruck.year}</span>
+                      <span className="font-medium">{selectedTruck?.year}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">Status:</span>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(selectedTruck.status)}`}>
-                        {getStatusText(selectedTruck.status)}
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(selectedTruck?.status)}`}>
+                        {getStatusText(selectedTruck?.status)}
                       </span>
                     </div>
                   </div>
@@ -2173,39 +2215,39 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
                   <div className="space-y-3">
                     <div className="flex justify-between">
                       <span className="text-gray-600">Capacity Weight:</span>
-                      <span className="font-medium">{selectedTruck.capacityWeight?.toLocaleString()} kg</span>
+                      <span className="font-medium">{selectedTruck?.capacityWeight?.toLocaleString()} kg</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">Capacity Volume:</span>
-                      <span className="font-medium">{selectedTruck.capacityVolume?.toLocaleString()} cu ft</span>
+                      <span className="font-medium">{selectedTruck?.capacityVolume?.toLocaleString()} cu ft</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">VIN:</span>
-                      <span className="font-medium">{selectedTruck.vin || 'N/A'}</span>
+                      <span className="font-medium">{selectedTruck?.vin || 'N/A'}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">Truck Type:</span>
-                      <span className="font-medium">{selectedTruck.truckType || 'N/A'}</span>
+                      <span className="font-medium">{selectedTruck?.truckType || 'N/A'}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">Trailer Type:</span>
-                      <span className="font-medium">{selectedTruck.trailerType || 'N/A'}</span>
+                      <span className="font-medium">{selectedTruck?.trailerType || 'N/A'}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">Fuel Type:</span>
-                      <span className="font-medium">{selectedTruck.fuelType || 'N/A'}</span>
+                      <span className="font-medium">{selectedTruck?.fuelType || 'N/A'}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">Color:</span>
-                      <span className="font-medium">{selectedTruck.color || 'N/A'}</span>
+                      <span className="font-medium">{selectedTruck?.color || 'N/A'}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">Mileage:</span>
-                      <span className="font-medium">{selectedTruck.mileage?.toLocaleString()} miles</span>
+                      <span className="font-medium">{selectedTruck?.mileage?.toLocaleString()} miles</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">Fuel Efficiency:</span>
-                      <span className="font-medium">{selectedTruck.fuelEfficiency || 'N/A'} mpg</span>
+                      <span className="font-medium">{selectedTruck?.fuelEfficiency || 'N/A'} mpg</span>
                     </div>
                   </div>
                 </div>
@@ -2216,15 +2258,15 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
                   <div className="space-y-3">
                     <div className="flex justify-between">
                       <span className="text-gray-600">Max Length:</span>
-                      <span className="font-medium">{selectedTruck.maxLength ? `${selectedTruck.maxLength} m` : 'N/A'}</span>
+                      <span className="font-medium">{selectedTruck?.maxLength ? `${selectedTruck?.maxLength} m` : 'N/A'}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">Max Width:</span>
-                      <span className="font-medium">{selectedTruck.maxWidth ? `${selectedTruck.maxWidth} m` : 'N/A'}</span>
+                      <span className="font-medium">{selectedTruck?.maxWidth ? `${selectedTruck?.maxWidth} m` : 'N/A'}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">Max Height:</span>
-                      <span className="font-medium">{selectedTruck.maxHeight ? `${selectedTruck.maxHeight} m` : 'N/A'}</span>
+                      <span className="font-medium">{selectedTruck?.maxHeight ? `${selectedTruck?.maxHeight} m` : 'N/A'}</span>
                     </div>
                   </div>
                 </div>
@@ -2233,19 +2275,19 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
                 <div className="space-y-4">
                   <h4 className="text-lg font-semibold text-gray-900 border-b border-gray-200 pb-2">Current Location</h4>
                   <div className="space-y-3">
-                    {selectedTruck.currentLocation ? (
+                    {selectedTruck?.currentLocation ? (
                       <>
                         <div className="flex justify-between">
                           <span className="text-gray-600">Address:</span>
-                          <span className="font-medium">{selectedTruck.currentLocation.address}</span>
+                          <span className="font-medium">{selectedTruck?.currentLocation?.address}</span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-gray-600">City:</span>
-                          <span className="font-medium">{selectedTruck.currentLocation.city}</span>
+                          <span className="font-medium">{selectedTruck?.currentLocation?.city}</span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-gray-600">State:</span>
-                          <span className="font-medium">{selectedTruck.currentLocation.state}</span>
+                          <span className="font-medium">{selectedTruck?.currentLocation?.state}</span>
                         </div>
                       </>
                     ) : (
@@ -2259,10 +2301,10 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
                   <h4 className="text-lg font-semibold text-gray-900 border-b border-gray-200 pb-2">Current Assignments</h4>
                   <div className="space-y-3">
                     <div>
-                      <h5 className="font-medium text-gray-900 mb-2">Drivers ({selectedTruck.assignedDrivers?.length || 0})</h5>
-                      {selectedTruck.assignedDrivers && selectedTruck.assignedDrivers.length > 0 ? (
+                      <h5 className="font-medium text-gray-900 mb-2">Drivers ({selectedTruck?.assignedDrivers?.length || 0})</h5>
+                      {selectedTruck?.assignedDrivers && selectedTruck?.assignedDrivers?.length > 0 ? (
                         <div className="space-y-2">
-                          {selectedTruck.assignedDrivers.map((assignment: any, index: number) => (
+                          {selectedTruck?.assignedDrivers?.map((assignment: any, index: number) => (
                             <div key={assignment.id || `driver-${index}`} className="flex items-center justify-between p-2 bg-green-50 rounded">
                               <span className="text-sm font-medium">{assignment.driverName}</span>
                               <span className="text-xs text-gray-500">{assignment.status}</span>
@@ -2275,10 +2317,10 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
                     </div>
 
                     <div>
-                      <h5 className="font-medium text-gray-900 mb-2">Routes ({selectedTruck.assignedRoutes?.length || 0})</h5>
-                      {selectedTruck.assignedRoutes && selectedTruck.assignedRoutes.length > 0 ? (
+                      <h5 className="font-medium text-gray-900 mb-2">Routes ({selectedTruck?.assignedRoutes?.length || 0})</h5>
+                      {selectedTruck?.assignedRoutes && selectedTruck?.assignedRoutes?.length > 0 ? (
                         <div className="space-y-2">
-                          {selectedTruck.assignedRoutes.map((assignment: any, index: number) => (
+                          {selectedTruck?.assignedRoutes?.map((assignment: any, index: number) => (
                             <div key={assignment.id || `route-${index}`} className="flex items-center justify-between p-2 bg-blue-50 rounded">
                               <span className="text-sm font-medium">{assignment.routeName}</span>
                               <span className="text-xs text-gray-500">{assignment.status}</span>
@@ -2298,23 +2340,23 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
                   <div className="space-y-3">
                     <div className="flex justify-between">
                       <span className="text-gray-600">Registration Number:</span>
-                      <span className="font-medium">{selectedTruck.registrationNumber || 'N/A'}</span>
+                      <span className="font-medium">{selectedTruck?.registrationNumber || 'N/A'}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">Registration Expiry:</span>
-                      <span className="font-medium">{selectedTruck.registrationExpiry ? new Date(selectedTruck.registrationExpiry).toLocaleDateString() : 'N/A'}</span>
+                      <span className="font-medium">{selectedTruck?.registrationExpiry ? new Date(selectedTruck?.registrationExpiry).toLocaleDateString() : 'N/A'}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">Insurance Policy:</span>
-                      <span className="font-medium">{selectedTruck.insurancePolicy || 'N/A'}</span>
+                      <span className="font-medium">{selectedTruck?.insurancePolicy || 'N/A'}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">Insurance Expiry:</span>
-                      <span className="font-medium">{selectedTruck.insuranceExpiry ? new Date(selectedTruck.insuranceExpiry).toLocaleDateString() : 'N/A'}</span>
+                      <span className="font-medium">{selectedTruck?.insuranceExpiry ? new Date(selectedTruck?.insuranceExpiry).toLocaleDateString() : 'N/A'}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">Roadworthy Cert Expiry:</span>
-                      <span className="font-medium">{selectedTruck.roadworthyCertExpiry ? new Date(selectedTruck.roadworthyCertExpiry).toLocaleDateString() : 'N/A'}</span>
+                      <span className="font-medium">{selectedTruck?.roadworthyCertExpiry ? new Date(selectedTruck?.roadworthyCertExpiry).toLocaleDateString() : 'N/A'}</span>
                     </div>
                   </div>
                 </div>
@@ -2323,16 +2365,16 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
                 <div className="space-y-4">
                   <h4 className="text-lg font-semibold text-gray-900 border-b border-gray-200 pb-2">Capabilities & Safety</h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                    <div className="flex justify-between"><span className="text-gray-600">Refrigeration:</span><span className="font-medium">{selectedTruck.hasRefrigeration || selectedTruck.hasReefer ? 'Yes' : 'No'}</span></div>
-                    <div className="flex justify-between"><span className="text-gray-600">Lift Gate:</span><span className="font-medium">{selectedTruck.hasLiftGate ? 'Yes' : 'No'}</span></div>
-                    <div className="flex justify-between"><span className="text-gray-600">Hazmat Permit:</span><span className="font-medium">{selectedTruck.hasHazmatPermit ? 'Yes' : 'No'}</span></div>
-                    <div className="flex justify-between"><span className="text-gray-600">GPS:</span><span className="font-medium">{selectedTruck.hasGps || selectedTruck.hasGPS ? 'Yes' : 'No'}</span></div>
-                    <div className="flex justify-between"><span className="text-gray-600">Tracking:</span><span className="font-medium">{selectedTruck.hasTracking ? 'Yes' : 'No'}</span></div>
-                    <div className="flex justify-between"><span className="text-gray-600">Telematics:</span><span className="font-medium">{selectedTruck.hasTelematics ? 'Yes' : 'No'}</span></div>
-                    <div className="flex justify-between"><span className="text-gray-600">ELD:</span><span className="font-medium">{selectedTruck.hasELD ? 'Yes' : 'No'}</span></div>
-                    <div className="flex justify-between"><span className="text-gray-600">Dash Cam:</span><span className="font-medium">{selectedTruck.hasDashCam ? 'Yes' : 'No'}</span></div>
+                    <div className="flex justify-between"><span className="text-gray-600">Refrigeration:</span><span className="font-medium">{selectedTruck?.hasRefrigeration || selectedTruck?.hasReefer ? 'Yes' : 'No'}</span></div>
+                    <div className="flex justify-between"><span className="text-gray-600">Lift Gate:</span><span className="font-medium">{selectedTruck?.hasLiftGate ? 'Yes' : 'No'}</span></div>
+                    <div className="flex justify-between"><span className="text-gray-600">Hazmat Permit:</span><span className="font-medium">{selectedTruck?.hasHazmatPermit ? 'Yes' : 'No'}</span></div>
+                    <div className="flex justify-between"><span className="text-gray-600">GPS:</span><span className="font-medium">{selectedTruck?.hasGps || selectedTruck?.hasGPS ? 'Yes' : 'No'}</span></div>
+                    <div className="flex justify-between"><span className="text-gray-600">Tracking:</span><span className="font-medium">{selectedTruck?.hasTracking ? 'Yes' : 'No'}</span></div>
+                    <div className="flex justify-between"><span className="text-gray-600">Telematics:</span><span className="font-medium">{selectedTruck?.hasTelematics ? 'Yes' : 'No'}</span></div>
+                    <div className="flex justify-between"><span className="text-gray-600">ELD:</span><span className="font-medium">{selectedTruck?.hasELD ? 'Yes' : 'No'}</span></div>
+                    <div className="flex justify-between"><span className="text-gray-600">Dash Cam:</span><span className="font-medium">{selectedTruck?.hasDashCam ? 'Yes' : 'No'}</span></div>
                   </div>
-                  <div className="text-xs text-gray-500">Equipment items: {Array.isArray(selectedTruck.equipmentList) ? selectedTruck.equipmentList.length : 0}</div>
+                  <div className="text-xs text-gray-500">Equipment items: {Array.isArray(selectedTruck?.equipmentList) ? selectedTruck?.equipmentList?.length : 0}</div>
                 </div>
               </div>
 
