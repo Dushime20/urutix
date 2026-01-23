@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { FaTimes, FaSpinner } from 'react-icons/fa';
 import { fuelApi, type CreateFuelLogData } from '../services/fuelApi';
 import { fleetApi } from '../services/fleetApi';
@@ -112,8 +113,8 @@ const AddFuelLogModal: React.FC<AddFuelLogModalProps> = ({ isOpen, onClose, onSu
 
     const totalCost = formData.gallons * formData.pricePerGallon;
 
-    return (
-        <div className="fixed inset-0 z-50 overflow-y-auto">
+    return createPortal(
+        <div className="fixed inset-0 z-[99999] overflow-y-auto">
             <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
                 {/* Background overlay */}
                 <div
@@ -349,7 +350,8 @@ const AddFuelLogModal: React.FC<AddFuelLogModalProps> = ({ isOpen, onClose, onSu
                     </form>
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 };
 

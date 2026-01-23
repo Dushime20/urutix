@@ -67,12 +67,12 @@ const QuickActionPanel: React.FC<QuickActionPanelProps> = ({ isOpen, onClose, on
     <>
       {/* Overlay */}
       <div 
-        className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40 transition-opacity"
+        className="fixed inset-0 bg-black/30 backdrop-blur-sm z-[100] transition-opacity"
         onClick={onClose}
       />
 
       {/* Slide-over Panel */}
-      <div className="fixed inset-y-0 right-0 w-full sm:w-[500px] lg:w-[600px] bg-white shadow-2xl z-50 transform transition-transform duration-300 ease-in-out overflow-hidden flex flex-col">
+      <div className="fixed inset-y-0 right-0 w-full sm:w-[500px] lg:w-[600px] bg-white shadow-2xl z-[110] transform transition-transform duration-300 ease-in-out overflow-hidden flex flex-col">
         {/* Header */}
         <div className="bg-gradient-to-r from-indigo-600 to-purple-600 px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">

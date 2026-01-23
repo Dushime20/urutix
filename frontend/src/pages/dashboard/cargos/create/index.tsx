@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { createPortal } from "react-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { FaTruck, FaCheck, FaRocket, FaBookmark } from "react-icons/fa";
 import JourneySelectionModal from "@/components/CargoOwnerJourney/JourneySelectionModal";
 import BrokerAssignmentStep from "@/components/CargoOwnerJourney/BrokerAssignmentStep";
@@ -16,6 +17,7 @@ import { FileText, X } from "lucide-react";
 
 const CargoCreatePage: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [showEnhancedForm, setShowEnhancedForm] = useState(false);
   const [showJourneySelection, setShowJourneySelection] = useState(false);
@@ -33,6 +35,25 @@ const CargoCreatePage: React.FC = () => {
   const [showDraftModal, setShowDraftModal] = useState(false);
   const [showBrokerAssignment, setShowBrokerAssignment] = useState(false);
   const [assignedBrokerId, setAssignedBrokerId] = useState<string | null>(null);
+  const [editMode, setEditMode] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Check for editCargo in navigation state and auto-open form with data
+  useEffect(() => {
+    const editCargo = (location.state as any)?.editCargo;
+    if (editCargo) {
+      console.log("📝 Opening form with cargo data for editing:", editCargo);
+      setSelectedTemplate(editCargo);
+      setEditMode(editCargo.status !== 'DRAFT'); // Set edit mode for non-draft cargos
+      setShowEnhancedForm(true);
+      // Clear the navigation state to prevent re-triggering on refresh
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
 
   // Fetch drafts on mount
   useEffect(() => {
@@ -318,9 +339,13 @@ const CargoCreatePage: React.FC = () => {
         {/* Enhanced Cargo Form Modal */}
         <EnhancedCargoForm
           isOpen={showEnhancedForm}
-          onClose={() => setShowEnhancedForm(false)}
+          onClose={() => {
+            setShowEnhancedForm(false);
+            setSelectedTemplate(null);
+            setEditMode(false);
+          }}
           onSubmit={handleCargoSubmit}
-          mode="create"
+          mode={editMode ? "edit" : "create"}
           initialData={selectedTemplate}
           showTruckSelection={false}
           onSaveDraft={handleSaveDraft}
@@ -384,8 +409,8 @@ const CargoCreatePage: React.FC = () => {
         )}
 
         {/* Draft Selection Modal */}
-        {showDraftModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        {showDraftModal && mounted && createPortal(
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[99999] p-4">
             <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
               <div className="p-6">
                 <div className="flex items-center justify-between mb-4">
@@ -444,7 +469,8 @@ const CargoCreatePage: React.FC = () => {
                 </div>
               </div>
             </div>
-          </div>
+          </div>,
+          document.body
         )}
       </div>
     </div>

@@ -184,14 +184,13 @@ export const biddingAPI = {
   getMyBids: () => api.get('/bidding/bids'),
 };
 
+import { formatCurrency } from '../utils/formatNumber';
+
 // Helper functions for common operations
 export const biddingHelpers = {
   // Format currency for display
   formatCurrency: (amount: number, currency: string = 'USD') => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency,
-    }).format(amount);
+    return formatCurrency(amount, currency);
   },
 
   // Calculate time remaining for auction

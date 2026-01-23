@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { FaChartLine, FaDollarSign, FaPercentage, FaClock } from 'react-icons/fa';
+import { formatCurrency } from '../../utils/formatNumber';
 
 interface LoadPerformance {
   title: string;
@@ -96,12 +97,7 @@ const BidAnalytics: React.FC<BidAnalyticsProps> = ({ userRole }) => {
     }
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(amount);
-  };
+
 
   const formatTime = (minutes: number) => {
     const hours = Math.floor(minutes / 60);

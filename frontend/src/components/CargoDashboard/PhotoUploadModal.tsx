@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from 'react';
-import { FaTimes, FaUpload, FaCamera, FaTrash, FaEye } from 'react-icons/fa';
+import { createPortal } from 'react-dom';
+import { FaTimes, FaUpload, FaTrash } from 'react-icons/fa';
 import { useDropzone } from 'react-dropzone';
 
 interface PhotoUploadModalProps {
@@ -77,7 +78,7 @@ const PhotoUploadModal: React.FC<PhotoUploadModalProps> = ({
 
     try {
       const formData = new FormData();
-      uploadedFiles.forEach((file, index) => {
+      uploadedFiles.forEach((file, _) => {
         formData.append('photos', file);
       });
 
@@ -119,8 +120,8 @@ const PhotoUploadModal: React.FC<PhotoUploadModalProps> = ({
 
   if (!isOpen) return null;
 
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+  return createPortal(
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[99999] p-4">
       <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="p-6 border-b border-gray-100">
@@ -253,7 +254,8 @@ const PhotoUploadModal: React.FC<PhotoUploadModalProps> = ({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 
