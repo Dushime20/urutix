@@ -38,7 +38,7 @@ import { RolesGuard } from './roles.guard';
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
         secret: configService.get<string>('JWT_SECRET') || 'your-secret-key',
-        signOptions: { expiresIn: '15m' },
+        signOptions: { expiresIn: '24h' }, // 24 hours for development
       }),
       inject: [ConfigService],
     }),
@@ -64,4 +64,4 @@ import { RolesGuard } from './roles.guard';
     EmailService,
   ],
 })
-export class EnhancedAuthModule {}
+export class EnhancedAuthModule { }

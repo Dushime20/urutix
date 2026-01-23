@@ -9,17 +9,12 @@ import { lazy, Suspense } from 'react';
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const CargoDashboard = lazy(() => import('./pages/CargoDashboard'));
 const FleetDashboard = lazy(() => import('./pages/FleetDashboard'));
-const FleetOwnerDashboard = lazy(() => import('./pages/FleetOwnerDashboard'));
 const FleetSafety = lazy(() => import('./pages/FleetSafety'));
 const TruckBidsPage = lazy(() => import('./pages/TruckBidsPage'));
-const FleetBidsPage = lazy(() => import('./pages/FleetBidsPage'));
 const MyBidsPage = lazy(() => import('./pages/MyBidsPage'));
-const DriversListPage = lazy(() => import('./pages/DriversListPage'));
 const DriverDashboard = lazy(() => import('./components/DriverDashboard/DriverDashboard'));
-const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
 const Analytics = lazy(() => import('./pages/Analytics'));
 const FleetAnalytics = lazy(() => import('./pages/FleetAnalytics'));
-const DriverAssignments = lazy(() => import('./components/FleetDashboard/DriverAssignments').then(module => ({ default: module.DriverAssignments })));
 
 // Keep essential components that are needed immediately (layouts, auth, home)
 import CargoOwnerLayout from './components/Layout/CargoOwnerLayout';
@@ -30,7 +25,7 @@ import TenantAdminLayout from './components/Layout/TenantAdminLayout';
 import LenderLayout from './components/Layout/LenderLayout';
 import BrokerLayout from './components/Layout/BrokerLayout';
 import BrokerRouteTest from './components/BrokerRouteTest';
-import RoleBasedLayout from './components/Layout/RoleBasedLayout';
+
 import Auth from './pages/Auth';
 import Home from './pages/Home';
 import DriverPasswordSetup from './pages/DriverPasswordSetup';
@@ -43,12 +38,12 @@ const CargoList = lazy(() => import('./pages/dashboard/cargos/list'));
 const CargoOwnerContracts = lazy(() => import('./pages/cargo-owner/Contracts'));
 const EnhancedJourneyFlow = lazy(() => import('./components/CargoOwnerJourney/EnhancedJourneyFlow'));
 const EnhancedCargoDemo = lazy(() => import('./pages/EnhancedCargoDemo'));
-const TrucksListPage = lazy(() => import('./pages/TrucksListPage'));
+
 const TruckRecordsPage = lazy(() => import('./pages/TruckRecordsPage'));
 const UnifiedFleetManagement = lazy(() => import('./pages/UnifiedFleetManagement'));
 const UnifiedDriverManagement = lazy(() => import('./pages/UnifiedDriverManagement'));
 const FleetPaymentManagement = lazy(() => import('./pages/FleetPaymentManagement'));
-const FleetHelpSupport = lazy(() => import('./pages/FleetHelpSupport'));
+
 const CargoHelpSupport = lazy(() => import('./pages/CargoHelpSupport'));
 const RoutesPage = lazy(() => import('./pages/Routes'));
 const AdminUsers = lazy(() => import('./pages/AdminUsers'));
@@ -63,7 +58,7 @@ const DisputeManagement = lazy(() => import('./pages/admin/DisputeManagement'));
 const FinancialAdminDashboard = lazy(() => import('./pages/admin/FinancialAdminDashboard'));
 const TenantDashboardPage = lazy(() => import('./pages/TenantDashboard'));
 const TenantFleetManagement = lazy(() => import('./components/TenantAdmin/TenantFleetManagement'));
-const TenantCargoOperations = lazy(() => import('./components/TenantAdmin/TenantCargoOperations'));
+
 const TenantAdminRoutes = lazy(() => import('./components/TenantAdmin/TenantAdminRoutes'));
 const TenantAdminDrivers = lazy(() => import('./components/TenantAdmin/TenantAdminDrivers'));
 const TenantAdminCargo = lazy(() => import('./components/TenantAdmin/TenantAdminCargo'));
@@ -85,7 +80,7 @@ const ContractNegotiation = lazy(() => import('./pages/ContractNegotiation'));
 const EscrowManagement = lazy(() => import('./pages/EscrowManagement'));
 const DisputeResolution = lazy(() => import('./pages/DisputeResolution'));
 const TripTracking = lazy(() => import('./pages/TripTracking'));
-const Tracking = lazy(() => import('./pages/Tracking'));
+
 const DeliveryConfirmation = lazy(() => import('./pages/DeliveryConfirmation'));
 const SettlementProcessing = lazy(() => import('./pages/SettlementProcessing'));
 const LenderDashboardPage = lazy(() => import('./pages/LenderDashboardPage'));
@@ -96,7 +91,7 @@ const InvoiceViewer = lazy(() => import('./components/CargoOwner/InvoiceViewer')
 const ReceiverCargosPage = lazy(() => import('./pages/cargo-owner/ReceiverCargosPage'));
 const CargoInspectionPage = lazy(() => import('./pages/cargo-owner/CargoInspectionPage'));
 const ReceiptViewer = lazy(() => import('./components/Lender/ReceiptViewer'));
-const DocumentsPage = lazy(() => import('./pages/DocumentsPage'));
+
 const UnifiedNotificationManagement = lazy(() => import('./pages/dashboard/notifications'));
 const SmartBookingRequests = lazy(() => import('./pages/SmartBookingRequests'));
 const FuelManagement = lazy(() => import('./pages/FuelManagement'));
@@ -123,7 +118,7 @@ const LenderTeamManagementPage = lazy(() => import('./pages/LenderTeamManagement
 
 // Broker Pages
 const SimpleBrokerDashboard = lazy(() => import('./pages/broker/SimpleBrokerDashboard'));
-const BrokerDashboard = lazy(() => import('./pages/broker/BrokerDashboard'));
+
 const BrokerProfile = lazy(() => import('./pages/broker/BrokerProfile'));
 const BrokerBidding = lazy(() => import('./pages/broker/BrokerBidding'));
 const CargoDiscovery = lazy(() => import('./pages/broker/CargoDiscovery'));

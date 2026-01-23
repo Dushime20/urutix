@@ -20,11 +20,13 @@ import 'leaflet/dist/leaflet.css';
 import { fleetApi } from '../../services/fleetApi';
 import type { FleetItem as ServiceTruck, Driver as ServiceDriver } from '../../services/fleetApi';
 import { authAPI } from '../../services/api';
-import type { FleetItem as LocalFleetItem, FleetFilters as FleetFiltersType } from '../../types/fleet';
+import type { FleetItem as LocalFleetItem } from '../../types/fleet';
 import { FleetStatus } from '../../types/fleet';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { TruckAnalytics } from './TruckAnalytics';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
+import { TrucksList } from './TrucksList';
+import { TruckMatches } from './TruckMatches';
 
 import { useCargoOwnerLayout } from '../../contexts/CargoOwnerLayoutContext';
 
@@ -54,10 +56,10 @@ export const FleetDashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedFleetItem, setSelectedFleetItem] = useState<LocalFleetItem | null>(null);
-  const [filters, setFilters] = useState<FleetFiltersType>({ status: FleetStatus.IN_TRANSIT });
+
   const [search, setSearch] = useState('');
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'trucks' | 'drivers' | 'analytics' | 'safety' | 'financial' | 'routes'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'trucks' | 'drivers' | 'analytics' | 'safety' | 'financial' | 'routes' | 'matches'>('overview');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
 
   const observer = useRef<IntersectionObserver | null>(null);
@@ -119,10 +121,10 @@ export const FleetDashboard: React.FC = () => {
       type: 'truck',
       name,
       status,
-      currentLocation: t.currentLocation ? { 
-        coordinates: { coordinates: [] }, 
-        address: typeof t.currentLocation === 'string' 
-          ? t.currentLocation 
+      currentLocation: t.currentLocation ? {
+        coordinates: { coordinates: [] },
+        address: typeof t.currentLocation === 'string'
+          ? t.currentLocation
           : (t.currentLocation as any)?.address || 'Unknown'
       } : undefined,
       createdAt: new Date(t.createdAt),
@@ -348,7 +350,7 @@ export const FleetDashboard: React.FC = () => {
                 </button>
 
                 <button
-                  onClick={() => {/* Implement Smart Matches */ }}
+                  onClick={() => setActiveTab('matches')}
                   className="inline-flex items-center gap-2 px-4 py-2 bg-white hover:bg-indigo-50 text-indigo-600 hover:text-indigo-700 rounded-lg transition-all font-medium shadow-sm border border-indigo-200 hover:border-indigo-300 hover:shadow"
                 >
                   <FiZap className="w-4 h-4" />
@@ -356,7 +358,7 @@ export const FleetDashboard: React.FC = () => {
                 </button>
 
                 <button
-                  onClick={() => {/* Implement Log Fuel */ }}
+                  onClick={() => navigate('/dashboard/fleet/fuel')}
                   className="inline-flex items-center gap-2 px-4 py-2 bg-white hover:bg-orange-50 text-orange-600 hover:text-orange-700 rounded-lg transition-all font-medium shadow-sm border border-orange-200 hover:border-orange-300 hover:shadow"
                 >
                   <FaGasPump className="w-4 h-4" />
@@ -520,27 +522,27 @@ export const FleetDashboard: React.FC = () => {
                       {fleetItems
                         .filter(i => {
                           const coords = i.currentLocation?.coordinates?.coordinates;
-                          return coords && coords.length >= 2 && 
-                            typeof coords[0] === 'number' && 
+                          return coords && coords.length >= 2 &&
+                            typeof coords[0] === 'number' &&
                             typeof coords[1] === 'number';
                         })
                         .map(item => (
-                        <Marker
-                          key={item.id}
-                          position={[
-                            item.currentLocation!.coordinates.coordinates[1],
-                            item.currentLocation!.coordinates.coordinates[0]
-                          ]}
-                          icon={fleetIcon}
-                        >
-                          <Popup>
-                            <div className="p-2">
-                              <p className="font-bold">{item.name}</p>
-                              <p className="text-xs text-gray-500">{item.status}</p>
-                            </div>
-                          </Popup>
-                        </Marker>
-                      ))}
+                          <Marker
+                            key={item.id}
+                            position={[
+                              item.currentLocation!.coordinates.coordinates[1],
+                              item.currentLocation!.coordinates.coordinates[0]
+                            ]}
+                            icon={fleetIcon}
+                          >
+                            <Popup>
+                              <div className="p-2">
+                                <p className="font-bold">{item.name}</p>
+                                <p className="text-xs text-gray-500">{item.status}</p>
+                              </div>
+                            </Popup>
+                          </Marker>
+                        ))}
                     </MapContainer>
                     {/* Floating Controls Placeholder */}
                     <div className="absolute top-4 left-4 flex flex-col gap-2 z-[400]">
@@ -604,7 +606,7 @@ export const FleetDashboard: React.FC = () => {
             </div>
           ) : (
             <>
-              <FleetFilters filters={filters} setFilters={setFilters} search={search} setSearch={setSearch} activeTab={activeTab} viewMode={viewMode} setViewMode={setViewMode} />
+              <FleetFilters search={search} setSearch={setSearch} activeTab={activeTab} viewMode={viewMode} setViewMode={setViewMode} />
 
               {error && (
                 <div className="bg-red-100 text-red-700 p-4 rounded flex items-center gap-2 mb-4" role="alert">
@@ -620,14 +622,18 @@ export const FleetDashboard: React.FC = () => {
                 <FinancialManagement />
               ) : activeTab === 'routes' ? (
                 <RouteAssignmentManager />
+              ) : activeTab === 'trucks' ? (
+                <TrucksList onAddTruck={handleCreateTruck} />
+              ) : activeTab === 'matches' ? (
+                <TruckMatches />
               ) : loading && fleetItems.length === 0 ? (
                 <FleetSkeleton />
               ) : (
                 <FleetTable
-                  fleetItems={fleetItems.filter(item => activeTab === 'trucks' ? item.type === 'truck' : item.type === 'driver')}
+                  fleetItems={fleetItems.filter(item => item.type === 'driver')}
                   lastFleetItemRef={lastFleetItemRef}
                   view={viewMode}
-                  activeTab={activeTab as 'trucks' | 'drivers'}
+                  activeTab={activeTab === 'drivers' ? 'drivers' : 'trucks'}
                   onRowClick={setSelectedFleetItem}
                   onEditFleetItem={handleEditFleetItem}
                   onDeleteFleetItem={handleDeleteFleetItem}

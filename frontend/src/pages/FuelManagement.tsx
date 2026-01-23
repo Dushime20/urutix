@@ -4,13 +4,19 @@ import {
     FaTruck,
     FaDollarSign,
     FaSpinner,
+    FaChartLine,
     FaPlus,
-    FaCheck,
     FaExclamationTriangle,
-    FaClock,
-    FaChartLine
 } from 'react-icons/fa';
-import { fuelApi, type FuelLog, type FuelStatistics } from '../services/fuelApi';
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogDescription,
+} from '../components/ui';
+import { fuelApi, type FuelLog, type FuelStatistics, type CreateFuelLogData } from '../services/fuelApi';
+import { fleetApi } from '../services/fleetApi';
 import toast from 'react-hot-toast';
 import { cn } from '../utils/cn';
 
@@ -22,9 +28,27 @@ const FuelManagement: React.FC = () => {
     const [filteredLogs, setFilteredLogs] = useState<FuelLog[]>([]);
     const [statistics, setStatistics] = useState<FuelStatistics | null>(null);
     const [loading, setLoading] = useState(false);
+    const [showAddForm, setShowAddForm] = useState(false);
+    const [trucks, setTrucks] = useState<any[]>([]);
+    const [drivers, setDrivers] = useState<any[]>([]);
+    const [submitting, setSubmitting] = useState(false);
+
+    const [formData, setFormData] = useState<CreateFuelLogData>({
+        truckId: '',
+        driverId: '',
+        fuelDate: new Date().toISOString().split('T')[0],
+        gallons: 0,
+        pricePerGallon: 0,
+        location: '',
+        odometer: undefined,
+        receiptNumber: '',
+        paymentMethod: 'CREDIT_CARD',
+        notes: '',
+    });
 
     useEffect(() => {
         loadData();
+        loadTrucksAndDrivers();
     }, []);
 
     useEffect(() => {
@@ -48,6 +72,19 @@ const FuelManagement: React.FC = () => {
         }
     };
 
+    const loadTrucksAndDrivers = async () => {
+        try {
+            const [trucksData, driversData] = await Promise.all([
+                fleetApi.getTrucks({}),
+                fleetApi.getDrivers({}),
+            ]);
+            setTrucks(trucksData || []);
+            setDrivers(driversData || []);
+        } catch (error) {
+            console.error('Error loading trucks and drivers:', error);
+        }
+    };
+
     const filterLogs = () => {
         if (activeTab === 'flagged') {
             setFilteredLogs(fuelLogs.filter(log => log.isFlagged));
@@ -56,33 +93,57 @@ const FuelManagement: React.FC = () => {
         }
     };
 
-    const getStatusBadge = (status: string) => {
-        switch (status) {
-            case 'VERIFIED':
-                return (
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold bg-green-100 text-green-800">
-                        <FaCheck className="w-3 h-3" />
-                        Verified
-                    </span>
-                );
-            case 'PENDING':
-                return (
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold bg-yellow-100 text-yellow-800">
-                        <FaClock className="w-3 h-3" />
-                        Pending
-                    </span>
-                );
-            case 'FLAGGED':
-                return (
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold bg-red-100 text-red-800">
-                        <FaExclamationTriangle className="w-3 h-3" />
-                        Flagged
-                    </span>
-                );
-            default:
-                return null;
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+
+        if (!formData.truckId) {
+            toast.error('Please select a truck');
+            return;
+        }
+
+        setSubmitting(true);
+        try {
+            await fuelApi.createFuelLog(formData);
+            toast.success('Fuel log added successfully');
+            setShowAddForm(false);
+            resetForm();
+            loadData(); // Reload data
+        } catch (error: any) {
+            console.error('Error creating fuel log:', error);
+            toast.error(error?.response?.data?.message || 'Failed to add fuel log');
+        } finally {
+            setSubmitting(false);
         }
     };
+
+    const resetForm = () => {
+        setFormData({
+            truckId: '',
+            driverId: '',
+            fuelDate: new Date().toISOString().split('T')[0],
+            gallons: 0,
+            pricePerGallon: 0,
+            location: '',
+            odometer: undefined,
+            receiptNumber: '',
+            paymentMethod: 'CREDIT_CARD',
+            notes: '',
+        });
+    };
+
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({
+            ...prev,
+            [name]: ['gallons', 'pricePerGallon', 'odometer'].includes(name)
+                ? (value === '' ? undefined : Number(value))
+                : value
+        }));
+    };
+
+    const totalCost = formData.gallons && formData.pricePerGallon
+        ? (formData.gallons * formData.pricePerGallon).toFixed(2)
+        : '0.00';
 
     return (
         <div className="min-h-screen bg-gray-50 px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
@@ -98,8 +159,11 @@ const FuelManagement: React.FC = () => {
                         </p>
                     </div>
                     <button
-                        onClick={() => toast.success('Add Fuel Log feature coming soon!')}
-                        className="inline-flex items-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors font-medium shadow-sm text-sm sm:text-base"
+                        onClick={() => setShowAddForm(true)}
+                        className="inline-flex items-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 text-white rounded-lg transition-colors font-medium shadow-sm text-sm sm:text-base"
+                        style={{ backgroundColor: '#345e85' }}
+                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#2a4d6d'}
+                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#345e85'}
                     >
                         <FaPlus className="w-4 h-4" />
                         Add Fuel Log
@@ -235,7 +299,6 @@ const FuelManagement: React.FC = () => {
                                         <th className="text-left py-3 px-4 text-xs sm:text-sm font-semibold text-gray-700">Location</th>
                                         <th className="text-right py-3 px-4 text-xs sm:text-sm font-semibold text-gray-700">Gallons</th>
                                         <th className="text-right py-3 px-4 text-xs sm:text-sm font-semibold text-gray-700">Cost</th>
-                                        <th className="text-center py-3 px-4 text-xs sm:text-sm font-semibold text-gray-700">Status</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-100">
@@ -271,19 +334,16 @@ const FuelManagement: React.FC = () => {
                                             </td>
                                             <td className="py-3 px-4 text-right">
                                                 <span className="text-sm font-medium text-gray-900">
-                                                    {log.gallons.toFixed(1)}
+                                                    {Number(log.gallons).toFixed(1)}
                                                 </span>
                                             </td>
                                             <td className="py-3 px-4 text-right">
                                                 <div className="text-sm font-semibold text-gray-900">
-                                                    ${log.totalCost.toFixed(2)}
+                                                    ${Number(log.totalCost).toFixed(2)}
                                                 </div>
                                                 <div className="text-xs text-gray-500">
-                                                    ${log.pricePerGallon.toFixed(2)} / gal
+                                                    ${Number(log.pricePerGallon).toFixed(2)} / gal
                                                 </div>
-                                            </td>
-                                            <td className="py-3 px-4 text-center">
-                                                {getStatusBadge(log.status)}
                                             </td>
                                         </tr>
                                     ))}
@@ -293,6 +353,240 @@ const FuelManagement: React.FC = () => {
                     </div>
                 )}
             </div>
+
+            {/* Add Fuel Log Modal */}
+            <Dialog open={showAddForm} onOpenChange={(open) => {
+                if (!open) resetForm();
+                setShowAddForm(open);
+            }}>
+                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                        <DialogTitle>Add Fuel Log</DialogTitle>
+                        <DialogDescription>Record a new fuel purchase</DialogDescription>
+                    </DialogHeader>
+
+                    <form onSubmit={handleSubmit} className="space-y-6 py-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {/* Truck Selection */}
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Truck <span className="text-red-500">*</span>
+                                </label>
+                                <select
+                                    name="truckId"
+                                    value={formData.truckId}
+                                    onChange={handleInputChange}
+                                    required
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                                >
+                                    <option value="">Select a truck</option>
+                                    {trucks.map(truck => (
+                                        <option key={truck.id} value={truck.id}>
+                                            {truck.plateNumber} - {truck.make} {truck.model}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            {/* Driver Selection */}
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Driver (Optional)
+                                </label>
+                                <select
+                                    name="driverId"
+                                    value={formData.driverId}
+                                    onChange={handleInputChange}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                                >
+                                    <option value="">Select a driver</option>
+                                    {drivers.map(driver => (
+                                        <option key={driver.id} value={driver.id}>
+                                            {driver.firstName} {driver.lastName}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            {/* Fuel Date */}
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Date <span className="text-red-500">*</span>
+                                </label>
+                                <input
+                                    type="date"
+                                    name="fuelDate"
+                                    value={formData.fuelDate}
+                                    onChange={handleInputChange}
+                                    required
+                                    max={new Date().toISOString().split('T')[0]}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                                />
+                            </div>
+
+                            {/* Gallons */}
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Gallons <span className="text-red-500">*</span>
+                                </label>
+                                <input
+                                    type="number"
+                                    name="gallons"
+                                    value={formData.gallons || ''}
+                                    onChange={handleInputChange}
+                                    required
+                                    min="0"
+                                    step="0.01"
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                                />
+                            </div>
+
+                            {/* Price Per Gallon */}
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Price per Gallon <span className="text-red-500">*</span>
+                                </label>
+                                <input
+                                    type="number"
+                                    name="pricePerGallon"
+                                    value={formData.pricePerGallon || ''}
+                                    onChange={handleInputChange}
+                                    required
+                                    min="0"
+                                    step="0.01"
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                                />
+                            </div>
+
+                            {/* Total Cost (Calculated) */}
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Total Cost
+                                </label>
+                                <div className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-900 font-semibold">
+                                    ${totalCost}
+                                </div>
+                            </div>
+
+                            {/* Location */}
+                            <div className="md:col-span-2">
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Location <span className="text-red-500">*</span>
+                                </label>
+                                <input
+                                    type="text"
+                                    name="location"
+                                    value={formData.location}
+                                    onChange={handleInputChange}
+                                    required
+                                    placeholder="e.g., Shell Station, Main St, Nairobi"
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                                />
+                            </div>
+
+                            {/* Odometer */}
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Odometer Reading (Optional)
+                                </label>
+                                <input
+                                    type="number"
+                                    name="odometer"
+                                    value={formData.odometer || ''}
+                                    onChange={handleInputChange}
+                                    min="0"
+                                    placeholder="e.g., 45000"
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                                />
+                            </div>
+
+                            {/* Receipt Number */}
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Receipt Number (Optional)
+                                </label>
+                                <input
+                                    type="text"
+                                    name="receiptNumber"
+                                    value={formData.receiptNumber}
+                                    onChange={handleInputChange}
+                                    placeholder="e.g., RCP-12345"
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                                />
+                            </div>
+
+                            {/* Payment Method */}
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Payment Method
+                                </label>
+                                <select
+                                    name="paymentMethod"
+                                    value={formData.paymentMethod}
+                                    onChange={handleInputChange}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                                >
+                                    <option value="CREDIT_CARD">Credit Card</option>
+                                    <option value="DEBIT_CARD">Debit Card</option>
+                                    <option value="CASH">Cash</option>
+                                    <option value="FUEL_CARD">Fuel Card</option>
+                                    <option value="COMPANY_ACCOUNT">Company Account</option>
+                                    <option value="MTN_MOBILE_MONEY">MTN Mobile Money</option>
+                                </select>
+                            </div>
+
+                            {/* Notes */}
+                            <div className="md:col-span-2">
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Notes (Optional)
+                                </label>
+                                <textarea
+                                    name="notes"
+                                    value={formData.notes}
+                                    onChange={handleInputChange}
+                                    rows={3}
+                                    placeholder="Add any additional notes..."
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Action Buttons */}
+                        <div className="flex items-center justify-end gap-3 pt-6 border-t border-gray-200">
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setShowAddForm(false);
+                                    resetForm();
+                                }}
+                                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="submit"
+                                disabled={submitting}
+                                className="px-4 py-2 text-white rounded-lg transition-colors flex items-center gap-2"
+                                style={{ backgroundColor: '#345e85' }}
+                                onMouseEnter={(e) => !submitting && (e.currentTarget.style.backgroundColor = '#2a4d6d')}
+                                onMouseLeave={(e) => !submitting && (e.currentTarget.style.backgroundColor = '#345e85')}
+                            >
+                                {submitting ? (
+                                    <>
+                                        <FaSpinner className="w-4 h-4 animate-spin" />
+                                        Saving...
+                                    </>
+                                ) : (
+                                    <>
+                                        <FaPlus className="w-4 h-4" />
+                                        Add Fuel Log
+                                    </>
+                                )}
+                            </button>
+                        </div>
+                    </form>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 };

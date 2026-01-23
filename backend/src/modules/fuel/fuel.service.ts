@@ -21,8 +21,10 @@ export class FuelService {
 
         const fuelLog = this.fuelLogRepository.create({
             ...createDto,
+            fuelAmount: createDto.gallons, // fuel_amount is same as gallons
             totalCost,
             tenantId,
+            userId,
             createdBy: userId,
             status: FuelLogStatus.PENDING,
         });

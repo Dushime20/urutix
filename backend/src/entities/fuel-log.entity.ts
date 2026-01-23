@@ -31,6 +31,9 @@ export class FuelLog {
     @Column({ name: 'tenant_id', type: 'uuid' })
     tenantId: string;
 
+    @Column({ name: 'user_id', type: 'uuid' })
+    userId: string;
+
     @Column({ name: 'truck_id', type: 'uuid' })
     truckId: string;
 
@@ -42,6 +45,9 @@ export class FuelLog {
 
     @Column({ name: 'fuel_date', type: 'timestamp with time zone' })
     fuelDate: Date;
+
+    @Column({ name: 'fuel_amount', type: 'decimal', precision: 10, scale: 2 })
+    fuelAmount: number;
 
     @Column({ name: 'gallons', type: 'decimal', precision: 10, scale: 2 })
     gallons: number;
