@@ -40,6 +40,7 @@ import { cargoOwnerAPI } from '../services/cargoOwnerAPI';
 import api from '../services/api';
 import { loadsAPI } from '@/services/load';
 import toast from 'react-hot-toast';
+import { useConfirmDialog } from '@/hooks/useConfirmDialog';
 
 // Feature Components
 import UnifiedFinancialManagement from './dashboard/financial/UnifiedFinancialManagement';
@@ -82,6 +83,7 @@ const CargoOwnerDashboard = () => {
   const { user } = useAuth();
   const { setHideHeader } = layoutContext || {};
   const navigate = useNavigate();
+  const { confirm: confirmDelete, DialogComponent } = useConfirmDialog();
 
   // Onboarding state
   const shouldShowOnboarding = useShouldShowOnboarding();
@@ -131,7 +133,17 @@ const CargoOwnerDashboard = () => {
   // Handle cargo deletion
   const handleDeleteCargo = async (e: React.MouseEvent, cargoId: string) => {
     e.stopPropagation(); // Prevent row click
-    if (!confirm('Are you sure you want to delete this cargo?')) return;
+    
+    // Use custom confirm dialog
+    const shouldDelete = await confirmDelete({
+      title: 'Delete Draft',
+      message: 'Are you sure you want to delete this draft? This action cannot be undone.',
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      type: 'danger'
+    });
+
+    if (!shouldDelete) return;
 
     try {
       await loadsAPI.delete(cargoId);
@@ -1156,6 +1168,7 @@ const CargoOwnerDashboard = () => {
           onClose={() => setShowDocumentScanner(false)}
         />
       )}
+      {DialogComponent}
     </div>
   );
 };
