@@ -24,7 +24,8 @@ import {
   Camera,
   FileText,
   Settings,
-  Plus
+  Plus,
+  Trash2
 } from 'lucide-react';
 // Dynamically import recharts to reduce initial bundle size
 import {
@@ -37,6 +38,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { fetchCargos } from '../services/cargoApi';
 import { cargoOwnerAPI } from '../services/cargoOwnerAPI';
 import api from '../services/api';
+import { loadsAPI } from '@/services/load';
+import toast from 'react-hot-toast';
 
 // Feature Components
 import UnifiedFinancialManagement from './dashboard/financial/UnifiedFinancialManagement';
@@ -122,6 +125,23 @@ const CargoOwnerDashboard = () => {
     } else if (cargo.status === 'CREATED') {
       // Navigate to view the cargo
       navigate(`/dashboard/cargos/list?view=${cargo.id}`);
+    }
+  };
+
+  // Handle cargo deletion
+  const handleDeleteCargo = async (e: React.MouseEvent, cargoId: string) => {
+    e.stopPropagation(); // Prevent row click
+    if (!confirm('Are you sure you want to delete this cargo?')) return;
+
+    try {
+      await loadsAPI.delete(cargoId);
+      toast.success('Cargo deleted successfully');
+      
+      // Update state to remove deleted cargo
+      setCargos(prev => prev.filter(c => c.id !== cargoId));
+    } catch (error) {
+      console.error('Error deleting cargo:', error);
+      toast.error('Failed to delete cargo');
     }
   };
 
@@ -399,7 +419,7 @@ const CargoOwnerDashboard = () => {
     return cargos
       .filter(c => c.status === 'CREATED' || c.status === 'DRAFT')
       .sort((a, b) => new Date(b.updatedAt || b.createdAt).getTime() - new Date(a.updatedAt || a.createdAt).getTime())
-      .slice(0, 6)
+      .slice(0, 5)
       .map((cargo) => {
         const date = new Date(cargo.updatedAt || cargo.createdAt);
         const statusColors: Record<string, string> = {
@@ -460,7 +480,7 @@ const CargoOwnerDashboard = () => {
         title: 'Finish your drafts',
         message: `You have ${stats.incompleteCargos} incomplete cargo drafts.Finishing them now could help you secure carriers faster.`,
         action: 'View Drafts',
-        onClick: () => { setActiveTab('All Cargos'); navigate('/dashboard/cargos?status=DRAFT'); },
+        onClick: () => { setActiveTab('All Cargos'); navigate('/dashboard/cargos/list?status=DRAFT'); },
         icon: Sparkles,
         color: 'text-gray-600',
       });
@@ -622,24 +642,34 @@ const CargoOwnerDashboard = () => {
                       </span>
                     </td>
                     <td className="px-6 py-4">
-                      <span className="text-sm text-blue-600 group-hover:text-blue-800 font-medium flex items-center gap-1">
-                        {tx.status === 'DRAFT' ? (
-                          <>
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                            </svg>
-                            Continue
-                          </>
-                        ) : (
-                          <>
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                            </svg>
-                            View
-                          </>
-                        )}
-                      </span>
+                      <div className="flex items-center gap-3">
+                        <span className="text-sm text-blue-600 group-hover:text-blue-800 font-medium flex items-center gap-1 w-20">
+                          {tx.status === 'DRAFT' ? (
+                            <>
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                              </svg>
+                              Continue
+                            </>
+                          ) : (
+                            <>
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                              </svg>
+                              View
+                            </>
+                          )}
+                        </span>
+                        
+                        <button
+                          onClick={(e) => handleDeleteCargo(e, tx.id)}
+                          className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          title="Delete Cargo"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))

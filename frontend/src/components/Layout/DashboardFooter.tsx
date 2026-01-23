@@ -21,7 +21,7 @@ const DashboardFooter = () => {
           </div>
 
           <div className="text-xs sm:text-sm text-gray-400 text-center sm:text-left">
-            © 2024 UrutiX. All rights reserved.
+            © {new Date().getFullYear()} UrutiX. All rights reserved.
           </div>
         </div>
       </div>

@@ -3,6 +3,7 @@ import { FaEye, FaEdit, FaTrash, FaCheck, FaTimes, FaHistory, FaEnvelope, FaPhon
 import { Grid, Table } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { biddingAPI, biddingHelpers } from '../../services/biddingApi';
+import { createPortal } from 'react-dom';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import { calculateAdvancePayment, formatCurrency as formatCurrencyUtil, formatPercentage } from '../../utils/paymentCalculations';
 
@@ -556,49 +557,70 @@ const BidHistory: React.FC<BidHistoryProps> = ({ userRole }) => {
       )}
 
       {/* Bid Details Modal */}
-      {showDetailsModal && selectedBid && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 p-3 sm:p-4">
-          <div className="relative top-4 sm:top-10 md:top-20 mx-auto p-3 sm:p-4 md:p-5 border w-full max-w-2xl shadow-lg rounded-lg bg-white max-h-[90vh] overflow-y-auto">
-            <div className="mt-0 sm:mt-3">
-              <div className="flex justify-between items-center mb-3 sm:mb-4">
-                <h3 className="text-base sm:text-lg font-medium text-gray-900 break-words pr-2">Bid Details</h3>
-                <button
-                  onClick={() => setShowDetailsModal(false)}
-                  className="text-gray-400 hover:text-gray-600 transition-colors touch-manipulation min-w-[32px] min-h-[32px] flex items-center justify-center flex-shrink-0"
-                  aria-label="Close"
-                >
-                  <svg className="h-5 w-5 sm:h-6 sm:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-
-              <div className="space-y-4">
+      {/* Bid Details Modal */}
+      {showDetailsModal && selectedBid && createPortal(
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[99999] p-4"
+          onClick={() => setShowDetailsModal(false)}
+        >
+          <div 
+            className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50 shrink-0">
+              <div className="flex items-center space-x-4">
+                <div className="p-2 bg-blue-100 rounded-lg">
+                  <FaDollarSign className="w-6 h-6 text-blue-600" />
+                </div>
                 <div>
-                  <h4 className="font-medium text-gray-900">{selectedBid.load.title}</h4>
-                  <p className="text-sm text-gray-500">{selectedBid.load.weight} kg</p>
+                  <h2 className="text-xl font-bold text-gray-900">Bid Details</h2>
+                  <p className="text-sm text-gray-600">ID: {selectedBid.id}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowDetailsModal(false)}
+                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <FaTimes className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Scrollable Content */}
+            <div className="p-6 overflow-y-auto custom-scrollbar">
+              <div className="space-y-6">
+                {/* Cargo Info */}
+                <div className="bg-gray-50 rounded-lg p-4 border border-gray-100">
+                  <h4 className="font-semibold text-gray-900 text-lg mb-1">{selectedBid.load.title}</h4>
+                  <div className="flex items-center text-sm text-gray-500 gap-4 mt-2">
+                     <span className="flex items-center gap-1"><FaPercentage className="w-3 h-3" /> {selectedBid.load.weight} kg</span>
+                     <span className="flex items-center gap-1"><FaDollarSign className="w-3 h-3" /> Value: {formatCurrencyUtil(selectedBid.load.loadValue, 'USD')}</span>
+                  </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                  <div>
-                    <label className="block text-xs sm:text-sm font-medium text-gray-700">Bid Amount</label>
-                    <p className="text-base sm:text-lg font-semibold text-gray-900 break-words">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  <div className="bg-white rounded-xl border border-gray-200 p-4">
+                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1 block">Bid Amount</label>
+                    <p className="text-2xl font-bold text-gray-900">
                       {formatCurrencyUtil(selectedBid.bidAmount, selectedBid.bidCurrency)}
                     </p>
                   </div>
-                  <div>
-                    <label className="block text-xs sm:text-sm font-medium text-gray-700">Status</label>
+                  <div className="bg-white rounded-xl border border-gray-200 p-4">
+                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1 block">Status</label>
                     <div className="mt-1">{getStatusBadge(selectedBid.status)}</div>
                   </div>
                 </div>
 
                 {/* Advance Payment Calculation - Show for cargo owners when bid is accepted */}
                 {userRole === 'CARGO_OWNER' && selectedBid.status === 'ACCEPTED' && (
-                  <div className="border-t pt-4 mt-4">
-                    <h5 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                      <FaDollarSign className="h-4 w-4 text-gray-600" />
-                      Payment Breakdown
-                    </h5>
+                  <div className="border border-blue-200 rounded-xl overflow-hidden">
+                    <div className="bg-blue-50 px-4 py-3 border-b border-blue-200">
+                      <h5 className="font-semibold text-blue-900 flex items-center gap-2">
+                        <FaDollarSign className="h-4 w-4" />
+                        Payment Breakdown
+                      </h5>
+                    </div>
+                    <div className="p-4 bg-white">
                     {(() => {
                       const paymentCalc = calculateAdvancePayment(
                         selectedBid.bidAmount,
@@ -608,23 +630,18 @@ const BidHistory: React.FC<BidHistoryProps> = ({ userRole }) => {
                       );
 
                       return (
-                        <div className="space-y-3 bg-blue-50 p-3 sm:p-4 rounded-lg border border-blue-200">
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                        <div className="space-y-4">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
-                              <label className="block text-xs font-medium text-gray-700 mb-1">
-                                Total Transportation Fee
-                              </label>
-                              <p className="text-base sm:text-lg font-bold text-gray-900 break-words">
+                              <p className="text-xs text-gray-500">Total Fee</p>
+                              <p className="text-lg font-bold text-gray-900">
                                 {formatCurrencyUtil(paymentCalc.transportationFee, paymentCalc.currency)}
                               </p>
                             </div>
                             {paymentCalc.requireAdvancePayment && (
                               <div>
-                                <label className="block text-xs font-medium text-gray-700 mb-1 flex items-center gap-1">
-                                  <FaPercentage className="h-3 w-3" />
-                                  Advance Payment Percentage
-                                </label>
-                                <p className="text-base sm:text-lg font-semibold text-blue-700">
+                                <p className="text-xs text-gray-500">Advance %</p>
+                                <p className="text-lg font-semibold text-blue-600">
                                   {formatPercentage(paymentCalc.advancePaymentPercentage)}
                                 </p>
                               </div>
@@ -633,139 +650,130 @@ const BidHistory: React.FC<BidHistoryProps> = ({ userRole }) => {
 
                           {paymentCalc.requireAdvancePayment ? (
                             <>
-                              <div className="border-t border-blue-200 pt-3 mt-3">
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                                  <div className="bg-white p-2.5 sm:p-3 rounded border border-green-200">
-                                    <label className="block text-xs font-medium text-green-700 mb-1">
-                                      Advance Payment (Before Trip)
-                                    </label>
-                                    <p className="text-lg sm:text-xl font-bold text-green-700 break-words">
-                                      {formatCurrencyUtil(paymentCalc.advanceAmount, paymentCalc.currency)}
-                                    </p>
-                                    <p className="text-xs text-gray-500 mt-1">
-                                      {formatPercentage(paymentCalc.advancePaymentPercentage)} of total
-                                    </p>
-                                  </div>
-                                  <div className="bg-white p-2.5 sm:p-3 rounded border border-gray-200">
-                                    <label className="block text-xs font-medium text-gray-700 mb-1">
-                                      Final Payment (After Delivery)
-                                    </label>
-                                    <p className="text-lg sm:text-xl font-bold text-gray-700 break-words">
-                                      {formatCurrencyUtil(paymentCalc.finalAmount, paymentCalc.currency)}
-                                    </p>
-                                    <p className="text-xs text-gray-500 mt-1">
-                                      {formatPercentage(100 - paymentCalc.advancePaymentPercentage)} of total
-                                    </p>
-                                  </div>
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t border-gray-100">
+                                <div className="p-3 bg-green-50 rounded-lg border border-green-100">
+                                  <p className="text-xs font-medium text-green-700 mb-1">Advance Payment</p>
+                                  <p className="text-xl font-bold text-green-700">
+                                    {formatCurrencyUtil(paymentCalc.advanceAmount, paymentCalc.currency)}
+                                  </p>
+                                </div>
+                                <div className="p-3 bg-gray-50 rounded-lg border border-gray-100">
+                                  <p className="text-xs font-medium text-gray-500 mb-1">Final Payment</p>
+                                  <p className="text-xl font-bold text-gray-700">
+                                    {formatCurrencyUtil(paymentCalc.finalAmount, paymentCalc.currency)}
+                                  </p>
                                 </div>
                               </div>
-                              <div className="bg-yellow-50 border border-yellow-200 rounded p-2 sm:p-2.5 mt-2">
-                                <p className="text-xs text-yellow-800 break-words">
-                                  <strong>Note:</strong> You will need to pay {formatCurrencyUtil(paymentCalc.advanceAmount, paymentCalc.currency)} as advance payment before the trip starts.
-                                  The remaining {formatCurrencyUtil(paymentCalc.finalAmount, paymentCalc.currency)} will be paid after successful delivery.
-                                </p>
+                              <div className="bg-yellow-50 text-yellow-800 text-xs p-3 rounded-lg flex items-start gap-2">
+                                <FaEnvelope className="w-4 h-4 mt-0.5 shrink-0" />
+                                <p>Advance payment is required before trip start. Remaining balance due upon successful delivery.</p>
                               </div>
                             </>
                           ) : (
-                            <div className="bg-white p-2.5 sm:p-3 rounded border border-gray-200">
-                              <label className="block text-xs font-medium text-gray-700 mb-1">
-                                Payment Schedule
-                              </label>
-                              <p className="text-xs sm:text-sm text-gray-900 break-words">
-                                No advance payment required. Full payment of {formatCurrencyUtil(paymentCalc.transportationFee, paymentCalc.currency)} will be processed after trip completion.
-                              </p>
+                            <div className="p-3 bg-gray-50 rounded-lg text-sm text-gray-600 text-center">
+                              No advance payment required. Full payment due after completion.
                             </div>
                           )}
                         </div>
                       );
                     })()}
+                    </div>
                   </div>
                 )}
 
-                {selectedBid.proposedPickupDate && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Proposed Pickup</label>
-                    <p className="text-sm text-gray-900">{formatDate(selectedBid.proposedPickupDate)}</p>
-                  </div>
-                )}
+                {/* Dates & Notes Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  {selectedBid.proposedPickupDate && (
+                    <div className="group">
+                      <label className="flex items-center gap-2 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                        <FaEdit className="w-3 h-3 text-gray-400" /> Proposed Pickup
+                      </label>
+                      <p className="text-gray-900 font-medium bg-gray-50 p-3 rounded-lg">{formatDate(selectedBid.proposedPickupDate)}</p>
+                    </div>
+                  )}
 
-                {selectedBid.proposedDeliveryDate && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Proposed Delivery</label>
-                    <p className="text-sm text-gray-900">{formatDate(selectedBid.proposedDeliveryDate)}</p>
-                  </div>
-                )}
+                  {selectedBid.proposedDeliveryDate && (
+                    <div className="group">
+                      <label className="flex items-center gap-2 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                        <FaEdit className="w-3 h-3 text-gray-400" /> Proposed Delivery
+                      </label>
+                      <p className="text-gray-900 font-medium bg-gray-50 p-3 rounded-lg">{formatDate(selectedBid.proposedDeliveryDate)}</p>
+                    </div>
+                  )}
+                </div>
 
                 {selectedBid.bidNotes && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Notes</label>
-                    <p className="text-sm text-gray-900">{selectedBid.bidNotes}</p>
+                  <div className="col-span-full">
+                     <label className="flex items-center gap-2 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                        <FaEdit className="w-3 h-3 text-gray-400" /> Notes
+                      </label>
+                    <div className="bg-gray-50 p-4 rounded-lg border border-gray-100 text-gray-700 text-sm leading-relaxed">
+                      {selectedBid.bidNotes}
+                    </div>
                   </div>
                 )}
 
                 {userRole === 'CARGO_OWNER' && selectedBid.truckOwner && (
-                  <div className="border-t pt-4 mt-4">
-                    <h5 className="text-sm font-semibold text-gray-900 mb-3">Truck Owner Contact Information</h5>
-                    <div className="space-y-2">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700">Name</label>
-                        <p className="text-sm text-gray-900">
+                  <div className="border-t border-gray-100 pt-6">
+                    <h5 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                      <FaEnvelope className="h-4 w-4 text-gray-400" /> Contact Information
+                    </h5>
+                    <div className="bg-gray-50 rounded-xl p-4 space-y-3">
+                      <div className="flex items-center justify-between py-1 border-b border-gray-200 last:border-0">
+                        <span className="text-sm text-gray-500">Name</span>
+                        <span className="text-sm font-medium text-gray-900">
                           {selectedBid.truckOwner.profile
                             ? `${selectedBid.truckOwner.profile.firstName || ''} ${selectedBid.truckOwner.profile.lastName || ''}`.trim() || 'Unknown'
                             : selectedBid.truckOwner.email || 'Unknown'}
-                        </p>
+                        </span>
                       </div>
+                      
                       {selectedBid.truckOwner.profile?.companyName && (
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700">Company</label>
-                          <p className="text-sm text-gray-900">{selectedBid.truckOwner.profile.companyName}</p>
-                        </div>
+                         <div className="flex items-center justify-between py-1 border-b border-gray-200 last:border-0">
+                          <span className="text-sm text-gray-500">Company</span>
+                          <span className="text-sm font-medium text-gray-900">{selectedBid.truckOwner.profile.companyName}</span>
+                         </div>
                       )}
+
                       {selectedBid.truckOwner.email && (
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700">Email</label>
-                          <a
-                            href={`mailto:${selectedBid.truckOwner.email}`}
-                            className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-2"
-                          >
-                            <FaEnvelope className="h-3 w-3" />
+                         <div className="flex items-center justify-between py-1 border-b border-gray-200 last:border-0">
+                          <span className="text-sm text-gray-500">Email</span>
+                          <a href={`mailto:${selectedBid.truckOwner.email}`} className="text-sm font-medium text-blue-600 hover:text-blue-700">
                             {selectedBid.truckOwner.email}
                           </a>
-                        </div>
+                         </div>
                       )}
+
                       {(selectedBid.truckOwner.profile?.phone || selectedBid.truckOwner.phone) && (
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700">Phone</label>
-                          <a
-                            href={`tel:${selectedBid.truckOwner.profile?.phone || selectedBid.truckOwner.phone}`}
-                            className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-2"
-                          >
-                            <FaPhone className="h-3 w-3" />
+                         <div className="flex items-center justify-between py-1 border-b border-gray-200 last:border-0">
+                          <span className="text-sm text-gray-500">Phone</span>
+                          <a href={`tel:${selectedBid.truckOwner.profile?.phone || selectedBid.truckOwner.phone}`} className="text-sm font-medium text-blue-600 hover:text-blue-700">
                             {selectedBid.truckOwner.profile?.phone || selectedBid.truckOwner.phone}
                           </a>
-                        </div>
+                         </div>
                       )}
                     </div>
                   </div>
                 )}
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Created</label>
-                  <p className="text-sm text-gray-900">{formatDate(selectedBid.createdAt)}</p>
+                <div className="text-center pt-4">
+                  <p className="text-xs text-gray-400">Created on {formatDate(selectedBid.createdAt)}</p>
                 </div>
               </div>
+            </div>
 
-              <div className="mt-4 sm:mt-6 flex justify-end">
-                <button
-                  onClick={() => setShowDetailsModal(false)}
-                  className="px-4 py-2.5 sm:py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 touch-manipulation min-h-[44px] sm:min-h-0"
-                >
-                  Close
-                </button>
-              </div>
+            {/* Footer */}
+            <div className="p-6 border-t border-gray-200 bg-gray-50 flex justify-end shrink-0 rounded-b-lg">
+              <button
+                onClick={() => setShowDetailsModal(false)}
+                 className="px-6 py-2.5 bg-white border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 shadow-sm transition-all"
+              >
+                Close
+              </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Styled Confirmation Dialog */}
