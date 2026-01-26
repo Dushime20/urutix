@@ -14,6 +14,7 @@ import {
   FaExclamationTriangle,
   FaCheckCircle,
   FaTimesCircle,
+  FaTimes,
   FaInfoCircle,
   FaClock,
   FaUserPlus,
@@ -2065,7 +2066,7 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
                     }}
                     className="text-gray-400 hover:text-gray-600"
                   >
-                    <FaEdit className="w-5 h-5" />
+                    <FaTimes className="w-5 h-5" />
                   </button>
                 </div>
 
