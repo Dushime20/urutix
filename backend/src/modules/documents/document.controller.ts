@@ -56,7 +56,7 @@ import { Document, DocumentStatus } from '../../entities/document.entity';
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth()
 export class DocumentController {
-  constructor(private readonly documentService: DocumentService) {}
+  constructor(private readonly documentService: DocumentService) { }
 
   @Post()
   @Roles(
@@ -294,7 +294,7 @@ export class DocumentController {
     if (!tenantId) {
       throw new BadRequestException('Tenant ID is required');
     }
-    const result = await this.documentService.getDocuments(filterDto, tenantId);
+    const result = await this.documentService.getDocuments(filterDto, req.user);
 
     // Calculate pagination info for frontend compatibility
     const page = filterDto.page || 1;
@@ -639,7 +639,7 @@ export class DocumentController {
 
   @Delete(':id')
   @Roles(
-    UserRole.ADMIN, 
+    UserRole.ADMIN,
     UserRole.SUPER_ADMIN,
     UserRole.CARGO_OWNER,
     UserRole.TRUCK_OWNER,

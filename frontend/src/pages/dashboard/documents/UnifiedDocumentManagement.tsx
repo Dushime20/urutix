@@ -79,14 +79,30 @@ const UnifiedDocumentManagement = () => {
     },
   ];
 
+  // Get user role
+  const getUserRole = () => {
+    // Quick check from local storage or context if available
+    // For now we'll assume the DocumentsPage handles the content
+    // and we just need to hide the tabs here if needed.
+    // However, without context here, we might need a different approach.
+    // Let's check localStorage for now as a quick fix, or better, 
+    // rely on the user knowing where they are. 
+    // Actually, let's use the hook if we can wrap this component or if it's inside provider.
+    // Since AuthProvider wraps the whole app, we can use useAuth hook here too.
+    return localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user') || '{}').role : '';
+  };
+
+  const userRole = getUserRole();
+  const isCargoOwner = userRole === 'CARGO_OWNER';
+
   return (
     <div className="min-h-screen bg-gray-50 relative">
       {/* Background Logo */}
-      <img 
-        src={logoUrutiX} 
-        alt="UrutiX Logo Background" 
-        className="pointer-events-none select-none fixed inset-0 w-full h-full object-cover opacity-10 z-0" 
-        style={{objectPosition: 'center'}} 
+      <img
+        src={logoUrutiX}
+        alt="UrutiX Logo Background"
+        className="pointer-events-none select-none fixed inset-0 w-full h-full object-cover opacity-10 z-0"
+        style={{ objectPosition: 'center' }}
       />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 relative z-10">
         {/* Header */}
@@ -99,43 +115,45 @@ const UnifiedDocumentManagement = () => {
           </p>
         </div>
 
-        {/* Navigation Tabs */}
-        <div className="bg-white rounded-lg border border-gray-200 mb-4 overflow-hidden">
-          <nav className="flex space-x-1 p-1 overflow-x-auto scrollbar-hide scroll-smooth">
-            {tabs.map((tab) => {
-              const Icon = tab.icon;
-              const isActive = activeTab === tab.id;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => handleTabChange(tab.id)}
-                  className={cn(
-                    "px-3 sm:px-4 py-2.5 rounded-md text-xs sm:text-sm font-medium flex items-center gap-1.5 sm:gap-2 transition-all whitespace-nowrap flex-shrink-0",
-                    isActive
-                      ? "bg-gray-100 text-gray-900 border border-gray-300"
-                      : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
-                  )}
-                >
-                  <Icon className="w-4 h-4 flex-shrink-0" />
-                  <span className="hidden sm:inline"><TranslatedText text={tab.label} /></span>
-                  <span className="sm:hidden"><TranslatedText text={tab.label.split(' ')[0]} /></span>
-                </button>
-              );
-            })}
-          </nav>
-        </div>
+        {/* Navigation Tabs - Hide for Cargo Owner */}
+        {!isCargoOwner && (
+          <div className="bg-white rounded-lg border border-gray-200 mb-4 overflow-hidden">
+            <nav className="flex space-x-1 p-1 overflow-x-auto scrollbar-hide scroll-smooth">
+              {tabs.map((tab) => {
+                const Icon = tab.icon;
+                const isActive = activeTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => handleTabChange(tab.id)}
+                    className={cn(
+                      "px-3 sm:px-4 py-2.5 rounded-md text-xs sm:text-sm font-medium flex items-center gap-1.5 sm:gap-2 transition-all whitespace-nowrap flex-shrink-0",
+                      isActive
+                        ? "bg-gray-100 text-gray-900 border border-gray-300"
+                        : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                    )}
+                  >
+                    <Icon className="w-4 h-4 flex-shrink-0" />
+                    <span className="hidden sm:inline"><TranslatedText text={tab.label} /></span>
+                    <span className="sm:hidden"><TranslatedText text={tab.label.split(' ')[0]} /></span>
+                  </button>
+                );
+              })}
+            </nav>
+          </div>
+        )}
 
         {/* Tab Content */}
         <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
           <div className="p-6 pt-6">
             {/* Pass entityType to DocumentsPage based on active tab */}
-            <DocumentsPage 
-              key={activeTab} 
+            <DocumentsPage
+              key={activeTab}
               entityTypeOverride={
                 activeTab === 'cargo' ? 'CARGO' :
-                activeTab === 'trip' ? 'TRIP' :
-                activeTab === 'financial' ? 'FINANCIAL' :
-                undefined
+                  activeTab === 'trip' ? 'TRIP' :
+                    activeTab === 'financial' ? 'FINANCIAL' :
+                      undefined
               }
             />
           </div>

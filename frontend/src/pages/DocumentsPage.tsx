@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
+import { useAuth } from '../contexts/AuthContext';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useParams } from 'react-router-dom';
 import { Plus, Search, Eye, Trash2, Download, FileText, Box, Truck, CreditCard, X, Clock, CheckCircle, XCircle, AlertCircle, Info } from 'lucide-react';
@@ -16,13 +17,15 @@ interface DocumentsPageProps {
 
 
 const DocumentsPage: React.FC<DocumentsPageProps> = ({ entityTypeOverride }) => {
+  const { user } = useAuth();
+  const isCargoOwner = user?.role === 'CARGO_OWNER';
   const { confirm, DialogComponent } = useConfirmDialog();
   const { entityType: urlEntityType, entityId } = useParams();
-  
+
   // For VIEWING/FILTERING: Only use override or URL params (no role-based default)
   // This ensures "All Documents" view shows all documents, not filtered by role
   const entityType = entityTypeOverride || urlEntityType;
-  
+
   const [filters, setFilters] = useState({
     entityType: entityType || '',
     category: entityType || '',
@@ -302,151 +305,109 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ entityTypeOverride }) => 
         )}
       </div>
 
-      {/* Statistics */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-        <div className="bg-white p-3 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all duration-200 group relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-gray-50/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-          <div className="relative">
-            <div className="bg-gradient-to-br from-gray-500 to-gray-600 rounded-lg p-2 w-fit mb-2 group-hover:scale-110 transition-transform">
-              <FileText className="text-white w-4 h-4" />
-            </div>
-            <div className="text-xl font-bold text-gray-900 mb-0.5">
-              {isLoading ? '...' : safeStatistics.totalDocuments || 0}
-            </div>
-            <div className="text-xs text-gray-600">Total Documents</div>
-          </div>
-        </div>
-        <div className="bg-white p-3 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all duration-200 group relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-gray-50/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-          <div className="relative">
-            <div className="bg-gradient-to-br from-gray-500 to-gray-600 rounded-lg p-2 w-fit mb-2 group-hover:scale-110 transition-transform">
-              <FileText className="text-white w-4 h-4" />
-            </div>
-            <div className="text-xl font-bold text-gray-900 mb-0.5">
-              {isLoading ? '...' : safeStatistics.documentsByStatus?.PENDING || 0}
-            </div>
-            <div className="text-xs text-gray-600">Pending Review</div>
-          </div>
-        </div>
-        <div className="bg-white p-3 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all duration-200 group relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-gray-50/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-          <div className="relative">
-            <div className="bg-gradient-to-br from-gray-500 to-gray-600 rounded-lg p-2 w-fit mb-2 group-hover:scale-110 transition-transform">
-              <CheckCircle className="text-white w-4 h-4" />
-            </div>
-            <div className="text-xl font-bold text-gray-900 mb-0.5">
-              {isLoading ? '...' : safeStatistics.documentsByStatus?.VERIFIED || 0}
-            </div>
-            <div className="text-xs text-gray-600">Verified</div>
-          </div>
-        </div>
-        <div className="bg-white p-3 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all duration-200 group relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-gray-50/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-          <div className="relative">
-            <div className="bg-gradient-to-br from-gray-500 to-gray-600 rounded-lg p-2 w-fit mb-2 group-hover:scale-110 transition-transform">
-              <XCircle className="text-white w-4 h-4" />
-            </div>
-            <div className="text-xl font-bold text-gray-900 mb-0.5">
-              {isLoading ? '...' : safeStatistics.documentsByStatus?.EXPIRED || 0}
-            </div>
-            <div className="text-xs text-gray-600">Expired</div>
-          </div>
-        </div>
-      </div>
-
-      {/* Category Statistics */}
-      {!isLoading && safeStatistics.documentsByCategory && Object.keys(safeStatistics.documentsByCategory).length > 0 && (
-        <div className="flex flex-wrap gap-2 mb-2">
-          {Object.entries(safeStatistics.documentsByCategory)
-            .sort((a, b) => (b[1] as number) - (a[1] as number))
-            .map(([category, count]) => (
-              <div 
-                key={category} 
-                className="flex items-center bg-white border border-gray-200 rounded-full px-2.5 py-1 shadow-sm hover:border-blue-300 transition-all cursor-default group"
-              >
-                <span className="text-[10px] font-bold text-blue-600 mr-1.5 group-hover:scale-110 transition-transform">{count as number}</span>
-                <span className="text-[9px] font-medium text-gray-500 uppercase tracking-wider">{category.replace('_', ' ')}</span>
+      {/* Statistics - Only show for non-Cargo Owners */}
+      {!isCargoOwner && (
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+            <div className="bg-white p-3 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all duration-200 group relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-gray-50/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+              <div className="relative">
+                <div className="bg-gradient-to-br from-gray-500 to-gray-600 rounded-lg p-2 w-fit mb-2 group-hover:scale-110 transition-transform">
+                  <FileText className="text-white w-4 h-4" />
+                </div>
+                <div className="text-xl font-bold text-gray-900 mb-0.5">
+                  {isLoading ? '...' : safeStatistics.totalDocuments || 0}
+                </div>
+                <div className="text-xs text-gray-600">Total Documents</div>
               </div>
-            ))}
-        </div>
-      )}
-
-      {/* Show warning if using fallback data */}
-      {!statistics && !isLoading && (
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-2.5">
-          <div className="flex items-center">
-            <svg className="h-4 w-4 text-yellow-400 mr-1.5" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-            </svg>
-            <span className="text-xs text-yellow-800">
-              Statistics temporarily unavailable. Showing default values.
-            </span>
-          </div>
-        </div>
-      )}
-
-      {/* Filters and Search */}
-      <div className="bg-white p-3 rounded-lg border border-gray-200 space-y-3">
-        <div className="flex flex-col md:flex-row gap-3">
-          <div className="flex-1">
-            <div className="relative">
-              <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 text-gray-400 w-3.5 h-3.5" />
-              <input
-                type="text"
-                placeholder="Search documents by title, type, or entity..."
-                className="w-full pl-9 pr-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                value={filters.search}
-                onChange={(e) => handleSearch(e.target.value)}
-              />
+            </div>
+            <div className="bg-white p-3 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all duration-200 group relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-gray-50/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+              <div className="relative">
+                <div className="bg-gradient-to-br from-gray-500 to-gray-600 rounded-lg p-2 w-fit mb-2 group-hover:scale-110 transition-transform">
+                  <FileText className="text-white w-4 h-4" />
+                </div>
+                <div className="text-xl font-bold text-gray-900 mb-0.5">
+                  {isLoading ? '...' : safeStatistics.documentsByStatus?.PENDING || 0}
+                </div>
+                <div className="text-xs text-gray-600">Pending Review</div>
+              </div>
+            </div>
+            <div className="bg-white p-3 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all duration-200 group relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-gray-50/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+              <div className="relative">
+                <div className="bg-gradient-to-br from-gray-500 to-gray-600 rounded-lg p-2 w-fit mb-2 group-hover:scale-110 transition-transform">
+                  <CheckCircle className="text-white w-4 h-4" />
+                </div>
+                <div className="text-xl font-bold text-gray-900 mb-0.5">
+                  {isLoading ? '...' : safeStatistics.documentsByStatus?.VERIFIED || 0}
+                </div>
+                <div className="text-xs text-gray-600">Verified</div>
+              </div>
+            </div>
+            <div className="bg-white p-3 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all duration-200 group relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-gray-50/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+              <div className="relative">
+                <div className="bg-gradient-to-br from-gray-500 to-gray-600 rounded-lg p-2 w-fit mb-2 group-hover:scale-110 transition-transform">
+                  <XCircle className="text-white w-4 h-4" />
+                </div>
+                <div className="text-xl font-bold text-gray-900 mb-0.5">
+                  {isLoading ? '...' : safeStatistics.documentsByStatus?.EXPIRED || 0}
+                </div>
+                <div className="text-xs text-gray-600">Expired</div>
+              </div>
             </div>
           </div>
-          <div className="flex gap-2">
-            {/* Only show entity type filter if not already filtered by tab */}
-            {!entityType && (
-              <select
-                className="px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                value={filters.entityType}
-                onChange={(e) => handleFilterChange('entityType', e.target.value)}
-              >
-                <option value="">All Entity Types</option>
-                <option value="DRIVER">Driver</option>
-                <option value="VEHICLE">Vehicle</option>
-                <option value="CARGO">Cargo</option>
-                <option value="TRIP">Trip</option>
-                <option value="USER">User</option>
-              </select>
-            )}
-            {/* Category filter - distinct from entity type */}
-            <select
-              className="px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-              value={filters.category}
-              onChange={(e) => handleFilterChange('category', e.target.value)}
-            >
-              <option value="">All Categories</option>
-              <option value="CARGO">Cargo</option>
-              <option value="VEHICLE">Vehicle</option>
-              <option value="DRIVER">Driver</option>
-              <option value="TRIP">Trip</option>
-              <option value="BUSINESS">Business</option>
-              <option value="COMPLIANCE">Compliance</option>
-              <option value="FINANCIAL">Financial</option>
-              <option value="LEGAL">Legal</option>
-              <option value="OPERATIONAL">Operational</option>
-              <option value="OTHER">Other</option>
-            </select>
-            <select
-              className="px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-              value={filters.status}
-              onChange={(e) => handleFilterChange('status', e.target.value)}
-            >
-              <option value="">All Statuses</option>
-              <option value="PENDING">Pending</option>
-              <option value="VERIFIED">Verified</option>
-              <option value="REJECTED">Rejected</option>
-              <option value="EXPIRED">Expired</option>
-            </select>
-            {/* Clear filters button */}
-            {(filters.search || filters.category || filters.status || (!entityType && filters.entityType)) && (
+
+          {/* Category Statistics */}
+          {!isLoading && safeStatistics.documentsByCategory && Object.keys(safeStatistics.documentsByCategory).length > 0 && (
+            <div className="flex flex-wrap gap-2 mb-2">
+              {Object.entries(safeStatistics.documentsByCategory)
+                .sort((a, b) => (b[1] as number) - (a[1] as number))
+                .map(([category, count]) => (
+                  <div
+                    key={category}
+                    className="flex items-center bg-white border border-gray-200 rounded-full px-2.5 py-1 shadow-sm hover:border-blue-300 transition-all cursor-default group"
+                  >
+                    <span className="text-[10px] font-bold text-blue-600 mr-1.5 group-hover:scale-110 transition-transform">{count as number}</span>
+                    <span className="text-[9px] font-medium text-gray-500 uppercase tracking-wider">{category.replace('_', ' ')}</span>
+                  </div>
+                ))}
+            </div>
+          )}
+
+          {/* Show warning if using fallback data */}
+          {!statistics && !isLoading && (
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-2.5">
+              <div className="flex items-center">
+                <svg className="h-4 w-4 text-yellow-400 mr-1.5" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+                <span className="text-xs text-yellow-800">
+                  Statistics temporarily unavailable. Showing default values.
+                </span>
+              </div>
+            </div>
+          )}
+        </>
+      )}
+
+      {/* Filters and Search - Conditional Rendering */}
+      {isCargoOwner ? (
+        // Simplified search/filter for Cargo Owners
+        <div className="bg-white p-3 rounded-lg border border-gray-200 space-y-3">
+          <div className="relative">
+            <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 text-gray-400 w-3.5 h-3.5" />
+            <input
+              type="text"
+              placeholder="Search your documents..."
+              className="w-full pl-9 pr-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              value={filters.search}
+              onChange={(e) => handleSearch(e.target.value)}
+            />
+          </div>
+          {filters.search && (
+            <div className="flex justify-end">
               <button
                 onClick={() => {
                   setFilters({
@@ -458,22 +419,104 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ entityTypeOverride }) => 
                   });
                   setCurrentPage(1);
                 }}
-                className="px-2.5 py-1.5 text-xs text-gray-600 hover:text-gray-900 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-1"
+                className="text-xs text-blue-600 hover:text-blue-800 flex items-center gap-1"
               >
-                <X className="w-3 h-3" />
-                Clear
+                Clear search
               </button>
-            )}
-          </div>
+            </div>
+          )}
         </div>
-        {/* Active filter indicator */}
-        {entityType && (
-          <div className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded border border-blue-200 flex items-center gap-1">
-            <Info className="w-3 h-3" />
-            Filtering by: <span className="font-medium">{entityType}</span>
+      ) : (
+        // Full filters for other roles (Admin, etc.)
+        <div className="bg-white p-3 rounded-lg border border-gray-200 space-y-3">
+          <div className="flex flex-col md:flex-row gap-3">
+            <div className="flex-1">
+              <div className="relative">
+                <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 text-gray-400 w-3.5 h-3.5" />
+                <input
+                  type="text"
+                  placeholder="Search documents by title, type, or entity..."
+                  className="w-full pl-9 pr-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  value={filters.search}
+                  onChange={(e) => handleSearch(e.target.value)}
+                />
+              </div>
+            </div>
+            <div className="flex gap-2">
+              {/* Only show entity type filter if not already filtered by tab */}
+              {(!entityType && !isCargoOwner) && (
+                <select
+                  className="px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  value={filters.entityType}
+                  onChange={(e) => handleFilterChange('entityType', e.target.value)}
+                >
+                  <option value="">All Entity Types</option>
+                  <option value="DRIVER">Driver</option>
+                  <option value="VEHICLE">Vehicle</option>
+                  <option value="CARGO">Cargo</option>
+                  <option value="TRIP">Trip</option>
+                  <option value="USER">User</option>
+                </select>
+              )}
+              {/* Category filter - distinct from entity type */}
+              <select
+                className="px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                value={filters.category}
+                onChange={(e) => handleFilterChange('category', e.target.value)}
+              >
+                <option value="">All Categories</option>
+                <option value="CARGO">Cargo</option>
+                <option value="VEHICLE">Vehicle</option>
+                <option value="DRIVER">Driver</option>
+                <option value="TRIP">Trip</option>
+                <option value="BUSINESS">Business</option>
+                <option value="COMPLIANCE">Compliance</option>
+                <option value="FINANCIAL">Financial</option>
+                <option value="LEGAL">Legal</option>
+                <option value="OPERATIONAL">Operational</option>
+                <option value="OTHER">Other</option>
+              </select>
+              <select
+                className="px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                value={filters.status}
+                onChange={(e) => handleFilterChange('status', e.target.value)}
+              >
+                <option value="">All Statuses</option>
+                <option value="PENDING">Pending</option>
+                <option value="VERIFIED">Verified</option>
+                <option value="REJECTED">Rejected</option>
+                <option value="EXPIRED">Expired</option>
+              </select>
+              {/* Clear filters button */}
+              {(filters.search || filters.category || filters.status || (!entityType && filters.entityType)) && (
+                <button
+                  onClick={() => {
+                    setFilters({
+                      entityType: entityType || '',
+                      category: entityType || '',
+                      status: '',
+                      priority: '',
+                      search: '',
+                    });
+                    setCurrentPage(1);
+                  }}
+                  className="px-2.5 py-1.5 text-xs text-gray-600 hover:text-gray-900 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-1"
+                >
+                  <X className="w-3 h-3" />
+                  Clear
+                </button>
+              )}
+            </div>
           </div>
-        )}
-      </div>
+          {/* Active filter indicator */}
+          {entityType && (
+            <div className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded border border-blue-200 flex items-center gap-1">
+              <Info className="w-3 h-3" />
+              Filtering by: <span className="font-medium">{entityType}</span>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Bulk Actions */}
       {selectedDocuments.length > 0 ? (

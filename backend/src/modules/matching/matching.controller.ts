@@ -46,7 +46,7 @@ export class MatchingController {
     private readonly aiMatchingEngineService: AIMatchingEngineService,
     private readonly enhancedMatchingService: EnhancedMatchingService,
     private readonly marketIntelligenceService: MarketIntelligenceService,
-  ) {}
+  ) { }
 
   @Post('find-matches')
   @ApiOperation({
@@ -299,13 +299,13 @@ export class MatchingController {
     try {
       const userId = req.user.id || req.user.sub || req.user.userId;
       this.logger.log(`👤 Getting matches for Truck Owner: ${userId}`);
-      
+
       if (!userId) {
         throw new BadRequestException('User ID not found in token');
       }
 
       const matches = await this.matchingService.getMatchesForOwner(userId);
-      
+
       return {
         message: 'Matches retrieved successfully',
         data: matches,
@@ -323,12 +323,12 @@ export class MatchingController {
   async requestMatch(@Body() body: { loadId: string; truckId: string }, @Request() req) {
     this.logger.log('📥 requestMatch called with:', { loadId: body.loadId, truckId: body.truckId });
     this.logger.log('👤 User info:', JSON.stringify(req.user, null, 2));
-    
+
     // Validate request body
     if (!body.loadId || !body.truckId) {
       throw new BadRequestException('loadId and truckId are required');
     }
-    
+
     // Get tenantId from request user or headers (same pattern as findMatches)
     let tenantId: string;
     if (req.user?.tenantId) {
@@ -341,7 +341,7 @@ export class MatchingController {
       this.logger.error('❌ No tenantId found in request');
       throw new BadRequestException('Tenant ID is required. Please ensure you are authenticated.');
     }
-    
+
     try {
       const result = await this.matchingService.requestMatch(body.loadId, body.truckId, tenantId);
       this.logger.log('✅ Match requested successfully:', result.id);
@@ -367,6 +367,24 @@ export class MatchingController {
     @Body() body: { status: MatchStatus },
   ) {
     return this.matchingService.respondToMatch(matchId, body.status);
+  }
+
+  @Post('create-trips-for-accepted')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({
+    summary: 'Create trips for already-accepted matches (Migration endpoint)',
+    description: 'Retroactively creates trips for matches that were accepted before auto-trip creation was implemented'
+  })
+  async createTripsForAcceptedMatches(@Request() req) {
+    try {
+      const result = await this.matchingService.createTripsForAcceptedMatches(req.user.tenantId);
+      return {
+        message: 'Trip creation completed',
+        ...result
+      };
+    } catch (error) {
+      throw new InternalServerErrorException('Failed to create trips for accepted matches');
+    }
   }
 
   @Post('find-matches/hungarian')
@@ -843,7 +861,7 @@ export class MatchingController {
             (type: string) => {
               if (
                 analytics.cargoTypeCoverage[
-                  type as keyof typeof analytics.cargoTypeCoverage
+                type as keyof typeof analytics.cargoTypeCoverage
                 ] !== undefined
               ) {
                 analytics.cargoTypeCoverage[

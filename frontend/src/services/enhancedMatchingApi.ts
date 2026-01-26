@@ -110,7 +110,7 @@ export const enhancedMatchingApi = {
       throw error;
     }
   },
-  
+
   // Get matches for Truck Owner
   getTruckOwnerMatches: async (): Promise<any> => {
     try {
@@ -128,18 +128,37 @@ export const enhancedMatchingApi = {
       const response = await api.patch(`/matching/${matchId}/respond`, { status });
       return response.data;
     } catch (error) {
-       console.error('Error responding to match:', error);
-       throw error;
+      console.error('Error responding to match:', error);
+      throw error;
     }
   },
 
   // Request a match (Cargo Owner)
   requestMatch: async (loadId: string, truckId: string): Promise<any> => {
     try {
+      // Validate parameters before sending
+      if (!loadId || !truckId) {
+        console.error('❌ requestMatch called with missing parameters:', { loadId, truckId });
+        throw new Error(`Missing required parameters: ${!loadId ? 'loadId' : ''} ${!truckId ? 'truckId' : ''}`);
+      }
+
+      console.log('✅ Requesting match:', { loadId, truckId });
       const response = await api.post('/matching/request', { loadId, truckId });
+      console.log('✅ Match request response:', response.data);
       return response.data;
     } catch (error) {
-      console.error('Error requesting match:', error);
+      console.error('❌ Error requesting match:', error);
+      throw error;
+    }
+  },
+
+  // Create trips for already-accepted matches (migration)
+  createTripsForAcceptedMatches: async (): Promise<any> => {
+    try {
+      const response = await api.post('/matching/create-trips-for-accepted');
+      return response.data;
+    } catch (error) {
+      console.error('Error creating trips for accepted matches:', error);
       throw error;
     }
   }

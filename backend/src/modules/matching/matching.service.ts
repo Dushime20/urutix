@@ -24,6 +24,7 @@ import {
 import { Driver, DriverStatus } from '../../entities/driver.entity';
 import { Location } from '../../entities/location.entity';
 import { LoadMatch, MatchStatus } from '../../entities/load-match.entity';
+import { Trip, TripStatus } from '../../entities/trip.entity';
 import { MatchRequestDto } from './dto/match-request.dto';
 import { MatchResultDto } from './dto/match-result.dto';
 
@@ -139,10 +140,10 @@ export class MatchingService {
   // =====================================================
   // CONSOLIDATED FEATURES FROM AI & ENHANCED SERVICES
   // =====================================================
-  
+
   /** In-memory cache for fast repeated lookups */
   private readonly memoryCache = new Map<string, { data: any; expiry: number }>();
-  
+
   /** Matching performance metrics */
   private readonly metrics: MatchingMetrics = {
     totalMatches: 0,
@@ -288,13 +289,13 @@ export class MatchingService {
           isExpired,
           daysUntilDelivery: isExpired
             ? Math.floor(
-                (now.getTime() - deliveryDate.getTime()) /
-                  (1000 * 60 * 60 * 24),
-              )
+              (now.getTime() - deliveryDate.getTime()) /
+              (1000 * 60 * 60 * 24),
+            )
             : Math.floor(
-                (deliveryDate.getTime() - now.getTime()) /
-                  (1000 * 60 * 60 * 24),
-              ),
+              (deliveryDate.getTime() - now.getTime()) /
+              (1000 * 60 * 60 * 24),
+            ),
         });
       }
 
@@ -418,8 +419,8 @@ export class MatchingService {
       // Persist top matches for Truck Owners to view
       if (matches.length > 0) {
         // Run in background to not block response
-        this.persistMatchesForTruckOwners(matches, matchRequestDto.loadId, tenantId).catch(err => 
-            this.logger.error('Background match persistence failed', err)
+        this.persistMatchesForTruckOwners(matches, matchRequestDto.loadId, tenantId).catch(err =>
+          this.logger.error('Background match persistence failed', err)
         );
       }
 
@@ -453,7 +454,7 @@ export class MatchingService {
     try {
       // Filter for high quality matches (e.g. > 0.6)
       const highQualityMatches = matches.filter((m) => m.overallScore >= 0.6);
-      
+
       this.logger.debug(`Persisting ${highQualityMatches.length} matches for Load ${loadId}`);
 
       for (const match of highQualityMatches) {
@@ -472,12 +473,12 @@ export class MatchingService {
           });
           await this.loadMatchRepository.save(entity);
         } else {
-            // Update score if changed significantly
-            if (Math.abs(existing.score - match.overallScore) > 0.01) {
-                existing.score = match.overallScore;
-                existing.matchDetails = match;
-                await this.loadMatchRepository.save(existing);
-            }
+          // Update score if changed significantly
+          if (Math.abs(existing.score - match.overallScore) > 0.01) {
+            existing.score = match.overallScore;
+            existing.matchDetails = match;
+            await this.loadMatchRepository.save(existing);
+          }
         }
       }
     } catch (err) {
@@ -488,7 +489,7 @@ export class MatchingService {
   /**
    * Get all persisted matches for a truck owner's fleet
    */
-  async getMatchesForOwner(ownerId: string): Promise<LoadMatch[]> {
+  async getMatchesForOwner(ownerId: string): Promise<any[]> {
     try {
       // 1. Find all trucks for this owner
       const trucks = await this.truckRepository.find({
@@ -503,15 +504,79 @@ export class MatchingService {
       const truckIds = trucks.map((t) => t.id);
 
       // 2. Find matches for these trucks
-      return this.loadMatchRepository.find({
-        where: { 
-            truckId: In(truckIds),
-            status: Not(MatchStatus.POTENTIAL)
+      const matches = await this.loadMatchRepository.find({
+        where: {
+          truckId: In(truckIds),
+          status: Not(MatchStatus.POTENTIAL)
         },
-        relations: ['load'],
         order: { createdAt: 'DESC', score: 'DESC' },
         take: 50, // Limit to recent matches
       });
+
+      // 3. Manually fetch and attach load and truck details for each match
+      const enrichedMatches = await Promise.all(
+        matches.map(async (match) => {
+          // Fetch load details
+          const load = await this.loadRepository.findOne({
+            where: { id: match.loadId }
+          });
+
+          // Fetch truck details
+          const truck = await this.truckRepository.findOne({
+            where: { id: match.truckId }
+          });
+
+          // Enhance load with origin and destination if not already set
+          let enhancedLoad: any = load;
+          if (load) {
+            // If origin/destination are not set, extract from locations array
+            if (!load.origin && load.locations && load.locations.length > 0) {
+              const pickupLocation = load.locations.find(loc => loc.type === 'PICKUP');
+              if (pickupLocation) {
+                enhancedLoad = {
+                  ...load,
+                  origin: {
+                    address: pickupLocation.locationData?.address || '',
+                    city: pickupLocation.locationData?.city || '',
+                    state: pickupLocation.locationData?.state,
+                    postalCode: pickupLocation.locationData?.postalCode,
+                    country: pickupLocation.locationData?.country || '',
+                    lat: pickupLocation.locationData?.coordinates?.latitude,
+                    lng: pickupLocation.locationData?.coordinates?.longitude,
+                  }
+                };
+              }
+            }
+
+            if (!load.destination && load.locations && load.locations.length > 0) {
+              const deliveryLocation = load.locations.find(loc => loc.type === 'DELIVERY');
+              if (deliveryLocation) {
+                enhancedLoad = {
+                  ...enhancedLoad,
+                  destination: {
+                    address: deliveryLocation.locationData?.address || '',
+                    city: deliveryLocation.locationData?.city || '',
+                    state: deliveryLocation.locationData?.state,
+                    postalCode: deliveryLocation.locationData?.postalCode,
+                    country: deliveryLocation.locationData?.country || '',
+                    lat: deliveryLocation.locationData?.coordinates?.latitude,
+                    lng: deliveryLocation.locationData?.coordinates?.longitude,
+                  }
+                };
+              }
+            }
+          }
+
+          // Return match with attached details
+          return {
+            ...match,
+            load: enhancedLoad || null,
+            truck: truck || null,
+          };
+        })
+      );
+
+      return enrichedMatches;
     } catch (error) {
       this.logger.error(`Error finding matches for owner ${ownerId}`, error);
       throw error;
@@ -519,11 +584,15 @@ export class MatchingService {
   }
 
   async requestMatch(loadId: string, truckId: string, tenantId: string): Promise<LoadMatch> {
+    this.logger.log(`📥 requestMatch called: loadId=${loadId}, truckId=${truckId}, tenantId=${tenantId}`);
+
+    // Check if match already exists
     let match = await this.loadMatchRepository.findOne({
       where: { loadId, truckId },
     });
 
     if (!match) {
+      this.logger.log(`📝 Creating new match`);
       match = this.loadMatchRepository.create({
         loadId,
         truckId,
@@ -532,19 +601,264 @@ export class MatchingService {
         status: MatchStatus.REQUESTED,
       });
     } else {
+      this.logger.log(`📝 Updating existing match status to REQUESTED`);
       match.status = MatchStatus.REQUESTED;
     }
-    return this.loadMatchRepository.save(match);
+
+    const savedMatch = await this.loadMatchRepository.save(match);
+    this.logger.log(`✅ Match saved successfully: ${savedMatch.id}`);
+    return savedMatch;
   }
 
+  /**
+   * Handle truck owner's response to a match request
+   * When ACCEPTED: Creates trip, updates load/truck status, sends notifications
+   */
   async respondToMatch(matchId: string, status: MatchStatus): Promise<LoadMatch> {
-    const match = await this.loadMatchRepository.findOne({ where: { id: matchId } });
+    const match = await this.loadMatchRepository.findOne({
+      where: { id: matchId }
+      // Note: LoadMatch doesn't have load/truck relations - we load them separately in handleMatchAcceptance
+    });
+
     if (!match) {
-        throw new NotFoundException(`Match ${matchId} not found`);
+      throw new NotFoundException(`Match ${matchId} not found`);
     }
-    
+
+    // Update match status
     match.status = status;
-    return this.loadMatchRepository.save(match);
+    const updatedMatch = await this.loadMatchRepository.save(match);
+
+    // If accepted, trigger post-acceptance workflow
+    if (status === MatchStatus.ACCEPTED) {
+      this.logger.log(`🎉 Match ${matchId} ACCEPTED - Starting post-acceptance workflow`);
+      await this.handleMatchAcceptance(match);
+    } else if (status === MatchStatus.REJECTED) {
+      this.logger.log(`❌ Match ${matchId} REJECTED by truck owner`);
+      // Could implement rejection handling here (e.g., find alternative matches)
+    }
+
+    return updatedMatch;
+  }
+
+  /**
+   * Complete post-acceptance workflow
+   * 1. Update load status to ASSIGNED
+   * 2. Update truck status to ASSIGNED
+   * 3. Create trip record
+   * 4. Send notifications
+   * 5. Initialize tracking (if available)
+   */
+  private async handleMatchAcceptance(match: LoadMatch): Promise<void> {
+    try {
+      this.logger.log(`📋 Processing acceptance for Load ${match.loadId} + Truck ${match.truckId}`);
+
+      // Step 1: Get load and truck details (no relations - they're stored as IDs/JSON)
+      const load = await this.loadRepository.findOne({
+        where: { id: match.loadId }
+      });
+
+      const truck = await this.truckRepository.findOne({
+        where: { id: match.truckId }
+      });
+
+      if (!load || !truck) {
+        throw new NotFoundException('Load or Truck not found for match acceptance');
+      }
+
+      // Step 2: Update Load status
+      load.status = LoadStatus.ASSIGNED;
+      load.assignedTruckId = truck.id;
+      load.updatedAt = new Date();
+      await this.loadRepository.save(load);
+      this.logger.log(`✅ Load ${load.id} status updated to ASSIGNED`);
+
+      // Step 3: Update Truck status
+      truck.status = VehicleStatus.IN_TRANSIT;
+      truck.updatedAt = new Date();
+      await this.truckRepository.save(truck);
+      this.logger.log(`✅ Truck ${truck.id} status updated to IN_TRANSIT`);
+
+      // Step 4: Create Trip record
+      const trip = await this.createTripFromMatch(load, truck, match);
+      this.logger.log(`✅ Trip ${trip.tripNumber} created successfully`);
+
+      // Step 5: Send notifications (implement notification service integration)
+      await this.sendAcceptanceNotifications(load, truck, trip);
+
+      // Step 6: Initialize tracking (if tracking service is available)
+      // await this.initializeTracking(trip);
+
+      this.logger.log(`🎊 Match acceptance workflow completed successfully for Trip ${trip.tripNumber}`);
+    } catch (error) {
+      this.logger.error(`❌ Failed to process match acceptance: ${error.message}`, error.stack);
+      throw new InternalServerErrorException('Failed to complete match acceptance workflow');
+    }
+  }
+
+  /**
+   * Create a Trip record from an accepted match
+   */
+  private async createTripFromMatch(load: Load, truck: Truck, match: LoadMatch): Promise<any> {
+    const tripNumber = `TRIP-${Date.now()}-${load.id.substring(0, 8)}`;
+
+    // Calculate estimated times
+    const now = new Date();
+    const pickupDate = new Date(load.pickupDate);
+    const deliveryDate = new Date(load.deliveryDate);
+
+    const tripData = {
+      tenantId: load.tenantId,
+      loadId: load.id,
+      truckId: truck.id,
+      driverId: truck.currentDriverId,
+      tripNumber,
+      status: TripStatus.PLANNED,
+      plannedStartTime: pickupDate,
+      plannedEndTime: deliveryDate,
+      agreedPrice: load.offeredPrice || match.matchDetails?.estimatedCost || 0,
+      currencyCode: load.currencyCode || 'USD',
+      notes: `Auto-created from Smart Matching (Match Score: ${match.score})`,
+    };
+
+    // Use Trip entity class for proper type safety and to avoid lookup errors
+    const tripRepository = this.loadRepository.manager.getRepository(Trip);
+    const trip = tripRepository.create(tripData);
+    return await tripRepository.save(trip);
+  }
+
+  /**
+   * Send notifications to all parties about match acceptance
+   */
+  private async sendAcceptanceNotifications(load: any, truck: any, trip: any): Promise<void> {
+    try {
+      // TODO: Integrate with NotificationService when available
+      this.logger.log(`📧 Sending acceptance notifications:`);
+      this.logger.log(`   - To Cargo Owner: Load ${load.id} has been accepted`);
+      this.logger.log(`   - To Truck Owner: You accepted Load ${load.id}`);
+      this.logger.log(`   - Trip ${trip.tripNumber} is now active`);
+
+      // Placeholder for actual notification implementation
+      // await this.notificationService.send({
+      //   to: load.cargoOwnerId,
+      //   type: 'MATCH_ACCEPTED',
+      //   data: { loadId: load.id, truckId: truck.id, tripNumber: trip.tripNumber }
+      // });
+    } catch (error) {
+      this.logger.warn(`Failed to send notifications: ${error.message}`);
+      // Don't throw - notifications are non-critical
+    }
+  }
+
+  /**
+   * Retroactively create trips for all accepted matches that don't have trips yet
+   * This is a migration method for matches accepted before auto-trip creation was implemented
+   */
+  async createTripsForAcceptedMatches(tenantId: string): Promise<{
+    created: number;
+    skipped: number;
+    errors: number;
+  }> {
+    this.logger.log(`🔄 Starting trip creation for accepted matches in tenant ${tenantId}`);
+
+    let created = 0;
+    let skipped = 0;
+    let errors = 0;
+
+    try {
+      // Find all accepted matches for this tenant
+      const acceptedMatches = await this.loadMatchRepository
+        .createQueryBuilder('match')
+        .where('match.tenantId = :tenantId', { tenantId })
+        .andWhere('match.status = :status', { status: MatchStatus.ACCEPTED })
+        .getMany();
+
+      this.logger.log(`📋 Found ${acceptedMatches.length} accepted matches`);
+
+      for (const match of acceptedMatches) {
+        try {
+          // Get load details (no relations needed - origin/destination are JSON fields)
+          const load = await this.loadRepository.findOne({
+            where: { id: match.loadId }
+          });
+
+          if (!load) {
+            this.logger.warn(`⚠️  Load ${match.loadId} not found`);
+            skipped++;
+            continue;
+          }
+
+          // Check if trip already exists
+          const tripRepository = this.loadRepository.manager.getRepository('Trip');
+          const existingTrip = await tripRepository.findOne({
+            where: { loadId: load.id }
+          });
+
+          if (existingTrip) {
+            this.logger.log(`⏭️  Trip already exists for load ${load.id}`);
+            skipped++;
+            continue;
+          }
+
+          // Get truck details
+          const truck = await this.truckRepository.findOne({
+            where: { id: match.truckId }
+          });
+
+          if (!truck) {
+            this.logger.warn(`⚠️  Truck ${match.truckId} not found`);
+            skipped++;
+            continue;
+          }
+
+          // Create the trip
+          const tripNumber = `TRIP-${Date.now()}-${load.id.substring(0, 8)}`;
+          const pickupDate = new Date(load.pickupDate);
+          const deliveryDate = new Date(load.deliveryDate);
+
+          const tripData = {
+            tenantId: load.tenantId,
+            loadId: load.id,
+            truckId: truck.id,
+            driverId: truck.currentDriverId,
+            tripNumber,
+            status: 'PLANNED',
+            plannedStartTime: pickupDate,
+            plannedEndTime: deliveryDate,
+            agreedPrice: load.offeredPrice || match.matchDetails?.estimatedCost || 0,
+            currencyCode: load.currencyCode || 'USD',
+            notes: `Retroactively created from accepted match (Match Score: ${match.score})`,
+          };
+
+          const trip = tripRepository.create(tripData);
+          await tripRepository.save(trip);
+
+          // Update load status if needed
+          if (load.status !== LoadStatus.ASSIGNED) {
+            load.status = LoadStatus.ASSIGNED;
+            load.assignedTruckId = truck.id;
+            await this.loadRepository.save(load);
+          }
+
+          // Update truck status if needed
+          if (truck.status !== VehicleStatus.IN_TRANSIT) {
+            truck.status = VehicleStatus.IN_TRANSIT;
+            await this.truckRepository.save(truck);
+          }
+
+          this.logger.log(`✅ Created trip ${tripNumber} for load ${load.id}`);
+          created++;
+        } catch (error) {
+          this.logger.error(`❌ Error processing match ${match.id}: ${error.message}`);
+          errors++;
+        }
+      }
+
+      this.logger.log(`\n📊 Summary: Created ${created}, Skipped ${skipped}, Errors ${errors}`);
+      return { created, skipped, errors };
+    } catch (error) {
+      this.logger.error(`Failed to create trips for accepted matches: ${error.message}`, error.stack);
+      throw error;
+    }
   }
 
   private async getAvailableTrucks(
@@ -899,21 +1213,21 @@ export class MatchingService {
       // 1. CAPACITY CONSTRAINT
       const truckCapacityKg = Number(truck.capacityWeight);
       const loadWeight = Number(load.weight);
-      
+
       this.logger.debug(`🔍 Checking constraints for truck ${truck.plateNumber}`);
 
       if (!truckCapacityKg || !loadWeight || loadWeight > truckCapacityKg) {
         this.logger.debug(`❌ Rejected: Capacity insufficient (${loadWeight}kg > ${truckCapacityKg}kg)`);
-        return null; 
+        return null;
       }
 
       // 2. AVAILABILITY CONSTRAINT
       if (truck.status !== VehicleStatus.AVAILABLE) {
         // Exception: If truck is incoming and will be available soon (within 2 hours)
-        const isIncoming = truck.status === VehicleStatus.IN_TRANSIT && 
-                          truck.estimatedAvailableTime && 
-                          (new Date(truck.estimatedAvailableTime).getTime() - Date.now()) < 2 * 60 * 60 * 1000;
-        
+        const isIncoming = truck.status === VehicleStatus.IN_TRANSIT &&
+          truck.estimatedAvailableTime &&
+          (new Date(truck.estimatedAvailableTime).getTime() - Date.now()) < 2 * 60 * 60 * 1000;
+
         if (!isIncoming) {
           this.logger.debug(`❌ Rejected: Status is ${truck.status}`);
           return null;
@@ -939,11 +1253,11 @@ export class MatchingService {
       // 5. ROUTE/DISTANCE CONSTRAINT
       // Calculate distance between load pickup and truck current location
       const distanceKm = this.calculateDistance(load, truck);
-      
+
       // If truck has max distance constraint
       if (truck.routeCapabilities?.maxDistance && distanceKm > truck.routeCapabilities.maxDistance) {
-         this.logger.debug(`❌ Rejected: Outside max operating distance`);
-         return null;
+        this.logger.debug(`❌ Rejected: Outside max operating distance`);
+        return null;
       }
 
       // =====================================================
@@ -970,7 +1284,7 @@ export class MatchingService {
       const weights = this.getDynamicWeights(load);
 
       // Calculate weighted overall score using 5 core factors
-      const overallScore = 
+      const overallScore =
         capacityScore * weights.capacity +
         equipmentScore * weights.equipment +
         distanceScore * weights.distance +
@@ -980,8 +1294,8 @@ export class MatchingService {
       // Calculate supporting metrics
       const estimatedCost = this.estimateCost(distanceKm, loadWeight, truck);
       const estimatedRevenue = this.estimateRevenue(distanceKm, loadWeight);
-      const profitMargin = estimatedRevenue > 0 
-        ? ((estimatedRevenue - estimatedCost) / estimatedRevenue) 
+      const profitMargin = estimatedRevenue > 0
+        ? ((estimatedRevenue - estimatedCost) / estimatedRevenue)
         : 0;
       const estimatedDeliveryTime = this.estimateDeliveryTime(distanceKm, load);
       const riskScore = Math.max(0, 1 - overallScore);
@@ -1007,7 +1321,7 @@ export class MatchingService {
       // Generate match reason based on 5 core factors
       const utilization = ((loadWeight / truckCapacityKg) * 100).toFixed(1);
       const matchReason = this.generateSimplifiedMatchReason(
-        truck, load, capacityScore, equipmentScore, distanceScore, 
+        truck, load, capacityScore, equipmentScore, distanceScore,
         gpsTrackingScore, availabilityScore, distanceKm, utilization
       );
 
@@ -1046,7 +1360,7 @@ export class MatchingService {
         recommendedPrice: Math.round(recommendedPrice * 100) / 100,
         // Owner information
         ownerId: truck.ownerId || null,
-        ownerName: (truck as any).owner?.profile 
+        ownerName: (truck as any).owner?.profile
           ? `${(truck as any).owner.profile.firstName || ''} ${(truck as any).owner.profile.lastName || ''}`.trim() || (truck as any).owner.profile.companyName || 'Unknown Carrier'
           : 'Unknown Carrier',
         ownerEmail: (truck as any).owner?.email || null,
@@ -1103,7 +1417,7 @@ export class MatchingService {
     const maxDistance = criteria.maxDistance || 200;
 
     if (distance > maxDistance) return 0;
-    
+
     // Aggressive scoring for "same city" / nearby matching
     if (distance <= 10) return 1.0;  // Extremely close / same neighborhood
     if (distance <= 25) return 0.9;  // Same city/area
@@ -1706,7 +2020,7 @@ export class MatchingService {
       // Parse truck coordinates - handle PostGIS GeoJSON Point format
       // GeoJSON Point: { type: "Point", coordinates: [longitude, latitude] }
       let truckLat: number, truckLon: number;
-      
+
       const loc = truck.currentLocation as any;
       if (loc.coordinates && Array.isArray(loc.coordinates)) {
         [truckLon, truckLat] = loc.coordinates;
@@ -1745,9 +2059,9 @@ export class MatchingService {
     const a =
       Math.sin(dLat / 2) * Math.sin(dLat / 2) +
       Math.cos(this.deg2rad(lat1)) *
-        Math.cos(this.deg2rad(lat2)) *
-        Math.sin(dLon / 2) *
-        Math.sin(dLon / 2);
+      Math.cos(this.deg2rad(lat2)) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     const d = R * c; // Distance in km
     return d;
@@ -2270,7 +2584,7 @@ export class MatchingService {
   private async getMarketContext(tenantId: string): Promise<MarketContext> {
     try {
       const conditions = await this.marketIntelligence.getCurrentConditions(tenantId);
-      
+
       // Calculate market balance
       const publishedLoads = await this.loadRepository.count({
         where: { tenantId, status: In([LoadStatus.CREATED, LoadStatus.PUBLISHED]) },
@@ -2397,7 +2711,7 @@ export class MatchingService {
     try {
       // Try to use the ML prediction service
       const mlResult = await this.mlPrediction.predictSuccessProbability(load, truck);
-      
+
       return {
         successProbability: mlResult || 0.85 + match.overallScore * 0.1,
         estimatedDeliveryTime: match.estimatedDeliveryTime || match.distanceKm / 60,
@@ -2449,11 +2763,11 @@ export class MatchingService {
    */
   private blendScoreWithML(baseScore: number, prediction: MLPrediction): number {
     // 70% traditional algorithm, 30% ML
-    const blendedScore = 
+    const blendedScore =
       baseScore * 0.7 +
       prediction.successProbability * 0.2 +
       (1 - prediction.riskScore) * 0.1;
-    
+
     return Math.min(Math.max(blendedScore, 0), 1.0);
   }
 
@@ -2492,10 +2806,10 @@ export class MatchingService {
   ): EnvironmentalImpact {
     const fuelEfficiency = truck.fuelEfficiency || 6.5; // L/100km
     const fuelConsumption = (distanceKm / 100) * fuelEfficiency;
-    
+
     // CO2 emissions: ~2.31 kg CO2 per liter of diesel
     const co2Emissions = fuelConsumption * 2.31;
-    
+
     // Eco score: Based on fuel efficiency and electric options
     let ecoScore = Math.min(1.0, fuelEfficiency / 10);
     if (truck.fuelType === FuelType.ELECTRIC) ecoScore = 0.95;
@@ -2522,7 +2836,7 @@ export class MatchingService {
     return Promise.all(matches.map(async match => {
       const truck = await this.truckRepository.findOne({ where: { id: match.truckId } });
       const load = await this.loadRepository.findOne({ where: { id: match.loadId } });
-      const driver = match.driverId 
+      const driver = match.driverId
         ? await this.driverRepository.findOne({ where: { id: match.driverId } })
         : null;
 
@@ -2617,12 +2931,12 @@ export class MatchingService {
     }
 
     // Calculate total risk
-    overallRisk = Math.min(1.0, 
-      overallRisk + 
-      equipmentRisk * 0.3 + 
-      capacityRisk * 0.2 + 
-      ratingRisk * 0.2 + 
-      availabilityRisk * 0.15 + 
+    overallRisk = Math.min(1.0,
+      overallRisk +
+      equipmentRisk * 0.3 +
+      capacityRisk * 0.2 +
+      ratingRisk * 0.2 +
+      availabilityRisk * 0.15 +
       costRisk * 0.15
     );
 
@@ -2684,7 +2998,7 @@ export class MatchingService {
   ): Promise<MatchResultDto[]> {
     return matches.map(match => {
       const optimization = this.calculateRouteOptimization(match);
-      
+
       return {
         ...match,
         routeOptimization: optimization as any,
@@ -2776,10 +3090,10 @@ export class MatchingService {
    */
   private updateMatchingMetrics(startTime: number, matchCount: number): void {
     const responseTime = Date.now() - startTime;
-    
+
     this.metrics.totalMatches += matchCount;
     this.metrics.responseTime = this.metrics.responseTime * 0.9 + responseTime * 0.1;
-    
+
     if (matchCount > 0) {
       this.metrics.matchRate = this.metrics.matchRate * 0.9 + 0.1;
     } else {

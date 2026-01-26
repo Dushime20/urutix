@@ -3,9 +3,10 @@ import {
   NotFoundException,
   BadRequestException,
   ForbiddenException,
+  Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, In, Like, Between, IsNull, Not } from 'typeorm';
+import { Repository, In, Like, Between, IsNull, Not, Brackets } from 'typeorm';
 import {
   Document,
   DocumentType,
@@ -32,13 +33,15 @@ import { UserService } from '../users/user.service';
 
 @Injectable()
 export class DocumentService {
+  private readonly logger = new Logger(DocumentService.name);
+
   constructor(
     @InjectRepository(Document)
     private documentRepository: Repository<Document>,
     private fileUploadService: FileUploadService,
     private notificationService: NotificationService,
     private userService: UserService,
-  ) {}
+  ) { }
 
   /**
    * Create a new document
@@ -127,12 +130,34 @@ export class DocumentService {
    */
   async getDocuments(
     filterDto: DocumentFilterDto,
-    tenantId: string,
+    user: any, // { userId: string; role: string; tenantId: string }
   ): Promise<{ documents: Document[]; total: number }> {
+    const { tenantId, userId, role } = user;
+    this.logger.log(`📄 getDocuments called for user:`, { userId, role, tenantId });
+
     const queryBuilder = this.documentRepository
       .createQueryBuilder('document')
       .where('document.tenantId = :tenantId', { tenantId })
       .andWhere('document.deleted_at IS NULL'); // Use snake_case column name from DB
+
+    // Role-based filtering: Restrict non-admin users to their own documents
+    // Modified to allow Owners to see documents for their entities (Cargo, Truck) even if uploaded by others (e.g. System/Admin)
+    if (role === 'CARGO_OWNER') {
+      this.logger.log(`🔒 Applying extended visibility for CARGO_OWNER: uploadedBy=${userId} OR entityType=CARGO`);
+      queryBuilder.andWhere(new Brackets((qb) => {
+        qb.where('document.uploadedBy = :userId', { userId })
+          .orWhere('document.entityType = :cargoType', { cargoType: 'CARGO' });
+      }));
+    } else if (role === 'TRUCK_OWNER') {
+      this.logger.log(`🔒 Applying extended visibility for TRUCK_OWNER: uploadedBy=${userId} OR entityType=TRUCK/DRIVER`);
+      queryBuilder.andWhere(new Brackets((qb) => {
+        qb.where('document.uploadedBy = :userId', { userId })
+          .orWhere('document.entityType IN (:...truckTypes)', { truckTypes: ['TRUCK', 'DRIVER'] });
+      }));
+    } else if (role === 'DRIVER' || role === 'CARGO_RECEIVER') {
+      this.logger.log(`🔒 Applying strict ownership filter for role ${role}: uploadedBy = ${userId}`);
+      queryBuilder.andWhere('document.uploadedBy = :userId', { userId });
+    }
 
     // Apply filters
     if (filterDto.entityType) {
@@ -559,10 +584,19 @@ export class DocumentService {
     entityId: string,
     tenantId: string,
   ): Promise<Document[]> {
-    return this.documentRepository.find({
+    this.logger.log(`📄 getDocumentsByEntity called with:`, { entityType, entityId, tenantId });
+
+    const documents = await this.documentRepository.find({
       where: { entityType, entityId, tenantId },
       order: { createdAt: 'DESC' },
     });
+
+    this.logger.log(`📄 Found ${documents.length} documents for entity ${entityType}:${entityId}`);
+    if (documents.length > 0) {
+      this.logger.log(`📄 Sample document IDs:`, documents.slice(0, 3).map(d => ({ id: d.id, title: d.title, entityId: d.entityId })));
+    }
+
+    return documents;
   }
 
   /**
@@ -604,7 +638,7 @@ export class DocumentService {
    */
   async getDocumentStatistics(tenantId: string, entityType?: any): Promise<any> {
     const activeWhere: any = { tenantId, deletedAt: IsNull() };
-    
+
     if (entityType) {
       if (entityType === 'FINANCIAL') {
         activeWhere.category = DocumentCategory.FINANCIAL;
@@ -616,15 +650,15 @@ export class DocumentService {
     const totalDocuments = await this.documentRepository.count({
       where: activeWhere,
     });
-    
+
     const verifiedDocuments = await this.documentRepository.count({
       where: { ...activeWhere, status: DocumentStatus.VERIFIED },
     });
-    
+
     const expiredDocuments = await this.documentRepository.count({
       where: { ...activeWhere, status: DocumentStatus.EXPIRED },
     });
-    
+
     const pendingDocuments = await this.documentRepository.count({
       where: { ...activeWhere, status: DocumentStatus.PENDING },
     });

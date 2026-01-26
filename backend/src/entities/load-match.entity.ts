@@ -4,12 +4,8 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
-  ManyToOne,
-  JoinColumn,
   Index,
 } from 'typeorm';
-import { Load } from './load.entity';
-import { Truck } from './truck.entity';
 
 export enum MatchStatus {
   POTENTIAL = 'POTENTIAL',    // Suggestion by AI, not yet seen by Truck Owner
@@ -27,39 +23,31 @@ export class LoadMatch {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column('uuid')
+  @Column({ name: 'tenant_id', type: 'uuid' })
   tenantId: string;
 
-  @ManyToOne(() => Load)
-  @JoinColumn({ name: 'loadId' })
-  load: Load;
-
-  @Column('uuid')
+  @Column({ name: 'load_id', type: 'uuid' })
   loadId: string;
 
-  @ManyToOne(() => Truck)
-  @JoinColumn({ name: 'truckId' })
-  truck: Truck;
-
-  @Column('uuid')
+  @Column({ name: 'truck_id', type: 'uuid' })
   truckId: string;
-  
-  @Column('float')
+
+  @Column({ type: 'numeric', precision: 5, scale: 2, nullable: true })
   score: number;
 
   @Column({
-      type: 'enum',
-      enum: MatchStatus,
-      default: MatchStatus.POTENTIAL
+    type: 'enum',
+    enum: MatchStatus,
+    default: MatchStatus.POTENTIAL
   })
   status: MatchStatus;
 
-  @Column('jsonb', { nullable: true })
-  matchDetails: any; // Store the score breakdown details
+  @Column({ name: 'match_details', type: 'jsonb', nullable: true })
+  matchDetails: any;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 
-  @UpdateDateColumn()
+  @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
 }
