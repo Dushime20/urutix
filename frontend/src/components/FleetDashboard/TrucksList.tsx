@@ -34,6 +34,7 @@ console.log('🔍 TrucksList - fleetApi type:', typeof fleetApi);
 import toast from 'react-hot-toast';
 import { useAuth } from '../../contexts/AuthContext';
 import { EmptyState } from './EmptyState';
+import TruckLocationModal from './TruckLocationModal';
 
 
 interface TrucksListProps {
@@ -532,6 +533,7 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
   const [showTruckDetails, setShowTruckDetails] = useState(false);
   const [showTruckRoutes, setShowTruckRoutes] = useState(false);
   const [showEditTruck, setShowEditTruck] = useState(false);
+  const [showLocationModal, setShowLocationModal] = useState(false);
   const [editingTruck, setEditingTruck] = useState<any>(null);
   const [sortConfig, setSortConfig] = useState<SortConfig>({ key: 'name', direction: 'asc' });
   const [currentPage, setCurrentPage] = useState(1);
@@ -581,19 +583,23 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
       // Keep existing routes list; refresh fallback if we have none
       if (!routes || routes.length === 0) {
         try {
-          const adminRoutes = await fetchAdminRoutes({ tenantId: user.tenantId, status: 'active' });
-          const mapped = (adminRoutes || []).map((r: any) => ({
-            id: r.id,
-            name: r.name,
-            origin: r.origin,
-            destination: r.destination,
-            distance: Number(r.distance) || 0,
-            estimatedDuration: Number(r.estimatedDuration || r.estimatedTime) || 0,
-            status: r.status || 'active',
-            assignedDrivers: Array.isArray(r.assignedDrivers) ? r.assignedDrivers : [],
-            assignedTrucks: Array.isArray(r.assignedTrucks) ? r.assignedTrucks : [],
-          }));
-          setRoutes(mapped);
+          // Only attempt fallback to admin routes if user has admin privileges
+          const isAdmin = ['SUPER_ADMIN', 'ADMIN', 'TENANT_ADMIN'].includes(user.role);
+          if (isAdmin) {
+            const adminRoutes = await fetchAdminRoutes({ tenantId: user.tenantId, status: 'active' });
+            const mapped = (adminRoutes || []).map((r: any) => ({
+              id: r.id,
+              name: r.name,
+              origin: r.origin,
+              destination: r.destination,
+              distance: Number(r.distance) || 0,
+              estimatedDuration: Number(r.estimatedDuration || r.estimatedTime) || 0,
+              status: r.status || 'active',
+              assignedDrivers: Array.isArray(r.assignedDrivers) ? r.assignedDrivers : [],
+              assignedTrucks: Array.isArray(r.assignedTrucks) ? r.assignedTrucks : [],
+            }));
+            setRoutes(mapped);
+          }
         } catch (e) {
           console.warn('No fallback admin routes available');
         }
@@ -723,22 +729,28 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
         console.log('✅ Routes data type:', typeof routesData);
         console.log('✅ Routes data length:', Array.isArray(routesData) ? routesData.length : 'Not an array');
         console.log('✅ Routes data structure:', JSON.stringify(routesData, null, 2));
-        // Fallback to admin routes if empty
-        if (!routesData || routesData.length === 0) {
-          console.log('⚠️ No routes from /fleet/routes. Falling back to /admin/routes with tenant filter...');
-          const adminRoutes = await fetchAdminRoutes({ tenantId: user.tenantId, status: 'active' });
-          routesData = (adminRoutes || []).map((r: any) => ({
-            id: r.id,
-            name: r.name,
-            origin: r.origin,
-            destination: r.destination,
-            distance: Number(r.distance) || 0,
-            estimatedDuration: Number(r.estimatedDuration || r.estimatedTime) || 0,
-            status: r.status || 'active',
-            assignedDrivers: Array.isArray(r.assignedDrivers) ? r.assignedDrivers : [],
-            assignedTrucks: Array.isArray(r.assignedTrucks) ? r.assignedTrucks : [],
-          }));
-          console.log('✅ Fallback admin routes mapped:', routesData.length);
+        // Fallback to admin routes if empty AND user is admin
+        if ((!routesData || routesData.length === 0)) {
+          const isAdmin = ['SUPER_ADMIN', 'ADMIN', 'TENANT_ADMIN'].includes(user.role);
+          
+          if (isAdmin) {
+            console.log('⚠️ No routes from /fleet/routes. Falling back to /admin/routes with tenant filter...');
+            const adminRoutes = await fetchAdminRoutes({ tenantId: user.tenantId, status: 'active' });
+            routesData = (adminRoutes || []).map((r: any) => ({
+              id: r.id,
+              name: r.name,
+              origin: r.origin,
+              destination: r.destination,
+              distance: Number(r.distance) || 0,
+              estimatedDuration: Number(r.estimatedDuration || r.estimatedTime) || 0,
+              status: r.status || 'active',
+              assignedDrivers: Array.isArray(r.assignedDrivers) ? r.assignedDrivers : [],
+              assignedTrucks: Array.isArray(r.assignedTrucks) ? r.assignedTrucks : [],
+            }));
+            console.log('✅ Fallback admin routes mapped:', routesData.length);
+          } else {
+             console.log('ℹ️ User is not admin, skipping admin routes fallback');
+          }
         }
       } catch (routeError: any) {
         console.error('❌ Error fetching routes:', routeError);
@@ -799,18 +811,21 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
           estimatedDuration: r.estimatedDuration || r.estimatedTime || 0
         }));
         if (!routesData || routesData.length === 0) {
-          const adminRoutes = await fetchAdminRoutes({ tenantId: user.tenantId, status: 'active' });
-          routesData = (adminRoutes || []).map((r: any) => ({
-            id: r.id,
-            name: r.name,
-            origin: r.origin,
-            destination: r.destination,
-            distance: Number(r.distance) || 0,
-            estimatedDuration: Number(r.estimatedDuration || r.estimatedTime) || 0,
-            status: r.status || 'active',
-            assignedDrivers: Array.isArray(r.assignedDrivers) ? r.assignedDrivers : [],
-            assignedTrucks: Array.isArray(r.assignedTrucks) ? r.assignedTrucks : [],
-          }));
+          const isAdmin = ['SUPER_ADMIN', 'ADMIN', 'TENANT_ADMIN'].includes(user.role);
+          if (isAdmin) {
+            const adminRoutes = await fetchAdminRoutes({ tenantId: user.tenantId, status: 'active' });
+            routesData = (adminRoutes || []).map((r: any) => ({
+              id: r.id,
+              name: r.name,
+              origin: r.origin,
+              destination: r.destination,
+              distance: Number(r.distance) || 0,
+              estimatedDuration: Number(r.estimatedDuration || r.estimatedTime) || 0,
+              status: r.status || 'active',
+              assignedDrivers: Array.isArray(r.assignedDrivers) ? r.assignedDrivers : [],
+              assignedTrucks: Array.isArray(r.assignedTrucks) ? r.assignedTrucks : [],
+            }));
+          }
         }
         setRoutes(routesData || []);
 
@@ -1595,6 +1610,26 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
                     <span className="text-gray-500">Capacity:</span>
                     <span className="text-gray-900">{truck.capacityWeight?.toLocaleString()} kg</span>
                   </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <FaMapMarkerAlt className="w-3 h-3 text-gray-400" />
+                    {truck.currentLocation ? (
+                      <span className="text-gray-900 truncate max-w-[150px]" title={truck.currentLocation.address}>
+                        {truck.currentLocation.address}
+                      </span>
+                    ) : (
+                      <span className="text-gray-400 italic">No location set</span>
+                    )}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedTruck(truck);
+                        setShowLocationModal(true);
+                      }}
+                      className="ml-auto text-xs text-blue-600 hover:text-blue-800 underline"
+                    >
+                      Update
+                    </button>
+                  </div>
                   {truck.currentLocation && truck.currentLocation.address && (
                     <div className="flex items-center gap-2 text-sm">
                       <FaMapMarkerAlt className="w-3 h-3 text-gray-400" />
@@ -1790,14 +1825,29 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        {truck.currentLocation ? (
-                          <div className="flex items-center text-sm text-gray-900">
-                            <FaMapMarkerAlt className="w-3 h-3 text-gray-400 mr-1" />
-                            {truck.currentLocation.address}
-                          </div>
-                        ) : (
-                          <span className="text-sm text-gray-400">No location</span>
-                        )}
+                        <div className="flex flex-col gap-1">
+                          {truck.currentLocation ? (
+                            <div className="flex items-center text-sm text-gray-900">
+                              <FaMapMarkerAlt className="w-3 h-3 text-gray-400 mr-1 shrink-0" />
+                              <span className="truncate max-w-[150px]" title={truck.currentLocation.address}>
+                                {truck.currentLocation.address}
+                              </span>
+                            </div>
+                          ) : (
+                            <span className="text-sm text-gray-400 italic">No location set</span>
+                          )}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedTruck(truck);
+                              setShowLocationModal(true);
+                            }}
+                            className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
+                            title="Edit Location"
+                          >
+                            <FaEdit className="w-3 h-3" />
+                          </button>
+                        </div>
                       </td>
                       <td className="px-6 py-4">
                         {truck.assignedDrivers && truck.assignedDrivers.length > 0 ? (
@@ -2187,22 +2237,28 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
                   <div className="space-y-3">
                     <div className="flex justify-between">
                       <span className="text-gray-600">Name:</span>
+                      <span className="font-medium">{selectedTruck?.name || 'N/A'}</span>
                       <span className="font-medium">{selectedTruck?.name || selectedTruck?.plateNumber || 'N/A'}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">Plate Number:</span>
                       <span className="font-medium">{selectedTruck?.plateNumber || 'N/A'}</span>
+                      <span className="font-medium">{selectedTruck?.plateNumber || 'N/A'}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">Make/Model:</span>
+                      <span className="font-medium">{selectedTruck?.make} {selectedTruck?.model}</span>
                       <span className="font-medium">{selectedTruck?.make} {selectedTruck?.model}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">Year:</span>
                       <span className="font-medium">{selectedTruck?.year}</span>
+                      <span className="font-medium">{selectedTruck?.year}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">Status:</span>
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(selectedTruck?.status)}`}>
+                        {getStatusText(selectedTruck?.status)}
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(selectedTruck?.status)}`}>
                         {getStatusText(selectedTruck?.status)}
                       </span>
@@ -2217,37 +2273,46 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
                     <div className="flex justify-between">
                       <span className="text-gray-600">Capacity Weight:</span>
                       <span className="font-medium">{selectedTruck?.capacityWeight?.toLocaleString()} kg</span>
+                      <span className="font-medium">{selectedTruck?.capacityWeight?.toLocaleString()} kg</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">Capacity Volume:</span>
+                      <span className="font-medium">{selectedTruck?.capacityVolume?.toLocaleString()} cu ft</span>
                       <span className="font-medium">{selectedTruck?.capacityVolume?.toLocaleString()} cu ft</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">VIN:</span>
                       <span className="font-medium">{selectedTruck?.vin || 'N/A'}</span>
+                      <span className="font-medium">{selectedTruck?.vin || 'N/A'}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">Truck Type:</span>
+                      <span className="font-medium">{selectedTruck?.truckType || 'N/A'}</span>
                       <span className="font-medium">{selectedTruck?.truckType || 'N/A'}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">Trailer Type:</span>
                       <span className="font-medium">{selectedTruck?.trailerType || 'N/A'}</span>
+                      <span className="font-medium">{selectedTruck?.trailerType || 'N/A'}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">Fuel Type:</span>
+                      <span className="font-medium">{selectedTruck?.fuelType || 'N/A'}</span>
                       <span className="font-medium">{selectedTruck?.fuelType || 'N/A'}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">Color:</span>
                       <span className="font-medium">{selectedTruck?.color || 'N/A'}</span>
+                      <span className="font-medium">{selectedTruck?.color || 'N/A'}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">Mileage:</span>
                       <span className="font-medium">{selectedTruck?.mileage?.toLocaleString()} miles</span>
+                      <span className="font-medium">{selectedTruck?.mileage?.toLocaleString()} miles</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">Fuel Efficiency:</span>
+                      <span className="font-medium">{selectedTruck?.fuelEfficiency || 'N/A'} mpg</span>
                       <span className="font-medium">{selectedTruck?.fuelEfficiency || 'N/A'} mpg</span>
                     </div>
                   </div>
@@ -2260,13 +2325,16 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
                     <div className="flex justify-between">
                       <span className="text-gray-600">Max Length:</span>
                       <span className="font-medium">{selectedTruck?.maxLength ? `${selectedTruck?.maxLength} m` : 'N/A'}</span>
+                      <span className="font-medium">{selectedTruck?.maxLength ? `${selectedTruck?.maxLength} m` : 'N/A'}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">Max Width:</span>
                       <span className="font-medium">{selectedTruck?.maxWidth ? `${selectedTruck?.maxWidth} m` : 'N/A'}</span>
+                      <span className="font-medium">{selectedTruck?.maxWidth ? `${selectedTruck?.maxWidth} m` : 'N/A'}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">Max Height:</span>
+                      <span className="font-medium">{selectedTruck?.maxHeight ? `${selectedTruck?.maxHeight} m` : 'N/A'}</span>
                       <span className="font-medium">{selectedTruck?.maxHeight ? `${selectedTruck?.maxHeight} m` : 'N/A'}</span>
                     </div>
                   </div>
@@ -2274,26 +2342,40 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
 
                 {/* Location */}
                 <div className="space-y-4">
-                  <h4 className="text-lg font-semibold text-gray-900 border-b border-gray-200 pb-2">Current Location</h4>
+                  <div className="flex items-center justify-between border-b border-gray-200 pb-2">
+                    <h4 className="text-lg font-semibold text-gray-900">Current Location</h4>
+                    <button
+                      onClick={() => setShowLocationModal(true)}
+                      className="text-gray-400 hover:text-blue-600 p-1 rounded hover:bg-gray-100 transition-colors"
+                      title="Edit Location"
+                    >
+                      <FaEdit className="w-4 h-4" />
+                    </button>
+                  </div>
                   <div className="space-y-3">
+                    {selectedTruck?.currentLocation ? (
                     {selectedTruck?.currentLocation ? (
                       <>
                         <div className="flex justify-between">
                           <span className="text-gray-600">Address:</span>
+                          <span className="font-medium">{selectedTruck?.currentLocation.address}</span>
                           <span className="font-medium">{selectedTruck?.currentLocation?.address}</span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-gray-600">City:</span>
+                          <span className="font-medium">{selectedTruck?.currentLocation.city}</span>
                           <span className="font-medium">{selectedTruck?.currentLocation?.city}</span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-gray-600">State:</span>
+                          <span className="font-medium">{selectedTruck?.currentLocation.state}</span>
                           <span className="font-medium">{selectedTruck?.currentLocation?.state}</span>
                         </div>
                       </>
                     ) : (
                       <span className="text-gray-500">No location data available</span>
                     )}
+
                   </div>
                 </div>
 
@@ -2303,8 +2385,11 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
                   <div className="space-y-3">
                     <div>
                       <h5 className="font-medium text-gray-900 mb-2">Drivers ({selectedTruck?.assignedDrivers?.length || 0})</h5>
+                      {selectedTruck?.assignedDrivers && selectedTruck?.assignedDrivers.length > 0 ? (
+                      <h5 className="font-medium text-gray-900 mb-2">Drivers ({selectedTruck?.assignedDrivers?.length || 0})</h5>
                       {selectedTruck?.assignedDrivers && selectedTruck?.assignedDrivers?.length > 0 ? (
                         <div className="space-y-2">
+                          {selectedTruck?.assignedDrivers.map((assignment: any, index: number) => (
                           {selectedTruck?.assignedDrivers?.map((assignment: any, index: number) => (
                             <div key={assignment.id || `driver-${index}`} className="flex items-center justify-between p-2 bg-green-50 rounded">
                               <span className="text-sm font-medium">{assignment.driverName}</span>
@@ -2319,8 +2404,11 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
 
                     <div>
                       <h5 className="font-medium text-gray-900 mb-2">Routes ({selectedTruck?.assignedRoutes?.length || 0})</h5>
+                      {selectedTruck?.assignedRoutes && selectedTruck?.assignedRoutes.length > 0 ? (
+                      <h5 className="font-medium text-gray-900 mb-2">Routes ({selectedTruck?.assignedRoutes?.length || 0})</h5>
                       {selectedTruck?.assignedRoutes && selectedTruck?.assignedRoutes?.length > 0 ? (
                         <div className="space-y-2">
+                          {selectedTruck?.assignedRoutes.map((assignment: any, index: number) => (
                           {selectedTruck?.assignedRoutes?.map((assignment: any, index: number) => (
                             <div key={assignment.id || `route-${index}`} className="flex items-center justify-between p-2 bg-blue-50 rounded">
                               <span className="text-sm font-medium">{assignment.routeName}</span>
@@ -2342,21 +2430,26 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
                     <div className="flex justify-between">
                       <span className="text-gray-600">Registration Number:</span>
                       <span className="font-medium">{selectedTruck?.registrationNumber || 'N/A'}</span>
+                      <span className="font-medium">{selectedTruck?.registrationNumber || 'N/A'}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">Registration Expiry:</span>
+                      <span className="font-medium">{selectedTruck?.registrationExpiry ? new Date(selectedTruck?.registrationExpiry).toLocaleDateString() : 'N/A'}</span>
                       <span className="font-medium">{selectedTruck?.registrationExpiry ? new Date(selectedTruck?.registrationExpiry).toLocaleDateString() : 'N/A'}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">Insurance Policy:</span>
                       <span className="font-medium">{selectedTruck?.insurancePolicy || 'N/A'}</span>
+                      <span className="font-medium">{selectedTruck?.insurancePolicy || 'N/A'}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">Insurance Expiry:</span>
                       <span className="font-medium">{selectedTruck?.insuranceExpiry ? new Date(selectedTruck?.insuranceExpiry).toLocaleDateString() : 'N/A'}</span>
+                      <span className="font-medium">{selectedTruck?.insuranceExpiry ? new Date(selectedTruck?.insuranceExpiry).toLocaleDateString() : 'N/A'}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">Roadworthy Cert Expiry:</span>
+                      <span className="font-medium">{selectedTruck?.roadworthyCertExpiry ? new Date(selectedTruck?.roadworthyCertExpiry).toLocaleDateString() : 'N/A'}</span>
                       <span className="font-medium">{selectedTruck?.roadworthyCertExpiry ? new Date(selectedTruck?.roadworthyCertExpiry).toLocaleDateString() : 'N/A'}</span>
                     </div>
                   </div>
@@ -2374,7 +2467,16 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
                     <div className="flex justify-between"><span className="text-gray-600">Telematics:</span><span className="font-medium">{selectedTruck?.hasTelematics ? 'Yes' : 'No'}</span></div>
                     <div className="flex justify-between"><span className="text-gray-600">ELD:</span><span className="font-medium">{selectedTruck?.hasELD ? 'Yes' : 'No'}</span></div>
                     <div className="flex justify-between"><span className="text-gray-600">Dash Cam:</span><span className="font-medium">{selectedTruck?.hasDashCam ? 'Yes' : 'No'}</span></div>
+                    <div className="flex justify-between"><span className="text-gray-600">Refrigeration:</span><span className="font-medium">{selectedTruck?.hasRefrigeration || selectedTruck?.hasReefer ? 'Yes' : 'No'}</span></div>
+                    <div className="flex justify-between"><span className="text-gray-600">Lift Gate:</span><span className="font-medium">{selectedTruck?.hasLiftGate ? 'Yes' : 'No'}</span></div>
+                    <div className="flex justify-between"><span className="text-gray-600">Hazmat Permit:</span><span className="font-medium">{selectedTruck?.hasHazmatPermit ? 'Yes' : 'No'}</span></div>
+                    <div className="flex justify-between"><span className="text-gray-600">GPS:</span><span className="font-medium">{selectedTruck?.hasGps || selectedTruck?.hasGPS ? 'Yes' : 'No'}</span></div>
+                    <div className="flex justify-between"><span className="text-gray-600">Tracking:</span><span className="font-medium">{selectedTruck?.hasTracking ? 'Yes' : 'No'}</span></div>
+                    <div className="flex justify-between"><span className="text-gray-600">Telematics:</span><span className="font-medium">{selectedTruck?.hasTelematics ? 'Yes' : 'No'}</span></div>
+                    <div className="flex justify-between"><span className="text-gray-600">ELD:</span><span className="font-medium">{selectedTruck?.hasELD ? 'Yes' : 'No'}</span></div>
+                    <div className="flex justify-between"><span className="text-gray-600">Dash Cam:</span><span className="font-medium">{selectedTruck?.hasDashCam ? 'Yes' : 'No'}</span></div>
                   </div>
+                  <div className="text-xs text-gray-500">Equipment items: {Array.isArray(selectedTruck?.equipmentList) ? selectedTruck?.equipmentList.length : 0}</div>
                   <div className="text-xs text-gray-500">Equipment items: {Array.isArray(selectedTruck?.equipmentList) ? selectedTruck?.equipmentList?.length : 0}</div>
                 </div>
               </div>
@@ -2573,6 +2675,46 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
             </div>
           )
         }
+        {/* Truck Location Modal */}
+        {showLocationModal && selectedTruck && (
+          <TruckLocationModal
+            isOpen={showLocationModal}
+            onClose={() => {
+              setShowLocationModal(false);
+              // If we aren't showing details, clear the selection
+              if (!showTruckDetails) {
+                setSelectedTruck(null);
+              }
+            }}
+            truck={selectedTruck}
+            onLocationUpdated={async () => {
+              await loadData(); // Refresh grid/list data
+              setShowLocationModal(false);
+              
+              // If details view is open, refresh the selected truck data so user sees new location
+              if (showTruckDetails) {
+                try {
+                  const updatedTruck = await fleetApi.getTruckById(selectedTruck.id);
+                  if (updatedTruck) {
+                    // Preserve the enriched fields if needed, or rely on what getTruckById returns
+                    // The list view enriches with routes, so we might lose that if we just replacing with raw API result
+                    // But for location update, raw API result is better than stale data.
+                    // Let's re-enrich if possible or just merge.
+                    setSelectedTruck(prev => ({
+                       ...prev, 
+                       ...updatedTruck,
+                       currentLocation: updatedTruck.currentLocation // Ensure this is updated
+                    }));
+                  }
+                } catch (e) {
+                  console.error('Failed to refresh selected truck', e);
+                }
+              } else {
+                setSelectedTruck(null);
+              }
+            }}
+          />
+        )}
       </div >
     </div >
   );

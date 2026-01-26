@@ -129,7 +129,6 @@ const TruckLocationModal: React.FC<TruckLocationModalProps> = ({
       const address = data.display_name || `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
       
       setSelectedLocation({ lat, lng, address });
-      toast.success('Location selected!');
     } catch (error) {
       console.error('Geocoding error:', error);
       setSelectedLocation({
