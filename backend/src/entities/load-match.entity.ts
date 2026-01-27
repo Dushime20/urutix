@@ -23,13 +23,13 @@ export class LoadMatch {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ name: 'tenant_id', type: 'uuid' })
+  @Column({ name: 'tenant_id', type: 'uuid', nullable: true })
   tenantId: string;
 
-  @Column({ name: 'load_id', type: 'uuid' })
+  @Column({ name: 'load_id', type: 'uuid', nullable: true })
   loadId: string;
 
-  @Column({ name: 'truck_id', type: 'uuid' })
+  @Column({ name: 'truck_id', type: 'uuid', nullable: true })
   truckId: string;
 
   @Column({ type: 'numeric', precision: 5, scale: 2, nullable: true })
