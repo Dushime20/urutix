@@ -122,7 +122,12 @@ export const SecurityMonitoringStep: React.FC<SecurityMonitoringStepProps> = ({
                       className="mt-1 rounded border-gray-300 text-gray-600 focus:ring-gray-500"
                     />
                     <div className="flex-1">
-                      <div className="font-medium text-gray-900 text-sm">{label}</div>
+                      <div className="font-medium text-gray-900 text-sm flex items-center">
+                        {label}
+                        {key === 'hasGps' && (
+                          <span className="ml-2 text-xs text-blue-600 font-normal">(Used in matching)</span>
+                        )}
+                      </div>
                       <div className="text-xs text-gray-600 mt-1">{description}</div>
                     </div>
                   </label>

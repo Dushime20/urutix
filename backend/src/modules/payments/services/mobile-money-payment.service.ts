@@ -168,7 +168,7 @@ export class MobileMoneyPaymentService {
         `Creating Mobile Money transaction: ${amount} ${config.currency} from ${formattedPhone}, Reference: ${referenceId}`,
       );
 
-      const response = await firstValueFrom(
+      const response: any = await firstValueFrom(
         this.httpService.post(
           `${config.apiUrl}/api/v3/transaction?apiKey=${config.apiKey}`,
           payload,
@@ -179,7 +179,7 @@ export class MobileMoneyPaymentService {
             },
             timeout: 30000,
           },
-        ),
+        ) as any,
       );
 
       const transactionData: MobileMoneyTransactionResponse = response.data;
@@ -208,7 +208,7 @@ export class MobileMoneyPaymentService {
     const config = this.getConfig();
 
     try {
-      const response = await firstValueFrom(
+      const response: any = await firstValueFrom(
         this.httpService.get(
           `${config.apiUrl}/api/v3/transaction/${referenceId}?apiKey=${config.apiKey}`,
           {
@@ -217,7 +217,7 @@ export class MobileMoneyPaymentService {
             },
             timeout: 30000,
           },
-        ),
+        ) as any,
       );
 
       return response.data;

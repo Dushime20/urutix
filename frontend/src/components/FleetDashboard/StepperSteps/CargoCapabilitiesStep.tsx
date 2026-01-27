@@ -79,7 +79,9 @@ export const CargoCapabilitiesStep: React.FC<CargoCapabilitiesStepProps> = ({
                   onChange={() => handleCargoTypeToggle(type)}
                   className="rounded border-gray-300 text-gray-600 focus:ring-gray-500 w-3.5 h-3.5"
                 />
-                <span className="text-xs text-gray-600">{type}</span>
+                <span className="text-xs text-gray-600">
+                  {type}
+                </span>
             </label>
             ))}
         </div>
@@ -100,8 +102,8 @@ export const CargoCapabilitiesStep: React.FC<CargoCapabilitiesStepProps> = ({
               'maxValuableHandling',
             ].map((capability) => (
               <label key={capability} className="flex items-center space-x-1.5">
-            <input
-              type="checkbox"
+                <input
+                  type="checkbox"
                   checked={formData.cargoCapabilities?.[capability] || false}
                   onChange={() => handleCapabilityToggle(capability)}
                   className="rounded border-gray-300 text-gray-600 focus:ring-gray-500 w-3.5 h-3.5"
@@ -109,7 +111,7 @@ export const CargoCapabilitiesStep: React.FC<CargoCapabilitiesStepProps> = ({
                 <span className="text-xs text-gray-600">
                   {capability.replace('max', '').replace('Handling', '')}
                 </span>
-            </label>
+              </label>
             ))}
           </div>
           </div>

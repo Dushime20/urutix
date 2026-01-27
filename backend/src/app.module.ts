@@ -33,6 +33,7 @@ import { FuelModule } from './modules/fuel/fuel.module';
 import { databaseConfig } from './config/database.config';
 import { ThrottlerModule } from '@nestjs/throttler';
 
+
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
@@ -65,6 +66,7 @@ import { ThrottlerModule } from '@nestjs/throttler';
     ReceiversModule,
     BrokersModule,
     FuelModule,
+
   ],
   controllers: [AppController],
   providers: [AppService],

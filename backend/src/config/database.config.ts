@@ -1,5 +1,7 @@
 import { TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { User } from '../entities/user.entity';
+
+
 import { UserProfile } from '../entities/user-profile.entity';
 import { Load } from '../entities/load.entity';
 import { Location } from '../entities/location.entity';
@@ -51,6 +53,7 @@ import {
   BrokerTransporterPerformance,
 } from '../entities/broker-intelligence.entity';
 import { FuelLog } from '../entities/fuel-log.entity';
+
 
 // Financial entities
 import {
@@ -156,8 +159,9 @@ export const databaseConfig: TypeOrmModuleOptions = {
     LoadMatch,
     // Fuel entities
     FuelLog,
+
   ],
-  synchronize: false,
+  synchronize: true,
   autoLoadEntities: false,
   logging: process.env.NODE_ENV === 'development',
   ssl:

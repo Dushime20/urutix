@@ -228,7 +228,7 @@ const TruckLocationModal: React.FC<TruckLocationModalProps> = ({
           {/* Instructions & Current Location Button */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 bg-gray-50 rounded-lg">
             <p className="text-sm text-gray-600">
-              <span className="font-medium">Click on the map</span> to select the truck's current location, 
+              <span className="font-medium">Click on the map</span> to select the truck's current location <span className="text-blue-600 font-normal">(Used in matching)</span>, 
               or use your device's GPS.
             </p>
             <button

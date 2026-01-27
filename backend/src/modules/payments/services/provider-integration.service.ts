@@ -231,7 +231,7 @@ export class ProviderIntegrationService {
               'User-Agent': 'CargoAI-Payment-Service/1.0',
             },
             timeout: config.timeout,
-          }),
+          }) as any,
         );
 
         return (response as any).data;
@@ -403,7 +403,7 @@ export class ProviderIntegrationService {
             Authorization: `Bearer ${config.apiKey}`,
           },
           timeout: 10000,
-        }),
+        }) as any,
       );
 
       return (response as any).status === 200;

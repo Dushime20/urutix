@@ -107,8 +107,9 @@ export const SpecificationsStep: React.FC<SpecificationsStepProps> = ({
         
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">
+            <label className="block text-xs font-medium text-gray-600 mb-1 flex items-center">
               Weight Capacity (kg)
+              <span className="ml-2 text-xs text-blue-600 font-normal">(Used in matching)</span>
             </label>
             <input
               type="number"
@@ -120,8 +121,9 @@ export const SpecificationsStep: React.FC<SpecificationsStepProps> = ({
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">
+            <label className="block text-xs font-medium text-gray-600 mb-1 flex items-center">
               Volume Capacity (m³)
+              <span className="ml-2 text-xs text-blue-600 font-normal">(Used in matching)</span>
             </label>
             <input
               type="number"

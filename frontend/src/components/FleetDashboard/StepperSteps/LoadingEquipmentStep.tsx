@@ -53,8 +53,9 @@ export const LoadingEquipmentStep: React.FC<LoadingEquipmentStepProps> = ({
       {/* Equipment Selection */}
       <div className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-3">
+          <label className="block text-sm font-medium text-gray-700 mb-3 flex items-center">
             Available Equipment
+            <span className="ml-2 text-xs text-blue-600 font-normal">(Some items used in matching)</span>
           </label>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {equipmentOptions.map(({ key, label, icon, description }) => (
@@ -69,7 +70,12 @@ export const LoadingEquipmentStep: React.FC<LoadingEquipmentStepProps> = ({
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
                       <span className="text-lg">{icon}</span>
-                      <span className="font-medium text-gray-900">{label}</span>
+                      <span className="font-medium text-gray-900 flex items-center">
+                        {label}
+                        {(key === 'hasTailLift' || key === 'hasLoadingDock') && (
+                          <span className="ml-2 text-xs text-blue-600 font-normal">(Used in matching)</span>
+                        )}
+                      </span>
                     </div>
                     <p className="text-sm text-gray-600 mt-1">{description}</p>
                   </div>

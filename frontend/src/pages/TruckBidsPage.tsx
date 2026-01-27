@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useState, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { biddingAPI, biddingHelpers } from '../services/biddingApi';
 import { fleetApi } from '../services/fleetApi';
-import { FaSearch, FaGavel, FaDollarSign, FaClock, FaPlus, FaStar, FaRegStar, FaMapMarkerAlt, FaTimes, FaHistory, FaCheckCircle, FaHourglass } from 'react-icons/fa';
+import { FaSearch, FaGavel, FaDollarSign, FaClock, FaPlus, FaStar, FaRegStar, FaMapMarkerAlt, FaTimes, FaHistory, FaCheckCircle, FaHourglass, FaEye, FaBox, FaRuler, FaWeight, FaRoute, FaCalendarAlt, FaBuilding, FaUser, FaPhone, FaEnvelope } from 'react-icons/fa';
 import { Grid, Table } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -14,6 +15,7 @@ const TruckBidsPage: React.FC = () => {
 	const [limit] = useState(10);
 	const [showBidModal, setShowBidModal] = useState(false);
 	const [showQuickBidModal, setShowQuickBidModal] = useState(false);
+	const [showDetailsModal, setShowDetailsModal] = useState(false);
 	const [selectedAuction, setSelectedAuction] = useState<any | null>(null);
 	const [bidAmount, setBidAmount] = useState<string>('');
 	const [quickBidAmount, setQuickBidAmount] = useState<string>('');
@@ -305,13 +307,25 @@ const TruckBidsPage: React.FC = () => {
 
 	// Auctions user has NOT bid on yet (available for bidding)
 	const availableAuctions = useMemo(() => {
-		return filtered.filter(a => !hasUserBidOnAuction(a));
+		return filtered.filter((a) => {
+			// 1. User must not have already bid on it
+			if (hasUserBidOnAuction(a)) return false;
+
+			// 2. Auction must be in a "biddable" state (ACTIVE or SCHEDULED)
+			// CLOSED, CANCELLED, EXPIRED, etc. should not be shown in "Available"
+			const isAuctionOpen = ['ACTIVE', 'SCHEDULED'].includes(a.status);
+			if (!isAuctionOpen) return false;
+
+			// 3. Load must not be already assigned or in transit
+			// Even if auction is technically active, if load is assigned, you can't bid
+			const unavailableLoadStatuses = ['ASSIGNED', 'DISPATCHED', 'IN_TRANSIT', 'DELIVERED', 'COMPLETED', 'CANCELLED'];
+			if (a.load?.status && unavailableLoadStatuses.includes(a.load.status)) return false;
+
+			return true;
+		});
 	}, [filtered, hasUserBidOnAuction]);
 
-	// Auctions user has already bid on
-	const biddedAuctions = useMemo(() => {
-		return filtered.filter(a => hasUserBidOnAuction(a));
-	}, [filtered, hasUserBidOnAuction]);
+
 
 	const toggleWatch = async (auction: any) => {
 		const isWatched = watchedIds.has(auction.id);
@@ -332,6 +346,11 @@ const TruckBidsPage: React.FC = () => {
 		} catch (e: any) {
 			toast.error(e?.response?.data?.message || 'Failed to toggle watch');
 		}
+	};
+
+	const openDetailsModal = (auction: any) => {
+		setSelectedAuction(auction);
+		setShowDetailsModal(true);
 	};
 
 	const openQuickBidModal = (auction: any) => {
@@ -646,7 +665,7 @@ const TruckBidsPage: React.FC = () => {
 								<option value="all">All Statuses</option>
 								<option value="ACTIVE">Active</option>
 								<option value="SCHEDULED">Scheduled</option>
-								<option value="CLOSED">Closed</option>
+
 							</select>
 							<div className="flex items-center text-sm text-gray-600">Total: {availableAuctions.length}</div>
 						</div>
@@ -705,8 +724,9 @@ const TruckBidsPage: React.FC = () => {
 													</div>
 												) : (
 													<>
-														<button onClick={() => openQuickBidModal(a)} className="px-3 py-2 rounded bg-primary-600 text-white hover:bg-primary-700 inline-flex items-center gap-2"><FaPlus /> Quick Bid</button>
-														<button onClick={() => openBidModal(a)} className="px-3 py-2 rounded bg-blue-100 text-blue-700 hover:bg-blue-200 inline-flex items-center gap-2">Custom Bid</button>
+														<button onClick={() => openDetailsModal(a)} className="px-3 py-2 rounded bg-gray-100 text-gray-700 hover:bg-gray-200 inline-flex items-center gap-2 text-sm"><FaEye /> Details</button>
+														<button onClick={() => openQuickBidModal(a)} className="px-3 py-2 rounded bg-primary-600 text-white hover:bg-primary-700 inline-flex items-center gap-2 text-sm"><FaPlus /> Quick Bid</button>
+														<button onClick={() => openBidModal(a)} className="px-3 py-2 rounded bg-blue-100 text-blue-700 hover:bg-blue-200 inline-flex items-center gap-2 text-sm">Custom Bid</button>
 													</>
 												)}
 											</div>
@@ -771,6 +791,7 @@ const TruckBidsPage: React.FC = () => {
 																</span>
 															) : (
 																<div className="inline-flex items-center gap-2">
+																	<button onClick={() => openDetailsModal(a)} className="px-3 py-1 rounded bg-gray-100 text-gray-700 hover:bg-gray-200 text-sm"><FaEye className="inline mr-1"/> Details</button>
 																	<button onClick={() => openQuickBidModal(a)} className="px-3 py-1 rounded bg-primary-600 text-white hover:bg-primary-700 text-sm">Quick Bid</button>
 																	<button onClick={() => openBidModal(a)} className="px-3 py-1 rounded bg-blue-100 text-blue-700 hover:bg-blue-200 text-sm">Custom Bid</button>
 																</div>
@@ -1254,6 +1275,241 @@ const TruckBidsPage: React.FC = () => {
 						</div>
 					</div>
 				</div>
+			)}
+
+
+			{/* Details Modal */}
+			{showDetailsModal && selectedAuction && createPortal(
+				<div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[100000] p-4 overflow-hidden">
+					<div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto relative flex flex-col animate-fade-in">
+						<div className="sticky top-0 bg-white border-b border-gray-200 p-6 flex items-center justify-between z-10">
+							<div className="flex items-center gap-3">
+								<h2 className="text-2xl font-bold text-gray-900">Cargo Details</h2>
+								<span className={`px-2.5 py-0.5 rounded-full text-xs font-medium bg-${biddingHelpers.getStatusColor(selectedAuction.status)}-100 text-${biddingHelpers.getStatusColor(selectedAuction.status)}-700`}>
+									{selectedAuction.status}
+								</span>
+							</div>
+							<button
+								onClick={() => setShowDetailsModal(false)}
+								className="text-gray-400 hover:text-gray-600 p-2 hover:bg-gray-100 rounded-full transition-colors"
+							>
+								<FaTimes className="w-6 h-6" />
+							</button>
+						</div>
+						<div className="p-6 space-y-8">
+							{/* Basic Info */}
+							<div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+								<div className="space-y-6">
+									<div>
+										<h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+											<FaBox className="text-gray-400" /> Cargo Information
+										</h3>
+										<div className="bg-gray-50 rounded-lg p-4 space-y-4">
+											<div>
+												<label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Title</label>
+												<p className="text-gray-900 font-medium text-lg">{selectedAuction.load?.title || 'Untitled Cargo'}</p>
+											</div>
+											<div className="grid grid-cols-2 gap-4">
+												<div>
+													<label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Type</label>
+													<p className="text-gray-900">{selectedAuction.load?.cargoType || 'General'}</p>
+												</div>
+												<div>
+													<label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Weight</label>
+													<p className="text-gray-900 flex items-center gap-2">
+														<FaWeight className="text-gray-400" />
+														{selectedAuction.load?.weight?.toLocaleString() || '—'} kg
+													</p>
+												</div>
+												<div>
+													<label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Volume</label>
+													<p className="text-gray-900 flex items-center gap-2">
+														<FaBox className="text-gray-400" />
+														{selectedAuction.load?.volume || '—'} m³
+													</p>
+												</div>
+												<div>
+													<label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Dimensions</label>
+													<p className="text-gray-900 flex items-center gap-2">
+														<FaRuler className="text-gray-400" />
+														{selectedAuction.load?.length ? `${selectedAuction.load.length}x${selectedAuction.load.width}x${selectedAuction.load.height} m` : '—'}
+													</p>
+												</div>
+											</div>
+											<div>
+												<label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Description</label>
+												<p className="text-gray-700 text-sm mt-1 leading-relaxed">{selectedAuction.load?.description || 'No description provided.'}</p>
+											</div>
+										</div>
+									</div>
+
+									<div>
+										<h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+											<FaUser className="text-gray-400" /> Cargo Owner
+										</h3>
+										<div className="bg-gray-50 rounded-lg p-4 space-y-3">
+											<div className="flex items-center gap-3">
+												<div className="bg-white p-2 rounded-full shadow-sm">
+													<FaBuilding className="text-gray-400 w-5 h-5" />
+												</div>
+												<div>
+													<p className="text-sm font-medium text-gray-900">{selectedAuction.load?.cargoOwnerCompany || 'Company Details Hidden'}</p>
+													<p className="text-xs text-gray-500">Verified Shipper</p>
+												</div>
+											</div>
+											<div className="flex items-center gap-3">
+												<div className="bg-white p-2 rounded-full shadow-sm">
+													<FaUser className="text-gray-400 w-5 h-5" />
+												</div>
+												<div>
+													<p className="text-sm font-medium text-gray-900">{getCargoOwnerName(selectedAuction.load) || 'Contact Hidden'}</p>
+													<p className="text-xs text-gray-500">Representative</p>
+												</div>
+											</div>
+											{selectedAuction.load?.cargoOwner?.phone && (
+												<div className="flex items-center gap-3">
+													<div className="bg-white p-2 rounded-full shadow-sm">
+														<FaPhone className="text-gray-400 w-4 h-4" />
+													</div>
+													<div className="text-sm text-gray-900">{selectedAuction.load.cargoOwner.phone}</div>
+												</div>
+											)}
+											{selectedAuction.load?.cargoOwner?.email && (
+												<div className="flex items-center gap-3">
+													<div className="bg-white p-2 rounded-full shadow-sm">
+														<FaEnvelope className="text-gray-400 w-4 h-4" />
+													</div>
+													<div className="text-sm text-gray-900">{selectedAuction.load.cargoOwner.email}</div>
+												</div>
+											)}
+										</div>
+									</div>
+								</div>
+
+								<div className="space-y-6">
+									<div>
+										<h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+											<FaRoute className="text-gray-400" /> Route Details
+										</h3>
+										<div className="bg-gray-50 rounded-lg p-4 space-y-4 relative">
+											{/* Route Visualization Line */}
+											<div className="absolute left-[27px] top-[48px] bottom-[48px] w-0.5 bg-gray-300 border-l border-dashed border-gray-400"></div>
+											
+											<div className="relative z-10">
+												<div className="flex items-start gap-4">
+													<div className="w-6 h-6 rounded-full bg-green-100 border-2 border-green-500 flex items-center justify-center flex-shrink-0 mt-1">
+														<div className="w-2 h-2 rounded-full bg-green-600"></div>
+													</div>
+													<div>
+														<label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Pickup</label>
+														<p className="text-gray-900 font-medium">{getLocationName(selectedAuction.load, 'PICKUP')}</p>
+														<p className="text-sm text-gray-500 mt-1 flex items-center gap-2">
+															<FaCalendarAlt className="w-3.5 h-3.5" />
+															{selectedAuction.load?.pickupDate ? new Date(selectedAuction.load.pickupDate).toLocaleDateString() : 'Flexible'}
+														</p>
+													</div>
+												</div>
+											</div>
+
+											<div className="pl-14 py-2">
+												<div className="flex items-center gap-4 text-sm text-gray-600 bg-white p-2 rounded border border-gray-200 w-fit">
+													<span className="flex items-center gap-1.5"><FaRoute className="w-3.5 h-3.5" /> {selectedAuction.load?.distance || '—'} km</span>
+													<span className="text-gray-300">|</span>
+													<span className="flex items-center gap-1.5"><FaClock className="w-3.5 h-3.5" /> {selectedAuction.load?.estimatedDuration || '—'} hrs</span>
+												</div>
+											</div>
+
+											<div className="relative z-10">
+												<div className="flex items-start gap-4">
+													<div className="w-6 h-6 rounded-full bg-red-100 border-2 border-red-500 flex items-center justify-center flex-shrink-0 mt-1">
+														<div className="w-2 h-2 rounded-full bg-red-600"></div>
+													</div>
+													<div>
+														<label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Delivery</label>
+														<p className="text-gray-900 font-medium">{getLocationName(selectedAuction.load, 'DELIVERY')}</p>
+														<p className="text-sm text-gray-500 mt-1 flex items-center gap-2">
+															<FaCalendarAlt className="w-3.5 h-3.5" />
+															{selectedAuction.load?.deliveryDate ? new Date(selectedAuction.load.deliveryDate).toLocaleDateString() : 'Flexible'}
+														</p>
+													</div>
+												</div>
+											</div>
+										</div>
+									</div>
+
+									<div>
+										<h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+											<FaDollarSign className="text-gray-400" /> Auction Status
+										</h3>
+										<div className="bg-blue-50 rounded-lg p-5 border border-blue-100">
+											<div className="grid grid-cols-2 gap-6">
+												<div>
+													<label className="text-xs font-medium text-blue-600 uppercase tracking-wider">Current Bid</label>
+													<p className="text-2xl font-bold text-gray-900 mt-1">
+														{selectedAuction.currentBid ? biddingHelpers.formatCurrency(selectedAuction.currentBid) : 'No Bids'}
+													</p>
+												</div>
+												<div>
+													<label className="text-xs font-medium text-blue-600 uppercase tracking-wider">Time Remaining</label>
+													<p className="text-xl font-bold text-gray-900 mt-1 flex items-center gap-2">
+														{selectedAuction.auctionEnd ? (
+															<>
+																<FaHourglass className="text-blue-500 w-5 h-5 animate-pulse" />
+																{biddingHelpers.getTimeRemaining(selectedAuction.auctionEnd)}
+															</>
+														) : 'Ended'}
+													</p>
+												</div>
+											</div>
+											<div className="mt-4 pt-4 border-t border-blue-200">
+												<div className="flex items-center justify-between text-sm">
+													<span className="text-gray-600">Reserve Price:</span>
+													<span className="font-medium text-gray-900">{selectedAuction.reservePrice ? biddingHelpers.formatCurrency(selectedAuction.reservePrice) : 'Not Set'}</span>
+												</div>
+												<div className="flex items-center justify-between text-sm mt-1">
+													<span className="text-gray-600">Min Increment:</span>
+													<span className="font-medium text-gray-900">{selectedAuction.minimumBidIncrement ? biddingHelpers.formatCurrency(selectedAuction.minimumBidIncrement) : '$50'}</span>
+												</div>
+											</div>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+						
+						<div className="p-6 border-t bg-gray-50 flex items-center justify-end gap-3 sticky bottom-0">
+							<button 
+								onClick={() => setShowDetailsModal(false)}
+								className="px-5 py-2.5 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition-colors"
+							>
+								Close
+							</button>
+							{!hasUserBidOnAuction(selectedAuction) && (
+								<>
+									<button 
+										onClick={() => {
+											setShowDetailsModal(false);
+											openQuickBidModal(selectedAuction);
+										}}
+										className="px-5 py-2.5 bg-primary-600 text-white rounded-lg hover:bg-primary-700 font-medium transition-colors shadow-sm flex items-center gap-2"
+									>
+										<FaPlus className="w-4 h-4" /> Quick Bid
+									</button>
+									<button 
+										onClick={() => {
+											setShowDetailsModal(false);
+											openBidModal(selectedAuction);
+										}}
+										className="px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition-colors shadow-sm flex items-center gap-2"
+									>
+										<FaGavel className="w-4 h-4" /> Custom Bid
+									</button>
+								</>
+							)}
+						</div>
+					</div>
+				</div>,
+				document.body
 			)}
 		</div>
 	);

@@ -35,6 +35,7 @@ import toast from 'react-hot-toast';
 import { useAuth } from '../../contexts/AuthContext';
 import { EmptyState } from './EmptyState';
 import TruckLocationModal from './TruckLocationModal';
+import FleetFormStepper from './FleetFormStepper';
 
 
 interface TrucksListProps {
@@ -526,7 +527,7 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
-  const [view, setView] = useState<'grid' | 'list'>('list');
+  const [view, setView] = useState<'grid' | 'list'>('grid');
   const [selectedTruck, setSelectedTruck] = useState<any | null>(null);
   const [showAssignDriver, setShowAssignDriver] = useState(false);
   const [showAssignRoute, setShowAssignRoute] = useState(false);
@@ -1627,7 +1628,7 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
                       }}
                       className="ml-auto text-xs text-blue-600 hover:text-blue-800 underline"
                     >
-                      Update
+                      Set Location
                     </button>
                   </div>
                   {truck.currentLocation && truck.currentLocation.address && (
@@ -2353,7 +2354,6 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
                     ) : (
                       <span className="text-gray-500">No location data available</span>
                     )}
-
                   </div>
                 </div>
 
@@ -2365,10 +2365,10 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
                       <h5 className="font-medium text-gray-900 mb-2">Drivers ({selectedTruck?.assignedDrivers?.length || 0})</h5>
                       {selectedTruck?.assignedDrivers && selectedTruck?.assignedDrivers?.length > 0 ? (
                         <div className="space-y-2">
-                          {selectedTruck?.assignedDrivers?.map((driver: any, index: number) => (
-                            <div key={driver.id || `driver-${index}`} className="flex items-center justify-between p-2 bg-green-50 rounded">
-                              <span className="text-sm font-medium">{driver.driverName}</span>
-                              <span className="text-xs text-gray-500">{driver.status}</span>
+                          {selectedTruck?.assignedDrivers?.map((assignment: any, index: number) => (
+                            <div key={assignment.id || `driver-${index}`} className="flex items-center justify-between p-2 bg-green-50 rounded">
+                              <span className="text-sm font-medium">{assignment.driverName}</span>
+                              <span className="text-xs text-gray-500">{assignment.status}</span>
                             </div>
                           ))}
                         </div>
@@ -2381,10 +2381,10 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
                       <h5 className="font-medium text-gray-900 mb-2">Routes ({selectedTruck?.assignedRoutes?.length || 0})</h5>
                       {selectedTruck?.assignedRoutes && selectedTruck?.assignedRoutes?.length > 0 ? (
                         <div className="space-y-2">
-                          {selectedTruck?.assignedRoutes?.map((route: any, index: number) => (
-                            <div key={route.id || `route-${index}`} className="flex items-center justify-between p-2 bg-blue-50 rounded">
-                              <span className="text-sm font-medium">{route.routeName}</span>
-                              <span className="text-xs text-gray-500">{route.status}</span>
+                          {selectedTruck?.assignedRoutes?.map((assignment: any, index: number) => (
+                            <div key={assignment.id || `route-${index}`} className="flex items-center justify-between p-2 bg-blue-50 rounded">
+                              <span className="text-sm font-medium">{assignment.routeName}</span>
+                              <span className="text-xs text-gray-500">{assignment.status}</span>
                             </div>
                           ))}
                         </div>
@@ -2467,99 +2467,31 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
         </Dialog>
 
         {/* Edit Truck Modal */}
-        {/* Edit Truck Modal */}
-        <Dialog open={showEditTruck && !!editingTruck} onOpenChange={(open) => {
-          if (!open) {
+        {/* Edit Truck Modal - Replaced with FleetFormStepper */}
+        <FleetFormStepper
+          isOpen={showEditTruck && !!editingTruck}
+          onClose={() => {
             setShowEditTruck(false);
             setEditingTruck(null);
-          }
-        }}>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader className="hidden">
-              <DialogTitle>Edit Truck</DialogTitle>
-              <DialogDescription>Edit Truck Details</DialogDescription>
-            </DialogHeader>
-            <div className="p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-2xl font-bold text-gray-900">Edit Truck</h3>
-              </div>
-
-              <EditTruckForm
-                truck={editingTruck}
-                onSave={async (updatedData) => {
-                  try {
-                    // Clean the data: remove empty strings, convert dates, handle undefined values
-                    const cleanedData: any = {};
-
-                    // Copy all non-empty values
-                    Object.keys(updatedData).forEach(key => {
-                      const value = updatedData[key];
-
-                      // Handle date fields first - convert empty strings to undefined
-                      if (['registrationExpiry', 'insuranceExpiry', 'roadworthyCertExpiry'].includes(key)) {
-                        if (value === '' || !value) {
-                          return; // Don't send empty dates
-                        }
-                        cleanedData[key] = value; // Keep as ISO string
-                        return;
-                      }
-
-                      // Skip empty strings for optional fields
-                      if (value === '' && ['color', 'trailerType', 'registrationNumber', 'insurancePolicy'].includes(key)) {
-                        return; // Don't include empty optional fields
-                      }
-
-                      // Convert string numbers to actual numbers for numeric fields
-                      if (['maxLength', 'maxWidth', 'maxHeight', 'fuelEfficiency'].includes(key)) {
-                        if (value === '' || value === null || value === undefined) {
-                          return; // Don't send empty numeric optional fields
-                        }
-                        const numValue = Number(value);
-                        if (!isNaN(numValue)) {
-                          cleanedData[key] = numValue;
-                        }
-                        return;
-                      }
-
-                      // Handle mileage - default to 0 if empty
-                      if (key === 'mileage') {
-                        if (value === '' || value === null || value === undefined) {
-                          cleanedData[key] = 0;
-                        } else {
-                          cleanedData[key] = Number(value) || 0;
-                        }
-                        return;
-                      }
-
-                      // Don't send NaN values
-                      if (typeof value === 'number' && isNaN(value)) {
-                        return;
-                      }
-
-                      // Include all other valid values
-                      cleanedData[key] = value;
-                    });
-
-                    console.log('Sending cleaned truck update data:', cleanedData);
-                    await fleetApi.updateTruck(editingTruck.id, cleanedData);
-                    toast.success('Truck updated successfully');
-                    setShowEditTruck(false);
-                    setEditingTruck(null);
-                    loadData(); // Refresh the list
-                  } catch (error: any) {
-                    console.error('Error updating truck:', error);
-                    console.error('Error response:', error.response?.data);
-                    toast.error(error.response?.data?.message || error.message || 'Failed to update truck');
-                  }
-                }}
-                onCancel={() => {
-                  setShowEditTruck(false);
-                  setEditingTruck(null);
-                }}
-              />
-            </div>
-          </DialogContent>
-        </Dialog>
+          }}
+          onSubmit={async (data) => {
+            try {
+              if (!editingTruck?.id) return;
+              console.log('📝 Submitting truck update:', data);
+              await fleetApi.updateTruck(editingTruck.id, data);
+              toast.success('Truck updated successfully');
+              setShowEditTruck(false);
+              setEditingTruck(null);
+              loadFilteredData(); // Refresh the list
+            } catch (error: any) {
+              console.error('Error updating truck:', error);
+              toast.error(error.response?.data?.message || 'Failed to update truck');
+            }
+          }}
+          initialData={editingTruck}
+          mode="edit"
+          activeTab="trucks"
+        />
 
         {/* Empty State */}
         {

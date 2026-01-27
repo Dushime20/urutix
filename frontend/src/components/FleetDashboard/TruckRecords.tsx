@@ -389,12 +389,12 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
       console.log('Loading truck data for ID:', truckId);
       setLoading(true);
       try {
-        // For now, we'll use mock data
-        // In a real app, you would fetch from API
-        console.log('Setting truck data:', mockTruck);
-        setTruck(mockTruck);
+        const truckData = await fleetApi.getTruckById(truckId);
+        console.log('Setting truck data:', truckData);
+        setTruck(truckData);
       } catch (error) {
         console.error('Error loading truck data:', error);
+        toast.error('Failed to load truck details');
       } finally {
         setLoading(false);
         console.log('Truck data loading completed');
@@ -492,8 +492,8 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
       <div className="mb-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">{truck.name} - Complete Records</h1>
-            <p className="text-gray-600">License: {truck.licensePlate} • VIN: {truck.vin}</p>
+            <h1 className="text-2xl font-bold text-gray-900">{truck.plateNumber || truck.licensePlate || truck.name} - Complete Records</h1>
+            <p className="text-gray-600">VIN: {truck.vin || 'N/A'}</p>
           </div>
           <div className="flex items-center gap-2">
             <button className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 flex items-center gap-2">
@@ -579,47 +579,158 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
       <div className="bg-white rounded-lg shadow-sm border border-gray-200">
         {activeTab === 'overview' && (
           <div className="p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Truck Overview</h2>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Vehicle Information */}
-              <div>
-                <h3 className="text-lg font-medium text-gray-900 mb-3">Vehicle Information</h3>
-                <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-gray-500">Make/Model:</span>
-                    <span className="font-medium">{truck.make} {truck.model}</span>
+            <h2 className="text-xl font-semibold text-gray-900 mb-6">Records Dashboard</h2>
+
+            {/* Alerts Section */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+              {/* Insurance Alert */}
+              {truck.insuranceExpiry && new Date(truck.insuranceExpiry) < new Date() && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
+                  <FaExclamationTriangle className="w-5 h-5 text-red-600 mt-0.5" />
+                  <div>
+                    <h4 className="font-medium text-red-900">Insurance Expired</h4>
+                    <p className="text-sm text-red-700">Insurance policy expired on {new Date(truck.insuranceExpiry).toLocaleDateString()}</p>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-500">Year:</span>
-                    <span className="font-medium">{truck.year}</span>
+                </div>
+              )}
+              {truck.insuranceExpiry && new Date(truck.insuranceExpiry) > new Date() && new Date(truck.insuranceExpiry) < new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) && (
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 flex items-start gap-3">
+                  <FaExclamationTriangle className="w-5 h-5 text-yellow-600 mt-0.5" />
+                  <div>
+                    <h4 className="font-medium text-yellow-900">Insurance Expiring Soon</h4>
+                    <p className="text-sm text-yellow-700">Renew by {new Date(truck.insuranceExpiry).toLocaleDateString()}</p>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-500">Capacity:</span>
-                    <span className="font-medium">{truck.capacity?.toLocaleString()} kg</span>
+                </div>
+              )}
+
+              {/* Maintenance Alert */}
+              {truck.nextMaintenanceDate && new Date(truck.nextMaintenanceDate) < new Date() && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
+                  <FaTools className="w-5 h-5 text-red-600 mt-0.5" />
+                  <div>
+                    <h4 className="font-medium text-red-900">Maintenance Overdue</h4>
+                    <p className="text-sm text-red-700">Scheduled maintenance was due on {new Date(truck.nextMaintenanceDate).toLocaleDateString()}</p>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-500">Fuel Type:</span>
-                    <span className="font-medium">{truck.fuelType}</span>
+                </div>
+              )}
+
+              {/* Annual Inspection Alert */}
+              {truck.roadworthyCertExpiry && new Date(truck.roadworthyCertExpiry) < new Date() && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
+                  <FaShieldAlt className="w-5 h-5 text-red-600 mt-0.5" />
+                  <div>
+                    <h4 className="font-medium text-red-900">Roadworthy Certificate Expired</h4>
+                    <p className="text-sm text-red-700">Certificate expired on {new Date(truck.roadworthyCertExpiry).toLocaleDateString()}</p>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-500">Transmission:</span>
-                    <span className="font-medium">{truck.transmissionType}</span>
+                </div>
+              )}
+            </div>
+
+            {/* Records Status Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {/* Insurance Card */}
+              <div className="bg-white border border-gray-200 rounded-lg p-5 shadow-sm hover:shadow-md transition-shadow">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <FaFileAlt className="w-5 h-5 text-blue-600" />
+                    <h3 className="font-medium text-gray-900">Insurance</h3>
+                  </div>
+                  {truck.insuranceExpiry && (
+                    <span className={`px-2 py-1 rounded text-xs font-medium ${
+                      new Date(truck.insuranceExpiry) < new Date() ? 'bg-red-100 text-red-800' : 
+                      new Date(truck.insuranceExpiry) < new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) ? 'bg-yellow-100 text-yellow-800' :
+                      'bg-green-100 text-green-800'
+                    }`}>
+                      {new Date(truck.insuranceExpiry) < new Date() ? 'Expired' : 'Active'}
+                    </span>
+                  )}
+                </div>
+                <div className="space-y-3 text-sm">
+                  <div>
+                    <p className="text-gray-500 text-xs">Policy Number</p>
+                    <p className="font-medium">{truck.insurancePolicy || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-500 text-xs">Expiry Date</p>
+                    <p className="font-medium">{truck.insuranceExpiry ? new Date(truck.insuranceExpiry).toLocaleDateString() : 'N/A'}</p>
                   </div>
                 </div>
               </div>
 
-              {/* Compliance Status */}
-              <div>
-                <h3 className="text-lg font-medium text-gray-900 mb-3">Compliance Status</h3>
-                <div className="space-y-2">
-                  {truck.compliance?.map(record => (
-                    <div key={record.id} className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                      <span className="text-sm">{record.requirement}</span>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(record.status)}`}>
-                        {record.status}
-                      </span>
-                    </div>
-                  ))}
+              {/* Registration Card */}
+              <div className="bg-white border border-gray-200 rounded-lg p-5 shadow-sm hover:shadow-md transition-shadow">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <FaFileAlt className="w-5 h-5 text-purple-600" />
+                    <h3 className="font-medium text-gray-900">Registration</h3>
+                  </div>
+                  {truck.registrationExpiry && (
+                    <span className={`px-2 py-1 rounded text-xs font-medium ${
+                      new Date(truck.registrationExpiry) < new Date() ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
+                    }`}>
+                      {new Date(truck.registrationExpiry) < new Date() ? 'Expired' : 'Valid'}
+                    </span>
+                  )}
+                </div>
+                <div className="space-y-3 text-sm">
+                  <div>
+                    <p className="text-gray-500 text-xs">Registration Number</p>
+                    <p className="font-medium">{truck.registrationNumber || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-500 text-xs">Expiry Date</p>
+                    <p className="font-medium">{truck.registrationExpiry ? new Date(truck.registrationExpiry).toLocaleDateString() : 'N/A'}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Maintenance Card */}
+              <div className="bg-white border border-gray-200 rounded-lg p-5 shadow-sm hover:shadow-md transition-shadow">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <FaTools className="w-5 h-5 text-orange-600" />
+                    <h3 className="font-medium text-gray-900">Maintenance</h3>
+                  </div>
+                  {truck.nextMaintenanceDate && (
+                    <span className={`px-2 py-1 rounded text-xs font-medium ${
+                      new Date(truck.nextMaintenanceDate) < new Date() ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800'
+                    }`}>
+                      {new Date(truck.nextMaintenanceDate) < new Date() ? 'Overdue' : 'Scheduled'}
+                    </span>
+                  )}
+                </div>
+                <div className="space-y-3 text-sm">
+                  <div>
+                    <p className="text-gray-500 text-xs">Last Maintenance</p>
+                    <p className="font-medium">{truck.lastMaintenanceDate ? new Date(truck.lastMaintenanceDate).toLocaleDateString() : 'N/A'}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-500 text-xs">Next Due</p>
+                    <p className="font-medium">{truck.nextMaintenanceDate ? new Date(truck.nextMaintenanceDate).toLocaleDateString() : 'Not Scheduled'}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Inspection Card */}
+              <div className="bg-white border border-gray-200 rounded-lg p-5 shadow-sm hover:shadow-md transition-shadow">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <FaShieldAlt className="w-5 h-5 text-green-600" />
+                    <h3 className="font-medium text-gray-900">Safety & Inspection</h3>
+                  </div>
+                  {truck.roadworthyCertExpiry && (
+                    <span className={`px-2 py-1 rounded text-xs font-medium ${
+                      new Date(truck.roadworthyCertExpiry) < new Date() ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
+                    }`}>
+                      {new Date(truck.roadworthyCertExpiry) < new Date() ? 'Expired' : 'Valid'}
+                    </span>
+                  )}
+                </div>
+                <div className="space-y-3 text-sm">
+                   <div>
+                    <p className="text-gray-500 text-xs">Roadworthy Cert. Expiry</p>
+                    <p className="font-medium">{truck.roadworthyCertExpiry ? new Date(truck.roadworthyCertExpiry).toLocaleDateString() : 'N/A'}</p>
+                  </div>
                 </div>
               </div>
             </div>

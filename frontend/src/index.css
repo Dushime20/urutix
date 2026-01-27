@@ -97,7 +97,7 @@
   
   /* Ensure modals appear above map */
   .modal-overlay {
-    z-index: 9999 !important;
+    z-index: 99999 !important;
   }
   
   .btn {

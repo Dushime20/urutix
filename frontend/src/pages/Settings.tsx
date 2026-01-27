@@ -4,8 +4,10 @@ import { useAuth } from '../contexts/AuthContext';
 import { authAPI } from '../services/api';
 import { TranslatedText } from '../components/translated-text';
 
+
 const Settings: React.FC = () => {
   const { user } = useAuth();
+  // const { setCurrency, availableCurrencies } = useCurrency(); // Removed
   const [activeTab, setActiveTab] = useState('general');
   const [userProfile, setUserProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -696,20 +698,7 @@ const Settings: React.FC = () => {
                     </select>
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Currency
-                    </label>
-                    <select
-                      value={preferences.currency}
-                      onChange={(e) => handlePreferenceChange('currency', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                    >
-                      <option value="USD">USD ($)</option>
-                      <option value="KES">KES (KSh)</option>
-                      <option value="EUR">EUR (€)</option>
-                    </select>
-                  </div>
+
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
