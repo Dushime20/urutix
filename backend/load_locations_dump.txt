@@ -1,0 +1,85 @@
+=== LOAD LOCATION DATA ===
+Load ID: 1aca347c-8726-4293-988b-c05a85392cf1
+Title: Rice
+
+--- Origin (JSONB Column) ---
+{
+  "lat": -1.972020911074776,
+  "lng": 30.069578492704768,
+  "city": "Unknown City",
+  "address": "Lat: -1.9720, Lng: 30.0696",
+  "country": ""
+}
+
+--- Destination (JSONB Column) ---
+{
+  "lat": -1.9706460334227334,
+  "lng": 30.271436734883256,
+  "city": "Unknown City",
+  "address": "Lat: -1.9706, Lng: 30.2714",
+  "country": ""
+}
+
+--- Locations Array (JSONB Column) ---
+[
+  {
+    "id": "pickup-1766411999852-obwg7o",
+    "type": "PICKUP",
+    "status": "PENDING",
+    "sequence": 1,
+    "locationData": {
+      "name": "Pickup Location",
+      "address": "Lat: -1.9720, Lng: 30.0696",
+      "contactInfo": {
+        "contactEmail": "",
+        "contactPhone": "",
+        "contactPerson": ""
+      },
+      "coordinates": {
+        "latitude": -1.972020911074776,
+        "longitude": 30.069578492704768
+      },
+      "operatingHours": {}
+    },
+    "requirements": {
+      "requiresCrane": false,
+      "hazmatCertified": false,
+      "requiresForklift": false,
+      "securityClearance": "STANDARD",
+      "requiresLoadingDock": false,
+      "temperatureControlled": false
+    },
+    "estimatedTime": 60,
+    "scheduledDate": "2025-12-23T00:00:00.000Z"
+  },
+  {
+    "id": "delivery-1766411999852-fzkjoz",
+    "type": "DELIVERY",
+    "status": "PENDING",
+    "sequence": 2,
+    "locationData": {
+      "name": "Delivery Location",
+      "address": "Lat: -1.9706, Lng: 30.2714",
+      "contactInfo": {
+        "contactEmail": "",
+        "contactPhone": "",
+        "contactPerson": ""
+      },
+      "coordinates": {
+        "latitude": -1.9706460334227334,
+        "longitude": 30.271436734883256
+      },
+      "operatingHours": {}
+    },
+    "requirements": {
+      "requiresCrane": false,
+      "hazmatCertified": false,
+      "requiresForklift": false,
+      "securityClearance": "STANDARD",
+      "requiresLoadingDock": false,
+      "temperatureControlled": false
+    },
+    "estimatedTime": 60,
+    "scheduledDate": "2025-12-23T00:00:00.000Z"
+  }
+]

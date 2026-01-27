@@ -387,6 +387,31 @@ export class MatchingController {
     }
   }
 
+  @Post(':matchId/create-trip')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({
+    summary: 'Create a trip for a specific accepted match',
+    description: 'Creates a trip for a single accepted match if it does not exist yet'
+  })
+  async createTripForMatch(
+    @Param('matchId') matchId: string,
+    @Request() req
+  ) {
+    try {
+      const trip = await this.matchingService.createTripForMatch(matchId, req.user.tenantId);
+      return {
+        success: true,
+        message: 'Trip created successfully',
+        data: trip
+      };
+    } catch (error) {
+      if (error instanceof BadRequestException || error instanceof NotFoundException) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Failed to create trip');
+    }
+  }
+
   @Post('find-matches/hungarian')
   @ApiOperation({
     summary: 'Hungarian algorithm matching',

@@ -161,5 +161,16 @@ export const enhancedMatchingApi = {
       console.error('Error creating trips for accepted matches:', error);
       throw error;
     }
+  },
+
+  // Create trip for a specific match
+  createTripForMatch: async (matchId: string): Promise<any> => {
+    try {
+      const response = await api.post(`/matching/${matchId}/create-trip`);
+      return response.data;
+    } catch (error) {
+      console.error('Error creating trip for match:', error);
+      throw error;
+    }
   }
 };

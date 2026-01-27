@@ -526,6 +526,12 @@ export class MatchingService {
             where: { id: match.truckId }
           });
 
+          // Fetch trip details if exists
+          const tripRepo = this.loadRepository.manager.getRepository(Trip);
+          const trip = await tripRepo.findOne({
+            where: { loadId: match.loadId }
+          });
+
           // Enhance load with origin and destination if not already set
           let enhancedLoad: any = load;
           if (load) {
@@ -572,6 +578,7 @@ export class MatchingService {
             ...match,
             load: enhancedLoad || null,
             truck: truck || null,
+            trip: trip || null,
           };
         })
       );
@@ -859,6 +866,57 @@ export class MatchingService {
       this.logger.error(`Failed to create trips for accepted matches: ${error.message}`, error.stack);
       throw error;
     }
+  }
+
+  /**
+   * Create a trip for a specific accepted match
+   */
+  async createTripForMatch(matchId: string, tenantId: string): Promise<Trip> {
+    const match = await this.loadMatchRepository.findOne({
+      where: { id: matchId, tenantId }
+    });
+
+    if (!match) {
+      throw new NotFoundException(`Match ${matchId} not found`);
+    }
+
+    if (match.status !== MatchStatus.ACCEPTED) {
+      throw new BadRequestException('Match must be in ACCEPTED status to create a trip');
+    }
+
+    // Check if trip already exists
+    const tripRepository = this.loadRepository.manager.getRepository(Trip);
+    const existingTrip = await tripRepository.findOne({
+      where: { loadId: match.loadId }
+    });
+
+    if (existingTrip) {
+      throw new BadRequestException('Trip already exists for this match');
+    }
+
+    const load = await this.loadRepository.findOne({ where: { id: match.loadId } });
+    const truck = await this.truckRepository.findOne({ where: { id: match.truckId } });
+
+    if (!load || !truck) {
+      throw new NotFoundException('Load or Truck not found');
+    }
+
+    // Reuse helper method
+    const trip = await this.createTripFromMatch(load, truck, match);
+
+    // Also update Load and Truck status if needed (migration case)
+    if (load.status !== LoadStatus.ASSIGNED) {
+      load.status = LoadStatus.ASSIGNED;
+      load.assignedTruckId = truck.id;
+      await this.loadRepository.save(load);
+    }
+
+    if (truck.status !== VehicleStatus.IN_TRANSIT) {
+      truck.status = VehicleStatus.IN_TRANSIT;
+      await this.truckRepository.save(truck);
+    }
+
+    return trip;
   }
 
   private async getAvailableTrucks(

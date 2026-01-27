@@ -12,6 +12,7 @@ import {
   ManyToOne,
   OneToMany,
   Index,
+  JoinColumn,
 } from 'typeorm';
 import { Load } from './load.entity';
 import { Truck } from './truck.entity';
@@ -169,12 +170,15 @@ export class Trip {
 
   // Relations
   @ManyToOne('Load', 'trips')
+  @JoinColumn({ name: 'loadId' })
   load: Load;
 
   @ManyToOne('Truck')
+  @JoinColumn({ name: 'truckId' })
   truck: Truck;
 
   @ManyToOne('Driver')
+  @JoinColumn({ name: 'driverId' })
   driver: Driver;
 
   // Removed locations relationship to avoid circular dependency

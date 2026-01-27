@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, Brackets } from 'typeorm';
 import { Trip, TripStatus } from '../../entities/trip.entity';
 import { CreateTripDto } from './dto/create-trip.dto';
 import { UpdateTripStatusDto } from './dto/update-trip-status.dto';
@@ -10,7 +10,7 @@ export class TripsService {
   constructor(
     @InjectRepository(Trip)
     private readonly tripRepository: Repository<Trip>,
-  ) {}
+  ) { }
 
   async create(createTripDto: CreateTripDto, tenantId: string): Promise<Trip> {
     const trip = this.tripRepository.create({
@@ -25,41 +25,67 @@ export class TripsService {
   async findAll(
     query: any,
     tenantId: string,
+    userId?: string,
   ): Promise<{ trips: Trip[]; pagination: any }> {
     const { page = 1, limit = 10, status, search } = query;
     const skip = (page - 1) * limit;
 
-    const queryBuilder = this.tripRepository
-      .createQueryBuilder('trip')
-      .where('trip.tenantId = :tenantId', { tenantId });
+    try {
+      const queryBuilder = this.tripRepository
+        .createQueryBuilder('trip')
+        .leftJoinAndSelect('trip.truck', 'truck')
+        .leftJoinAndSelect('trip.driver', 'driver')
+        .leftJoinAndSelect('trip.load', 'load')
+        .leftJoinAndSelect('trip.pickupLocation', 'pickupLocation')
+        .leftJoinAndSelect('trip.deliveryLocation', 'deliveryLocation');
 
-    if (status) {
-      queryBuilder.andWhere('trip.status = :status', { status });
-    }
+      // Filter by tenant and/or user
+      if (userId) {
+        // For specific user, show trips they own or are assigned to
+        queryBuilder.where('trip.tenantId = :tenantId', { tenantId })
+          .andWhere(
+            new Brackets((qb) => {
+              qb.where('truck.ownerId = :userId', { userId })
+                .orWhere('driver.userId = :userId', { userId });
+            })
+          );
+      } else {
+        // For no specific user, show all tenant trips
+        queryBuilder.where('trip.tenantId = :tenantId', { tenantId });
+      }
 
-    if (search) {
-      queryBuilder.andWhere(
-        '(trip.tripNumber ILIKE :search OR trip.notes ILIKE :search)',
-        {
-          search: `%${search}%`,
+      if (status) {
+        queryBuilder.andWhere('trip.status = :status', { status });
+      }
+
+      if (search) {
+        queryBuilder.andWhere(
+          '(trip.tripNumber ILIKE :search OR trip.notes ILIKE :search)',
+          {
+            search: `%${search}%`,
+          },
+        );
+      }
+
+      const [trips, total] = await queryBuilder
+        .orderBy('trip.createdAt', 'DESC')
+        .skip(skip)
+        .take(limit)
+        .getManyAndCount();
+
+      return {
+        trips,
+        pagination: {
+          page: parseInt(page),
+          limit: parseInt(limit),
+          total,
+          totalPages: Math.ceil(total / limit),
         },
-      );
+      };
+    } catch (error) {
+      console.error('Error fetching trips:', error);
+      throw error;
     }
-
-    const [trips, total] = await queryBuilder
-      .skip(skip)
-      .take(limit)
-      .getManyAndCount();
-
-    return {
-      trips,
-      pagination: {
-        page: parseInt(page),
-        limit: parseInt(limit),
-        total,
-        totalPages: Math.ceil(total / limit),
-      },
-    };
   }
 
   async findOne(id: string, tenantId: string): Promise<Trip> {
