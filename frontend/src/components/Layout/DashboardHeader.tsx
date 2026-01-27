@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Search, Bell, User, Menu, X, ChevronDown, Package, Gavel, MapPin, BarChart3, CreditCard, FileText, Settings, HelpCircle, Truck, Users, Route, Shield, TrendingUp, Wallet, AlertCircle, DollarSign, Home, CheckCircle, Building, ClipboardList, Receipt, Fuel, AlertTriangle } from 'lucide-react';
+import { Search, Bell, User, Menu, X, ChevronDown, Package, Gavel, MapPin, BarChart3, CreditCard, FileText, Settings, HelpCircle, Truck, Users, Route, Shield, TrendingUp, Wallet, AlertCircle, DollarSign, Home, CheckCircle, Building, ClipboardList, Receipt, Fuel, AlertTriangle, Activity } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useCargoOwnerNotifications } from '../../hooks/useCargoOwnerNotifications.tsx';
 import ContextualHelp from '../Help/ContextualHelp';
@@ -395,6 +395,16 @@ const DashboardHeader = () => {
           icon: DollarSign
         },
         {
+          label: 'Roles',
+          path: '/admin/roles',
+          icon: Shield
+        },
+        {
+          label: 'Monitoring',
+          path: '/admin/monitoring',
+          icon: Activity
+        },
+        {
           label: 'Users',
           path: '/admin/users',
           icon: Users
@@ -438,6 +448,16 @@ const DashboardHeader = () => {
           label: 'Borrowers',
           path: '/admin/borrowers',
           icon: Users
+        },
+        {
+          label: 'System',
+          path: '/admin/advanced-settings',
+          icon: Settings,
+          subItems: [
+            { label: 'Activity Logs', path: '/admin/activity-logs' },
+            { label: 'Permissions', path: '/admin/enhanced-permissions' },
+            { label: 'Settings', path: '/admin/advanced-settings' },
+          ]
         },
         {
           label: 'Notifications',
@@ -671,6 +691,7 @@ const DashboardHeader = () => {
 
     // Admin paths
     if (user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN') {
+      if (path.includes('/admin/activity-logs') || path.includes('/admin/enhanced-permissions') || path.includes('/admin/advanced-settings')) return 'System';
       if (path.includes('/admin/monitoring')) return 'Monitoring';
       if (path.includes('/admin/bidding')) return 'Bidding';
       if (path.includes('/admin/disputes')) return 'Disputes';

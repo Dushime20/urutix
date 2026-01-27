@@ -20,6 +20,8 @@ import { TenantService } from './tenant.service';
 import { TenantController } from './tenant.controller';
 import { JwtService } from '@nestjs/jwt';
 import { RolesGuard } from './roles.guard';
+import { PermissionService } from '../../services/permissionService';
+import { PermissionsGuard } from './permissions.guard';
 
 @Module({
   imports: [
@@ -50,7 +52,10 @@ import { RolesGuard } from './roles.guard';
     EmailService,
     TenantGuard,
     TenantService,
+    TenantService,
     RolesGuard,
+    PermissionService,
+    PermissionsGuard,
   ],
   controllers: [EnhancedAuthController, TenantController],
   exports: [
@@ -61,7 +66,10 @@ import { RolesGuard } from './roles.guard';
     TenantGuard,
     TenantService,
     RolesGuard,
+    RolesGuard,
     EmailService,
+    PermissionService,
+    PermissionsGuard,
   ],
 })
-export class EnhancedAuthModule {}
+export class EnhancedAuthModule { }

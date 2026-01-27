@@ -29,8 +29,11 @@ import { TripsModule } from './modules/trips/trips.module';
 import { DriverModule } from './modules/drivers/driver.module';
 import { ReceiversModule } from './modules/receivers/receivers.module';
 import { BrokersModule } from './modules/brokers/brokers.module';
+import { MigrationsModule } from './modules/migrations/migrations.module';
 import { databaseConfig } from './config/database.config';
 import { ThrottlerModule } from '@nestjs/throttler';
+import { EventsModule } from './modules/events/events.module';
+import { OnboardingModule } from './modules/onboarding/onboarding.module';
 
 @Module({
   imports: [
@@ -63,8 +66,11 @@ import { ThrottlerModule } from '@nestjs/throttler';
     DriverModule,
     ReceiversModule,
     BrokersModule,
+    MigrationsModule,
+    EventsModule,
+    OnboardingModule,
   ],
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {}
+export class AppModule { }

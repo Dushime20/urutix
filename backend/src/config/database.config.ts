@@ -50,6 +50,14 @@ import {
   BrokerTransporterPerformance,
 } from '../entities/broker-intelligence.entity';
 
+// Admin entities
+import { ActivityLog } from '../entities/activity-log.entity';
+import { UserSession } from '../entities/user-session.entity';
+import { Permission } from '../entities/permission.entity';
+import { Role } from '../entities/role.entity';
+import { UserPermissionOverride } from '../entities/user-permission-override.entity';
+import { SystemSettings } from '../entities/system-settings.entity';
+
 // Financial entities
 import {
   Invoice,
@@ -150,8 +158,15 @@ export const databaseConfig: TypeOrmModuleOptions = {
     BrokerTransporterCredit,
     BrokerMultiStopLoad,
     BrokerTransporterPerformance,
+    // Admin entities
+    ActivityLog,
+    UserSession,
+    Permission,
+    Role,
+    UserPermissionOverride,
+    SystemSettings,
   ],
-  synchronize: false,
+  synchronize: process.env.NODE_ENV !== 'production',
   autoLoadEntities: false,
   logging: process.env.NODE_ENV === 'development',
   ssl:
@@ -237,6 +252,13 @@ export const testDatabaseConfig: TypeOrmModuleOptions = {
     BrokerTransporterCredit,
     BrokerMultiStopLoad,
     BrokerTransporterPerformance,
+    // Admin entities
+    ActivityLog,
+    UserSession,
+    Permission,
+    Role,
+    UserPermissionOverride,
+    SystemSettings,
   ],
   synchronize: true,
   autoLoadEntities: false,

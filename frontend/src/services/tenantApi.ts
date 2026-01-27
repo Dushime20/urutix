@@ -201,6 +201,22 @@ export const tenantApi = {
       responseType: 'blob'
     });
     return response.data;
+  },
+
+  // KYC Management
+  submitKYC: async (tenantId: string, data: any): Promise<TenantInfo> => {
+    const response = await api.post(`/tenants/${tenantId}/kyc`, data);
+    return response.data;
+  },
+
+  updateKYCStatus: async (tenantId: string, status: 'APPROVED' | 'REJECTED' | 'INCOMPLETE', notes?: string): Promise<TenantInfo> => {
+    const response = await api.put(`/tenants/${tenantId}/kyc/status`, { status, notes });
+    return response.data;
+  },
+
+  getPendingKYC: async (): Promise<TenantInfo[]> => {
+    const response = await api.get('/tenants/kyc/pending');
+    return response.data;
   }
 };
 

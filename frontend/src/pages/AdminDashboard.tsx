@@ -1,10 +1,16 @@
-import React from 'react';
-import { 
-  FaUsers, FaTruck, FaBox, FaDollarSign,
-  FaCheckCircle, FaExclamationTriangle, FaSync
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import {
+  FaCheckCircle, FaExclamationTriangle,
+  FaArrowUp, FaArrowDown,
+  FaBell, FaBox, FaUserShield
 } from 'react-icons/fa';
-import { TranslatedText } from '../components/translated-text';
-import { Line, Bar, Doughnut } from 'react-chartjs-2';
+import AdminHeader from '../components/Admin/AdminHeader';
+import {
+  Zap, Activity, Layers,
+  Users, Truck
+} from 'lucide-react';
+import { Line, Doughnut } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -12,10 +18,10 @@ import {
   PointElement,
   LineElement,
   BarElement,
-  Title,
   Tooltip,
   Legend,
   ArcElement,
+  Filler
 } from 'chart.js';
 
 ChartJS.register(
@@ -24,311 +30,289 @@ ChartJS.register(
   PointElement,
   LineElement,
   BarElement,
-  Title,
   Tooltip,
   Legend,
-  ArcElement
+  ArcElement,
+  Filler
 );
 
 const AdminDashboard: React.FC = () => {
+  const [timeRange, setTimeRange] = useState('7d');
+  const navigate = useNavigate();
+
   const stats = [
-    { 
-      label: 'Total Users', 
-      value: 1284, 
-      change: '+12%',
+    {
+      label: 'Total Users',
+      value: '1,284',
+      change: '+12.5%',
       changeType: 'positive',
-      icon: FaUsers, 
-      color: 'from-blue-500 to-blue-600',
-      description: 'Active platform users'
+      icon: Users,
+      color: 'blue',
+      description: 'Active platform users',
+      trend: [65, 59, 80, 81, 56, 55, 40],
+      link: '/admin/users'
     },
-    { 
-      label: 'Active Trucks', 
-      value: 428, 
-      change: '+8%',
+    {
+      label: 'Active Fleet',
+      value: '428',
+      change: '+8.2%',
       changeType: 'positive',
-      icon: FaTruck, 
-      color: 'from-green-500 to-green-600',
-      description: 'Trucks in service'
+      icon: Truck,
+      color: 'emerald',
+      description: 'Trucks currently active',
+      trend: [28, 48, 40, 19, 86, 27, 90],
+      link: '/admin/trucks'
     },
-    { 
-      label: 'Total Cargos', 
-      value: 876, 
-      change: '+15%',
+    {
+      label: 'Total Shipments',
+      value: '876',
+      change: '+15.3%',
       changeType: 'positive',
-      icon: FaBox, 
-      color: 'from-purple-500 to-purple-600',
-      description: 'Managed shipments'
+      icon: Layers,
+      color: 'indigo',
+      description: 'Managed this month',
+      trend: [65, 59, 80, 81, 56, 55, 40],
+      link: '/admin/loads'
     },
-    { 
-      label: 'Revenue', 
-      value: '$45.2K', 
-      change: '+23%',
+    {
+      label: 'Total Revenue',
+      value: '$45.2K',
+      change: '+23.1%',
       changeType: 'positive',
-      icon: FaDollarSign, 
-      color: 'from-yellow-500 to-yellow-600',
-      description: 'Monthly earnings'
+      icon: Activity,
+      color: 'amber',
+      description: 'Monthly earnings',
+      trend: [28, 48, 40, 19, 86, 27, 90],
+      link: '/admin/financial'
     },
   ];
-
-  const chartData = {
-    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-    datasets: [
-      {
-        label: 'Revenue (K$)',
-        data: [12.5, 19.2, 15.8, 25.3, 22.7, 30.1],
-        borderColor: 'rgb(59, 130, 246)',
-        backgroundColor: 'rgba(59, 130, 246, 0.1)',
-        tension: 0.4,
-        fill: true,
-      },
-    ],
-  };
-
-  const barData = {
-    labels: ['New Users', 'Active Trucks', 'Completed Orders', 'Revenue Growth'],
-    datasets: [
-      {
-        label: 'This Month',
-        data: [128, 87, 156, 203],
-        backgroundColor: [
-          'rgba(59, 130, 246, 0.8)',
-          'rgba(16, 185, 129, 0.8)',
-          'rgba(139, 92, 246, 0.8)',
-          'rgba(245, 158, 11, 0.8)',
-        ],
-        borderRadius: 8,
-      },
-    ],
-  };
-
-  const doughnutData = {
-    labels: ['In Transit', 'Delivered', 'Pending Pickup', 'Cancelled'],
-    datasets: [
-      {
-        data: [45, 35, 15, 5],
-        backgroundColor: [
-          'rgba(16, 185, 129, 0.8)',
-          'rgba(59, 130, 246, 0.8)',
-          'rgba(245, 158, 11, 0.8)',
-          'rgba(239, 68, 68, 0.8)',
-        ],
-        borderWidth: 0,
-        cutout: '60%',
-      },
-    ],
-  };
 
   const chartOptions = {
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
       legend: {
-        display: true,
-        position: 'bottom' as const,
-        labels: {
-          padding: 10,
-          font: {
-            size: 10,
-          },
-          boxWidth: 10,
-          boxHeight: 10,
-        },
+        display: false,
       },
       tooltip: {
-        backgroundColor: 'rgba(0, 0, 0, 0.8)',
-        titleColor: 'white',
-        bodyColor: 'white',
-        cornerRadius: 6,
-        titleFont: { size: 11 },
-        bodyFont: { size: 10 },
-        padding: 8,
-      },
+        backgroundColor: '#1e293b',
+        titleColor: '#f8fafc',
+        bodyColor: '#f8fafc',
+        padding: 12,
+        cornerRadius: 8,
+        displayColors: false,
+      }
     },
     scales: {
       x: {
-        grid: {
-          display: false,
-        },
-        ticks: {
-          font: { size: 10 },
-        },
+        grid: { display: false },
+        ticks: { color: '#64748b', font: { size: 11 } }
       },
       y: {
-        grid: {
-          color: 'rgba(0, 0, 0, 0.05)',
-        },
-        beginAtZero: true,
-        ticks: {
-          font: { size: 10 },
-        },
+        grid: { color: '#f1f5f9' },
+        ticks: { color: '#64748b', font: { size: 11 } }
+      }
+    }
+  };
+
+  const revenueData = {
+    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+    datasets: [
+      {
+        fill: true,
+        label: 'Revenue',
+        data: [12500, 19200, 15800, 25300, 22700, 30100, 28500],
+        borderColor: '#3b82f6',
+        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+        tension: 0.4,
+        borderWidth: 2,
+        pointRadius: 0,
+        pointHoverRadius: 4,
       },
-    },
+    ],
+  };
+
+  const donutOptions = {
+    cutout: '75%',
+    plugins: {
+      legend: { display: false }
+    }
+  };
+
+  const statusData = {
+    labels: ['Active', 'Pending', 'Issues', 'Completed'],
+    datasets: [
+      {
+        data: [45, 15, 5, 35],
+        backgroundColor: [
+          '#10b981', // Emerald
+          '#f59e0b', // Amber
+          '#ef4444', // Red
+          '#3b82f6', // Blue
+        ],
+        borderWidth: 0,
+      },
+    ],
   };
 
   const recentActivities = [
-    { icon: FaCheckCircle, color: 'text-green-500', text: 'New cargo shipment completed', time: '2 min ago' },
-    { icon: FaUsers, color: 'text-blue-500', text: 'New user registered: john@example.com', time: '5 min ago' },
-    { icon: FaTruck, color: 'text-yellow-500', text: 'Truck TRK-001 maintenance scheduled', time: '10 min ago' },
-    { icon: FaExclamationTriangle, color: 'text-red-500', text: 'High priority cargo requires attention', time: '15 min ago' },
-    { icon: FaBox, color: 'text-purple-500', text: 'Cargo batch processed successfully', time: '20 min ago' },
+    { icon: FaCheckCircle, color: 'text-emerald-500', bg: 'bg-emerald-500/10', title: 'Shipment #SH-8821 Completed', desc: 'Successfully delivered to Mombasa Port', time: '2 min ago' },
+    { icon: FaUserShield, color: 'text-blue-500', bg: 'bg-blue-500/10', title: 'New Admin Access', desc: 'User sarah.j granted moderator permissions', time: '15 min ago' },
+    { icon: FaExclamationTriangle, color: 'text-amber-500', bg: 'bg-amber-500/10', title: 'Maintenance Alert', desc: 'Truck KCA-452 requires urgent service', time: '1 hr ago' },
+    { icon: FaBox, color: 'text-purple-500', bg: 'bg-purple-500/10', title: 'New Cargo Listed', desc: '20 tons steel request from Nairobi Industrial', time: '2 hrs ago' },
   ];
 
   return (
-    <div className="space-y-3">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-3">
-        <div>
-          <h1 className="text-lg font-bold text-gray-900">
-            <TranslatedText text="Admin Dashboard" />
-          </h1>
-          <p className="text-xs text-gray-600 mt-0.5">
-            <TranslatedText text="Platform overview and key metrics" />
-          </p>
+    <div className="min-h-screen bg-slate-50 font-sans">
+      {/* Dark Header */}
+      <div className="bg-[#0f172a] text-white">
+        <AdminHeader
+          searchPlaceholder="Search system..."
+          customRightContent={
+            <button className="relative p-2 text-slate-400 hover:text-white hover:bg-white/5 rounded-full transition-colors">
+              <FaBell size={18} />
+              <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-[#0f172a]"></span>
+            </button>
+          }
+        />
+
+        {/* Hero Section */}
+        <div className="bg-gradient-to-b from-[#0f172a] to-[#1e293b]">
+          <div className="max-w-[1536px] mx-auto px-4 md:px-8 lg:px-12 xl:px-20 py-8 pb-12 flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div>
+              <h1 className="text-3xl md:text-4xl font-black text-white mb-2 tracking-tight">System Overview</h1>
+              <p className="text-slate-400 max-w-xl">Real-time monitoring of platform performance, user activity, and financial metrics across the entire logistics network.</p>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm font-bold">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                </span>
+                Systems Operational
+              </div>
+              <button className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-bold shadow-lg shadow-indigo-600/20 transition-all">
+                <Zap size={16} /> Quick Actions
+              </button>
+            </div>
+          </div>
         </div>
-        <button className="px-2.5 py-1.5 text-xs bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-1.5 transition-colors">
-          <FaSync className="w-3 h-3" />
-          <TranslatedText text="Refresh" />
-        </button>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2.5 mb-3">
-        {stats.map((stat, index) => {
-          const Icon = stat.icon;
-          return (
-            <div key={index} className="bg-white rounded-lg shadow-sm border border-gray-200 p-2.5 hover:shadow-md transition-all duration-200 group relative overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-100 transition-opacity" style={{
-                background: stat.color === 'from-blue-500 to-blue-600' ? 'linear-gradient(to bottom right, rgba(59, 130, 246, 0.05), transparent)' :
-                           stat.color === 'from-green-500 to-green-600' ? 'linear-gradient(to bottom right, rgba(16, 185, 129, 0.05), transparent)' :
-                           stat.color === 'from-purple-500 to-purple-600' ? 'linear-gradient(to bottom right, rgba(168, 85, 247, 0.05), transparent)' :
-                           'linear-gradient(to bottom right, rgba(245, 158, 11, 0.05), transparent)'
-              }}></div>
-              <div className="relative">
-                <div className="flex items-center justify-between mb-1.5">
-                  <div className={`w-10 h-10 bg-gradient-to-r ${stat.color} rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform`}>
-                    <Icon className="text-white text-sm" />
+      <main className="max-w-[1536px] mx-auto px-4 md:px-8 lg:px-12 xl:px-20 -mt-8 pb-12">
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          {stats.map((stat, idx) => {
+            const Icon = stat.icon;
+            return (
+              <div
+                key={idx}
+                onClick={() => stat.link && navigate(stat.link)}
+                className={`bg-white rounded-xl p-6 shadow-sm border border-slate-200 hover:shadow-md transition-all group ${stat.link ? 'cursor-pointer hover:border-indigo-200' : ''}`}
+              >
+                <div className="flex items-start justify-between mb-4">
+                  <div className={`p-3 rounded-xl bg-${stat.color}-50 text-${stat.color}-600 group-hover:bg-${stat.color}-600 group-hover:text-white transition-colors duration-300`}>
+                    <Icon size={24} />
                   </div>
-                  <span className={`text-xs font-semibold px-1.5 py-0.5 rounded-full ${
-                    stat.changeType === 'positive' ? 'text-green-600 bg-green-100' : 'text-red-600 bg-red-100'
-                  }`}>
+                  <span className={`flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-full ${stat.changeType === 'positive' ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'}`}>
+                    {stat.changeType === 'positive' ? <FaArrowUp size={10} /> : <FaArrowDown size={10} />}
                     {stat.change}
                   </span>
                 </div>
-                <div className="text-lg font-bold text-gray-900 mb-0.5">{stat.value}</div>
-                <div className="text-xs font-medium text-gray-600 mb-0.5">
-                  <TranslatedText text={stat.label} />
+                <div>
+                  <h3 className="text-3xl font-black text-slate-800 mb-1">{stat.value}</h3>
+                  <p className="text-sm font-semibold text-slate-500">{stat.label}</p>
                 </div>
-                <div className="text-[10px] text-gray-500">
-                  <TranslatedText text={stat.description} />
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Main Content Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+          {/* Revenue Chart */}
+          <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h3 className="text-lg font-bold text-slate-800">Financial Performance</h3>
+                <p className="text-sm text-slate-500">Revenue trajectory over the last 7 days</p>
+              </div>
+              <div className="flex bg-slate-100 p-1 rounded-lg">
+                <button className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${timeRange === '7d' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`} onClick={() => setTimeRange('7d')}>7 Days</button>
+                <button className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${timeRange === '30d' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`} onClick={() => setTimeRange('30d')}>30 Days</button>
+                <button className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${timeRange === '1y' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`} onClick={() => setTimeRange('1y')}>Year</button>
+              </div>
+            </div>
+            <div className="h-[300px]">
+              <Line data={revenueData} options={chartOptions} />
+            </div>
+          </div>
+
+          {/* Side Column */}
+          <div className="space-y-8">
+
+            {/* System Status Donut */}
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+              <h3 className="text-lg font-bold text-slate-800 mb-1">Order Status</h3>
+              <p className="text-sm text-slate-500 mb-6">Distribution of current shipments</p>
+
+              <div className="relative w-[200px] h-[200px] mx-auto">
+                <Doughnut data={statusData} options={donutOptions} />
+                <div className="absolute inset-0 flex items-center justify-center flex-col pointer-events-none">
+                  <span className="text-3xl font-black text-slate-800">876</span>
+                  <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Total</span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 mt-8">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-emerald-500"></div>
+                  <span className="text-sm font-medium text-slate-600">Active</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-amber-500"></div>
+                  <span className="text-sm font-medium text-slate-600">Pending</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+                  <span className="text-sm font-medium text-slate-600">Completed</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-red-500"></div>
+                  <span className="text-sm font-medium text-slate-600">Issues</span>
                 </div>
               </div>
             </div>
-          );
-        })}
-      </div>
 
-      {/* Charts Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-        <div className="lg:col-span-2 bg-white rounded-lg shadow-sm border border-gray-200 p-2.5">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-xs font-semibold text-gray-900">
-              <TranslatedText text="Revenue Trend" />
-            </h3>
-            <div className="flex space-x-1.5">
-              <button className="px-2 py-0.5 text-xs bg-blue-100 text-blue-600 rounded-md font-medium">6M</button>
-              <button className="px-2 py-0.5 text-xs text-gray-500 rounded-md hover:bg-gray-100">1Y</button>
+            {/* Recent Activity */}
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-bold text-slate-800">Live Activity</h3>
+                <button className="text-sm font-bold text-indigo-600 hover:text-indigo-700">View All</button>
+              </div>
+              <div className="space-y-6">
+                {recentActivities.map((activity, idx) => {
+                  const Icon = activity.icon;
+                  return (
+                    <div key={idx} className="flex gap-4">
+                      <div className={`w-10 h-10 rounded-full ${activity.bg} flex items-center justify-center flex-shrink-0`}>
+                        <Icon className={activity.color} size={16} />
+                      </div>
+                      <div className="flex-1">
+                        <h4 className="text-sm font-bold text-slate-800">{activity.title}</h4>
+                        <p className="text-xs text-slate-500 mt-0.5">{activity.desc}</p>
+                      </div>
+                      <span className="text-[10px] font-bold text-slate-400 whitespace-nowrap">{activity.time}</span>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
-          </div>
-          <div className="h-64">
-            <Line data={chartData} options={{ 
-              ...chartOptions,
-              plugins: {
-                ...chartOptions.plugins,
-                legend: {
-                  ...chartOptions.plugins.legend,
-                  labels: {
-                    ...chartOptions.plugins.legend.labels,
-                    padding: 10,
-                    font: { size: 10 }
-                  }
-                }
-              }
-            }} />
-          </div>
-        </div>
-        
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-2.5">
-          <h3 className="text-xs font-semibold text-gray-900 mb-2">
-            <TranslatedText text="Cargo Status" />
-          </h3>
-          <div className="h-64">
-            <Doughnut data={doughnutData} options={{ 
-              ...chartOptions,
-              plugins: {
-                ...chartOptions.plugins,
-                legend: {
-                  ...chartOptions.plugins.legend,
-                  labels: {
-                    ...chartOptions.plugins.legend.labels,
-                    padding: 10,
-                    font: { size: 10 }
-                  }
-                }
-              }
-            }} />
-          </div>
-        </div>
-      </div>
 
-      {/* Bottom Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-2.5">
-          <h3 className="text-xs font-semibold text-gray-900 mb-2">
-            <TranslatedText text="Performance Metrics" />
-          </h3>
-          <div className="h-64">
-            <Bar data={barData} options={{ 
-              ...chartOptions,
-              plugins: {
-                ...chartOptions.plugins,
-                legend: {
-                  ...chartOptions.plugins.legend,
-                  labels: {
-                    ...chartOptions.plugins.legend.labels,
-                    padding: 10,
-                    font: { size: 10 }
-                  }
-                }
-              }
-            }} />
           </div>
         </div>
-        
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-2.5">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-xs font-semibold text-gray-900">
-              <TranslatedText text="Recent Activity" />
-            </h3>
-            <button className="text-blue-600 hover:text-blue-800 text-xs font-medium">
-              <TranslatedText text="View All" />
-            </button>
-          </div>
-          <div className="space-y-1.5 max-h-64 overflow-y-auto">
-            {recentActivities.map((activity, index) => {
-              const Icon = activity.icon;
-              return (
-                <div key={index} className="flex items-start gap-1.5 p-1.5 rounded-lg hover:bg-gray-50 transition-colors">
-                  <Icon className={`${activity.color} text-sm mt-0.5 flex-shrink-0`} />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs text-gray-900 font-medium">{activity.text}</p>
-                    <p className="text-[10px] text-gray-500 mt-0.5">{activity.time}</p>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </div>
+      </main>
     </div>
   );
 };

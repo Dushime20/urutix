@@ -8,6 +8,7 @@ import AssignmentModal from '../components/FleetDashboard/AssignmentModal';
 import InspectionModal from '../components/FleetDashboard/InspectionModal';
 import toast from 'react-hot-toast';
 import { useMemo } from 'react';
+import { ProtectedAction } from '../components/common/ProtectedAction';
 
 // Types
 interface Vehicle {
@@ -673,13 +674,15 @@ const NewFleetManager: React.FC = () => {
                                     </button>
                                 </div>
                                 <div className="h-8 w-px bg-[#324467] mx-2" />
-                                <button
-                                    onClick={activeTab === 'vehicles' ? handleCreateTruck : handleRegisterDriver}
-                                    className="bg-[#135bec] hover:bg-[#135bec]/90 text-white flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all shadow-lg"
-                                >
-                                    <span className="material-symbols-outlined text-xl">add</span>
-                                    {activeTab === 'vehicles' ? 'Register New Vehicle' : 'Register New Driver'}
-                                </button>
+                                <ProtectedAction permission={activeTab === 'vehicles' ? 'truck:create' : 'driver:create'}>
+                                    <button
+                                        onClick={activeTab === 'vehicles' ? handleCreateTruck : handleRegisterDriver}
+                                        className="bg-[#135bec] hover:bg-[#135bec]/90 text-white flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all shadow-lg"
+                                    >
+                                        <span className="material-symbols-outlined text-xl">add</span>
+                                        {activeTab === 'vehicles' ? 'Register New Vehicle' : 'Register New Driver'}
+                                    </button>
+                                </ProtectedAction>
                             </div>
                         </div>
                     </div>
@@ -902,16 +905,18 @@ const NewFleetManager: React.FC = () => {
                                                     >
                                                         <span className="material-symbols-outlined text-lg">visibility</span>
                                                     </button>
-                                                    <button
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            handleEditTruck(vehicle.id);
-                                                        }}
-                                                        className="p-1.5 rounded-lg hover:bg-blue-50 text-slate-400 hover:text-[#135bec] transition-colors"
-                                                        title="Edit Vehicle"
-                                                    >
-                                                        <span className="material-symbols-outlined text-lg">edit</span>
-                                                    </button>
+                                                    <ProtectedAction permission="truck:update">
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                handleEditTruck(vehicle.id);
+                                                            }}
+                                                            className="p-1.5 rounded-lg hover:bg-blue-50 text-slate-400 hover:text-[#135bec] transition-colors"
+                                                            title="Edit Vehicle"
+                                                        >
+                                                            <span className="material-symbols-outlined text-lg">edit</span>
+                                                        </button>
+                                                    </ProtectedAction>
                                                     <button
                                                         onClick={(e) => {
                                                             e.stopPropagation();
@@ -932,16 +937,18 @@ const NewFleetManager: React.FC = () => {
                                                     >
                                                         <span className="material-symbols-outlined text-lg">description</span>
                                                     </button>
-                                                    <button
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            handleDeleteTruck(vehicle.id);
-                                                        }}
-                                                        className="p-1.5 rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-600 transition-colors"
-                                                        title="Delete Vehicle"
-                                                    >
-                                                        <span className="material-symbols-outlined text-lg">delete</span>
-                                                    </button>
+                                                    <ProtectedAction permission="truck:delete">
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                handleDeleteTruck(vehicle.id);
+                                                            }}
+                                                            className="p-1.5 rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-600 transition-colors"
+                                                            title="Delete Vehicle"
+                                                        >
+                                                            <span className="material-symbols-outlined text-lg">delete</span>
+                                                        </button>
+                                                    </ProtectedAction>
                                                 </div>
                                                 {/* Fallback for non-hover */}
                                                 <div className="flex items-center justify-center opacity-100 group-hover:opacity-0 group-hover:hidden transition-opacity">

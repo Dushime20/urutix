@@ -38,16 +38,19 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
 import { UserRole } from '../../entities/user.entity';
+import { PermissionsGuard } from '../auth/permissions.guard';
+import { RequirePermissions } from '../auth/decorators/require-permissions.decorator';
 
 @ApiTags('Fleet Management')
 @ApiBearerAuth()
 @Controller('fleet')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
 export class FleetController {
-  constructor(private readonly fleetService: FleetService) {}
+  constructor(private readonly fleetService: FleetService) { }
 
   // Truck endpoints
   @Post('trucks')
+  @RequirePermissions('truck:create')
   // @Roles(UserRole.TRUCK_OWNER, UserRole.ADMIN, UserRole.SUPER_ADMIN) // Temporarily disabled for testing
   @ApiOperation({
     summary: 'Create a new truck',
@@ -171,6 +174,7 @@ export class FleetController {
   }
 
   @Get('trucks')
+  @RequirePermissions('truck:view')
   @ApiOperation({
     summary: 'Get all trucks',
     description: 'Retrieves all trucks with optional filtering and pagination',
@@ -216,7 +220,7 @@ export class FleetController {
     console.log('User role:', req.user?.role);
     console.log('Tenant ID:', req.user?.tenantId);
     console.log('Query params:', { search, status, location, page, limit });
-    
+
     // Log the exact tenant ID being used
     if (req.user?.tenantId) {
       console.log(`🔍 Searching for trucks with tenantId: "${req.user.tenantId}"`);
@@ -233,7 +237,7 @@ export class FleetController {
       console.log(`🔍 Controller - Calling findAllTrucks with tenantId: "${tenantId}"`);
       console.log(`🔍 Controller - TenantId type: ${typeof tenantId}`);
       console.log(`🔍 Controller - TenantId length: ${tenantId?.length}`);
-      
+
       const trucks = await this.fleetService.findAllTrucks(
         tenantId,
         req.user.userId,
@@ -242,7 +246,7 @@ export class FleetController {
 
       console.log('✅ Controller - Trucks retrieved successfully:', trucks.length);
       console.log('✅ Controller - Returning trucks:', trucks.map(t => ({ id: t.id, plateNumber: t.plateNumber })));
-      
+
       return {
         message: 'Trucks retrieved successfully',
         trucks: trucks || [], // Ensure we always return an array
@@ -256,6 +260,7 @@ export class FleetController {
   }
 
   @Get('trucks/:id')
+  @RequirePermissions('truck:view')
   @ApiOperation({
     summary: 'Get truck by ID',
     description: 'Retrieves a specific truck by its ID',
@@ -273,6 +278,7 @@ export class FleetController {
   }
 
   @Patch('trucks/:id')
+  @RequirePermissions('truck:update')
   @ApiOperation({
     summary: 'Update truck',
     description: 'Updates an existing truck',
@@ -313,6 +319,7 @@ export class FleetController {
   }
 
   @Delete('trucks/:id')
+  @RequirePermissions('truck:delete')
   @ApiOperation({
     summary: 'Delete truck',
     description: 'Deletes a truck from the fleet',

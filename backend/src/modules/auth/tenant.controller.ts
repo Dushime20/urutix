@@ -27,7 +27,7 @@ import { FindTenantsDto, UpdateTenantDto } from './dto/tenant.dto';
 @ApiTags('Tenant Management')
 @Controller('tenants')
 export class TenantController {
-  constructor(private readonly tenantService: TenantService) {}
+  constructor(private readonly tenantService: TenantService) { }
 
   private createApiResponse<T>(
     data: T,
@@ -107,13 +107,13 @@ export class TenantController {
     console.log('🔍 [PUBLIC] Tenant search endpoint called');
     console.log('🔍 [PUBLIC] Query params:', query);
     console.log('🔍 [PUBLIC] Request headers:', JSON.stringify(query));
-    
+
     try {
       const tenants = await this.tenantService.getSearchedTenants(query);
       console.log('✅ [PUBLIC] Tenants found:', tenants);
       console.log('✅ [PUBLIC] Tenants count:', tenants?.results?.length || tenants?.total || 0);
       console.log('✅ [PUBLIC] All tenants:', JSON.stringify(tenants, null, 2));
-      
+
       const response = this.createApiResponse(tenants, 'Tenants retrieved successfully');
       console.log('✅ [PUBLIC] Response:', JSON.stringify(response, null, 2));
       return response;
@@ -224,6 +224,58 @@ export class TenantController {
   ): Promise<ApiResponseDto> {
     const tenant = await this.tenantService.suspendTenant(id, body.reason);
     return this.createApiResponse(tenant, 'Tenant suspended successfully');
+  }
+
+  @Get('kyc/pending')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, TenantGuard)
+  @ApiOperation({
+    summary: 'Get pending KYC tenants',
+    description: 'Get all tenants with pending or submitted KYC (Super Admin only)',
+  })
+  @ApiOkResponse({
+    description: 'Pending KYC tenants retrieved successfully',
+  })
+  async getPendingKYCTenants(): Promise<ApiResponseDto> {
+    const submitted = await this.tenantService.getTenantsByKYCStatus('SUBMITTED');
+    const pending = await this.tenantService.getTenantsByKYCStatus('PENDING');
+    return this.createApiResponse([...submitted, ...pending], 'Pending KYC tenants retrieved successfully');
+  }
+
+  @Post(':id/kyc')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({
+    summary: 'Submit KYC',
+    description: 'Submit KYC data for a tenant',
+  })
+  @ApiOkResponse({
+    description: 'KYC submitted successfully',
+  })
+  async submitKYC(
+    @Param('id') id: string,
+    @Body() kycData: any,
+  ): Promise<ApiResponseDto> {
+    const tenant = await this.tenantService.submitKYC(id, kycData);
+    return this.createApiResponse(tenant, 'KYC submitted successfully');
+  }
+
+  @Put(':id/kyc/status')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, TenantGuard)
+  @ApiOperation({
+    summary: 'Update KYC Status',
+    description: 'Approve or Reject KYC (Super Admin only)',
+  })
+  @ApiOkResponse({
+    description: 'KYC status updated successfully',
+  })
+  async updateKYCStatus(
+    @Param('id') id: string,
+    @Body() body: { status: 'APPROVED' | 'REJECTED' | 'INCOMPLETE', notes?: string },
+  ): Promise<ApiResponseDto> {
+    const tenant = await this.tenantService.updateKYCStatus(id, body.status, body.notes);
+    return this.createApiResponse(tenant, `KYC status updated to ${body.status}`);
   }
 
   @Delete(':id')

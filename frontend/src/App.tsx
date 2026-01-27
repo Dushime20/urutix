@@ -1,7 +1,9 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from './contexts/AuthContext';
+import { PermissionProvider } from './contexts/PermissionContext';
 import { I18nProvider } from './contexts/i18n-context';
+import { SocketProvider } from './contexts/SocketContext';
 import { Toaster } from 'react-hot-toast';
 import { lazy, Suspense } from 'react';
 
@@ -39,6 +41,10 @@ import TenantPasswordSetup from './pages/TenantPasswordSetup';
 import LenderPasswordSetup from './pages/LenderPasswordSetup';
 import ReceiverPasswordSetup from './pages/ReceiverPasswordSetup';
 
+// Onboarding
+const OnboardingLayout = lazy(() => import('./components/Layout/OnboardingLayout'));
+const OnboardingWizard = lazy(() => import('./pages/onboarding/OnboardingWizard'));
+
 // Lazy load all page components to reduce initial bundle size
 const CargoList = lazy(() => import('./pages/dashboard/cargos/list'));
 const EnhancedJourneyFlow = lazy(() => import('./components/CargoOwnerJourney/EnhancedJourneyFlow'));
@@ -56,7 +62,7 @@ const AdminLoads = lazy(() => import('./pages/AdminLoads'));
 const AdminTrips = lazy(() => import('./pages/AdminTrips'));
 const AdminTenants = lazy(() => import('./pages/AdminTenants'));
 const AdminRoutes = lazy(() => import('./pages/AdminRoutes'));
-const MonitoringDashboard = lazy(() => import('./pages/admin/MonitoringDashboard'));
+
 const BiddingManagement = lazy(() => import('./pages/admin/BiddingManagement'));
 const DisputeManagement = lazy(() => import('./pages/admin/DisputeManagement'));
 const FinancialAdminDashboard = lazy(() => import('./pages/admin/FinancialAdminDashboard'));
@@ -72,6 +78,12 @@ const Settings = lazy(() => import('./pages/Settings'));
 const LenderPolicySettingsPage = lazy(() => import('./pages/LenderPolicySettingsPage'));
 const AdminLenderRegistrationPage = lazy(() => import('./pages/AdminLenderRegistrationPage'));
 const AdminBorrowersPage = lazy(() => import('./pages/AdminBorrowersPage'));
+const PermissionManagement = lazy(() => import('./pages/admin/PermissionManagement'));
+const RoleManagement = lazy(() => import('./pages/admin/RoleManagement'));
+const SystemMonitoring = lazy(() => import('./pages/admin/SystemMonitoring'));
+const ActivityLogs = lazy(() => import('./pages/admin/ActivityLogs'));
+const EnhancedPermissions = lazy(() => import('./pages/admin/EnhancedPermissions'));
+const AdvancedSettings = lazy(() => import('./pages/admin/AdvancedSettings'));
 
 // Enhanced Transaction Flow Components - lazy load
 const BookingConfirmation = lazy(() => import('./pages/BookingConfirmation'));
@@ -164,282 +176,295 @@ function App() {
         googleTranslateApiKey={import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY}
       >
         <AuthProvider>
-          <Router>
-            <Suspense fallback={<PageLoadingFallback />}>
-              <Routes>
-                <Route path="/" element={<Home />} />
-                <Route path="/fleet-manager" element={<NewFleetManager />} />
-                <Route path="/dispatch" element={<DispatchPage />} />
-                <Route path="/dispatch" element={<DispatchPage />} />
-                <Route path="/dashboard/fleet/dispatch" element={<DispatchPage />} />
-                <Route path="/dashboard/fleet/reports" element={<FleetAnalytics />} />
-                <Route path="/dashboard/fleet/smart-bookings" element={<SmartBookingsPage />} />
-                <Route path="/auth" element={<Auth />} />
-                <Route path="/driver/setup-password" element={<DriverPasswordSetup />} />
-                <Route path="/tenant/setup-password" element={<TenantPasswordSetup />} />
-                <Route path="/lender/setup-password" element={<LenderPasswordSetup />} />
-                <Route path="/receiver/setup-password" element={<ReceiverPasswordSetup />} />
+          <PermissionProvider>
+            <SocketProvider>
+              <Router>
+                <Suspense fallback={<PageLoadingFallback />}>
+                  <Routes>
+                    <Route path="/" element={<Home />} />
+                    <Route path="/fleet-manager" element={<NewFleetManager />} />
+                    <Route path="/dispatch" element={<DispatchPage />} />
+                    <Route path="/dispatch" element={<DispatchPage />} />
+                    <Route path="/dashboard/fleet/dispatch" element={<DispatchPage />} />
+                    <Route path="/dashboard/fleet/reports" element={<FleetAnalytics />} />
+                    <Route path="/dashboard/fleet/smart-bookings" element={<SmartBookingsPage />} />
+                    <Route path="/auth" element={<Auth />} />
+                    <Route path="/onboarding" element={<OnboardingLayout />}>
+                      <Route index element={<OnboardingWizard />} />
+                    </Route>
+                    <Route path="/driver/setup-password" element={<DriverPasswordSetup />} />
+                    <Route path="/tenant/setup-password" element={<TenantPasswordSetup />} />
+                    <Route path="/lender/setup-password" element={<LenderPasswordSetup />} />
+                    <Route path="/receiver/setup-password" element={<ReceiverPasswordSetup />} />
 
-                {/* Cargo Owner Routes */}
-                <Route path="/dashboard" element={<CargoOwnerLayout />}>
-                  <Route index element={<Dashboard />} />
-                  <Route path="cargos" element={<CargoDashboard />} />
-                  <Route path="cargos/create" element={<CargoList />} />
-                  <Route path="cargos/list" element={<CargoList />} />
-                  <Route path="cargos/active" element={<CargoList />} />
-                  <Route path="cargos/my-cargos" element={<ReceiverCargosPage />} />
-                  <Route path="cargos/:cargoId/inspect" element={<CargoInspectionPage />} />
-                  <Route path="cargos/enhanced-demo" element={<EnhancedCargoDemo />} />
-                  <Route path="cargos/enhanced-demo/:cargoId" element={<EnhancedCargoDemo />} />
-                  <Route path="bidding" element={<CargoList />} />
-                  <Route path="my-bids" element={<MyBidsPage />} />
-                  <Route path="journey" element={<EnhancedJourneyFlow />} />
-                  <Route path="tenant-dashboard" element={<TenantDashboardPage />} />
-                  <Route path="analytics" element={<UnifiedAnalyticsManagement />} />
-                  <Route path="reports" element={<UnifiedAnalyticsManagement />} />
-                  <Route path="history" element={<UnifiedAnalyticsManagement />} />
-                  <Route path="tracking" element={<UnifiedTrackingManagement />} />
-                  <Route path="routes" element={<UnifiedTrackingManagement />} />
-                  <Route path="profile" element={<UnifiedAccountManagement />} />
-                  <Route path="settings" element={<UnifiedAccountManagement />} />
-                  <Route path="payments" element={<UnifiedFinancialManagement />} />
-                  <Route path="financial" element={<UnifiedFinancialManagement />} />
-                  <Route path="loan-requests" element={<UnifiedFinancialManagement />} />
-                  <Route path="invoices" element={<InvoiceViewer />} />
-                  <Route path="documents" element={<UnifiedDocumentManagement />} />
-                  <Route path="documents/:entityType" element={<UnifiedDocumentManagement />} />
-                  <Route path="financing" element={<CargoFinancingPage />} />
-                  <Route path="support" element={<CargoHelpSupport />} />
-                  <Route path="ratings" element={<UnifiedReputationManagement />} />
-                  <Route path="rewards" element={<UnifiedReputationManagement />} />
-                  <Route path="scoring" element={<UnifiedReputationManagement />} />
-                  <Route path="receivers" element={<ReceiversPage />} />
+                    {/* Cargo Owner Routes */}
+                    <Route path="/dashboard" element={<CargoOwnerLayout />}>
+                      <Route index element={<Dashboard />} />
+                      <Route path="cargos" element={<CargoDashboard />} />
+                      <Route path="cargos/create" element={<CargoList />} />
+                      <Route path="cargos/list" element={<CargoList />} />
+                      <Route path="cargos/active" element={<CargoList />} />
+                      <Route path="cargos/my-cargos" element={<ReceiverCargosPage />} />
+                      <Route path="cargos/:cargoId/inspect" element={<CargoInspectionPage />} />
+                      <Route path="cargos/enhanced-demo" element={<EnhancedCargoDemo />} />
+                      <Route path="cargos/enhanced-demo/:cargoId" element={<EnhancedCargoDemo />} />
+                      <Route path="bidding" element={<CargoList />} />
+                      <Route path="my-bids" element={<MyBidsPage />} />
+                      <Route path="journey" element={<EnhancedJourneyFlow />} />
+                      <Route path="tenant-dashboard" element={<TenantDashboardPage />} />
+                      <Route path="analytics" element={<UnifiedAnalyticsManagement />} />
+                      <Route path="reports" element={<UnifiedAnalyticsManagement />} />
+                      <Route path="history" element={<UnifiedAnalyticsManagement />} />
+                      <Route path="tracking" element={<UnifiedTrackingManagement />} />
+                      <Route path="routes" element={<UnifiedTrackingManagement />} />
+                      <Route path="profile" element={<UnifiedAccountManagement />} />
+                      <Route path="settings" element={<UnifiedAccountManagement />} />
+                      <Route path="payments" element={<UnifiedFinancialManagement />} />
+                      <Route path="financial" element={<UnifiedFinancialManagement />} />
+                      <Route path="loan-requests" element={<UnifiedFinancialManagement />} />
+                      <Route path="invoices" element={<InvoiceViewer />} />
+                      <Route path="documents" element={<UnifiedDocumentManagement />} />
+                      <Route path="documents/:entityType" element={<UnifiedDocumentManagement />} />
+                      <Route path="financing" element={<CargoFinancingPage />} />
+                      <Route path="support" element={<CargoHelpSupport />} />
+                      <Route path="ratings" element={<UnifiedReputationManagement />} />
+                      <Route path="rewards" element={<UnifiedReputationManagement />} />
+                      <Route path="scoring" element={<UnifiedReputationManagement />} />
+                      <Route path="receivers" element={<ReceiversPage />} />
 
-                  {/* Enhanced Transaction Flow Routes */}
-                  <Route path="transaction-flow" element={<TransactionFlow />} />
-                  <Route path="match-results" element={<MatchResults />} />
-                  <Route path="booking-confirmation/:matchId" element={<BookingConfirmation />} />
-                  <Route path="contract-negotiation/:bookingId" element={<ContractNegotiation />} />
-                  <Route path="payment-processing/:bookingId" element={<PaymentProcessing />} />
-                  <Route path="escrow-management/:bookingId" element={<EscrowManagement />} />
-                  <Route path="trip-tracking/:tripId" element={<TripTracking />} />
-                  <Route path="delivery-confirmation/:tripId" element={<DeliveryConfirmation />} />
-                  <Route path="settlement-processing/:tripId" element={<SettlementProcessing />} />
-                  <Route path="dispute-resolution/:tripId" element={<DisputeResolution />} />
-                </Route>
+                      {/* Enhanced Transaction Flow Routes */}
+                      <Route path="transaction-flow" element={<TransactionFlow />} />
+                      <Route path="match-results" element={<MatchResults />} />
+                      <Route path="booking-confirmation/:matchId" element={<BookingConfirmation />} />
+                      <Route path="contract-negotiation/:bookingId" element={<ContractNegotiation />} />
+                      <Route path="payment-processing/:bookingId" element={<PaymentProcessing />} />
+                      <Route path="escrow-management/:bookingId" element={<EscrowManagement />} />
+                      <Route path="trip-tracking/:tripId" element={<TripTracking />} />
+                      <Route path="delivery-confirmation/:tripId" element={<DeliveryConfirmation />} />
+                      <Route path="settlement-processing/:tripId" element={<SettlementProcessing />} />
+                      <Route path="dispute-resolution/:tripId" element={<DisputeResolution />} />
+                    </Route>
 
-                {/* Cargo Owner Routes (alias for /dashboard) */}
-                <Route path="/cargo-owner" element={<CargoOwnerLayout />}>
-                  <Route index element={<Dashboard />} />
-                  <Route path="cargos" element={<CargoDashboard />} />
-                  <Route path="cargos/create" element={<CargoList />} />
-                  <Route path="cargos/list" element={<CargoList />} />
-                  <Route path="cargos/active" element={<CargoList />} />
-                  <Route path="cargos/enhanced-demo" element={<EnhancedCargoDemo />} />
-                  <Route path="cargos/enhanced-demo/:cargoId" element={<EnhancedCargoDemo />} />
-                  <Route path="bidding" element={<CargoList />} />
-                  <Route path="my-bids" element={<MyBidsPage />} />
-                  <Route path="journey" element={<EnhancedJourneyFlow />} />
-                  <Route path="tenant-dashboard" element={<TenantDashboardPage />} />
-                  <Route path="analytics" element={<UnifiedAnalyticsManagement />} />
-                  <Route path="reports" element={<UnifiedAnalyticsManagement />} />
-                  <Route path="history" element={<UnifiedAnalyticsManagement />} />
-                  <Route path="tracking" element={<UnifiedTrackingManagement />} />
-                  <Route path="routes" element={<UnifiedTrackingManagement />} />
-                  <Route path="profile" element={<UnifiedAccountManagement />} />
-                  <Route path="settings" element={<UnifiedAccountManagement />} />
-                  <Route path="payments" element={<UnifiedFinancialManagement />} />
-                  <Route path="payment" element={<UnifiedFinancialManagement />} />
-                  <Route path="loan-requests" element={<UnifiedFinancialManagement />} />
-                  <Route path="financing" element={<CargoFinancingPage />} />
-                  <Route path="financial-info" element={<UnifiedFinancialManagement />} />
-                  <Route path="invoices" element={<InvoiceViewer />} />
-                  <Route path="documents" element={<UnifiedDocumentManagement />} />
-                  <Route path="documents/:entityType" element={<UnifiedDocumentManagement />} />
-                  <Route path="notification-center" element={<UnifiedNotificationManagement />} />
-                  <Route path="notifications" element={<UnifiedNotificationManagement />} />
-                  <Route path="support" element={<CargoHelpSupport />} />
-                  <Route path="ratings" element={<UnifiedReputationManagement />} />
-                  <Route path="rewards" element={<UnifiedReputationManagement />} />
-                  <Route path="scoring" element={<UnifiedReputationManagement />} />
-                  <Route path="receivers" element={<ReceiversPage />} />
+                    {/* Cargo Owner Routes (alias for /dashboard) */}
+                    <Route path="/cargo-owner" element={<CargoOwnerLayout />}>
+                      <Route index element={<Dashboard />} />
+                      <Route path="cargos" element={<CargoDashboard />} />
+                      <Route path="cargos/create" element={<CargoList />} />
+                      <Route path="cargos/list" element={<CargoList />} />
+                      <Route path="cargos/active" element={<CargoList />} />
+                      <Route path="cargos/enhanced-demo" element={<EnhancedCargoDemo />} />
+                      <Route path="cargos/enhanced-demo/:cargoId" element={<EnhancedCargoDemo />} />
+                      <Route path="bidding" element={<CargoList />} />
+                      <Route path="my-bids" element={<MyBidsPage />} />
+                      <Route path="journey" element={<EnhancedJourneyFlow />} />
+                      <Route path="tenant-dashboard" element={<TenantDashboardPage />} />
+                      <Route path="analytics" element={<UnifiedAnalyticsManagement />} />
+                      <Route path="reports" element={<UnifiedAnalyticsManagement />} />
+                      <Route path="history" element={<UnifiedAnalyticsManagement />} />
+                      <Route path="tracking" element={<UnifiedTrackingManagement />} />
+                      <Route path="routes" element={<UnifiedTrackingManagement />} />
+                      <Route path="profile" element={<UnifiedAccountManagement />} />
+                      <Route path="settings" element={<UnifiedAccountManagement />} />
+                      <Route path="payments" element={<UnifiedFinancialManagement />} />
+                      <Route path="payment" element={<UnifiedFinancialManagement />} />
+                      <Route path="loan-requests" element={<UnifiedFinancialManagement />} />
+                      <Route path="financing" element={<CargoFinancingPage />} />
+                      <Route path="financial-info" element={<UnifiedFinancialManagement />} />
+                      <Route path="invoices" element={<InvoiceViewer />} />
+                      <Route path="documents" element={<UnifiedDocumentManagement />} />
+                      <Route path="documents/:entityType" element={<UnifiedDocumentManagement />} />
+                      <Route path="notification-center" element={<UnifiedNotificationManagement />} />
+                      <Route path="notifications" element={<UnifiedNotificationManagement />} />
+                      <Route path="support" element={<CargoHelpSupport />} />
+                      <Route path="ratings" element={<UnifiedReputationManagement />} />
+                      <Route path="rewards" element={<UnifiedReputationManagement />} />
+                      <Route path="scoring" element={<UnifiedReputationManagement />} />
+                      <Route path="receivers" element={<ReceiversPage />} />
 
-                  {/* Enhanced Transaction Flow Routes */}
-                  <Route path="transaction-flow" element={<TransactionFlow />} />
-                  <Route path="match-results" element={<MatchResults />} />
-                  <Route path="booking-confirmation/:matchId" element={<BookingConfirmation />} />
-                  <Route path="contract-negotiation/:bookingId" element={<ContractNegotiation />} />
-                  <Route path="payment-processing/:bookingId" element={<PaymentProcessing />} />
-                  <Route path="escrow-management/:bookingId" element={<EscrowManagement />} />
-                  <Route path="trip-tracking/:tripId" element={<TripTracking />} />
-                  <Route path="delivery-confirmation/:tripId" element={<DeliveryConfirmation />} />
-                  <Route path="settlement-processing/:tripId" element={<SettlementProcessing />} />
-                  <Route path="dispute-resolution/:tripId" element={<DisputeResolution />} />
-                </Route>
+                      {/* Enhanced Transaction Flow Routes */}
+                      <Route path="transaction-flow" element={<TransactionFlow />} />
+                      <Route path="match-results" element={<MatchResults />} />
+                      <Route path="booking-confirmation/:matchId" element={<BookingConfirmation />} />
+                      <Route path="contract-negotiation/:bookingId" element={<ContractNegotiation />} />
+                      <Route path="payment-processing/:bookingId" element={<PaymentProcessing />} />
+                      <Route path="escrow-management/:bookingId" element={<EscrowManagement />} />
+                      <Route path="trip-tracking/:tripId" element={<TripTracking />} />
+                      <Route path="delivery-confirmation/:tripId" element={<DeliveryConfirmation />} />
+                      <Route path="settlement-processing/:tripId" element={<SettlementProcessing />} />
+                      <Route path="dispute-resolution/:tripId" element={<DisputeResolution />} />
+                    </Route>
 
-                {/* Fleet Owner Routes */}
-                <Route path="/fleet" element={<FleetOwnerLayout />}>
-                  <Route index element={<FleetDashboard />} />
-                  <Route path="analytics" element={<Analytics />} />
-                  <Route path="tenant-dashboard" element={<TenantDashboardPage />} />
-                </Route>
+                    {/* Fleet Owner Routes */}
+                    <Route path="/fleet" element={<FleetOwnerLayout />}>
+                      <Route index element={<FleetDashboard />} />
+                      <Route path="analytics" element={<Analytics />} />
+                      <Route path="tenant-dashboard" element={<TenantDashboardPage />} />
+                    </Route>
 
-                {/* Fleet Dashboard Routes (under dashboard path) */}
-                <Route path="/dashboard/fleet" element={<FleetOwnerLayout />}>
-                  <Route index element={<FleetOwnerDashboard />} />
-                  <Route index element={<FleetOwnerDashboard />} />
-                  <Route path="trucks" element={<UnifiedFleetManagement />} />
-                  <Route path="trucks/create" element={<UnifiedFleetManagement />} />
-                  <Route path="trucks/:truckId/records" element={<TruckRecordsPage />} />
-                  <Route path="trips" element={<UnifiedFleetManagement />} />
-                  <Route path="bids" element={<TruckBidsPage />} />
-                  <Route path="drivers" element={<UnifiedDriverManagement />} />
-                  <Route path="drivers/create" element={<UnifiedDriverManagement />} />
-                  <Route path="assignments" element={<UnifiedDriverManagement />} />
-                  <Route path="maintenance" element={<MaintenancePage />} />
-                  <Route path="fuel" element={<FuelPage />} />
-                  <Route path="payments" element={<FleetPaymentManagement />} />
-                  <Route path="routes" element={<FleetRoutesPage />} />
-                  <Route path="tenant-dashboard" element={<TenantDashboardPage />} />
-                  <Route path="profile" element={<FleetDashboard />} />
-                  <Route path="settings" element={<FleetDashboard />} />
-                  <Route path="notifications" element={<FleetDashboard />} />
-                  <Route path="support" element={<FleetHelpSupport />} />
-                  <Route path="ratings" element={<UnifiedDriverManagement />} />
-                  <Route path="rewards" element={<UnifiedDriverManagement />} />
-                  <Route path="scoring" element={<UnifiedDriverManagement />} />
-                  <Route path="safety" element={<FleetSafety />} />
-                  <Route path="financial" element={<UnifiedFinancialManagement />} />
-                  <Route path="cost-analysis" element={<UnifiedFinancialManagement />} />
-                  <Route path="insurance" element={<FleetDashboard />} />
+                    {/* Fleet Dashboard Routes (under dashboard path) */}
+                    <Route path="/dashboard/fleet" element={<FleetOwnerLayout />}>
+                      <Route index element={<FleetOwnerDashboard />} />
+                      <Route index element={<FleetOwnerDashboard />} />
+                      <Route path="trucks" element={<UnifiedFleetManagement />} />
+                      <Route path="trucks/create" element={<UnifiedFleetManagement />} />
+                      <Route path="trucks/:truckId/records" element={<TruckRecordsPage />} />
+                      <Route path="trips" element={<UnifiedFleetManagement />} />
+                      <Route path="bids" element={<TruckBidsPage />} />
+                      <Route path="drivers" element={<UnifiedDriverManagement />} />
+                      <Route path="drivers/create" element={<UnifiedDriverManagement />} />
+                      <Route path="assignments" element={<UnifiedDriverManagement />} />
+                      <Route path="maintenance" element={<MaintenancePage />} />
+                      <Route path="fuel" element={<FuelPage />} />
+                      <Route path="payments" element={<FleetPaymentManagement />} />
+                      <Route path="routes" element={<FleetRoutesPage />} />
+                      <Route path="tenant-dashboard" element={<TenantDashboardPage />} />
+                      <Route path="profile" element={<FleetDashboard />} />
+                      <Route path="settings" element={<FleetDashboard />} />
+                      <Route path="notifications" element={<FleetDashboard />} />
+                      <Route path="support" element={<FleetHelpSupport />} />
+                      <Route path="ratings" element={<UnifiedDriverManagement />} />
+                      <Route path="rewards" element={<UnifiedDriverManagement />} />
+                      <Route path="scoring" element={<UnifiedDriverManagement />} />
+                      <Route path="safety" element={<FleetSafety />} />
+                      <Route path="financial" element={<UnifiedFinancialManagement />} />
+                      <Route path="cost-analysis" element={<UnifiedFinancialManagement />} />
+                      <Route path="insurance" element={<FleetDashboard />} />
 
-                  {/* Fleet Transaction Flow Routes */}
-                  <Route path="available-loads" element={<MatchResults />} />
-                  <Route path="booking-requests" element={<BookingConfirmation />} />
-                  <Route path="contract-negotiation/:bookingId" element={<ContractNegotiation />} />
-                  <Route path="payment-processing/:bookingId" element={<PaymentProcessing />} />
-                  <Route path="escrow-management/:bookingId" element={<EscrowManagement />} />
-                  <Route path="trip-tracking/:tripId" element={<TripTracking />} />
-                  <Route path="delivery-confirmation/:tripId" element={<DeliveryConfirmation />} />
-                  <Route path="settlement-processing/:tripId" element={<SettlementProcessing />} />
-                  <Route path="dispute-resolution/:tripId" element={<DisputeResolution />} />
-                </Route>
+                      {/* Fleet Transaction Flow Routes */}
+                      <Route path="available-loads" element={<MatchResults />} />
+                      <Route path="booking-requests" element={<BookingConfirmation />} />
+                      <Route path="contract-negotiation/:bookingId" element={<ContractNegotiation />} />
+                      <Route path="payment-processing/:bookingId" element={<PaymentProcessing />} />
+                      <Route path="escrow-management/:bookingId" element={<EscrowManagement />} />
+                      <Route path="trip-tracking/:tripId" element={<TripTracking />} />
+                      <Route path="delivery-confirmation/:tripId" element={<DeliveryConfirmation />} />
+                      <Route path="settlement-processing/:tripId" element={<SettlementProcessing />} />
+                      <Route path="dispute-resolution/:tripId" element={<DisputeResolution />} />
+                    </Route>
 
-                {/* Driver Routes */}
-                <Route path="/dashboard/driver" element={<DriverLayout />}>
-                  <Route index element={<DriverDashboard />} />
-                  <Route path="trips" element={<DriverDashboard />} />
-                  <Route path="truck" element={<DriverDashboard />} />
-                  <Route path="cargo" element={<DriverDashboard />} />
-                  <Route path="earnings" element={<DriverDashboard />} />
-                  <Route path="safety" element={<DriverDashboard />} />
-                  <Route path="documents" element={<DriverDashboard />} />
-                  <Route path="tracking" element={<DriverDashboard />} />
-                  <Route path="analytics" element={<DriverDashboard />} />
-                  <Route path="notifications" element={<DriverDashboard />} />
-                  <Route path="profile" element={<DriverDashboard />} />
-                  <Route path="settings" element={<DriverDashboard />} />
-                  <Route path="support" element={<DriverDashboard />} />
-                </Route>
+                    {/* Driver Routes */}
+                    <Route path="/dashboard/driver" element={<DriverLayout />}>
+                      <Route index element={<DriverDashboard />} />
+                      <Route path="trips" element={<DriverDashboard />} />
+                      <Route path="truck" element={<DriverDashboard />} />
+                      <Route path="cargo" element={<DriverDashboard />} />
+                      <Route path="earnings" element={<DriverDashboard />} />
+                      <Route path="safety" element={<DriverDashboard />} />
+                      <Route path="documents" element={<DriverDashboard />} />
+                      <Route path="tracking" element={<DriverDashboard />} />
+                      <Route path="analytics" element={<DriverDashboard />} />
+                      <Route path="notifications" element={<DriverDashboard />} />
+                      <Route path="profile" element={<DriverDashboard />} />
+                      <Route path="settings" element={<DriverDashboard />} />
+                      <Route path="support" element={<DriverDashboard />} />
+                    </Route>
 
-                {/* Admin Routes */}
-                <Route path="/admin" element={<AdminLayout />}>
-                  <Route index element={<AdminDashboard />} />
-                  <Route path="lenders/register" element={<AdminLenderRegistrationPage />} />
-                  <Route path="lenders" element={<Navigate to="lenders/register" replace />} />
-                  <Route path="borrowers" element={<AdminBorrowersPage />} />
-                  <Route path="analytics" element={<Analytics />} />
-                  <Route path="monitoring" element={<MonitoringDashboard />} />
-                  <Route path="bidding" element={<BiddingManagement />} />
-                  <Route path="disputes" element={<DisputeManagement />} />
-                  <Route path="financial" element={<FinancialAdminDashboard />} />
-                  <Route path="transaction-monitoring" element={<TransactionFlow />} />
-                  <Route path="dispute-management" element={<DisputeResolution />} />
-                  <Route path="escrow-management" element={<EscrowManagement />} />
-                  <Route path="users" element={<AdminUsers />} />
-                  <Route path="trucks" element={<AdminTrucks />} />
-                  <Route path="loads" element={<AdminLoads />} />
-                  <Route path="trips" element={<AdminTrips />} />
-                  <Route path="tenants" element={<AdminTenants />} />
-                  <Route path="routes" element={<AdminRoutes />} />
-                  <Route path="profile" element={<Profile />} />
-                  <Route path="settings" element={<Settings />} />
-                </Route>
+                    {/* Admin Routes */}
+                    <Route path="/admin" element={<AdminLayout />}>
+                      <Route index element={<AdminDashboard />} />
+                      <Route path="lenders/register" element={<AdminLenderRegistrationPage />} />
+                      <Route path="lenders" element={<Navigate to="lenders/register" replace />} />
+                      <Route path="borrowers" element={<AdminBorrowersPage />} />
+                      <Route path="analytics" element={<Analytics />} />
 
-                {/* Tenant Admin Routes */}
-                <Route path="/tenant-admin" element={<TenantAdminLayout />}>
-                  <Route index element={<TenantDashboardPage />} />
-                  <Route path="fleet" element={<TenantFleetManagement />} />
-                  <Route path="cargo" element={<TenantAdminCargo />} />
-                  <Route path="drivers" element={<TenantAdminDrivers />} />
-                  <Route path="lenders" element={<TenantLenderManagementPage />} />
-                  <Route path="routes" element={<TenantAdminRoutes />} />
-                  <Route path="trips" element={<TenantAdminTrips />} />
-                  <Route path="financial" element={<TenantDashboardPage />} />
-                  <Route path="analytics" element={<TenantDashboardPage />} />
-                  <Route path="reports" element={<TenantDashboardPage />} />
-                  <Route path="profile" element={<Profile />} />
-                  <Route path="settings" element={<Settings />} />
-                </Route>
+                      <Route path="bidding" element={<BiddingManagement />} />
+                      <Route path="disputes" element={<DisputeManagement />} />
+                      <Route path="financial" element={<FinancialAdminDashboard />} />
+                      <Route path="transaction-monitoring" element={<TransactionFlow />} />
+                      <Route path="dispute-management" element={<DisputeResolution />} />
+                      <Route path="escrow-management" element={<EscrowManagement />} />
+                      <Route path="users" element={<AdminUsers />} />
+                      <Route path="trucks" element={<AdminTrucks />} />
+                      <Route path="loads" element={<AdminLoads />} />
+                      <Route path="trips" element={<AdminTrips />} />
+                      <Route path="tenants" element={<AdminTenants />} />
+                      <Route path="routes" element={<AdminRoutes />} />
+                      <Route path="profile" element={<Profile />} />
+                      <Route path="settings" element={<Settings />} />
+                      <Route path="permissions" element={<PermissionManagement />} />
+                      <Route path="roles" element={<RoleManagement />} />
+                      <Route path="monitoring" element={<SystemMonitoring />} />
+                      <Route path="activity-logs" element={<ActivityLogs />} />
+                      <Route path="enhanced-permissions" element={<EnhancedPermissions />} />
+                      <Route path="advanced-settings" element={<AdvancedSettings />} />
+                    </Route>
 
-                {/* Lender Routes */}
-                <Route path="/lender" element={<LenderLayout />}>
-                  <Route index element={<LenderDashboardPage />} />
-                  <Route path="requests" element={<EnhancedLoanRequestsPage />} />
-                  <Route path="policy" element={<LenderPolicySettingsPage />} />
-                  <Route path="active" element={<ActiveLoansPage />} />
-                  <Route path="disbursements" element={<DisbursementsPage />} />
-                  <Route path="repayments" element={<RepaymentsPage />} />
-                  <Route path="analytics" element={<PortfolioAnalyticsPage />} />
-                  <Route path="risk" element={<RiskAnalysisPage />} />
-                  <Route path="interest" element={<InterestTrackingPage />} />
-                  <Route path="reports" element={<FinancialReportsPage />} />
-                  <Route path="borrowers" element={<BorrowersManagementPage />} />
-                  <Route path="policies" element={<LendingPoliciesPage />} />
-                  <Route path="credit" element={<CreditAssessmentPage />} />
-                  <Route path="history" element={<TransactionsHistoryPage />} />
-                  <Route path="profile" element={<LenderProfilePage />} />
-                  <Route path="notifications" element={<LenderNotificationsPage />} />
-                  <Route path="team" element={<LenderTeamManagementPage />} />
-                  <Route path="support" element={<LenderSupportPage />} />
-                  <Route path="financial" element={<UnifiedFinancialManagement />} />
-                  <Route path="financial-info" element={<UnifiedFinancialManagement />} />
-                  <Route path="receipts" element={<ReceiptViewer />} />
-                </Route>
+                    {/* Tenant Admin Routes */}
+                    <Route path="/tenant-admin" element={<TenantAdminLayout />}>
+                      <Route index element={<TenantDashboardPage />} />
+                      <Route path="fleet" element={<TenantFleetManagement />} />
+                      <Route path="cargo" element={<TenantAdminCargo />} />
+                      <Route path="drivers" element={<TenantAdminDrivers />} />
+                      <Route path="lenders" element={<TenantLenderManagementPage />} />
+                      <Route path="routes" element={<TenantAdminRoutes />} />
+                      <Route path="trips" element={<TenantAdminTrips />} />
+                      <Route path="financial" element={<TenantDashboardPage />} />
+                      <Route path="analytics" element={<TenantDashboardPage />} />
+                      <Route path="reports" element={<TenantDashboardPage />} />
+                      <Route path="profile" element={<Profile />} />
+                      <Route path="settings" element={<Settings />} />
+                    </Route>
 
-                {/* Broker Routes */}
-                <Route path="/dashboard/broker" element={<BrokerLayout />}>
-                  <Route index element={<BrokerDashboard />} />
-                  <Route path="loads" element={<BrokerLoadsPage />} />
-                  <Route path="loads/:loadId" element={<BrokerLoadDetail />} />
-                  <Route path="loads/:loadId/tracking" element={<LoadTracking />} />
-                  <Route path="discovery" element={<CargoDiscovery />} />
-                  <Route path="deals" element={<DealFacilitation />} />
-                  <Route path="commissions" element={<CommissionsPage />} />
-                  <Route path="statistics" element={<BrokerAnalytics />} />
-                  <Route path="analytics" element={<BrokerAnalytics />} />
-                  <Route path="profile" element={<BrokerProfile />} />
-                  <Route path="notifications" element={<UnifiedNotificationManagement />} />
-                  <Route path="settings" element={<BrokerProfile />} />
-                  {/* Critical Features Routes */}
-                  <Route path="contracts" element={<ContractManagement />} />
-                  <Route path="insurance" element={<InsuranceVerification />} />
-                  <Route path="disputes" element={<BrokerDisputeResolution />} />
-                  <Route path="escrow" element={<BrokerEscrowManagement />} />
-                  <Route path="documents" element={<DocumentManagement />} />
-                  {/* Intelligence Features Routes */}
-                  <Route path="smart-matching" element={<SmartMatching />} />
-                  <Route path="market-intelligence" element={<MarketIntelligence />} />
-                  <Route path="credit-management" element={<CreditManagement />} />
-                  <Route path="multi-stop" element={<MultiStopManagement />} />
-                  <Route path="performance" element={<PerformanceAnalytics />} />
-                </Route>
+                    {/* Lender Routes */}
+                    <Route path="/lender" element={<LenderLayout />}>
+                      <Route index element={<LenderDashboardPage />} />
+                      <Route path="requests" element={<EnhancedLoanRequestsPage />} />
+                      <Route path="policy" element={<LenderPolicySettingsPage />} />
+                      <Route path="active" element={<ActiveLoansPage />} />
+                      <Route path="disbursements" element={<DisbursementsPage />} />
+                      <Route path="repayments" element={<RepaymentsPage />} />
+                      <Route path="analytics" element={<PortfolioAnalyticsPage />} />
+                      <Route path="risk" element={<RiskAnalysisPage />} />
+                      <Route path="interest" element={<InterestTrackingPage />} />
+                      <Route path="reports" element={<FinancialReportsPage />} />
+                      <Route path="borrowers" element={<BorrowersManagementPage />} />
+                      <Route path="policies" element={<LendingPoliciesPage />} />
+                      <Route path="credit" element={<CreditAssessmentPage />} />
+                      <Route path="history" element={<TransactionsHistoryPage />} />
+                      <Route path="profile" element={<LenderProfilePage />} />
+                      <Route path="notifications" element={<LenderNotificationsPage />} />
+                      <Route path="team" element={<LenderTeamManagementPage />} />
+                      <Route path="support" element={<LenderSupportPage />} />
+                      <Route path="financial" element={<UnifiedFinancialManagement />} />
+                      <Route path="financial-info" element={<UnifiedFinancialManagement />} />
+                      <Route path="receipts" element={<ReceiptViewer />} />
+                    </Route>
 
-                {/* Alias: support /dashboard/admin by redirecting to /admin */}
-                <Route path="/dashboard/admin/*" element={<Navigate to="/admin" replace />} />
-              </Routes>
-            </Suspense>
-          </Router>
+                    {/* Broker Routes */}
+                    <Route path="/dashboard/broker" element={<BrokerLayout />}>
+                      <Route index element={<BrokerDashboard />} />
+                      <Route path="loads" element={<BrokerLoadsPage />} />
+                      <Route path="loads/:loadId" element={<BrokerLoadDetail />} />
+                      <Route path="loads/:loadId/tracking" element={<LoadTracking />} />
+                      <Route path="discovery" element={<CargoDiscovery />} />
+                      <Route path="deals" element={<DealFacilitation />} />
+                      <Route path="commissions" element={<CommissionsPage />} />
+                      <Route path="statistics" element={<BrokerAnalytics />} />
+                      <Route path="analytics" element={<BrokerAnalytics />} />
+                      <Route path="profile" element={<BrokerProfile />} />
+                      <Route path="notifications" element={<UnifiedNotificationManagement />} />
+                      <Route path="settings" element={<BrokerProfile />} />
+                      {/* Critical Features Routes */}
+                      <Route path="contracts" element={<ContractManagement />} />
+                      <Route path="insurance" element={<InsuranceVerification />} />
+                      <Route path="disputes" element={<BrokerDisputeResolution />} />
+                      <Route path="escrow" element={<BrokerEscrowManagement />} />
+                      <Route path="documents" element={<DocumentManagement />} />
+                      {/* Intelligence Features Routes */}
+                      <Route path="smart-matching" element={<SmartMatching />} />
+                      <Route path="market-intelligence" element={<MarketIntelligence />} />
+                      <Route path="credit-management" element={<CreditManagement />} />
+                      <Route path="multi-stop" element={<MultiStopManagement />} />
+                      <Route path="performance" element={<PerformanceAnalytics />} />
+                    </Route>
+
+                    {/* Alias: support /dashboard/admin by redirecting to /admin */}
+                    <Route path="/dashboard/admin/*" element={<Navigate to="/admin" replace />} />
+                  </Routes>
+                </Suspense>
+              </Router>
+            </SocketProvider>
+          </PermissionProvider>
         </AuthProvider>
         <Toaster
           position="bottom-right"

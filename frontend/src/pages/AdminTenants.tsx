@@ -4,7 +4,8 @@ import { createTenant, fetchTenants, getTenantById, updateTenant } from '../serv
 import toast from 'react-hot-toast';
 import TenantSettingsModal from '../components/TenantSettingsModal';
 import ManageUsersModal from '../components/ManageUsersModal';
-import { 
+import TenantKYCModal from '../components/TenantKYCModal';
+import {
   FaBuilding, FaEdit, FaPlus, FaSearch, FaDownload,
   FaEye, FaCheck, FaTimes, FaBan,
   FaSort, FaGlobe, FaUsers, FaChartLine,
@@ -27,14 +28,16 @@ interface Tenant {
   contactEmail?: string;
   adminName?: string;
   location?: string;
+  kycStatus?: 'PENDING' | 'SUBMITTED' | 'APPROVED' | 'REJECTED' | 'INCOMPLETE';
+  kycData?: any;
 }
 
 const AdminTenants: React.FC = () => {
   const qc = useQueryClient();
-  
+
   // Fetch tenants from API
-  const { data: tenantsData, isLoading: isLoadingTenants, error: tenantsError } = useQuery({ 
-    queryKey: ['admin-tenants'], 
+  const { data: tenantsData, isLoading: isLoadingTenants, error: tenantsError } = useQuery({
+    queryKey: ['admin-tenants'],
     queryFn: async () => {
       try {
         const result = await fetchTenants();
@@ -52,7 +55,7 @@ const AdminTenants: React.FC = () => {
   const [domain, setDomain] = useState('');
   const [contactEmail, setContactEmail] = useState('');
   const [plan, setPlan] = useState<'starter' | 'professional' | 'enterprise'>('starter');
-  
+
   // UI state
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -69,6 +72,8 @@ const AdminTenants: React.FC = () => {
   const [showManageUsersModal, setShowManageUsersModal] = useState(false);
   const [manageUsersTenantId, setManageUsersTenantId] = useState<string | null>(null);
   const [manageUsersTenantName, setManageUsersTenantName] = useState<string>('');
+  const [showKYCModal, setShowKYCModal] = useState(false);
+  const [kycTenant, setKYCTenant] = useState<Tenant | null>(null);
 
   // Edit form state
   const [editName, setEditName] = useState('');
@@ -112,7 +117,7 @@ const AdminTenants: React.FC = () => {
     // Backend returns { success: true, data: [...tenants], message: "..." }
     // Check multiple possible response structures
     let tenantsArray: any[] = [];
-    
+
     if (tenantsData?.data && Array.isArray(tenantsData.data)) {
       tenantsArray = tenantsData.data;
     } else if (tenantsData?.tenants && Array.isArray(tenantsData.tenants)) {
@@ -120,14 +125,14 @@ const AdminTenants: React.FC = () => {
     } else if (Array.isArray(tenantsData)) {
       tenantsArray = tenantsData;
     }
-    
+
     if (!tenantsArray || tenantsArray.length === 0) {
       console.log('⚠️ No tenants found in response:', tenantsData);
       return [];
     }
-    
+
     console.log(`✅ Found ${tenantsArray.length} tenants to display`);
-    
+
     const transformed = tenantsArray.map((tenant: any) => {
       const mapped = {
         id: tenant.id,
@@ -144,26 +149,28 @@ const AdminTenants: React.FC = () => {
         contactEmail: tenant.contactEmail || '',
         adminName: '', // Will be populated from admin user relation if available
         location: tenant.city && tenant.country ? `${tenant.city}, ${tenant.country}` : tenant.country || tenant.city || '',
+        kycStatus: tenant.kycStatus || 'PENDING',
+        kycData: tenant.kycData || {},
       };
       return mapped;
     });
-    
+
     return transformed;
   }, [tenantsData]);
 
   const { mutate, isPending: isCreating } = useMutation({
     mutationFn: (payload: any) => createTenant(payload),
-    onSuccess: () => { 
-      qc.invalidateQueries({ queryKey: ['admin-tenants'] }); 
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['admin-tenants'] });
       resetForm();
       setShowCreateModal(false);
       toast.success('Tenant created successfully!');
     },
     onError: (error: any) => {
-      const errorMessage = error?.response?.data?.message || 
-                          error?.response?.data?.error || 
-                          error?.message || 
-                          'Failed to create tenant. Please try again.';
+      const errorMessage = error?.response?.data?.message ||
+        error?.response?.data?.error ||
+        error?.message ||
+        'Failed to create tenant. Please try again.';
       toast.error(errorMessage);
     },
   });
@@ -187,10 +194,10 @@ const AdminTenants: React.FC = () => {
       toast.success('Tenant updated successfully!');
     },
     onError: (error: any) => {
-      const errorMessage = error?.response?.data?.message || 
-                          error?.response?.data?.error || 
-                          error?.message || 
-                          'Failed to update tenant. Please try again.';
+      const errorMessage = error?.response?.data?.message ||
+        error?.response?.data?.error ||
+        error?.message ||
+        'Failed to update tenant. Please try again.';
       toast.error(errorMessage);
     },
   });
@@ -266,8 +273,8 @@ const AdminTenants: React.FC = () => {
   const filteredTenants = tenants
     .filter((tenant: Tenant) => {
       const matchesSearch = tenant.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          tenant.subdomain.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          tenant.contactEmail?.toLowerCase().includes(searchTerm.toLowerCase());
+        tenant.subdomain.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        tenant.contactEmail?.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesStatus = statusFilter === 'all' || tenant.status === statusFilter;
       const matchesPlan = planFilter === 'all' || tenant.plan === planFilter;
       return matchesSearch && matchesStatus && matchesPlan;
@@ -310,11 +317,20 @@ const AdminTenants: React.FC = () => {
     }
   };
 
+  const getKYCStatusColor = (status: string) => {
+    switch (status) {
+      case 'APPROVED': return 'bg-green-100 text-green-700';
+      case 'REJECTED': return 'bg-red-100 text-red-700';
+      case 'SUBMITTED': return 'bg-blue-100 text-blue-700';
+      default: return 'bg-gray-100 text-gray-600';
+    }
+  };
+
   const handleCreateTenant = () => {
     // Use default admin names since admin info is stored in User entity, not Tenant
     const adminFirstName = 'Admin';
     const adminLastName = 'User';
-    
+
     // Generate a secure temporary password (8+ chars as required by backend)
     // Note: In production, consider using a password reset email flow instead
     const generateTempPassword = () => {
@@ -326,7 +342,7 @@ const AdminTenants: React.FC = () => {
       return password;
     };
     const tempPassword = generateTempPassword();
-    
+
     mutate({
       name: name.trim(),
       subdomain: subdomain.trim().toLowerCase(),
@@ -399,7 +415,7 @@ const AdminTenants: React.FC = () => {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-          
+
           <select
             className="px-2 py-1.5 text-xs border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent"
             value={statusFilter}
@@ -461,7 +477,7 @@ const AdminTenants: React.FC = () => {
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
                   <th className="px-2 py-1.5 text-left text-xs font-semibold text-gray-900">
-                    <button 
+                    <button
                       className="flex items-center gap-1"
                       onClick={() => {
                         setSortBy('name');
@@ -475,6 +491,7 @@ const AdminTenants: React.FC = () => {
                   <th className="px-2 py-1.5 text-left text-xs font-semibold text-gray-900">Domain</th>
                   <th className="px-2 py-1.5 text-left text-xs font-semibold text-gray-900">Plan</th>
                   <th className="px-2 py-1.5 text-left text-xs font-semibold text-gray-900">Status</th>
+                  <th className="px-2 py-1.5 text-left text-xs font-semibold text-gray-900">KYC</th>
                   <th className="px-2 py-1.5 text-left text-xs font-semibold text-gray-900">Users</th>
                   <th className="px-2 py-1.5 text-left text-xs font-semibold text-gray-900">Revenue</th>
                   <th className="px-2 py-1.5 text-left text-xs font-semibold text-gray-900">Last Activity</th>
@@ -483,89 +500,101 @@ const AdminTenants: React.FC = () => {
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {filteredTenants.map((tenant: Tenant) => (
-                <tr key={tenant.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-2 py-1.5">
-                    <div className="flex items-center gap-1.5">
-                      <div className="w-8 h-8 bg-gray-700 rounded-lg flex items-center justify-center">
-                        <FaBuilding className="text-white text-xs" />
+                  <tr key={tenant.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-2 py-1.5">
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-8 h-8 bg-gray-700 rounded-lg flex items-center justify-center">
+                          <FaBuilding className="text-white text-xs" />
+                        </div>
+                        <div>
+                          <div className="font-semibold text-gray-900 text-xs">{tenant.name}</div>
+                          <div className="text-[10px] text-gray-500">{tenant.adminName}</div>
+                          <div className="text-[10px] text-gray-400">{tenant.location}</div>
+                        </div>
                       </div>
-                      <div>
-                        <div className="font-semibold text-gray-900 text-xs">{tenant.name}</div>
-                        <div className="text-[10px] text-gray-500">{tenant.adminName}</div>
-                        <div className="text-[10px] text-gray-400">{tenant.location}</div>
+                    </td>
+                    <td className="px-2 py-1.5">
+                      <div className="flex items-center gap-0.5">
+                        <FaGlobe className="text-gray-400 text-xs" />
+                        <span className="text-xs text-gray-900">{tenant.domain}</span>
                       </div>
-                    </div>
-                  </td>
-                  <td className="px-2 py-1.5">
-                    <div className="flex items-center gap-0.5">
-                      <FaGlobe className="text-gray-400 text-xs" />
-                      <span className="text-xs text-gray-900">{tenant.domain}</span>
-                    </div>
-                    <div className="text-[10px] text-gray-500">{tenant.contactEmail}</div>
-                  </td>
-                  <td className="px-2 py-1.5">
-                    <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium ${getPlanColor(tenant.plan)}`}>
-                      {tenant.plan.charAt(0).toUpperCase() + tenant.plan.slice(1)}
-                    </span>
-                  </td>
-                  <td className="px-2 py-1.5">
-                    <div className="flex items-center gap-1">
-                      <span className="text-[10px]">{getStatusIcon(tenant.status)}</span>
-                      <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium ${getStatusColor(tenant.status)}`}>
-                        {tenant.status.charAt(0).toUpperCase() + tenant.status.slice(1)}
+                      <div className="text-[10px] text-gray-500">{tenant.contactEmail}</div>
+                    </td>
+                    <td className="px-2 py-1.5">
+                      <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium ${getPlanColor(tenant.plan)}`}>
+                        {tenant.plan.charAt(0).toUpperCase() + tenant.plan.slice(1)}
                       </span>
-                    </div>
-                  </td>
-                  <td className="px-2 py-1.5">
-                    <div className="text-xs text-gray-900">{tenant.userCount}</div>
-                    <div className="text-[10px] text-gray-500">{tenant.trucksCount} trucks</div>
-                  </td>
-                  <td className="px-2 py-1.5">
-                    <div className="text-xs font-semibold text-gray-900">
-                      ${tenant.revenue?.toLocaleString()}
-                    </div>
-                  </td>
-                  <td className="px-2 py-1.5">
-                    <div className="text-xs text-gray-900">
-                      {new Date(tenant.lastActivity).toLocaleDateString()}
-                    </div>
-                    <div className="text-[10px] text-gray-500">
-                      {new Date(tenant.lastActivity).toLocaleTimeString()}
-                    </div>
-                  </td>
-                  <td className="px-2 py-1.5">
-                    <div className="flex items-center gap-1">
-                      <button 
-                        onClick={() => {
-                          setSelectedTenant(tenant);
-                          setShowDetailsModal(true);
+                    </td>
+                    <td className="px-2 py-1.5">
+                      <div className="flex items-center gap-1">
+                        <span className="text-[10px]">{getStatusIcon(tenant.status)}</span>
+                        <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium ${getStatusColor(tenant.status)}`}>
+                          {tenant.status.charAt(0).toUpperCase() + tenant.status.slice(1)}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-2 py-1.5">
+                      <span
+                        className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium cursor-pointer ${getKYCStatusColor(tenant.kycStatus || 'PENDING')}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setKYCTenant(tenant);
+                          setShowKYCModal(true);
                         }}
-                        className="p-1 text-gray-600 hover:bg-gray-100 rounded transition-colors"
-                        title="View Details"
                       >
-                        <FaEye className="w-3 h-3" />
-                      </button>
-                      <button 
-                        onClick={() => handleEditTenant(tenant)}
-                        className="p-1 text-gray-600 hover:bg-gray-50 rounded transition-colors"
-                        title="Edit"
-                      >
-                        <FaEdit className="w-3 h-3" />
-                      </button>
-                      <button 
-                        onClick={() => {
-                          setSettingsTenantId(tenant.id);
-                          setShowSettingsModal(true);
-                        }}
-                        className="p-1 text-gray-600 hover:bg-gray-50 rounded transition-colors"
-                        title="Settings"
-                      >
-                        <FaCog className="w-3 h-3" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                        {tenant.kycStatus || 'PENDING'}
+                      </span>
+                    </td>
+                    <td className="px-2 py-1.5">
+                      <div className="text-xs text-gray-900">{tenant.userCount}</div>
+                      <div className="text-[10px] text-gray-500">{tenant.trucksCount} trucks</div>
+                    </td>
+                    <td className="px-2 py-1.5">
+                      <div className="text-xs font-semibold text-gray-900">
+                        ${tenant.revenue?.toLocaleString()}
+                      </div>
+                    </td>
+                    <td className="px-2 py-1.5">
+                      <div className="text-xs text-gray-900">
+                        {new Date(tenant.lastActivity).toLocaleDateString()}
+                      </div>
+                      <div className="text-[10px] text-gray-500">
+                        {new Date(tenant.lastActivity).toLocaleTimeString()}
+                      </div>
+                    </td>
+                    <td className="px-2 py-1.5">
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => {
+                            setSelectedTenant(tenant);
+                            setShowDetailsModal(true);
+                          }}
+                          className="p-1 text-gray-600 hover:bg-gray-100 rounded transition-colors"
+                          title="View Details"
+                        >
+                          <FaEye className="w-3 h-3" />
+                        </button>
+                        <button
+                          onClick={() => handleEditTenant(tenant)}
+                          className="p-1 text-gray-600 hover:bg-gray-50 rounded transition-colors"
+                          title="Edit"
+                        >
+                          <FaEdit className="w-3 h-3" />
+                        </button>
+                        <button
+                          onClick={() => {
+                            setSettingsTenantId(tenant.id);
+                            setShowSettingsModal(true);
+                          }}
+                          className="p-1 text-gray-600 hover:bg-gray-50 rounded transition-colors"
+                          title="Settings"
+                        >
+                          <FaCog className="w-3 h-3" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
@@ -590,7 +619,7 @@ const AdminTenants: React.FC = () => {
                 </button>
               </div>
             </div>
-            
+
             <div className="p-3 space-y-3">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                 <div>
@@ -605,7 +634,7 @@ const AdminTenants: React.FC = () => {
                     onChange={(e) => setName(e.target.value)}
                   />
                 </div>
-                
+
                 <div>
                   <label className="block text-xs font-semibold text-gray-700 mb-1">
                     Subdomain *
@@ -640,7 +669,7 @@ const AdminTenants: React.FC = () => {
                     onChange={(e) => setDomain(e.target.value)}
                   />
                 </div>
-                
+
                 <div>
                   <label className="block text-xs font-semibold text-gray-700 mb-1">
                     Contact Email *
@@ -663,11 +692,10 @@ const AdminTenants: React.FC = () => {
                   {['starter', 'professional', 'enterprise'].map((planOption) => (
                     <div
                       key={planOption}
-                      className={`border-2 rounded-lg p-2 cursor-pointer transition-all ${
-                        plan === planOption 
-                          ? 'border-gray-500 bg-gray-50' 
-                          : 'border-gray-200 hover:border-gray-300'
-                      }`}
+                      className={`border-2 rounded-lg p-2 cursor-pointer transition-all ${plan === planOption
+                        ? 'border-gray-500 bg-gray-50'
+                        : 'border-gray-200 hover:border-gray-300'
+                        }`}
                       onClick={() => setPlan(planOption as 'starter' | 'professional' | 'enterprise')}
                     >
                       <div className="text-center">
@@ -738,7 +766,7 @@ const AdminTenants: React.FC = () => {
                 </button>
               </div>
             </div>
-            
+
             {isLoadingTenantDetails ? (
               <div className="p-3 flex items-center justify-center">
                 <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-600"></div>
@@ -759,7 +787,7 @@ const AdminTenants: React.FC = () => {
                       onChange={(e) => setEditName(e.target.value)}
                     />
                   </div>
-                  
+
                   <div>
                     <label className="block text-xs font-semibold text-gray-700 mb-1">
                       Subdomain *
@@ -794,7 +822,7 @@ const AdminTenants: React.FC = () => {
                       onChange={(e) => setEditDomain(e.target.value)}
                     />
                   </div>
-                  
+
                   <div>
                     <label className="block text-xs font-semibold text-gray-700 mb-1">
                       Contact Email *
@@ -822,7 +850,7 @@ const AdminTenants: React.FC = () => {
                       onChange={(e) => setEditContactPhone(e.target.value)}
                     />
                   </div>
-                  
+
                   <div>
                     <label className="block text-xs font-semibold text-gray-700 mb-1">
                       Website URL
@@ -863,7 +891,7 @@ const AdminTenants: React.FC = () => {
                       onChange={(e) => setEditAddress(e.target.value)}
                     />
                   </div>
-                  
+
                   <div>
                     <label className="block text-xs font-semibold text-gray-700 mb-1">
                       City
@@ -891,7 +919,7 @@ const AdminTenants: React.FC = () => {
                       onChange={(e) => setEditState(e.target.value)}
                     />
                   </div>
-                  
+
                   <div>
                     <label className="block text-xs font-semibold text-gray-700 mb-1">
                       Country
@@ -904,7 +932,7 @@ const AdminTenants: React.FC = () => {
                       onChange={(e) => setEditCountry(e.target.value)}
                     />
                   </div>
-                  
+
                   <div>
                     <label className="block text-xs font-semibold text-gray-700 mb-1">
                       Postal Code
@@ -927,11 +955,10 @@ const AdminTenants: React.FC = () => {
                     {['starter', 'professional', 'enterprise'].map((planOption) => (
                       <div
                         key={planOption}
-                        className={`border-2 rounded-lg p-2 cursor-pointer transition-all ${
-                          editPlan === planOption 
-                            ? 'border-gray-500 bg-gray-50' 
-                            : 'border-gray-200 hover:border-gray-300'
-                        }`}
+                        className={`border-2 rounded-lg p-2 cursor-pointer transition-all ${editPlan === planOption
+                          ? 'border-gray-500 bg-gray-50'
+                          : 'border-gray-200 hover:border-gray-300'
+                          }`}
                         onClick={() => setEditPlan(planOption as 'starter' | 'professional' | 'enterprise')}
                       >
                         <div className="text-center">
@@ -996,7 +1023,7 @@ const AdminTenants: React.FC = () => {
                 </button>
               </div>
             </div>
-            
+
             <div className="p-3 space-y-3">
               {/* Status and Plan */}
               <div className="flex items-center justify-between flex-wrap gap-2">
@@ -1032,7 +1059,7 @@ const AdminTenants: React.FC = () => {
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="bg-gray-50 rounded-lg p-2 border border-gray-200">
                   <div className="flex items-center space-x-2">
                     <FaTruck className="text-gray-600 text-xs" />
@@ -1042,7 +1069,7 @@ const AdminTenants: React.FC = () => {
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="bg-gray-50 rounded-lg p-2 border border-gray-200">
                   <div className="flex items-center space-x-2">
                     <FaChartLine className="text-gray-600 text-xs" />
@@ -1052,7 +1079,7 @@ const AdminTenants: React.FC = () => {
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="bg-gray-50 rounded-lg p-2 border border-gray-200">
                   <div className="flex items-center space-x-2">
                     <FaCalendarAlt className="text-gray-600 text-xs" />
@@ -1093,11 +1120,11 @@ const AdminTenants: React.FC = () => {
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="space-y-2">
                   <h3 className="text-xs font-semibold text-gray-900">Quick Actions</h3>
                   <div className="space-y-2">
-                    <button 
+                    <button
                       onClick={() => {
                         setSettingsTenantId(selectedTenant.id);
                         setShowSettingsModal(true);
@@ -1107,7 +1134,7 @@ const AdminTenants: React.FC = () => {
                       <FaCog className="text-gray-400 w-3 h-3" />
                       <span>Tenant Settings</span>
                     </button>
-                    <button 
+                    <button
                       onClick={() => {
                         setManageUsersTenantId(selectedTenant.id);
                         setManageUsersTenantName(selectedTenant.name);
@@ -1156,6 +1183,21 @@ const AdminTenants: React.FC = () => {
             setShowManageUsersModal(false);
             setManageUsersTenantId(null);
             setManageUsersTenantName('');
+          }}
+        />
+      )}
+
+      {/* KYC Modal */}
+      {showKYCModal && kycTenant && (
+        <TenantKYCModal
+          tenantId={kycTenant.id}
+          tenantName={kycTenant.name}
+          currentStatus={kycTenant.kycStatus || 'PENDING'}
+          kycData={kycTenant.kycData}
+          isOpen={showKYCModal}
+          onClose={() => {
+            setShowKYCModal(false);
+            setKYCTenant(null);
           }}
         />
       )}

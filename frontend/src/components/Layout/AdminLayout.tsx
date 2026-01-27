@@ -17,13 +17,18 @@ const AdminLayoutContent: React.FC = () => {
 
   if (isLoading || !user) return null;
 
-  // Check if we're on the index dashboard route
-  const isDashboardIndex = location.pathname === '/admin' || 
-                           location.pathname === '/admin/';
+  // Check if we're on a route that manages its own layout (like the redesigned dashboard & users page)
+  const isCustomLayout = location.pathname === '/admin' ||
+    location.pathname === '/admin/' ||
+    location.pathname === '/admin/users' ||
+    location.pathname === '/admin/monitoring' ||
+    location.pathname === '/admin/activity-logs' ||
+    location.pathname === '/admin/enhanced-permissions' ||
+    location.pathname === '/admin/advanced-settings';
 
   return (
     <>
-      {isDashboardIndex ? (
+      {isCustomLayout ? (
         // Dashboard index route has its own layout with welcome section (includes header/footer)
         <div className="min-h-screen bg-gray-50 flex flex-col">
           <main className="flex-1 relative z-0">
