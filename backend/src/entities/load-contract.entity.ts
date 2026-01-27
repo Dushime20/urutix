@@ -47,17 +47,17 @@ export class LoadContract {
   @Column('uuid')
   tenantId: string;
 
-  @Column('uuid')
-  brokerId: string;
+  @Column('uuid', { nullable: true })
+  brokerId?: string;
 
-  @Column('uuid')
-  loadId: string;
+  @Column('uuid', { nullable: true })
+  loadId?: string;
 
   @Column('uuid', { nullable: true })
   tripId?: string;
 
-  @Column('uuid')
-  cargoOwnerId: string;
+  @Column('uuid', { nullable: true })
+  cargoOwnerId?: string;
 
   @Column('uuid', { nullable: true })
   transporterId?: string;
@@ -77,17 +77,17 @@ export class LoadContract {
   status: ContractStatus;
 
   // Contract Terms
-  @Column('decimal', { precision: 15, scale: 2 })
-  agreedRate: number;
+  @Column('decimal', { precision: 15, scale: 2, nullable: true })
+  agreedRate?: number;
 
   @Column('varchar', { length: 3, default: 'KES' })
   currencyCode: string;
 
-  @Column('decimal', { precision: 5, scale: 2 })
-  commissionRate: number;
+  @Column('decimal', { precision: 5, scale: 2, nullable: true })
+  commissionRate?: number;
 
-  @Column('decimal', { precision: 15, scale: 2 })
-  commissionAmount: number;
+  @Column('decimal', { precision: 15, scale: 2, nullable: true })
+  commissionAmount?: number;
 
   @Column('text', { nullable: true })
   paymentTerms: string; // e.g., "Net 30", "50% advance, 50% on delivery"
@@ -108,11 +108,11 @@ export class LoadContract {
   specialInstructions?: string;
 
   // Contract Content
-  @Column('text')
-  contractContent: string; // Full contract text/template
+  @Column('text', { nullable: true })
+  contractContent?: string; // Full contract text/template
 
-  @Column('jsonb', { default: {} })
-  contractData: Record<string, any>; // Structured contract data
+  @Column('jsonb', { default: {}, nullable: true })
+  contractData?: Record<string, any>; // Structured contract data
 
   // Signature Tracking
   @Column('jsonb', { nullable: true })
@@ -143,8 +143,8 @@ export class LoadContract {
   fullySignedAt?: Date;
 
   // Negotiation History
-  @Column('jsonb', { default: [] })
-  negotiationHistory: Array<{
+  @Column('jsonb', { default: [], nullable: true })
+  negotiationHistory?: Array<{
     timestamp: Date;
     changedBy: string;
     changes: Record<string, any>;
@@ -155,15 +155,15 @@ export class LoadContract {
   @Column('date', { nullable: true })
   expiresAt?: Date;
 
-  @Column('boolean', { default: false })
-  isTemplate: boolean;
+  @Column('boolean', { default: false, nullable: true })
+  isTemplate?: boolean;
 
   @Column('uuid', { nullable: true })
   templateId?: string; // If created from template
 
   // Metadata
-  @Column('jsonb', { default: {} })
-  metadata: Record<string, any>;
+  @Column('jsonb', { default: {}, nullable: true })
+  metadata?: Record<string, any>;
 
   @CreateDateColumn()
   createdAt: Date;

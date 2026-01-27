@@ -161,7 +161,7 @@ export const databaseConfig: TypeOrmModuleOptions = {
     FuelLog,
 
   ],
-  synchronize: true,
+  synchronize: false,
   autoLoadEntities: false,
   logging: process.env.NODE_ENV === 'development',
   ssl:

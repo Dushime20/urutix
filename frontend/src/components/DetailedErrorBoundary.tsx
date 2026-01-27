@@ -38,7 +38,6 @@ export class DetailedErrorBoundary extends React.Component<
                 </div>
             );
         }
-
         return this.props.children;
     }
 }

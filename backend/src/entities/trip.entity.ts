@@ -44,7 +44,7 @@ export class Trip {
   @Column('uuid')
   truckId: string;
 
-  @Column('uuid')
+  @Column('uuid', { nullable: true })
   driverId: string;
 
   @Column({ length: 50, unique: true })

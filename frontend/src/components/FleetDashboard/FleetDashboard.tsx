@@ -28,6 +28,7 @@ import { TruckAnalytics } from './TruckAnalytics';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import { TrucksList } from './TrucksList';
 import { TruckMatches } from './TruckMatches';
+import { TruckOwnerRecentActivities } from './TruckOwnerRecentActivities';
 
 import { useCargoOwnerLayout } from '../../contexts/CargoOwnerLayoutContext';
 
@@ -483,6 +484,11 @@ export const FleetDashboard: React.FC = () => {
                     </div>
                   </div>
                 </div>
+              </section>
+
+              {/* Recent Activities Card */}
+              <section className="mt-8">
+                <TruckOwnerRecentActivities />
               </section>
 
               {/* Fleet Status Breakdown */}
