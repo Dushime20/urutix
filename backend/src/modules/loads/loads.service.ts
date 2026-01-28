@@ -846,6 +846,11 @@ export class LoadsService {
 
       const queryBuilder = this.buildLoadsQuery(tenantId, userId, filters, role);
 
+      // Join receiver data
+      queryBuilder
+        .leftJoinAndSelect('load.receiver', 'receiver')
+        .leftJoinAndSelect('receiver.profile', 'receiverProfile');
+
       // Apply sorting
       queryBuilder.orderBy(`load.${sortBy}`, sortOrder);
 
@@ -969,6 +974,8 @@ export class LoadsService {
         .leftJoinAndSelect('load.cargoOwner', 'cargoOwner')
         .leftJoinAndSelect('cargoOwner.profile', 'cargoOwnerProfile')
         .leftJoinAndSelect('load.broker', 'broker')
+        .leftJoinAndSelect('load.receiver', 'receiver')
+        .leftJoinAndSelect('receiver.profile', 'receiverProfile')
         .where('load.id = :id', { id })
         .andWhere('load.tenantId = :tenantId', { tenantId });
 
@@ -3984,6 +3991,19 @@ export class LoadsService {
       brokerId: load.brokerId,
       brokerCommissionRate: load.brokerCommissionRate,
       brokerCommissionAmount: load.brokerCommissionAmount,
+      receiverId: load.receiverId,
+      receiver: load.receiver
+        ? {
+          id: load.receiver.id,
+          email: load.receiver.email,
+          profile: load.receiver.profile
+            ? {
+              firstName: load.receiver.profile.firstName,
+              lastName: load.receiver.profile.lastName,
+            }
+            : undefined,
+        }
+        : undefined,
       pickupLocation: (() => {
         // Try new format: locations JSONB array
         if (load.locations && Array.isArray(load.locations)) {

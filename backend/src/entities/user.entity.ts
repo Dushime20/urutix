@@ -41,9 +41,9 @@ export enum UserStatus {
 }
 
 @Entity('users')
-@Index(['tenantId', 'email'], { unique: true, where: 'deleted_at IS NULL' })
+@Index(['tenantId', 'email', 'role'], { unique: true, where: 'deleted_at IS NULL' })
 @Index(['role', 'status'])
-@Index(['email'], { unique: true })
+@Index(['email']) // Removed unique constraint
 export class User {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -51,7 +51,7 @@ export class User {
   @Column('uuid')
   tenantId: string;
 
-  @Column({ unique: true })
+  @Column() // Removed unique: true
   email: string;
 
   @Column({ nullable: true })

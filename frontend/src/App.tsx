@@ -32,6 +32,7 @@ import DriverPasswordSetup from './pages/DriverPasswordSetup';
 import TenantPasswordSetup from './pages/TenantPasswordSetup';
 import LenderPasswordSetup from './pages/LenderPasswordSetup';
 import ReceiverPasswordSetup from './pages/ReceiverPasswordSetup';
+const RoleSelectionPage = lazy(() => import('./pages/RoleSelectionPage'));
 
 // Lazy load all page components to reduce initial bundle size
 const CargoList = lazy(() => import('./pages/dashboard/cargos/list'));
@@ -172,6 +173,7 @@ function App() {
               <Routes>
                 <Route path="/" element={<Home />} />
                 <Route path="/auth" element={<Auth />} />
+                <Route path="/select-role" element={<RoleSelectionPage />} />
                 <Route path="/driver/setup-password" element={<DriverPasswordSetup />} />
                 <Route path="/tenant/setup-password" element={<TenantPasswordSetup />} />
                 <Route path="/lender/setup-password" element={<LenderPasswordSetup />} />
@@ -234,6 +236,8 @@ function App() {
                   <Route path="cargos/create" element={<CargoList />} />
                   <Route path="cargos/list" element={<CargoList />} />
                   <Route path="cargos/active" element={<CargoList />} />
+                  <Route path="cargos/my-cargos" element={<ReceiverCargosPage />} />
+                  <Route path="cargos/:cargoId/inspect" element={<CargoInspectionPage />} />
                   <Route path="cargos/enhanced-demo" element={<EnhancedCargoDemo />} />
                   <Route path="cargos/enhanced-demo/:cargoId" element={<EnhancedCargoDemo />} />
                   <Route path="bidding" element={<CargoList />} />

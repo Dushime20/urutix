@@ -153,6 +153,50 @@ export class EnhancedAuthController {
     }
   }
 
+  @Post('select-role')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Select role for multi-role account',
+    description: 'Complete login by selecting a specific role',
+  })
+  @ApiBody({
+      schema: {
+          type: 'object',
+          properties: {
+              role: { type: 'string', example: 'CARGO_OWNER' },
+              preAuthToken: { type: 'string' }
+          }
+      }
+  })
+  @ApiOkResponse({
+    description: 'Login successful',
+    type: LoginResponseDto,
+  })
+  async selectRole(
+    @Body() body: { role: string; preAuthToken: string },
+    @Req() req: Request,
+  ): Promise<LoginResponseDto> {
+    try {
+      const clientIp = this.getClientIp(req);
+      this.logger.log(`Role selection attempt from IP: ${clientIp}`);
+
+      const result = await this.authService.selectRole(
+        body.preAuthToken,
+        body.role,
+        clientIp,
+      );
+
+      this.logger.log(`Role selection successful from IP: ${clientIp}`);
+      return result;
+    } catch (error) {
+      const clientIp = this.getClientIp(req);
+      this.logger.error(
+        `Role selection failed from IP: ${clientIp}: ${error.message}`,
+      );
+      throw error;
+    }
+  }
+
   @Post('register')
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({

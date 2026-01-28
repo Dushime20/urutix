@@ -39,6 +39,7 @@ import { fetchCargos } from '../services/cargoApi';
 import { cargoOwnerAPI } from '../services/cargoOwnerAPI';
 import api from '../services/api';
 import { loadsAPI } from '@/services/load';
+import receiverService from '../services/receiverService';
 import toast from 'react-hot-toast';
 import { useConfirmDialog } from '@/hooks/useConfirmDialog';
 
@@ -74,7 +75,7 @@ const Dashboard = () => {
     }
   }, [user, navigate]);
 
-  // Otherwise show cargo owner dashboard
+  // Otherwise show cargo owner dashboard (CARGO_RECEIVER sees simplified version)
   return <CargoOwnerDashboard />;
 };
 
@@ -121,6 +122,11 @@ const CargoOwnerDashboard = () => {
 
   // Handle cargo row click - view if CREATED, edit if DRAFT
   const handleCargoRowClick = (cargo: any) => {
+    if (user?.role === 'CARGO_RECEIVER') {
+      navigate(`/dashboard/cargos/my-cargos?view=${cargo.id}`);
+      return;
+    }
+
     if (cargo.status === 'DRAFT') {
       // Navigate to edit the draft
       navigate(`/dashboard/cargos/create`, { state: { editCargo: cargo } });
@@ -181,19 +187,47 @@ const CargoOwnerDashboard = () => {
     loading: false,
   });
 
+  // Receiver-specific stats (for CARGO_RECEIVER role)
+  const [receiverStats, setReceiverStats] = useState({
+    totalReceived: 0,    // Cargos with completed inspection
+    activeCargos: 0,     // Cargos pending inspection
+    loading: true,
+  });
+
   // Auto-refresh cargos every 30 seconds
   useEffect(() => {
     const interval = setInterval(async () => {
       try {
-        const data = await fetchCargos(1, '', {});
-        setCargos(Array.isArray(data) ? data : []);
+        if (user?.role === 'CARGO_RECEIVER') {
+          // Fetch receiver's assigned cargos
+          const receiverCargos = await receiverService.getMyCargos();
+          const cargosArray = Array.isArray(receiverCargos) ? receiverCargos : [];
+          
+          // Calculate receiver stats
+          const inspected = cargosArray.filter((c: any) => 
+            c.inspectionStatus === 'COMPLETED' || c.status === 'DELIVERED' || c.status === 'COMPLETED'
+          ).length;
+          const pending = cargosArray.filter((c: any) => 
+            c.inspectionStatus !== 'COMPLETED' && c.status !== 'DELIVERED' && c.status !== 'COMPLETED'
+          ).length;
+          
+          setReceiverStats({
+            totalReceived: inspected,
+            activeCargos: pending,
+            loading: false,
+          });
+          setCargos(cargosArray);
+        } else {
+          const data = await fetchCargos(1, '', {});
+          setCargos(Array.isArray(data) ? data : []);
+        }
       } catch (error) {
         console.error('Error refreshing cargos:', error);
       }
     }, 30000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [user]);
 
   // Fetch cargos and related data on mount
   useEffect(() => {
@@ -201,7 +235,31 @@ const CargoOwnerDashboard = () => {
       try {
         setLoading(true);
 
-        // Fetch cargos
+        // Different data fetching for CARGO_RECEIVER
+        if (user?.role === 'CARGO_RECEIVER') {
+          // Fetch receiver's assigned cargos
+          const receiverCargos = await receiverService.getMyCargos();
+          const cargosArray = Array.isArray(receiverCargos) ? receiverCargos : [];
+          
+          // Calculate receiver stats based on inspection status
+          const inspected = cargosArray.filter((c: any) => 
+            c.inspectionStatus === 'COMPLETED' || c.status === 'DELIVERED' || c.status === 'COMPLETED'
+          ).length;
+          const pending = cargosArray.filter((c: any) => 
+            c.inspectionStatus !== 'COMPLETED' && c.status !== 'DELIVERED' && c.status !== 'COMPLETED'
+          ).length;
+          
+          setReceiverStats({
+            totalReceived: inspected,
+            activeCargos: pending,
+            loading: false,
+          });
+          setCargos(cargosArray);
+          setLoading(false);
+          return; // Exit early for receivers
+        }
+
+        // Fetch cargos for cargo owners
         const cargoData = await fetchCargos(1, '', {});
         setCargos(Array.isArray(cargoData) ? cargoData : []);
 
@@ -426,8 +484,34 @@ const CargoOwnerDashboard = () => {
       }));
   }, [cargos]);
 
-  // Get recent cargo activity for "transactions" section - filter for CREATED and DRAFT only
+  // Get recent cargo activity for "transactions" section
   const recentCargoActivity = useMemo(() => {
+    // For CARGO_RECEIVER: Show recent assigned cargos with inspection status
+    if (user?.role === 'CARGO_RECEIVER') {
+      return cargos
+        .sort((a, b) => new Date(b.updatedAt || b.createdAt).getTime() - new Date(a.updatedAt || a.createdAt).getTime())
+        .slice(0, 5)
+        .map((cargo) => {
+          const date = new Date(cargo.updatedAt || cargo.createdAt);
+          const isCompleted = cargo.inspectionStatus === 'COMPLETED' || cargo.allItemsVerified;
+          const status = isCompleted ? 'COMPLETED' : 'PENDING';
+          
+          return {
+            id: cargo.id,
+            name: cargo.title || `Cargo ${cargo.id.slice(0, 8)} `,
+            type: cargo.cargoType || 'General',
+            date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+            time: date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+            amount: Number(cargo.loadValue) || 0,
+            status: status,
+            logo: cargo.title?.[0]?.toUpperCase() || 'C',
+            statusColor: isCompleted ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700',
+            fullCargo: cargo,
+          };
+        });
+    }
+
+    // For other roles: filter for CREATED and DRAFT only
     return cargos
       .filter(c => c.status === 'CREATED' || c.status === 'DRAFT')
       .sort((a, b) => new Date(b.updatedAt || b.createdAt).getTime() - new Date(a.updatedAt || a.createdAt).getTime())
@@ -455,7 +539,7 @@ const CargoOwnerDashboard = () => {
           fullCargo: cargo, // Store full cargo data for click handlers
         };
       });
-  }, [cargos]);
+  }, [cargos, user]);
 
   // Cargo activity data for chart (last 7 days)
   const cargoActivityData = useMemo(() => {
@@ -536,79 +620,125 @@ const CargoOwnerDashboard = () => {
           <Activity className="w-5 h-5 text-gray-600" />
           <h2 className="text-lg font-bold text-gray-900">Performance Overview</h2>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {/* Total Cargos */}
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-            <div className="flex justify-between items-start mb-4">
-              <div>
-                <p className="text-sm font-medium text-gray-500">Total Cargos</p>
-                <h3 className="text-2xl font-bold text-gray-900 mt-1">{stats.totalCargos}</h3>
+        
+        {/* Different cards for CARGO_RECEIVER vs other roles */}
+        {user?.role === 'CARGO_RECEIVER' ? (
+          /* CARGO_RECEIVER: Show only 2 cards - Total Received and Active/Pending */
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Total Received (Inspected Cargos) */}
+            <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+              <div className="flex justify-between items-start mb-4">
+                <div>
+                  <p className="text-sm font-medium text-gray-500">Total Received</p>
+                  <h3 className="text-2xl font-bold text-gray-900 mt-1">
+                    {receiverStats.loading ? '...' : receiverStats.totalReceived}
+                  </h3>
+                </div>
+                <div className="p-2 bg-green-50 rounded-lg">
+                  <CheckCircle className="w-5 h-5 text-green-600" />
+                </div>
               </div>
-              <div className="p-2 bg-gray-50 rounded-lg">
-                <Package className="w-5 h-5 text-gray-600" />
-              </div>
-            </div>
-            {stats.growthRate > 0 && (
               <div className="flex items-center text-sm text-green-600 font-medium">
-                <TrendingUpIcon className="w-4 h-4 mr-1" />
-                <span>+{formatNumber(stats.growthRate)}% growth</span>
+                <CheckCircle className="w-4 h-4 mr-1" />
+                <span>Inspection Completed</span>
               </div>
-            )}
-          </div>
+            </div>
 
-          {/* Active Cargos */}
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-            <div className="flex justify-between items-start mb-4">
-              <div>
-                <p className="text-sm font-medium text-gray-500">Active Cargos</p>
-                <h3 className="text-2xl font-bold text-gray-900 mt-1">{stats.activeCargos}</h3>
+            {/* Active Cargos (Pending Inspection) */}
+            <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+              <div className="flex justify-between items-start mb-4">
+                <div>
+                  <p className="text-sm font-medium text-gray-500">Active Cargos</p>
+                  <h3 className="text-2xl font-bold text-gray-900 mt-1">
+                    {receiverStats.loading ? '...' : receiverStats.activeCargos}
+                  </h3>
+                </div>
+                <div className="p-2 bg-amber-50 rounded-lg">
+                  <Truck className="w-5 h-5 text-amber-600" />
+                </div>
               </div>
-              <div className="p-2 bg-gray-50 rounded-lg">
-                <Truck className="w-5 h-5 text-gray-600" />
+              <div className="flex items-center text-sm text-amber-600 font-medium">
+                <Clock className="w-4 h-4 mr-1" />
+                <span>Pending Inspection</span>
               </div>
-            </div>
-            <div className="flex items-center text-sm text-sky-600 font-medium">
-              <Activity className="w-4 h-4 mr-1" />
-              <span>Live Operations</span>
             </div>
           </div>
+        ) : (
+          /* Other roles: Show all 4 cards */
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Total Cargos */}
+            <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+              <div className="flex justify-between items-start mb-4">
+                <div>
+                  <p className="text-sm font-medium text-gray-500">Total Cargos</p>
+                  <h3 className="text-2xl font-bold text-gray-900 mt-1">{stats.totalCargos}</h3>
+                </div>
+                <div className="p-2 bg-gray-50 rounded-lg">
+                  <Package className="w-5 h-5 text-gray-600" />
+                </div>
+              </div>
+              {stats.growthRate > 0 && (
+                <div className="flex items-center text-sm text-green-600 font-medium">
+                  <TrendingUpIcon className="w-4 h-4 mr-1" />
+                  <span>+{formatNumber(stats.growthRate)}% growth</span>
+                </div>
+              )}
+            </div>
 
-          {/* Completed Cargos */}
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-            <div className="flex justify-between items-start mb-4">
-              <div>
-                <p className="text-sm font-medium text-gray-500">Completed</p>
-                <h3 className="text-2xl font-bold text-gray-900 mt-1">{stats.completedCargos}</h3>
+            {/* Active Cargos */}
+            <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+              <div className="flex justify-between items-start mb-4">
+                <div>
+                  <p className="text-sm font-medium text-gray-500">Active Cargos</p>
+                  <h3 className="text-2xl font-bold text-gray-900 mt-1">{stats.activeCargos}</h3>
+                </div>
+                <div className="p-2 bg-gray-50 rounded-lg">
+                  <Truck className="w-5 h-5 text-gray-600" />
+                </div>
               </div>
-              <div className="p-2 bg-gray-50 rounded-lg">
-                <CheckCircle className="w-5 h-5 text-gray-600" />
+              <div className="flex items-center text-sm text-sky-600 font-medium">
+                <Activity className="w-4 h-4 mr-1" />
+                <span>Live Operations</span>
               </div>
             </div>
-            <div className="w-full bg-gray-100 rounded-full h-1.5 mt-2">
-              <div className="bg-green-500 h-1.5 rounded-full" style={{ width: stats.totalCargos > 0 ? `${(stats.completedCargos / stats.totalCargos) * 100}% ` : '0%' }}></div>
-            </div>
-            <p className="text-xs text-gray-500 mt-2">{formatNumber(stats.completionRate)}% completion rate</p>
-          </div>
 
-          {/* Total Value */}
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-            <div className="flex justify-between items-start mb-4">
-              <div>
-                <p className="text-sm font-medium text-gray-500">Total Value</p>
-                <h3 className="text-2xl font-bold text-gray-900 mt-1">
-                  {loading ? '...' : formatCurrency(stats.totalValue)}
-                </h3>
+            {/* Completed Cargos */}
+            <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+              <div className="flex justify-between items-start mb-4">
+                <div>
+                  <p className="text-sm font-medium text-gray-500">Completed</p>
+                  <h3 className="text-2xl font-bold text-gray-900 mt-1">{stats.completedCargos}</h3>
+                </div>
+                <div className="p-2 bg-gray-50 rounded-lg">
+                  <CheckCircle className="w-5 h-5 text-gray-600" />
+                </div>
               </div>
-              <div className="p-2 bg-gray-50 rounded-lg">
-                <DollarSign className="w-5 h-5 text-gray-600" />
+              <div className="w-full bg-gray-100 rounded-full h-1.5 mt-2">
+                <div className="bg-green-500 h-1.5 rounded-full" style={{ width: stats.totalCargos > 0 ? `${(stats.completedCargos / stats.totalCargos) * 100}% ` : '0%' }}></div>
               </div>
+              <p className="text-xs text-gray-500 mt-2">{formatNumber(stats.completionRate)}% completion rate</p>
             </div>
-            <div className="flex items-center text-sm text-emerald-600 font-medium">
-              <Wallet className="w-4 h-4 mr-1" />
-              <span>Revenue</span>
+
+            {/* Total Value */}
+            <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+              <div className="flex justify-between items-start mb-4">
+                <div>
+                  <p className="text-sm font-medium text-gray-500">Total Value</p>
+                  <h3 className="text-2xl font-bold text-gray-900 mt-1">
+                    {loading ? '...' : formatCurrency(stats.totalValue)}
+                  </h3>
+                </div>
+                <div className="p-2 bg-gray-50 rounded-lg">
+                  <DollarSign className="w-5 h-5 text-gray-600" />
+                </div>
+              </div>
+              <div className="flex items-center text-sm text-emerald-600 font-medium">
+                <Wallet className="w-4 h-4 mr-1" />
+                <span>Revenue</span>
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </section>
 
       {/* 2. Recent Activity - MOVED TO SECOND */}
@@ -631,12 +761,11 @@ const CargoOwnerDashboard = () => {
                 <th className="px-6 py-3">Date</th>
                 <th className="px-6 py-3">Amount</th>
                 <th className="px-6 py-3">Status</th>
-                <th className="px-6 py-3">Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
               {recentCargoActivity.length === 0 ? (
-                <tr><td colSpan={6} className="px-6 py-8 text-center text-gray-400">No drafts or created cargos yet</td></tr>
+                <tr><td colSpan={5} className="px-6 py-8 text-center text-gray-400">No drafts or created cargos yet</td></tr>
               ) : (
                 recentCargoActivity.map(tx => (
                   <tr 
@@ -653,36 +782,6 @@ const CargoOwnerDashboard = () => {
                         {tx.status}
                       </span>
                     </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <span className="text-sm text-blue-600 group-hover:text-blue-800 font-medium flex items-center gap-1 w-20">
-                          {tx.status === 'DRAFT' ? (
-                            <>
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                              </svg>
-                              Continue
-                            </>
-                          ) : (
-                            <>
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                              </svg>
-                              View
-                            </>
-                          )}
-                        </span>
-                        
-                        <button
-                          onClick={(e) => handleDeleteCargo(e, tx.id)}
-                          className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                          title="Delete Cargo"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </td>
                   </tr>
                 ))
               )}
@@ -691,6 +790,9 @@ const CargoOwnerDashboard = () => {
         </div>
       </section>
 
+      {/* Hide all sections below for CARGO_RECEIVER users */}
+      {user?.role !== 'CARGO_RECEIVER' && (
+      <>
       {/* 3. Advanced Features Section - Premium Styling */}
       <section aria-label="Advanced Features">
         <div className="flex items-center gap-3 mb-6">
@@ -967,6 +1069,8 @@ const CargoOwnerDashboard = () => {
           </div>
         </section>
       </div>
+      </>
+      )}
     </div>
   );
 
@@ -993,59 +1097,64 @@ const CargoOwnerDashboard = () => {
                   : 'Welcome to your dashboard'}
               </p>
             </div>
-            <div className="flex flex-wrap gap-3">
-              <button
-                onClick={() => setShowQuickActionFlow(true)}
-                className="inline-flex items-center gap-2 px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-medium shadow-sm"
-              >
-                <Zap className="w-5 h-5" />
-                Quick Create
-              </button>
-              <button
-                onClick={() => setActiveTab('Transactions')}
-                className="inline-flex items-center gap-2 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium shadow-sm"
-              >
-                <CreditCard className="w-5 h-5" />
-                Request Financing
-              </button>
-              <button
-                onClick={() => navigate('/cargo-owner/cargos/create')}
-                className="inline-flex items-center gap-2 px-6 py-3 bg-white text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-medium shadow-sm"
-              >
-                <Plus className="w-5 h-5" />
-                Full Form
-              </button>
-            </div>
+            {/* Action Buttons - Hidden for CARGO_RECEIVER role */}
+            {user?.role !== 'CARGO_RECEIVER' && (
+              <div className="flex flex-wrap gap-3">
+                <button
+                  onClick={() => setShowQuickActionFlow(true)}
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-medium shadow-sm"
+                >
+                  <Zap className="w-5 h-5" />
+                  Quick Create
+                </button>
+                <button
+                  onClick={() => setActiveTab('Transactions')}
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium shadow-sm"
+                >
+                  <CreditCard className="w-5 h-5" />
+                  Request Financing
+                </button>
+                <button
+                  onClick={() => navigate('/cargo-owner/cargos/create')}
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-white text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-medium shadow-sm"
+                >
+                  <Plus className="w-5 h-5" />
+                  Full Form
+                </button>
+              </div>
+            )}
           </div>
 
-          {/* Clean Navigation Tabs */}
-          <div className="mt-8 flex gap-1 overflow-x-auto scrollbar-hide">
-            {[
-              { id: 'Overview', label: 'Overview', icon: Activity },
-              { id: 'All Cargos', label: 'Cargos', icon: Package },
-              ...(cargos.some(c => c.brokerId) ? [{ id: 'Contracts', label: 'Contracts', icon: FileText }] : []),
-              { id: 'Transactions', label: 'Financials', icon: Wallet },
-              { id: 'Analytics', label: 'Analytics', icon: BarChart3 },
-              { id: 'Documents', label: 'Documents', icon: FileText },
-              { id: 'Settings', label: 'Settings', icon: Settings }
-            ].map((tab) => {
-              const Icon = tab.icon;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-all whitespace-nowrap ${
-                    activeTab === tab.id
-                      ? 'bg-primary-50 text-primary-700'
-                      : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-                  }`}
-                >
-                  <Icon className="w-4 h-4" />
-                  <span className="text-sm">{tab.label}</span>
-                </button>
-              );
-            })}
-          </div>
+          {/* Clean Navigation Tabs - Hidden for CARGO_RECEIVER role */}
+          {user?.role !== 'CARGO_RECEIVER' && (
+            <div className="mt-8 flex gap-1 overflow-x-auto scrollbar-hide">
+              {[
+                { id: 'Overview', label: 'Overview', icon: Activity },
+                { id: 'All Cargos', label: 'Cargos', icon: Package },
+                ...(cargos.some(c => c.brokerId) ? [{ id: 'Contracts', label: 'Contracts', icon: FileText }] : []),
+                { id: 'Transactions', label: 'Financials', icon: Wallet },
+                { id: 'Analytics', label: 'Analytics', icon: BarChart3 },
+                { id: 'Documents', label: 'Documents', icon: FileText },
+                { id: 'Settings', label: 'Settings', icon: Settings }
+              ].map((tab) => {
+                const Icon = tab.icon;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-all whitespace-nowrap ${
+                      activeTab === tab.id
+                        ? 'bg-primary-50 text-primary-700'
+                        : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                    }`}
+                  >
+                    <Icon className="w-4 h-4" />
+                    <span className="text-sm">{tab.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
 

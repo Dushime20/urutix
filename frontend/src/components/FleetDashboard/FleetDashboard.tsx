@@ -71,6 +71,8 @@ export const FleetDashboard: React.FC = () => {
   const [formMode, setFormMode] = useState<'create' | 'edit'>('create');
   const [editingFleetItem, setEditingFleetItem] = useState<LocalFleetItem | null>(null);
 
+  const [analytics, setAnalytics] = useState<any>(null);
+
   // Sync activeTab with URL
   useEffect(() => {
     const path = location.pathname;
@@ -164,16 +166,33 @@ export const FleetDashboard: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      const truckData = await fleetApi.getTrucks({});
-      const driverData = await fleetApi.getDrivers({});
+      const [truckData, driverData, analyticsData] = await Promise.all([
+        fleetApi.getTrucks({}),
+        fleetApi.getDrivers({}),
+        fleetApi.fetchAnalytics()
+      ]);
+      
       const allData = [...truckData.map(normalizeTruck), ...driverData.map(normalizeDriver)];
       setFleetItems(allData);
+      setAnalytics(analyticsData);
     } catch (e) {
       setError('Failed to load fleet items.');
     } finally {
       setLoading(false);
     }
   }, []);
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-KE', {
+      style: 'currency',
+      currency: 'KES',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 1
+    }).format(amount);
+  };
+
+
+
 
   useEffect(() => {
     loadFleetItems();
@@ -413,24 +432,24 @@ export const FleetDashboard: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Card 2: Fuel Costs (Mock Data) */}
+                  {/* Card 2: Fuel Costs (Placeholder as API doesn't provide this yet) */}
                   <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-100 flex flex-col justify-between h-40 relative overflow-hidden group hover:shadow-md transition-shadow">
                     <div className="absolute top-4 right-4 text-orange-500 bg-orange-50 p-2 rounded-lg">
                       <FaGasPump className="w-5 h-5" />
                     </div>
                     <div>
                       <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">FUEL COSTS (MTD)</h3>
-                      <span className="text-3xl font-bold text-gray-900">$12.4k</span>
+                      <span className="text-3xl font-bold text-gray-900">$0</span>
                     </div>
                     <div className="mt-auto">
                       <div className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 px-2 py-1 rounded text-xs font-medium">
                         <FiZap className="w-3 h-3" />
-                        <span>6.2 MPG Avg</span>
+                        <span>-- MPG Avg</span>
                       </div>
                     </div>
                   </div>
 
-                  {/* Card 3: Fleet Reputation (Mock Data to match image) */}
+                  {/* Card 3: Fleet Reputation */}
                   <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-100 flex flex-col justify-between h-40 relative overflow-hidden group hover:shadow-md transition-shadow">
                     <div className="absolute top-4 right-4 text-amber-500">
                       <FaStar className="w-5 h-5" />
@@ -438,14 +457,14 @@ export const FleetDashboard: React.FC = () => {
                     <div>
                       <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">FLEET REPUTATION</h3>
                       <div className="flex items-baseline gap-1">
-                        <span className="text-3xl font-bold text-gray-900">4.82</span>
+                        <span className="text-3xl font-bold text-gray-900">{analytics?.averageRating?.toFixed(1) || '0.0'}</span>
                         <span className="text-sm text-gray-400 font-medium">/5</span>
                       </div>
                     </div>
                     <div className="mt-auto">
                       <div className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 px-2 py-1 rounded text-xs font-medium">
                         <FiTrendingUp className="w-3 h-3" />
-                        <span>+0.2 avg driver rating</span>
+                        <span>Based on recent trips</span>
                       </div>
                     </div>
                   </div>
@@ -457,29 +476,31 @@ export const FleetDashboard: React.FC = () => {
                     </div>
                     <div>
                       <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">DRIVER UTILIZATION</h3>
-                      <span className="text-3xl font-bold text-gray-900">{utilization}%</span>
+                      <span className="text-3xl font-bold text-gray-900">{analytics?.utilizationRate !== undefined ? Math.round(analytics.utilizationRate) : utilization}%</span>
                     </div>
                     <div className="mt-auto">
                       <div className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 px-2 py-1 rounded text-xs font-medium">
                         <FiTrendingUp className="w-3 h-3" />
-                        <span>+2% efficiency</span>
+                        <span>Active Drivers</span>
                       </div>
                     </div>
                   </div>
 
-                  {/* Card 5: Revenue (Mock Data) */}
+                  {/* Card 5: Revenue */}
                   <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-100 flex flex-col justify-between h-40 relative overflow-hidden group hover:shadow-md transition-shadow">
                     <div className="absolute top-4 right-4 text-amber-500">
                       <FaDollarSign className="w-5 h-5" />
                     </div>
                     <div>
                       <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">REVENUE (MTD)</h3>
-                      <span className="text-3xl font-bold text-gray-900">KES 2.4M</span>
+                      <span className="text-3xl font-bold text-gray-900">
+                        {analytics?.totalRevenue ? formatCurrency(analytics.totalRevenue) : 'KES 0'}
+                      </span>
                     </div>
                     <div className="mt-auto">
                       <div className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 px-2 py-1 rounded text-xs font-medium">
                         <FiTrendingUp className="w-3 h-3" />
-                        <span>+12% monthly growth</span>
+                        <span>Total Revenue</span>
                       </div>
                     </div>
                   </div>

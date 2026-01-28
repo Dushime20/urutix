@@ -41,11 +41,12 @@ interface AuthContextType {
   user: User | null;
   accessToken: string | null;
   refreshToken: string | null;
-  login: (email: string, password: string, rememberMe?: boolean) => Promise<User | null>;
+  login: (email: string, password: string, rememberMe?: boolean) => Promise<any>;
   register: (userData: RegisterData) => Promise<User | null>;
   logout: () => void;
   refreshAccessToken: () => Promise<boolean>;
   updateProfile: (profileData: Partial<User>) => Promise<boolean>;
+  selectRole: (role: string, preAuthToken: string) => Promise<User | null>;
   isLoading: boolean;
 }
 
@@ -325,7 +326,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     checkAuth();
   }, [accessToken, isInitialized, isLoggingIn, isRefreshing]); // Removed function dependencies since they're now stable
 
-  const login = async (email: string, password: string, rememberMe: boolean = false): Promise<User | null> => {
+  const login = async (email: string, password: string, rememberMe: boolean = false): Promise<any> => {
     try {
       setIsLoading(true);
       setIsLoggingIn(true); // Set logging in flag
@@ -334,6 +335,18 @@ export function AuthProvider({ children }: AuthProviderProps) {
         password,
         rememberMe,
       });
+      
+      // Check if role selection is required
+      if (response.data.requiresRoleSelection) {
+         setIsLoading(false);
+         setIsLoggingIn(false);
+         return {
+             requiresRoleSelection: true,
+             availableRoles: response.data.availableRoles,
+             preAuthToken: response.data.accessToken // Using accessToken field as preAuthToken
+         };
+      }
+      
       const { accessToken: newAccessToken, refreshToken: newRefreshToken, user: userData } = response.data;
       
       console.log('🔐 Login Debug:');
@@ -368,12 +381,47 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setIsLoggingIn(false); // Reset logging in flag
       
       toast.success('Login successful!');
-      return userData;
+      return { user: userData };
     } catch (error: any) {
       console.error('Login: Error occurred:', error);
       setIsLoading(false);
       setIsLoggingIn(false); // Reset logging in flag
       toast.error(error.response?.data?.message || 'Login failed');
+      return null;
+    }
+  };
+
+  const selectRole = async (role: string, preAuthToken: string): Promise<User | null> => {
+    try {
+      setIsLoading(true);
+      setIsLoggingIn(true);
+      
+      const response = await authAPI.selectRole({ role, preAuthToken });
+      const { accessToken: newAccessToken, refreshToken: newRefreshToken, user: userData } = response.data;
+      
+      debugUserData(userData, 'selectRole');
+      
+      localStorage.setItem('accessToken', newAccessToken);
+      localStorage.setItem('refreshToken', newRefreshToken);
+      setAccessToken(newAccessToken);
+      setRefreshToken(newRefreshToken);
+      
+      persistUser(userData);
+      identifyUser(userData);
+      captureEvent('user_role_selected', {
+          user_id: userData.id,
+          role: userData.role
+      });
+      
+      setIsLoading(false);
+      setIsLoggingIn(false);
+      toast.success(`Logged in as ${userData.role}`);
+      return userData;
+    } catch (error: any) {
+      console.error('Select Role Error:', error);
+      setIsLoading(false);
+      setIsLoggingIn(false);
+      toast.error(error.response?.data?.message || 'Role selection failed');
       return null;
     }
   };
@@ -479,6 +527,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     logout,
     refreshAccessToken,
     updateProfile,
+    selectRole,
     isLoading,
   };
 

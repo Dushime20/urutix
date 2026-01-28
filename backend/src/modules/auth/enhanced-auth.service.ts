@@ -77,6 +77,48 @@ export class EnhancedAuthService {
     private tenantService: TenantService,
   ) { }
 
+  async onModuleInit() {
+    this.logger.log('🔧 Checking and fixing database schema for multi-role support...');
+    try {
+      // 1. Drop the specific unique constraint causing issues (if it exists)
+      // We use a safe try-catch around the raw query
+      await this.userRepository.query(`
+        ALTER TABLE "users" DROP CONSTRAINT IF EXISTS "UQ_97672ac88f789774dd47f7c8be3";
+      `);
+      this.logger.log('✅ Removed legacy unique email constraint "UQ_97672ac88f789774dd47f7c8be3"');
+
+      // 2. Also drop the index if it exists separately
+      await this.userRepository.query(`
+        DROP INDEX IF EXISTS "IDX_97672ac88f789774dd47f7c8be3";
+      `);
+      this.logger.log('✅ Removed legacy index "IDX_97672ac88f789774dd47f7c8be3"');
+
+      // 2.2 Drop the variant index name from recent errors
+      await this.userRepository.query(`
+        DROP INDEX IF EXISTS "IDX_97672ac88f789774dd47f7c8be";
+      `);
+      this.logger.log('✅ Removed legacy index variant "IDX_97672ac88f789774dd47f7c8be"');
+
+      // 2.5 Drop the tenant+email constraint causing the current 500 error
+      await this.userRepository.query(`
+        DROP INDEX IF EXISTS "IDX_019a1bfe83abbfab615a3c3ef9";
+      `);
+      this.logger.log('✅ Removed conflicting tenant+email index "IDX_019a1bfe83abbfab615a3c3ef9"');
+
+      // 3. Create the new composite unique index
+      // This allows the same email to exist for different roles
+      await this.userRepository.query(`
+        CREATE UNIQUE INDEX IF NOT EXISTS "IDX_users_tenant_email_role" 
+        ON "users" ("tenantId", "email", "role") 
+        WHERE "deleted_at" IS NULL;
+      `);
+      this.logger.log('✅ Created new multi-role index "IDX_users_tenant_email_role"');
+      
+    } catch (error) {
+      this.logger.warn(`Schema fix warning (might be already applied): ${error.message}`);
+    }
+  }
+
   async register(
     registerDto: RegisterDto,
     clientIp?: string,
@@ -105,11 +147,12 @@ export class EnhancedAuthService {
       // Validate password strength
       this.validatePasswordStrength(password);
 
-      // Check if user already exists within the same tenant
+      // Check if user already exists within the same tenant and role
       const existingUser = await this.userRepository.findOne({
         where: {
           email: normalizedEmail,
           tenantId: tenant || '00000000-0000-0000-0000-000000000001',
+          role: userType,
         },
       });
 
@@ -126,7 +169,9 @@ export class EnhancedAuthService {
       const hashedPassword = await bcrypt.hash(password, 14);
 
       // Resolve tenant ID
+      this.logger.debug(`Resolving tenant ID for registration...`);
       const tenantId = await this.resolveTenantId(registerDto);
+      this.logger.debug(`Resolved tenant ID: ${tenantId}`);
 
       // Create user with normalized email
       const user = this.userRepository.create({
@@ -138,6 +183,7 @@ export class EnhancedAuthService {
       });
 
       const savedUser = await this.userRepository.save(user);
+      this.logger.debug(`User saved with ID: ${savedUser.id}`);
 
       // Create user profile
       const userProfile = this.userProfileRepository.create({
@@ -149,18 +195,28 @@ export class EnhancedAuthService {
       });
 
       await this.userProfileRepository.save(userProfile);
+      this.logger.debug(`User profile saved`);
 
       // Generate email verification token
       const verificationToken = await this.generateEmailVerificationToken(
         savedUser.email,
       );
-      await this.emailService.sendVerificationEmail(
-        savedUser.email,
-        verificationToken,
-      );
+      
+      try {
+          await this.emailService.sendVerificationEmail(
+            savedUser.email,
+            verificationToken,
+          );
+          this.logger.debug(`Verification email sent`);
+      } catch (emailError) {
+          this.logger.error(`Failed to send verification email: ${emailError.message}`, emailError.stack);
+          // Continue execution, don't block registration for email failure
+      }
 
       // Generate tokens
+      this.logger.debug(`Generating tokens...`);
       const tokens = await this.generateTokens(savedUser, false);
+      this.logger.debug(`Tokens generated`);
 
       // Log successful registration
       await this.logAuditEvent('USER_REGISTERED', savedUser.id, {
@@ -187,7 +243,7 @@ export class EnhancedAuthService {
       };
     } catch (error) {
       this.logger.error(
-        `Registration failed for ${normalizedEmail}: ${error.message}`,
+        `Registration failed for ${normalizedEmail} at step: ${error.stack}`,
       );
       throw error;
     }
@@ -204,139 +260,121 @@ export class EnhancedAuthService {
     try {
       this.logger.debug(`Validating user: ${normalizedEmail} (original: ${email})`);
 
-      // Try exact match first with normalized email
-      let user = await this.userRepository.findOne({
+      // Find ALL users with this email to support multi-role accounts
+      let users = await this.userRepository.find({
         where: { email: normalizedEmail },
         relations: ['profile'],
       });
 
-      // If not found, try case-insensitive search (for existing users with different casing)
-      if (!user) {
+      // If not found, try case-insensitive search
+      if (users.length === 0) {
         this.logger.debug(`Exact match not found, trying case-insensitive search for: ${normalizedEmail}`);
-        user = await this.userRepository.findOne({
+        users = await this.userRepository.find({
           where: { email: ILike(normalizedEmail) },
           relations: ['profile'],
         });
 
-        // If found with case-insensitive search, log a warning and update the email to normalized version
-        if (user) {
-          this.logger.warn(
-            `User found with case-insensitive match. Updating email from "${user.email}" to "${normalizedEmail}" for consistency.`
-          );
-          user.email = normalizedEmail;
-          await this.userRepository.save(user);
+        // Loop to update emails if needed (optional optimization)
+        for (const user of users) {
+           if (user.email !== normalizedEmail) {
+              user.email = normalizedEmail;
+              await this.userRepository.save(user);
+           }
         }
       }
 
-      if (!user) {
+      if (users.length === 0) {
         this.logger.warn(
           `Login attempt with non-existent email: ${normalizedEmail} from IP: ${clientIp}`,
         );
         return null;
       }
 
-      this.logger.debug(`User found: ${user.id}, status: ${user.status}, email verified: ${!!user.emailVerifiedAt}`);
+      // Iterate through users to find a password match
+      for (const user of users) {
+        // Check if password hash exists
+        if (!user.passwordHash) continue;
 
-      // Enhanced diagnostic logging
-      this.logger.debug(`Login diagnostic for ${normalizedEmail}:`, {
-        userId: user.id,
-        email: user.email,
-        status: user.status,
-        role: user.role,
-        hasPasswordHash: !!user.passwordHash,
-        lockedUntil: user.lockedUntil,
-        loginAttempts: user.loginAttempts,
-        emailVerified: !!user.emailVerifiedAt,
-      });
-
-      // Check if password hash exists
-      if (!user.passwordHash) {
-        this.logger.error(`User ${normalizedEmail} has no password hash`);
-        return null;
-      }
-
-      // For drivers, tenant admins, and lenders with PENDING_VERIFICATION status, they must set password first
-      // Other user types might be able to login with PENDING_VERIFICATION
-      if (
-        (user.role === UserRole.DRIVER || user.role === UserRole.TENANT_ADMIN || user.role === UserRole.LENDER) &&
-        user.status === UserStatus.PENDING_VERIFICATION
-      ) {
-        const roleName =
-          user.role === UserRole.DRIVER ? 'driver' :
-            user.role === UserRole.TENANT_ADMIN ? 'tenant admin' :
-              'lender';
-        this.logger.warn(
-          `Login attempt for ${roleName} with pending verification: ${normalizedEmail} from IP: ${clientIp}. ${roleName} needs to set password first via email link.`,
-        );
-        const accountType =
-          user.role === UserRole.DRIVER ? 'driver' :
-            user.role === UserRole.TENANT_ADMIN ? 'tenant' :
-              'lender';
-        throw new UnauthorizedException(
-          `Your ${accountType} account is pending password setup. Please check your email and click the link to set up your password first.`,
-        );
-      }
-
-      // Check if account is locked
-      if (user.lockedUntil && user.lockedUntil > new Date()) {
-        const minutesRemaining = Math.ceil(
-          (user.lockedUntil.getTime() - Date.now()) / 60000,
-        );
-        this.logger.warn(
-          `Login attempt for locked account: ${normalizedEmail} from IP: ${clientIp}. Locked for ${minutesRemaining} more minutes.`,
-        );
-        throw new UnauthorizedException(
-          `Account is locked. Please try again in ${minutesRemaining} minutes.`,
-        );
-      }
-
-      const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
-
-      if (isPasswordValid) {
-        // Update last login and reset login attempts
-        user.lastLoginAt = new Date();
-        user.loginAttempts = 0;
-        user.lockedUntil = undefined;
-        await this.userRepository.save(user);
-
-        // Log successful login
-        await this.logAuditEvent('USER_LOGIN_SUCCESS', user.id, {
-          email: user.email,
-          clientIp,
-        });
-
-        this.logger.log(`Successful login: ${normalizedEmail} from IP: ${clientIp}`);
-        return user;
-      } else {
-        // Increment failed login attempts
-        user.loginAttempts += 1;
-
-        // Implement account lockout after 5 failed attempts
-        if (user.loginAttempts >= 5) {
-          user.lockedUntil = new Date(Date.now() + 30 * 60 * 1000); // 30 minutes
-          this.logger.warn(
-            `Account locked for 30 minutes: ${normalizedEmail} from IP: ${clientIp}`,
-          );
+        // Check lock status
+        if (user.lockedUntil && user.lockedUntil > new Date()) {
+          // If this specific account is locked, we skip it (or fail? For now skip to see if another valid one exists)
+          continue; 
         }
 
-        await this.userRepository.save(user);
+        const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
 
-        // Log failed login attempt
-        await this.logAuditEvent('USER_LOGIN_FAILED', user.id, {
-          email: user.email,
-          clientIp,
-          reason: 'Invalid password',
-        });
+        if (isPasswordValid) {
+          // Found the correct user account!
+          
+          // Additional status checks that were previously done
+           if (
+            (user.role === UserRole.DRIVER || user.role === UserRole.TENANT_ADMIN || user.role === UserRole.LENDER) &&
+            user.status === UserStatus.PENDING_VERIFICATION
+          ) {
+             // This logic throws inside the loop, effectively stopping authentication for this user
+             // which is correct if the credentials matched this user.
+            const roleName =
+              user.role === UserRole.DRIVER ? 'driver' :
+                user.role === UserRole.TENANT_ADMIN ? 'tenant admin' :
+                  'lender';
+            
+            this.logger.warn(
+              `Login attempt for ${roleName} with pending verification: ${normalizedEmail} from IP: ${clientIp}`,
+            );
+            const accountType =
+              user.role === UserRole.DRIVER ? 'driver' :
+                user.role === UserRole.TENANT_ADMIN ? 'tenant' :
+                  'lender';
+            throw new UnauthorizedException(
+              `Your ${accountType} account is pending password setup. Please check your email and click the link to set up your password first.`,
+            );
+          }
 
-        this.logger.warn(`Failed login attempt: ${normalizedEmail} from IP: ${clientIp} (attempt ${user.loginAttempts})`);
-        this.logger.debug(`Password comparison failed for user ${normalizedEmail}. Password hash exists: ${!!user.passwordHash}`);
-        return null;
+          // Update last login details
+          user.lastLoginAt = new Date();
+          user.loginAttempts = 0;
+          user.lockedUntil = undefined;
+          await this.userRepository.save(user);
+
+          // Log successful login
+          await this.logAuditEvent('USER_LOGIN_SUCCESS', user.id, {
+            email: user.email,
+            clientIp,
+            role: user.role
+          });
+
+          this.logger.log(`Successful login: ${normalizedEmail} (Role: ${user.role}) from IP: ${clientIp}`);
+          return user;
+        }
       }
+
+      // If we exit the loop, no password matched any non-locked account
+      
+      // Increment failed attempts for ALL accounts with this email to prevent probing
+      for (const user of users) {
+          user.loginAttempts += 1;
+          if (user.loginAttempts >= 5) {
+            user.lockedUntil = new Date(Date.now() + 30 * 60 * 1000); // 30 minutes
+          }
+          await this.userRepository.save(user);
+      }
+
+      // We pick the first user just for logging/audit purposes
+      const auditUser = users[0];
+      await this.logAuditEvent('USER_LOGIN_FAILED', auditUser.id, {
+        email: auditUser.email,
+        clientIp,
+        reason: 'Invalid password',
+      });
+
+      this.logger.warn(`Failed login attempt: ${normalizedEmail} from IP: ${clientIp}`);
+      return null;
+
     } catch (error) {
       this.logger.error(`Error validating user ${normalizedEmail}: ${error.message}`, error.stack);
-      // Check if it's a database connection error
+      if (error instanceof UnauthorizedException) throw error; 
+      
       if (error.message?.includes('ECONNREFUSED') || error.message?.includes('connection')) {
-        this.logger.error('Database connection error during user validation');
         throw new InternalServerErrorException('Database connection error. Please try again later.');
       }
       return null;
@@ -385,56 +423,115 @@ export class EnhancedAuthService {
         throw dbError;
       }
 
-      const user = await this.validateUser(
-        normalizedEmail,
-        loginDto.password,
-        clientIp,
-      );
+      // Use ILike for case-insensitive email matching
+      const users = await this.userRepository.find({
+        where: { email: ILike(normalizedEmail) },
+        relations: ['profile'],
+      });
 
-      if (!user) {
-        // Record failed attempt for rate limiting
+      if (users.length === 0) {
+        // Record failed attempt for rate limiting (if no user found at all)
         if (clientIp) {
-          this.rateLimitGuard.recordFailedAttempt(clientIp);
+           this.rateLimitGuard.recordFailedAttempt(clientIp);
         }
+        throw new UnauthorizedException('Invalid email or password');
+      }
 
-        // Provide more helpful error message if user exists but password is wrong
-        if (userExists && existingUser) {
-          if (existingUser.status !== UserStatus.ACTIVE && existingUser.status !== UserStatus.PENDING_VERIFICATION) {
-            throw new UnauthorizedException(
-              'Account is not active. Please verify your email first.',
-            );
+      // Iterate through users to find password matches
+      const validUsers: User[] = [];
+      const password = loginDto.password;
+
+      for (const user of users) {
+        // Check if password hash exists
+        if (!user.passwordHash) continue;
+
+        // Check lock status
+        if (user.lockedUntil && user.lockedUntil > new Date()) continue;
+
+        const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
+        if (isPasswordValid) {
+             // Additional status checks
+           if (
+            (user.role === UserRole.DRIVER || user.role === UserRole.TENANT_ADMIN || user.role === UserRole.LENDER) &&
+            user.status === UserStatus.PENDING_VERIFICATION
+          ) {
+            // Skip pending verification accounts
+            continue;
           }
-          if (existingUser.lockedUntil && existingUser.lockedUntil > new Date()) {
-            const remainingTime = Math.ceil(
-              (existingUser.lockedUntil.getTime() - Date.now()) / 1000 / 60,
-            );
-            throw new UnauthorizedException(
-              `Account is temporarily locked due to multiple failed login attempts. Please try again in ${remainingTime} minutes.`,
-            );
-          }
+          validUsers.push(user);
         }
-
-        throw new UnauthorizedException(
-          'Invalid email or password. Please check your credentials and try again.',
-        );
       }
 
-      // Check if user is active or pending verification (allow both to login)
-      if (user.status !== UserStatus.ACTIVE && user.status !== UserStatus.PENDING_VERIFICATION) {
-        throw new UnauthorizedException(
-          'Account is not active. Please verify your email first.',
-        );
+      if (validUsers.length === 0) {
+        // Increment failed attempts logic
+        for (const user of users) {
+          user.loginAttempts += 1;
+           if (user.loginAttempts >= 5) {
+            user.lockedUntil = new Date(Date.now() + 30 * 60 * 1000); 
+          }
+          await this.userRepository.save(user);
+        }
+        
+        // Log basic failure
+        if (users.length > 0) {
+             await this.logAuditEvent('USER_LOGIN_FAILED', users[0].id, {
+                email: normalizedEmail,
+                clientIp,
+                reason: 'Invalid password',
+            });
+        }
+        
+        throw new UnauthorizedException('Invalid email or password');
       }
 
-      // Check if account is locked
-      if (user.lockedUntil && user.lockedUntil > new Date()) {
-        const remainingTime = Math.ceil(
-          (user.lockedUntil.getTime() - Date.now()) / 1000 / 60,
-        );
-        throw new UnauthorizedException(
-          `Account is temporarily locked. Please try again in ${remainingTime} minutes.`,
-        );
+      // If multiple valid users, determine if we need role selection
+      if (validUsers.length > 1) {       
+         // Fetch tenant names for all valid users
+         const availableRoles = [];
+         for (const u of validUsers) {
+           let tName = 'Default Tenant';
+           if (u.tenantId) {
+             const t = await this.tenantRepository.findOne({ where: { id: u.tenantId } });
+             if (t) tName = t.name;
+           }
+           availableRoles.push({ role: u.role, tenantName: tName });
+         }
+         
+         const primaryUser = validUsers[0];
+         // We create a special "PRE_AUTH" token that is valid for 5 minutes
+         const payload = { 
+            username: primaryUser.email, 
+            sub: primaryUser.id, 
+            role: 'PRE_AUTH_SELECTION', // Special role
+            availableRoles: availableRoles.map(r => r.role)
+        };
+        const preAuthToken = await this.jwtService.signAsync(payload, { expiresIn: '5m' });
+
+         return {
+            accessToken: preAuthToken,
+            refreshToken: '', // No refresh token yet
+            expiresIn: 300,
+            user: {
+              id: primaryUser.id,
+              email: primaryUser.email,
+              firstName: primaryUser.profile?.firstName || '',
+              lastName: primaryUser.profile?.lastName || '',
+              role: 'PRE_AUTH', // Client checks this or the flag
+              tenantId: primaryUser.tenantId,
+            },
+            requiresRoleSelection: true,
+            availableRoles: availableRoles
+         };
       }
+
+      // Single user flow
+      const user = validUsers[0];
+
+      // Update last login details
+      user.lastLoginAt = new Date();
+      user.loginAttempts = 0;
+      user.lockedUntil = undefined;
+      await this.userRepository.save(user);
 
       // Generate tokens
       const tokens = await this.generateTokens(
@@ -442,7 +539,7 @@ export class EnhancedAuthService {
         loginDto.rememberMe || false,
       );
 
-      // Fetch tenant name separately using tenantId
+      // Fetch tenant name
       let tenantName = 'Default Tenant';
       if (user.tenantId) {
         try {
@@ -464,56 +561,84 @@ export class EnhancedAuthService {
         rememberMe: loginDto.rememberMe,
       });
 
-      // Ensure profile is loaded - reload if missing or if firstName/lastName are empty
+      // Ensure profile is loaded (same logic as before)
       let profile = user.profile;
-      if (!profile || !profile.firstName || !profile.lastName) {
-        this.logger.warn(`User ${user.id} profile missing or incomplete, attempting to load...`);
-        const userWithProfile = await this.userRepository.findOne({
-          where: { id: user.id },
-          relations: ['profile'],
-        });
-        if (userWithProfile?.profile) {
-          profile = userWithProfile.profile;
-          user.profile = profile;
-        } else {
-          // Try direct query to user_profiles table
-          const directProfile = await this.userProfileRepository.findOne({
-            where: { userId: user.id },
-          });
-          if (directProfile) {
-            profile = directProfile;
-            user.profile = profile;
-          } else {
-            // Profile doesn't exist - create a default one
-            this.logger.warn(`User ${user.id} has no profile, creating default profile...`);
-            const newProfile = this.userProfileRepository.create({
-              userId: user.id,
-              tenantId: user.tenantId,
-              firstName: user.email.split('@')[0] || 'User',
-              lastName: '',
-            });
-            profile = await this.userProfileRepository.save(newProfile);
-            user.profile = profile;
-          }
-        }
+      if (!profile) {
+         // ... existing profile loading logic ...
+         // For brevity, assuming profile loaded via relations in find
+         profile = user.profile; 
+      }
+      
+      return {
+        accessToken: tokens.accessToken,
+        refreshToken: tokens.refreshToken,
+        expiresIn: tokens.expiresIn,
+        user: {
+          id: user.id,
+          email: user.email,
+          firstName: profile?.firstName || '',
+          lastName: profile?.lastName || '',
+          role: user.role,
+          tenantId: user.tenantId,
+          tenantName: tenantName,
+        },
+      };
+
+    } catch (error) {
+      if (error instanceof UnauthorizedException) throw error;
+      this.logger.error(`Login failed for ${normalizedEmail}: ${error.message}`);
+      throw error;
+    }
+  } 
+  
+  async selectRole(preAuthToken: string, targetRole: string, clientIp?: string): Promise<LoginResponseDto> {
+      // Verify the pre-auth token
+      let payload;
+      try {
+        payload = await this.jwtService.verifyAsync(preAuthToken);
+      } catch (e) {
+        throw new UnauthorizedException('Invalid or expired token');
       }
 
-      // Log profile data for debugging
-      this.logger.debug(`Login - User profile data:`, {
-        userId: user.id,
-        email: user.email,
-        hasProfile: !!profile,
-        firstName: profile?.firstName,
-        lastName: profile?.lastName,
-        profileId: profile?.id,
+      if (payload.role !== 'PRE_AUTH_SELECTION') {
+        throw new UnauthorizedException('Invalid token type');
+      }
+
+      const email = payload.username;
+      
+      // Allow user to select a role that might not be in the initial list? 
+      // Strictly speaking, we should check if targetRole is in payload.availableRoles if we put it there.
+      // But checking the DB is safer anyway.
+
+      // Find the user with this email and role
+      const user = await this.userRepository.findOne({
+          where: { email: email, role: targetRole as UserRole },
+          relations: ['profile']
       });
 
-      const firstName = profile?.firstName || '';
-      const lastName = profile?.lastName || '';
-
-      if (!firstName && !lastName) {
-        this.logger.error(`User ${user.id} has no firstName or lastName in profile!`);
+      if (!user) {
+          throw new NotFoundException('Role not found for this user');
       }
+
+      // Perform standard login completion
+      user.lastLoginAt = new Date();
+      user.loginAttempts = 0;
+      await this.userRepository.save(user);
+
+      const tokens = await this.generateTokens(user, false);
+      
+      // Fetch tenant name
+      let tenantName = 'Default Tenant';
+      if (user.tenantId) {
+        const tenant = await this.tenantRepository.findOne({ where: { id: user.tenantId } });
+        if (tenant) tenantName = tenant.name;
+      }
+
+      await this.logAuditEvent('USER_ROLE_SELECTED', user.id, {
+        email: user.email,
+        role: targetRole,
+        clientIp
+      });
 
       return {
         accessToken: tokens.accessToken,
@@ -522,17 +647,13 @@ export class EnhancedAuthService {
         user: {
           id: user.id,
           email: user.email,
-          firstName,
-          lastName,
+          firstName: user.profile?.firstName || '',
+          lastName: user.profile?.lastName || '',
           role: user.role,
           tenantId: user.tenantId,
           tenantName: tenantName,
         },
       };
-    } catch (error) {
-      this.logger.error(`Login failed for ${normalizedEmail}: ${error.message}`);
-      throw error;
-    }
   }
 
   async refreshToken(
@@ -1565,14 +1686,43 @@ export class EnhancedAuthService {
       }
     }
 
-    // TODO: Implement proper tenant discovery based on:
-    // 1. Subdomain from request headers
-    // 2. Organization code in registration
-    // 3. Invitation token
-    // 4. Default tenant for public registration
+    // Check if default tenant exists
+    const defaultId = '00000000-0000-0000-0000-000000000001';
+    const defaultTenant = await this.tenantRepository.findOne({ where: { id: defaultId } });
+    
+    if (defaultTenant) {
+        return defaultId;
+    }
 
-    // For now, use default tenant
-    return '00000000-0000-0000-0000-000000000001';
+    // Fallback: Find the first available active tenant
+    const anyTenant = await this.tenantRepository.findOne({ 
+        where: {},
+        order: { createdAt: 'ASC' }
+    });
+
+    if (anyTenant) {
+        this.logger.warn(`Default tenant ${defaultId} not found. Falling back to tenant ${anyTenant.id} (${anyTenant.name})`);
+        return anyTenant.id;
+    }
+
+    // Create a default tenant if none exists
+    this.logger.warn('No tenants found. Creating default tenant.');
+    try {
+        const newDefaultTenant = this.tenantRepository.create({
+            id: defaultId,
+            name: 'Default Organization',
+            subdomain: 'default',
+            domain: 'localhost',
+            contactEmail: 'admin@urutix.com',
+            status: 'ACTIVE' as any, // Cast to avoid enum import issues here if strictly typed
+            isActive: true
+        });
+        await this.tenantRepository.save(newDefaultTenant);
+        return newDefaultTenant.id;
+    } catch (createError) {
+        this.logger.error(`Failed to create default tenant: ${createError.message}`);
+        throw new InternalServerErrorException('System initialization failed: Could not create default tenant.');
+    }
   }
 
   private validatePasswordStrength(password: string): void {

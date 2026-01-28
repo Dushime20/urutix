@@ -1586,7 +1586,6 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
                     <FaTruck className="w-6 h-6 text-[#345E85]" />
                     <div>
                       <h3>{truck.name || truck.plateNumber}</h3>
-                      <p className="text-sm text-gray-500">{truck.plateNumber}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
@@ -2068,7 +2067,7 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
                     }}
                     className="text-gray-400 hover:text-gray-600"
                   >
-                    <FaEdit className="w-5 h-5" />
+                    <FaTimes className="w-5 h-5" />
                   </button>
                 </div>
 
@@ -2124,13 +2123,13 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
                 <div className="space-y-4">
                   <p className="text-sm text-gray-600">Select a route to assign to this truck:</p>
 
-                  {/* Debug information */}
                   <div className="bg-gray-50 p-3 rounded-lg text-xs text-gray-600">
-                    <p><strong>Debug Info:</strong></p>
+                    <p><strong>Routes Info:</strong></p>
                     <p>Total routes in system: {routes.length}</p>
-                    <p>Available routes for this truck: {getAvailableRoutes(selectedTruck?.id).length}</p>
-                    <p>Truck ID: {selectedTruck?.id}</p>
+                    <p>Available routes: {getAvailableRoutes(selectedTruck?.id).length}</p>
                   </div>
+
+
 
                   {getAvailableRoutes(selectedTruck?.id).length === 0 ? (
                     <div className="text-center py-4">

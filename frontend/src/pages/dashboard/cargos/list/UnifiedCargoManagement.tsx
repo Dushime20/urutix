@@ -11,6 +11,7 @@ import {
   Gavel,
   Package,
   FileText,
+  Users,
   Eye,
 } from "lucide-react";
 import { CargoLoadConfirmation } from "@/components/LoanRequest";
@@ -20,6 +21,7 @@ import EnhancedCargoForm from "../create/components/form";
 import BiddingDashboard from "@/components/Bidding/BiddingDashboard";
 import { useAuth } from "@/contexts/AuthContext";
 import LoadItem from "./components/loadItem";
+import { ReceiverAssignmentModal } from "./components/ReceiverAssignmentModal";
 import TemplateSelectionModal from "../create/components/TemplateSelectionModal";
 import type { CargoFormSchemaType } from "../create/components/form/cargoFormSchema";
 import { cn } from "@/utils/cn";
@@ -127,6 +129,10 @@ const UnifiedCargoManagement = () => {
   // Broker assignment state
   const [showAssignBrokerModal, setShowAssignBrokerModal] = useState(false);
   const [selectedLoadForBroker, setSelectedLoadForBroker] = useState<any>(null);
+  
+  // Receiver assignment state
+  const [showAssignReceiverModal, setShowAssignReceiverModal] = useState(false);
+  const [selectedLoadForReceiver, setSelectedLoadForReceiver] = useState<any>(null);
 
   const queryClient = useQueryClient();
   const unsubscribeRefs = useRef<Map<string, () => void>>(new Map());
@@ -410,6 +416,15 @@ const UnifiedCargoManagement = () => {
     } catch (error) {
       console.error('❌ Error refreshing data:', error);
     }
+  };
+
+  const handleAssignReceiver = (load: any) => {
+    setSelectedLoadForReceiver(load);
+    setShowAssignReceiverModal(true);
+  };
+
+  const handleReceiverAssignmentComplete = async () => {
+    await refetch();
   };
 
   const handleUnassignBroker = async (load: any) => {
@@ -822,6 +837,7 @@ const UnifiedCargoManagement = () => {
                               handleEditCargo={handleEditCargo}
                               handleAssignBroker={handleAssignBroker}
                               handleUnassignBroker={handleUnassignBroker}
+                              handleAssignReceiver={handleAssignReceiver}
                             />
                           ))}
                         </div>
@@ -881,10 +897,18 @@ const UnifiedCargoManagement = () => {
                                       <div className="flex items-center justify-end gap-2">
                                         <button
                                           onClick={() => handleViewClick(load)}
-                                          className="text-blue-600 hover:text-blue-900 transition-colors"
+                                          className="text-blue-600 hover:text-blue-900 transition-colors rounded p-1"
                                           title="View Details"
                                         >
                                           <Eye className="w-4 h-4" />
+                                        </button>
+                                        <button
+                                          onClick={() => !load.receiverId && handleAssignReceiver(load)}
+                                          className={`${load.receiverId ? 'text-gray-300 cursor-not-allowed' : 'text-purple-600 hover:text-purple-900'} transition-colors rounded p-1`}
+                                          title={load.receiverId ? "Receiver already assigned" : "Assign Receiver"}
+                                          disabled={!!load.receiverId}
+                                        >
+                                          <Users className="w-4 h-4" />
                                         </button>
                                       </div>
                                     </td>
@@ -1033,6 +1057,22 @@ const UnifiedCargoManagement = () => {
             loadTitle={selectedLoadForBroker.title}
             loadValue={selectedLoadForBroker.loadValue}
             onSuccess={handleBrokerAssignmentSuccess}
+          />
+        )
+      }
+
+      {/* Assign Receiver Modal */}
+      {
+        selectedLoadForReceiver && (
+          <ReceiverAssignmentModal
+            isOpen={showAssignReceiverModal}
+            onClose={() => {
+              setShowAssignReceiverModal(false);
+              setSelectedLoadForReceiver(null);
+            }}
+            cargoId={selectedLoadForReceiver.id}
+            currentReceiverId={selectedLoadForReceiver.receiverId}
+            onAssignmentComplete={handleReceiverAssignmentComplete}
           />
         )
       }

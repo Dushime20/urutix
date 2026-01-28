@@ -63,13 +63,17 @@ export class ReceiversService {
       throw new BadRequestException('User is not a cargo owner');
     }
 
-    // Check if email already exists
+    // Check if receiver (User) already exists for this tenant
     const existingUser = await this.userRepository.findOne({
-      where: { email: createReceiverDto.email.toLowerCase().trim() },
+      where: { 
+          email: createReceiverDto.email.toLowerCase().trim(),
+          role: UserRole.CARGO_RECEIVER,
+          tenantId: cargoOwner.tenantId
+      },
     });
 
     if (existingUser) {
-      throw new ConflictException('A user with this email already exists');
+      throw new ConflictException('A receiver with this email already exists in this tenant');
     }
 
     // Generate temporary password (will be changed on first login)
@@ -324,7 +328,7 @@ export class ReceiversService {
   /**
    * Get all cargos assigned to a receiver (for receiver users)
    */
-  async getCargosByReceiverId(receiverId: string): Promise<Load[]> {
+  async getCargosByReceiverId(receiverId: string): Promise<any[]> {
     // Verify receiver exists
     const receiver = await this.userRepository.findOne({
       where: { id: receiverId, role: UserRole.CARGO_RECEIVER },
@@ -340,7 +344,30 @@ export class ReceiversService {
       order: { createdAt: 'DESC' },
     });
 
-    return cargos;
+    // Fetch inspection status for each cargo
+    const cargosWithInspection = await Promise.all(
+      cargos.map(async (cargo) => {
+        const inspection = await this.cargoInspectionRepository.findOne({
+          where: { loadId: cargo.id, receiverId },
+        });
+        
+        return {
+          ...cargo,
+          inspectionStatus: inspection?.status || 'PENDING',
+          inspection: inspection ? {
+            id: inspection.id,
+            status: inspection.status,
+            completedAt: inspection.completedAt,
+            verifiedCount: inspection.verifiedCount,
+            totalItems: inspection.totalItems,
+            discrepancyCount: inspection.discrepancyCount,
+            allItemsVerified: inspection.allItemsVerified,
+          } : null,
+        };
+      })
+    );
+
+    return cargosWithInspection;
   }
 
   /**
@@ -584,6 +611,10 @@ export class ReceiversService {
       (item) => item.discrepancy === true,
     ).length;
     const allItemsVerified = verifiedCount === totalItems && discrepancyCount === 0;
+    
+    // Mark as COMPLETED when inspection is submitted (regardless of discrepancies)
+    // The inspection process is complete - discrepancies are just noted issues
+    const inspectionStatus = InspectionStatus.COMPLETED;
 
     if (inspection) {
       // Update existing inspection - map DTO to entity format
@@ -600,10 +631,8 @@ export class ReceiversService {
       inspection.totalItems = totalItems;
       inspection.discrepancyCount = discrepancyCount;
       inspection.allItemsVerified = allItemsVerified;
-      inspection.status = allItemsVerified
-        ? InspectionStatus.COMPLETED
-        : InspectionStatus.IN_PROGRESS;
-      inspection.completedAt = allItemsVerified ? new Date() : undefined;
+      inspection.status = inspectionStatus;
+      inspection.completedAt = new Date();
       inspection.discrepancies = inspectionData.checklist
         .filter((item) => item.discrepancy)
         .map((item) => ({
@@ -630,8 +659,8 @@ export class ReceiversService {
         totalItems,
         discrepancyCount,
         allItemsVerified,
-        status: allItemsVerified ? InspectionStatus.COMPLETED : InspectionStatus.IN_PROGRESS,
-        completedAt: allItemsVerified ? new Date() : undefined,
+        status: inspectionStatus,
+        completedAt: new Date(),
         discrepancies: inspectionData.checklist
           .filter((item) => item.discrepancy)
           .map((item) => ({

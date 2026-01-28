@@ -15,9 +15,10 @@ import {
   Weight,
   Box,
   User,
+  Users,
   UserX,
-  UserCheck,
   Briefcase,
+  ChevronLeft,
 } from "lucide-react";
 import {
   getCargoTypeDisplayName,
@@ -45,7 +46,6 @@ import { useCallback, useMemo, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import type { CargoFormSchemaType } from "../../../create/components/form/cargoFormSchema";
 import { encodeUrl } from "@/utils/url";
-import { ChevronLeft, ChevronRight } from "lucide-react";
 
 export default function LoadItem({
   load,
@@ -55,6 +55,7 @@ export default function LoadItem({
   handleEditCargo,
   handleAssignBroker,
   handleUnassignBroker,
+  handleAssignReceiver,
 }: {
   load: Cargo;
   handleViewClick: (load: Cargo) => void;
@@ -63,6 +64,7 @@ export default function LoadItem({
   handleEditCargo?: (load: Cargo) => void;
   handleAssignBroker?: (load: Cargo) => void;
   handleUnassignBroker?: (load: Cargo) => void;
+  handleAssignReceiver?: (load: Cargo) => void;
 }) {
   const navigate = useNavigate();
   const [showMobileDetails, setShowMobileDetails] = useState(false);
@@ -554,6 +556,22 @@ export default function LoadItem({
                     <span className="xs:hidden">Assign</span>
                   </button>
                 )}
+                {handleAssignReceiver && (
+                   <button
+                     className={`flex-1 min-w-[120px] px-4 py-2.5 bg-white border rounded-lg font-medium text-sm flex items-center justify-center gap-2 touch-manipulation min-h-[44px] ${
+                       load.receiverId 
+                         ? 'text-gray-400 border-gray-200 cursor-not-allowed' 
+                         : 'text-teal-600 border-teal-300 hover:bg-teal-50 transition-colors'
+                     }`}
+                     onClick={() => !load.receiverId && handleAssignReceiver(load)}
+                     disabled={!!load.receiverId}
+                     title={load.receiverId ? "Receiver already assigned" : "Assign Receiver"}
+                   >
+                     <Users className="w-4 h-4" />
+                     <span className="hidden xs:inline">{load.receiverId ? "Receiver Assigned" : "Assign Receiver"}</span>
+                     <span className="xs:hidden">{load.receiverId ? "Assigned" : "Recv"}</span>
+                   </button>
+                 )}
                 {handleUnassignBroker && load.broker && (
                   <button
                     className="flex-1 min-w-[120px] px-4 py-2.5 bg-white text-orange-600 border border-orange-300 rounded-lg font-medium text-sm hover:bg-orange-50 transition-colors flex items-center justify-center gap-2 touch-manipulation min-h-[44px]"
@@ -942,6 +960,20 @@ export default function LoadItem({
                 onClick={() => handleAssignBroker(load)}
               >
                 <User className="w-4 h-4" />
+              </button>
+            )}
+            {handleAssignReceiver && (
+              <button
+                className={`p-3 bg-white rounded-xl transition-all duration-200 shadow-sm ${
+                  load.receiverId 
+                    ? 'text-gray-300 cursor-not-allowed hover:shadow-sm' 
+                    : 'text-gray-400 hover:text-teal-600 hover:bg-teal-50 hover:shadow-md'
+                }`}
+                title={load.receiverId ? "Receiver already assigned" : "Assign Receiver"}
+                onClick={() => !load.receiverId && handleAssignReceiver(load)}
+                disabled={!!load.receiverId}
+              >
+                <Users className="w-4 h-4" />
               </button>
             )}
             {handleUnassignBroker && load.broker && (

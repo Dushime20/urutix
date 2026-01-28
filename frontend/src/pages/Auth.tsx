@@ -144,9 +144,24 @@ const Auth = () => {
       setError(null);
       setIsLoading(true);
       console.log('🔐 Attempting login for:', values.email);
-      const user = await login(values.email, values.password);
-      if (user) {
-        console.log("✅ Login successful, user:", user);
+      const response = await login(values.email, values.password);
+      
+      if (response) {
+        console.log("✅ Login response:", response);
+
+        // Check for role selection requirement
+        if (response.requiresRoleSelection) {
+            navigate('/select-role', { 
+                state: { 
+                    availableRoles: response.availableRoles,
+                    preAuthToken: response.preAuthToken 
+                } 
+            });
+            return;
+        }
+
+        // Standard flow - response contains user or is user
+        const user = response.user || response;
 
         // Role-based redirects
         switch (user.role) {

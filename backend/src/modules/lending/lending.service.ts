@@ -199,16 +199,20 @@ export class LendingService {
         ? { 
             email: createLenderDto.contact_email.trim().toLowerCase(),
             tenantId: tenantId,
+            role: UserRole.LENDER,
           }
-        : { email: createLenderDto.contact_email.trim().toLowerCase() },
+        : { 
+            email: createLenderDto.contact_email.trim().toLowerCase(),
+            role: UserRole.LENDER,
+          },
     });
 
     if (existingUser) {
       this.logger.error(
-        `User with email ${createLenderDto.contact_email} already exists. Cannot create lender with existing user email.`,
+        `Lender user with email ${createLenderDto.contact_email} already exists. Cannot create lender with existing user email.`,
       );
       throw new ConflictException(
-        `A user with the email "${createLenderDto.contact_email}" already exists in the system. Please use a different email address for this lender.`,
+        `A lender with the email "${createLenderDto.contact_email}" already exists in the system.`,
       );
     }
 

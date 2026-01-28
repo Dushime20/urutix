@@ -79,13 +79,17 @@ export class BrokersService {
       throw new BadRequestException('User is not authorized to create brokers');
     }
 
-    // Check if email already exists
+    // Check if broker already exists in this tenant
     const existingUser = await this.userRepository.findOne({
-      where: { email: createBrokerDto.email.toLowerCase().trim() },
+      where: { 
+        email: createBrokerDto.email.toLowerCase().trim(),
+        role: UserRole.BROKER,
+        tenantId: tenantAdmin.tenantId
+      },
     });
 
     if (existingUser) {
-      throw new ConflictException('A user with this email already exists');
+      throw new ConflictException('A broker with this email already exists in this tenant');
     }
 
     // Generate temporary password (will be changed on first login)

@@ -42,6 +42,7 @@ import { loadsAPI } from '@/services/load';
 import { matchingAPI } from '@/services/api';
 import { documentApi, type Document as DocumentType } from '@/services/documents/documentApi';
 import { enhancedMatchingApi } from '@/services/enhancedMatchingApi';
+import receiverService from '@/services/receiverService';
 import toast from 'react-hot-toast';
 import { useConfirmDialog } from '@/hooks/useConfirmDialog';
 import DocumentPreviewModal from '@/components/documents/DocumentPreviewModal';
@@ -76,16 +77,29 @@ const CargoDetailsModal = ({ isOpen, onClose, cargoId }: CargoDetailsModalProps)
   const [previewDoc, setPreviewDoc] = useState<{ id: string, title: string, fileName: string } | null>(null);
 
   const { data: response, isLoading, error } = useQuery({
-    queryKey: ['cargo', cargoId],
-    queryFn: () => loadsAPI.getById(cargoId!),
+    queryKey: ['cargo', cargoId, user?.role],
+    queryFn: async () => {
+      if (user?.role === 'CARGO_RECEIVER') {
+        const res = await receiverService.getCargoForInspection(cargoId!);
+        return { data: res.cargo };
+      }
+      return loadsAPI.getById(cargoId!);
+    },
     enabled: !!cargoId,
+    retry: 1,
   });
   const cargo = response?.data;
 
   const { data: documentsData, isLoading: documentsLoading, refetch: refetchDocuments } = useQuery({
-    queryKey: ['documents', cargoId],
+    queryKey: ['documents', cargoId, user?.role],
     queryFn: async () => {
       if (!cargoId) return [];
+      
+      // Receivers currently don't have access to the documents API
+      if (user?.role === 'CARGO_RECEIVER') {
+        return [];
+      }
+
       try {
         // Check if documentApi exists and has getDocumentsByEntity
         if (documentApi && typeof documentApi.getDocumentsByEntity === 'function') {

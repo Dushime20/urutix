@@ -570,26 +570,31 @@ export class FleetService {
         );
       }
 
-      // Step 1: Check if user already exists BEFORE creating driver (same as lender creation)
-      this.logger.log(`Checking if user with email ${createDriverDto.email} already exists...`);
+      // Step 1: Check if driver user already exists (role = DRIVER) in this tenant
+      this.logger.log(`Checking if driver user with email ${createDriverDto.email} already exists...`);
       const existingUser = await this.userRepository.findOne({
-        where: { email: createDriverDto.email.trim().toLowerCase(), tenantId },
+        where: { 
+          email: createDriverDto.email.trim().toLowerCase(), 
+          role: UserRole.DRIVER,
+          tenantId 
+        },
       });
 
       if (existingUser) {
         this.logger.error(
-          `User with email ${createDriverDto.email} already exists. Cannot create driver with existing user email.`,
+          `Driver user with email ${createDriverDto.email} already exists in this tenant.`,
         );
         throw new ConflictException(
-          `A user with the email "${createDriverDto.email}" already exists in the system. Please use a different email address for this driver.`,
+          `A driver with the email "${createDriverDto.email}" already exists in the system for this specific tenant.`,
         );
       }
 
-      // Step 2: Create the driver entity (only if user doesn't exist)
-      // But first, we need to create the user account
-      this.logger.log(`No existing user found. Proceeding with driver creation...`);
+      // Step 2: Create the user account (even if email exists for other roles)
+      // This will now pass database constraints because we are creating a new role entry
+      // Note: We don't check for other roles here because valid multi-role logic allows same email + different role
+      this.logger.log(`Proceeding with driver creation (multi-role compatible)...`);
       
-      // Create new user for driver (following lender creation pattern)
+      // Create new user for driver
       this.logger.log(`👤 Creating new driver user account...`);
       
       // Validate email is provided

@@ -66,6 +66,31 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
   const getNavItems = () => {
     const basePath = user?.role === 'CARGO_OWNER' ? '/cargo-owner' : '/dashboard';
 
+    if (user?.role === 'CARGO_RECEIVER') {
+      return [
+        {
+          label: 'Dashboard',
+          path: '/dashboard',
+          icon: Home
+        },
+        {
+          label: 'My Cargos',
+          path: '/cargo-owner/cargos/my-cargos',
+          icon: Package
+        },
+        {
+          label: 'Tracking',
+          path: '/cargo-owner/tracking',
+          icon: MapPin
+        },
+        {
+          label: 'Settings',
+          path: '/cargo-owner/settings',
+          icon: Settings
+        },
+      ];
+    }
+
     if (user?.role === 'CARGO_OWNER') {
       return [
         {
@@ -84,6 +109,11 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
             { label: 'Drafts', path: `${basePath}/cargos/list?status=DRAFT` },
             { label: 'Templates', path: `${basePath}/cargos/list?tab=template` },
           ]
+        },
+        {
+          label: 'Receivers',
+          path: `${basePath}/receivers`,
+          icon: Users
         },
         {
           label: 'Bidding',
@@ -517,6 +547,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
 
     // Cargo owner paths
     if (path.includes('/cargos')) return 'Cargo Management';
+    if (path.includes('/receivers')) return 'Receivers';
     if (path.includes('/bidding') || path.includes('/my-bids')) return 'Bidding';
     if (path.includes('/payments') || path.includes('/loan-requests') || path.includes('/financial')) return 'Payments';
     if (path.includes('/analytics') || path.includes('/reports') || path.includes('/history')) return 'Analytics';

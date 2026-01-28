@@ -97,6 +97,15 @@ export interface ICargoResponse {
   cargoOwner: IContactInfo;
   pickupLocation: ILocation;
   deliveryLocation: ILocation;
+  receiverId?: string;
+  receiver?: {
+    id: string;
+    email: string;
+    profile?: {
+      firstName?: string;
+      lastName?: string;
+    };
+  };
 }
 
 export interface CargoFormData {
