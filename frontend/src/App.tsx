@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from './contexts/AuthContext';
+import { NotificationProvider } from './contexts/NotificationContext';
 import { I18nProvider } from './contexts/i18n-context';
 import { Toaster } from 'react-hot-toast';
 import { lazy, Suspense } from 'react';
@@ -168,6 +169,7 @@ function App() {
         googleTranslateApiKey={import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY}
       >
         <AuthProvider>
+          <NotificationProvider>
           <Router>
             <Suspense fallback={<PageLoadingFallback />}>
               <Routes>
@@ -439,6 +441,7 @@ function App() {
               </Routes>
             </Suspense>
           </Router>
+          </NotificationProvider>
         </AuthProvider>
         <Toaster
           position="bottom-right"

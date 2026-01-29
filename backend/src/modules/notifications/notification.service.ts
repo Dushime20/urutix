@@ -161,7 +161,7 @@ export class NotificationService {
     const strategies = {
       price_drop: {
         name: 'Price Drop Alert',
-        title: '🚨 Price Drop Alert!',
+        title: 'Price Drop Alert!',
         message: `Great news! The price for your cargo ${data.cargoTitle} has dropped by ${data.priceReduction}%. This could save you money!`,
         shortMessage: `Price drop: ${data.cargoTitle}`,
         type: NotificationType.TRIP_UPDATE,
@@ -174,7 +174,7 @@ export class NotificationService {
       },
       route_optimization: {
         name: 'Route Optimization',
-        title: '🛣️ Better Route Available',
+        title: 'Better Route Available',
         message: `We found a faster route for your cargo ${data.cargoTitle}. Save ${data.timeSaved} hours and ${data.fuelSaved}% fuel!`,
         shortMessage: `Better route: ${data.cargoTitle}`,
         type: NotificationType.TRIP_ROUTE_CHANGE,
@@ -187,7 +187,7 @@ export class NotificationService {
       },
       demand_spike: {
         name: 'Demand Spike',
-        title: '📈 High Demand Alert',
+        title: 'High Demand Alert',
         message: `High demand detected on route ${data.route}. Consider increasing your price by ${data.recommendedIncrease}% for better profitability.`,
         shortMessage: `High demand: ${data.route}`,
         type: NotificationType.SYSTEM_UPDATE,
@@ -200,7 +200,7 @@ export class NotificationService {
       },
       delivery_delay: {
         name: 'Delivery Delay Warning',
-        title: '⚠️ Delivery Delay Warning',
+        title: 'Delivery Delay Warning',
         message: `Your cargo ${data.cargoTitle} is experiencing delays. Estimated new delivery time: ${data.newDeliveryTime}.`,
         shortMessage: `Delay: ${data.cargoTitle}`,
         type: NotificationType.TRIP_DELAY,
@@ -213,7 +213,7 @@ export class NotificationService {
       },
       market_opportunity: {
         name: 'Market Opportunity',
-        title: '💡 Market Opportunity',
+        title: 'Market Opportunity',
         message: `New high-value cargo available on route ${data.route}. Estimated profit: $${data.estimatedProfit}. Act fast!`,
         shortMessage: `Opportunity: ${data.route}`,
         type: NotificationType.SYSTEM_UPDATE,

@@ -4,12 +4,18 @@ import { Repository, Brackets } from 'typeorm';
 import { Trip, TripStatus } from '../../entities/trip.entity';
 import { CreateTripDto } from './dto/create-trip.dto';
 import { UpdateTripStatusDto } from './dto/update-trip-status.dto';
+import { UserProfile } from '../../entities/user-profile.entity';
+import { NotificationService } from '../notifications/services/notification.service';
+import { NotificationType, NotificationCategory, NotificationChannel, EntityType } from '../../entities/notification.entity';
 
 @Injectable()
 export class TripsService {
   constructor(
     @InjectRepository(Trip)
     private readonly tripRepository: Repository<Trip>,
+    @InjectRepository(UserProfile)
+    private readonly userProfileRepository: Repository<UserProfile>,
+    private readonly notificationService: NotificationService,
   ) { }
 
   async create(createTripDto: CreateTripDto, tenantId: string): Promise<Trip> {
@@ -115,6 +121,7 @@ export class TripsService {
     tenantId: string,
   ): Promise<Trip> {
     const trip = await this.findOne(id, tenantId);
+    const oldStatus = trip.status;
 
     trip.status = updateTripStatusDto.status;
     if (updateTripStatusDto.actualStartTime) {
@@ -124,7 +131,14 @@ export class TripsService {
       trip.actualEndTime = updateTripStatusDto.actualEndTime;
     }
 
-    return this.tripRepository.save(trip);
+    const savedTrip = await this.tripRepository.save(trip);
+
+    // Send notification if status changed to IN_PROGRESS (Loaded)
+    if (updateTripStatusDto.status === TripStatus.IN_PROGRESS && oldStatus !== TripStatus.IN_PROGRESS) {
+      this.sendLoadedNotification(savedTrip.id, tenantId).catch(err => console.error('Failed to send loaded notification', err));
+    }
+
+    return savedTrip;
   }
 
   async remove(id: string, tenantId: string): Promise<void> {
@@ -161,5 +175,41 @@ export class TripsService {
       plannedTrips,
       completionRate: totalTrips > 0 ? (completedTrips / totalTrips) * 100 : 0,
     };
+  }
+
+  private async sendLoadedNotification(tripId: string, tenantId: string): Promise<void> {
+    try {
+      const trip = await this.tripRepository.findOne({
+        where: { id: tripId },
+        relations: ['driver', 'truck', 'truck.owner', 'truck.owner.profile', 'load'],
+      });
+
+      if (!trip || !trip.load || !trip.truck || !trip.driver) return;
+
+      const driverName = `${trip.driver.firstName} ${trip.driver.lastName}`.trim();
+      
+      let truckOwnerName = 'Truck Owner';
+      if (trip.truck.owner?.profile) {
+        truckOwnerName = `${trip.truck.owner.profile.firstName} ${trip.truck.owner.profile.lastName}`.trim();
+      }
+
+      await this.notificationService.createNotification({
+        userId: trip.load.cargoOwnerId,
+        tenantId,
+        subject: 'Cargo Loaded & Ready',
+        content: `Driver ${driverName} from ${truckOwnerName} has loaded your cargo "${trip.load.title}", make advance payment to start your trip`,
+        type: NotificationType.GENERAL,
+        category: NotificationCategory.FINANCIAL,
+        channel: NotificationChannel.IN_APP,
+        actionUrl: '/dashboard/payments',
+        actionText: 'Make Payment',
+        metadata: {
+          entityType: EntityType.TRIP,
+          entityId: trip.id,
+        },
+      } as any);
+    } catch (error) {
+      console.error('Error in sendLoadedNotification:', error);
+    }
   }
 }

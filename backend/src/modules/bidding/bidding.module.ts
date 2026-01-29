@@ -13,6 +13,7 @@ import { AuctionView } from '../../entities/auction-view.entity';
 import { LoadContract } from '../../entities/load-contract.entity';
 import { BiddingService } from './bidding.service';
 import { BiddingController } from './bidding.controller';
+import { NotificationModule } from '../notifications/notification.module';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { BiddingController } from './bidding.controller';
       AuctionView,
       LoadContract,
     ]),
+    NotificationModule,
   ],
   providers: [BiddingService],
   controllers: [BiddingController],

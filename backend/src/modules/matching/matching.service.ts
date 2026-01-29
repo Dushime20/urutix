@@ -22,6 +22,7 @@ import {
   FuelType,
 } from '../../entities/truck.entity';
 import { Driver, DriverStatus } from '../../entities/driver.entity';
+import { UserProfile } from '../../entities/user-profile.entity';
 import { Location } from '../../entities/location.entity';
 import { LoadMatch, MatchStatus } from '../../entities/load-match.entity';
 import { Trip, TripStatus } from '../../entities/trip.entity';
@@ -37,6 +38,15 @@ import { TopsisAlgorithm } from './algorithms/topsis.algorithm';
 import { CacheService } from './services/cache.service';
 import { MarketIntelligenceService } from './services/market-intelligence.service';
 import { MLPredictionService } from './services/ml-prediction.service';
+import { NotificationService } from '../notifications/notification.service';
+import {
+  NotificationType,
+  NotificationPriority,
+  NotificationCategory,
+  NotificationChannel,
+  EntityType,
+} from '../../entities/notification.entity';
+import { User } from '../../entities/user.entity';
 
 // =====================================================
 // CONSOLIDATED MATCHING INTERFACES
@@ -169,6 +179,7 @@ export class MatchingService {
     private readonly cacheService: CacheService,
     private readonly marketIntelligence: MarketIntelligenceService,
     private readonly mlPrediction: MLPredictionService,
+    private readonly notificationService: NotificationService,
   ) {
     this.hungarianAlgorithm = new HungarianAlgorithm();
     this.geneticAlgorithm = new GeneticAlgorithm([], []);
@@ -614,6 +625,63 @@ export class MatchingService {
 
     const savedMatch = await this.loadMatchRepository.save(match);
     this.logger.log(`✅ Match saved successfully: ${savedMatch.id}`);
+
+    // Send notification to truck owner
+    try {
+      // Get the load details to find the cargo owner
+      const load = await this.loadRepository.findOne({
+        where: { id: loadId },
+      });
+
+      // Get the truck details with owner
+      const truck = await this.truckRepository.findOne({
+        where: { id: truckId },
+        relations: ['owner', 'owner.profile'],
+      });
+
+      if (load && truck && truck.owner) {
+        // Get cargo owner's profile information directly
+        const userProfileRepo = this.loadRepository.manager.getRepository(UserProfile);
+        const userProfile = await userProfileRepo.findOne({
+          where: { userId: load.cargoOwnerId },
+        });
+
+        let cargoOwnerFullName = 'A cargo owner';
+        if (userProfile && userProfile.firstName) {
+            cargoOwnerFullName = `${userProfile.firstName} ${userProfile.lastName || ''}`.trim();
+        }
+        const truckPlateNumber = truck.plateNumber || 'your truck';
+
+        this.logger.log(`📧 Creating notification for truck owner: ${truck.owner.id}`);
+        this.logger.log(`📧 Notification details: tenantId=${tenantId}, cargoOwner=${cargoOwnerFullName}, truck=${truckPlateNumber}`);
+
+        // Create notification for truck owner
+        const notification = await this.notificationService.createNotification({
+          tenantId: tenantId,
+          recipientId: truck.owner.id,
+          title: 'New Truck Request',
+          message: `${cargoOwnerFullName} requested for your truck ${truckPlateNumber} after matching.`,
+          shortMessage: `${cargoOwnerFullName} requested truck ${truckPlateNumber}`,
+          notificationType: NotificationType.GENERAL,
+          category: NotificationCategory.BUSINESS,
+          priority: NotificationPriority.HIGH,
+          channels: [NotificationChannel.IN_APP, NotificationChannel.PUSH],
+          entityType: EntityType.CARGO,
+          entityId: loadId,
+          requiresAction: true,
+          actionUrl: `/dashboard/fleet?tab=matches`,
+          actionText: 'View Request',
+        });
+
+        this.logger.log(`📧 Notification created successfully with ID: ${notification?.id}`);
+      } else {
+        this.logger.warn(`⚠️ Could not create notification: load=${!!load}, truck=${!!truck}, owner=${!!truck?.owner}`);
+      }
+    } catch (notificationError) {
+      // Log error but don't fail the match request
+      this.logger.error(`⚠️ Failed to send notification: ${notificationError.message}`, notificationError.stack);
+    }
+
     return savedMatch;
   }
 
@@ -738,21 +806,61 @@ export class MatchingService {
    */
   private async sendAcceptanceNotifications(load: any, truck: any, trip: any): Promise<void> {
     try {
-      // TODO: Integrate with NotificationService when available
-      this.logger.log(`📧 Sending acceptance notifications:`);
-      this.logger.log(`   - To Cargo Owner: Load ${load.id} has been accepted`);
-      this.logger.log(`   - To Truck Owner: You accepted Load ${load.id}`);
-      this.logger.log(`   - Trip ${trip.tripNumber} is now active`);
+      this.logger.log(`📧 Sending acceptance notifications...`);
 
-      // Placeholder for actual notification implementation
-      // await this.notificationService.send({
-      //   to: load.cargoOwnerId,
-      //   type: 'MATCH_ACCEPTED',
-      //   data: { loadId: load.id, truckId: truck.id, tripNumber: trip.tripNumber }
-      // });
+      // 1. Notify Cargo Owner
+      await this.notificationService.createNotification({
+        tenantId: load.tenantId,
+        recipientId: load.cargoOwnerId,
+        title: 'Match Accepted',
+        message: `Your cargo match has been accepted by truck ${truck.plateNumber}. Trip ${trip.tripNumber} has been created.`,
+        notificationType: NotificationType.TRIP_CREATED,
+        category: NotificationCategory.TRIP,
+        priority: NotificationPriority.HIGH,
+        channels: [NotificationChannel.IN_APP, NotificationChannel.PUSH],
+        entityType: EntityType.TRIP,
+        entityId: trip.id,
+        requiresAction: true,
+        actionUrl: `/dashboard/trips/${trip.id}`,
+        actionText: 'View Trip'
+      });
+      this.logger.log(`📧 Notification sent to Cargo Owner: ${load.cargoOwnerId}`);
+
+      // 2. Notify Truck Owner
+      let truckOwnerId = truck.owner?.id || truck.ownerId;
+      
+      // If owner ID is missing, fetch it
+      if (!truckOwnerId) {
+         const truckWithOwner = await this.truckRepository.findOne({
+             where: { id: truck.id },
+             relations: ['owner']
+         });
+         truckOwnerId = truckWithOwner?.owner?.id;
+      }
+
+      if (truckOwnerId) {
+        await this.notificationService.createNotification({
+          tenantId: load.tenantId, // Assuming same tenant, or truck.tenantId
+          recipientId: truckOwnerId,
+          title: 'Trip Created',
+          message: `You accepted the match for cargo. Trip ${trip.tripNumber} is now active.`,
+          notificationType: NotificationType.TRIP_CREATED,
+          category: NotificationCategory.TRIP,
+          priority: NotificationPriority.HIGH,
+          channels: [NotificationChannel.IN_APP, NotificationChannel.PUSH],
+          entityType: EntityType.TRIP,
+          entityId: trip.id,
+          requiresAction: true,
+          actionUrl: `/dashboard/fleet/trips/${trip.id}`,
+          actionText: 'View Trip'
+        });
+        this.logger.log(`📧 Notification sent to Truck Owner: ${truckOwnerId}`);
+      } else {
+        this.logger.warn(`⚠️ Could not find truck owner for notification (Truck ID: ${truck.id})`);
+      }
+
     } catch (error) {
-      this.logger.warn(`Failed to send notifications: ${error.message}`);
-      // Don't throw - notifications are non-critical
+      this.logger.error(`Failed to send notifications: ${error.message}`, error.stack);
     }
   }
 

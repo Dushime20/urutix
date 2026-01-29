@@ -1,9 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Bell, User, Menu, X, ChevronDown, Package, Gavel, MapPin, BarChart3, CreditCard, FileText, Settings, HelpCircle, Truck, Users, Route, Shield, Wallet, DollarSign, Home, CheckCircle, ClipboardList, Receipt } from 'lucide-react';
+import { User, Menu, X, ChevronDown, Package, Gavel, MapPin, BarChart3, CreditCard, FileText, Settings, HelpCircle, Truck, Users, Route, Shield, Wallet, DollarSign, Home, CheckCircle, ClipboardList, Receipt } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
-import { useCargoOwnerNotifications } from '../../hooks/useCargoOwnerNotifications';
 import ContextualHelp from '../Help/ContextualHelp';
+import NotificationDropdown from '../notifications/NotificationDropdown';
 
 interface DashboardHeaderProps {
   children?: React.ReactNode;
@@ -19,8 +19,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
   const userMenuRef = useRef<HTMLDivElement>(null);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
 
-  // Real-time notifications for cargo owners (hook must be called unconditionally)
-  const cargoOwnerNotifications = useCargoOwnerNotifications();
+
 
   // Close user menu when clicking outside
   useEffect(() => {
@@ -672,20 +671,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
             <ContextualHelp context={location.pathname} />
 
             {/* Notifications */}
-            <button
-              onClick={() => navigate(user?.role === 'CARGO_OWNER' ? '/cargo-owner/notifications' : '/dashboard/notifications')}
-              className="p-2 sm:p-2 bg-gray-50 rounded-full hover:bg-gray-100 active:bg-gray-200 transition-colors relative touch-manipulation min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center text-gray-600"
-            >
-              <Bell className="w-4 h-4 sm:w-5 sm:h-5" />
-              {(cargoOwnerNotifications.unreadCount > 0 || (user?.role !== 'CARGO_OWNER')) && (
-                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
-              )}
-              {cargoOwnerNotifications.unreadCount > 0 && (
-                <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-white">
-                  {cargoOwnerNotifications.unreadCount > 9 ? '9+' : cargoOwnerNotifications.unreadCount}
-                </span>
-              )}
-            </button>
+            <NotificationDropdown />
 
             {/* User Menu */}
             <div className="relative z-[9999]" ref={userMenuRef}>

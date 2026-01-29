@@ -7,8 +7,15 @@ import { Driver } from '../../entities/driver.entity';
 import { TripsService } from './trips.service';
 import { TripsController } from './trips.controller';
 
+import { UserProfile } from '../../entities/user-profile.entity';
+import { NotificationsModule } from '../notifications/notifications.module';
+import { NotificationService } from '../notifications/notification.service';
+
 @Module({
-  imports: [TypeOrmModule.forFeature([Trip, Load, Truck, Driver])],
+  imports: [
+    TypeOrmModule.forFeature([Trip, Load, Truck, Driver, UserProfile]),
+    NotificationsModule,
+  ],
   providers: [TripsService],
   controllers: [TripsController],
   exports: [TripsService],

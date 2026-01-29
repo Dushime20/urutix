@@ -22,12 +22,14 @@ import { RateLimiterService } from './services/rate-limiter.service';
 import { CacheService } from './services/cache.service';
 import { MarketIntelligenceService } from './services/market-intelligence.service';
 import { MLPredictionService } from './services/ml-prediction.service';
+import { NotificationModule } from '../notifications/notification.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Truck, Load, Driver, Location, Trip, RateLimit, LoadMatch]),
     EventEmitterModule.forRoot(),
     ConfigModule,
+    NotificationModule,
   ],
   providers: [
     MatchingService,

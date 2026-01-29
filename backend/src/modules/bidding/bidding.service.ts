@@ -21,6 +21,8 @@ import { Trip, TripStatus } from '../../entities/trip.entity';
 import { AuctionWatch } from '../../entities/auction-watch.entity';
 import { AuctionView } from '../../entities/auction-view.entity';
 import { LoadContract, ContractStatus } from '../../entities/load-contract.entity';
+import { NotificationService } from '../notifications/notification.service';
+import { NotificationType, EntityType, NotificationCategory, NotificationChannel } from '../../entities/notification.entity';
 
 export interface CreateBidDto {
   loadId: string;
@@ -117,6 +119,7 @@ export class BiddingService {
     private readonly viewRepository: Repository<AuctionView>,
     @InjectRepository(LoadContract)
     private readonly contractRepository: Repository<LoadContract>,
+    private readonly notificationService: NotificationService,
   ) { }
 
   async createBid(
@@ -254,6 +257,33 @@ export class BiddingService {
 
     // Update auction analytics
     await this.updateAuctionAnalytics(createBidDto.loadId);
+
+    // Send Notification to Cargo Owner
+    try {
+      const userProfile = await this.userProfileRepository.findOne({
+        where: { userId: truckOwnerId },
+      });
+      const bidderName = userProfile && userProfile.firstName 
+        ? `${userProfile.firstName} ${userProfile.lastName || ''}`.trim() 
+        : 'A truck owner';
+
+      await this.notificationService.createNotification({
+        recipientId: load.cargoOwnerId,
+        tenantId,
+        title: 'New Bid Received',
+        message: `${bidderName} has bid on your cargo "${load.title}"`,
+        notificationType: NotificationType.GENERAL,
+        category: NotificationCategory.CARGO,
+        channels: [NotificationChannel.IN_APP],
+        entityType: EntityType.CARGO,
+        entityId: savedBid.id,
+        requiresAction: true,
+        actionUrl: `/dashboard/bidding?view=bids`,
+        actionText: 'View Bid',
+      });
+    } catch (error) {
+      console.error('Failed to send bid notification', error);
+    }
 
     return savedBid;
   }
@@ -482,10 +512,13 @@ export class BiddingService {
       where: { loadId: bid.loadId, tenantId },
     });
 
+    let tripId = existingTrip?.id;
+    let finalDriverId: string | null = existingTrip?.driverId || null;
+
     if (!existingTrip) {
       try {
         // Get driver ID - use from bid details or assign a default driver from the truck
-        let finalDriverId = driverId;
+        finalDriverId = driverId;
         if (!finalDriverId) {
           // Try to get the first assigned driver from the truck
           if (truck.assignedDrivers && Array.isArray(truck.assignedDrivers) && truck.assignedDrivers.length > 0) {
@@ -531,6 +564,7 @@ export class BiddingService {
         });
 
         const savedTrip = await this.tripRepository.save(newTrip);
+        tripId = savedTrip.id;
         console.log(`Trip ${savedTrip.id} created automatically for accepted bid ${bidId}`);
       } catch (tripError: any) {
         // Log error but don't fail bid acceptance
@@ -541,6 +575,48 @@ export class BiddingService {
       }
     } else {
       console.log(`Trip ${existingTrip.id} already exists for load ${bid.loadId}`);
+    }
+
+    // Send notifications
+    try {
+      // 1. Notify Truck Owner
+      await this.notificationService.createNotification({
+        recipientId: bid.truckOwnerId,
+        tenantId,
+        title: 'Bid Accepted!',
+        message: `Your bid for cargo "${bid.load.title}" has been accepted. A trip has been created.`,
+        notificationType: NotificationType.GENERAL,
+        category: NotificationCategory.FINANCIAL,
+        channels: [NotificationChannel.IN_APP],
+        entityType: EntityType.TRIP,
+        entityId: tripId || bid.id,
+        requiresAction: true,
+        actionUrl: tripId ? `/dashboard/trips` : `/dashboard/bidding`,
+        actionText: 'View Trip',
+      });
+
+      // 2. Notify Driver
+      if (finalDriverId) {
+        const driverEntity = await this.driverRepository.findOne({ where: { id: finalDriverId } });
+        if (driverEntity && driverEntity.userId) {
+          await this.notificationService.createNotification({
+            recipientId: driverEntity.userId,
+            tenantId,
+            title: 'New Trip Assignment',
+            message: `Bid accepted! You have been assigned to load "${bid.load.title}".`,
+            notificationType: NotificationType.GENERAL,
+            category: NotificationCategory.TRIP,
+            channels: [NotificationChannel.IN_APP],
+            entityType: EntityType.TRIP,
+            entityId: tripId || bid.id,
+            requiresAction: true,
+            actionUrl: `/dashboard/trips`,
+            actionText: 'Start Trip',
+          });
+        }
+      }
+    } catch (notificationError) {
+      console.error('Failed to send bid acceptance notifications:', notificationError);
     }
 
     return acceptedBid;

@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { FaDollarSign, FaCalendarAlt, FaTruck, FaUser, FaChartLine } from 'react-icons/fa';
+import { fleetApi } from '../../services/fleetApi';
+import type { FleetItem } from '../../services/fleetApi';
 
 interface Auction {
   id: string;
@@ -65,6 +67,19 @@ const BidForm: React.FC<BidFormProps> = ({ auction, onSubmit, onCancel }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successProbability, setSuccessProbability] = useState<number>(0);
+  const [availableTrucks, setAvailableTrucks] = useState<FleetItem[]>([]);
+
+  useEffect(() => {
+    const fetchTrucks = async () => {
+      try {
+        const trucks = await fleetApi.getTrucks();
+        setAvailableTrucks(trucks);
+      } catch (err) {
+        console.error('Failed to fetch trucks', err);
+      }
+    };
+    fetchTrucks();
+  }, []);
 
   useEffect(() => {
     // Set default dates based on load requirements
@@ -292,14 +307,37 @@ const BidForm: React.FC<BidFormProps> = ({ auction, onSubmit, onCancel }) => {
       </h6>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Truck ID</label>
-          <input
-            type="text"
+          <label className="block text-sm font-medium text-gray-700 mb-1">Select Truck</label>
+          <select
             value={formData.bidDetails.truckSpecifications.truckId}
-            onChange={(e) => handleInputChange('bidDetails.truckSpecifications.truckId', e.target.value)}
-            placeholder="Enter truck ID"
+            onChange={(e) => {
+              const truckId = e.target.value;
+              const truck = availableTrucks.find(t => t.id === truckId);
+              
+              setFormData(prev => ({
+                ...prev,
+                bidDetails: {
+                  ...prev.bidDetails,
+                  truckSpecifications: {
+                    ...prev.bidDetails.truckSpecifications,
+                    truckId: truckId,
+                    ...(truck ? {
+                       capacityWeight: truck.capacityWeight?.toString() || '',
+                       capacityVolume: truck.capacityVolume?.toString() || '',
+                    } : {})
+                  }
+                }
+              }));
+            }}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          />
+          >
+            <option value="">Select a truck...</option>
+            {availableTrucks.map(truck => (
+              <option key={truck.id} value={truck.id}>
+                {truck.plateNumber} - {truck.make} {truck.model}
+              </option>
+            ))}
+          </select>
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Capacity Weight (kg)</label>

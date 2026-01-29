@@ -1630,12 +1630,7 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
                       Set Location
                     </button>
                   </div>
-                  {truck.currentLocation && truck.currentLocation.address && (
-                    <div className="flex items-center gap-2 text-sm">
-                      <FaMapMarkerAlt className="w-3 h-3 text-gray-400" />
-                      <span className="text-gray-900">{truck.currentLocation.address}</span>
-                    </div>
-                  )}
+
                 </div>
 
                 {/* Driver Assignment */}

@@ -76,6 +76,14 @@ export const FleetDashboard: React.FC = () => {
   // Sync activeTab with URL
   useEffect(() => {
     const path = location.pathname;
+    const searchParams = new URLSearchParams(location.search);
+    const tabParam = searchParams.get('tab');
+
+    if (tabParam === 'matches') {
+      setActiveTab('matches');
+      return;
+    }
+
     if (path.includes('/fleet/trucks')) setActiveTab('trucks');
     else if (path.includes('/fleet/drivers')) setActiveTab('drivers');
     else if (path.includes('/fleet/analytics')) setActiveTab('analytics');
@@ -83,7 +91,7 @@ export const FleetDashboard: React.FC = () => {
     else if (path.includes('/fleet/financial')) setActiveTab('financial');
     else if (path.includes('/fleet/routes')) setActiveTab('routes');
     else if (path.includes('/dashboard/fleet')) setActiveTab('overview');
-  }, [location.pathname]);
+  }, [location.pathname, location.search]);
 
   useEffect(() => {
     if (setHideHeader) {
