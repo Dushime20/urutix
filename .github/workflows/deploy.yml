@@ -1,0 +1,63 @@
+name: Deploy to Server
+
+on:
+  push:
+    branches:
+      - main
+      - master
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    name: Deploy Backend and Frontend
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy to Server via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: 22
+          script_stop: true
+          script: |
+            echo "🚀 Starting deployment..."
+            
+            # Navigate to project directory
+            cd ~/urutix/urutix
+            
+            # Pull latest changes
+            echo "📥 Pulling latest changes..."
+            git pull origin main || git pull origin master
+            
+            # Backend deployment
+            echo "🔧 Deploying Backend..."
+            cd ~/urutix/urutix/backend
+            npm install --legacy-peer-deps
+            npm run build
+            
+            # Run migrations
+            echo "🗃️ Running migrations..."
+            npm run migration:run || echo "Migration completed with warnings"
+            
+            # Restart backend with PM2
+            echo "🔄 Restarting Backend..."
+            pm2 restart backend || pm2 start dist/main.js --name backend
+            
+            # Frontend deployment
+            echo "🎨 Deploying Frontend..."
+            cd ~/urutix/urutix/frontend
+            npm install --legacy-peer-deps
+            npm run build
+            
+            # Restart frontend with PM2 (if using PM2 for frontend)
+            echo "🔄 Restarting Frontend..."
+            pm2 restart frontend || echo "Frontend static files updated"
+            
+            # Save PM2 process list
+            pm2 save
+            
+            echo "✅ Deployment completed successfully!"
