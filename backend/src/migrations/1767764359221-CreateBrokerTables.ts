@@ -301,12 +301,12 @@ export class CreateBrokerTables1767764359221 implements MigrationInterface {
         await queryRunner.query(`DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='insurance_policies' AND column_name='deletedAt') THEN ALTER TABLE "insurance_policies" ADD "deletedAt" TIMESTAMP; END IF; END $$;`);
         await queryRunner.query(`COMMENT ON COLUMN "bids"."advancePaymentPercentage" IS NULL`);
         await queryRunner.query(`COMMENT ON COLUMN "bids"."requireAdvancePayment" IS NULL`);
-        await queryRunner.query(`ALTER TABLE "trucks" ALTER COLUMN "inspectionAlerts" SET NOT NULL`);
-        await queryRunner.query(`ALTER TABLE "trucks" ALTER COLUMN "insuranceAlerts" SET NOT NULL`);
-        await queryRunner.query(`ALTER TABLE "trucks" ALTER COLUMN "fuelAlerts" SET NOT NULL`);
-        await queryRunner.query(`ALTER TABLE "trucks" ALTER COLUMN "tireAlerts" SET NOT NULL`);
-        await queryRunner.query(`ALTER TABLE "trucks" ALTER COLUMN "complianceAlerts" SET NOT NULL`);
-        await queryRunner.query(`ALTER TYPE "public"."users_role_enum" RENAME TO "users_role_enum_old"`);
+        await queryRunner.query(`DO $$ BEGIN IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='trucks' AND column_name='inspectionAlerts') THEN ALTER TABLE "trucks" ALTER COLUMN "inspectionAlerts" SET NOT NULL; END IF; END $$;`);
+        await queryRunner.query(`DO $$ BEGIN IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='trucks' AND column_name='insuranceAlerts') THEN ALTER TABLE "trucks" ALTER COLUMN "insuranceAlerts" SET NOT NULL; END IF; END $$;`);
+        await queryRunner.query(`DO $$ BEGIN IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='trucks' AND column_name='fuelAlerts') THEN ALTER TABLE "trucks" ALTER COLUMN "fuelAlerts" SET NOT NULL; END IF; END $$;`);
+        await queryRunner.query(`DO $$ BEGIN IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='trucks' AND column_name='tireAlerts') THEN ALTER TABLE "trucks" ALTER COLUMN "tireAlerts" SET NOT NULL; END IF; END $$;`);
+        await queryRunner.query(`DO $$ BEGIN IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='trucks' AND column_name='complianceAlerts') THEN ALTER TABLE "trucks" ALTER COLUMN "complianceAlerts" SET NOT NULL; END IF; END $$;`);
+        await queryRunner.query(`DO $$ BEGIN IF EXISTS (SELECT 1 FROM pg_type WHERE typname = 'users_role_enum') THEN ALTER TYPE "public"."users_role_enum" RENAME TO "users_role_enum_old"; END IF; END $$;`);
         await queryRunner.query(`DROP TYPE IF EXISTS "public"."users_role_enum" CASCADE`);
         await queryRunner.query(`DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'users_role_enum') THEN CREATE TYPE "public"."users_role_enum" AS ENUM('SUPER_ADMIN', 'ADMIN', 'TENANT_ADMIN', 'CARGO_OWNER', 'CARGO_RECEIVER', 'TRUCK_OWNER', 'DRIVER', 'AGENT', 'LENDER', 'BROKER'); END IF; END $$;`);
         await queryRunner.query(`ALTER TABLE "users" ALTER COLUMN "role" DROP DEFAULT`);
