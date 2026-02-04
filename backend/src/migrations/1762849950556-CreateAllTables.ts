@@ -750,8 +750,10 @@ END$$;`);
     await queryRunner.query(
       `CREATE UNIQUE INDEX IF NOT EXISTS "IDX_3d1613f95c6a564a3b588d161a" ON "email_verification_tokens" ("token") `,
     );
-    await queryRunner.query(
-      `CREATE TYPE "public"."disputes_status_enum" AS ENUM('OPEN', 'RESOLVED', 'ESCALATED', 'REJECTED')`,
+    await this.createTypeIfNotExists(
+      queryRunner,
+      'disputes_status_enum',
+      `'OPEN', 'RESOLVED', 'ESCALATED', 'REJECTED'`,
     );
     await queryRunner.query(
       `CREATE TABLE IF NOT EXISTS "disputes" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "tenantId" uuid NOT NULL, "tripId" uuid NOT NULL, "raisedById" uuid NOT NULL, "status" "public"."disputes_status_enum" NOT NULL DEFAULT 'OPEN', "reason" text NOT NULL, "resolution" text, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), "deleted_at" TIMESTAMP, CONSTRAINT "PK_3c97580d01c1a4b0b345c42a107" PRIMARY KEY ("id"))`,
@@ -762,20 +764,30 @@ END$$;`);
     await queryRunner.query(
       `CREATE INDEX IF NOT EXISTS "IDX_4a1758baf97d7cf6d77d75620f" ON "disputes" ("tenantId", "status") `,
     );
-    await queryRunner.query(
-      `CREATE TYPE "public"."documents_entitytype_enum" AS ENUM('USER', 'DRIVER', 'TRUCK', 'CARGO', 'TRIP', 'COMPANY', 'TENANT', 'SYSTEM')`,
+    await this.createTypeIfNotExists(
+      queryRunner,
+      'documents_entitytype_enum',
+      `'USER', 'DRIVER', 'TRUCK', 'CARGO', 'TRIP', 'COMPANY', 'TENANT', 'SYSTEM'`,
     );
-    await queryRunner.query(
-      `CREATE TYPE "public"."documents_documenttype_enum" AS ENUM('DRIVER_LICENSE', 'DRIVER_MEDICAL_CERT', 'DRIVER_DRUG_TEST', 'DRIVER_BACKGROUND_CHECK', 'DRIVER_TRAINING_CERT', 'DRIVER_INSURANCE', 'VEHICLE_REGISTRATION', 'VEHICLE_INSURANCE', 'VEHICLE_INSPECTION', 'VEHICLE_MAINTENANCE', 'VEHICLE_PERMIT', 'CARGO_MANIFEST', 'CARGO_INSURANCE', 'CARGO_CUSTOMS', 'CARGO_WEIGHT_CERT', 'BUSINESS_LICENSE', 'BUSINESS_INSURANCE', 'BUSINESS_TAX_CERT', 'BUSINESS_PERMIT', 'USER_ID_PROOF', 'USER_ADDRESS_PROOF', 'USER_BANK_DETAILS', 'TRIP_PERMIT', 'TRIP_ROUTE_PLAN', 'TRIP_WEIGHT_TICKET', 'POD', 'INVOICE', 'RECEIPT', 'PAYMENT_PROOF', 'EXPENSE_RECEIPT', 'SAFETY_CERT', 'ENVIRONMENTAL_CERT', 'QUALITY_CERT', 'CONTRACT', 'AGREEMENT', 'POLICY', 'MANUAL', 'OTHER')`,
+    await this.createTypeIfNotExists(
+      queryRunner,
+      'documents_documenttype_enum',
+      `'DRIVER_LICENSE', 'DRIVER_MEDICAL_CERT', 'DRIVER_DRUG_TEST', 'DRIVER_BACKGROUND_CHECK', 'DRIVER_TRAINING_CERT', 'DRIVER_INSURANCE', 'VEHICLE_REGISTRATION', 'VEHICLE_INSURANCE', 'VEHICLE_INSPECTION', 'VEHICLE_MAINTENANCE', 'VEHICLE_PERMIT', 'CARGO_MANIFEST', 'CARGO_INSURANCE', 'CARGO_CUSTOMS', 'CARGO_WEIGHT_CERT', 'BUSINESS_LICENSE', 'BUSINESS_INSURANCE', 'BUSINESS_TAX_CERT', 'BUSINESS_PERMIT', 'USER_ID_PROOF', 'USER_ADDRESS_PROOF', 'USER_BANK_DETAILS', 'TRIP_PERMIT', 'TRIP_ROUTE_PLAN', 'TRIP_WEIGHT_TICKET', 'POD', 'INVOICE', 'RECEIPT', 'PAYMENT_PROOF', 'EXPENSE_RECEIPT', 'SAFETY_CERT', 'ENVIRONMENTAL_CERT', 'QUALITY_CERT', 'CONTRACT', 'AGREEMENT', 'POLICY', 'MANUAL', 'OTHER'`,
     );
-    await queryRunner.query(
-      `CREATE TYPE "public"."documents_category_enum" AS ENUM('IDENTITY', 'LICENSE', 'INSURANCE', 'CERTIFICATION', 'COMPLIANCE', 'FINANCIAL', 'OPERATIONAL', 'LEGAL', 'OTHER')`,
+    await this.createTypeIfNotExists(
+      queryRunner,
+      'documents_category_enum',
+      `'IDENTITY', 'LICENSE', 'INSURANCE', 'CERTIFICATION', 'COMPLIANCE', 'FINANCIAL', 'OPERATIONAL', 'LEGAL', 'OTHER'`,
     );
-    await queryRunner.query(
-      `CREATE TYPE "public"."documents_status_enum" AS ENUM('PENDING', 'VERIFIED', 'REJECTED', 'EXPIRED', 'ARCHIVED')`,
+    await this.createTypeIfNotExists(
+      queryRunner,
+      'documents_status_enum',
+      `'PENDING', 'VERIFIED', 'REJECTED', 'EXPIRED', 'ARCHIVED'`,
     );
-    await queryRunner.query(
-      `CREATE TYPE "public"."documents_priority_enum" AS ENUM('LOW', 'NORMAL', 'HIGH', 'URGENT')`,
+    await this.createTypeIfNotExists(
+      queryRunner,
+      'documents_priority_enum',
+      `'LOW', 'NORMAL', 'HIGH', 'URGENT'`,
     );
     await queryRunner.query(
       `CREATE TABLE IF NOT EXISTS "documents" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "tenantId" uuid NOT NULL, "entityType" "public"."documents_entitytype_enum" NOT NULL, "entityId" uuid NOT NULL, "documentType" "public"."documents_documenttype_enum" NOT NULL, "category" "public"."documents_category_enum" NOT NULL, "status" "public"."documents_status_enum" NOT NULL DEFAULT 'PENDING', "priority" "public"."documents_priority_enum" NOT NULL DEFAULT 'NORMAL', "documentNumber" character varying, "title" text NOT NULL, "description" text NOT NULL, "fileName" text NOT NULL, "originalFileName" text NOT NULL, "fileUrl" text NOT NULL, "thumbnailUrl" text NOT NULL, "fileSize" integer NOT NULL, "mimeType" character varying NOT NULL, "fileExtension" character varying, "issueDate" date, "expiryDate" date, "isExpired" boolean NOT NULL DEFAULT false, "requiresRenewal" boolean NOT NULL DEFAULT false, "renewalReminderDays" integer NOT NULL DEFAULT '30', "metadata" jsonb NOT NULL DEFAULT '{}', "tags" jsonb NOT NULL DEFAULT '[]', "uploadedBy" uuid NOT NULL, "verifiedBy" uuid, "verifiedAt" TIMESTAMP, "verificationNotes" text, "verificationData" jsonb NOT NULL DEFAULT '{}', "versions" jsonb NOT NULL DEFAULT '[]', "currentVersion" integer NOT NULL DEFAULT '1', "accessControl" jsonb NOT NULL DEFAULT '[]', "auditTrail" jsonb NOT NULL DEFAULT '[]', "isPublic" boolean NOT NULL DEFAULT false, "isConfidential" boolean NOT NULL DEFAULT false, "encryptionKey" character varying, "ocrData" jsonb NOT NULL DEFAULT '{}', "digitalSignature" jsonb NOT NULL DEFAULT '{}', "complianceInfo" jsonb NOT NULL DEFAULT '{}', "workflowInfo" jsonb NOT NULL DEFAULT '{}', "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), "deleted_at" TIMESTAMP, CONSTRAINT "PK_ac51aa5181ee2036f5ca482857c" PRIMARY KEY ("id")); COMMENT ON COLUMN "documents"."entityType" IS 'Type of entity this document belongs to'; COMMENT ON COLUMN "documents"."documentType" IS 'Specific type of document'; COMMENT ON COLUMN "documents"."category" IS 'Category of document for grouping'`,
@@ -798,8 +810,10 @@ END$$;`);
     await queryRunner.query(
       `CREATE INDEX IF NOT EXISTS "IDX_95476c2fe1b629671d3e6e7514" ON "documents" ("entityType", "entityId") `,
     );
-    await queryRunner.query(
-      `CREATE TYPE "public"."audit_logs_action_enum" AS ENUM('CREATE', 'UPDATE', 'DELETE', 'LOGIN', 'LOGOUT', 'PAYMENT', 'DISPUTE', 'OTHER')`,
+    await this.createTypeIfNotExists(
+      queryRunner,
+      'audit_logs_action_enum',
+      `'CREATE', 'UPDATE', 'DELETE', 'LOGIN', 'LOGOUT', 'PAYMENT', 'DISPUTE', 'OTHER'`,
     );
     await queryRunner.query(
       `CREATE TABLE IF NOT EXISTS "audit_logs" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "tenantId" uuid NOT NULL, "userId" uuid NOT NULL, "action" "public"."audit_logs_action_enum" NOT NULL DEFAULT 'OTHER', "description" text NOT NULL, "metadata" jsonb NOT NULL DEFAULT '{}', "createdAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_1bb179d048bbc581caa3b013439" PRIMARY KEY ("id"))`,
