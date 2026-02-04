@@ -927,6 +927,7 @@ END$$;`);
       'loan_requests_status_enum',
       `'pending', 'approved', 'rejected', 'disbursed', 'repaid', 'failed', 'defaulted'`,
     );
+    await queryRunner.query('DROP TABLE IF EXISTS "loan_requests" CASCADE');
     await queryRunner.query(
       `CREATE TABLE IF NOT EXISTS "loan_requests" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "tenant_id" uuid NOT NULL, "cargo_id" uuid NOT NULL, "trip_id" uuid NOT NULL, "lender_id" uuid, "requested_amount" numeric(15,2) NOT NULL, "approved_amount" numeric(15,2), "status" "public"."loan_requests_status_enum" NOT NULL DEFAULT 'pending', "idempotency_key" character varying(255) NOT NULL, "interest_amount" numeric(15,2), "due_date" date, "created_by" uuid NOT NULL, "borrower_id" uuid, "external_loan_ref" character varying(255), "rejection_reason" text, "requested_split" json, "metadata" json, "created_at" TIMESTAMP NOT NULL DEFAULT now(), "updated_at" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "UQ_5f2d8564e7eb4d695c072376958" UNIQUE ("idempotency_key"), CONSTRAINT "PK_52d5943f8adea74332d5d53ec6a" PRIMARY KEY ("id"))`,
     );
