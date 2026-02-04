@@ -46,17 +46,17 @@ jobs:
             
             # Restart backend with PM2
             echo "🔄 Restarting Backend..."
-            pm2 restart backend || pm2 start dist/main.js --name backend
-            
+            pm2 restart smartcargo-backend || pm2 start dist/main.js --name smartcargo-backend
+
             # Frontend deployment
             echo "🎨 Deploying Frontend..."
             cd ~/urutix/urutix/frontend
             npm install --legacy-peer-deps
             npm run build
             
-            # Restart frontend with PM2 (if using PM2 for frontend)
+            # Restart frontend with PM2
             echo "🔄 Restarting Frontend..."
-            pm2 restart frontend || echo "Frontend static files updated"
+            pm2 restart smartcargo-frontend || pm2 serve dist 5174 --name smartcargo-frontend --spa
             
             # Save PM2 process list
             pm2 save
