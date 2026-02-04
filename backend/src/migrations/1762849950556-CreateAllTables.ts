@@ -394,8 +394,10 @@ export class CreateAllTables1762849950556 implements MigrationInterface {
       'drivers_employmenttype_enum',
       `'FULL_TIME', 'PART_TIME', 'CONTRACT', 'OWNER_OPERATOR', 'FREELANCE'`,
     );
-    await queryRunner.query(
-      `CREATE TYPE "public"."drivers_status_enum" AS ENUM('ACTIVE', 'INACTIVE', 'SUSPENDED', 'ON_LEAVE', 'TERMINATED', 'IN_TRANSIT')`,
+    await this.createTypeIfNotExists(
+      queryRunner,
+      'drivers_status_enum',
+      `'ACTIVE', 'INACTIVE', 'SUSPENDED', 'ON_LEAVE', 'TERMINATED', 'IN_TRANSIT'`,
     );
     await queryRunner.query(
       `CREATE TABLE IF NOT EXISTS "drivers" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "tenantId" uuid NOT NULL, "userId" uuid NOT NULL, "employerId" uuid NOT NULL, "employeeId" character varying, "firstName" character varying NOT NULL, "lastName" character varying NOT NULL, "email" character varying NOT NULL, "phone" character varying NOT NULL, "dateOfBirth" date NOT NULL, "address" text NOT NULL, "emergencyContact" jsonb NOT NULL DEFAULT '{}', "licenseNumber" character varying(50) NOT NULL, "licenseClasses" jsonb NOT NULL DEFAULT '[]', "licenseIssueDate" date NOT NULL, "licenseExpiry" date NOT NULL, "licenseState" character varying(50) NOT NULL, "licenseCountry" character varying(50) NOT NULL, "endorsements" jsonb NOT NULL DEFAULT '[]', "restrictions" jsonb NOT NULL DEFAULT '[]', "employmentType" "public"."drivers_employmenttype_enum" NOT NULL DEFAULT 'FULL_TIME', "hireDate" date NOT NULL, "terminationDate" date, "status" "public"."drivers_status_enum" NOT NULL DEFAULT 'ACTIVE', "availabilityStatus" character varying NOT NULL DEFAULT 'AVAILABLE', "currentTruckId" uuid, "currentTripId" uuid, "currentLocation" geometry(Point,4326), "locationUpdatedAt" TIMESTAMP, "hoursWorkedThisWeek" numeric(5,2) NOT NULL DEFAULT '0', "hoursWorkedThisMonth" numeric(5,2) NOT NULL DEFAULT '0', "lastBreakTime" TIMESTAMP, "consecutiveDrivingHours" integer NOT NULL DEFAULT '0', "medicalCertExpiry" date, "drugTestDate" date, "backgroundCheckDate" date, "trainingCompletionDate" date, "certifications" jsonb NOT NULL DEFAULT '[]', "rating" numeric(3,2) NOT NULL DEFAULT '0', "totalTrips" integer NOT NULL DEFAULT '0', "totalDistance" numeric(12,2) NOT NULL DEFAULT '0', "safetyScore" numeric(5,2) NOT NULL DEFAULT '100', "onTimeDeliveryRate" numeric(5,2) NOT NULL DEFAULT '0', "hourlyRate" numeric(10,2), "mileageRate" numeric(10,2), "totalEarnings" numeric(15,2) NOT NULL DEFAULT '0', "preferences" jsonb NOT NULL DEFAULT '{}', "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), "deleted_at" TIMESTAMP, CONSTRAINT "UQ_754b3d50a8cc64f7ad5c24f62b4" UNIQUE ("licenseNumber"), CONSTRAINT "PK_92ab3fb69e566d3eb0cae896047" PRIMARY KEY ("id"))`,
@@ -412,8 +414,10 @@ export class CreateAllTables1762849950556 implements MigrationInterface {
     await queryRunner.query(
       `CREATE UNIQUE INDEX IF NOT EXISTS "IDX_baea09a6daa36c25bc1f321699" ON "drivers" ("licenseNumber") WHERE deleted_at IS NULL`,
     );
-    await queryRunner.query(
-      `CREATE TYPE "public"."trips_status_enum" AS ENUM('PLANNED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED', 'DELAYED')`,
+    await this.createTypeIfNotExists(
+      queryRunner,
+      'trips_status_enum',
+      `'PLANNED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED', 'DELAYED'`,
     );
     await queryRunner.query(
       `CREATE TABLE IF NOT EXISTS "trips" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "tenantId" uuid NOT NULL, "loadId" uuid NOT NULL, "truckId" uuid NOT NULL, "driverId" uuid NOT NULL, "tripNumber" character varying(50) NOT NULL, "status" "public"."trips_status_enum" NOT NULL DEFAULT 'PLANNED', "plannedStartTime" TIMESTAMP WITH TIME ZONE NOT NULL, "plannedEndTime" TIMESTAMP WITH TIME ZONE NOT NULL, "actualStartTime" TIMESTAMP WITH TIME ZONE, "estimatedEndTime" TIMESTAMP WITH TIME ZONE, "actualEndTime" TIMESTAMP WITH TIME ZONE, "plannedRoute" jsonb, "actualRoute" jsonb, "totalDistance" numeric(10,2), "agreedPrice" numeric(15,2) NOT NULL, "currencyCode" character varying(3) NOT NULL DEFAULT 'USD', "fuelCost" numeric(10,2), "tollsCost" numeric(10,2), "otherExpenses" numeric(10,2), "totalCost" numeric(15,2), "profitMargin" numeric(5,2), "fuelEfficiency" numeric(8,2), "averageSpeed" numeric(8,2), "onTimePerformance" boolean, "eta" TIMESTAMP WITH TIME ZONE, "distance" double precision, "duration" double precision, "currentLocation" geometry(Point,4326), "locationUpdatedAt" TIMESTAMP, "estimatedArrival" TIMESTAMP WITH TIME ZONE, "cargoOwnerRating" numeric(3,2), "cargoOwnerFeedback" character varying, "driverRating" numeric(3,2), "driverFeedback" character varying, "notes" character varying, "issuesReported" jsonb NOT NULL DEFAULT '[]', "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), "completedAt" TIMESTAMP, "deleted_at" TIMESTAMP, "pickupLocationId" uuid, "deliveryLocationId" uuid, CONSTRAINT "UQ_47c934ba14c7f8893184544f865" UNIQUE ("tripNumber"), CONSTRAINT "PK_f71c231dee9c05a9522f9e840f5" PRIMARY KEY ("id"))`,
@@ -433,11 +437,15 @@ export class CreateAllTables1762849950556 implements MigrationInterface {
     await queryRunner.query(
       `CREATE UNIQUE INDEX IF NOT EXISTS "IDX_47c934ba14c7f8893184544f86" ON "trips" ("tripNumber") `,
     );
-    await queryRunner.query(
-      `CREATE TYPE "public"."tracking_events_type_enum" AS ENUM('Location', 'GeofenceEnter', 'GeofenceExit', 'Delay', 'Incident', 'StatusChange', 'DocumentUpload', 'Alert')`,
+    await this.createTypeIfNotExists(
+      queryRunner,
+      'tracking_events_type_enum',
+      `'Location', 'GeofenceEnter', 'GeofenceExit', 'Delay', 'Incident', 'StatusChange', 'DocumentUpload', 'Alert'`,
     );
-    await queryRunner.query(
-      `CREATE TYPE "public"."tracking_events_geofencetype_enum" AS ENUM('pickup', 'delivery', 'custom', 'restricted')`,
+    await this.createTypeIfNotExists(
+      queryRunner,
+      'tracking_events_geofencetype_enum',
+      `'pickup', 'delivery', 'custom', 'restricted'`,
     );
     await queryRunner.query(
       `CREATE TABLE IF NOT EXISTS "tracking_events" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "loadId" uuid NOT NULL, "type" "public"."tracking_events_type_enum" NOT NULL, "latitude" numeric(10,8), "longitude" numeric(11,8), "timestamp" TIMESTAMP WITH TIME ZONE NOT NULL, "speedKph" numeric(5,2), "headingDeg" numeric(5,2), "accuracyM" numeric(5,2), "altitude" numeric(5,2), "altitudeAccuracy" numeric(5,2), "address" text, "city" text, "state" text, "country" text, "postalCode" text, "geofenceId" text, "geofenceType" "public"."tracking_events_geofencetype_enum", "geofenceName" text, "data" jsonb, "description" text, "notes" text, "reportedBy" uuid, "isAutomated" boolean NOT NULL DEFAULT false, "requiresAction" boolean NOT NULL DEFAULT false, "actionTakenAt" TIMESTAMP WITH TIME ZONE, "actionTakenBy" uuid, "actionTaken" text, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), "deleted_at" TIMESTAMP, CONSTRAINT "PK_cc22ae68e05d9ba5a6575a6f429" PRIMARY KEY ("id"))`,
