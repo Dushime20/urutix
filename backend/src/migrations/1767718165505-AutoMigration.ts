@@ -130,6 +130,20 @@ export class AutoMigration1767718165505 implements MigrationInterface {
                 END IF;
             END $$;
         `);
+        
+        -- Drop and recreate tables that may have schema mismatches
+        await queryRunner.query(`DROP TABLE IF EXISTS "broker_commissions" CASCADE`);
+        await queryRunner.query(`DROP TABLE IF EXISTS "receipts" CASCADE`);
+        await queryRunner.query(`DROP TABLE IF EXISTS "load_documents" CASCADE`);
+        await queryRunner.query(`DROP TABLE IF EXISTS "load_contracts" CASCADE`);
+        await queryRunner.query(`DROP TABLE IF EXISTS "insurance_verifications" CASCADE`);
+        await queryRunner.query(`DROP TABLE IF EXISTS "escrow_accounts" CASCADE`);
+        await queryRunner.query(`DROP TABLE IF EXISTS "broker_match_recommendations" CASCADE`);
+        await queryRunner.query(`DROP TABLE IF EXISTS "broker_market_intelligence" CASCADE`);
+        await queryRunner.query(`DROP TABLE IF EXISTS "broker_transporter_credit" CASCADE`);
+        await queryRunner.query(`DROP TABLE IF EXISTS "broker_multi_stop_loads" CASCADE`);
+        await queryRunner.query(`DROP TABLE IF EXISTS "broker_transporter_performance" CASCADE`);
+        await queryRunner.query(`DROP TABLE IF EXISTS "broker_disputes" CASCADE`);
         await queryRunner.query(`CREATE TABLE IF NOT EXISTS "broker_commissions" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "tenantId" uuid NOT NULL, "brokerId" uuid NOT NULL, "loadId" uuid NOT NULL, "tripId" uuid, "loadAmount" numeric(15,2) NOT NULL, "commissionRate" numeric(5,2) NOT NULL, "commissionAmount" numeric(15,2) NOT NULL, "status" "public"."broker_commissions_status_enum" NOT NULL DEFAULT 'PENDING', "paidAt" TIMESTAMP, "paymentReference" character varying, "metadata" jsonb NOT NULL DEFAULT '{}', "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_fd2db57b1ad746870b601b61d20" PRIMARY KEY ("id"))`);
         await queryRunner.query(`CREATE INDEX IF NOT EXISTS "IDX_d95069b15600948519407df98b" ON "broker_commissions" ("status", "createdAt") `);
         await queryRunner.query(`CREATE INDEX IF NOT EXISTS "IDX_022f74b4dc17cf37766f0658e1" ON "broker_commissions" ("tenantId", "createdAt") `);
