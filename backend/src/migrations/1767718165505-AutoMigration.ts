@@ -4,16 +4,17 @@ export class AutoMigration1767718165505 implements MigrationInterface {
     name = 'AutoMigration1767718165505'
 
     public async up(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(`ALTER TABLE "loads" DROP CONSTRAINT "fk_loads_receiver"`);
-        await queryRunner.query(`ALTER TABLE "users" DROP CONSTRAINT "fk_users_createdbycargoowner"`);
-        await queryRunner.query(`ALTER TABLE "insurance_claims" DROP CONSTRAINT "FK_d4e396c5a1c8de48961bdf349a2"`);
-        await queryRunner.query(`ALTER TABLE "insurance_claims" DROP CONSTRAINT "FK_47ae4807b3ed676f608660b8dfa"`);
-        await queryRunner.query(`ALTER TABLE "insurance_claims" DROP CONSTRAINT "FK_42c8e0e8ee2e6953e607e7c2daa"`);
-        await queryRunner.query(`ALTER TABLE "insurance_policies" DROP CONSTRAINT "FK_bf04611ec3fbf4d71b9f8515d43"`);
-        await queryRunner.query(`ALTER TABLE "insurance_policies" DROP CONSTRAINT "FK_32881c13a51d3576a0222a6ebde"`);
-        await queryRunner.query(`ALTER TABLE "cargo_inspections" DROP CONSTRAINT "FK_cargo_inspections_receiverId"`);
-        await queryRunner.query(`ALTER TABLE "cargo_inspections" DROP CONSTRAINT "FK_cargo_inspections_loadId"`);
-        await queryRunner.query(`ALTER TABLE "insurance_claims" DROP CONSTRAINT "FK_58b6d392b802763fda1b8cdd21d"`);
+        // Safe drop constraints - only drop if they exist
+        await queryRunner.query(`ALTER TABLE "loads" DROP CONSTRAINT IF EXISTS "fk_loads_receiver"`);
+        await queryRunner.query(`ALTER TABLE "users" DROP CONSTRAINT IF EXISTS "fk_users_createdbycargoowner"`);
+        await queryRunner.query(`ALTER TABLE "insurance_claims" DROP CONSTRAINT IF EXISTS "FK_d4e396c5a1c8de48961bdf349a2"`);
+        await queryRunner.query(`ALTER TABLE "insurance_claims" DROP CONSTRAINT IF EXISTS "FK_47ae4807b3ed676f608660b8dfa"`);
+        await queryRunner.query(`ALTER TABLE "insurance_claims" DROP CONSTRAINT IF EXISTS "FK_42c8e0e8ee2e6953e607e7c2daa"`);
+        await queryRunner.query(`ALTER TABLE "insurance_policies" DROP CONSTRAINT IF EXISTS "FK_bf04611ec3fbf4d71b9f8515d43"`);
+        await queryRunner.query(`ALTER TABLE "insurance_policies" DROP CONSTRAINT IF EXISTS "FK_32881c13a51d3576a0222a6ebde"`);
+        await queryRunner.query(`ALTER TABLE "cargo_inspections" DROP CONSTRAINT IF EXISTS "FK_cargo_inspections_receiverId"`);
+        await queryRunner.query(`ALTER TABLE "cargo_inspections" DROP CONSTRAINT IF EXISTS "FK_cargo_inspections_loadId"`);
+        await queryRunner.query(`ALTER TABLE "insurance_claims" DROP CONSTRAINT IF EXISTS "FK_58b6d392b802763fda1b8cdd21d"`);
         await queryRunner.query(`DROP INDEX "public"."IDX_207051f533bf9ed05dc96c1f3e"`);
         await queryRunner.query(`DROP INDEX "public"."IDX_0d1ebe448cb691f63a2015d458"`);
         await queryRunner.query(`DROP INDEX "public"."IDX_203fecbe7e6e79182d64c11971"`);
