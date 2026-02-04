@@ -583,6 +583,12 @@ export class CreateAllTables1762849950556 implements MigrationInterface {
     await queryRunner.query(
       `CREATE UNIQUE INDEX IF NOT EXISTS "IDX_ab673f0e63eac966762155508e" ON "password_reset_tokens" ("token") `,
     );
+    // Drop notification enums to ensure they are recreated with correct values
+    await queryRunner.query('DROP TYPE IF EXISTS "public"."notifications_entitytype_enum" CASCADE');
+    await queryRunner.query('DROP TYPE IF EXISTS "public"."notifications_notificationtype_enum" CASCADE');
+    await queryRunner.query('DROP TYPE IF EXISTS "public"."notifications_category_enum" CASCADE');
+    await queryRunner.query('DROP TYPE IF EXISTS "public"."notifications_priority_enum" CASCADE');
+    await queryRunner.query('DROP TYPE IF EXISTS "public"."notifications_status_enum" CASCADE');
     await this.createTypeIfNotExists(
       queryRunner,
       'notifications_entitytype_enum',
