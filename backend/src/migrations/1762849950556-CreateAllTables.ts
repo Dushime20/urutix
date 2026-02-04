@@ -1636,6 +1636,24 @@ END$$;`);
     await queryRunner.query(
       `CREATE INDEX IF NOT EXISTS "IDX_8ba9f8f6f24babb4e5a4380198" ON "insurance_policies" ("truckId", "status") `,
     );
+    
+    // Drop all foreign key constraints if they exist before adding them
+    // This prevents "constraint already exists" errors on re-runs
+    await queryRunner.query(`
+      DO $$
+      DECLARE
+        r RECORD;
+      BEGIN
+        FOR r IN (SELECT conname, conrelid::regclass AS table_name
+                  FROM pg_constraint
+                  WHERE contype = 'f'
+                  AND connamespace = 'public'::regnamespace)
+        LOOP
+          EXECUTE 'ALTER TABLE ' || r.table_name || ' DROP CONSTRAINT IF EXISTS "' || r.conname || '" CASCADE';
+        END LOOP;
+      END $$;
+    `);
+    
     await queryRunner.query(
       `ALTER TABLE "user_profiles" ADD CONSTRAINT "FK_6ca9503d77ae39b4b5a6cc3ba88" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`,
     );
