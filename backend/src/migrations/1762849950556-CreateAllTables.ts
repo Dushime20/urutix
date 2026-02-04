@@ -389,8 +389,10 @@ export class CreateAllTables1762849950556 implements MigrationInterface {
     await queryRunner.query(
       `CREATE INDEX IF NOT EXISTS "IDX_776c71c455d5d5ae9f0acadffc" ON "locations" ("tenantId", "cityId") `,
     );
-    await queryRunner.query(
-      `CREATE TYPE "public"."drivers_employmenttype_enum" AS ENUM('FULL_TIME', 'PART_TIME', 'CONTRACT', 'OWNER_OPERATOR', 'FREELANCE')`,
+    await this.createTypeIfNotExists(
+      queryRunner,
+      'drivers_employmenttype_enum',
+      `'FULL_TIME', 'PART_TIME', 'CONTRACT', 'OWNER_OPERATOR', 'FREELANCE'`,
     );
     await queryRunner.query(
       `CREATE TYPE "public"."drivers_status_enum" AS ENUM('ACTIVE', 'INACTIVE', 'SUSPENDED', 'ON_LEAVE', 'TERMINATED', 'IN_TRANSIT')`,
