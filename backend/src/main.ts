@@ -67,7 +67,8 @@ async function bootstrap() {
 
   await app.listen(port);
 
-  console.log(`🚀 UrutiX API is running on: http://localhost:${port}`);
+  console.log(`Application is running on: ${await app.getUrl()}`);
+  console.log(`Deployed automatically: ${new Date().toISOString()}`);
   console.log(`🔧 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`📡 WebSocket server is available on: ws://localhost:${port}`);
   console.log(`📚 API Documentation: http://localhost:${port}/api/docs`);
