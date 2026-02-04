@@ -95,16 +95,33 @@ export class AutoMigration1767718165505 implements MigrationInterface {
         await queryRunner.query(`DROP INDEX IF EXISTS "public"."IDX_baa50eb26aac0be1b692c080fb"`);
         await queryRunner.query(`DROP INDEX IF EXISTS "public"."IDX_e18ea109a1f68c3868b032a089"`);
         await queryRunner.query(`DROP INDEX IF EXISTS "public"."IDX_f3c89f740731a501a18912bd0b"`);
-        await queryRunner.query(`ALTER TABLE "safety_trainings" DROP CONSTRAINT IF EXISTS "safety_trainings_status_check"`);
-        await queryRunner.query(`ALTER TABLE "safety_trainings" DROP CONSTRAINT IF EXISTS "safety_trainings_frequency_check"`);
-        await queryRunner.query(`ALTER TABLE "safety_trainings" DROP CONSTRAINT IF EXISTS "safety_trainings_type_check"`);
-        await queryRunner.query(`ALTER TABLE "safety_inspections" DROP CONSTRAINT IF EXISTS "safety_inspections_complianceStatus_check"`);
-        await queryRunner.query(`ALTER TABLE "safety_inspections" DROP CONSTRAINT IF EXISTS "safety_inspections_status_check"`);
-        await queryRunner.query(`ALTER TABLE "safety_inspections" DROP CONSTRAINT IF EXISTS "safety_inspections_type_check"`);
-        await queryRunner.query(`ALTER TABLE "safety_incidents" DROP CONSTRAINT IF EXISTS "safety_incidents_severity_check"`);
-        await queryRunner.query(`ALTER TABLE "safety_incidents" DROP CONSTRAINT IF EXISTS "safety_incidents_status_check"`);
-        await queryRunner.query(`ALTER TABLE "safety_incidents" DROP CONSTRAINT IF EXISTS "safety_incidents_type_check"`);
-        await queryRunner.query(`COMMENT ON TABLE "safety_trainings" IS NULL`);
+        // Drop constraints only if tables exist
+        await queryRunner.query(`
+            DO $$ BEGIN
+                IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'safety_trainings') THEN
+                    ALTER TABLE "safety_trainings" DROP CONSTRAINT IF EXISTS "safety_trainings_status_check";
+                    ALTER TABLE "safety_trainings" DROP CONSTRAINT IF EXISTS "safety_trainings_frequency_check";
+                    ALTER TABLE "safety_trainings" DROP CONSTRAINT IF EXISTS "safety_trainings_type_check";
+                END IF;
+                IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'safety_inspections') THEN
+                    ALTER TABLE "safety_inspections" DROP CONSTRAINT IF EXISTS "safety_inspections_complianceStatus_check";
+                    ALTER TABLE "safety_inspections" DROP CONSTRAINT IF EXISTS "safety_inspections_status_check";
+                    ALTER TABLE "safety_inspections" DROP CONSTRAINT IF EXISTS "safety_inspections_type_check";
+                END IF;
+                IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'safety_incidents') THEN
+                    ALTER TABLE "safety_incidents" DROP CONSTRAINT IF EXISTS "safety_incidents_severity_check";
+                    ALTER TABLE "safety_incidents" DROP CONSTRAINT IF EXISTS "safety_incidents_status_check";
+                    ALTER TABLE "safety_incidents" DROP CONSTRAINT IF EXISTS "safety_incidents_type_check";
+                END IF;
+            END $$;
+        `);
+        await queryRunner.query(`
+            DO $$ BEGIN
+                IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'safety_trainings') THEN
+                    COMMENT ON TABLE "safety_trainings" IS NULL;
+                END IF;
+            END $$;
+        `);
         await queryRunner.query(`
             DO $$
             BEGIN
