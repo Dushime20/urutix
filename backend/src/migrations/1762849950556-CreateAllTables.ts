@@ -480,11 +480,15 @@ export class CreateAllTables1762849950556 implements MigrationInterface {
     await queryRunner.query(
       `CREATE INDEX IF NOT EXISTS "IDX_941d32f73977001a50bf372375" ON "route_trucks" ("tenantId") `,
     );
-    await queryRunner.query(
-      `CREATE TYPE "public"."routes_routetype_enum" AS ENUM('highway', 'city', 'rural', 'mixed')`,
+    await this.createTypeIfNotExists(
+      queryRunner,
+      'routes_routetype_enum',
+      `'highway', 'city', 'rural', 'mixed'`,
     );
-    await queryRunner.query(
-      `CREATE TYPE "public"."routes_status_enum" AS ENUM('active', 'inactive', 'maintenance')`,
+    await this.createTypeIfNotExists(
+      queryRunner,
+      'routes_status_enum',
+      `'active', 'inactive', 'maintenance'`,
     );
     await queryRunner.query(
       `CREATE TABLE IF NOT EXISTS "routes" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "tenantId" uuid NOT NULL, "name" character varying(100) NOT NULL, "origin" character varying(100) NOT NULL, "destination" character varying(100) NOT NULL, "distance" numeric(10,2) NOT NULL, "estimatedTime" integer NOT NULL, "routeType" "public"."routes_routetype_enum" NOT NULL DEFAULT 'highway', "status" "public"."routes_status_enum" NOT NULL DEFAULT 'active', "assignedTrucks" jsonb NOT NULL DEFAULT '[]', "assignedDrivers" jsonb NOT NULL DEFAULT '[]', "description" character varying, "isActive" boolean NOT NULL DEFAULT true, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), "deleted_at" TIMESTAMP, CONSTRAINT "PK_76100511cdfa1d013c859f01d8b" PRIMARY KEY ("id"))`,
@@ -504,14 +508,20 @@ export class CreateAllTables1762849950556 implements MigrationInterface {
     await queryRunner.query(
       `CREATE UNIQUE INDEX IF NOT EXISTS "IDX_4542dd2f38a61354a040ba9fd5" ON "refresh_tokens" ("token") `,
     );
-    await queryRunner.query(
-      `CREATE TYPE "public"."price_suggestions_pricingmodel_enum" AS ENUM('market_rate', 'distance_based', 'weight_based', 'volume_based', 'time_based', 'demand_based', 'competitive', 'custom')`,
+    await this.createTypeIfNotExists(
+      queryRunner,
+      'price_suggestions_pricingmodel_enum',
+      `'market_rate', 'distance_based', 'weight_based', 'volume_based', 'time_based', 'demand_based', 'competitive', 'custom'`,
     );
-    await queryRunner.query(
-      `CREATE TYPE "public"."price_suggestions_confidencelevel_enum" AS ENUM('low', 'medium', 'high', 'very_high')`,
+    await this.createTypeIfNotExists(
+      queryRunner,
+      'price_suggestions_confidencelevel_enum',
+      `'low', 'medium', 'high', 'very_high'`,
     );
-    await queryRunner.query(
-      `CREATE TYPE "public"."price_suggestions_status_enum" AS ENUM('draft', 'active', 'expired', 'accepted', 'rejected', 'superseded')`,
+    await this.createTypeIfNotExists(
+      queryRunner,
+      'price_suggestions_status_enum',
+      `'draft', 'active', 'expired', 'accepted', 'rejected', 'superseded'`,
     );
     await queryRunner.query(
       `CREATE TABLE IF NOT EXISTS "price_suggestions" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "loadId" uuid NOT NULL, "pricingModel" "public"."price_suggestions_pricingmodel_enum" NOT NULL DEFAULT 'market_rate', "suggestedAmount" numeric(15,2) NOT NULL, "currency" character varying(3) NOT NULL DEFAULT 'USD', "confidence" numeric(3,2) NOT NULL, "confidenceLevel" "public"."price_suggestions_confidencelevel_enum" NOT NULL DEFAULT 'medium', "status" "public"."price_suggestions_status_enum" NOT NULL DEFAULT 'draft', "minAmount" numeric(15,2), "maxAmount" numeric(15,2), "baseRate" numeric(15,2), "fuelSurcharge" numeric(15,2), "accessorials" numeric(15,2), "taxes" numeric(15,2), "insurance" numeric(15,2), "markup" numeric(15,2), "discount" numeric(15,2), "distanceMiles" numeric(10,2), "distanceKm" numeric(10,2), "estimatedHours" numeric(10,2), "tolls" numeric(10,2), "parking" numeric(10,2), "marketDemand" numeric(5,2), "capacityUtilization" numeric(5,2), "fuelPrice" numeric(5,2), "seasonalFactor" numeric(5,2), "competitorLow" numeric(15,2), "competitorHigh" numeric(15,2), "competitorAverage" numeric(15,2), "competitorCount" integer, "weightFactor" numeric(10,2), "volumeFactor" numeric(10,2), "urgencyFactor" numeric(10,2), "specialHandlingFactor" numeric(10,2), "hazmatFactor" numeric(10,2), "temperatureFactor" numeric(10,2), "inputs" jsonb, "calculationSteps" jsonb, "marketData" jsonb, "notes" text, "reasoning" text, "assumptions" text, "limitations" text, "recommendations" text, "validFrom" TIMESTAMP WITH TIME ZONE, "validUntil" TIMESTAMP WITH TIME ZONE, "acceptedAt" TIMESTAMP WITH TIME ZONE, "acceptedBy" uuid, "rejectedAt" TIMESTAMP WITH TIME ZONE, "rejectedBy" uuid, "rejectionReason" text, "metadata" jsonb, "externalReference" text, "externalSystem" text, "isAutomated" boolean NOT NULL DEFAULT false, "automationSource" text, "processingTimeMs" numeric(5,2), "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), "deleted_at" TIMESTAMP, CONSTRAINT "PK_d520dc9638dcf235b80e6f23186" PRIMARY KEY ("id"))`,
@@ -534,14 +544,20 @@ export class CreateAllTables1762849950556 implements MigrationInterface {
     await queryRunner.query(
       `CREATE INDEX IF NOT EXISTS "IDX_3cdb9a8e7d235c139d64966279" ON "price_suggestions" ("loadId") `,
     );
-    await queryRunner.query(
-      `CREATE TYPE "public"."payments_paymentmethod_enum" AS ENUM('credit_card', 'debit_card', 'bank_transfer', 'digital_wallet', 'cash', 'check', 'wire_transfer')`,
+    await this.createTypeIfNotExists(
+      queryRunner,
+      'payments_paymentmethod_enum',
+      `'credit_card', 'debit_card', 'bank_transfer', 'digital_wallet', 'cash', 'check', 'wire_transfer'`,
     );
-    await queryRunner.query(
-      `CREATE TYPE "public"."payments_paymenttype_enum" AS ENUM('trip_payment', 'subscription', 'service_fee', 'deposit', 'refund', 'withdrawal', 'advance', 'final')`,
+    await this.createTypeIfNotExists(
+      queryRunner,
+      'payments_paymenttype_enum',
+      `'trip_payment', 'subscription', 'service_fee', 'deposit', 'refund', 'withdrawal', 'advance', 'final'`,
     );
-    await queryRunner.query(
-      `CREATE TYPE "public"."payments_status_enum" AS ENUM('pending', 'processing', 'completed', 'failed', 'cancelled', 'refunded', 'escrow')`,
+    await this.createTypeIfNotExists(
+      queryRunner,
+      'payments_status_enum',
+      `'pending', 'processing', 'completed', 'failed', 'cancelled', 'refunded', 'escrow'`,
     );
     await queryRunner.query(
       `CREATE TABLE IF NOT EXISTS "payments" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "idempotencyKey" character varying, "tenantId" uuid NOT NULL, "tripId" uuid NOT NULL, "payerId" uuid NOT NULL, "amount" numeric(10,2) NOT NULL, "currency" character varying(3) NOT NULL, "paymentMethod" "public"."payments_paymentmethod_enum" NOT NULL, "paymentType" "public"."payments_paymenttype_enum" NOT NULL, "status" "public"."payments_status_enum" NOT NULL DEFAULT 'pending', "description" character varying, "referenceNumber" character varying, "transactionId" character varying, "gatewayResponse" character varying, "failureReason" character varying, "billingAddress" character varying, "notes" character varying, "dueDate" TIMESTAMP, "processedAt" TIMESTAMP, "processingFee" numeric(10,2), "metadata" jsonb NOT NULL DEFAULT '{}', "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), "deleted_at" TIMESTAMP, CONSTRAINT "PK_197ab7af18c93fbb0c9b28b4a59" PRIMARY KEY ("id"))`,
@@ -567,20 +583,30 @@ export class CreateAllTables1762849950556 implements MigrationInterface {
     await queryRunner.query(
       `CREATE UNIQUE INDEX IF NOT EXISTS "IDX_ab673f0e63eac966762155508e" ON "password_reset_tokens" ("token") `,
     );
-    await queryRunner.query(
-      `CREATE TYPE "public"."notifications_entitytype_enum" AS ENUM('USER', 'DRIVER', 'TRUCK', 'CARGO', 'TRIP', 'COMPANY', 'TENANT', 'SYSTEM', 'DOCUMENT', 'PAYMENT', 'EXPENSE')`,
+    await this.createTypeIfNotExists(
+      queryRunner,
+      'notifications_entitytype_enum',
+      `'USER', 'DRIVER', 'TRUCK', 'CARGO', 'TRIP', 'COMPANY', 'TENANT', 'SYSTEM', 'DOCUMENT', 'PAYMENT', 'EXPENSE'`,
     );
-    await queryRunner.query(
-      `CREATE TYPE "public"."notifications_notificationtype_enum" AS ENUM('SYSTEM_MAINTENANCE', 'SYSTEM_UPDATE', 'SYSTEM_ERROR', 'USER_WELCOME', 'USER_VERIFICATION', 'USER_PASSWORD_RESET', 'USER_ACCOUNT_LOCKED', 'DRIVER_ASSIGNMENT', 'DRIVER_TRIP_START', 'DRIVER_TRIP_END', 'DRIVER_ALERT', 'DRIVER_DOCUMENT_EXPIRY', 'DRIVER_SAFETY_ALERT', 'DRIVER_FATIGUE_WARNING', 'VEHICLE_MAINTENANCE_DUE', 'VEHICLE_INSPECTION_DUE', 'VEHICLE_INSURANCE_EXPIRY', 'VEHICLE_REGISTRATION_EXPIRY', 'VEHICLE_BREAKDOWN', 'CARGO_PICKUP_REMINDER', 'CARGO_DELIVERY_UPDATE', 'CARGO_DELAY', 'CARGO_DAMAGE', 'CARGO_CUSTOMS_UPDATE', 'TRIP_CREATED', 'TRIP_STARTED', 'TRIP_COMPLETED', 'TRIP_CANCELLED', 'TRIP_DELAY', 'TRIP_ROUTE_CHANGE', 'TRIP_UPDATE', 'TRIP_STATUS', 'PAYMENT_RECEIVED', 'PAYMENT_DUE', 'PAYMENT_OVERDUE', 'INVOICE_GENERATED', 'EXPENSE_APPROVED', 'EXPENSE_REJECTED', 'PAYMENT', 'LICENSE_EXPIRY', 'CERTIFICATION_EXPIRY', 'INSURANCE_EXPIRY', 'PERMIT_EXPIRY', 'AUDIT_DUE', 'VIOLATION_ALERT', 'CONTRACT_EXPIRY', 'AGREEMENT_UPDATE', 'POLICY_CHANGE', 'NEW_FEATURE', 'EMERGENCY_ALERT', 'ACCIDENT_REPORT', 'WEATHER_WARNING', 'ROAD_CLOSURE', 'DOCUMENT_UPLOADED', 'DOCUMENT_VERIFIED', 'DOCUMENT_REJECTED', 'GENERAL', 'REMINDER', 'ALERT', 'INFO')`,
+    await this.createTypeIfNotExists(
+      queryRunner,
+      'notifications_notificationtype_enum',
+      `'SYSTEM_MAINTENANCE', 'SYSTEM_UPDATE', 'SYSTEM_ERROR', 'USER_WELCOME', 'USER_VERIFICATION', 'USER_PASSWORD_RESET', 'USER_ACCOUNT_LOCKED', 'DRIVER_ASSIGNMENT', 'DRIVER_TRIP_START', 'DRIVER_TRIP_END', 'DRIVER_ALERT', 'DRIVER_DOCUMENT_EXPIRY', 'DRIVER_SAFETY_ALERT', 'DRIVER_FATIGUE_WARNING', 'VEHICLE_MAINTENANCE_DUE', 'VEHICLE_INSPECTION_DUE', 'VEHICLE_INSURANCE_EXPIRY', 'VEHICLE_REGISTRATION_EXPIRY', 'VEHICLE_BREAKDOWN', 'CARGO_PICKUP_REMINDER', 'CARGO_DELIVERY_UPDATE', 'CARGO_DELAY', 'CARGO_DAMAGE', 'CARGO_CUSTOMS_UPDATE', 'TRIP_CREATED', 'TRIP_STARTED', 'TRIP_COMPLETED', 'TRIP_CANCELLED', 'TRIP_DELAY', 'TRIP_ROUTE_CHANGE', 'TRIP_UPDATE', 'TRIP_STATUS', 'PAYMENT_RECEIVED', 'PAYMENT_DUE', 'PAYMENT_OVERDUE', 'INVOICE_GENERATED', 'EXPENSE_APPROVED', 'EXPENSE_REJECTED', 'PAYMENT', 'LICENSE_EXPIRY', 'CERTIFICATION_EXPIRY', 'INSURANCE_EXPIRY', 'PERMIT_EXPIRY', 'AUDIT_DUE', 'VIOLATION_ALERT', 'CONTRACT_EXPIRY', 'AGREEMENT_UPDATE', 'POLICY_CHANGE', 'NEW_FEATURE', 'EMERGENCY_ALERT', 'ACCIDENT_REPORT', 'WEATHER_WARNING', 'ROAD_CLOSURE', 'DOCUMENT_UPLOADED', 'DOCUMENT_VERIFIED', 'DOCUMENT_REJECTED', 'GENERAL', 'REMINDER', 'ALERT', 'INFO'`,
     );
-    await queryRunner.query(
-      `CREATE TYPE "public"."notifications_category_enum" AS ENUM('SYSTEM', 'USER', 'DRIVER', 'VEHICLE', 'CARGO', 'TRIP', 'TRIP_STATUS', 'FINANCIAL', 'COMPLIANCE', 'BUSINESS', 'EMERGENCY', 'GENERAL', 'SAFETY', 'PERFORMANCE', 'MAINTENANCE', 'MARKETING')`,
+    await this.createTypeIfNotExists(
+      queryRunner,
+      'notifications_category_enum',
+      `'SYSTEM', 'USER', 'DRIVER', 'VEHICLE', 'CARGO', 'TRIP', 'TRIP_STATUS', 'FINANCIAL', 'COMPLIANCE', 'BUSINESS', 'EMERGENCY', 'GENERAL', 'SAFETY', 'PERFORMANCE', 'MAINTENANCE', 'MARKETING'`,
     );
-    await queryRunner.query(
-      `CREATE TYPE "public"."notifications_priority_enum" AS ENUM('LOW', 'NORMAL', 'HIGH', 'URGENT', 'CRITICAL')`,
+    await this.createTypeIfNotExists(
+      queryRunner,
+      'notifications_priority_enum',
+      `'LOW', 'NORMAL', 'HIGH', 'URGENT', 'CRITICAL'`,
     );
-    await queryRunner.query(
-      `CREATE TYPE "public"."notifications_status_enum" AS ENUM('PENDING', 'SENT', 'DELIVERED', 'READ', 'FAILED', 'CANCELLED')`,
+    await this.createTypeIfNotExists(
+      queryRunner,
+      'notifications_status_enum',
+      `'PENDING', 'SENT', 'DELIVERED', 'READ', 'FAILED', 'CANCELLED'`,
     );
     await queryRunner.query(
       `CREATE TABLE IF NOT EXISTS "notifications" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "tenantId" uuid NOT NULL, "recipientId" uuid NOT NULL, "entityType" "public"."notifications_entitytype_enum" NOT NULL, "entityId" uuid, "notificationType" "public"."notifications_notificationtype_enum" NOT NULL, "category" "public"."notifications_category_enum" NOT NULL, "priority" "public"."notifications_priority_enum" NOT NULL DEFAULT 'NORMAL', "status" "public"."notifications_status_enum" NOT NULL DEFAULT 'PENDING', "title" text NOT NULL, "message" text NOT NULL, "shortMessage" text, "channels" jsonb NOT NULL DEFAULT '[]', "channelData" jsonb NOT NULL DEFAULT '{}', "metadata" jsonb NOT NULL DEFAULT '{}', "tags" jsonb NOT NULL DEFAULT '[]', "scheduledAt" TIMESTAMP, "sentAt" TIMESTAMP, "deliveredAt" TIMESTAMP, "readAt" TIMESTAMP, "expiresAt" TIMESTAMP, "isRead" boolean NOT NULL DEFAULT false, "isArchived" boolean NOT NULL DEFAULT false, "requiresAction" boolean NOT NULL DEFAULT false, "actionUrl" text, "actionText" text, "actionData" jsonb NOT NULL DEFAULT '{}', "attachments" jsonb NOT NULL DEFAULT '[]', "deliveryAttempts" jsonb NOT NULL DEFAULT '{}', "userPreferences" jsonb NOT NULL DEFAULT '{}', "analytics" jsonb NOT NULL DEFAULT '{}', "relatedNotifications" jsonb NOT NULL DEFAULT '[]', "workflowInfo" jsonb NOT NULL DEFAULT '{}', "escalationInfo" jsonb NOT NULL DEFAULT '{}', "complianceInfo" jsonb NOT NULL DEFAULT '{}', "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), "deleted_at" TIMESTAMP, CONSTRAINT "PK_6a72c3c0f683f6462415e653c3a" PRIMARY KEY ("id")); COMMENT ON COLUMN "notifications"."entityType" IS 'Type of entity this notification is related to'; COMMENT ON COLUMN "notifications"."notificationType" IS 'Specific type of notification'; COMMENT ON COLUMN "notifications"."category" IS 'Category of notification for grouping'`,
