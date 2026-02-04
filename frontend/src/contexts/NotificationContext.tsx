@@ -171,6 +171,15 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     }
   }, [user]);
 
+  // Clear notifications when user logs out
+  useEffect(() => {
+    if (!user) {
+      // User logged out - clear all local notification state
+      setNotifications([]);
+      setBackendNotifications([]);
+    }
+  }, [user]);
+
   // Initialize WebSocket connection
   useEffect(() => {
     if (!user) return;
@@ -418,39 +427,72 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     );
   }, []);
 
+  // Helper function to check if a string is a valid UUID
+  const isValidUUID = (str: string): boolean => {
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    return uuidRegex.test(str);
+  };
+
   const markAsRead = useCallback(async (id: string) => {
-    // Update local state
+    console.log('[NotificationContext] markAsRead called with id:', id);
+    
+    // Update local real-time notifications state
     setNotifications(prev => 
       prev.map(n => n.id === id ? { ...n, isRead: true } : n)
     );
     
-    // Update backend
-    try {
-      await notificationApi.markAsRead(id);
-    } catch (error) {
-      console.error('Failed to mark notification as read:', error);
+    // Update local backend notifications state
+    setBackendNotifications(prev => 
+      prev.map(n => n.id === id ? { ...n, readAt: new Date().toISOString() } : n)
+    );
+    
+    // Only call the API if this is a valid backend notification ID (UUID format)
+    // Real-time notifications with fake IDs (timestamp-based) won't have database records
+    if (!isValidUUID(id)) {
+      console.log('[NotificationContext] Skipping API call - not a valid UUID:', id);
+      return;
     }
-  }, []);
+    
+    // Update backend and refresh to ensure consistency
+    try {
+      console.log('[NotificationContext] Calling API to mark as read...');
+      const result = await notificationApi.markAsRead(id);
+      console.log('[NotificationContext] API response:', result);
+      // Refresh from backend to ensure read status is persisted
+      await refreshNotifications();
+      console.log('[NotificationContext] Refreshed notifications from backend');
+    } catch (error: any) {
+      console.error('[NotificationContext] Failed to mark notification as read:', error);
+      console.error('[NotificationContext] Error details:', error.response?.data || error.message);
+    }
+  }, [refreshNotifications]);
 
   const markAllAsRead = useCallback(async () => {
     // Update local state
     setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
     setBackendNotifications(prev => prev.map(n => ({ ...n, readAt: new Date().toISOString() })));
     
-    // Update backend
+    // Update backend - only send valid UUIDs (filter out fake timestamp-based IDs)
     try {
       const unreadRealtimeIds = notifications.filter(n => !n.isRead).map(n => n.id);
       const unreadBackendIds = backendNotifications.filter(n => !n.readAt).map(n => n.id);
       
       const allUnreadIds = [...new Set([...unreadRealtimeIds, ...unreadBackendIds])];
       
-      if (allUnreadIds.length > 0) {
-        await notificationApi.bulkMarkAsRead(allUnreadIds);
+      // Only include valid UUIDs for the API call
+      const validUUIDs = allUnreadIds.filter(id => isValidUUID(id));
+      
+      console.log('[NotificationContext] markAllAsRead - Total IDs:', allUnreadIds.length, ', Valid UUIDs:', validUUIDs.length);
+      
+      if (validUUIDs.length > 0) {
+        await notificationApi.bulkMarkAsRead(validUUIDs);
+        // Refresh from backend to ensure read status is persisted
+        await refreshNotifications();
       }
     } catch (error) {
       console.error('Failed to mark all notifications as read:', error);
     }
-  }, [notifications, backendNotifications]);
+  }, [notifications, backendNotifications, refreshNotifications]);
 
   const removeNotification = useCallback((id: string) => {
     setNotifications(prev => prev.filter(n => n.id !== id));
@@ -472,7 +514,13 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     };
   }, []);
 
-  // Calculate counts
+  // Calculate counts - prioritize backend read status
+  // Create a map of backend notification read status by ID
+  const backendReadStatusMap = new Map<string, boolean>();
+  backendNotifications.forEach(n => {
+    backendReadStatusMap.set(n.id, !!n.readAt);
+  });
+
   const allNotifications = [...notifications, ...backendNotifications.map(n => ({
     id: n.id,
     type: (n.notificationType as NotificationEventType) || 'general',
@@ -486,10 +534,20 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     actionText: n.actionText,
   }))];
 
-  // Deduplicate by id
+  // Deduplicate by id, preferring backend read status if available
   const uniqueNotifications = allNotifications.reduce((acc, curr) => {
-    if (!acc.find(n => n.id === curr.id)) {
+    const existingIndex = acc.findIndex(n => n.id === curr.id);
+    if (existingIndex === -1) {
+      // If this notification exists in backend, use backend's read status
+      if (backendReadStatusMap.has(curr.id)) {
+        curr.isRead = backendReadStatusMap.get(curr.id)!;
+      }
       acc.push(curr);
+    } else {
+      // Already exists - update with backend read status if available
+      if (backendReadStatusMap.has(curr.id)) {
+        acc[existingIndex].isRead = backendReadStatusMap.get(curr.id)!;
+      }
     }
     return acc;
   }, [] as RealTimeNotification[]);

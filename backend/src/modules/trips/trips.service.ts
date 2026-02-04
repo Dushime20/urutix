@@ -138,6 +138,11 @@ export class TripsService {
       this.sendLoadedNotification(savedTrip.id, tenantId).catch(err => console.error('Failed to send loaded notification', err));
     }
 
+    // Send notification if status changed to COMPLETED
+    if (updateTripStatusDto.status === TripStatus.COMPLETED && oldStatus !== TripStatus.COMPLETED) {
+      this.sendTripCompletedNotifications(savedTrip.id, tenantId).catch(err => console.error('Failed to send completed notifications', err));
+    }
+
     return savedTrip;
   }
 
@@ -210,6 +215,74 @@ export class TripsService {
       } as any);
     } catch (error) {
       console.error('Error in sendLoadedNotification:', error);
+    }
+  }
+
+  private async sendTripCompletedNotifications(tripId: string, tenantId: string): Promise<void> {
+    try {
+      const trip = await this.tripRepository.findOne({
+        where: { id: tripId },
+        relations: ['driver', 'truck', 'truck.owner', 'load'],
+      });
+
+      if (!trip || !trip.load) return;
+
+      const notifications = [];
+
+      // 1. Cargo Owner
+      if (trip.load.cargoOwnerId) {
+        notifications.push({
+          userId: trip.load.cargoOwnerId,
+          subject: 'Shipment Delivered',
+          content: `Your shipment "${trip.load.title || 'Shipment'}" has been delivered successfully.`,
+        });
+      }
+
+      // 2. Receiver (if exists)
+      if (trip.load.receiverId) {
+        notifications.push({
+          userId: trip.load.receiverId,
+          subject: 'Shipment Arrived',
+          content: `Shipment "${trip.load.title || 'Shipment'}" has arrived at your location.`,
+        });
+      }
+
+      // 3. Truck Owner (if exists)
+      if (trip.truck && trip.truck.ownerId) {
+        let driverName = 'Unknown Driver';
+        if (trip.driver) {
+          driverName = `${trip.driver.firstName} ${trip.driver.lastName}`.trim();
+        }
+        
+        notifications.push({
+          userId: trip.truck.ownerId,
+          subject: 'Trip Completed',
+          content: `Trip ${trip.tripNumber} has been completed by driver ${driverName}.`,
+        });
+      }
+
+      for (const notif of notifications) {
+        await this.notificationService.createNotification({
+          userId: notif.userId,
+          tenantId,
+          subject: notif.subject,
+          content: notif.content,
+          type: NotificationType.TRIP_COMPLETED,
+          category: NotificationCategory.TRIP,
+          channel: NotificationChannel.IN_APP,
+          actionUrl: `/dashboard/trips/${trip.id}`,
+          actionText: 'View Trip Details',
+          metadata: {
+            entityType: EntityType.TRIP,
+            entityId: trip.id,
+          },
+        } as any);
+      }
+      
+      console.log(`Sent completion notifications for trip ${tripId} to ${notifications.length} recipients`);
+      
+    } catch (error) {
+      console.error('Error sending completion notifications:', error);
     }
   }
 }

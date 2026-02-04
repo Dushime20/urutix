@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { tripsAPI } from '../../services/api';
 import { driverApi } from '../../services/driverApi';
@@ -46,6 +47,19 @@ const DriverTrips: React.FC<DriverTripsProps> = ({ driverId }) => {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [selectedTrip, setSelectedTrip] = useState<Trip | null>(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [searchParams] = useSearchParams();
+
+  // Auto-open trip details from URL param
+  useEffect(() => {
+    const tripId = searchParams.get('tripId');
+    if (tripId && allTrips.length > 0) {
+      const trip = allTrips.find((t) => t.id === tripId);
+      if (trip) {
+        setSelectedTrip(trip);
+        setShowDetailsModal(true);
+      }
+    }
+  }, [searchParams, allTrips]);
 
   // Fetch current trip
   const { data: currentTrip, isLoading: currentTripLoading } = useQuery({

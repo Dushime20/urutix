@@ -24,6 +24,7 @@ import {
   ApiParam,
   ApiQuery,
 } from '@nestjs/swagger';
+import { TripStatus } from '../../entities/trip.entity';
 import { TripsService } from './trips.service';
 import { CreateTripDto, CreateTripResponseDto } from './dto/create-trip.dto';
 import { UpdateTripStatusDto } from './dto/update-trip-status.dto';
@@ -276,6 +277,38 @@ export class TripsController {
     return {
       success: true,
       message: 'Trip status updated successfully',
+      data: trip,
+
+      statusCode: 200,
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  @Post(':id/complete')
+  @ApiOperation({
+    summary: 'Complete a trip',
+    description: 'Mark a trip as COMPLETED',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'Trip ID',
+    example: 'trip-uuid',
+  })
+  @ApiOkResponse({
+    description: 'Trip completed successfully',
+  })
+  async complete(
+    @Param('id') id: string,
+    @Request() req,
+  ): Promise<ApiResponseDto> {
+    const trip = await this.tripsService.updateTripStatus(
+      id,
+      { status: TripStatus.COMPLETED },
+      req.user.tenantId,
+    );
+    return {
+      success: true,
+      message: 'Trip completed successfully',
       data: trip,
       statusCode: 200,
       timestamp: new Date().toISOString(),

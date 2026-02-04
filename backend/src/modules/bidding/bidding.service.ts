@@ -610,8 +610,8 @@ export class BiddingService {
             entityType: EntityType.TRIP,
             entityId: tripId || bid.id,
             requiresAction: true,
-            actionUrl: `/dashboard/trips`,
-            actionText: 'Start Trip',
+            actionUrl: `/dashboard/driver/trips?tripId=${tripId}`,
+            actionText: 'View Trip',
           });
         }
       }

@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useRef } from 'react';
 import type { ReactNode } from 'react';
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
@@ -94,6 +94,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [isInitialized, setIsInitialized] = useState(false);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false); // Add flag to prevent infinite loop
+  const sessionExpiredToastShown = useRef(false); // Track if session expired toast has been shown
 
   const persistUser = (userData: User | null) => {
     if (userData) {
@@ -127,7 +128,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
     persistUser(null);
     setIsRefreshing(false);
     delete axios.defaults.headers.common['Authorization'];
-    toast.error('Session expired. Please login again.');
+    
+    // Only show the session expired toast once
+    if (!sessionExpiredToastShown.current) {
+      sessionExpiredToastShown.current = true;
+      toast.error('Session expired. Please login again.');
+    }
   };
 
   const refreshAccessToken = async (): Promise<boolean> => {
@@ -362,6 +368,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setAccessToken(newAccessToken);
       setRefreshToken(newRefreshToken);
       
+      // Reset the session expired toast flag for new session
+      sessionExpiredToastShown.current = false;
+      
       console.log('✅ Tokens saved to localStorage and state');
       
       // Set user data and persist (ensures tenantId is stored for X-Tenant-ID header)
@@ -406,6 +415,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setAccessToken(newAccessToken);
       setRefreshToken(newRefreshToken);
       
+      // Reset the session expired toast flag for new session
+      sessionExpiredToastShown.current = false;
+      
       persistUser(userData);
       identifyUser(userData);
       captureEvent('user_role_selected', {
@@ -438,6 +450,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
       localStorage.setItem('refreshToken', newRefreshToken);
       setAccessToken(newAccessToken);
       setRefreshToken(newRefreshToken);
+      
+      // Reset the session expired toast flag for new session
+      sessionExpiredToastShown.current = false;
       
       // Set user data
       persistUser(registeredUser);

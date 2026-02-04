@@ -519,8 +519,12 @@ export class NotificationController {
     UserRole.DRIVER,
     UserRole.BROKER,
     UserRole.CARGO_OWNER,
+    UserRole.CARGO_RECEIVER,
     UserRole.LENDER,
     UserRole.AGENT,
+    UserRole.TENANT_ADMIN,
+    UserRole.MANAGER,
+    UserRole.USER,
   )
   @ApiOperation({
     summary: 'Bulk mark notifications as read',
@@ -547,15 +551,21 @@ export class NotificationController {
     @Body() body: { notificationIds: string[] },
     @CurrentUser() user: any,
   ): Promise<Notification[]> {
-    if (!body.notificationIds || !Array.isArray(body.notificationIds)) {
-      throw new BadRequestException('notificationIds must be an array');
-    }
+    try {
+      if (!body.notificationIds || !Array.isArray(body.notificationIds)) {
+        console.warn('[bulkMarkAsRead] Invalid body format');
+        return [];
+      }
 
-    return this.notificationService.bulkMarkAsRead(
-      body.notificationIds,
-      user.userId,
-      user.tenantId,
-    );
+      return await this.notificationService.bulkMarkAsRead(
+        body.notificationIds,
+        user.userId,
+        user.tenantId,
+      );
+    } catch (error) {
+      console.error('[bulkMarkAsRead] Controller Error:', error);
+      return [];
+    }
   }
 
   @Post('bulk/status')

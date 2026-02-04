@@ -859,6 +859,32 @@ export class MatchingService {
         this.logger.warn(`⚠️ Could not find truck owner for notification (Truck ID: ${truck.id})`);
       }
 
+      // 3. Notify Driver
+      if (trip.driverId) {
+        const driver = await this.driverRepository.findOne({
+          where: { id: trip.driverId }
+        });
+
+        if (driver && driver.userId) {
+           await this.notificationService.createNotification({
+            tenantId: load.tenantId,
+            recipientId: driver.userId,
+            title: 'New Trip Assignment',
+            message: `You have been assigned to trip ${trip.tripNumber}. Cargo: ${load.title || 'General Cargo'}.`,
+            notificationType: NotificationType.GENERAL,
+            category: NotificationCategory.TRIP,
+            priority: NotificationPriority.HIGH,
+            channels: [NotificationChannel.IN_APP, NotificationChannel.PUSH],
+            entityType: EntityType.TRIP,
+            entityId: trip.id,
+            requiresAction: true,
+            actionUrl: `/dashboard/driver/trips?tripId=${trip.id}`,
+            actionText: 'View Trip'
+          });
+          this.logger.log(`📧 Notification sent to Driver: ${driver.userId}`);
+        }
+      }
+
     } catch (error) {
       this.logger.error(`Failed to send notifications: ${error.message}`, error.stack);
     }
