@@ -46,6 +46,25 @@ export class CreateAllTables1762849950556 implements MigrationInterface {
     `);
   }
 
+  // Helper function to add constraint only if it doesn't exist
+  private async addConstraintIfNotExists(
+    queryRunner: QueryRunner,
+    tableName: string,
+    constraintName: string,
+    constraintDefinition: string,
+  ): Promise<void> {
+    await queryRunner.query(`
+      DO $$
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM pg_constraint WHERE conname = '${constraintName}'
+        ) THEN
+          ALTER TABLE "${tableName}" ADD CONSTRAINT "${constraintName}" ${constraintDefinition};
+        END IF;
+      END $$;
+    `);
+  }
+
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(
       `DROP INDEX "public"."IDX_rate_limits_tenant_endpoint_createdAt"`,
