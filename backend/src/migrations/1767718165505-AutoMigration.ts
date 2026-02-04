@@ -131,7 +131,7 @@ export class AutoMigration1767718165505 implements MigrationInterface {
             END $$;
         `);
         
-        -- Drop and recreate tables that may have schema mismatches
+        // Drop and recreate tables that may have schema mismatches
         await queryRunner.query(`DROP TABLE IF EXISTS "broker_commissions" CASCADE`);
         await queryRunner.query(`DROP TABLE IF EXISTS "receipts" CASCADE`);
         await queryRunner.query(`DROP TABLE IF EXISTS "load_documents" CASCADE`);
