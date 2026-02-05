@@ -6,6 +6,7 @@
 
 const { DataSource } = require('typeorm');
 const path = require('path');
+require('dotenv').config(); // Load .env file
 
 // Critical columns that must exist for the app to function
 const CRITICAL_SCHEMA = {
@@ -35,10 +36,12 @@ async function checkMigrations() {
     type: 'postgres',
     host: process.env.DB_HOST || 'localhost',
     port: parseInt(process.env.DB_PORT || '5432'),
-    username: process.env.DB_USER || 'postgres',
+    username: process.env.DB_USERNAME || process.env.DB_USER || 'postgres',
     password: process.env.DB_PASSWORD || 'postgres',
     database: process.env.DB_NAME || 'smartcargo',
   };
+  
+  console.log(`📊 Connecting to: ${config.username}@${config.host}:${config.port}/${config.database}\n`);
 
   const dataSource = new DataSource(config);
 
