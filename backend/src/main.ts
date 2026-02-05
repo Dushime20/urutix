@@ -9,7 +9,7 @@ import { join } from 'path';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
-  const port = process.env.PORT || 3002;
+  const port = process.env.PORT || 3005;
 
   // Serve static files from uploads directory (must be before global prefix)
   const uploadsPath = join(process.cwd(), 'uploads');
@@ -21,18 +21,16 @@ async function bootstrap() {
   // Configure CORS origins.
   // In development you can set ALLOWED_ORIGINS="http://localhost:5173,http://localhost:5713"
   // otherwise we fall back to sensible localhost entries.
+  // Configure CORS origins from environment variable ONLY
   const allowedOrigins = process.env.ALLOWED_ORIGINS
     ? process.env.ALLOWED_ORIGINS.split(',').map((o) => o.trim())
-    : [
-      'http://localhost:5173',
-      'http://127.0.0.1:5173', // Allow 127.0.0.1 (Vite default)
-      'http://localhost:5174', // Additional Vite port
-      'http://127.0.0.1:5174',
-      `http://localhost:${port}`,
-      `http://127.0.0.1:${port}`,
-      'http://localhost:5713',
-      'http://127.0.0.1:5713',
-    ];
+    : [];
+
+  if (allowedOrigins.length === 0) {
+    console.warn('⚠️  WARNING: No ALLOWED_ORIGINS defined in .env. CORS will block all requests.');
+  } else {
+    console.log('✅ CORS Allowed Origins:', allowedOrigins);
+  }
 
   // Enable CORS for HTTP requests
   app.enableCors({
