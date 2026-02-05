@@ -18,6 +18,7 @@ import {
   ArcElement,
 } from 'chart.js';
 
+import { useAuth } from '../contexts/AuthContext';
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -31,6 +32,7 @@ ChartJS.register(
 );
 
 const AdminDashboard: React.FC = () => {
+  const { user } = useAuth();
   const stats = [
     { 
       label: 'Total Users', 
@@ -202,7 +204,7 @@ const AdminDashboard: React.FC = () => {
             </button>
             <button className="flex items-center gap-2 p-2 hover:bg-gray-100 rounded-lg">
               <div className="w-8 h-8 bg-navy-600 rounded-full flex items-center justify-center text-white font-semibold">
-                A
+                {user?.firstName?.charAt(0) || 'A'}
               </div>
             </button>
           </div>
@@ -229,6 +231,20 @@ const AdminDashboard: React.FC = () => {
             <TranslatedText text="Help" />
           </button>
         </div>
+      </div>
+
+      {/* Greeting Section */}
+      <div className="px-6 pb-2">
+            {(() => {
+              const hour = new Date().getHours();
+              const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
+              return (
+                  <div>
+                    <h1 className="text-2xl font-bold text-gray-900">{greeting}, {user?.firstName || 'Admin'}</h1>
+                     <p className="text-gray-500 text-sm">Welcome to the administration panel</p>
+                  </div>
+              );
+            })()}
       </div>
 
       {/* Stats Grid */}

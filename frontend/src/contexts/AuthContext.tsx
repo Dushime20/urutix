@@ -389,7 +389,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setIsLoading(false);
       setIsLoggingIn(false); // Reset logging in flag
       
-      toast.success('Login successful!');
+      toast.success('Logged in successfully');
       return { user: userData };
     } catch (error: any) {
       console.error('Login: Error occurred:', error);
@@ -427,7 +427,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       
       setIsLoading(false);
       setIsLoggingIn(false);
-      toast.success(`Logged in as ${userData.role}`);
+      toast.success('Logged in successfully');
       return userData;
     } catch (error: any) {
       console.error('Select Role Error:', error);
@@ -471,7 +471,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setIsLoading(false);
       setIsLoggingIn(false); // Reset logging in flag
       
-      toast.success('Registration successful! Please check your email to verify your account.');
+      const message = registeredUser.status === 'ACTIVE'
+        ? 'Registration successful!'
+        : 'Registration successful! Please check your email to verify your account.';
+
+      toast.success(message);
       return registeredUser;
     } catch (error: any) {
       console.error('Register: Error occurred:', error);

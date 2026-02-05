@@ -921,15 +921,19 @@ export class LoadsV2Service {
         (sum, load) => sum + (load.offeredPrice || 0),
         0,
       );
-      const averageLoadValue =
-        loads.reduce((sum, load) => sum + load.loadValue, 0) / loads.length ||
-        0;
+      const totalLoadValue = loads.reduce(
+        (sum, load) => sum + (Number(load.loadValue) || 0),
+        0,
+      );
+      
+      const averageLoadValue = loads.length > 0 ? totalLoadValue / loads.length : 0;
 
       return {
         totalLoads,
         deliveredLoads,
         activeLoads,
         totalRevenue,
+        totalLoadValue, // Added total value of all cargos
         averageLoadValue,
         deliveryRate: totalLoads > 0 ? (deliveredLoads / totalLoads) * 100 : 0,
         period,

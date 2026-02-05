@@ -160,6 +160,18 @@ const DriverDashboard: React.FC = () => {
         </div>
       </div>
 
+      {/* Greeting Section */}
+      <div className="px-6 pt-6">
+          <h1 className="text-2xl font-bold text-gray-900">
+            {(() => {
+              const hour = new Date().getHours();
+              const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
+              return `${greeting}, ${user?.firstName || 'Driver'}`;
+            })()}
+          </h1>
+          <p className="text-gray-500">Here's your activity overview</p>
+      </div>
+
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
         <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">

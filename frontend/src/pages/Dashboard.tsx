@@ -110,6 +110,7 @@ const CargoOwnerDashboard = () => {
 
   const [activeTab, setActiveTab] = useState('Overview');
   const [cargos, setCargos] = useState<any[]>([]);
+  const [dashboardAnalytics, setDashboardAnalytics] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [showQuickCreate, setShowQuickCreate] = useState(false);
   const [showQuickActionPanel, setShowQuickActionPanel] = useState(false);
@@ -146,7 +147,7 @@ const CargoOwnerDashboard = () => {
       message: 'Are you sure you want to delete this draft? This action cannot be undone.',
       confirmText: 'Delete',
       cancelText: 'Cancel',
-      type: 'danger'
+      variant: 'danger'
     });
 
     if (!shouldDelete) return;
@@ -257,6 +258,15 @@ const CargoOwnerDashboard = () => {
           setCargos(cargosArray);
           setLoading(false);
           return; // Exit early for receivers
+        }
+
+
+        // Fetch analytics
+        try {
+           const analyticsRes = await cargoOwnerAPI.getDashboardAnalytics('all');
+           setDashboardAnalytics(analyticsRes.data);
+        } catch (e) {
+           console.error('Failed to fetch analytics', e);
         }
 
         // Fetch cargos for cargo owners
@@ -423,7 +433,7 @@ const CargoOwnerDashboard = () => {
     const completedCargos = cargos.filter(c =>
       c.status === 'DELIVERED' || c.status === 'COMPLETED'
     ).length;
-    const totalValue = cargos.reduce((sum, c) => {
+    const totalValue = dashboardAnalytics?.totalLoadValue ?? cargos.reduce((sum, c) => {
       const value = Number(c.loadValue) || 0;
       return sum + value;
     }, 0);
@@ -464,7 +474,7 @@ const CargoOwnerDashboard = () => {
       growthRate,
       achievements,
     };
-  }, [cargos]);
+  }, [cargos, dashboardAnalytics]);
 
   // Get active/recent cargos for "saving plans" section
   const activeCargosList = useMemo(() => {
@@ -614,6 +624,31 @@ const CargoOwnerDashboard = () => {
 
   const renderOverview = () => (
     <div className="space-y-6 md:space-y-8">
+      {/* Dashboard Greeting Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 mb-1">
+            {(() => {
+              const hour = new Date().getHours();
+              const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
+              return `${greeting}, ${user?.firstName || 'User'}`;
+            })()}
+          </h1>
+          <p className="text-sm text-gray-600">Here's an overview of your shipping operations</p>
+        </div>
+        <div>
+           {/* Primary action for Cargo Owners */}
+           {user?.role !== 'CARGO_RECEIVER' && (
+             <button 
+               onClick={() => setShowQuickCreate(true)}
+               className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold shadow-lg shadow-blue-600/20 transition-all hover:shadow-xl hover:translate-y-[-1px]"
+             >
+               <Plus className="w-5 h-5" />
+               <span>Create New Cargo</span>
+             </button>
+           )}
+        </div>
+      </div>
       {/* 1. Performance Overview - MOVED TO TOP */}
       <section>
         <div className="flex items-center gap-2 mb-4">

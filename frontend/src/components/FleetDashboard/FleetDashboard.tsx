@@ -340,7 +340,11 @@ export const FleetDashboard: React.FC = () => {
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
                   <h1 className="text-3xl font-bold text-gray-900 mb-1">
-                    Welcome back, Fleet Manager
+                    {(() => {
+                      const hour = new Date().getHours();
+                      const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
+                      return `${greeting}, ${user?.firstName || 'Fleet Manager'}`;
+                    })()}
                   </h1>
                   <p className="text-sm text-gray-600">Manage your fleet operations efficiently</p>
                 </div>
