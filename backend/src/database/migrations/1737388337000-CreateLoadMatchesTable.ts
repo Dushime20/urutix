@@ -12,6 +12,7 @@ export class CreateLoadMatchesTable1737388337000 implements MigrationInterface {
     `);
 
     // Create the load_matches table
+    await queryRunner.dropTable('load_matches', true);
     await queryRunner.createTable(
       new Table({
         name: 'load_matches',
