@@ -92,12 +92,7 @@ const CargoOwnerDashboard = () => {
   const [showOnboardingTour, setShowOnboardingTour] = useState(false);
 
   // Hide default header on mount, show on unmount
-  useEffect(() => {
-    if (setHideHeader) {
-      setHideHeader(true);
-      return () => setHideHeader(false);
-    }
-  }, [setHideHeader]);
+
 
   // Check if should show onboarding on mount
   useEffect(() => {
@@ -624,31 +619,7 @@ const CargoOwnerDashboard = () => {
 
   const renderOverview = () => (
     <div className="space-y-6 md:space-y-8">
-      {/* Dashboard Greeting Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-1">
-            {(() => {
-              const hour = new Date().getHours();
-              const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
-              return `${greeting}, ${user?.firstName || 'User'}`;
-            })()}
-          </h1>
-          <p className="text-sm text-gray-600">Here's an overview of your shipping operations</p>
-        </div>
-        <div>
-           {/* Primary action for Cargo Owners */}
-           {user?.role !== 'CARGO_RECEIVER' && (
-             <button 
-               onClick={() => setShowQuickCreate(true)}
-               className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold shadow-lg shadow-blue-600/20 transition-all hover:shadow-xl hover:translate-y-[-1px]"
-             >
-               <Plus className="w-5 h-5" />
-               <span>Create New Cargo</span>
-             </button>
-           )}
-        </div>
-      </div>
+
       {/* 1. Performance Overview - MOVED TO TOP */}
       <section>
         <div className="flex items-center gap-2 mb-4">
