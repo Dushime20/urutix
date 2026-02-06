@@ -8,6 +8,8 @@ import { UserProfile } from '../../entities/user-profile.entity';
 import { NotificationService } from '../notifications/services/notification.service';
 import { NotificationType, NotificationCategory, NotificationChannel, EntityType } from '../../entities/notification.entity';
 
+import { RealTimeAvailabilityService } from '../matching/services/real-time-availability.service';
+
 @Injectable()
 export class TripsService {
   constructor(
@@ -16,6 +18,7 @@ export class TripsService {
     @InjectRepository(UserProfile)
     private readonly userProfileRepository: Repository<UserProfile>,
     private readonly notificationService: NotificationService,
+    private readonly availabilityService: RealTimeAvailabilityService,
   ) { }
 
   async create(createTripDto: CreateTripDto, tenantId: string): Promise<Trip> {
@@ -133,13 +136,26 @@ export class TripsService {
 
     const savedTrip = await this.tripRepository.save(trip);
 
-    // Send notification if status changed to IN_PROGRESS (Loaded)
+    // Update Driver/Truck Availability Status
+    // If starting trip (IN_PROGRESS), mark as IN_TRANSIT
     if (updateTripStatusDto.status === TripStatus.IN_PROGRESS && oldStatus !== TripStatus.IN_PROGRESS) {
+      try {
+        await this.availabilityService.handleTripStart(savedTrip.id, tenantId);
+      } catch (err) {
+        console.error('Failed to update availability on trip start', err);
+      }
+
       this.sendLoadedNotification(savedTrip.id, tenantId).catch(err => console.error('Failed to send loaded notification', err));
     }
 
-    // Send notification if status changed to COMPLETED
+    // If completing trip, mark as AVAILABLE
     if (updateTripStatusDto.status === TripStatus.COMPLETED && oldStatus !== TripStatus.COMPLETED) {
+      try {
+        await this.availabilityService.handleTripCompletion(savedTrip.id, tenantId);
+      } catch (err) {
+        console.error('Failed to update availability on trip completion', err);
+      }
+
       this.sendTripCompletedNotifications(savedTrip.id, tenantId).catch(err => console.error('Failed to send completed notifications', err));
     }
 
