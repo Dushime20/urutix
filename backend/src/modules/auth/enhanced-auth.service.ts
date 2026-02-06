@@ -984,10 +984,10 @@ export class EnhancedAuthService {
         throw new NotFoundException('User not found');
       }
 
-      // Verify user is a driver
-      if (user.role !== UserRole.DRIVER) {
-        throw new BadRequestException('This token is only valid for driver accounts');
-      }
+      // Verify user is a driver - REMOVED strict check to allow existing users (e.g. cargo owners) to become drivers
+      // if (user.role !== UserRole.DRIVER) {
+      //   throw new BadRequestException('This token is only valid for driver accounts');
+      // }
 
       // Update password and activate account
       const hashedPassword = await bcrypt.hash(password, 14);
