@@ -7,80 +7,117 @@ export class FixGeometryColumns1738844424000 implements MigrationInterface {
     // Ensure PostGIS extension is installed
     await queryRunner.query(`CREATE EXTENSION IF NOT EXISTS postgis`);
 
-    // Fix trucks table - convert currentLocation from jsonb to geometry
-    const trucksColumnCheck = await queryRunner.query(`
-      SELECT udt_name 
-      FROM information_schema.columns 
-      WHERE table_name = 'trucks' AND column_name = 'currentLocation'
-    `);
+    // Helper function to check if column exists
+    const columnExists = async (table: string, column: string): Promise<boolean> => {
+      const result = await queryRunner.query(`
+        SELECT column_name 
+        FROM information_schema.columns 
+        WHERE table_name = '${table}' AND column_name = '${column}'
+      `);
+      return result.length > 0;
+    };
 
-    if (trucksColumnCheck.length > 0 && trucksColumnCheck[0].udt_name !== 'geometry') {
-      console.log('Converting trucks.currentLocation from', trucksColumnCheck[0].udt_name, 'to geometry');
+    // Helper function to get column type
+    const getColumnType = async (table: string, column: string): Promise<string | null> => {
+      const result = await queryRunner.query(`
+        SELECT udt_name 
+        FROM information_schema.columns 
+        WHERE table_name = '${table}' AND column_name = '${column}'
+      `);
+      return result.length > 0 ? result[0].udt_name : null;
+    };
+
+    // ============ FIX TRUCKS TABLE ============
+    console.log('🚛 Fixing trucks table...');
+
+    // Fix currentLocation column
+    const trucksLocationType = await getColumnType('trucks', 'currentLocation');
+    if (trucksLocationType && trucksLocationType !== 'geometry') {
+      console.log('Converting trucks.currentLocation from', trucksLocationType, 'to geometry');
       await queryRunner.query(`ALTER TABLE trucks DROP COLUMN IF EXISTS "currentLocation"`);
       await queryRunner.query(`ALTER TABLE trucks ADD COLUMN "currentLocation" geometry(Point, 4326)`);
-    } else if (trucksColumnCheck.length === 0) {
+    } else if (!trucksLocationType) {
       console.log('Adding trucks.currentLocation as geometry');
       await queryRunner.query(`ALTER TABLE trucks ADD COLUMN "currentLocation" geometry(Point, 4326)`);
     }
 
-    // Fix drivers table - convert currentLocation from jsonb to geometry
-    const driversColumnCheck = await queryRunner.query(`
-      SELECT udt_name 
-      FROM information_schema.columns 
-      WHERE table_name = 'drivers' AND column_name = 'currentLocation'
-    `);
+    // Add current_address column if missing
+    if (!(await columnExists('trucks', 'current_address'))) {
+      console.log('Adding trucks.current_address column');
+      await queryRunner.query(`ALTER TABLE trucks ADD COLUMN "current_address" VARCHAR(500)`);
+    }
 
-    if (driversColumnCheck.length > 0 && driversColumnCheck[0].udt_name !== 'geometry') {
-      console.log('Converting drivers.currentLocation from', driversColumnCheck[0].udt_name, 'to geometry');
+    // Add locationUpdatedAt column if missing
+    if (!(await columnExists('trucks', 'locationUpdatedAt'))) {
+      console.log('Adding trucks.locationUpdatedAt column');
+      await queryRunner.query(`ALTER TABLE trucks ADD COLUMN "locationUpdatedAt" TIMESTAMP`);
+    }
+
+    // ============ FIX DRIVERS TABLE ============
+    console.log('👤 Fixing drivers table...');
+
+    // Fix currentLocation column
+    const driversLocationType = await getColumnType('drivers', 'currentLocation');
+    if (driversLocationType && driversLocationType !== 'geometry') {
+      console.log('Converting drivers.currentLocation from', driversLocationType, 'to geometry');
       await queryRunner.query(`ALTER TABLE drivers DROP COLUMN IF EXISTS "currentLocation"`);
       await queryRunner.query(`ALTER TABLE drivers ADD COLUMN "currentLocation" geometry(Point, 4326)`);
-    } else if (driversColumnCheck.length === 0) {
+    } else if (!driversLocationType) {
       console.log('Adding drivers.currentLocation as geometry');
       await queryRunner.query(`ALTER TABLE drivers ADD COLUMN "currentLocation" geometry(Point, 4326)`);
     }
 
-    // Fix trips table - convert currentLocation from jsonb to geometry
-    const tripsTableCheck = await queryRunner.query(`
+    // Add locationUpdatedAt column if missing
+    if (!(await columnExists('drivers', 'locationUpdatedAt'))) {
+      console.log('Adding drivers.locationUpdatedAt column');
+      await queryRunner.query(`ALTER TABLE drivers ADD COLUMN "locationUpdatedAt" TIMESTAMP`);
+    }
+
+    // ============ FIX TRIPS TABLE ============
+    const tripsTableExists = await queryRunner.query(`
       SELECT table_name 
       FROM information_schema.tables 
       WHERE table_name = 'trips' AND table_schema = 'public'
     `);
 
-    if (tripsTableCheck.length > 0) {
-      const tripsColumnCheck = await queryRunner.query(`
-        SELECT udt_name 
-        FROM information_schema.columns 
-        WHERE table_name = 'trips' AND column_name = 'currentLocation'
-      `);
+    if (tripsTableExists.length > 0) {
+      console.log('🚚 Fixing trips table...');
 
-      if (tripsColumnCheck.length > 0 && tripsColumnCheck[0].udt_name !== 'geometry') {
-        console.log('Converting trips.currentLocation from', tripsColumnCheck[0].udt_name, 'to geometry');
+      // Fix currentLocation column
+      const tripsLocationType = await getColumnType('trips', 'currentLocation');
+      if (tripsLocationType && tripsLocationType !== 'geometry') {
+        console.log('Converting trips.currentLocation from', tripsLocationType, 'to geometry');
         await queryRunner.query(`ALTER TABLE trips DROP COLUMN IF EXISTS "currentLocation"`);
         await queryRunner.query(`ALTER TABLE trips ADD COLUMN "currentLocation" geometry(Point, 4326)`);
-      } else if (tripsColumnCheck.length === 0) {
+      } else if (!tripsLocationType) {
         console.log('Adding trips.currentLocation as geometry');
         await queryRunner.query(`ALTER TABLE trips ADD COLUMN "currentLocation" geometry(Point, 4326)`);
       }
     }
 
-    console.log('✅ All currentLocation columns have been fixed to use geometry type');
+    console.log('✅ All geometry columns and related fields have been fixed!');
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    // Revert to jsonb (not recommended but provided for rollback)
+    // Revert trucks
     await queryRunner.query(`ALTER TABLE trucks DROP COLUMN IF EXISTS "currentLocation"`);
     await queryRunner.query(`ALTER TABLE trucks ADD COLUMN "currentLocation" jsonb`);
+    await queryRunner.query(`ALTER TABLE trucks DROP COLUMN IF EXISTS "current_address"`);
+    await queryRunner.query(`ALTER TABLE trucks DROP COLUMN IF EXISTS "locationUpdatedAt"`);
 
+    // Revert drivers
     await queryRunner.query(`ALTER TABLE drivers DROP COLUMN IF EXISTS "currentLocation"`);
     await queryRunner.query(`ALTER TABLE drivers ADD COLUMN "currentLocation" jsonb`);
+    await queryRunner.query(`ALTER TABLE drivers DROP COLUMN IF EXISTS "locationUpdatedAt"`);
 
-    const tripsTableCheck = await queryRunner.query(`
+    // Revert trips
+    const tripsTableExists = await queryRunner.query(`
       SELECT table_name 
       FROM information_schema.tables 
       WHERE table_name = 'trips' AND table_schema = 'public'
     `);
 
-    if (tripsTableCheck.length > 0) {
+    if (tripsTableExists.length > 0) {
       await queryRunner.query(`ALTER TABLE trips DROP COLUMN IF EXISTS "currentLocation"`);
       await queryRunner.query(`ALTER TABLE trips ADD COLUMN "currentLocation" jsonb`);
     }
