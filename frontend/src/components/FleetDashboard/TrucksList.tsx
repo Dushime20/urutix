@@ -36,6 +36,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { EmptyState } from './EmptyState';
 import TruckLocationModal from './TruckLocationModal';
 import FleetFormStepper from './FleetFormStepper';
+import { ConfirmDialog } from '../ui/ConfirmDialog';
 
 
 interface TrucksListProps {
@@ -539,6 +540,9 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
   const [sortConfig, setSortConfig] = useState<SortConfig>({ key: 'name', direction: 'asc' });
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [truckToDelete, setTruckToDelete] = useState<any>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
 
 
@@ -1345,6 +1349,30 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
     }
   };
 
+  // Handle truck deletion
+  const handleDeleteTruck = async () => {
+    if (!truckToDelete) return;
+
+    setIsDeleting(true);
+    try {
+      console.log('🗑️ Deleting truck:', truckToDelete.id);
+      await fleetApi.deleteTruck(truckToDelete.id);
+      
+      // Remove from local state
+      setTrucks(prev => prev.filter(t => t.id !== truckToDelete.id));
+      
+      toast.success(`Truck "${truckToDelete.plateNumber || truckToDelete.name}" deleted successfully`);
+      setShowDeleteConfirm(false);
+      setTruckToDelete(null);
+    } catch (error: any) {
+      console.error('❌ Error deleting truck:', error);
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to delete truck';
+      toast.error(errorMessage);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="p-6">
@@ -1771,7 +1799,13 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
                     <FaEdit className="w-3 h-3" />
                     Edit
                   </button>
-                  <button className="flex-1 px-3 py-2 text-sm bg-red-100 text-red-700 rounded hover:bg-red-200 flex items-center justify-center gap-1">
+                  <button
+                    onClick={() => {
+                      setTruckToDelete(truck);
+                      setShowDeleteConfirm(true);
+                    }}
+                    className="flex-1 px-3 py-2 text-sm bg-red-100 text-red-700 rounded hover:bg-red-200 flex items-center justify-center gap-1"
+                  >
                     <FaTrash className="w-3 h-3" />
                     Delete
                   </button>
@@ -1967,6 +2001,21 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
                             </button>
                             <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-white text-gray-900 text-xs font-medium rounded-md shadow-lg border border-gray-200 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
                               Edit
+                              <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-white"></div>
+                            </div>
+                          </div>
+                          <div className="relative group">
+                            <button
+                              onClick={() => {
+                                setTruckToDelete(truck);
+                                setShowDeleteConfirm(true);
+                              }}
+                              className="text-red-600 hover:text-red-800 text-sm flex items-center gap-1"
+                            >
+                              <FaTrash className="w-3 h-3" />
+                            </button>
+                            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-white text-gray-900 text-xs font-medium rounded-md shadow-lg border border-gray-200 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                              Delete
                               <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-white"></div>
                             </div>
                           </div>
@@ -2599,6 +2648,25 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
             }}
           />
         )}
+
+        {/* Delete Confirmation Modal */}
+        <ConfirmDialog
+          isOpen={showDeleteConfirm}
+          title="Delete Truck"
+          message={truckToDelete 
+            ? `Are you sure you want to delete "${truckToDelete.plateNumber}"?\n\n${truckToDelete.make} ${truckToDelete.model} (${truckToDelete.year})\n\nThis action cannot be undone. All truck data will be permanently removed.`
+            : 'Are you sure you want to delete this truck?'
+          }
+          confirmText="Delete Truck"
+          cancelText="Cancel"
+          onConfirm={handleDeleteTruck}
+          onCancel={() => {
+            setShowDeleteConfirm(false);
+            setTruckToDelete(null);
+          }}
+          variant="danger"
+          isLoading={isDeleting}
+        />
       </div >
     </div >
   );
