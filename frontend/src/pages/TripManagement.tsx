@@ -56,23 +56,63 @@ const TripManagement: React.FC = () => {
     queryFn: () => tripsAPI.getAll({ limit: 100 }),
     select: (response) => {
       // Map the API response to the component's Trip interface
-      return response.data.data.map((trip: any) => ({
-        id: trip.id,
-        tripNumber: trip.tripNumber || 'N/A',
-        loadId: trip.load?.reference || trip.loadId || 'N/A',
-        truckId: trip.truckId,
-        driverId: trip.driverId,
-        status: trip.status,
-        plannedStartTime: new Date(trip.plannedStartTime),
-        plannedEndTime: new Date(trip.plannedEndTime),
-        actualStartTime: trip.actualStartTime ? new Date(trip.actualStartTime) : undefined,
-        actualEndTime: trip.actualEndTime ? new Date(trip.actualEndTime) : undefined,
-        agreedPrice: Number(trip.agreedPrice) || 0,
-        pickupLocation: trip.pickupLocation?.city || trip.load?.origin?.city || 'Unknown Origin',
-        deliveryLocation: trip.deliveryLocation?.city || trip.load?.destination?.city || 'Unknown Destination',
-        driverName: trip.driver ? `${trip.driver.firstName} ${trip.driver.lastName}` : 'Unassigned',
-        truckPlate: trip.truck?.plateNumber || 'Unassigned'
-      }));
+      return response.data.data.map((trip: any) => {
+        // Extract pickup location from multiple possible sources
+        const getPickupLocation = () => {
+          // 1. Check trip's pickupLocation relation
+          if (trip.pickupLocation?.city) return trip.pickupLocation.city;
+          if (trip.pickupLocation?.address) return trip.pickupLocation.address;
+          
+          // 2. Check load's origin field (jsonb Address type)
+          if (trip.load?.origin?.city) return trip.load.origin.city;
+          if (trip.load?.origin?.address) return trip.load.origin.address;
+          
+          // 3. Check load's locations array for PICKUP type
+          const pickupLoc = trip.load?.locations?.find((loc: any) => loc.type === 'PICKUP');
+          if (pickupLoc?.locationData?.city) return pickupLoc.locationData.city;
+          if (pickupLoc?.locationData?.name) return pickupLoc.locationData.name;
+          if (pickupLoc?.locationData?.address) return pickupLoc.locationData.address;
+          
+          return 'Unknown Origin';
+        };
+
+        // Extract delivery location from multiple possible sources
+        const getDeliveryLocation = () => {
+          // 1. Check trip's deliveryLocation relation
+          if (trip.deliveryLocation?.city) return trip.deliveryLocation.city;
+          if (trip.deliveryLocation?.address) return trip.deliveryLocation.address;
+          
+          // 2. Check load's destination field (jsonb Address type)
+          if (trip.load?.destination?.city) return trip.load.destination.city;
+          if (trip.load?.destination?.address) return trip.load.destination.address;
+          
+          // 3. Check load's locations array for DELIVERY type
+          const deliveryLoc = trip.load?.locations?.find((loc: any) => loc.type === 'DELIVERY');
+          if (deliveryLoc?.locationData?.city) return deliveryLoc.locationData.city;
+          if (deliveryLoc?.locationData?.name) return deliveryLoc.locationData.name;
+          if (deliveryLoc?.locationData?.address) return deliveryLoc.locationData.address;
+          
+          return 'Unknown Destination';
+        };
+
+        return {
+          id: trip.id,
+          tripNumber: trip.tripNumber || 'N/A',
+          loadId: trip.load?.reference || trip.loadId || 'N/A',
+          truckId: trip.truckId,
+          driverId: trip.driverId,
+          status: trip.status,
+          plannedStartTime: new Date(trip.plannedStartTime),
+          plannedEndTime: new Date(trip.plannedEndTime),
+          actualStartTime: trip.actualStartTime ? new Date(trip.actualStartTime) : undefined,
+          actualEndTime: trip.actualEndTime ? new Date(trip.actualEndTime) : undefined,
+          agreedPrice: Number(trip.agreedPrice) || 0,
+          pickupLocation: getPickupLocation(),
+          deliveryLocation: getDeliveryLocation(),
+          driverName: trip.driver ? `${trip.driver.firstName} ${trip.driver.lastName}` : 'Unassigned',
+          truckPlate: trip.truck?.plateNumber || 'Unassigned'
+        };
+      });
     }
   });
 

@@ -172,7 +172,8 @@ export const TruckMatches: React.FC = () => {
                                         <button
                                             onClick={() => handleRespond(match.id, 'ACCEPTED', match)}
                                             disabled={processingMatchId === match.id}
-                                            className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-emerald-600 text-white px-5 py-2.5 rounded-lg hover:bg-emerald-700 font-medium transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                                            className="flex-1 md:flex-none flex items-center justify-center gap-2 text-white px-5 py-2.5 rounded-lg font-medium transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90"
+                                            style={{ backgroundColor: '#345E85' }}
                                         >
                                             {processingMatchId === match.id ? (
                                                 <>
@@ -243,21 +244,21 @@ export const TruckMatches: React.FC = () => {
                     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
                         <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden animate-scale-in">
                             {/* Header */}
-                            <div className="bg-gradient-to-r from-emerald-500 to-emerald-600 p-6 text-white">
+                            <div className="p-6 text-white" style={{ background: 'linear-gradient(to right, #345E85, #4A7BA7)' }}>
                                 <div className="flex items-center justify-center mb-4">
                                     <div className="bg-white bg-opacity-20 rounded-full p-4">
                                         <FaCheckCircle className="w-12 h-12" />
                                     </div>
                                 </div>
                                 <h2 className="text-2xl font-bold text-center">Match Accepted!</h2>
-                                <p className="text-emerald-100 text-center mt-2">Trip has been created successfully</p>
+                                <p className="text-blue-100 text-center mt-2">Trip has been created successfully</p>
                             </div>
 
                             {/* Content */}
                             <div className="p-6 space-y-4">
                                 <div className="bg-gray-50 rounded-lg p-4 space-y-3">
                                     <div className="flex items-center gap-3">
-                                        <FaRoute className="text-emerald-600 w-5 h-5" />
+                                        <FaRoute className="w-5 h-5" style={{ color: '#345E85' }} />
                                         <div className="flex-1">
                                             <p className="text-xs text-gray-500">Load</p>
                                             <p className="font-semibold text-gray-900">{acceptedMatchDetails.match.load?.title}</p>
@@ -265,7 +266,7 @@ export const TruckMatches: React.FC = () => {
                                     </div>
 
                                     <div className="flex items-center gap-3">
-                                        <FaTruck className="text-emerald-600 w-5 h-5" />
+                                        <FaTruck className="w-5 h-5" style={{ color: '#345E85' }} />
                                         <div className="flex-1">
                                             <p className="text-xs text-gray-500">Truck</p>
                                             <p className="font-semibold text-gray-900">{acceptedMatchDetails.match.truck?.plateNumber}</p>
@@ -273,7 +274,7 @@ export const TruckMatches: React.FC = () => {
                                     </div>
 
                                     <div className="flex items-center gap-3">
-                                        <FaMapMarkerAlt className="text-emerald-600 w-5 h-5" />
+                                        <FaMapMarkerAlt className="w-5 h-5" style={{ color: '#345E85' }} />
                                         <div className="flex-1">
                                             <p className="text-xs text-gray-500">Route</p>
                                             <p className="font-semibold text-gray-900">
@@ -284,7 +285,7 @@ export const TruckMatches: React.FC = () => {
 
                                     {acceptedMatchDetails.match.load?.pickupDate && (
                                         <div className="flex items-center gap-3">
-                                            <FaCalendar className="text-emerald-600 w-5 h-5" />
+                                            <FaCalendar className="w-5 h-5" style={{ color: '#345E85' }} />
                                             <div className="flex-1">
                                                 <p className="text-xs text-gray-500">Pickup Date</p>
                                                 <p className="font-semibold text-gray-900">
@@ -296,7 +297,7 @@ export const TruckMatches: React.FC = () => {
 
                                     {acceptedMatchDetails.match.load?.offeredPrice && (
                                         <div className="flex items-center gap-3">
-                                            <FaDollarSign className="text-emerald-600 w-5 h-5" />
+                                            <FaDollarSign className="w-5 h-5" style={{ color: '#345E85' }} />
                                             <div className="flex-1">
                                                 <p className="text-xs text-gray-500">Agreed Price</p>
                                                 <p className="font-semibold text-gray-900">
@@ -325,7 +326,8 @@ export const TruckMatches: React.FC = () => {
                                 </button>
                                 <button
                                     onClick={handleViewTrip}
-                                    className="flex-1 px-4 py-2.5 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 font-medium transition-colors shadow-sm"
+                                    className="flex-1 px-4 py-2.5 text-white rounded-lg font-medium transition-colors shadow-sm hover:opacity-90"
+                                    style={{ backgroundColor: '#345E85' }}
                                 >
                                     View My Trips
                                 </button>
