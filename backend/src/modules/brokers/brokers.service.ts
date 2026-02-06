@@ -92,9 +92,24 @@ export class BrokersService {
       throw new ConflictException('A broker with this email already exists in this tenant');
     }
 
-    // Generate temporary password (will be changed on first login)
-    const tempPassword = crypto.randomBytes(16).toString('hex');
-    const passwordHash = await bcrypt.hash(tempPassword, 10);
+    // Check for existing user account to reuse credentials
+    const existingUserAccount = await this.userRepository.findOne({
+      where: { email: createBrokerDto.email.toLowerCase().trim() }
+    });
+
+    let passwordHash;
+    let userStatus = UserStatus.PENDING_VERIFICATION;
+    let shouldSendInvitation = true;
+
+    if (existingUserAccount && existingUserAccount.passwordHash) {
+       passwordHash = existingUserAccount.passwordHash;
+       userStatus = UserStatus.ACTIVE;
+       shouldSendInvitation = false;
+       this.logger.log(`Reusing existing credentials for broker ${createBrokerDto.email}`);
+    } else {
+       const tempPassword = crypto.randomBytes(16).toString('hex');
+       passwordHash = await bcrypt.hash(tempPassword, 10);
+    }
 
     // Get tenant settings for default commission rate
     const tenant = await this.tenantRepository.findOne({
@@ -112,7 +127,7 @@ export class BrokersService {
       phone: createBrokerDto.phone?.trim(),
       passwordHash,
       role: UserRole.BROKER,
-      status: UserStatus.PENDING_VERIFICATION,
+      status: userStatus,
       tenantId: tenantAdmin.tenantId,
       brokerTenantId: tenantAdmin.tenantId,
       defaultCommissionRate,
@@ -132,52 +147,56 @@ export class BrokersService {
 
     await this.userProfileRepository.save(profile);
 
-    // Generate password setup token
-    const token = crypto.randomBytes(32).toString('hex');
-    const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + 7); // Token expires in 7 days
+    if (shouldSendInvitation) {
+        // Generate password setup token
+        const token = crypto.randomBytes(32).toString('hex');
+        const expiresAt = new Date();
+        expiresAt.setDate(expiresAt.getDate() + 7); // Token expires in 7 days
 
-    // Invalidate any existing tokens for this email
-    await this.passwordResetTokenRepository.update(
-      { email: broker.email, used: false },
-      { used: true },
-    );
+        // Invalidate any existing tokens for this email
+        await this.passwordResetTokenRepository.update(
+          { email: broker.email, used: false },
+          { used: true },
+        );
 
-    const passwordSetupToken = this.passwordResetTokenRepository.create({
-      email: broker.email,
-      token,
-      expiresAt,
-      used: false,
-    });
-
-    await this.passwordResetTokenRepository.save(passwordSetupToken);
-
-    // Send invitation email
-    try {
-      // Use generic email method if broker-specific method doesn't exist
-      if (typeof (this.emailService as any).sendBrokerInvitationEmail === 'function') {
-        await (this.emailService as any).sendBrokerInvitationEmail(
-          broker.email,
-          createBrokerDto.firstName,
-          createBrokerDto.lastName,
-          tenantAdmin.email,
+        const passwordSetupToken = this.passwordResetTokenRepository.create({
+          email: broker.email,
           token,
-        );
-      } else {
-        // Fallback: use driver invitation email template (similar structure)
-        const frontendUrl = this.configService.get<string>('FRONTEND_URL', 'http://localhost:3000');
-        const setupUrl = `${frontendUrl}/auth/setup-password?token=${token}&email=${encodeURIComponent(broker.email)}`;
-        await (this.emailService as any).sendDriverPasswordSetupEmail(
-          broker.email,
-          createBrokerDto.firstName,
-          createBrokerDto.lastName,
-          setupUrl,
-        );
-      }
-      this.logger.log(`✅ Invitation email sent to ${broker.email}`);
-    } catch (error) {
-      this.logger.error(`Failed to send invitation email: ${error.message}`);
-      // Don't fail the creation if email fails
+          expiresAt,
+          used: false,
+        });
+
+        await this.passwordResetTokenRepository.save(passwordSetupToken);
+
+        // Send invitation email
+        try {
+          // Use generic email method if broker-specific method doesn't exist
+          if (typeof (this.emailService as any).sendBrokerInvitationEmail === 'function') {
+            await (this.emailService as any).sendBrokerInvitationEmail(
+              broker.email,
+              createBrokerDto.firstName,
+              createBrokerDto.lastName,
+              tenantAdmin.email,
+              token,
+            );
+          } else {
+            // Fallback: use driver invitation email template (similar structure)
+            const frontendUrl = this.configService.get<string>('FRONTEND_URL', 'http://localhost:3000');
+            const setupUrl = `${frontendUrl}/auth/setup-password?token=${token}&email=${encodeURIComponent(broker.email)}`;
+            await (this.emailService as any).sendDriverPasswordSetupEmail(
+              broker.email,
+              createBrokerDto.firstName,
+              createBrokerDto.lastName,
+              setupUrl,
+            );
+          }
+          this.logger.log(`✅ Invitation email sent to ${broker.email}`);
+        } catch (error) {
+          this.logger.error(`Failed to send invitation email: ${error.message}`);
+          // Don't fail the creation if email fails
+        }
+    } else {
+        this.logger.log(`Existing credentials found for ${broker.email}. Skipped invitation email.`);
     }
 
     return {

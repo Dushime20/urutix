@@ -76,9 +76,24 @@ export class ReceiversService {
       throw new ConflictException('A receiver with this email already exists in this tenant');
     }
 
-    // Generate temporary password (will be changed on first login)
-    const tempPassword = crypto.randomBytes(16).toString('hex');
-    const passwordHash = await bcrypt.hash(tempPassword, 10);
+    // Check for existing user account to reuse credentials
+    const existingUserAccount = await this.userRepository.findOne({
+      where: { email: createReceiverDto.email.toLowerCase().trim() }
+    });
+
+    let passwordHash;
+    let userStatus = UserStatus.PENDING_VERIFICATION;
+    let shouldSendInvitation = true;
+
+    if (existingUserAccount && existingUserAccount.passwordHash) {
+       passwordHash = existingUserAccount.passwordHash;
+       userStatus = UserStatus.ACTIVE;
+       shouldSendInvitation = false;
+       this.logger.log(`Reusing existing credentials for receiver ${createReceiverDto.email}`);
+    } else {
+       const tempPassword = crypto.randomBytes(16).toString('hex');
+       passwordHash = await bcrypt.hash(tempPassword, 10);
+    }
 
     // Create receiver user
     const receiver = this.userRepository.create({
@@ -86,7 +101,7 @@ export class ReceiversService {
       phone: createReceiverDto.phone?.trim(),
       passwordHash,
       role: UserRole.CARGO_RECEIVER,
-      status: UserStatus.PENDING_VERIFICATION,
+      status: userStatus,
       tenantId: cargoOwner.tenantId,
       createdByCargoOwnerId: cargoOwnerId,
     });
@@ -103,41 +118,46 @@ export class ReceiversService {
 
     await this.userProfileRepository.save(profile);
 
-    // Generate password setup token
-    const token = crypto.randomBytes(32).toString('hex');
-    const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + 7); // Token expires in 7 days
+    // Only send invitation if needed
+    if (shouldSendInvitation) {
+        // Generate password setup token
+        const token = crypto.randomBytes(32).toString('hex');
+        const expiresAt = new Date();
+        expiresAt.setDate(expiresAt.getDate() + 7); // Token expires in 7 days
 
-    // Invalidate any existing tokens for this email
-    await this.passwordResetTokenRepository.update(
-      { email: receiver.email, used: false },
-      { used: true },
-    );
+        // Invalidate any existing tokens for this email
+        await this.passwordResetTokenRepository.update(
+          { email: receiver.email, used: false },
+          { used: true },
+        );
 
-    const passwordSetupToken = this.passwordResetTokenRepository.create({
-      email: receiver.email,
-      token,
-      expiresAt,
-      used: false,
-    });
+        const passwordSetupToken = this.passwordResetTokenRepository.create({
+          email: receiver.email,
+          token,
+          expiresAt,
+          used: false,
+        });
 
-    await this.passwordResetTokenRepository.save(passwordSetupToken);
+        await this.passwordResetTokenRepository.save(passwordSetupToken);
 
-    // Send invitation email
-    try {
-      await this.emailService.sendReceiverInvitationEmail(
-        receiver.email,
-        createReceiverDto.firstName,
-        createReceiverDto.lastName,
-        cargoOwner.email,
-        token,
-      );
-      this.logger.log(`✅ Invitation email sent to ${receiver.email}`);
-    } catch (error) {
-      this.logger.error(
-        `Failed to send invitation email: ${error.message}`,
-      );
-      // Don't fail the creation if email fails
+        // Send invitation email
+        try {
+          await this.emailService.sendReceiverInvitationEmail(
+            receiver.email,
+            createReceiverDto.firstName,
+            createReceiverDto.lastName,
+            cargoOwner.email,
+            token,
+          );
+          this.logger.log(`✅ Invitation email sent to ${receiver.email}`);
+        } catch (error) {
+          this.logger.error(
+            `Failed to send invitation email: ${error.message}`,
+          );
+          // Don't fail the creation if email fails
+        }
+    } else {
+       this.logger.log(`Existing credentials found for ${receiver.email}. Skipped invitation email.`);
     }
 
     return {

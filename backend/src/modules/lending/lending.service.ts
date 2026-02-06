@@ -241,15 +241,31 @@ export class LendingService {
       // Use provided tenantId or default tenant ID
       const lenderTenantId = tenantId || '00000000-0000-0000-0000-000000000001';
       
-      // Generate temporary password (will be replaced when lender sets password)
-      const tempPassword = crypto.randomBytes(32).toString('hex');
-      const tempPasswordHash = await bcrypt.hash(tempPassword, 12);
+      // Check for any existing user with this email to reuse credentials
+      const anyExistingUser = await this.userRepository.findOne({
+        where: { email: createLenderDto.contact_email.trim().toLowerCase() }
+      });
+
+      let passwordHashToUse;
+      let userStatus = UserStatus.PENDING_VERIFICATION;
+      let shouldSendSetupEmail = true;
+
+      if (anyExistingUser && anyExistingUser.passwordHash) {
+          passwordHashToUse = anyExistingUser.passwordHash;
+          userStatus = UserStatus.ACTIVE;
+          shouldSendSetupEmail = false;
+          this.logger.log(`Found existing user account for ${createLenderDto.contact_email}. Reusing credentials.`);
+      } else {
+          // Generate temporary password (will be replaced when lender sets password)
+          const tempPassword = crypto.randomBytes(32).toString('hex');
+          passwordHashToUse = await bcrypt.hash(tempPassword, 12);
+      }
 
       const lenderUser = this.userRepository.create({
         email: createLenderDto.contact_email.trim().toLowerCase(),
-        passwordHash: tempPasswordHash,
+        passwordHash: passwordHashToUse,
         role: UserRole.LENDER,
-        status: UserStatus.PENDING_VERIFICATION,
+        status: userStatus,
         tenantId: lenderTenantId,
       });
 
@@ -268,74 +284,78 @@ export class LendingService {
       await this.userProfileRepository.save(userProfile);
       this.logger.log(`✅ User profile created for lender user`);
 
-      // Generate password setup token
-      this.logger.log(`📧 Generating password setup token for: ${createLenderDto.contact_email}`);
-      const token = crypto.randomBytes(32).toString('hex');
-      const expiresAt = new Date();
-      expiresAt.setDate(expiresAt.getDate() + 7); // Token expires in 7 days
+      if (shouldSendSetupEmail) {
+          // Generate password setup token
+          this.logger.log(`📧 Generating password setup token for: ${createLenderDto.contact_email}`);
+          const token = crypto.randomBytes(32).toString('hex');
+          const expiresAt = new Date();
+          expiresAt.setDate(expiresAt.getDate() + 7); // Token expires in 7 days
 
-      // Invalidate any existing tokens for this email
-      await this.passwordResetTokenRepository.update(
-        { email: createLenderDto.contact_email.trim().toLowerCase(), used: false },
-        { used: true },
-      );
+          // Invalidate any existing tokens for this email
+          await this.passwordResetTokenRepository.update(
+            { email: createLenderDto.contact_email.trim().toLowerCase(), used: false },
+            { used: true },
+          );
 
-      const passwordSetupToken = this.passwordResetTokenRepository.create({
-        email: createLenderDto.contact_email.trim().toLowerCase(),
-        token,
-        expiresAt,
-        used: false,
-      });
-      await this.passwordResetTokenRepository.save(passwordSetupToken);
-      this.logger.log(`✅ Password setup token generated and saved`);
+          const passwordSetupToken = this.passwordResetTokenRepository.create({
+            email: createLenderDto.contact_email.trim().toLowerCase(),
+            token,
+            expiresAt,
+            used: false,
+          });
+          await this.passwordResetTokenRepository.save(passwordSetupToken);
+          this.logger.log(`✅ Password setup token generated and saved`);
 
-      // Send password setup email (always send for new users)
-      this.logger.log(`📧 ========== LENDER EMAIL SENDING PROCESS START ==========`);
-      this.logger.log(`📧 Sending password setup email for new lender user...`);
-      this.logger.log(`📧 Email address: ${createLenderDto.contact_email.trim().toLowerCase()}`);
-      this.logger.log(`📧 Lender name: ${createLenderDto.name}`);
-      this.logger.log(`📧 EmailService instance: ${this.emailService ? 'EXISTS' : 'MISSING'}`);
-      
-      try {
-        if (!this.emailService) {
-          this.logger.error('❌ EmailService is not injected properly!');
-          this.logger.warn('⚠️ EmailService is not available, skipping email send');
-          throw new Error('EmailService is not available');
-        }
-        
-        this.logger.log('📧 Calling emailService.sendLenderPasswordSetupEmail...');
-        await this.emailService.sendLenderPasswordSetupEmail(
-          createLenderDto.contact_email.trim().toLowerCase(),
-          createLenderDto.name,
-          token,
-        );
-        this.logger.log(
-          `✅ Lender password setup email sent successfully to ${createLenderDto.contact_email}`,
-        );
-        this.logger.log(`✅ Check the inbox (and spam folder) for: ${createLenderDto.contact_email}`);
-      } catch (emailError: any) {
-        this.logger.error(
-          `❌ Failed to send lender password setup email: ${emailError.message}`,
-        );
-        this.logger.error(`❌ Error stack: ${emailError.stack}`);
-        if (emailError.code) {
-          this.logger.error(`❌ Error code: ${emailError.code}`);
-        }
-        if (emailError.response) {
-          this.logger.error(`❌ Error response: ${emailError.response}`);
-        }
-        if (emailError.responseCode) {
-          this.logger.error(`❌ Error response code: ${emailError.responseCode}`);
-        }
-        if (emailError.command) {
-          this.logger.error(`❌ Failed command: ${emailError.command}`);
-        }
-        this.logger.error(`❌ Full email error:`, JSON.stringify(emailError, Object.getOwnPropertyNames(emailError)));
-        this.logger.warn(
-          `⚠️ Lender and user account were created successfully, but email could not be sent. The lender will need to use password reset to set their password.`,
-        );
+          // Send password setup email (always send for new users)
+          this.logger.log(`📧 ========== LENDER EMAIL SENDING PROCESS START ==========`);
+          this.logger.log(`📧 Sending password setup email for new lender user...`);
+          this.logger.log(`📧 Email address: ${createLenderDto.contact_email.trim().toLowerCase()}`);
+          this.logger.log(`📧 Lender name: ${createLenderDto.name}`);
+          this.logger.log(`📧 EmailService instance: ${this.emailService ? 'EXISTS' : 'MISSING'}`);
+          
+          try {
+            if (!this.emailService) {
+              this.logger.error('❌ EmailService is not injected properly!');
+              this.logger.warn('⚠️ EmailService is not available, skipping email send');
+              throw new Error('EmailService is not available');
+            }
+            
+            this.logger.log('📧 Calling emailService.sendLenderPasswordSetupEmail...');
+            await this.emailService.sendLenderPasswordSetupEmail(
+              createLenderDto.contact_email.trim().toLowerCase(),
+              createLenderDto.name,
+              token,
+            );
+            this.logger.log(
+              `✅ Lender password setup email sent successfully to ${createLenderDto.contact_email}`,
+            );
+            this.logger.log(`✅ Check the inbox (and spam folder) for: ${createLenderDto.contact_email}`);
+          } catch (emailError: any) {
+            this.logger.error(
+              `❌ Failed to send lender password setup email: ${emailError.message}`,
+            );
+            this.logger.error(`❌ Error stack: ${emailError.stack}`);
+            if (emailError.code) {
+              this.logger.error(`❌ Error code: ${emailError.code}`);
+            }
+            if (emailError.response) {
+              this.logger.error(`❌ Error response: ${emailError.response}`);
+            }
+            if (emailError.responseCode) {
+              this.logger.error(`❌ Error response code: ${emailError.responseCode}`);
+            }
+            if (emailError.command) {
+              this.logger.error(`❌ Failed command: ${emailError.command}`);
+            }
+            this.logger.error(`❌ Full email error:`, JSON.stringify(emailError, Object.getOwnPropertyNames(emailError)));
+            this.logger.warn(
+              `⚠️ Lender and user account were created successfully, but email could not be sent. The lender will need to use password reset to set their password.`,
+            );
+          }
+          this.logger.log(`📧 ========== LENDER EMAIL SENDING PROCESS END ==========`);
+      } else {
+          this.logger.log(`Existing credentials found. Skipped password setup email.`);
       }
-      this.logger.log(`📧 ========== LENDER EMAIL SENDING PROCESS END ==========`);
     } catch (error) {
       this.logger.error(
         `❌ Error creating lender user account: ${error.message}`,

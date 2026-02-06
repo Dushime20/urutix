@@ -10,13 +10,11 @@ import { TripsController } from './trips.controller';
 import { UserProfile } from '../../entities/user-profile.entity';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { NotificationService } from '../notifications/notification.service';
-import { MatchingModule } from '../matching/matching.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Trip, Load, Truck, Driver, UserProfile]),
     NotificationsModule,
-    MatchingModule,
   ],
   providers: [TripsService],
   controllers: [TripsController],
