@@ -598,6 +598,10 @@ export class FleetService {
         where: { email: createDriverDto.email.trim().toLowerCase() }
       });
       
+      // Generate temporary password (default backup)
+      const tempPassword = crypto.randomBytes(32).toString('hex');
+      const tempPasswordHash = await bcrypt.hash(tempPassword, 12);
+      
       let passwordHashToUse = tempPasswordHash;
       let userStatus = UserStatus.PENDING_VERIFICATION;
       let shouldSendSetupEmail = true;
