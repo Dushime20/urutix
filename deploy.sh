@@ -16,7 +16,7 @@ NC='\033[0m' # No Color
 PROJECT_DIR="/root/urutix/urutix"
 BACKEND_DIR="$PROJECT_DIR/backend"
 FRONTEND_DIR="$PROJECT_DIR/frontend"
-GIT_BRANCH="main"
+GIT_BRANCH="dev"
 
 # PM2 process names
 PM2_BACKEND="smartcargo-backend"
