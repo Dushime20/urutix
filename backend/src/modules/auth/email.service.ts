@@ -114,7 +114,8 @@ export class EmailService {
   }
 
   async sendVerificationEmail(email: string, token: string): Promise<void> {
-    const verificationUrl = `${this.configService.get('FRONTEND_URL')}/verify-email?token=${token}`;
+    const frontendUrl = this.configService.get('FRONTEND_URL') || 'http://localhost:5173';
+    const verificationUrl = `${frontendUrl}/verify-email?token=${token}`;
     const fromAddress =
       this.configService.get<string>('SMTP_FROM') ||
       this.configService.get<string>('EMAIL_FROM_ADDRESS') ||
@@ -145,7 +146,8 @@ export class EmailService {
   }
 
   async sendPasswordResetEmail(email: string, token: string): Promise<void> {
-    const resetUrl = `${this.configService.get('FRONTEND_URL')}/reset-password?token=${token}`;
+    const frontendUrl = this.configService.get('FRONTEND_URL') || 'http://localhost:5173';
+    const resetUrl = `${frontendUrl}/reset-password?token=${token}`;
     const fromAddress =
       this.configService.get<string>('SMTP_FROM') ||
       this.configService.get<string>('EMAIL_FROM_ADDRESS') ||
@@ -186,7 +188,7 @@ export class EmailService {
     
     // Construct the setup URL - use FRONTEND_URL from env, or default to localhost:3001
     // This will work on whatever port the frontend is running on
-    const frontendUrl = this.configService.get('FRONTEND_URL') || 'http://localhost:3001';
+    const frontendUrl = this.configService.get('FRONTEND_URL') || 'http://localhost:5173';
     // Remove trailing slash if present and construct the full URL
     const baseUrl = frontendUrl.replace(/\/$/, '');
     const setupUrl = `${baseUrl}/driver/setup-password?token=${token}`;
@@ -328,7 +330,7 @@ This link will expire in 7 days.
     this.logger.log(`Attempting to send lender password setup email to: ${email}`);
     
     // Construct the setup URL - use FRONTEND_URL from env, or default to localhost:3001
-    const frontendUrl = this.configService.get('FRONTEND_URL') || 'http://localhost:3001';
+    const frontendUrl = this.configService.get('FRONTEND_URL') || 'http://localhost:5173';
     const baseUrl = frontendUrl.replace(/\/$/, '');
     const setupUrl = `${baseUrl}/lender/setup-password?token=${token}`;
     
@@ -458,7 +460,7 @@ This link will expire in 7 days.
     this.logger.log(`Attempting to send tenant password setup email to: ${email}`);
     
     // Construct the setup URL - use FRONTEND_URL from env, or default to localhost:3001
-    const frontendUrl = this.configService.get('FRONTEND_URL') || 'http://localhost:3001';
+    const frontendUrl = this.configService.get('FRONTEND_URL') || 'http://localhost:5173';
     const baseUrl = frontendUrl.replace(/\/$/, '');
     const setupUrl = `${baseUrl}/tenant/setup-password?token=${token}`;
     
@@ -607,7 +609,7 @@ This link will expire in 7 days.
     this.logger.log('========== RECEIVER INVITATION EMAIL SERVICE CALLED ==========');
     this.logger.log(`Attempting to send receiver invitation email to: ${email}`);
     
-    const frontendUrl = this.configService.get('FRONTEND_URL') || 'http://localhost:3001';
+    const frontendUrl = this.configService.get('FRONTEND_URL') || 'http://localhost:5173';
     const baseUrl = frontendUrl.replace(/\/$/, '');
     const setupUrl = `${baseUrl}/receiver/setup-password?token=${token}`;
     
