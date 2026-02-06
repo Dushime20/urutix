@@ -1094,7 +1094,11 @@ const CargoOwnerDashboard = () => {
                 {(() => {
                   const hour = new Date().getHours();
                   const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
-                  return `${greeting}, ${user?.firstName || 'User'}`;
+                  // Get firstName from user object, fallback to profile.firstName, then to 'User'
+                  const firstName = (user?.firstName && user.firstName.trim()) || 
+                                    ((user as any)?.profile?.firstName && (user as any).profile.firstName.trim()) || 
+                                    'User';
+                  return `${greeting}, ${firstName}`;
                 })()}
               </h1>
               <p className="mt-1 text-gray-600">

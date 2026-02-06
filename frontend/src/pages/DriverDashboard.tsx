@@ -166,7 +166,11 @@ const DriverDashboard: React.FC = () => {
             {(() => {
               const hour = new Date().getHours();
               const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
-              return `${greeting}, ${user?.firstName || 'Driver'}`;
+              // Get firstName from user object, fallback to profile.firstName, then to 'Driver'
+              const firstName = (user?.firstName && user.firstName.trim()) || 
+                                ((user as any)?.profile?.firstName && (user as any).profile.firstName.trim()) || 
+                                'Driver';
+              return `${greeting}, ${firstName}`;
             })()}
           </h1>
           <p className="text-gray-500">Here's your activity overview</p>

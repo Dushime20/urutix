@@ -238,9 +238,13 @@ const AdminDashboard: React.FC = () => {
             {(() => {
               const hour = new Date().getHours();
               const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
+              // Get firstName from user object, fallback to profile.firstName, then to 'Admin'
+              const firstName = (user?.firstName && user.firstName.trim()) || 
+                                ((user as any)?.profile?.firstName && (user as any).profile.firstName.trim()) || 
+                                'Admin';
               return (
                   <div>
-                    <h1 className="text-2xl font-bold text-gray-900">{greeting}, {user?.firstName || 'Admin'}</h1>
+                    <h1 className="text-2xl font-bold text-gray-900">{greeting}, {firstName}</h1>
                      <p className="text-gray-500 text-sm">Welcome to the administration panel</p>
                   </div>
               );

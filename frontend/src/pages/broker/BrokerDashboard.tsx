@@ -513,7 +513,11 @@ const BrokerDashboard: React.FC = () => {
               {(() => {
                 const hour = new Date().getHours();
                 const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
-                return `${greeting}, ${user?.firstName || 'Broker'}!`;
+                // Get firstName from user object, fallback to profile.firstName, then to 'Broker'
+                const firstName = (user?.firstName && user.firstName.trim()) || 
+                                  ((user as any)?.profile?.firstName && (user as any).profile.firstName.trim()) || 
+                                  'Broker';
+                return `${greeting}, ${firstName}!`;
               })()}
             </h1>
             <p className="text-gray-300 text-sm sm:text-base">
