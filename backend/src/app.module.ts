@@ -13,6 +13,7 @@ import { ScoringModule } from './modules/scoring/scoring.module';
 import { TrackingModule } from './modules/tracking/tracking.module';
 import { FinancialModule } from './modules/financial/financial.module';
 import { FleetModule } from './modules/fleet/fleet.module';
+import { CargoModule } from './modules/cargo/cargo.module';
 import { MatchingModule } from './modules/matching/matching.module';
 import { BiddingModule } from './modules/bidding/bidding.module';
 import { AdminModule } from './modules/admin/admin.module';
@@ -49,6 +50,7 @@ import { ThrottlerModule } from '@nestjs/throttler';
     TrackingModule,
     FinancialModule,
     FleetModule,
+    CargoModule,
     MatchingModule,
     BiddingModule,
     AdminModule,

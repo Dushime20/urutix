@@ -21,6 +21,15 @@ export interface CreateTenantUserDto {
   phoneNumber?: string;
 }
 
+export interface UpdateUserDto {
+  firstName?: string;
+  lastName?: string;
+  phoneNumber?: string;
+  companyName?: string;
+  role?: UserRole;
+  status?: UserStatus;
+}
+
 @Injectable()
 export class UsersService {
   constructor(
@@ -159,5 +168,98 @@ export class UsersService {
     return this.userRepository.find({
       relations: ['profile'],
     });
+  }
+
+  async findUserById(userId: string): Promise<User> {
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+      relations: ['profile'],
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    return user;
+  }
+
+  async updateUser(userId: string, updateDto: UpdateUserDto): Promise<User> {
+    const user = await this.findUserById(userId);
+
+    // Update user profile if profile fields are provided
+    if (updateDto.firstName || updateDto.lastName || updateDto.companyName || updateDto.phoneNumber) {
+      const profile = await this.userProfileRepository.findOne({
+        where: { userId },
+      });
+
+      if (profile) {
+        if (updateDto.firstName) profile.firstName = updateDto.firstName;
+        if (updateDto.lastName) profile.lastName = updateDto.lastName;
+        if (updateDto.companyName) profile.companyName = updateDto.companyName;
+        await this.userProfileRepository.save(profile);
+      }
+    }
+
+    // Update user phone if provided
+    if (updateDto.phoneNumber) {
+      user.phone = updateDto.phoneNumber;
+    }
+
+    // Update role if provided (with validation)
+    if (updateDto.role && updateDto.role !== user.role) {
+      if (!(await this.checkTenantRoleExists(updateDto.role))) {
+        throw new ConflictException(`Role ${updateDto.role} is not valid`);
+      }
+      user.role = updateDto.role;
+    }
+
+    // Update status if provided
+    if (updateDto.status) {
+      user.status = updateDto.status;
+    }
+
+    const updatedUser = await this.userRepository.save(user);
+
+    // Reload with relations
+    return this.findUserById(updatedUser.id);
+  }
+
+  async deleteUser(userId: string): Promise<void> {
+    const user = await this.findUserById(userId);
+
+    // Soft delete - set status to DEACTIVATED
+    user.status = UserStatus.DEACTIVATED;
+
+    await this.userRepository.save(user);
+  }
+
+  async updateUserStatus(userId: string, status: UserStatus): Promise<User> {
+    const user = await this.findUserById(userId);
+    user.status = status;
+    await this.userRepository.save(user);
+    return this.findUserById(userId);
+  }
+
+  async changeUserRole(userId: string, role: UserRole): Promise<User> {
+    const user = await this.findUserById(userId);
+
+    // Validate role
+    if (!(await this.checkTenantRoleExists(role))) {
+      throw new ConflictException(`Role ${role} is not valid for tenant users`);
+    }
+
+    user.role = role;
+    await this.userRepository.save(user);
+    return this.findUserById(userId);
+  }
+
+  async resetUserPassword(userId: string, newPassword: string): Promise<void> {
+    const user = await this.findUserById(userId);
+
+    // Hash new password
+    const hashedPassword = await bcrypt.hash(newPassword, 12);
+    user.passwordHash = hashedPassword;
+
+    await this.userRepository.save(user);
   }
 }

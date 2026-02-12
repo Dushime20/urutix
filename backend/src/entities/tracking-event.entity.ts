@@ -40,7 +40,6 @@ export class TrackingEvent {
   id: string;
 
   @Column('uuid')
-  @Index()
   loadId: string;
 
   @Column({

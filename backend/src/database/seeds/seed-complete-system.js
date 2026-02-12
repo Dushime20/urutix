@@ -95,7 +95,7 @@ async function createLocation(tenantId, name, address, city, state, country, lat
   await pool.query(`
     INSERT INTO locations (
       id, "tenantId", name, address, city, state, country, coordinates, "createdAt", "updatedAt"
-    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, ST_SetSRID(ST_MakePoint($8, $9), 4326), NOW(), NOW())
   `, [
     locationId,
     tenantId,
@@ -104,7 +104,8 @@ async function createLocation(tenantId, name, address, city, state, country, lat
     city,
     state,
     country,
-    JSON.stringify({ latitude: lat, longitude: lng })
+    lng, // longitude first for PostGIS
+    lat  // latitude second
   ]);
   return locationId;
 }
@@ -286,18 +287,27 @@ async function seedCompleteSystem() {
       const truckId = generateUUID();
       await pool.query(`
         INSERT INTO trucks (
-          id, "tenantId", "ownerId", "plateNumber", make, model, year, capacity, status, "createdAt", "updatedAt"
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
+          id, "tenantId", "ownerId", "plateNumber", vin, make, model, year, 
+          "capacityWeight", "capacityVolume", "registrationNumber", "registrationExpiry",
+          "insurancePolicy", "insuranceExpiry", status, "isActive", "createdAt", "updatedAt"
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, NOW(), NOW())
       `, [
         truckId,
         tenantId,
         truck.ownerId,
         truck.plateNumber,
+        `VIN${truck.plateNumber.replace(/\s/g, '')}`, // Generate VIN from plate
         truck.make,
         truck.model,
         truck.year,
         truck.capacity,
-        'ACTIVE'
+        truck.capacity * 0.5, // Volume is roughly half of weight capacity
+        truck.plateNumber, // Use plate number as registration
+        new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 1 year from now
+        `INS-${truck.plateNumber.replace(/\s/g, '')}`, // Insurance policy number
+        new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 1 year from now
+        'AVAILABLE',
+        true
       ]);
       trucks.push({ id: truckId, ...truck });
     }
@@ -505,9 +515,9 @@ async function seedCompleteSystem() {
       await pool.query(`
         INSERT INTO loads (
           id, "tenantId", "cargoOwnerId", title, description, weight, volume,
-          "pickupLocationId", "deliveryLocationId", "pickupDate", "deliveryDate",
-          status, visibility, "estimatedValue", locations, "createdAt", "updatedAt"
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, NOW(), NOW())
+          "pickupDate", "deliveryDate", status, "loadValue", "offeredPrice",
+          locations, "createdAt", "updatedAt"
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW(), NOW())
       `, [
         cargoId,
         tenantId,
@@ -516,13 +526,11 @@ async function seedCompleteSystem() {
         cargo.description,
         cargo.weight,
         cargo.volume,
-        cargo.pickupLocationId,
-        cargo.deliveryLocationId,
         cargo.pickupDate,
         cargo.deliveryDate,
         cargo.status,
-        'PUBLIC',
         cargo.estimatedValue,
+        cargo.estimatedValue * 0.8, // Offered price is 80% of estimated value
         JSON.stringify(locationsArray)
       ]);
       
@@ -575,11 +583,11 @@ async function seedCompleteSystem() {
       
       // Create 2-3 bids per auction from different truck owners
       const numBids = Math.floor(Math.random() * 2) + 2; // 2 or 3 bids
+      const baseAmount = cargo.estimatedValue * 0.7; // Start at 70% of estimated value
       
       for (let j = 0; j < numBids; j++) {
         const bidId = generateUUID();
         const bidderId = j % 2 === 0 ? truckOwnerId : truckOwner2Id;
-        const baseAmount = cargo.estimatedValue * 0.7; // Start at 70% of estimated value
         const bidAmount = baseAmount - (j * 500); // Decreasing bids
         
         await pool.query(`
@@ -760,24 +768,24 @@ async function seedCompleteSystem() {
     const routeData = [
       {
         name: 'Nairobi to Mombasa',
-        originId: locations.nairobi,
-        destinationId: locations.mombasa,
+        origin: 'Nairobi',
+        destination: 'Mombasa',
         distance: 485,
-        estimatedDuration: 480
+        estimatedTime: 480
       },
       {
         name: 'Kisumu to Nairobi',
-        originId: locations.kisumu,
-        destinationId: locations.nairobi,
+        origin: 'Kisumu',
+        destination: 'Nairobi',
         distance: 345,
-        estimatedDuration: 360
+        estimatedTime: 360
       },
       {
         name: 'Nairobi to Nakuru',
-        originId: locations.nairobi,
-        destinationId: locations.nakuru,
+        origin: 'Nairobi',
+        destination: 'Nakuru',
         distance: 160,
-        estimatedDuration: 180
+        estimatedTime: 180
       }
     ];
     
@@ -785,18 +793,18 @@ async function seedCompleteSystem() {
       const routeId = generateUUID();
       await pool.query(`
         INSERT INTO routes (
-          id, "tenantId", name, "originId", "destinationId", distance,
-          "estimatedDuration", status, "createdAt", "updatedAt"
+          id, "tenantId", name, origin, destination, distance,
+          "estimatedTime", status, "createdAt", "updatedAt"
         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
       `, [
         routeId,
         tenantId,
         route.name,
-        route.originId,
-        route.destinationId,
+        route.origin,
+        route.destination,
         route.distance,
-        route.estimatedDuration,
-        'ACTIVE'
+        route.estimatedTime,
+        'active'
       ]);
     }
     

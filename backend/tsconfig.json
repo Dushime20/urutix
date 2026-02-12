@@ -20,5 +20,9 @@
     "noFallthroughCasesInSwitch": false,
     "typeRoots": ["./node_modules/@types", "./src/types", "./types"]
   },
-  "include": ["src/**/*", "types/**/*"]
+  "include": ["src/**/*", "types/**/*"],
+  "exclude": [
+    "src/scripts/seed-matching-data.ts",
+    "src/scripts/seed-matching-demo.ts"
+  ]
 }

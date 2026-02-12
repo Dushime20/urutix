@@ -44,11 +44,9 @@ export class InsuranceClaim {
   id: string;
 
   @Column({ unique: true })
-  @Index()
   claimNumber: string;
 
   @Column({ type: 'uuid' })
-  @Index()
   policyId: string;
 
   @ManyToOne(() => InsurancePolicy, { onDelete: 'CASCADE' })
@@ -56,7 +54,6 @@ export class InsuranceClaim {
   policy: InsurancePolicy;
 
   @Column({ type: 'uuid' })
-  @Index()
   truckId: string;
 
   @ManyToOne(() => Truck, { onDelete: 'CASCADE' })
@@ -73,11 +70,9 @@ export class InsuranceClaim {
   description: string;
 
   @Column({ type: 'date' })
-  @Index()
   incidentDate: Date;
 
   @Column({ type: 'date' })
-  @Index()
   reportedDate: Date;
 
   @Column('decimal', { precision: 15, scale: 2 })

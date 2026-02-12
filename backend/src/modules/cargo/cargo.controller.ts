@@ -6,70 +6,46 @@ import {
   ApiParam,
   ApiQuery,
 } from '@nestjs/swagger';
-import { FleetService } from './fleet.service';
+import { CargoService } from './cargo.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { TenantGuard } from '../auth/tenant.guard';
 import { ApiResponseDto } from '../../common/dto/api-response.dto';
-import { VehicleStatus } from '../../entities/truck.entity';
+import { LoadStatus } from '../../entities/load.entity';
 
-@ApiTags('Fleet Management')
-@Controller('fleet')
+@ApiTags('Cargo Management')
+@Controller('cargo')
 @UseGuards(JwtAuthGuard, TenantGuard)
-export class FleetController {
-  constructor(private readonly fleetService: FleetService) {}
+export class CargoController {
+  constructor(private readonly cargoService: CargoService) {}
 
   @Get(':tenantId/summary')
   @ApiOperation({
-    summary: 'Get fleet summary',
-    description: 'Get comprehensive fleet summary for a tenant',
+    summary: 'Get cargo summary',
+    description: 'Get comprehensive cargo summary for a tenant',
   })
   @ApiParam({ name: 'tenantId', description: 'Tenant ID' })
   @ApiOkResponse({
-    description: 'Fleet summary retrieved successfully',
+    description: 'Cargo summary retrieved successfully',
     type: ApiResponseDto,
   })
-  async getFleetSummary(
+  async getCargoSummary(
     @Param('tenantId') tenantId: string,
   ): Promise<ApiResponseDto<any>> {
-    const summary = await this.fleetService.getFleetSummary(tenantId);
+    const summary = await this.cargoService.getCargoSummary(tenantId);
 
     return {
       success: true,
       statusCode: 200,
-      message: 'Fleet summary retrieved successfully',
+      message: 'Cargo summary retrieved successfully',
       data: summary,
       timestamp: new Date().toISOString(),
     };
   }
 
-  @Get(':tenantId/utilization')
+  @Get(':tenantId/cargo-owners')
   @ApiOperation({
-    summary: 'Get fleet utilization',
-    description: 'Get fleet utilization metrics over time',
-  })
-  @ApiParam({ name: 'tenantId', description: 'Tenant ID' })
-  @ApiOkResponse({
-    description: 'Fleet utilization retrieved successfully',
-    type: ApiResponseDto,
-  })
-  async getFleetUtilization(
-    @Param('tenantId') tenantId: string,
-  ): Promise<ApiResponseDto<any>> {
-    const utilization = await this.fleetService.getFleetUtilization(tenantId);
-
-    return {
-      success: true,
-      statusCode: 200,
-      message: 'Fleet utilization retrieved successfully',
-      data: utilization,
-      timestamp: new Date().toISOString(),
-    };
-  }
-
-  @Get(':tenantId/truck-owners')
-  @ApiOperation({
-    summary: 'Get truck owners',
-    description: 'Get list of truck owners for a tenant',
+    summary: 'Get cargo owners',
+    description: 'Get list of cargo owners for a tenant',
   })
   @ApiParam({ name: 'tenantId', description: 'Tenant ID' })
   @ApiQuery({ name: 'status', required: false, description: 'Filter by status' })
@@ -77,10 +53,10 @@ export class FleetController {
   @ApiQuery({ name: 'page', required: false, description: 'Page number' })
   @ApiQuery({ name: 'limit', required: false, description: 'Items per page' })
   @ApiOkResponse({
-    description: 'Truck owners retrieved successfully',
+    description: 'Cargo owners retrieved successfully',
     type: ApiResponseDto,
   })
-  async getTruckOwners(
+  async getCargoOwners(
     @Param('tenantId') tenantId: string,
     @Query('status') status?: string,
     @Query('search') search?: string,
@@ -94,24 +70,24 @@ export class FleetController {
       limit: limit ? parseInt(limit) : undefined,
     };
 
-    const result = await this.fleetService.getTruckOwners(tenantId, filters);
+    const result = await this.cargoService.getCargoOwners(tenantId, filters);
 
     return {
       success: true,
       statusCode: 200,
-      message: 'Truck owners retrieved successfully',
+      message: 'Cargo owners retrieved successfully',
       data: {
-        truckOwners: result.truckOwners,
+        cargoOwners: result.cargoOwners,
         total: result.total,
       },
       timestamp: new Date().toISOString(),
     };
   }
 
-  @Get(':tenantId/trucks')
+  @Get(':tenantId/loads')
   @ApiOperation({
-    summary: 'Get trucks',
-    description: 'Get list of trucks for a tenant',
+    summary: 'Get loads',
+    description: 'Get list of loads for a tenant',
   })
   @ApiParam({ name: 'tenantId', description: 'Tenant ID' })
   @ApiQuery({ name: 'ownerId', required: false, description: 'Filter by owner ID' })
@@ -120,10 +96,10 @@ export class FleetController {
   @ApiQuery({ name: 'page', required: false, description: 'Page number' })
   @ApiQuery({ name: 'limit', required: false, description: 'Items per page' })
   @ApiOkResponse({
-    description: 'Trucks retrieved successfully',
+    description: 'Loads retrieved successfully',
     type: ApiResponseDto,
   })
-  async getTrucks(
+  async getLoads(
     @Param('tenantId') tenantId: string,
     @Query('ownerId') ownerId?: string,
     @Query('status') status?: string,
@@ -133,48 +109,48 @@ export class FleetController {
   ): Promise<ApiResponseDto<any>> {
     const filters = {
       ownerId,
-      status: status as VehicleStatus,
+      status: status as LoadStatus,
       search,
       page: page ? parseInt(page) : undefined,
       limit: limit ? parseInt(limit) : undefined,
     };
 
-    const result = await this.fleetService.getTrucks(tenantId, filters);
+    const result = await this.cargoService.getLoads(tenantId, filters);
 
     return {
       success: true,
       statusCode: 200,
-      message: 'Trucks retrieved successfully',
+      message: 'Loads retrieved successfully',
       data: {
-        trucks: result.trucks,
+        loads: result.loads,
         total: result.total,
       },
       timestamp: new Date().toISOString(),
     };
   }
 
-  @Get(':tenantId/truck-owners/:ownerId')
+  @Get(':tenantId/cargo-owners/:ownerId')
   @ApiOperation({
-    summary: 'Get truck owner details',
-    description: 'Get detailed information about a specific truck owner',
+    summary: 'Get cargo owner details',
+    description: 'Get detailed information about a specific cargo owner',
   })
   @ApiParam({ name: 'tenantId', description: 'Tenant ID' })
   @ApiParam({ name: 'ownerId', description: 'Owner ID' })
   @ApiOkResponse({
-    description: 'Truck owner details retrieved successfully',
+    description: 'Cargo owner details retrieved successfully',
     type: ApiResponseDto,
   })
-  async getTruckOwnerById(
+  async getCargoOwnerById(
     @Param('tenantId') tenantId: string,
     @Param('ownerId') ownerId: string,
   ): Promise<ApiResponseDto<any>> {
-    const owner = await this.fleetService.getTruckOwnerById(tenantId, ownerId);
+    const owner = await this.cargoService.getCargoOwnerById(tenantId, ownerId);
 
     if (!owner) {
       return {
         success: false,
         statusCode: 404,
-        message: 'Truck owner not found',
+        message: 'Cargo owner not found',
         data: null,
         timestamp: new Date().toISOString(),
       };
@@ -183,7 +159,7 @@ export class FleetController {
     return {
       success: true,
       statusCode: 200,
-      message: 'Truck owner details retrieved successfully',
+      message: 'Cargo owner details retrieved successfully',
       data: owner,
       timestamp: new Date().toISOString(),
     };

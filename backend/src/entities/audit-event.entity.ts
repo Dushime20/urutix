@@ -54,7 +54,6 @@ export class AuditEvent {
   id: string;
 
   @Column('uuid')
-  @Index()
   loadId: string;
 
   @Column({
@@ -74,7 +73,6 @@ export class AuditEvent {
   action: AuditAction;
 
   @Column('uuid')
-  @Index()
   actorId: string;
 
   @Column('text', { nullable: true })

@@ -7,6 +7,7 @@ import { User, UserRole } from '../../entities/user.entity';
 import { Trip, TripStatus } from '../../entities/trip.entity';
 import { Payment, PaymentStatus } from '../../entities/payment.entity';
 import { Bid } from '../../entities/bid.entity';
+import { Tenant, TenantStatus } from '../../entities/tenant.entity';
 
 export interface TenantMetrics {
   totalRevenue: number;
@@ -15,10 +16,11 @@ export interface TenantMetrics {
   fuelEfficiency: number;
   onTimeDelivery: number;
   customerSatisfaction: number;
-  activeTrucks: number;
+  activeFleet: number; // Changed from activeTrucks to match frontend
   totalDrivers: number;
   pendingLoads: number;
   completedTrips: number;
+  disputeRate: number; // Added to match frontend
 }
 
 export interface TenantTrends {
@@ -57,7 +59,29 @@ export class TenantDashboardService {
     private readonly paymentRepository: Repository<Payment>,
     @InjectRepository(Bid)
     private readonly bidRepository: Repository<Bid>,
+    @InjectRepository(Tenant)
+    private readonly tenantRepository: Repository<Tenant>,
   ) {}
+
+  async getAllTenants(): Promise<any[]> {
+    const tenants = await this.tenantRepository.find({
+      where: {
+        status: TenantStatus.ACTIVE,
+        isActive: true,
+      },
+      select: ['id', 'name', 'type', 'city', 'state', 'country'],
+      order: {
+        name: 'ASC',
+      },
+    });
+
+    return tenants.map(tenant => ({
+      id: tenant.id,
+      name: tenant.name,
+      type: tenant.type,
+      location: [tenant.city, tenant.state, tenant.country].filter(Boolean).join(', '),
+    }));
+  }
 
   async getTenantMetrics(
     tenantId: string,
@@ -123,6 +147,7 @@ export class TenantDashboardService {
     const fuelEfficiency = 8.5; // Mock value - would be calculated from actual fuel data
     const onTimeDelivery = 95; // Mock value - would be calculated from actual delivery data
     const customerSatisfaction = 4.2; // Mock value - would be calculated from ratings
+    const disputeRate = 2.1; // Mock value - would be calculated from disputes
 
     return {
       totalRevenue,
@@ -131,10 +156,11 @@ export class TenantDashboardService {
       fuelEfficiency,
       onTimeDelivery,
       customerSatisfaction,
-      activeTrucks,
+      activeFleet: activeTrucks, // Changed from activeTrucks to activeFleet
       totalDrivers,
       pendingLoads,
       completedTrips,
+      disputeRate,
     };
   }
 

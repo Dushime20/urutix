@@ -367,6 +367,39 @@ export class BiddingController {
     );
   }
 
+  @Post('bids/:bidId/reject')
+  @ApiOperation({
+    summary: 'Reject a bid',
+    description:
+      'Cargo owner or tenant admin rejects a bid with optional reason.',
+  })
+  @ApiParam({ name: 'bidId', description: 'ID of the bid to reject' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        reason: { type: 'string', description: 'Reason for rejection' },
+      },
+    },
+  })
+  @ApiResponse({ status: 200, description: 'Bid rejected successfully' })
+  @ApiResponse({ status: 400, description: 'Cannot reject bid' })
+  @ApiResponse({ status: 403, description: 'Only cargo owner or tenant admin can reject bids' })
+  @ApiResponse({ status: 404, description: 'Bid not found' })
+  async rejectBid(
+    @Param('bidId') bidId: string,
+    @Body() body: { reason?: string },
+    @Request() req: any,
+  ): Promise<Bid> {
+    return this.biddingService.rejectBid(
+      bidId,
+      req.user?.userId,
+      req.user?.tenantId,
+      req.user?.role as UserRole,
+      body.reason,
+    );
+  }
+
   @Get('auctions')
   @ApiOperation({
     summary: 'Get all auctions',

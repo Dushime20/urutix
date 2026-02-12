@@ -25,6 +25,27 @@ export class TenantDashboardController {
     private readonly tenantDashboardService: TenantDashboardService,
   ) {}
 
+  @Get('tenants/list')
+  @ApiOperation({
+    summary: 'Get all tenants',
+    description: 'Get list of all active tenants for selection',
+  })
+  @ApiOkResponse({
+    description: 'Tenants list retrieved successfully',
+    type: ApiResponseDto,
+  })
+  async getAllTenants(): Promise<ApiResponseDto<any[]>> {
+    const tenants = await this.tenantDashboardService.getAllTenants();
+
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Tenants list retrieved successfully',
+      data: tenants,
+      timestamp: new Date().toISOString(),
+    };
+  }
+
   @Get(':tenantId/metrics')
   @ApiOperation({
     summary: 'Get tenant metrics',

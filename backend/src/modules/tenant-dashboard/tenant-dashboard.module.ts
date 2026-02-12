@@ -8,11 +8,12 @@ import { User } from '../../entities/user.entity';
 import { Trip } from '../../entities/trip.entity';
 import { Payment } from '../../entities/payment.entity';
 import { Bid } from '../../entities/bid.entity';
+import { Tenant } from '../../entities/tenant.entity';
 import { EnhancedAuthModule } from '../auth/enhanced-auth.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Load, Truck, User, Trip, Payment, Bid]),
+    TypeOrmModule.forFeature([Load, Truck, User, Trip, Payment, Bid, Tenant]),
     EnhancedAuthModule,
   ],
   controllers: [TenantDashboardController],

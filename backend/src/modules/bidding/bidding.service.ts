@@ -622,6 +622,87 @@ export class BiddingService {
     return acceptedBid;
   }
 
+  async rejectBid(
+    bidId: string,
+    cargoOwnerId: string,
+    tenantId: string,
+    userRole?: UserRole,
+    rejectionReason?: string,
+  ): Promise<Bid> {
+    const bid = await this.bidRepository.findOne({
+      where: { id: bidId },
+      relations: ['load', 'truckOwner'],
+    });
+
+    if (!bid) {
+      throw new NotFoundException('Bid not found');
+    }
+
+    // Check if load has an active broker contract
+    const hasActiveContract = await this.hasActiveBrokerContract(bid.loadId, tenantId);
+
+    // If cargo owner is trying to reject bid, check if broker is assigned
+    if (userRole === UserRole.CARGO_OWNER || !userRole) {
+      if (bid.load.brokerId && hasActiveContract) {
+        throw new ForbiddenException(
+          'Cannot reject bid: Load is managed by a broker. The broker must reject bids.',
+        );
+      }
+
+      if (bid.load.cargoOwnerId !== cargoOwnerId) {
+        throw new ForbiddenException('Only the cargo owner can reject bids');
+      }
+    }
+
+    // If broker is rejecting bid, verify they are assigned to the load
+    if (userRole === UserRole.BROKER) {
+      if (!bid.load.brokerId || bid.load.brokerId !== cargoOwnerId) {
+        throw new ForbiddenException(
+          'Broker is not assigned to this load',
+        );
+      }
+      if (!hasActiveContract) {
+        throw new ForbiddenException(
+          'Broker must have an active contract to reject bids for this load',
+        );
+      }
+    }
+
+    if (bid.status !== BidStatus.PENDING) {
+      throw new BadRequestException('Cannot reject bid that is not pending');
+    }
+
+    bid.status = BidStatus.REJECTED;
+    const rejectedBid = await this.bidRepository.save(bid);
+
+    // Send notification to truck owner
+    try {
+      const message = rejectionReason
+        ? `Your bid for cargo "${bid.load.title}" has been rejected. Reason: ${rejectionReason}`
+        : `Your bid for cargo "${bid.load.title}" has been rejected.`;
+
+      await this.notificationService.createNotification({
+        recipientId: bid.truckOwnerId,
+        tenantId,
+        title: 'Bid Rejected',
+        message,
+        notificationType: NotificationType.GENERAL,
+        category: NotificationCategory.FINANCIAL,
+        channels: [NotificationChannel.IN_APP],
+        entityType: EntityType.CARGO,
+        entityId: bid.id,
+        requiresAction: false,
+        actionUrl: `/dashboard/bidding`,
+        actionText: 'View Bids',
+      });
+    } catch (notificationError) {
+      console.error('Failed to send bid rejection notification:', notificationError);
+    }
+
+    return rejectedBid;
+  }
+
+
   /**
    * Check if load has an active broker contract that prevents cargo owner actions
    */

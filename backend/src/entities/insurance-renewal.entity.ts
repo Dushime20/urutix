@@ -39,11 +39,9 @@ export class InsuranceRenewal {
   id: string;
 
   @Column({ unique: true })
-  @Index()
   renewalNumber: string;
 
   @Column({ type: 'uuid' })
-  @Index()
   policyId: string;
 
   @ManyToOne(() => InsurancePolicy, { onDelete: 'CASCADE' })
@@ -51,7 +49,6 @@ export class InsuranceRenewal {
   policy: InsurancePolicy;
 
   @Column({ type: 'uuid' })
-  @Index()
   truckId: string;
 
   @ManyToOne(() => Truck, { onDelete: 'CASCADE' })
@@ -59,11 +56,9 @@ export class InsuranceRenewal {
   truck: Truck;
 
   @Column({ type: 'date' })
-  @Index()
   currentPolicyEndDate: Date;
 
   @Column({ type: 'date' })
-  @Index()
   renewalDate: Date;
 
   @Column({
