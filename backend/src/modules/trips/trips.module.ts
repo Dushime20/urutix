@@ -6,10 +6,15 @@ import { Truck } from '../../entities/truck.entity';
 import { Driver } from '../../entities/driver.entity';
 import { TripsService } from './trips.service';
 import { TripsController } from './trips.controller';
+import { SubscriptionModule } from '../subscription/subscription.module';
+import { CreditConsumptionListener } from '../../services/credit-consumption.listener';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Trip, Load, Truck, Driver])],
-  providers: [TripsService],
+  imports: [
+    TypeOrmModule.forFeature([Trip, Load, Truck, Driver]),
+    SubscriptionModule, // Import to get CreditService and PricingService
+  ],
+  providers: [TripsService, CreditConsumptionListener],
   controllers: [TripsController],
   exports: [TripsService],
 })

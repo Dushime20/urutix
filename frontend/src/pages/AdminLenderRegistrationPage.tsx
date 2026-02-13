@@ -1,16 +1,17 @@
 import React, { useState } from 'react';
 import { lendingApi } from '../services/lending/lendingApi';
 import toast from 'react-hot-toast';
-import { 
-  FaTrash, 
-  FaPlus, 
-  FaKey, 
-  FaEnvelope, 
-  FaPhone, 
-  FaBuilding, 
-  FaEllipsisH, 
-  FaCopy, 
-  FaCheck, 
+import AdminPageLayout from '../components/Admin/AdminPageLayout';
+import {
+  FaTrash,
+  FaPlus,
+  FaKey,
+  FaEnvelope,
+  FaPhone,
+  FaBuilding,
+  FaEllipsisH,
+  FaCopy,
+  FaCheck,
   FaSearch,
   FaChartLine,
   FaDollarSign,
@@ -57,11 +58,11 @@ interface LenderAnalytics {
 
 const mockFetchLenders = async (): Promise<Lender[]> => {
   return [
-    { 
-      id: '1', 
-      name: 'CargoAI Bank', 
-      email: 'bank@cargoai.com', 
-      phone: '+250788123456', 
+    {
+      id: '1',
+      name: 'CargoAI Bank',
+      email: 'bank@cargoai.com',
+      phone: '+250788123456',
       api_key: 'APIKEY123456789',
       status: 'active',
       createdAt: '2024-01-15',
@@ -74,11 +75,11 @@ const mockFetchLenders = async (): Promise<Lender[]> => {
       interestRate: 12.5,
       maxLoanAmount: 50000
     },
-    { 
-      id: '2', 
-      name: 'Swift Finance', 
-      email: 'swift@finance.com', 
-      phone: '+250788654321', 
+    {
+      id: '2',
+      name: 'Swift Finance',
+      email: 'swift@finance.com',
+      phone: '+250788654321',
       api_key: 'APIKEY987654321',
       status: 'active',
       createdAt: '2024-02-01',
@@ -91,11 +92,11 @@ const mockFetchLenders = async (): Promise<Lender[]> => {
       interestRate: 11.8,
       maxLoanAmount: 75000
     },
-    { 
-      id: '3', 
-      name: 'Micro Credit Plus', 
-      email: 'micro@creditplus.rw', 
-      phone: '+250788111222', 
+    {
+      id: '3',
+      name: 'Micro Credit Plus',
+      email: 'micro@creditplus.rw',
+      phone: '+250788111222',
       api_key: 'APIKEY555666777',
       status: 'pending',
       createdAt: '2024-02-08',
@@ -154,7 +155,7 @@ const AdminLenderRegistrationPage: React.FC = () => {
       setFetching(true);
       try {
         const lendersData = await lendingApi.getAllLenders();
-        
+
         const transformedLenders: Lender[] = lendersData.map((lender: any) => ({
           id: lender.id,
           name: lender.name,
@@ -176,10 +177,10 @@ const AdminLenderRegistrationPage: React.FC = () => {
         setLenders(transformedLenders);
         const analyticsData = await mockFetchAnalytics();
         setAnalytics(analyticsData);
-        
+
       } catch (err) {
         console.error('Error fetching lenders from API, falling back to mock data:', err);
-        
+
         try {
           const [lendersData, analyticsData] = await Promise.all([
             mockFetchLenders(),
@@ -212,7 +213,7 @@ const AdminLenderRegistrationPage: React.FC = () => {
         contact_email: form.email,
         callback_url: undefined
       });
-      
+
       setSuccess(true);
       setForm({ name: '', email: '', phone: '', api_key: '' });
       setShowModal(false);
@@ -223,19 +224,19 @@ const AdminLenderRegistrationPage: React.FC = () => {
     } catch (err: any) {
       console.error('Error creating lender:', err);
       const errorMessage = err.response?.data?.message || err.message || 'Error registering lender';
-      
+
       // Simplify error message for email conflicts
       let displayError = errorMessage;
       if (errorMessage.includes('already exists') || errorMessage.includes('email') || errorMessage.toLowerCase().includes('user with')) {
         displayError = 'Email already exists';
       }
-      
+
       setError(displayError);
       setLoading(false);
-      
+
       // Don't close modal on error - keep it open so user can see the error
       // Don't refresh lender list on error
-      
+
       // Show simple error toast for email conflicts
       if (errorMessage.includes('already exists') || errorMessage.includes('email') || errorMessage.toLowerCase().includes('user with')) {
         toast.error('Email already exists', {
@@ -283,12 +284,12 @@ const AdminLenderRegistrationPage: React.FC = () => {
       'Risk Rating': l.riskRating || 'N/A',
       'Created At': l.createdAt || 'N/A'
     }));
-    
+
     const csv = [
       Object.keys(csvData[0]).join(','),
       ...csvData.map(row => Object.values(row).join(','))
     ].join('\n');
-    
+
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -306,14 +307,14 @@ const AdminLenderRegistrationPage: React.FC = () => {
 
   const filtered = lenders.filter(l => {
     if (!search && statusFilter === 'all' && riskFilter === 'all') return true;
-    
-    const matchesSearch = !search || [l.name, l.email, l.phone].some(field => 
+
+    const matchesSearch = !search || [l.name, l.email, l.phone].some(field =>
       field.toLowerCase().includes(search.toLowerCase())
     );
-    
+
     const matchesStatus = statusFilter === 'all' || (l.status || 'active') === statusFilter;
     const matchesRisk = riskFilter === 'all' || (l.riskRating || 'low') === riskFilter;
-    
+
     return matchesSearch && matchesStatus && matchesRisk;
   });
 
@@ -344,13 +345,10 @@ const AdminLenderRegistrationPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-3">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-lg font-bold text-gray-900">Lender Management</h1>
-          <p className="text-xs text-gray-600 mt-0.5">Comprehensive overview and management of lending partners</p>
-        </div>
+    <AdminPageLayout
+      title="Lender Management"
+      description="Comprehensive overview and management of lending partners"
+      actions={
         <div className="flex gap-2">
           <button
             onClick={() => setShowAnalytics(!showAnalytics)}
@@ -374,7 +372,8 @@ const AdminLenderRegistrationPage: React.FC = () => {
             New Lender
           </button>
         </div>
-      </div>
+      }
+    >
 
       {/* Analytics Dashboard */}
       {showAnalytics && analytics && (
@@ -382,10 +381,10 @@ const AdminLenderRegistrationPage: React.FC = () => {
           <div className="bg-white rounded-lg border border-gray-200 p-2.5 hover:shadow-md transition-all duration-200">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-lg font-bold text-gray-900">{analytics.totalLenders}</p>
+                <p className="text-lg font-bold text-gray-900">{analytics?.totalLenders}</p>
                 <p className="text-xs text-gray-600">Total Lenders</p>
                 <p className="text-[10px] text-gray-500 flex items-center gap-0.5 mt-0.5">
-                  <FaArrowUp className="w-2 h-2" /> +{analytics.monthlyGrowth}% this month
+                  <FaArrowUp className="w-2 h-2" /> +{analytics?.monthlyGrowth}% this month
                 </p>
               </div>
               <div className="w-8 h-8 bg-gray-700 rounded-lg flex items-center justify-center">
@@ -397,10 +396,10 @@ const AdminLenderRegistrationPage: React.FC = () => {
           <div className="bg-white rounded-lg border border-gray-200 p-2.5 hover:shadow-md transition-all duration-200">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-lg font-bold text-gray-900">{analytics.activeLenders}</p>
+                <p className="text-lg font-bold text-gray-900">{analytics?.activeLenders}</p>
                 <p className="text-xs text-gray-600">Active Lenders</p>
                 <p className="text-[10px] text-gray-500 mt-0.5">
-                  {((analytics.activeLenders / analytics.totalLenders) * 100).toFixed(1)}% active rate
+                  {((analytics?.activeLenders || 0) / (analytics?.totalLenders || 1) * 100).toFixed(1)}% active rate
                 </p>
               </div>
               <div className="w-8 h-8 bg-gray-700 rounded-lg flex items-center justify-center">
@@ -412,7 +411,7 @@ const AdminLenderRegistrationPage: React.FC = () => {
           <div className="bg-white rounded-lg border border-gray-200 p-2.5 hover:shadow-md transition-all duration-200">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-lg font-bold text-gray-900">{analytics.totalLoansIssued.toLocaleString()}</p>
+                <p className="text-lg font-bold text-gray-900">{(analytics?.totalLoansIssued || 0).toLocaleString()}</p>
                 <p className="text-xs text-gray-600">Total Loans</p>
                 <p className="text-[10px] text-gray-500 mt-0.5">Loans issued</p>
               </div>
@@ -425,9 +424,9 @@ const AdminLenderRegistrationPage: React.FC = () => {
           <div className="bg-white rounded-lg border border-gray-200 p-2.5 hover:shadow-md transition-all duration-200">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-lg font-bold text-gray-900">RWF {(analytics.totalAmountDisbursed / 1000000).toFixed(1)}M</p>
+                <p className="text-lg font-bold text-gray-900">RWF {((analytics?.totalAmountDisbursed || 0) / 1000000).toFixed(1)}M</p>
                 <p className="text-xs text-gray-600">Amount Disbursed</p>
-                <p className="text-[10px] text-gray-500 mt-0.5">Avg: {analytics.avgApprovalRate.toFixed(1)}% approval</p>
+                <p className="text-[10px] text-gray-500 mt-0.5">Avg: {analytics?.avgApprovalRate.toFixed(1)}% approval</p>
               </div>
               <div className="w-8 h-8 bg-gray-700 rounded-lg flex items-center justify-center">
                 <FaDollarSign className="text-white text-xs" />
@@ -447,17 +446,17 @@ const AdminLenderRegistrationPage: React.FC = () => {
             <div className="text-center p-2 bg-gray-50 rounded-lg border border-gray-200">
               <FaPercent className="text-gray-600 text-sm mx-auto mb-1" />
               <p className="text-[10px] text-gray-600">Avg Approval Rate</p>
-              <p className="text-sm font-bold text-gray-900">{analytics.avgApprovalRate.toFixed(1)}%</p>
+              <p className="text-sm font-bold text-gray-900">{analytics?.avgApprovalRate.toFixed(1)}%</p>
             </div>
             <div className="text-center p-2 bg-gray-50 rounded-lg border border-gray-200">
               <FaClock className="text-gray-600 text-sm mx-auto mb-1" />
               <p className="text-[10px] text-gray-600">Avg Processing Time</p>
-              <p className="text-sm font-bold text-gray-900">{analytics.avgProcessingTime.toFixed(1)} days</p>
+              <p className="text-sm font-bold text-gray-900">{analytics?.avgProcessingTime.toFixed(1)} days</p>
             </div>
             <div className="text-center p-2 bg-gray-50 rounded-lg border border-gray-200">
               <FaChartLine className="text-gray-600 text-sm mx-auto mb-1" />
               <p className="text-[10px] text-gray-600">Monthly Growth</p>
-              <p className="text-sm font-bold text-gray-900">+{analytics.monthlyGrowth.toFixed(1)}%</p>
+              <p className="text-sm font-bold text-gray-900">+{analytics?.monthlyGrowth.toFixed(1)}%</p>
             </div>
           </div>
         </div>
@@ -475,7 +474,7 @@ const AdminLenderRegistrationPage: React.FC = () => {
               className="pl-7 pr-2 py-1.5 w-full rounded-lg border border-gray-200 focus:ring-2 focus:ring-gray-500 focus:border-transparent text-xs"
             />
           </div>
-          
+
           <div className="flex gap-2">
             <select
               value={statusFilter}
@@ -487,7 +486,7 @@ const AdminLenderRegistrationPage: React.FC = () => {
               <option value="pending">Pending</option>
               <option value="inactive">Inactive</option>
             </select>
-            
+
             <select
               value={riskFilter}
               onChange={e => setRiskFilter(e.target.value as any)}
@@ -592,7 +591,7 @@ const AdminLenderRegistrationPage: React.FC = () => {
       {/* Lenders Table */}
       {fetching ? (
         <div className="animate-pulse space-y-2">
-          {[...Array(3)].map((_,i) => (
+          {[...Array(3)].map((_, i) => (
             <div key={i} className="h-12 bg-gray-100 rounded-lg" />
           ))}
         </div>
@@ -603,7 +602,7 @@ const AdminLenderRegistrationPage: React.FC = () => {
           </div>
           <h3 className="text-sm font-semibold text-gray-800 mb-1">No lenders found</h3>
           <p className="text-xs text-gray-500 mb-4">
-            {search || statusFilter !== 'all' || riskFilter !== 'all' 
+            {search || statusFilter !== 'all' || riskFilter !== 'all'
               ? 'Try adjusting your filters or search terms.'
               : 'Start by registering your first lending partner.'
             }
@@ -649,15 +648,14 @@ const AdminLenderRegistrationPage: React.FC = () => {
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {sorted.map((l) => {
-                  const masked = l.api_key.length > 8 ? l.api_key.slice(0,4) + '••••' + l.api_key.slice(-4) : l.api_key;
+                  const masked = l.api_key.length > 8 ? l.api_key.slice(0, 4) + '••••' + l.api_key.slice(-4) : l.api_key;
                   return (
                     <tr key={l.id} className="hover:bg-gray-50 transition-colors">
                       <td className="px-3 py-2.5 whitespace-nowrap">
                         <div className="flex items-center gap-2">
-                          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-semibold ${
-                            l.status === 'active' ? 'bg-gray-700' :
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-semibold ${l.status === 'active' ? 'bg-gray-700' :
                             l.status === 'pending' ? 'bg-gray-500' : 'bg-gray-400'
-                          }`}>
+                            }`}>
                             {l.name.charAt(0).toUpperCase()}
                           </div>
                           <div>
@@ -698,11 +696,10 @@ const AdminLenderRegistrationPage: React.FC = () => {
                       <td className="px-3 py-2.5 whitespace-nowrap">
                         <div className="flex items-center gap-1.5">
                           <div className={`w-8 h-1.5 rounded-full bg-gray-200 overflow-hidden`}>
-                            <div 
-                              className={`h-full transition-all ${
-                                (l.approvalRate || 0) >= 80 ? 'bg-gray-600' :
+                            <div
+                              className={`h-full transition-all ${(l.approvalRate || 0) >= 80 ? 'bg-gray-600' :
                                 (l.approvalRate || 0) >= 60 ? 'bg-gray-500' : 'bg-gray-400'
-                              }`}
+                                }`}
                               style={{ width: `${l.approvalRate || 0}%` }}
                             ></div>
                           </div>
@@ -725,8 +722,8 @@ const AdminLenderRegistrationPage: React.FC = () => {
                       <td className="px-3 py-2.5 whitespace-nowrap">
                         <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium border ${getRiskColor(l.riskRating)}`}>
                           {l.riskRating === 'low' ? <FaCheckCircle className="w-2.5 h-2.5" /> :
-                           l.riskRating === 'medium' ? <FaClock className="w-2.5 h-2.5" /> :
-                           <FaExclamationTriangle className="w-2.5 h-2.5" />}
+                            l.riskRating === 'medium' ? <FaClock className="w-2.5 h-2.5" /> :
+                              <FaExclamationTriangle className="w-2.5 h-2.5" />}
                           {(l.riskRating || 'low').charAt(0).toUpperCase() + (l.riskRating || 'low').slice(1)}
                         </span>
                       </td>
@@ -811,23 +808,23 @@ const AdminLenderRegistrationPage: React.FC = () => {
               <div className="grid grid-cols-2 gap-3">
                 <div className="bg-gray-50 rounded-lg p-2.5 border border-gray-200">
                   <div className="text-[10px] text-gray-600 mb-0.5">Name</div>
-                  <div className="text-xs font-medium text-gray-900">{selectedLender.name}</div>
+                  <div className="text-xs font-medium text-gray-900">{selectedLender?.name}</div>
                 </div>
                 <div className="bg-gray-50 rounded-lg p-2.5 border border-gray-200">
                   <div className="text-[10px] text-gray-600 mb-0.5">Status</div>
                   <div className="flex items-center gap-1.5">
-                    <span className={`text-xs font-medium ${getStatusColor(selectedLender.status)}`}>
-                      {(selectedLender.status || 'active').charAt(0).toUpperCase() + (selectedLender.status || 'active').slice(1)}
+                    <span className={`text-xs font-medium ${getStatusColor(selectedLender?.status || 'inactive')}`}>
+                      {(selectedLender?.status || 'active').charAt(0).toUpperCase() + (selectedLender?.status || 'active').slice(1)}
                     </span>
                   </div>
                 </div>
                 <div className="bg-gray-50 rounded-lg p-2.5 border border-gray-200">
                   <div className="text-[10px] text-gray-600 mb-0.5">Email</div>
-                  <div className="text-xs text-gray-900">{selectedLender.email}</div>
+                  <div className="text-xs text-gray-900">{selectedLender?.email}</div>
                 </div>
                 <div className="bg-gray-50 rounded-lg p-2.5 border border-gray-200">
                   <div className="text-[10px] text-gray-600 mb-0.5">Phone</div>
-                  <div className="text-xs text-gray-900">{selectedLender.phone}</div>
+                  <div className="text-xs text-gray-900">{selectedLender?.phone}</div>
                 </div>
               </div>
 
@@ -837,19 +834,19 @@ const AdminLenderRegistrationPage: React.FC = () => {
                 <div className="grid grid-cols-2 gap-2">
                   <div>
                     <div className="text-[10px] text-gray-600">Total Loans</div>
-                    <div className="text-xs font-medium text-gray-900">{(selectedLender.totalLoans || 0).toLocaleString()}</div>
+                    <div className="text-xs font-medium text-gray-900">{(selectedLender?.totalLoans || 0).toLocaleString()}</div>
                   </div>
                   <div>
                     <div className="text-[10px] text-gray-600">Total Amount</div>
-                    <div className="text-xs font-medium text-gray-900">RWF {((selectedLender.totalAmount || 0) / 1000000).toFixed(1)}M</div>
+                    <div className="text-xs font-medium text-gray-900">RWF {((selectedLender?.totalAmount || 0) / 1000000).toFixed(1)}M</div>
                   </div>
                   <div>
                     <div className="text-[10px] text-gray-600">Approval Rate</div>
-                    <div className="text-xs font-medium text-gray-900">{selectedLender.approvalRate?.toFixed(1) || 0}%</div>
+                    <div className="text-xs font-medium text-gray-900">{selectedLender?.approvalRate?.toFixed(1) || 0}%</div>
                   </div>
                   <div>
                     <div className="text-[10px] text-gray-600">Avg Processing Time</div>
-                    <div className="text-xs font-medium text-gray-900">{selectedLender.avgProcessingTime?.toFixed(1) || 'N/A'} days</div>
+                    <div className="text-xs font-medium text-gray-900">{selectedLender?.avgProcessingTime?.toFixed(1) || 'N/A'} days</div>
                   </div>
                 </div>
               </div>
@@ -859,13 +856,13 @@ const AdminLenderRegistrationPage: React.FC = () => {
                 <div className="text-xs font-medium text-gray-900 mb-1">API Key</div>
                 <div className="inline-flex items-center gap-1.5 font-mono text-xs bg-gray-100 rounded-md px-2 py-1 border border-gray-200">
                   <FaKey className="text-gray-400 text-xs" />
-                  <span>{selectedLender.api_key}</span>
+                  <span>{selectedLender?.api_key}</span>
                   <button
-                    onClick={() => handleCopy(selectedLender.id, selectedLender.api_key)}
+                    onClick={() => selectedLender && handleCopy(selectedLender.id, selectedLender.api_key)}
                     className="text-gray-400 hover:text-gray-600 transition"
                     title="Copy API Key"
                   >
-                    {copiedId === selectedLender.id ? <FaCheck className="text-gray-600 text-xs" /> : <FaCopy className="text-xs" />}
+                    {selectedLender && copiedId === selectedLender.id ? <FaCheck className="text-gray-600 text-xs" /> : <FaCopy className="text-xs" />}
                   </button>
                 </div>
               </div>
@@ -875,29 +872,29 @@ const AdminLenderRegistrationPage: React.FC = () => {
                 <div className="bg-gray-50 rounded-lg p-2.5 border border-gray-200">
                   <div className="text-[10px] text-gray-600 mb-0.5">Risk Rating</div>
                   <div className="flex items-center gap-1.5">
-                    <span className={`text-xs font-medium ${getRiskColor(selectedLender.riskRating)}`}>
-                      {(selectedLender.riskRating || 'low').charAt(0).toUpperCase() + (selectedLender.riskRating || 'low').slice(1)}
+                    <span className={`text-xs font-medium ${getRiskColor(selectedLender?.riskRating)}`}>
+                      {(selectedLender?.riskRating || 'low').charAt(0).toUpperCase() + (selectedLender?.riskRating || 'low').slice(1)}
                     </span>
                   </div>
                 </div>
                 <div className="bg-gray-50 rounded-lg p-2.5 border border-gray-200">
                   <div className="text-[10px] text-gray-600 mb-0.5">Interest Rate</div>
-                  <div className="text-xs font-medium text-gray-900">{selectedLender.interestRate || 'N/A'}%</div>
+                  <div className="text-xs font-medium text-gray-900">{selectedLender?.interestRate || 'N/A'}%</div>
                 </div>
                 <div className="bg-gray-50 rounded-lg p-2.5 border border-gray-200">
                   <div className="text-[10px] text-gray-600 mb-0.5">Max Loan Amount</div>
-                  <div className="text-xs font-medium text-gray-900">RWF {(selectedLender.maxLoanAmount || 0).toLocaleString()}</div>
+                  <div className="text-xs font-medium text-gray-900">RWF {(selectedLender?.maxLoanAmount || 0).toLocaleString()}</div>
                 </div>
                 <div className="bg-gray-50 rounded-lg p-2.5 border border-gray-200">
                   <div className="text-[10px] text-gray-600 mb-0.5">Created At</div>
-                  <div className="text-xs text-gray-900">{selectedLender.createdAt || 'N/A'}</div>
+                  <div className="text-xs text-gray-900">{selectedLender?.createdAt || 'N/A'}</div>
                 </div>
               </div>
             </div>
           </div>
         </div>
       )}
-    </div>
+    </AdminPageLayout>
   );
 };
 

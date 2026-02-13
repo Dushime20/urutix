@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { 
+import {
   FaGavel, FaExclamationTriangle, FaSearch, FaFilter, FaDownload,
   FaEye, FaEdit, FaCalendar, FaClock, FaUser, FaTruck,
   FaCheckCircle, FaTimesCircle, FaHourglassHalf, FaBalanceScale,
   FaFileAlt, FaComments, FaDollarSign, FaFlag, FaShieldAlt, FaTimes
 } from 'react-icons/fa';
 import toast from 'react-hot-toast';
+import AdminPageLayout from '../../components/Admin/AdminPageLayout';
 
 interface Dispute {
   id: string;
@@ -177,18 +178,18 @@ const DisputeManagement: React.FC = () => {
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { 
-      year: 'numeric', 
-      month: 'short', 
-      day: 'numeric' 
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
     });
   };
 
   const formatDateTime = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleString('en-US', { 
-      year: 'numeric', 
-      month: 'short', 
+    return date.toLocaleString('en-US', {
+      year: 'numeric',
+      month: 'short',
       day: 'numeric',
       hour: '2-digit',
       minute: '2-digit'
@@ -220,10 +221,10 @@ const DisputeManagement: React.FC = () => {
 
   const filteredDisputes = disputes.filter(dispute => {
     const matchesSearch = dispute.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         dispute.disputeNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         dispute.submittedBy.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         dispute.respondent.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         dispute.description.toLowerCase().includes(searchTerm.toLowerCase());
+      dispute.disputeNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      dispute.submittedBy.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      dispute.respondent.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      dispute.description.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = !filterStatus || dispute.status === filterStatus;
     const matchesType = !filterType || dispute.type === filterType;
     const matchesPriority = !filterPriority || dispute.priority === filterPriority;
@@ -231,9 +232,9 @@ const DisputeManagement: React.FC = () => {
   });
 
   const handleStatusChange = (disputeId: string, newStatus: string) => {
-    setDisputes(disputes.map(dispute => 
-      dispute.id === disputeId 
-        ? { ...dispute, status: newStatus as any, updatedAt: new Date().toISOString() } 
+    setDisputes(disputes.map(dispute =>
+      dispute.id === disputeId
+        ? { ...dispute, status: newStatus as any, updatedAt: new Date().toISOString() }
         : dispute
     ));
     toast.success(`Dispute status updated to ${newStatus}`);
@@ -255,12 +256,10 @@ const DisputeManagement: React.FC = () => {
   };
 
   return (
-    <div className="space-y-3">
-      {/* Header */}
-      <div>
-        <h1 className="text-lg font-bold text-gray-900">Dispute Management</h1>
-        <p className="text-xs text-gray-600 mt-0.5">Manage and resolve customer disputes efficiently</p>
-      </div>
+    <AdminPageLayout
+      title="Dispute Management"
+      description="Manage and resolve customer disputes efficiently"
+    >
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-2.5">
@@ -499,7 +498,7 @@ const DisputeManagement: React.FC = () => {
                       </td>
                       <td className="px-3 py-2.5 whitespace-nowrap text-xs font-medium">
                         <div className="flex items-center gap-1">
-                          <button 
+                          <button
                             onClick={() => handleViewDetails(dispute)}
                             className="text-gray-600 hover:text-gray-900 p-1 rounded transition-colors"
                             title="View Details"
@@ -507,7 +506,7 @@ const DisputeManagement: React.FC = () => {
                             <FaEye className="w-3 h-3" />
                           </button>
                           {dispute.status !== 'resolved' && (
-                            <button 
+                            <button
                               onClick={() => handleStatusChange(dispute.id, 'resolved')}
                               className="text-gray-600 hover:text-gray-900 p-1 rounded transition-colors"
                               title="Mark Resolved"
@@ -673,7 +672,7 @@ const DisputeManagement: React.FC = () => {
           </div>
         </div>
       )}
-    </div>
+    </AdminPageLayout>
   );
 };
 

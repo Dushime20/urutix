@@ -1,13 +1,14 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { fetchAllTrips, fetchTenants } from '../services/adminApi';
-import { 
+import {
   FaTruck, FaEdit, FaPlus, FaSearch, FaDownload,
   FaEye, FaCheck, FaTimes, FaBan, FaMapMarkerAlt,
   FaSort, FaClock, FaRoad, FaShippingFast,
-  FaExclamationTriangle, FaBuilding, FaBox, 
+  FaExclamationTriangle, FaBuilding, FaBox,
   FaRoute, FaUser, FaDollarSign, FaWeightHanging, FaBarcode
 } from 'react-icons/fa';
+import AdminPageLayout from '../components/Admin/AdminPageLayout';
 
 interface Trip {
   id: string;
@@ -58,15 +59,15 @@ interface Tenant {
 
 const AdminTrips: React.FC = () => {
   // Fetch data
-  const { data: trips, isLoading, error } = useQuery({ 
-    queryKey: ['admin-all-trips'], 
-    queryFn: () => fetchAllTrips() 
+  const { data: trips, isLoading, error } = useQuery({
+    queryKey: ['admin-all-trips'],
+    queryFn: () => fetchAllTrips()
   });
-  const { data: tenantsData } = useQuery({ 
-    queryKey: ['admin-tenants'], 
-    queryFn: fetchTenants 
+  const { data: tenantsData } = useQuery({
+    queryKey: ['admin-tenants'],
+    queryFn: fetchTenants
   });
-  
+
   // UI state
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -347,7 +348,7 @@ const AdminTrips: React.FC = () => {
   const filteredTrips = mappedTrips
     .filter((trip: Trip) => {
       if (!trip || typeof trip !== 'object') return false;
-      
+
       const searchFields = [
         trip.reference,
         trip.driverName,
@@ -356,11 +357,11 @@ const AdminTrips: React.FC = () => {
         trip.cargoType,
         trip.tenantName
       ].filter(Boolean).map(field => field.toLowerCase());
-      
-      const matchesSearch = searchTerm === '' || searchFields.some(field => 
+
+      const matchesSearch = searchTerm === '' || searchFields.some(field =>
         field.includes(searchTerm.toLowerCase())
       );
-      
+
       const matchesStatus = statusFilter === 'all' || trip.status === statusFilter;
       const matchesTenant = tenantFilter === 'all' || trip.tenantId === tenantFilter;
       const matchesPriority = priorityFilter === 'all' || trip.priority === priorityFilter;
@@ -513,47 +514,52 @@ const AdminTrips: React.FC = () => {
   };
 
   const stats = [
-    { 
-      label: 'Total Trips', 
-      value: mappedTrips.length, 
-      icon: FaTruck, 
+    {
+      label: 'Total Trips',
+      value: mappedTrips.length,
+      icon: FaTruck,
       color: 'from-gray-600 to-gray-700',
       description: 'All registered trips'
     },
-    { 
-      label: 'Active Trips', 
-      value: mappedTrips.filter((t: Trip) => ['in_progress', 'scheduled'].includes(t.status)).length, 
-      icon: FaShippingFast, 
+    {
+      label: 'Active Trips',
+      value: mappedTrips.filter((t: Trip) => ['in_progress', 'scheduled'].includes(t.status)).length,
+      icon: FaShippingFast,
       color: 'from-gray-600 to-gray-700',
       description: 'Currently active'
     },
-    { 
-      label: 'Total Revenue', 
-      value: `RWF ${mappedTrips.reduce((sum: number, t: Trip) => sum + (t.revenue ?? 0), 0).toLocaleString()}`, 
-      icon: FaDollarSign, 
+    {
+      label: 'Total Revenue',
+      value: `RWF ${mappedTrips.reduce((sum: number, t: Trip) => sum + (t.revenue ?? 0), 0).toLocaleString()}`,
+      icon: FaDollarSign,
       color: 'from-gray-600 to-gray-700',
       description: 'Combined trip revenue'
     },
-    { 
-      label: 'Completed Today', 
-      value: mappedTrips.filter((t: Trip) => t.status === 'completed' && 
-        new Date(t.endTime || '').toDateString() === new Date().toDateString()).length, 
-      icon: FaCheck, 
+    {
+      label: 'Completed Today',
+      value: mappedTrips.filter((t: Trip) => t.status === 'completed' &&
+        new Date(t.endTime || '').toDateString() === new Date().toDateString()).length,
+      icon: FaCheck,
       color: 'from-gray-600 to-gray-700',
       description: 'Trips completed today'
     },
   ];
 
   return (
-    <div className="space-y-3">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-lg font-bold text-gray-900">Trip Management</h1>
-          <p className="text-xs text-gray-600 mt-0.5">Monitor and manage all logistics trips across tenants</p>
+    <AdminPageLayout
+      title="Trip Management"
+      description="Monitor and manage all logistics trips across tenants"
+      actions={
+        <div className="flex items-center gap-2">
+          <div className="text-sm text-slate-400 mr-2">
+            <span className="font-bold text-white">{mappedTrips.filter(t => t.status === 'in_progress').length}</span> active trips
+          </div>
+          <button className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-bold shadow-lg shadow-indigo-600/20 transition-all">
+            <FaDownload size={14} /> Export Report
+          </button>
         </div>
-      </div>
-
+      }
+    >
       {/* Loading and Error States */}
       {isLoading && (
         <div className="flex items-center justify-center h-64">
@@ -563,7 +569,7 @@ const AdminTrips: React.FC = () => {
       )}
 
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
           <div className="flex items-center gap-2">
             <FaExclamationTriangle className="text-red-600" />
             <div>
@@ -575,24 +581,22 @@ const AdminTrips: React.FC = () => {
       )}
 
       {!isLoading && !error && (
-        <>
+        <div className="space-y-6">
           {/* Stats Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2.5">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {stats.map((stat, index) => {
               const Icon = stat.icon;
               return (
-                <div key={index} className="bg-white rounded-lg shadow-sm border border-gray-200 p-2.5 hover:shadow-md transition-all duration-200 group relative overflow-hidden">
+                <div key={index} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-all duration-200 group relative overflow-hidden">
                   <div className="absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-100 transition-opacity bg-gray-50"></div>
-                  <div className="relative">
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1">
-                        <p className="text-xs text-gray-600 mb-0.5">{stat.label}</p>
-                        <p className="text-lg font-bold text-gray-900 mb-0.5">{stat.value}</p>
-                        <p className="text-[10px] text-gray-500">{stat.description}</p>
-                      </div>
-                      <div className="w-10 h-10 bg-gray-700 rounded-lg flex items-center justify-center group-hover:bg-gray-800 transition-colors">
-                        <Icon className="text-white text-sm" />
-                      </div>
+                  <div className="relative flex items-start justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-slate-500 mb-1">{stat.label}</p>
+                      <p className="text-2xl font-black text-slate-800 mb-1">{stat.value}</p>
+                      <p className="text-xs text-slate-400">{stat.description}</p>
+                    </div>
+                    <div className="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center group-hover:bg-indigo-50 group-hover:text-indigo-600 transition-colors text-slate-600">
+                      <Icon size={20} />
                     </div>
                   </div>
                 </div>
@@ -613,7 +617,7 @@ const AdminTrips: React.FC = () => {
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
               </div>
-              
+
               <select
                 className="px-2 py-1.5 text-xs border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent"
                 value={statusFilter}
@@ -681,7 +685,7 @@ const AdminTrips: React.FC = () => {
                 <thead className="bg-gray-50 border-b border-gray-200 sticky top-0 z-10">
                   <tr>
                     <th className="px-2 py-1.5 text-left text-xs font-semibold text-gray-900">
-                      <button 
+                      <button
                         className="flex items-center gap-1"
                         onClick={() => {
                           setSortBy('reference');
@@ -712,7 +716,7 @@ const AdminTrips: React.FC = () => {
                       const profit = calculateProfit(trip.revenue ?? 0, trip.fuelCost ?? 0, trip.tollCost ?? 0);
                       const profitMargin = getProfitMargin(trip.revenue ?? 0, trip.fuelCost ?? 0, trip.tollCost ?? 0);
                       const totalCost = (trip.fuelCost ?? 0) + (trip.tollCost ?? 0);
-                      
+
                       return (
                         <tr key={trip.id} className="hover:bg-gray-50 transition-colors">
                           <td className="px-2 py-1.5">
@@ -794,14 +798,14 @@ const AdminTrips: React.FC = () => {
                                   <span className="text-xs font-medium text-gray-900 truncate">{trip.cargoType || 'N/A'}</span>
                                 </div>
                               )}
-                              
+
                               {/* Cargo Type (if title exists) */}
                               {trip.cargoTitle && (
                                 <div className="text-[10px] text-gray-500 truncate">
                                   {trip.cargoType || 'General'}
                                 </div>
                               )}
-                              
+
                               {/* Weight and Volume */}
                               <div className="space-y-0.5">
                                 <div className="flex items-center gap-0.5">
@@ -814,7 +818,7 @@ const AdminTrips: React.FC = () => {
                                   </div>
                                 )}
                               </div>
-                              
+
                               {/* Special Requirements Badges */}
                               <div className="flex items-center gap-0.5 flex-wrap">
                                 {trip.isFragile && (
@@ -833,7 +837,7 @@ const AdminTrips: React.FC = () => {
                                   </span>
                                 )}
                               </div>
-                              
+
                               {/* Additional Info */}
                               <div className="space-y-0.5">
                                 {(trip.numberOfPieces || trip.numberOfPallets) && (
@@ -873,7 +877,7 @@ const AdminTrips: React.FC = () => {
                                   <span className="text-xs font-medium text-gray-900">{trip.progress}%</span>
                                 </div>
                                 <div className="w-full bg-gray-200 rounded-full h-1.5">
-                                  <div 
+                                  <div
                                     className={`h-1.5 rounded-full transition-all duration-300 ${getProgressColor(trip.progress, trip.status)}`}
                                     style={{ width: `${trip.progress}%` }}
                                   ></div>
@@ -915,7 +919,7 @@ const AdminTrips: React.FC = () => {
                           </td>
                           <td className="px-2 py-1.5">
                             <div className="flex items-center gap-1">
-                              <button 
+                              <button
                                 onClick={() => {
                                   setSelectedTrip(trip);
                                   setShowDetailsModal(true);
@@ -925,13 +929,13 @@ const AdminTrips: React.FC = () => {
                               >
                                 <FaEye className="w-3 h-3" />
                               </button>
-                              <button 
+                              <button
                                 className="p-1 text-gray-600 hover:bg-gray-50 rounded transition-colors"
                                 title="Edit"
                               >
                                 <FaEdit className="w-3 h-3" />
                               </button>
-                              <button 
+                              <button
                                 className="p-1 text-gray-600 hover:bg-gray-50 rounded transition-colors"
                                 title="Track"
                               >
@@ -970,7 +974,7 @@ const AdminTrips: React.FC = () => {
               </div>
             </div>
           </div>
-        </>
+        </div>
       )}
 
       {/* Trip Details Modal */}
@@ -997,7 +1001,7 @@ const AdminTrips: React.FC = () => {
                 </button>
               </div>
             </div>
-            
+
             <div className="p-3 space-y-3">
               {/* Status and Progress */}
               <div className="flex items-center justify-between flex-wrap gap-2">
@@ -1014,7 +1018,7 @@ const AdminTrips: React.FC = () => {
                   <div className="flex items-center space-x-1.5">
                     <span className="text-xs text-gray-600">Progress:</span>
                     <div className="w-24 bg-gray-200 rounded-full h-1.5">
-                      <div 
+                      <div
                         className={`h-1.5 rounded-full ${getProgressColor(selectedTrip.progress, selectedTrip.status)}`}
                         style={{ width: `${selectedTrip.progress}%` }}
                       ></div>
@@ -1035,7 +1039,7 @@ const AdminTrips: React.FC = () => {
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="bg-gray-50 rounded-lg p-2 border border-gray-200">
                   <div className="flex items-center space-x-2">
                     <FaClock className="text-gray-600 text-xs" />
@@ -1052,7 +1056,7 @@ const AdminTrips: React.FC = () => {
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="bg-gray-50 rounded-lg p-2 border border-gray-200">
                   <div className="flex items-center space-x-2">
                     <FaWeightHanging className="text-gray-600 text-xs" />
@@ -1062,7 +1066,7 @@ const AdminTrips: React.FC = () => {
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="bg-gray-50 rounded-lg p-2 border border-gray-200">
                   <div className="flex items-center space-x-2">
                     <FaDollarSign className="text-gray-600 text-xs" />
@@ -1157,7 +1161,7 @@ const AdminTrips: React.FC = () => {
                     )}
                   </div>
                 </div>
-                
+
                 {/* Schedule Information */}
                 <div className="space-y-2">
                   <h3 className="text-xs font-semibold text-gray-900">Schedule</h3>
@@ -1199,7 +1203,7 @@ const AdminTrips: React.FC = () => {
                     )}
                   </div>
                 </div>
-                
+
                 {/* Financial Information */}
                 <div className="space-y-2">
                   <h3 className="text-xs font-semibold text-gray-900">Financial</h3>
@@ -1249,7 +1253,7 @@ const AdminTrips: React.FC = () => {
           </div>
         </div>
       )}
-    </div>
+    </AdminPageLayout>
   );
 };
 

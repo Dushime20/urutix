@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { 
+import {
   FaChartLine, FaDollarSign, FaTruck, FaSearch, FaFilter, FaDownload,
   FaEye, FaEdit, FaCalendar, FaClock,
   FaGavel, FaCheckCircle, FaTimesCircle, FaExclamationTriangle, FaTimes
@@ -8,6 +8,7 @@ import {
 import { useAdminLayout } from '../../contexts/AdminLayoutContext';
 import toast from 'react-hot-toast';
 import { biddingAPI } from '../../services/biddingApi';
+import AdminPageLayout from '../../components/Admin/AdminPageLayout';
 
 interface Bid {
   id: string;
@@ -85,18 +86,18 @@ const BiddingManagement: React.FC = () => {
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { 
-      year: 'numeric', 
-      month: 'short', 
-      day: 'numeric' 
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
     });
   };
 
   const formatDateTime = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleString('en-US', { 
-      year: 'numeric', 
-      month: 'short', 
+    return date.toLocaleString('en-US', {
+      year: 'numeric',
+      month: 'short',
       day: 'numeric',
       hour: '2-digit',
       minute: '2-digit'
@@ -132,10 +133,10 @@ const BiddingManagement: React.FC = () => {
 
   const filteredBids = bids.filter(bid => {
     const matchesSearch = bid.cargoTitle.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         bid.bidderName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         bid.bidderCompany.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         bid.cargoId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         bid.id.toLowerCase().includes(searchTerm.toLowerCase());
+      bid.bidderName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      bid.bidderCompany.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      bid.cargoId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      bid.id.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = !filterStatus || bid.status === filterStatus;
     const matchesCargoId = !filterCargoId || bid.cargoId === filterCargoId;
     return matchesSearch && matchesStatus && matchesCargoId;
@@ -193,12 +194,10 @@ const BiddingManagement: React.FC = () => {
   };
 
   return (
-    <div className="space-y-3">
-      {/* Header */}
-      <div>
-        <h1 className="text-lg font-bold text-gray-900">Bidding Management</h1>
-        <p className="text-xs text-gray-600 mt-0.5">Monitor and manage cargo bidding processes</p>
-      </div>
+    <AdminPageLayout
+      title="Bidding Management"
+      description="Monitor and manage cargo bidding processes"
+    >
 
       {/* Bidding Stats */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2.5">
@@ -346,84 +345,84 @@ const BiddingManagement: React.FC = () => {
                     </td>
                   </tr>
                 ) : (
-                filteredBids.map((bid) => (
-                  <tr key={bid.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-3 py-2.5 whitespace-nowrap">
-                      <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 bg-gray-700 rounded-lg flex items-center justify-center">
-                          <FaGavel className="text-white text-xs" />
+                  filteredBids.map((bid) => (
+                    <tr key={bid.id} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-3 py-2.5 whitespace-nowrap">
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 bg-gray-700 rounded-lg flex items-center justify-center">
+                            <FaGavel className="text-white text-xs" />
+                          </div>
+                          <div>
+                            <div className="text-xs font-medium text-gray-900">{bid.cargoTitle}</div>
+                            <div className="text-[10px] text-gray-500">ID: {bid.cargoId} • Bid: {bid.id}</div>
+                          </div>
                         </div>
-                        <div>
-                          <div className="text-xs font-medium text-gray-900">{bid.cargoTitle}</div>
-                          <div className="text-[10px] text-gray-500">ID: {bid.cargoId} • Bid: {bid.id}</div>
+                      </td>
+                      <td className="px-3 py-2.5 whitespace-nowrap">
+                        <div className="text-xs text-gray-900">
+                          <div className="font-medium">{bid.bidderName}</div>
+                          <div className="text-[10px] text-gray-500">{bid.bidderCompany}</div>
+                          <div className="flex items-center gap-1 mt-0.5">
+                            <div className="flex text-[10px]">{getRatingStars(bid.rating)}</div>
+                            <span className="text-[10px] text-gray-500">({bid.rating})</span>
+                          </div>
                         </div>
-                      </div>
-                    </td>
-                    <td className="px-3 py-2.5 whitespace-nowrap">
-                      <div className="text-xs text-gray-900">
-                        <div className="font-medium">{bid.bidderName}</div>
-                        <div className="text-[10px] text-gray-500">{bid.bidderCompany}</div>
-                        <div className="flex items-center gap-1 mt-0.5">
-                          <div className="flex text-[10px]">{getRatingStars(bid.rating)}</div>
-                          <span className="text-[10px] text-gray-500">({bid.rating})</span>
+                      </td>
+                      <td className="px-3 py-2.5 whitespace-nowrap">
+                        <div className="text-xs text-gray-900">
+                          <div className="text-sm font-bold text-gray-900">${bid.bidAmount.toLocaleString()}</div>
+                          <div className="text-[10px] text-gray-500 flex items-center gap-1">
+                            <FaTruck className="w-2.5 h-2.5" />
+                            {bid.truckCapacity.toLocaleString()} kg
+                          </div>
                         </div>
-                      </div>
-                    </td>
-                    <td className="px-3 py-2.5 whitespace-nowrap">
-                      <div className="text-xs text-gray-900">
-                        <div className="text-sm font-bold text-gray-900">${bid.bidAmount.toLocaleString()}</div>
-                        <div className="text-[10px] text-gray-500 flex items-center gap-1">
-                          <FaTruck className="w-2.5 h-2.5" />
-                          {bid.truckCapacity.toLocaleString()} kg
+                      </td>
+                      <td className="px-3 py-2.5 whitespace-nowrap">
+                        <div className="flex items-center gap-1.5">
+                          {getStatusIcon(bid.status)}
+                          <span className={`inline-flex px-1.5 py-0.5 text-[10px] font-medium rounded-full ${getStatusColor(bid.status)}`}>
+                            {bid.status.charAt(0).toUpperCase() + bid.status.slice(1)}
+                          </span>
                         </div>
-                      </div>
-                    </td>
-                    <td className="px-3 py-2.5 whitespace-nowrap">
-                      <div className="flex items-center gap-1.5">
-                        {getStatusIcon(bid.status)}
-                        <span className={`inline-flex px-1.5 py-0.5 text-[10px] font-medium rounded-full ${getStatusColor(bid.status)}`}>
-                          {bid.status.charAt(0).toUpperCase() + bid.status.slice(1)}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-3 py-2.5 whitespace-nowrap text-xs text-gray-900">
-                      <div className="space-y-0.5">
-                        <div className="text-[10px] text-gray-600">Submitted: {getTimeAgo(bid.submittedAt)}</div>
-                        <div className="text-[10px] text-gray-600">Valid until: {formatDate(bid.validUntil)}</div>
-                        <div className="text-[10px] text-gray-600">Est. delivery: {formatDate(bid.estimatedDelivery)}</div>
-                      </div>
-                    </td>
-                    <td className="px-3 py-2.5 whitespace-nowrap text-xs font-medium">
-                      <div className="flex items-center gap-1">
-                        <button 
-                          onClick={() => handleViewDetails(bid)}
-                          className="text-gray-600 hover:text-gray-900 p-1 rounded transition-colors"
-                          title="View Details"
-                        >
-                          <FaEye className="w-3 h-3" />
-                        </button>
-                        {bid.status === 'pending' && (
-                          <>
-                            <button 
-                              onClick={() => handleAcceptBid(bid.id)}
-                              className="text-gray-600 hover:text-gray-900 p-1 rounded transition-colors"
-                              title="Accept Bid"
-                            >
-                              <FaCheckCircle className="w-3 h-3" />
-                            </button>
-                            <button 
-                              onClick={() => handleRejectBid(bid.id)}
-                              className="text-gray-600 hover:text-gray-900 p-1 rounded transition-colors"
-                              title="Reject Bid"
-                            >
-                              <FaTimesCircle className="w-3 h-3" />
-                            </button>
-                          </>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))
+                      </td>
+                      <td className="px-3 py-2.5 whitespace-nowrap text-xs text-gray-900">
+                        <div className="space-y-0.5">
+                          <div className="text-[10px] text-gray-600">Submitted: {getTimeAgo(bid.submittedAt)}</div>
+                          <div className="text-[10px] text-gray-600">Valid until: {formatDate(bid.validUntil)}</div>
+                          <div className="text-[10px] text-gray-600">Est. delivery: {formatDate(bid.estimatedDelivery)}</div>
+                        </div>
+                      </td>
+                      <td className="px-3 py-2.5 whitespace-nowrap text-xs font-medium">
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => handleViewDetails(bid)}
+                            className="text-gray-600 hover:text-gray-900 p-1 rounded transition-colors"
+                            title="View Details"
+                          >
+                            <FaEye className="w-3 h-3" />
+                          </button>
+                          {bid.status === 'pending' && (
+                            <>
+                              <button
+                                onClick={() => handleAcceptBid(bid.id)}
+                                className="text-gray-600 hover:text-gray-900 p-1 rounded transition-colors"
+                                title="Accept Bid"
+                              >
+                                <FaCheckCircle className="w-3 h-3" />
+                              </button>
+                              <button
+                                onClick={() => handleRejectBid(bid.id)}
+                                className="text-gray-600 hover:text-gray-900 p-1 rounded transition-colors"
+                                title="Reject Bid"
+                              >
+                                <FaTimesCircle className="w-3 h-3" />
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))
                 )}
               </tbody>
             </table>
@@ -556,7 +555,7 @@ const BiddingManagement: React.FC = () => {
           </div>
         </div>
       )}
-    </div>
+    </AdminPageLayout>
   );
 };
 

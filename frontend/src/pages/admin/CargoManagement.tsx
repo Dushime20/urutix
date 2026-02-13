@@ -21,6 +21,7 @@ import {
   FaSync,
 } from "react-icons/fa";
 import FilterSelect from "@/components/common/FilterSelect";
+import AdminPageLayout from '../../components/Admin/AdminPageLayout';
 
 interface Cargo {
   id: string;
@@ -125,25 +126,23 @@ const CargoManagement: React.FC = () => {
 
   const filteredCargos = cargos.filter(cargo => {
     const matchesSearch = cargo.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         cargo.owner.toLowerCase().includes(searchTerm.toLowerCase());
+      cargo.owner.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = !filterStatus || cargo.status === filterStatus;
     const matchesType = !filterType || cargo.type === filterType;
     return matchesSearch && matchesStatus && matchesType;
   });
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-800">Cargo Management</h2>
-          <p className="text-gray-600">Monitor and manage all cargo shipments</p>
-        </div>
+    <AdminPageLayout
+      title="Cargo Management"
+      description="Monitor and manage all cargo shipments"
+      actions={
         <button className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors">
           <FaPlus />
           <span>Add Cargo</span>
         </button>
-      </div>
+      }
+    >
 
       {/* Filters */}
       <div className="rounded-2xl bg-gradient-to-r from-gray-50 via-white to-gray-50 p-6 shadow-[0_20px_40px_-24px_rgba(15,23,42,0.35)]">
@@ -362,7 +361,7 @@ const CargoManagement: React.FC = () => {
           </table>
         </div>
       </div>
-    </div>
+    </AdminPageLayout>
   );
 };
 

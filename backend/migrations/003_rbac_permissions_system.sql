@@ -285,7 +285,7 @@ SELECT
 FROM users u
 LEFT JOIN role_permissions rp ON CAST(u.role AS TEXT) = rp.role
 LEFT JOIN permissions p ON rp.permission_id = p.id
-LEFT JOIN role_permissions rp ON CAST(u.role AS TEXT) = rp.role
+LEFT JOIN user_permissions up ON u.id = up.user_id AND p.id = up.permission_id;
 
 COMMENT ON TABLE permissions IS 'Stores all available system permissions';
 COMMENT ON TABLE role_permissions IS 'Maps permissions to roles';

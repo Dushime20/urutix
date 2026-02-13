@@ -1,11 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { UserPermissionEditor } from '../../components/Admin/Permissions/UserPermissionEditor';
-import AdminLayout from '../../components/Layout/AdminLayout'; // Check path
 import { toast } from 'react-hot-toast';
-// Need a way to fetch users. Assuming there is a users API or reusing AdminUsers component logic.
-// For now, I'll assume we can fetch users via a service or existing API.
-// Accessing api directly for user list as a shortcut or reuse existing userService/adminService.
 import api from '../../services/api';
+import AdminPageLayout from '../../components/Admin/AdminPageLayout';
+import { FaSearch } from 'react-icons/fa';
 
 const PermissionManagement = () => {
     const [users, setUsers] = useState<any[]>([]);
@@ -39,27 +37,30 @@ const PermissionManagement = () => {
     };
 
     return (
-        // Wrapper div instead of AdminLayout since this will likely be rendered inside AdminLayout via Router
-        <div className="p-6">
-            <h1 className="text-2xl font-bold mb-6 dark:text-white">Permission Management</h1>
-
+        <AdminPageLayout
+            title="Permission Management"
+            description="Manage user-specific permissions and access control"
+        >
             {!selectedUser ? (
                 <div className="bg-white dark:bg-slate-800 rounded-lg shadow p-6">
                     {/* Search Bar */}
                     <form onSubmit={handleSearch} className="flex gap-4 mb-6">
-                        <input
-                            type="text"
-                            placeholder="Search by name, email..."
-                            className="flex-1 border rounded p-2 dark:bg-slate-900 dark:text-white dark:border-gray-700"
-                            value={search}
-                            onChange={e => setSearch(e.target.value)}
-                        />
-                        <button type="submit" className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700">Search</button>
+                        <div className="relative flex-1">
+                            <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                            <input
+                                type="text"
+                                placeholder="Search by name, email..."
+                                className="w-full pl-10 pr-4 py-2 border rounded-lg dark:bg-slate-900 dark:text-white dark:border-gray-700 focus:ring-2 focus:ring-blue-500"
+                                value={search}
+                                onChange={e => setSearch(e.target.value)}
+                            />
+                        </div>
+                        <button type="submit" className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 font-bold shadow-lg shadow-blue-600/20 transition-all">Search</button>
                     </form>
 
                     {/* Users List */}
                     {loading ? (
-                        <div>Loading users...</div>
+                        <div className="text-center py-8 text-gray-500">Loading users...</div>
                     ) : (
                         <div className="overflow-x-auto">
                             <table className="w-full text-left">
@@ -115,7 +116,7 @@ const PermissionManagement = () => {
                     onClose={() => setSelectedUser(null)}
                 />
             )}
-        </div>
+        </AdminPageLayout>
     );
 };
 

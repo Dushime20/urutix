@@ -3,12 +3,13 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { loadsAPI } from '../services/load';
 import { fetchTenants, fetchAllUsers, fetchAllLoads } from '../services/adminApi';
-import { useAuth } from '../contexts/AuthContext';
-import { 
-  FaBox, FaEdit, FaPlus, FaSearch, FaDownload,
+import AdminPageLayout from '../components/Admin/AdminPageLayout';
+
+import {
+  FaBox, FaSearch, FaDownload,
   FaEye, FaCheck, FaTimes, FaBan, FaMapMarkerAlt,
-  FaSort, FaClock, FaRoad, FaUser, FaBuilding,
-  FaShieldAlt, FaExclamationTriangle, FaPlay, FaPause,
+  FaSort, FaUser, FaBuilding,
+  FaExclamationTriangle, FaPlay, FaPause,
   FaTrash, FaDollarSign, FaWeight, FaCube, FaCalendarAlt
 } from 'react-icons/fa';
 
@@ -61,12 +62,12 @@ interface Tenant {
 
 const AdminLoads: React.FC = () => {
   const qc = useQueryClient();
-  const { user } = useAuth();
-  const isAdmin = user?.role === 'ADMIN' || user?.role === 'TENANT_ADMIN';
-  
+
+
+
   // Fetch data - try admin endpoint first, fallback to regular endpoint
-  const { data: loadsData, isLoading: loadsLoading, error: loadsError } = useQuery({ 
-    queryKey: ['admin-loads'], 
+  const { data: loadsData, isLoading: loadsLoading, error: loadsError } = useQuery({
+    queryKey: ['admin-loads'],
     queryFn: async () => {
       try {
         // Try admin endpoint first
@@ -79,40 +80,40 @@ const AdminLoads: React.FC = () => {
         } catch (adminError) {
           console.log('Admin loads endpoint failed, trying regular endpoint:', adminError);
         }
-        
+
         // Fallback to regular loads endpoint
         const response = await loadsAPI.getAll();
         console.log('Loads API Response:', response);
         console.log('Response data:', response.data);
-        
+
         // Handle different response structures
         // Backend returns: { items: [], total, page, ... } or { data: { items: [] } }
         const data = response.data?.data || response.data;
-        
+
         // Try items array first (paginated response)
         if (data?.items && Array.isArray(data.items)) {
           console.log('Found loads in data.items:', data.items.length);
           return data.items;
         }
-        
+
         // Try loads array
         if (data?.loads && Array.isArray(data.loads)) {
           console.log('Found loads in data.loads:', data.loads.length);
           return data.loads;
         }
-        
+
         // Try direct array
         if (Array.isArray(data)) {
           console.log('Found loads as direct array:', data.length);
           return data;
         }
-        
+
         // Try response.data as array
         if (Array.isArray(response.data)) {
           console.log('Found loads in response.data:', response.data.length);
           return response.data;
         }
-        
+
         console.warn('Unexpected loads response structure:', {
           responseData: response.data,
           data: data,
@@ -126,15 +127,15 @@ const AdminLoads: React.FC = () => {
       }
     }
   });
-  
-  const { data: tenantsData } = useQuery({ 
-    queryKey: ['admin-tenants'], 
-    queryFn: fetchTenants 
+
+  const { data: tenantsData } = useQuery({
+    queryKey: ['admin-tenants'],
+    queryFn: fetchTenants
   });
 
-  const { data: usersData } = useQuery({ 
-    queryKey: ['admin-all-users'], 
-    queryFn: () => fetchAllUsers() 
+  const { data: usersData } = useQuery({
+    queryKey: ['admin-all-users'],
+    queryFn: () => fetchAllUsers()
   });
 
   // UI state
@@ -218,10 +219,10 @@ const AdminLoads: React.FC = () => {
       toast.success('Load deleted successfully!');
     },
     onError: (error: any) => {
-      const errorMessage = error?.response?.data?.message || 
-                          error?.response?.data?.error || 
-                          error?.message || 
-                          'Failed to delete load. Please try again.';
+      const errorMessage = error?.response?.data?.message ||
+        error?.response?.data?.error ||
+        error?.message ||
+        'Failed to delete load. Please try again.';
       toast.error(errorMessage);
     }
   });
@@ -236,9 +237,9 @@ const AdminLoads: React.FC = () => {
   const filteredLoads = loads
     .filter((load: Load) => {
       const matchesSearch = load.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          load.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          load.tenantName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          load.cargoOwnerName?.toLowerCase().includes(searchTerm.toLowerCase());
+        load.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        load.tenantName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        load.cargoOwnerName?.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesStatus = statusFilter === 'all' || load.status === statusFilter;
       const matchesCargoType = cargoTypeFilter === 'all' || load.cargoType === cargoTypeFilter;
       return matchesSearch && matchesStatus && matchesCargoType;
@@ -349,14 +350,10 @@ const AdminLoads: React.FC = () => {
   }
 
   return (
-    <div className="space-y-3">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-lg font-bold text-gray-900">Load Management</h1>
-          <p className="text-xs text-gray-600 mt-0.5">Manage cargo loads and shipments</p>
-        </div>
-      </div>
+    <AdminPageLayout
+      title="Load Management"
+      description="Manage cargo loads and shipments"
+    >
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2.5">
@@ -366,9 +363,9 @@ const AdminLoads: React.FC = () => {
             <div key={index} className="bg-white rounded-lg shadow-sm border border-gray-200 p-2.5 hover:shadow-md transition-all duration-200 group relative overflow-hidden">
               <div className="absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-100 transition-opacity" style={{
                 background: stat.color === 'from-blue-500 to-blue-600' ? 'linear-gradient(to bottom right, rgba(59, 130, 246, 0.05), transparent)' :
-                           stat.color === 'from-green-500 to-green-600' ? 'linear-gradient(to bottom right, rgba(16, 185, 129, 0.05), transparent)' :
-                           stat.color === 'from-purple-500 to-purple-600' ? 'linear-gradient(to bottom right, rgba(168, 85, 247, 0.05), transparent)' :
-                           'linear-gradient(to bottom right, rgba(245, 158, 11, 0.05), transparent)'
+                  stat.color === 'from-green-500 to-green-600' ? 'linear-gradient(to bottom right, rgba(16, 185, 129, 0.05), transparent)' :
+                    stat.color === 'from-purple-500 to-purple-600' ? 'linear-gradient(to bottom right, rgba(168, 85, 247, 0.05), transparent)' :
+                      'linear-gradient(to bottom right, rgba(245, 158, 11, 0.05), transparent)'
               }}></div>
               <div className="relative">
                 <div className="flex items-center justify-between">
@@ -400,7 +397,7 @@ const AdminLoads: React.FC = () => {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-          
+
           <select
             className="px-2 py-1.5 text-xs border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             value={statusFilter}
@@ -475,7 +472,7 @@ const AdminLoads: React.FC = () => {
                   />
                 </th>
                 <th className="px-2 py-1.5 text-left font-semibold text-gray-900 text-xs">
-                  <button 
+                  <button
                     className="flex items-center gap-1"
                     onClick={() => {
                       setSortBy('title');
@@ -603,7 +600,7 @@ const AdminLoads: React.FC = () => {
                     </td>
                     <td className="px-2 py-1.5">
                       <div className="flex items-center gap-1">
-                        <button 
+                        <button
                           onClick={() => {
                             setSelectedLoad(load);
                             setShowDetailsModal(true);
@@ -613,7 +610,7 @@ const AdminLoads: React.FC = () => {
                         >
                           <FaEye className="w-3 h-3" />
                         </button>
-                        <button 
+                        <button
                           onClick={() => handleDeleteLoad(load.id)}
                           className="p-1 text-red-600 hover:bg-red-50 rounded transition-colors"
                           title="Delete"
@@ -676,7 +673,7 @@ const AdminLoads: React.FC = () => {
                 </button>
               </div>
             </div>
-            
+
             <div className="p-3 space-y-3">
               {/* Status */}
               <div className="flex items-center justify-between flex-wrap gap-2">
@@ -707,7 +704,7 @@ const AdminLoads: React.FC = () => {
                     </div>
                   </div>
                 </div>
-                
+
                 {selectedLoad.volume && (
                   <div className="bg-green-50 rounded-lg p-2 border border-green-200">
                     <div className="flex items-center space-x-2">
@@ -719,7 +716,7 @@ const AdminLoads: React.FC = () => {
                     </div>
                   </div>
                 )}
-                
+
                 {selectedLoad.offeredPrice && (
                   <div className="bg-purple-50 rounded-lg p-2 border border-purple-200">
                     <div className="flex items-center space-x-2">
@@ -731,7 +728,7 @@ const AdminLoads: React.FC = () => {
                     </div>
                   </div>
                 )}
-                
+
                 {selectedLoad.loadValue && (
                   <div className="bg-yellow-50 rounded-lg p-2 border border-yellow-200">
                     <div className="flex items-center space-x-2">
@@ -778,7 +775,7 @@ const AdminLoads: React.FC = () => {
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="space-y-2">
                   <h3 className="text-xs font-semibold text-gray-900">Route & Dates</h3>
                   <div className="space-y-1.5 text-xs">
@@ -831,7 +828,7 @@ const AdminLoads: React.FC = () => {
           </div>
         </div>
       )}
-    </div>
+    </AdminPageLayout>
   );
 };
 

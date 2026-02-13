@@ -3,13 +3,16 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { fleetApi, type FleetItem } from '../services/fleetApi';
 import { fetchTenants, fetchAllUsers } from '../services/adminApi';
+import api from '../services/api';
+import AdminPageLayout from '../components/Admin/AdminPageLayout';
 import { useAuth } from '../contexts/AuthContext';
-import { 
+import { usePermission } from '../contexts/PermissionContext';
+import {
   FaTruck, FaEdit, FaPlus, FaSearch, FaDownload,
   FaEye, FaCheck, FaTimes, FaBan, FaMapMarkerAlt,
   FaSort, FaClock, FaRoad, FaUser, FaBuilding,
   FaShieldAlt, FaExclamationTriangle, FaPlay, FaPause,
-  FaTrash, FaWrench, FaGasPump
+  FaTrash, FaWrench, FaLayerGroup, FaChevronDown, FaChevronRight
 } from 'react-icons/fa';
 
 interface Truck extends FleetItem {
@@ -17,6 +20,12 @@ interface Truck extends FleetItem {
   tenantName?: string;
   ownerId?: string;
   ownerName?: string;
+  currentLocationString?: string;
+  coordinates?: {
+    latitude: number;
+    longitude: number;
+  };
+  locationUpdatedAt?: string;
   owner?: {
     id: string;
     email: string;
@@ -38,22 +47,35 @@ interface Tenant {
 const AdminTrucks: React.FC = () => {
   const qc = useQueryClient();
   const { user } = useAuth();
-  const isAdmin = user?.role === 'ADMIN' || user?.role === 'TENANT_ADMIN';
+  const { hasPermission } = usePermission();
   
+  // Check permissions instead of hardcoded role
+  const canManageTrucks = hasPermission('truck:manage') || hasPermission('truck:update') || user?.role === 'ADMIN' || user?.role === 'TENANT_ADMIN';
+
   // Fetch data
-  const { data: trucksData, isLoading: trucksLoading, error: trucksError } = useQuery({ 
-    queryKey: ['admin-trucks'], 
-    queryFn: () => fleetApi.getTrucks() 
-  });
-  
-  const { data: tenantsData } = useQuery({ 
-    queryKey: ['admin-tenants'], 
-    queryFn: fetchTenants 
+  const { data: trucksData, isLoading: trucksLoading, error: trucksError } = useQuery({
+    queryKey: ['admin-trucks'],
+    queryFn: async () => {
+      console.log('🚛 Fetching trucks from admin endpoint...');
+      // Use admin endpoint for admin users
+      const response = await api.get('/admin/all/trucks');
+      console.log('🚛 Admin trucks response:', response);
+      console.log('🚛 Response data:', response.data);
+      console.log('🚛 Trucks array:', response.data?.trucks || response.data);
+      const trucks = response.data?.trucks || response.data || [];
+      console.log('🚛 Final trucks count:', Array.isArray(trucks) ? trucks.length : 'Not an array');
+      return trucks;
+    }
   });
 
-  const { data: usersData } = useQuery({ 
-    queryKey: ['admin-all-users'], 
-    queryFn: () => fetchAllUsers() 
+  const { data: tenantsData } = useQuery({
+    queryKey: ['admin-tenants'],
+    queryFn: fetchTenants
+  });
+
+  const { data: usersData } = useQuery({
+    queryKey: ['admin-all-users'],
+    queryFn: () => fetchAllUsers()
   });
 
   // Form state
@@ -64,10 +86,11 @@ const AdminTrucks: React.FC = () => {
   const [capacityWeight, setCapacityWeight] = useState<number>(0);
   const [capacityVolume, setCapacityVolume] = useState<number>(0);
   const [status, setStatus] = useState<string>('available');
-  
+
   // UI state
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [tenantFilter, setTenantFilter] = useState<string>('all');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedTruck, setSelectedTruck] = useState<Truck | null>(null);
@@ -78,6 +101,8 @@ const AdminTrucks: React.FC = () => {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [selectedTruckIds, setSelectedTruckIds] = useState<string[]>([]);
+  const [groupByOwner, setGroupByOwner] = useState(false);
+  const [expandedOwners, setExpandedOwners] = useState<Set<string>>(new Set());
 
   // Get tenants for mapping
   const tenants: Tenant[] = tenantsData?.tenants || [];
@@ -102,13 +127,20 @@ const AdminTrucks: React.FC = () => {
 
   // Map trucks with tenant and owner names
   const trucks: Truck[] = useMemo(() => {
-    if (!trucksData || !Array.isArray(trucksData)) return [];
-    return trucksData.map((truck: any) => {
+    console.log('🔄 Mapping trucks data...');
+    console.log('🔄 trucksData:', trucksData);
+    console.log('🔄 Is array?', Array.isArray(trucksData));
+    if (!trucksData || !Array.isArray(trucksData)) {
+      console.log('⚠️ No trucks data or not an array');
+      return [];
+    }
+    console.log('🔄 Mapping', trucksData.length, 'trucks');
+    const mapped = trucksData.map((truck: any) => {
       let ownerName = 'N/A';
       if (truck.ownerId) {
         // First try to get from ownerMap
         ownerName = ownerMap.get(truck.ownerId) || 'N/A';
-        
+
         // If not in map, try to get from truck.owner object
         if (ownerName === 'N/A' && truck.owner) {
           if (truck.owner.profile?.firstName || truck.owner.profile?.lastName) {
@@ -120,7 +152,7 @@ const AdminTrucks: React.FC = () => {
           }
         }
       }
-      
+
       return {
         ...truck,
         tenantId: truck.tenantId,
@@ -129,7 +161,27 @@ const AdminTrucks: React.FC = () => {
         ownerName: ownerName
       };
     });
+    console.log('✅ Mapped trucks:', mapped.length);
+    return mapped;
   }, [trucksData, tenantMap, ownerMap]);
+
+  // Get only tenants that have trucks with counts
+  const tenantsWithTrucks = useMemo(() => {
+    const tenantTruckCounts = new Map<string, number>();
+    trucks.forEach(truck => {
+      if (truck.tenantId) {
+        tenantTruckCounts.set(truck.tenantId, (tenantTruckCounts.get(truck.tenantId) || 0) + 1);
+      }
+    });
+    
+    return tenants
+      .filter(tenant => tenantTruckCounts.has(tenant.id))
+      .map(tenant => ({
+        ...tenant,
+        truckCount: tenantTruckCounts.get(tenant.id) || 0
+      }))
+      .sort((a, b) => b.truckCount - a.truckCount); // Sort by truck count descending
+  }, [trucks, tenants]);
 
   // Mutations
   const { mutate: createTruck, isPending: isCreating } = useMutation({
@@ -139,7 +191,7 @@ const AdminTrucks: React.FC = () => {
       if (!model.trim()) throw new Error('Model is required');
       if (capacityWeight <= 0) throw new Error('Capacity weight must be greater than 0');
       if (capacityVolume <= 0) throw new Error('Capacity volume must be greater than 0');
-      
+
       return fleetApi.createTruck({
         plateNumber: plateNumber.trim(),
         make: make.trim(),
@@ -157,10 +209,10 @@ const AdminTrucks: React.FC = () => {
       toast.success('Truck created successfully!');
     },
     onError: (error: any) => {
-      const errorMessage = error?.response?.data?.message || 
-                          error?.response?.data?.error || 
-                          error?.message || 
-                          'Failed to create truck. Please try again.';
+      const errorMessage = error?.response?.data?.message ||
+        error?.response?.data?.error ||
+        error?.message ||
+        'Failed to create truck. Please try again.';
       toast.error(errorMessage);
     }
   });
@@ -171,7 +223,7 @@ const AdminTrucks: React.FC = () => {
       if (!editingTruck.plateNumber?.trim()) throw new Error('Plate number is required');
       if (!editingTruck.make?.trim()) throw new Error('Make is required');
       if (!editingTruck.model?.trim()) throw new Error('Model is required');
-      
+
       return fleetApi.updateTruck(editingTruck.id, {
         plateNumber: editingTruck.plateNumber.trim(),
         make: editingTruck.make.trim(),
@@ -189,10 +241,10 @@ const AdminTrucks: React.FC = () => {
       toast.success('Truck updated successfully!');
     },
     onError: (error: any) => {
-      const errorMessage = error?.response?.data?.message || 
-                          error?.response?.data?.error || 
-                          error?.message || 
-                          'Failed to update truck. Please try again.';
+      const errorMessage = error?.response?.data?.message ||
+        error?.response?.data?.error ||
+        error?.message ||
+        'Failed to update truck. Please try again.';
       toast.error(errorMessage);
     }
   });
@@ -206,27 +258,27 @@ const AdminTrucks: React.FC = () => {
       toast.success('Truck deleted successfully!');
     },
     onError: (error: any) => {
-      const errorMessage = error?.response?.data?.message || 
-                          error?.response?.data?.error || 
-                          error?.message || 
-                          'Failed to delete truck. Please try again.';
+      const errorMessage = error?.response?.data?.message ||
+        error?.response?.data?.error ||
+        error?.message ||
+        'Failed to delete truck. Please try again.';
       toast.error(errorMessage);
     }
   });
 
   // Status update mutation
   const { mutate: updateTruckStatus, isPending: isUpdatingStatus } = useMutation({
-    mutationFn: ({ truckId, status }: { truckId: string; status: string }) => 
+    mutationFn: ({ truckId, status }: { truckId: string; status: string }) =>
       fleetApi.updateTruck(truckId, { status }),
     onSuccess: (_, variables) => {
       qc.invalidateQueries({ queryKey: ['admin-trucks'] });
       toast.success(`Truck status updated to ${variables.status}`);
     },
     onError: (error: any) => {
-      const errorMessage = error?.response?.data?.message || 
-                          error?.response?.data?.error || 
-                          error?.message || 
-                          'Failed to update truck status. Please try again.';
+      const errorMessage = error?.response?.data?.message ||
+        error?.response?.data?.error ||
+        error?.message ||
+        'Failed to update truck status. Please try again.';
       toast.error(errorMessage);
     }
   });
@@ -256,16 +308,27 @@ const AdminTrucks: React.FC = () => {
     updateTruckStatus({ truckId, status: newStatus });
   };
 
+  const toggleOwnerExpansion = (ownerId: string) => {
+    const newExpanded = new Set(expandedOwners);
+    if (newExpanded.has(ownerId)) {
+      newExpanded.delete(ownerId);
+    } else {
+      newExpanded.add(ownerId);
+    }
+    setExpandedOwners(newExpanded);
+  };
+
   // Filter and sort trucks
   const filteredTrucks = trucks
     .filter((truck: Truck) => {
       const matchesSearch = truck.plateNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          truck.make?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          truck.model?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          truck.tenantName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          truck.ownerName?.toLowerCase().includes(searchTerm.toLowerCase());
+        truck.make?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        truck.model?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        truck.tenantName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        truck.ownerName?.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesStatus = statusFilter === 'all' || truck.status === statusFilter;
-      return matchesSearch && matchesStatus;
+      const matchesTenant = tenantFilter === 'all' || truck.tenantId === tenantFilter;
+      return matchesSearch && matchesStatus && matchesTenant;
     })
     .sort((a: Truck, b: Truck) => {
       const aValue = a[sortBy as keyof Truck] || '';
@@ -276,39 +339,64 @@ const AdminTrucks: React.FC = () => {
       return aValue < bValue ? 1 : -1;
     });
 
+  // Group trucks by owner if enabled
+  const groupedTrucks = useMemo(() => {
+    if (!groupByOwner) return null;
+    
+    const groups = new Map<string, Truck[]>();
+    filteredTrucks.forEach((truck: Truck) => {
+      const ownerKey = truck.ownerId || 'unassigned';
+      if (!groups.has(ownerKey)) {
+        groups.set(ownerKey, []);
+      }
+      groups.get(ownerKey)!.push(truck);
+    });
+    
+    return Array.from(groups.entries()).map(([ownerId, trucks]) => ({
+      ownerId,
+      ownerName: trucks[0]?.ownerName || 'Unassigned',
+      tenantName: trucks[0]?.tenantName || 'N/A',
+      trucks: trucks.sort((a, b) => (a.plateNumber || '').localeCompare(b.plateNumber || '')),
+      totalTrucks: trucks.length,
+      availableTrucks: trucks.filter(t => t.status === 'available').length,
+      inUseTrucks: trucks.filter(t => t.status === 'in_use' || t.status === 'on_trip').length,
+      maintenanceTrucks: trucks.filter(t => t.status === 'maintenance').length
+    })).sort((a, b) => b.totalTrucks - a.totalTrucks);
+  }, [filteredTrucks, groupByOwner]);
+
   const total = filteredTrucks.length;
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const currentPage = Math.min(page, totalPages);
   const startIdx = (currentPage - 1) * pageSize;
   const endIdx = startIdx + pageSize;
-  const pagedTrucks = filteredTrucks.slice(startIdx, endIdx);
+  const pagedTrucks = groupByOwner ? filteredTrucks : filteredTrucks.slice(startIdx, endIdx);
 
-  // Calculate stats
+  // Calculate stats (use filtered trucks for accurate counts)
   const stats = [
     {
       label: 'Total Trucks',
-      value: trucks.length,
-      description: 'All registered trucks',
+      value: filteredTrucks.length,
+      description: tenantFilter !== 'all' ? 'In selected tenant' : 'All registered trucks',
       color: 'from-blue-500 to-blue-600',
       icon: FaTruck
     },
     {
       label: 'Available',
-      value: trucks.filter((t: Truck) => t.status === 'available').length,
+      value: filteredTrucks.filter((t: Truck) => t.status === 'available').length,
       description: 'Ready for assignment',
       color: 'from-green-500 to-green-600',
       icon: FaCheck
     },
     {
       label: 'In Use',
-      value: trucks.filter((t: Truck) => t.status === 'in_use' || t.status === 'on_trip').length,
+      value: filteredTrucks.filter((t: Truck) => t.status === 'in_use' || t.status === 'on_trip').length,
       description: 'Currently assigned',
       color: 'from-purple-500 to-purple-600',
       icon: FaPlay
     },
     {
       label: 'Maintenance',
-      value: trucks.filter((t: Truck) => t.status === 'maintenance').length,
+      value: filteredTrucks.filter((t: Truck) => t.status === 'maintenance').length,
       description: 'Under maintenance',
       color: 'from-yellow-500 to-yellow-600',
       icon: FaWrench
@@ -359,14 +447,11 @@ const AdminTrucks: React.FC = () => {
   }
 
   return (
-    <div className="space-y-3">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-lg font-bold text-gray-900">Truck Management</h1>
-          <p className="text-xs text-gray-600 mt-0.5">Manage fleet trucks and assignments</p>
-        </div>
-        {isAdmin && (
+    <AdminPageLayout
+      title="Truck Management"
+      description="Manage fleet trucks and assignments"
+      actions={
+        canManageTrucks ? (
           <button
             onClick={() => setShowCreateModal(true)}
             className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-2.5 py-1.5 rounded-lg flex items-center gap-1.5 hover:from-blue-600 hover:to-blue-700 transition-all duration-200 shadow-sm text-xs font-medium"
@@ -374,8 +459,9 @@ const AdminTrucks: React.FC = () => {
             <FaPlus className="w-3 h-3" />
             <span>Add Truck</span>
           </button>
-        )}
-      </div>
+        ) : undefined
+      }
+    >
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2.5">
@@ -385,9 +471,9 @@ const AdminTrucks: React.FC = () => {
             <div key={index} className="bg-white rounded-lg shadow-sm border border-gray-200 p-2.5 hover:shadow-md transition-all duration-200 group relative overflow-hidden">
               <div className="absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-100 transition-opacity" style={{
                 background: stat.color === 'from-blue-500 to-blue-600' ? 'linear-gradient(to bottom right, rgba(59, 130, 246, 0.05), transparent)' :
-                           stat.color === 'from-green-500 to-green-600' ? 'linear-gradient(to bottom right, rgba(16, 185, 129, 0.05), transparent)' :
-                           stat.color === 'from-purple-500 to-purple-600' ? 'linear-gradient(to bottom right, rgba(168, 85, 247, 0.05), transparent)' :
-                           'linear-gradient(to bottom right, rgba(245, 158, 11, 0.05), transparent)'
+                  stat.color === 'from-green-500 to-green-600' ? 'linear-gradient(to bottom right, rgba(16, 185, 129, 0.05), transparent)' :
+                    stat.color === 'from-purple-500 to-purple-600' ? 'linear-gradient(to bottom right, rgba(168, 85, 247, 0.05), transparent)' :
+                      'linear-gradient(to bottom right, rgba(245, 158, 11, 0.05), transparent)'
               }}></div>
               <div className="relative">
                 <div className="flex items-center justify-between">
@@ -408,7 +494,7 @@ const AdminTrucks: React.FC = () => {
 
       {/* Toolbar */}
       <div className="bg-white rounded-lg shadow-sm p-2.5 border border-gray-200">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-2">
           <div className="relative">
             <FaSearch className="absolute left-2.5 top-1/2 transform -translate-y-1/2 text-gray-400 w-3.5 h-3.5" />
             <input
@@ -419,7 +505,7 @@ const AdminTrucks: React.FC = () => {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-          
+
           <select
             className="px-2 py-1.5 text-xs border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             value={statusFilter}
@@ -433,6 +519,38 @@ const AdminTrucks: React.FC = () => {
             <option value="unavailable">Unavailable</option>
           </select>
 
+          <select
+            className="px-2 py-1.5 text-xs border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            value={tenantFilter}
+            onChange={(e) => setTenantFilter(e.target.value)}
+          >
+            <option value="all">All Tenants ({tenantsWithTrucks.length})</option>
+            {tenantsWithTrucks.map((tenant) => (
+              <option key={tenant.id} value={tenant.id}>
+                {tenant.name} ({tenant.truckCount} {tenant.truckCount === 1 ? 'truck' : 'trucks'})
+              </option>
+            ))}
+          </select>
+
+          <button 
+            onClick={() => {
+              setGroupByOwner(!groupByOwner);
+              if (!groupByOwner) {
+                // Expand all owners by default when grouping is enabled
+                const allOwnerIds = new Set(trucks.map(t => t.ownerId || 'unassigned'));
+                setExpandedOwners(allOwnerIds);
+              }
+            }}
+            className={`px-2 py-1.5 text-xs border rounded-lg flex items-center justify-center gap-1.5 transition-all ${
+              groupByOwner 
+                ? 'bg-blue-50 border-blue-300 text-blue-700 font-medium' 
+                : 'border-gray-200 hover:bg-gray-50'
+            }`}
+          >
+            <FaLayerGroup className="w-3 h-3" />
+            <span>Group by Owner</span>
+          </button>
+
           <button className="px-2 py-1.5 text-xs border border-gray-200 rounded-lg flex items-center justify-center gap-1.5 hover:bg-gray-50 transition-colors">
             <FaDownload className="w-3 h-3" />
             <span>Export</span>
@@ -442,29 +560,32 @@ const AdminTrucks: React.FC = () => {
         <div className="mt-2 flex items-center justify-between">
           <div className="text-xs text-gray-600">
             {selectedTruckIds.length > 0 ? `${selectedTruckIds.length} selected` : `${total} trucks`}
+            {groupByOwner && groupedTrucks && ` • ${groupedTrucks.length} owners`}
           </div>
           <div className="flex items-center gap-1.5">
-            <select
-              className="px-1.5 py-0.5 text-xs border border-gray-200 rounded"
-              value={pageSize}
-              onChange={(e) => { setPageSize(Number(e.target.value)); setPage(1); }}
-            >
-              <option value={10}>10 / page</option>
-              <option value={25}>25 / page</option>
-              <option value={50}>50 / page</option>
-              <option value={100}>100 / page</option>
-            </select>
+            {!groupByOwner && (
+              <select
+                className="px-1.5 py-0.5 text-xs border border-gray-200 rounded"
+                value={pageSize}
+                onChange={(e) => { setPageSize(Number(e.target.value)); setPage(1); }}
+              >
+                <option value={10}>10 / page</option>
+                <option value={25}>25 / page</option>
+                <option value={50}>50 / page</option>
+                <option value={100}>100 / page</option>
+              </select>
+            )}
           </div>
         </div>
       </div>
 
       {/* Trucks Table */}
-      <div className="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-200">
+      <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200">
         <div className="overflow-x-auto">
-          <table className="w-full text-xs">
-            <thead className="bg-gray-50 border-b border-gray-200 sticky top-0 z-10">
+          <table className="w-full">
+            <thead className="bg-gradient-to-r from-gray-50 to-gray-100 border-b-2 border-gray-200">
               <tr>
-                <th className="px-2 py-1.5 w-8">
+                <th className="px-4 py-3 w-12">
                   <input
                     type="checkbox"
                     checked={selectedTruckIds.length > 0 && selectedTruckIds.length === pagedTrucks.length}
@@ -475,41 +596,55 @@ const AdminTrucks: React.FC = () => {
                         setSelectedTruckIds([]);
                       }
                     }}
+                    className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-2 focus:ring-blue-500"
                   />
                 </th>
-                <th className="px-2 py-1.5 text-left font-semibold text-gray-900 text-xs">
-                  <button 
-                    className="flex items-center gap-1"
+                <th className="px-4 py-3 text-left">
+                  <button
+                    className="flex items-center gap-2 text-xs font-semibold text-gray-700 uppercase tracking-wider hover:text-gray-900 transition-colors"
                     onClick={() => {
                       setSortBy('plateNumber');
                       setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
                     }}
                   >
-                    <span>Truck</span>
-                    <FaSort className="w-3 h-3" />
+                    <span>Truck Details</span>
+                    <FaSort className="w-3 h-3 opacity-50" />
                   </button>
                 </th>
-                <th className="px-2 py-1.5 text-left font-semibold text-gray-900 text-xs">Make & Model</th>
-                <th className="px-2 py-1.5 text-left font-semibold text-gray-900 text-xs">Capacity</th>
-                <th className="px-2 py-1.5 text-left font-semibold text-gray-900 text-xs">Status</th>
-                <th className="px-2 py-1.5 text-left font-semibold text-gray-900 text-xs">Tenant</th>
-                <th className="px-2 py-1.5 text-left font-semibold text-gray-900 text-xs">Owner</th>
-                <th className="px-2 py-1.5 text-left font-semibold text-gray-900 text-xs">Location</th>
-                <th className="px-2 py-1.5 text-left font-semibold text-gray-900 text-xs">Performance</th>
-                <th className="px-2 py-1.5 text-left font-semibold text-gray-900 text-xs">Actions</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                  Specifications
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                  Status
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                  Organization
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                  Performance
+                </th>
+                <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                  Actions
+                </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
+            <tbody className="divide-y divide-gray-100">
               {pagedTrucks.length === 0 ? (
                 <tr>
-                  <td colSpan={10} className="px-2 py-8 text-center text-xs text-gray-500">
-                    No trucks found
+                  <td colSpan={7} className="px-4 py-16 text-center">
+                    <div className="flex flex-col items-center justify-center">
+                      <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                        <FaTruck className="w-8 h-8 text-gray-400" />
+                      </div>
+                      <h3 className="text-sm font-medium text-gray-900 mb-1">No trucks found</h3>
+                      <p className="text-xs text-gray-500">Try adjusting your search or filters</p>
+                    </div>
                   </td>
                 </tr>
               ) : (
                 pagedTrucks.map((truck: Truck) => (
-                  <tr key={truck.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-2 py-1.5 w-8">
+                  <tr key={truck.id} className="hover:bg-blue-50/30 transition-colors group">
+                    <td className="px-4 py-4 w-12">
                       <input
                         type="checkbox"
                         checked={selectedTruckIds.includes(truck.id)}
@@ -520,35 +655,60 @@ const AdminTrucks: React.FC = () => {
                             setSelectedTruckIds(selectedTruckIds.filter(id => id !== truck.id));
                           }
                         }}
+                        className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-2 focus:ring-blue-500"
                       />
                     </td>
-                    <td className="px-2 py-1.5">
-                      <div className="flex items-center gap-1.5">
-                        <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
-                          <FaTruck className="text-white text-xs" />
+                    
+                    {/* Truck Details */}
+                    <td className="px-4 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-md group-hover:shadow-lg transition-shadow">
+                          <FaTruck className="text-white text-lg" />
                         </div>
-                        <div>
-                          <div className="font-semibold text-gray-900 text-xs">{truck.plateNumber}</div>
-                          <div className="text-[10px] text-gray-500">{truck.year}</div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <p className="text-sm font-bold text-gray-900 truncate">{truck.plateNumber}</p>
+                            <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs font-medium rounded">
+                              {truck.year}
+                            </span>
+                          </div>
+                          <p className="text-xs text-gray-600 truncate">
+                            {truck.make} {truck.model}
+                          </p>
                         </div>
                       </div>
                     </td>
-                    <td className="px-2 py-1.5">
-                      <div className="text-xs font-medium text-gray-900">{truck.make}</div>
-                      <div className="text-[10px] text-gray-500">{truck.model}</div>
-                    </td>
-                    <td className="px-2 py-1.5">
-                      <div className="space-y-0.5">
-                        <div className="text-xs font-medium text-gray-900">{(truck.capacityWeight || 0).toLocaleString()} kg</div>
-                        <div className="text-[10px] text-gray-500">{(truck.capacityVolume || 0).toLocaleString()} m³</div>
+
+                    {/* Specifications */}
+                    <td className="px-4 py-4">
+                      <div className="space-y-1.5">
+                        <div className="flex items-center gap-2">
+                          <div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
+                          <span className="text-xs text-gray-900 font-medium">
+                            {(truck.capacityWeight || 0).toLocaleString()} kg
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="w-1.5 h-1.5 bg-purple-500 rounded-full"></div>
+                          <span className="text-xs text-gray-600">
+                            {(truck.capacityVolume || 0).toLocaleString()} m³
+                          </span>
+                        </div>
                       </div>
                     </td>
-                    <td className="px-2 py-1.5">
-                      <div className="flex items-center gap-1">
-                        {getStatusIcon(truck.status)}
-                        {isAdmin ? (
+
+                    {/* Status */}
+                    <td className="px-4 py-4">
+                      <div className="flex items-center gap-2">
+                        <div className={`w-2 h-2 rounded-full ${
+                          truck.status === 'available' ? 'bg-green-500 animate-pulse' :
+                          truck.status === 'in_use' || truck.status === 'on_trip' ? 'bg-blue-500' :
+                          truck.status === 'maintenance' ? 'bg-yellow-500' :
+                          'bg-red-500'
+                        }`}></div>
+                        {canManageTrucks ? (
                           <select
-                            className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium border-0 ${getStatusColor(truck.status)} cursor-pointer`}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-medium border-0 ${getStatusColor(truck.status)} cursor-pointer hover:shadow-md transition-shadow`}
                             value={truck.status}
                             onChange={(e) => handleStatusUpdate(truck.id, e.target.value)}
                             disabled={isUpdatingStatus}
@@ -560,55 +720,107 @@ const AdminTrucks: React.FC = () => {
                             <option value="unavailable">Unavailable</option>
                           </select>
                         ) : (
-                          <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium ${getStatusColor(truck.status)}`}>
+                          <span className={`px-3 py-1.5 rounded-lg text-xs font-medium ${getStatusColor(truck.status)}`}>
                             {truck.status.replace('_', ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())}
                           </span>
                         )}
                       </div>
                     </td>
-                    <td className="px-2 py-1.5">
-                      <div className="flex items-center gap-1">
-                        <FaBuilding className="text-gray-400 text-xs" />
-                        <span className="text-xs text-gray-900">{truck.tenantName || 'N/A'}</span>
+
+                    {/* Organization */}
+                    <td className="px-4 py-4">
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <div className="w-6 h-6 bg-purple-100 rounded-lg flex items-center justify-center">
+                            <FaBuilding className="text-purple-600 text-xs" />
+                          </div>
+                          <span className="text-xs text-gray-900 font-medium truncate max-w-[150px]">
+                            {truck.tenantName || 'N/A'}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="w-6 h-6 bg-blue-100 rounded-lg flex items-center justify-center">
+                            <FaUser className="text-blue-600 text-xs" />
+                          </div>
+                          <span className="text-xs text-gray-600 truncate max-w-[150px]">
+                            {truck.ownerName || 'N/A'}
+                          </span>
+                        </div>
                       </div>
                     </td>
-                    <td className="px-2 py-1.5">
-                      <div className="flex items-center gap-1">
-                        <FaUser className="text-gray-400 text-xs" />
-                        <span className="text-xs text-gray-900">{truck.ownerName || 'N/A'}</span>
+
+                    {/* Performance */}
+                    <td className="px-4 py-4">
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-xs text-gray-600">Trips:</span>
+                          <span className="text-xs font-bold text-gray-900 bg-gray-100 px-2 py-0.5 rounded">
+                            {truck.totalTrips || 0}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-xs text-gray-600">Rating:</span>
+                          <div className="flex items-center gap-1">
+                            <span className="text-xs font-bold text-yellow-600">
+                              {Number(truck.averageRating || 0).toFixed(1)}
+                            </span>
+                            <span className="text-yellow-500">⭐</span>
+                          </div>
+                        </div>
+                        {truck.currentLocationString && (
+                          <div className="flex items-center gap-1 text-xs text-gray-500 mt-1">
+                            <FaMapMarkerAlt className="text-red-500" />
+                            <span className="truncate max-w-[120px]" title={truck.currentLocationString}>
+                              {truck.currentLocationString}
+                            </span>
+                          </div>
+                        )}
                       </div>
                     </td>
-                    <td className="px-2 py-1.5">
-                      <div className="flex items-center gap-0.5">
-                        <FaMapMarkerAlt className="text-gray-400 text-[10px]" />
-                        <span className="text-[10px] text-gray-500">{truck.currentLocation || 'N/A'}</span>
-                      </div>
-                    </td>
-                    <td className="px-2 py-1.5">
-                      <div className="space-y-0.5">
-                        <div className="text-xs font-medium text-gray-900">{truck.totalTrips || 0} trips</div>
-                        <div className="text-[10px] text-gray-500">{Number(truck.averageRating || 0).toFixed(1)} ⭐</div>
-                      </div>
-                    </td>
-                    <td className="px-2 py-1.5">
-                      <div className="flex items-center gap-1">
-                        <button 
+
+                    {/* Actions */}
+                    <td className="px-4 py-4">
+                      <div className="flex items-center justify-center gap-1">
+                        <button
                           onClick={() => {
                             setSelectedTruck(truck);
                             setShowDetailsModal(true);
                           }}
-                          className="p-1 text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                          className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-all hover:scale-110"
                           title="View Details"
                         >
-                          <FaEye className="w-3 h-3" />
+                          <FaEye className="w-4 h-4" />
                         </button>
-                        <button 
-                          onClick={() => handleEditTruck(truck)}
-                          className="p-1 text-gray-600 hover:bg-gray-50 rounded transition-colors"
-                          title="Edit"
-                        >
-                          <FaEdit className="w-3 h-3" />
-                        </button>
+                        {truck.coordinates && (
+                          <button
+                            onClick={() => {
+                              const { latitude, longitude } = truck.coordinates;
+                              window.open(`https://www.google.com/maps?q=${latitude},${longitude}`, '_blank');
+                            }}
+                            className="p-2 text-green-600 hover:bg-green-100 rounded-lg transition-all hover:scale-110"
+                            title="View Location on Map"
+                          >
+                            <FaMapMarkerAlt className="w-4 h-4" />
+                          </button>
+                        )}
+                        {canManageTrucks && (
+                          <>
+                            <button
+                              onClick={() => handleEditTruck(truck)}
+                              className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-all hover:scale-110"
+                              title="Edit"
+                            >
+                              <FaEdit className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteTruck(truck.id)}
+                              className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-all hover:scale-110"
+                              title="Delete"
+                            >
+                              <FaTrash className="w-4 h-4" />
+                            </button>
+                          </>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -617,22 +829,53 @@ const AdminTrucks: React.FC = () => {
             </tbody>
           </table>
         </div>
-        {/* Pagination */}
-        <div className="flex items-center justify-between p-2 border-t border-gray-200 bg-gray-50">
-          <div className="text-[10px] text-gray-600">
-            Showing {Math.min(endIdx, total)} of {total}
+        
+        {/* Enhanced Pagination */}
+        <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200 bg-gradient-to-r from-gray-50 to-gray-100">
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-gray-600">
+              Showing <span className="font-semibold text-gray-900">{startIdx + 1}</span> to{' '}
+              <span className="font-semibold text-gray-900">{Math.min(endIdx, total)}</span> of{' '}
+              <span className="font-semibold text-gray-900">{total}</span> trucks
+            </span>
           </div>
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-2">
             <button
-              className="px-1.5 py-0.5 text-xs border border-gray-300 rounded disabled:opacity-50 hover:bg-gray-100"
+              className="px-3 py-1.5 text-xs font-medium border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-white hover:shadow-sm transition-all"
               onClick={() => setPage(Math.max(1, currentPage - 1))}
               disabled={currentPage === 1}
             >
               Previous
             </button>
-            <span className="text-[10px] text-gray-700">Page {currentPage} / {totalPages}</span>
+            <div className="flex items-center gap-1">
+              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                let pageNum;
+                if (totalPages <= 5) {
+                  pageNum = i + 1;
+                } else if (currentPage <= 3) {
+                  pageNum = i + 1;
+                } else if (currentPage >= totalPages - 2) {
+                  pageNum = totalPages - 4 + i;
+                } else {
+                  pageNum = currentPage - 2 + i;
+                }
+                return (
+                  <button
+                    key={i}
+                    onClick={() => setPage(pageNum)}
+                    className={`w-8 h-8 text-xs font-medium rounded-lg transition-all ${
+                      currentPage === pageNum
+                        ? 'bg-blue-600 text-white shadow-md'
+                        : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
+                    }`}
+                  >
+                    {pageNum}
+                  </button>
+                );
+              })}
+            </div>
             <button
-              className="px-1.5 py-0.5 text-xs border border-gray-300 rounded disabled:opacity-50 hover:bg-gray-100"
+              className="px-3 py-1.5 text-xs font-medium border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-white hover:shadow-sm transition-all"
               onClick={() => setPage(Math.min(totalPages, currentPage + 1))}
               disabled={currentPage === totalPages}
             >
@@ -643,7 +886,7 @@ const AdminTrucks: React.FC = () => {
       </div>
 
       {/* Create Truck Modal */}
-      {isAdmin && showCreateModal && (
+      {canManageTrucks && showCreateModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <div className="p-3 border-b border-gray-200">
@@ -660,7 +903,7 @@ const AdminTrucks: React.FC = () => {
                 </button>
               </div>
             </div>
-            
+
             <div className="p-3 space-y-3">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                 <div>
@@ -675,7 +918,7 @@ const AdminTrucks: React.FC = () => {
                     onChange={(e) => setPlateNumber(e.target.value.toUpperCase())}
                   />
                 </div>
-                
+
                 <div>
                   <label className="block text-xs font-semibold text-gray-700 mb-1">
                     Year *
@@ -705,7 +948,7 @@ const AdminTrucks: React.FC = () => {
                     onChange={(e) => setMake(e.target.value)}
                   />
                 </div>
-                
+
                 <div>
                   <label className="block text-xs font-semibold text-gray-700 mb-1">
                     Model *
@@ -733,7 +976,7 @@ const AdminTrucks: React.FC = () => {
                     onChange={(e) => setCapacityWeight(Number(e.target.value) || 0)}
                   />
                 </div>
-                
+
                 <div>
                   <label className="block text-xs font-semibold text-gray-700 mb-1">
                     Capacity Volume (m³) *
@@ -819,7 +1062,7 @@ const AdminTrucks: React.FC = () => {
                 </button>
               </div>
             </div>
-            
+
             <div className="p-3 space-y-3">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                 <div>
@@ -834,7 +1077,7 @@ const AdminTrucks: React.FC = () => {
                     onChange={(e) => setEditingTruck({ ...editingTruck, plateNumber: e.target.value.toUpperCase() })}
                   />
                 </div>
-                
+
                 <div>
                   <label className="block text-xs font-semibold text-gray-700 mb-1">
                     Year *
@@ -864,7 +1107,7 @@ const AdminTrucks: React.FC = () => {
                     onChange={(e) => setEditingTruck({ ...editingTruck, make: e.target.value })}
                   />
                 </div>
-                
+
                 <div>
                   <label className="block text-xs font-semibold text-gray-700 mb-1">
                     Model *
@@ -892,7 +1135,7 @@ const AdminTrucks: React.FC = () => {
                     onChange={(e) => setEditingTruck({ ...editingTruck, capacityWeight: Number(e.target.value) || 0 })}
                   />
                 </div>
-                
+
                 <div>
                   <label className="block text-xs font-semibold text-gray-700 mb-1">
                     Capacity Volume (m³) *
@@ -971,7 +1214,7 @@ const AdminTrucks: React.FC = () => {
                 </button>
               </div>
             </div>
-            
+
             <div className="p-3 space-y-3">
               {/* Status */}
               <div className="flex items-center justify-between flex-wrap gap-2">
@@ -982,7 +1225,7 @@ const AdminTrucks: React.FC = () => {
                   </span>
                 </div>
                 <div className="flex space-x-1.5">
-                  <button 
+                  <button
                     onClick={() => {
                       handleEditTruck(selectedTruck);
                       setShowDetailsModal(false);
@@ -1005,7 +1248,7 @@ const AdminTrucks: React.FC = () => {
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="bg-green-50 rounded-lg p-2 border border-green-200">
                   <div className="flex items-center space-x-2">
                     <FaTruck className="text-green-600 text-xs" />
@@ -1015,7 +1258,7 @@ const AdminTrucks: React.FC = () => {
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="bg-purple-50 rounded-lg p-2 border border-purple-200">
                   <div className="flex items-center space-x-2">
                     <FaCheck className="text-purple-600 text-xs" />
@@ -1025,7 +1268,7 @@ const AdminTrucks: React.FC = () => {
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="bg-yellow-50 rounded-lg p-2 border border-yellow-200">
                   <div className="flex items-center space-x-2">
                     <FaClock className="text-yellow-600 text-xs" />
@@ -1056,7 +1299,21 @@ const AdminTrucks: React.FC = () => {
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">Location:</span>
-                      <span className="font-medium">{selectedTruck.currentLocation || 'N/A'}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">{selectedTruck.currentLocationString || 'N/A'}</span>
+                        {selectedTruck.coordinates && (
+                          <button
+                            onClick={() => {
+                              const { latitude, longitude } = selectedTruck.coordinates;
+                              window.open(`https://www.google.com/maps?q=${latitude},${longitude}`, '_blank');
+                            }}
+                            className="text-blue-600 hover:text-blue-700 text-xs underline"
+                            title="View on Google Maps"
+                          >
+                            View Map
+                          </button>
+                        )}
+                      </div>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">Mileage:</span>
@@ -1072,7 +1329,7 @@ const AdminTrucks: React.FC = () => {
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="space-y-2">
                   <h3 className="text-xs font-semibold text-gray-900">Performance</h3>
                   <div className="space-y-1.5 text-xs">
@@ -1121,7 +1378,7 @@ const AdminTrucks: React.FC = () => {
           </div>
         </div>
       )}
-    </div>
+    </AdminPageLayout>
   );
 };
 

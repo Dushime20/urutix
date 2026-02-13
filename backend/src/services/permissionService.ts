@@ -61,15 +61,55 @@ export class PermissionService {
 
     /**
      * Get all role-permission mappings (Matrix View)
+     * Returns roles with their permissions and all available permissions
      */
-    async getAllRolePermissionsMatrix(): Promise<Array<{ role: string; permission: string }>> {
-        const result = await this.dataSource.query(
-            `SELECT rp.role, p.name as permission
-             FROM role_permissions rp
-             INNER JOIN permissions p ON rp.permission_id = p.id
-             ORDER BY rp.role, p.name`
-        );
-        return result;
+    async getAllRolePermissionsMatrix(): Promise<{ roles: any[]; permissions: any[] }> {
+        // Get all roles with their permissions
+        const rolesQuery = `
+            SELECT 
+                r.id,
+                r.name,
+                r.description,
+                r.is_system as "isSystem",
+                COALESCE(
+                    json_agg(
+                        json_build_object(
+                            'id', p.id,
+                            'name', p.name,
+                            'resource', p.resource,
+                            'action', p.action,
+                            'description', p.description,
+                            'category', p.category
+                        )
+                    ) FILTER (WHERE p.id IS NOT NULL),
+                    '[]'
+                ) as permissions
+            FROM roles r
+            LEFT JOIN role_permissions rp ON r.name = rp.role
+            LEFT JOIN permissions p ON rp.permission_id = p.id
+            GROUP BY r.id, r.name, r.description, r.is_system
+            ORDER BY r.name
+        `;
+
+        // Get all available permissions
+        const permissionsQuery = `
+            SELECT 
+                id,
+                name,
+                resource,
+                action,
+                description,
+                category
+            FROM permissions
+            ORDER BY category, resource, action
+        `;
+
+        const [roles, permissions] = await Promise.all([
+            this.dataSource.query(rolesQuery),
+            this.dataSource.query(permissionsQuery),
+        ]);
+
+        return { roles, permissions };
     }
 
     /**
@@ -545,5 +585,365 @@ export class PermissionService {
         );
 
         return result;
+    }
+
+    /**
+     * Get all roles with their permissions
+     */
+    async getAllRoles(): Promise<Array<{
+        id: string;
+        name: string;
+        description: string;
+        isSystem: boolean;
+        permissions: Array<{ id: string; resource: string; action: string; description: string }>;
+    }>> {
+        const roles = await this.dataSource.query(
+            `SELECT id, name, description, is_system as "isSystem", created_at as "createdAt", updated_at as "updatedAt"
+             FROM roles
+             ORDER BY is_system DESC, name ASC`
+        );
+
+        // Get permissions for each role
+        // Note: role_permissions table uses 'role' column (string) not 'role_id' (UUID)
+        for (const role of roles) {
+            const permissions = await this.dataSource.query(
+                `SELECT p.id, p.resource, p.action, p.description
+                 FROM permissions p
+                 INNER JOIN role_permissions rp ON p.id = rp.permission_id
+                 WHERE rp.role = $1
+                 ORDER BY p.resource, p.action`,
+                [role.name]
+            );
+            role.permissions = permissions;
+        }
+
+        return roles;
+    }
+
+    /**
+     * Create a new custom role
+     */
+    async createRole(
+        name: string,
+        description: string,
+        permissionIds: string[],
+        createdBy: string
+    ): Promise<{ id: string; name: string; description: string; isSystem: boolean }> {
+        const queryRunner = this.dataSource.createQueryRunner();
+        await queryRunner.connect();
+        await queryRunner.startTransaction();
+
+        try {
+            // Check if role name already exists
+            const existing = await queryRunner.query(
+                'SELECT id FROM roles WHERE name = $1',
+                [name]
+            );
+
+            if (existing.length > 0) {
+                throw new Error(`Role with name '${name}' already exists`);
+            }
+
+            // Create the role
+            const result = await queryRunner.query(
+                `INSERT INTO roles (name, description, is_system, created_at, updated_at)
+                 VALUES ($1, $2, false, NOW(), NOW())
+                 RETURNING id, name, description, is_system as "isSystem"`,
+                [name, description || null]
+            );
+
+            const role = result[0];
+
+            // Assign permissions if provided
+            if (permissionIds && permissionIds.length > 0) {
+                for (const permissionId of permissionIds) {
+                    // Note: role_permissions uses 'role' column (string) not 'role_id'
+                    await queryRunner.query(
+                        `INSERT INTO role_permissions (role, permission_id, granted_at, granted_by)
+                         VALUES ($1, $2, NOW(), $3)
+                         ON CONFLICT (role, permission_id) DO NOTHING`,
+                        [role.name, permissionId, createdBy]
+                    );
+                }
+            }
+
+            // Log audit
+            await this.logAudit(
+                'create_role',
+                'role',
+                role.id,
+                createdBy,
+                { name, description, permissionIds },
+                undefined,
+                queryRunner
+            );
+
+            await queryRunner.commitTransaction();
+            return role;
+        } catch (error) {
+            await queryRunner.rollbackTransaction();
+            throw error;
+        } finally {
+            await queryRunner.release();
+        }
+    }
+
+    /**
+     * Update a role (name and description only, not permissions)
+     */
+    async updateRole(
+        roleId: string,
+        name?: string,
+        description?: string,
+        updatedBy?: string
+    ): Promise<{ id: string; name: string; description: string; isSystem: boolean }> {
+        const queryRunner = this.dataSource.createQueryRunner();
+        await queryRunner.connect();
+        await queryRunner.startTransaction();
+
+        try {
+            // Check if role exists and is not a system role
+            const existing = await queryRunner.query(
+                'SELECT id, name, description, is_system as "isSystem" FROM roles WHERE id = $1',
+                [roleId]
+            );
+
+            if (existing.length === 0) {
+                throw new Error('Role not found');
+            }
+
+            if (existing[0].isSystem) {
+                throw new Error('Cannot update system roles');
+            }
+
+            // Check if new name conflicts with existing role
+            if (name && name !== existing[0].name) {
+                const nameConflict = await queryRunner.query(
+                    'SELECT id FROM roles WHERE name = $1 AND id != $2',
+                    [name, roleId]
+                );
+
+                if (nameConflict.length > 0) {
+                    throw new Error(`Role with name '${name}' already exists`);
+                }
+            }
+
+            // Update the role
+            const updates: string[] = [];
+            const values: any[] = [];
+            let paramIndex = 1;
+
+            if (name !== undefined) {
+                updates.push(`name = $${paramIndex++}`);
+                values.push(name);
+            }
+
+            if (description !== undefined) {
+                updates.push(`description = $${paramIndex++}`);
+                values.push(description);
+            }
+
+            updates.push(`updated_at = NOW()`);
+            values.push(roleId);
+
+            const result = await queryRunner.query(
+                `UPDATE roles SET ${updates.join(', ')}
+                 WHERE id = $${paramIndex}
+                 RETURNING id, name, description, is_system as "isSystem"`,
+                values
+            );
+
+            // Log audit
+            if (updatedBy) {
+                await this.logAudit(
+                    'update_role',
+                    'role',
+                    roleId,
+                    updatedBy,
+                    { name, description },
+                    undefined,
+                    queryRunner
+                );
+            }
+
+            await queryRunner.commitTransaction();
+            return result[0];
+        } catch (error) {
+            await queryRunner.rollbackTransaction();
+            throw error;
+        } finally {
+            await queryRunner.release();
+        }
+    }
+
+    /**
+     * Delete a custom role
+     */
+    async deleteRole(roleId: string, deletedBy: string): Promise<void> {
+        const queryRunner = this.dataSource.createQueryRunner();
+        await queryRunner.connect();
+        await queryRunner.startTransaction();
+
+        try {
+            // Check if role exists and is not a system role
+            const existing = await queryRunner.query(
+                'SELECT id, name, is_system as "isSystem" FROM roles WHERE id = $1',
+                [roleId]
+            );
+
+            if (existing.length === 0) {
+                throw new Error('Role not found');
+            }
+
+            if (existing[0].isSystem) {
+                throw new Error('Cannot delete system roles');
+            }
+
+            // Check if any users have this role
+            const usersWithRole = await queryRunner.query(
+                'SELECT COUNT(*) as count FROM users WHERE role = $1',
+                [existing[0].name]
+            );
+
+            if (parseInt(usersWithRole[0].count) > 0) {
+                throw new Error(`Cannot delete role '${existing[0].name}' because it is assigned to ${usersWithRole[0].count} user(s)`);
+            }
+
+            // Delete role permissions
+            await queryRunner.query(
+                'DELETE FROM role_permissions WHERE role_id = $1',
+                [roleId]
+            );
+
+            // Delete the role
+            await queryRunner.query(
+                'DELETE FROM roles WHERE id = $1',
+                [roleId]
+            );
+
+            // Log audit
+            await this.logAudit(
+                'delete_role',
+                'role',
+                roleId,
+                deletedBy,
+                { name: existing[0].name },
+                undefined,
+                queryRunner
+            );
+
+            await queryRunner.commitTransaction();
+        } catch (error) {
+            await queryRunner.rollbackTransaction();
+            throw error;
+        } finally {
+            await queryRunner.release();
+        }
+    }
+
+    /**
+     * Bulk assign permissions to a role
+     */
+    async bulkAssignPermissions(
+        roleId: string,
+        permissionIds: string[],
+        grantedBy: string
+    ): Promise<void> {
+        const queryRunner = this.dataSource.createQueryRunner();
+        await queryRunner.connect();
+        await queryRunner.startTransaction();
+
+        try {
+            // Check if role exists and is not a system role
+            const existing = await queryRunner.query(
+                'SELECT id, name, is_system as "isSystem" FROM roles WHERE id = $1',
+                [roleId]
+            );
+
+            if (existing.length === 0) {
+                throw new Error('Role not found');
+            }
+
+            if (existing[0].isSystem) {
+                throw new Error('Cannot modify permissions for system roles');
+            }
+
+            const roleName = existing[0].name;
+
+            // Remove all existing permissions for this role
+            // Note: role_permissions uses 'role' column (string) not 'role_id'
+            await queryRunner.query(
+                'DELETE FROM role_permissions WHERE role = $1',
+                [roleName]
+            );
+
+            // Add new permissions
+            if (permissionIds && permissionIds.length > 0) {
+                for (const permissionId of permissionIds) {
+                    await queryRunner.query(
+                        `INSERT INTO role_permissions (role, permission_id, granted_at, granted_by)
+                         VALUES ($1, $2, NOW(), $3)
+                         ON CONFLICT (role, permission_id) DO NOTHING`,
+                        [roleName, permissionId, grantedBy]
+                    );
+                }
+            }
+
+            // Log audit
+            await this.logAudit(
+                'bulk_assign_permissions',
+                'role',
+                roleId,
+                grantedBy,
+                { permissionIds, count: permissionIds.length },
+                undefined,
+                queryRunner
+            );
+
+            await queryRunner.commitTransaction();
+        } catch (error) {
+            await queryRunner.rollbackTransaction();
+            throw error;
+        } finally {
+            await queryRunner.release();
+        }
+    }
+
+    /**
+     * Get role by ID
+     */
+    async getRoleById(roleId: string): Promise<{
+        id: string;
+        name: string;
+        description: string;
+        isSystem: boolean;
+        permissions: Array<{ id: string; resource: string; action: string; description: string }>;
+    } | null> {
+        const roles = await this.dataSource.query(
+            `SELECT id, name, description, is_system as "isSystem"
+             FROM roles
+             WHERE id = $1`,
+            [roleId]
+        );
+
+        if (roles.length === 0) {
+            return null;
+        }
+
+        const role = roles[0];
+
+        // Get permissions for this role
+        // Note: role_permissions uses 'role' column (string) not 'role_id'
+        const permissions = await this.dataSource.query(
+            `SELECT p.id, p.resource, p.action, p.description
+             FROM permissions p
+             INNER JOIN role_permissions rp ON p.id = rp.permission_id
+             WHERE rp.role = $1
+             ORDER BY p.resource, p.action`,
+            [role.name]
+        );
+
+        role.permissions = permissions;
+        return role;
     }
 }

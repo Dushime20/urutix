@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { updateKYCStatus, submitKYC } from '../services/tenantApi'; // Assuming extended tenantApi
+import { tenantApi } from '../services/tenantApi';
 import toast from 'react-hot-toast';
 import { FaCheck, FaTimes, FaFileAlt, FaShieldAlt, FaSpinner, FaCloudUploadAlt } from 'react-icons/fa';
 
@@ -32,7 +32,7 @@ const TenantKYCModal: React.FC<TenantKYCModalProps> = ({
 
     const { mutate: updateStatus, isPending: isUpdating } = useMutation({
         mutationFn: ({ status, notes }: { status: 'APPROVED' | 'REJECTED' | 'INCOMPLETE'; notes?: string }) =>
-            updateKYCStatus(tenantId, status, notes),
+            tenantApi.updateKYCStatus(tenantId, status, notes),
         onSuccess: () => {
             qc.invalidateQueries({ queryKey: ['admin-tenants'] });
             qc.invalidateQueries({ queryKey: ['tenant-details', tenantId] });
@@ -45,7 +45,7 @@ const TenantKYCModal: React.FC<TenantKYCModalProps> = ({
     });
 
     const { mutate: submitData, isPending: isSubmitting } = useMutation({
-        mutationFn: (data: any) => submitKYC(tenantId, data),
+        mutationFn: (data: any) => tenantApi.submitKYC(tenantId, data),
         onSuccess: () => {
             qc.invalidateQueries({ queryKey: ['admin-tenants'] });
             qc.invalidateQueries({ queryKey: ['tenant-details', tenantId] });

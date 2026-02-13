@@ -7,7 +7,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User, UserRole, UserStatus } from '../../entities/user.entity';
 import { UserProfile } from '../../entities/user-profile.entity';
-import { Tenant } from '../../entities/tenant.entity';
+import { Tenant, TenantStatus } from '../../entities/tenant.entity';
 import * as bcrypt from 'bcryptjs';
 
 export interface CreateTenantUserDto {
@@ -60,6 +60,13 @@ export class UsersService {
 
     if (!tenant) {
       throw new NotFoundException('Tenant not found');
+    }
+
+    // Check if tenant is active
+    if (tenant.status !== TenantStatus.ACTIVE) {
+      throw new ConflictException(
+        `Cannot create users for tenant with status: ${tenant.status}. Tenant must be ACTIVE.`,
+      );
     }
 
     // Check if role is valid for tenant

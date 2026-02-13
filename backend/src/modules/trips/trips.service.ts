@@ -1,15 +1,19 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Trip, TripStatus } from '../../entities/trip.entity';
 import { CreateTripDto } from './dto/create-trip.dto';
 import { UpdateTripStatusDto } from './dto/update-trip-status.dto';
+import { CreditConsumptionListener } from '../../services/credit-consumption.listener';
 
 @Injectable()
 export class TripsService {
+  private readonly logger = new Logger(TripsService.name);
+
   constructor(
     @InjectRepository(Trip)
     private readonly tripRepository: Repository<Trip>,
+    private readonly creditConsumptionListener: CreditConsumptionListener,
   ) {}
 
   async create(createTripDto: CreateTripDto, tenantId: string): Promise<Trip> {
@@ -90,7 +94,9 @@ export class TripsService {
   ): Promise<Trip> {
     const trip = await this.findOne(id, tenantId);
 
+    const previousStatus = trip.status;
     trip.status = updateTripStatusDto.status;
+    
     if (updateTripStatusDto.actualStartTime) {
       trip.actualStartTime = updateTripStatusDto.actualStartTime;
     }
@@ -98,7 +104,28 @@ export class TripsService {
       trip.actualEndTime = updateTripStatusDto.actualEndTime;
     }
 
-    return this.tripRepository.save(trip);
+    const savedTrip = await this.tripRepository.save(trip);
+
+    // If trip is completed, deduct credits based on cargo weight
+    if (
+      updateTripStatusDto.status === TripStatus.COMPLETED &&
+      previousStatus !== TripStatus.COMPLETED
+    ) {
+      this.logger.log(`Trip ${id} completed. Processing credit deduction...`);
+      
+      try {
+        await this.creditConsumptionListener.processTripCompletion(id, tenantId);
+        this.logger.log(`Credit deduction completed for trip ${id}`);
+      } catch (error) {
+        this.logger.error(
+          `Failed to deduct credits for trip ${id}: ${error.message}`,
+        );
+        // Don't fail the trip completion if credit deduction fails
+        // The transaction is logged and can be retried
+      }
+    }
+
+    return savedTrip;
   }
 
   async remove(id: string, tenantId: string): Promise<void> {

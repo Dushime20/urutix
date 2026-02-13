@@ -32,6 +32,15 @@ import { ActivityLogService } from '../../services/activity-log.service';
 import { RolePermissionService } from '../../services/permission.service';
 import { SystemSettingsService } from '../../services/system-settings.service';
 
+// Subscription imports
+import { SubscriptionPlan } from '../../entities/subscription-plan.entity';
+import { TenantSubscription } from '../../entities/tenant-subscription.entity';
+import { CreditAccount } from '../../entities/credit-account.entity';
+import { CreditTransaction } from '../../entities/credit-transaction.entity';
+import { FeatureCreditCost } from '../../entities/feature-credit-cost.entity';
+import { SubscriptionService } from '../../services/subscription.service';
+import { CreditService } from '../../services/credit.service';
+
 @Module({
   imports: [
     TypeOrmModule.forFeature([
@@ -52,6 +61,12 @@ import { SystemSettingsService } from '../../services/system-settings.service';
       Role,
       UserPermissionOverride,
       SystemSettings,
+      // Subscription entities
+      SubscriptionPlan,
+      TenantSubscription,
+      CreditAccount,
+      CreditTransaction,
+      FeatureCreditCost,
     ]),
     UsersModule, // Import UsersModule to use UsersService
     EnhancedAuthModule, // Import EnhancedAuthModule to use PermissionService
@@ -72,11 +87,16 @@ import { SystemSettingsService } from '../../services/system-settings.service';
     ActivityLogService,
     RolePermissionService,
     SystemSettingsService,
+    // Subscription services
+    SubscriptionService,
+    CreditService,
   ],
   exports: [
     ActivityLogService,
     RolePermissionService,
     SystemSettingsService,
+    SubscriptionService,
+    CreditService,
   ],
 })
 export class AdminModule { }

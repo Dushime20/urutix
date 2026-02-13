@@ -76,16 +76,29 @@ const Auth = () => {
     queryFn: async () => {
       const response = await tenantAPI.searchTenants({});
       // Extract tenants from response
+      let allTenants: Tenant[] = [];
+      
       if (response.data?.success && response.data?.data?.results) {
-        return response.data.data.results;
+        allTenants = response.data.data.results;
       } else if (response.data?.data?.results) {
-        return response.data.data.results;
+        allTenants = response.data.data.results;
       } else if (Array.isArray(response.data)) {
-        return response.data;
+        allTenants = response.data;
       } else if (response.data?.data && Array.isArray(response.data.data)) {
-        return response.data.data;
+        allTenants = response.data.data;
       }
-      return [];
+      
+      // Filter to only show ACTIVE tenants
+      const activeTenants = allTenants.filter((tenant: Tenant) => {
+        // Check for different status formats
+        const status = tenant.status?.toUpperCase();
+        return status === 'ACTIVE' || status === 'active';
+      });
+      
+      console.log('📋 Total tenants fetched:', allTenants.length);
+      console.log('✅ Active tenants available for signup:', activeTenants.length);
+      
+      return activeTenants;
     },
     enabled: true, // Always fetch tenants for both user types
     staleTime: 30 * 1000, // Cache for 30 seconds (reduced from 5 minutes to show new tenants faster)
@@ -484,11 +497,17 @@ const Auth = () => {
                       <div>
                         <label htmlFor="companyName" className="block text-xs font-medium text-gray-700 mb-1.5">
                           Select your company <span className="text-red-500">*</span>
+                          <span className="text-xs text-gray-500 font-normal ml-2">(Active companies only)</span>
                         </label>
                         {isLoadingTenants ? (
                           <div className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg bg-gray-50 flex items-center space-x-2">
                             <FaSpinner className="animate-spin h-3.5 w-3.5 text-gray-400" />
                             <span className="text-xs text-gray-500"><TranslatedText text="Loading companies..." /></span>
+                          </div>
+                        ) : tenants.length === 0 ? (
+                          <div className="w-full px-3 py-2 text-sm border border-yellow-300 rounded-lg bg-yellow-50">
+                            <p className="text-xs text-yellow-800 font-medium">No active companies available</p>
+                            <p className="text-xs text-yellow-700 mt-1">Please contact support to activate a company account.</p>
                           </div>
                         ) : (
                           <>
@@ -572,11 +591,17 @@ const Auth = () => {
                       <div>
                         <label htmlFor="companyName" className="block text-xs font-medium text-gray-700 mb-1.5">
                           Select your company <span className="text-red-500">*</span>
+                          <span className="text-xs text-gray-500 font-normal ml-2">(Active companies only)</span>
                         </label>
                         {isLoadingTenants ? (
                           <div className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg bg-gray-50 flex items-center space-x-2">
                             <FaSpinner className="animate-spin h-3.5 w-3.5 text-gray-400" />
                             <span className="text-xs text-gray-500"><TranslatedText text="Loading companies..." /></span>
+                          </div>
+                        ) : tenants.length === 0 ? (
+                          <div className="w-full px-3 py-2 text-sm border border-yellow-300 rounded-lg bg-yellow-50">
+                            <p className="text-xs text-yellow-800 font-medium">No active companies available</p>
+                            <p className="text-xs text-yellow-700 mt-1">Please contact support to activate a company account.</p>
                           </div>
                         ) : (
                           <>

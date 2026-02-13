@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import { createTenant, fetchTenants, getTenantById, updateTenant } from '../services/adminApi';
 import toast from 'react-hot-toast';
 import TenantSettingsModal from '../components/TenantSettingsModal';
@@ -10,8 +11,9 @@ import {
   FaEye, FaCheck, FaTimes, FaBan,
   FaSort, FaGlobe, FaUsers, FaChartLine,
   FaCalendarAlt, FaCog, FaShieldAlt, FaExclamationTriangle,
-  FaTruck
+  FaTruck, FaCreditCard, FaClock
 } from 'react-icons/fa';
+import AdminPageLayout from '../components/Admin/AdminPageLayout';
 
 interface Tenant {
   id: string;
@@ -34,6 +36,7 @@ interface Tenant {
 
 const AdminTenants: React.FC = () => {
   const qc = useQueryClient();
+  const navigate = useNavigate();
 
   // Fetch tenants from API
   const { data: tenantsData, isLoading: isLoadingTenants, error: tenantsError } = useQuery({
@@ -184,8 +187,21 @@ const AdminTenants: React.FC = () => {
 
   // Update mutation
   const { mutate: updateTenantMutation, isPending: isUpdating } = useMutation({
-    mutationFn: (payload: any) => updateTenant(editingTenantId!, payload),
-    onSuccess: () => {
+    mutationFn: async (payload: any) => {
+      console.log('🔄 Updating tenant:', editingTenantId, 'with payload:', payload);
+      try {
+        const result = await updateTenant(editingTenantId!, payload);
+        console.log('✅ Update successful:', result);
+        return result;
+      } catch (error: any) {
+        console.error('❌ Update failed:', error);
+        console.error('Error response:', error?.response);
+        console.error('Error data:', error?.response?.data);
+        throw error;
+      }
+    },
+    onSuccess: (data) => {
+      console.log('✅ Update mutation success, invalidating queries');
       qc.invalidateQueries({ queryKey: ['admin-tenants'] });
       qc.invalidateQueries({ queryKey: ['tenant-details', editingTenantId] });
       setShowEditModal(false);
@@ -194,10 +210,12 @@ const AdminTenants: React.FC = () => {
       toast.success('Tenant updated successfully!');
     },
     onError: (error: any) => {
+      console.error('❌ Update mutation error:', error);
       const errorMessage = error?.response?.data?.message ||
         error?.response?.data?.error ||
         error?.message ||
         'Failed to update tenant. Please try again.';
+      console.error('Error message shown to user:', errorMessage);
       toast.error(errorMessage);
     },
   });
@@ -252,7 +270,26 @@ const AdminTenants: React.FC = () => {
   };
 
   const handleUpdateTenant = () => {
-    updateTenantMutation({
+    // Validation
+    if (!editName.trim()) {
+      toast.error('Tenant name is required');
+      return;
+    }
+    if (!editSubdomain.trim()) {
+      toast.error('Subdomain is required');
+      return;
+    }
+    if (!editContactEmail.trim()) {
+      toast.error('Contact email is required');
+      return;
+    }
+
+    console.log('📝 Preparing tenant update...');
+    console.log('Tenant ID:', editingTenantId);
+    console.log('User from localStorage:', localStorage.getItem('user'));
+    console.log('Token from localStorage:', localStorage.getItem('accessToken') ? 'Present' : 'Missing');
+    
+    const payload = {
       name: editName.trim(),
       subdomain: editSubdomain.trim().toLowerCase(),
       domain: editDomain.trim() || undefined,
@@ -265,8 +302,11 @@ const AdminTenants: React.FC = () => {
       country: editCountry.trim() || undefined,
       postalCode: editPostalCode.trim() || undefined,
       websiteUrl: editWebsiteUrl.trim() || undefined,
-      subscriptionPlan: editPlan || undefined,
-    });
+      subscriptionPlan: editPlan.toUpperCase(), // Backend expects uppercase
+    };
+
+    console.log('📤 Sending payload:', payload);
+    updateTenantMutation(payload);
   };
 
   // Filter and sort tenants
@@ -363,21 +403,19 @@ const AdminTenants: React.FC = () => {
   ];
 
   return (
-    <div className="space-y-3">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-lg font-bold text-gray-900">Tenant Management</h1>
-          <p className="text-xs text-gray-600 mt-0.5">Manage platform tenants and their configurations</p>
-        </div>
+    <AdminPageLayout
+      title="Tenant Management"
+      description="Manage platform tenants and their configurations"
+      actions={
         <button
           onClick={() => setShowCreateModal(true)}
-          className="bg-gray-800 text-white px-2.5 py-1.5 rounded-lg flex items-center gap-1.5 hover:bg-gray-900 transition-all duration-200 shadow-sm text-xs font-medium"
+          className="bg-indigo-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-indigo-700 transition-all duration-200 shadow-sm text-sm font-bold"
         >
-          <FaPlus className="w-3 h-3" />
+          <FaPlus size={14} />
           <span>Add Tenant</span>
         </button>
-      </div>
+      }
+    >
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2.5">
@@ -447,95 +485,99 @@ const AdminTenants: React.FC = () => {
       </div>
 
       {/* Tenants Table */}
-      <div className="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-200">
+      <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200">
         {isLoadingTenants ? (
-          <div className="flex items-center justify-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-600"></div>
-            <span className="ml-3 text-xs text-gray-600">Loading tenants...</span>
+          <div className="flex items-center justify-center py-12">
+            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div>
+            <span className="ml-3 text-sm text-gray-600">Loading tenants...</span>
           </div>
         ) : tenantsError ? (
-          <div className="p-3 text-center">
-            <div className="text-gray-600 mb-1.5">
-              <FaExclamationTriangle className="text-lg mx-auto mb-1.5" />
-              <p className="text-xs">Failed to load tenants. Please try again.</p>
+          <div className="p-8 text-center">
+            <div className="text-red-600 mb-3">
+              <FaExclamationTriangle className="text-3xl mx-auto mb-3" />
+              <p className="text-base font-semibold">Failed to load tenants</p>
               {tenantsError instanceof Error && (
-                <p className="text-[10px] text-gray-500 mt-1">{tenantsError.message}</p>
+                <p className="text-sm text-gray-600 mt-2">{tenantsError.message}</p>
               )}
             </div>
           </div>
         ) : filteredTenants.length === 0 ? (
-          <div className="p-3 text-center">
-            <FaBuilding className="text-xl text-gray-400 mx-auto mb-1.5" />
-            <p className="text-xs text-gray-600">No tenants found</p>
+          <div className="p-12 text-center">
+            <FaBuilding className="text-5xl text-gray-300 mx-auto mb-4" />
+            <p className="text-base text-gray-600 font-medium">No tenants found</p>
             {searchTerm || statusFilter !== 'all' || planFilter !== 'all' ? (
-              <p className="text-[10px] text-gray-500 mt-1">Try adjusting your filters</p>
+              <p className="text-sm text-gray-500 mt-2">Try adjusting your filters</p>
             ) : null}
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-xs">
-              <thead className="bg-gray-50 border-b border-gray-200">
+            <table className="w-full">
+              <thead className="bg-gradient-to-r from-gray-50 to-gray-100 border-b-2 border-gray-200">
                 <tr>
-                  <th className="px-2 py-1.5 text-left text-xs font-semibold text-gray-900">
+                  <th className="px-4 py-4 text-left text-sm font-bold text-gray-900 uppercase tracking-wider">
                     <button
-                      className="flex items-center gap-1"
+                      className="flex items-center gap-2 hover:text-blue-600 transition-colors"
                       onClick={() => {
                         setSortBy('name');
                         setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
                       }}
                     >
                       <span>Tenant</span>
-                      <FaSort className="w-3 h-3" />
+                      <FaSort className="w-3.5 h-3.5" />
                     </button>
                   </th>
-                  <th className="px-2 py-1.5 text-left text-xs font-semibold text-gray-900">Domain</th>
-                  <th className="px-2 py-1.5 text-left text-xs font-semibold text-gray-900">Plan</th>
-                  <th className="px-2 py-1.5 text-left text-xs font-semibold text-gray-900">Status</th>
-                  <th className="px-2 py-1.5 text-left text-xs font-semibold text-gray-900">KYC</th>
-                  <th className="px-2 py-1.5 text-left text-xs font-semibold text-gray-900">Users</th>
-                  <th className="px-2 py-1.5 text-left text-xs font-semibold text-gray-900">Revenue</th>
-                  <th className="px-2 py-1.5 text-left text-xs font-semibold text-gray-900">Last Activity</th>
-                  <th className="px-2 py-1.5 text-left text-xs font-semibold text-gray-900">Actions</th>
+                  <th className="px-4 py-4 text-left text-sm font-bold text-gray-900 uppercase tracking-wider">Domain</th>
+                  <th className="px-4 py-4 text-left text-sm font-bold text-gray-900 uppercase tracking-wider">Plan</th>
+                  <th className="px-4 py-4 text-left text-sm font-bold text-gray-900 uppercase tracking-wider">Status</th>
+                  <th className="px-4 py-4 text-left text-sm font-bold text-gray-900 uppercase tracking-wider">KYC</th>
+                  <th className="px-4 py-4 text-left text-sm font-bold text-gray-900 uppercase tracking-wider">Users</th>
+                  <th className="px-4 py-4 text-left text-sm font-bold text-gray-900 uppercase tracking-wider">Revenue</th>
+                  <th className="px-4 py-4 text-left text-sm font-bold text-gray-900 uppercase tracking-wider">Last Activity</th>
+                  <th className="px-4 py-4 text-left text-sm font-bold text-gray-900 uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200">
+              <tbody className="divide-y divide-gray-200 bg-white">
                 {filteredTenants.map((tenant: Tenant) => (
-                  <tr key={tenant.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-2 py-1.5">
-                      <div className="flex items-center gap-1.5">
-                        <div className="w-8 h-8 bg-gray-700 rounded-lg flex items-center justify-center">
-                          <FaBuilding className="text-white text-xs" />
+                  <tr key={tenant.id} className="hover:bg-blue-50 transition-colors cursor-pointer">
+                    <td className="px-4 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-md flex-shrink-0">
+                          <FaBuilding className="text-white text-lg" />
                         </div>
-                        <div>
-                          <div className="font-semibold text-gray-900 text-xs">{tenant.name}</div>
-                          <div className="text-[10px] text-gray-500">{tenant.adminName}</div>
-                          <div className="text-[10px] text-gray-400">{tenant.location}</div>
+                        <div className="min-w-0">
+                          <div className="font-bold text-gray-900 text-base truncate">{tenant.name}</div>
+                          <div className="text-sm text-gray-600">{tenant.adminName || 'No admin assigned'}</div>
+                          {tenant.location && (
+                            <div className="text-xs text-gray-500 mt-0.5">{tenant.location}</div>
+                          )}
                         </div>
                       </div>
                     </td>
-                    <td className="px-2 py-1.5">
-                      <div className="flex items-center gap-0.5">
-                        <FaGlobe className="text-gray-400 text-xs" />
-                        <span className="text-xs text-gray-900">{tenant.domain}</span>
+                    <td className="px-4 py-4">
+                      <div className="flex items-center gap-2">
+                        <FaGlobe className="text-blue-500 text-base flex-shrink-0" />
+                        <div className="min-w-0">
+                          <div className="text-sm font-semibold text-gray-900 truncate">{tenant.domain || tenant.subdomain}</div>
+                          <div className="text-xs text-gray-500 truncate">{tenant.contactEmail}</div>
+                        </div>
                       </div>
-                      <div className="text-[10px] text-gray-500">{tenant.contactEmail}</div>
                     </td>
-                    <td className="px-2 py-1.5">
-                      <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium ${getPlanColor(tenant.plan)}`}>
+                    <td className="px-4 py-4">
+                      <span className={`inline-flex px-3 py-1.5 rounded-full text-sm font-bold ${getPlanColor(tenant.plan)}`}>
                         {tenant.plan.charAt(0).toUpperCase() + tenant.plan.slice(1)}
                       </span>
                     </td>
-                    <td className="px-2 py-1.5">
-                      <div className="flex items-center gap-1">
-                        <span className="text-[10px]">{getStatusIcon(tenant.status)}</span>
-                        <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium ${getStatusColor(tenant.status)}`}>
+                    <td className="px-4 py-4">
+                      <div className="flex items-center gap-2">
+                        <span className="text-base">{getStatusIcon(tenant.status)}</span>
+                        <span className={`inline-flex px-3 py-1.5 rounded-full text-sm font-bold ${getStatusColor(tenant.status)}`}>
                           {tenant.status.charAt(0).toUpperCase() + tenant.status.slice(1)}
                         </span>
                       </div>
                     </td>
-                    <td className="px-2 py-1.5">
+                    <td className="px-4 py-4">
                       <span
-                        className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium cursor-pointer ${getKYCStatusColor(tenant.kycStatus || 'PENDING')}`}
+                        className={`inline-flex px-3 py-1.5 rounded-full text-sm font-bold cursor-pointer hover:opacity-80 transition-opacity ${getKYCStatusColor(tenant.kycStatus || 'PENDING')}`}
                         onClick={(e) => {
                           e.stopPropagation();
                           setKYCTenant(tenant);
@@ -545,51 +587,60 @@ const AdminTenants: React.FC = () => {
                         {tenant.kycStatus || 'PENDING'}
                       </span>
                     </td>
-                    <td className="px-2 py-1.5">
-                      <div className="text-xs text-gray-900">{tenant.userCount}</div>
-                      <div className="text-[10px] text-gray-500">{tenant.trucksCount} trucks</div>
-                    </td>
-                    <td className="px-2 py-1.5">
-                      <div className="text-xs font-semibold text-gray-900">
-                        ${tenant.revenue?.toLocaleString()}
+                    <td className="px-4 py-4">
+                      <div className="text-base font-bold text-gray-900">{tenant.userCount || 0}</div>
+                      <div className="text-sm text-gray-600 flex items-center gap-1">
+                        <FaTruck className="w-3 h-3" />
+                        {tenant.trucksCount || 0} trucks
                       </div>
                     </td>
-                    <td className="px-2 py-1.5">
-                      <div className="text-xs text-gray-900">
-                        {new Date(tenant.lastActivity).toLocaleDateString()}
+                    <td className="px-4 py-4">
+                      <div className="text-base font-bold text-green-600">
+                        ${tenant.revenue?.toLocaleString() || '0'}
                       </div>
-                      <div className="text-[10px] text-gray-500">
-                        {new Date(tenant.lastActivity).toLocaleTimeString()}
+                      <div className="text-xs text-gray-500">monthly</div>
+                    </td>
+                    <td className="px-4 py-4">
+                      <div className="text-sm font-medium text-gray-900">
+                        {new Date(tenant.lastActivity).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        {new Date(tenant.lastActivity).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
                       </div>
                     </td>
-                    <td className="px-2 py-1.5">
-                      <div className="flex items-center gap-1">
+                    <td className="px-4 py-4">
+                      <div className="flex items-center gap-2">
                         <button
-                          onClick={() => {
+                          onClick={(e) => {
+                            e.stopPropagation();
                             setSelectedTenant(tenant);
                             setShowDetailsModal(true);
                           }}
-                          className="p-1 text-gray-600 hover:bg-gray-100 rounded transition-colors"
+                          className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
                           title="View Details"
                         >
-                          <FaEye className="w-3 h-3" />
+                          <FaEye className="w-4 h-4" />
                         </button>
                         <button
-                          onClick={() => handleEditTenant(tenant)}
-                          className="p-1 text-gray-600 hover:bg-gray-50 rounded transition-colors"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEditTenant(tenant);
+                          }}
+                          className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
                           title="Edit"
                         >
-                          <FaEdit className="w-3 h-3" />
+                          <FaEdit className="w-4 h-4" />
                         </button>
                         <button
-                          onClick={() => {
+                          onClick={(e) => {
+                            e.stopPropagation();
                             setSettingsTenantId(tenant.id);
                             setShowSettingsModal(true);
                           }}
-                          className="p-1 text-gray-600 hover:bg-gray-50 rounded transition-colors"
+                          className="p-2 text-purple-600 hover:bg-purple-100 rounded-lg transition-colors"
                           title="Settings"
                         >
-                          <FaCog className="w-3 h-3" />
+                          <FaCog className="w-4 h-4" />
                         </button>
                       </div>
                     </td>
@@ -1003,157 +1054,243 @@ const AdminTenants: React.FC = () => {
       {/* Tenant Details Modal */}
       {showDetailsModal && selectedTenant && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-            <div className="p-3 border-b border-gray-200">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-y-auto">
+            {/* Header */}
+            <div className="sticky top-0 bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6 rounded-t-xl z-10">
               <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-gray-700 rounded-lg flex items-center justify-center">
-                    <FaBuilding className="text-white text-sm" />
+                <div className="flex items-center gap-4">
+                  <div className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center">
+                    <FaBuilding className="text-white text-2xl" />
                   </div>
                   <div>
-                    <h2 className="text-lg font-bold text-gray-900">{selectedTenant.name}</h2>
-                    <p className="text-xs text-gray-600">{selectedTenant.domain || selectedTenant.subdomain}</p>
+                    <h2 className="text-2xl font-bold">{selectedTenant.name}</h2>
+                    <div className="flex items-center gap-3 mt-1">
+                      <span className="text-blue-100 text-sm flex items-center gap-1">
+                        <FaGlobe className="w-3 h-3" />
+                        {selectedTenant.domain || selectedTenant.subdomain}
+                      </span>
+                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                        selectedTenant.status === 'active' 
+                          ? 'bg-green-500/20 text-green-100 border border-green-400/30' 
+                          : 'bg-yellow-500/20 text-yellow-100 border border-yellow-400/30'
+                      }`}>
+                        {selectedTenant.status.toUpperCase()}
+                      </span>
+                      <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-white/20 text-white border border-white/30">
+                        {selectedTenant.plan.toUpperCase()} PLAN
+                      </span>
+                    </div>
                   </div>
                 </div>
                 <button
                   onClick={() => setShowDetailsModal(false)}
-                  className="p-1.5 text-gray-400 hover:text-gray-600 rounded-lg transition-colors"
+                  className="p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
                 >
-                  <FaTimes className="w-4 h-4" />
+                  <FaTimes className="w-5 h-5" />
                 </button>
               </div>
             </div>
 
-            <div className="p-3 space-y-3">
-              {/* Status and Plan */}
-              <div className="flex items-center justify-between flex-wrap gap-2">
-                <div className="flex items-center space-x-2 flex-wrap">
-                  <div className="flex items-center space-x-1.5">
-                    {getStatusIcon(selectedTenant.status)}
-                    <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium ${getStatusColor(selectedTenant.status)}`}>
-                      {selectedTenant.status.charAt(0).toUpperCase() + selectedTenant.status.slice(1)}
-                    </span>
+            <div className="p-6 space-y-6">
+              {/* Key Metrics Grid */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-4 border border-blue-200">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
+                      <FaUsers className="text-white text-lg" />
+                    </div>
                   </div>
-                  <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium ${getPlanColor(selectedTenant.plan)}`}>
-                    {selectedTenant.plan.charAt(0).toUpperCase() + selectedTenant.plan.slice(1)} Plan
-                  </span>
+                  <div className="text-2xl font-bold text-gray-900">{selectedTenant.userCount || 0}</div>
+                  <div className="text-sm text-gray-600">Total Users</div>
                 </div>
-                <div className="flex space-x-1.5">
-                  <button className="px-2.5 py-1.5 text-xs bg-gray-800 text-white rounded-lg hover:bg-gray-900 transition-colors">
-                    Manage Access
+
+                <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-4 border border-green-200">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="w-10 h-10 bg-green-600 rounded-lg flex items-center justify-center">
+                      <FaTruck className="text-white text-lg" />
+                    </div>
+                  </div>
+                  <div className="text-2xl font-bold text-gray-900">{selectedTenant.trucksCount || 0}</div>
+                  <div className="text-sm text-gray-600">Active Trucks</div>
+                </div>
+
+                <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-4 border border-purple-200">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="w-10 h-10 bg-purple-600 rounded-lg flex items-center justify-center">
+                      <FaChartLine className="text-white text-lg" />
+                    </div>
+                  </div>
+                  <div className="text-2xl font-bold text-gray-900">${(selectedTenant.revenue || 0).toLocaleString()}</div>
+                  <div className="text-sm text-gray-600">Monthly Revenue</div>
+                </div>
+
+                <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl p-4 border border-orange-200">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="w-10 h-10 bg-orange-600 rounded-lg flex items-center justify-center">
+                      <FaCalendarAlt className="text-white text-lg" />
+                    </div>
+                  </div>
+                  <div className="text-2xl font-bold text-gray-900">
+                    {Math.ceil((new Date().getTime() - new Date(selectedTenant.createdAt).getTime()) / (1000 * 3600 * 24))}
+                  </div>
+                  <div className="text-sm text-gray-600">Days Active</div>
+                </div>
+              </div>
+
+              {/* Information Sections */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Basic Information */}
+                <div className="bg-white border border-gray-200 rounded-xl p-5">
+                  <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                    <FaBuilding className="text-blue-600" />
+                    Basic Information
+                  </h3>
+                  <div className="space-y-3">
+                    <div className="flex items-start justify-between py-2 border-b border-gray-100">
+                      <span className="text-sm text-gray-600 font-medium">Tenant ID</span>
+                      <span className="text-sm text-gray-900 font-mono">{selectedTenant.id}</span>
+                    </div>
+                    <div className="flex items-start justify-between py-2 border-b border-gray-100">
+                      <span className="text-sm text-gray-600 font-medium">Subdomain</span>
+                      <span className="text-sm text-blue-600 font-medium">{selectedTenant.subdomain}</span>
+                    </div>
+                    <div className="flex items-start justify-between py-2 border-b border-gray-100">
+                      <span className="text-sm text-gray-600 font-medium">Domain</span>
+                      <span className="text-sm text-gray-900">{selectedTenant.domain || 'Not set'}</span>
+                    </div>
+                    <div className="flex items-start justify-between py-2 border-b border-gray-100">
+                      <span className="text-sm text-gray-600 font-medium">Created</span>
+                      <span className="text-sm text-gray-900">{new Date(selectedTenant.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                    </div>
+                    <div className="flex items-start justify-between py-2">
+                      <span className="text-sm text-gray-600 font-medium">Last Activity</span>
+                      <span className="text-sm text-gray-900">
+                        {selectedTenant.lastActivity 
+                          ? new Date(selectedTenant.lastActivity).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+                          : 'No activity'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Contact Information */}
+                <div className="bg-white border border-gray-200 rounded-xl p-5">
+                  <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                    <FaUsers className="text-green-600" />
+                    Contact Information
+                  </h3>
+                  <div className="space-y-3">
+                    <div className="flex items-start justify-between py-2 border-b border-gray-100">
+                      <span className="text-sm text-gray-600 font-medium">Admin Name</span>
+                      <span className="text-sm text-gray-900">{selectedTenant.adminName || 'Not assigned'}</span>
+                    </div>
+                    <div className="flex items-start justify-between py-2 border-b border-gray-100">
+                      <span className="text-sm text-gray-600 font-medium">Email</span>
+                      <span className="text-sm text-blue-600">{selectedTenant.contactEmail || 'Not set'}</span>
+                    </div>
+                    <div className="flex items-start justify-between py-2 border-b border-gray-100">
+                      <span className="text-sm text-gray-600 font-medium">Location</span>
+                      <span className="text-sm text-gray-900">{selectedTenant.location || 'Not set'}</span>
+                    </div>
+                    <div className="flex items-start justify-between py-2">
+                      <span className="text-sm text-gray-600 font-medium">KYC Status</span>
+                      <span className={`text-xs px-2 py-1 rounded-full font-medium ${getKYCStatusColor(selectedTenant.kycStatus || 'PENDING')}`}>
+                        {selectedTenant.kycStatus || 'PENDING'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Subscription Details Section */}
+              <TenantSubscriptionDetails tenantId={selectedTenant.id} />
+
+              {/* Quick Actions */}
+              <div className="bg-gray-50 border border-gray-200 rounded-xl p-5">
+                <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                  <FaCog className="text-purple-600" />
+                  Quick Actions
+                </h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  <button
+                    onClick={() => {
+                      handleEditTenant(selectedTenant);
+                      setShowDetailsModal(false);
+                    }}
+                    className="flex flex-col items-center justify-center p-4 bg-white border-2 border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-all group"
+                  >
+                    <FaEdit className="text-2xl text-gray-400 group-hover:text-blue-600 mb-2" />
+                    <span className="text-sm font-medium text-gray-700 group-hover:text-blue-600">Edit Tenant</span>
                   </button>
-                  <button className="px-2.5 py-1.5 text-xs border border-gray-200 text-gray-600 rounded-lg hover:bg-gray-50 transition-colors">
+
+                  <button
+                    onClick={() => {
+                      setSettingsTenantId(selectedTenant.id);
+                      setShowSettingsModal(true);
+                      setShowDetailsModal(false);
+                    }}
+                    className="flex flex-col items-center justify-center p-4 bg-white border-2 border-gray-200 rounded-lg hover:border-purple-500 hover:bg-purple-50 transition-all group"
+                  >
+                    <FaCog className="text-2xl text-gray-400 group-hover:text-purple-600 mb-2" />
+                    <span className="text-sm font-medium text-gray-700 group-hover:text-purple-600">Settings</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setManageUsersTenantId(selectedTenant.id);
+                      setManageUsersTenantName(selectedTenant.name);
+                      setShowManageUsersModal(true);
+                      setShowDetailsModal(false);
+                    }}
+                    className="flex flex-col items-center justify-center p-4 bg-white border-2 border-gray-200 rounded-lg hover:border-green-500 hover:bg-green-50 transition-all group"
+                  >
+                    <FaUsers className="text-2xl text-gray-400 group-hover:text-green-600 mb-2" />
+                    <span className="text-sm font-medium text-gray-700 group-hover:text-green-600">Manage Users</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setKYCTenant(selectedTenant);
+                      setShowKYCModal(true);
+                      setShowDetailsModal(false);
+                    }}
+                    className="flex flex-col items-center justify-center p-4 bg-white border-2 border-gray-200 rounded-lg hover:border-orange-500 hover:bg-orange-50 transition-all group"
+                  >
+                    <FaShieldAlt className="text-2xl text-gray-400 group-hover:text-orange-600 mb-2" />
+                    <span className="text-sm font-medium text-gray-700 group-hover:text-orange-600">KYC Status</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex justify-between items-center pt-4 border-t border-gray-200">
+                <button
+                  onClick={() => setShowDetailsModal(false)}
+                  className="px-6 py-2.5 text-sm border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+                >
+                  Close
+                </button>
+                <div className="flex gap-3">
+                  <button className="px-6 py-2.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center gap-2">
+                    <FaDownload className="w-4 h-4" />
+                    Export Data
+                  </button>
+                  <button 
+                    onClick={() => {
+                      if (selectedTenant) {
+                        setShowDetailsModal(false);
+                        navigate('/admin/activity-logs', { 
+                          state: { 
+                            filterTenantId: selectedTenant.id,
+                            filterTenantName: selectedTenant.name 
+                          } 
+                        });
+                      }
+                    }}
+                    className="px-6 py-2.5 text-sm bg-gray-800 text-white rounded-lg hover:bg-gray-900 transition-colors font-medium"
+                  >
                     View Logs
                   </button>
-                </div>
-              </div>
-
-              {/* Key Metrics */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                <div className="bg-gray-50 rounded-lg p-2 border border-gray-200">
-                  <div className="flex items-center space-x-2">
-                    <FaUsers className="text-gray-600 text-xs" />
-                    <div>
-                      <div className="text-base font-bold text-gray-900">{selectedTenant.userCount || 0}</div>
-                      <div className="text-[10px] text-gray-700">Total Users</div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-gray-50 rounded-lg p-2 border border-gray-200">
-                  <div className="flex items-center space-x-2">
-                    <FaTruck className="text-gray-600 text-xs" />
-                    <div>
-                      <div className="text-base font-bold text-gray-900">{selectedTenant.trucksCount || 0}</div>
-                      <div className="text-[10px] text-gray-700">Active Trucks</div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-gray-50 rounded-lg p-2 border border-gray-200">
-                  <div className="flex items-center space-x-2">
-                    <FaChartLine className="text-gray-600 text-xs" />
-                    <div>
-                      <div className="text-base font-bold text-gray-900">${(selectedTenant.revenue || 0).toLocaleString()}</div>
-                      <div className="text-[10px] text-gray-700">Monthly Revenue</div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-gray-50 rounded-lg p-2 border border-gray-200">
-                  <div className="flex items-center space-x-2">
-                    <FaCalendarAlt className="text-gray-600 text-xs" />
-                    <div>
-                      <div className="text-base font-bold text-gray-900">
-                        {Math.ceil((new Date().getTime() - new Date(selectedTenant.createdAt).getTime()) / (1000 * 3600 * 24))}
-                      </div>
-                      <div className="text-[10px] text-gray-700">Days Active</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Tenant Information */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div className="space-y-2">
-                  <h3 className="text-xs font-semibold text-gray-900">Tenant Information</h3>
-                  <div className="space-y-1.5 text-xs">
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Created:</span>
-                      <span className="font-medium">{new Date(selectedTenant.createdAt).toLocaleDateString()}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Last Activity:</span>
-                      <span className="font-medium">{selectedTenant.lastActivity ? new Date(selectedTenant.lastActivity).toLocaleDateString() : 'N/A'}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Admin:</span>
-                      <span className="font-medium">{selectedTenant.adminName || 'N/A'}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Contact:</span>
-                      <span className="font-medium">{selectedTenant.contactEmail || 'N/A'}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Location:</span>
-                      <span className="font-medium">{selectedTenant.location || 'N/A'}</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <h3 className="text-xs font-semibold text-gray-900">Quick Actions</h3>
-                  <div className="space-y-2">
-                    <button
-                      onClick={() => {
-                        setSettingsTenantId(selectedTenant.id);
-                        setShowSettingsModal(true);
-                      }}
-                      className="w-full flex items-center space-x-2 p-2 text-left border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-xs"
-                    >
-                      <FaCog className="text-gray-400 w-3 h-3" />
-                      <span>Tenant Settings</span>
-                    </button>
-                    <button
-                      onClick={() => {
-                        setManageUsersTenantId(selectedTenant.id);
-                        setManageUsersTenantName(selectedTenant.name);
-                        setShowManageUsersModal(true);
-                      }}
-                      className="w-full flex items-center space-x-2 p-2 text-left border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-xs"
-                    >
-                      <FaUsers className="text-gray-400 w-3 h-3" />
-                      <span>Manage Users</span>
-                    </button>
-                    <button className="w-full flex items-center space-x-2 p-2 text-left border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-xs">
-                      <FaShieldAlt className="text-gray-400 w-3 h-3" />
-                      <span>Security Settings</span>
-                    </button>
-                    <button className="w-full flex items-center space-x-2 p-2 text-left border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-gray-600 text-xs">
-                      <FaBan className="text-gray-400 w-3 h-3" />
-                      <span>Suspend Tenant</span>
-                    </button>
-                  </div>
                 </div>
               </div>
             </div>
@@ -1201,11 +1338,201 @@ const AdminTenants: React.FC = () => {
           }}
         />
       )}
+    </AdminPageLayout>
+  );
+};
 
+// Tenant Subscription Details Component
+const TenantSubscriptionDetails: React.FC<{ tenantId: string }> = ({ tenantId }) => {
+  const navigate = useNavigate();
+
+  // Fetch tenant subscription
+  const { data: subscriptionData, isLoading } = useQuery({
+    queryKey: ['tenant-subscription', tenantId],
+    queryFn: async () => {
+      try {
+        const response = await fetch(`/api/admin/tenants/${tenantId}/subscription`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
+            'Content-Type': 'application/json',
+          },
+        });
+        if (!response.ok) {
+          if (response.status === 404) {
+            return null; // No subscription found
+          }
+          throw new Error('Failed to fetch subscription');
+        }
+        const data = await response.json();
+        return data.data;
+      } catch (error) {
+        console.error('Error fetching subscription:', error);
+        return null;
+      }
+    },
+  });
+
+  const subscription = subscriptionData;
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'active':
+        return 'bg-green-100 text-green-800 border-green-200';
+      case 'trial':
+        return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'cancelled':
+        return 'bg-red-100 text-red-800 border-red-200';
+      case 'expired':
+        return 'bg-gray-100 text-gray-800 border-gray-200';
+      case 'suspended':
+        return 'bg-orange-100 text-orange-800 border-orange-200';
+      default:
+        return 'bg-gray-100 text-gray-800 border-gray-200';
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="bg-white border border-gray-200 rounded-xl p-5">
+        <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+          <FaCreditCard className="text-purple-600" />
+          Subscription Details
+        </h3>
+        <div className="flex items-center justify-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!subscription) {
+    return (
+      <div className="bg-white border border-gray-200 rounded-xl p-5">
+        <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+          <FaCreditCard className="text-purple-600" />
+          Subscription Details
+        </h3>
+        <div className="text-center py-8">
+          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
+            <FaExclamationTriangle className="text-gray-400 text-2xl" />
+          </div>
+          <p className="text-gray-600 text-sm">No active subscription found</p>
+          <button
+            onClick={() => navigate('/admin/subscriptions')}
+            className="mt-4 px-4 py-2 text-sm bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+          >
+            Manage Subscriptions
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const isTrial = subscription.status === 'trial';
+  const currentPrice = Number(subscription.billingCycle === 'monthly' 
+    ? (subscription.plan.priceMonthly || subscription.plan.price_monthly || 0)
+    : (subscription.plan.priceYearly || subscription.plan.price_yearly || 0));
+
+  return (
+    <div className="bg-gradient-to-br from-purple-50 to-indigo-50 border border-purple-200 rounded-xl p-5">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+          <FaCreditCard className="text-purple-600" />
+          Subscription Details
+        </h3>
+        <button
+          onClick={() => navigate('/admin/subscriptions')}
+          className="text-sm text-purple-600 hover:text-purple-700 font-medium flex items-center gap-1"
+        >
+          <FaCog className="w-3 h-3" />
+          Manage
+        </button>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Left Column */}
+        <div className="space-y-3">
+          <div className="flex items-start justify-between py-2 border-b border-purple-100">
+            <span className="text-sm text-gray-600 font-medium">Plan</span>
+            <span className="text-sm text-gray-900 font-bold">{subscription.plan.name}</span>
+          </div>
+          <div className="flex items-start justify-between py-2 border-b border-purple-100">
+            <span className="text-sm text-gray-600 font-medium">Status</span>
+            <span className={`text-xs px-2 py-1 rounded-full font-medium border ${getStatusColor(subscription.status)}`}>
+              {subscription.status.toUpperCase()}
+            </span>
+          </div>
+          <div className="flex items-start justify-between py-2 border-b border-purple-100">
+            <span className="text-sm text-gray-600 font-medium">Billing Cycle</span>
+            <span className="text-sm text-gray-900 capitalize">{subscription.billingCycle}</span>
+          </div>
+          <div className="flex items-start justify-between py-2">
+            <span className="text-sm text-gray-600 font-medium">Price</span>
+            <span className="text-sm text-gray-900 font-bold">
+              ${currentPrice.toFixed(2)}/{subscription.billingCycle === 'monthly' ? 'mo' : 'yr'}
+            </span>
+          </div>
+        </div>
+
+        {/* Right Column */}
+        <div className="space-y-3">
+          <div className="flex items-start justify-between py-2 border-b border-purple-100">
+            <span className="text-sm text-gray-600 font-medium">Credit Balance</span>
+            <span className="text-sm font-bold text-purple-600">{subscription.creditBalance || 0} credits</span>
+          </div>
+          <div className="flex items-start justify-between py-2 border-b border-purple-100">
+            <span className="text-sm text-gray-600 font-medium">Period Start</span>
+            <span className="text-sm text-gray-900">
+              {new Date(subscription.currentPeriodStart).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+            </span>
+          </div>
+          <div className="flex items-start justify-between py-2 border-b border-purple-100">
+            <span className="text-sm text-gray-600 font-medium">Period End</span>
+            <span className="text-sm text-gray-900">
+              {new Date(subscription.currentPeriodEnd).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+            </span>
+          </div>
+          <div className="flex items-start justify-between py-2">
+            <span className="text-sm text-gray-600 font-medium">Auto-Renew</span>
+            <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+              subscription.autoRenew 
+                ? 'bg-green-100 text-green-800 border border-green-200' 
+                : 'bg-gray-100 text-gray-800 border border-gray-200'
+            }`}>
+              {subscription.autoRenew ? 'Enabled' : 'Disabled'}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Trial Banner */}
+      {isTrial && subscription.trialEnd && (
+        <div className="mt-4 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-lg p-3">
+          <div className="flex items-center gap-2">
+            <FaClock className="text-lg" />
+            <div>
+              <p className="text-sm font-bold">Trial Period</p>
+              <p className="text-xs opacity-90">
+                Ends on {new Date(subscription.trialEnd).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Quick Stats */}
+      <div className="mt-4 grid grid-cols-2 gap-3">
+        <div className="bg-white/60 backdrop-blur-sm rounded-lg p-3 border border-purple-200">
+          <div className="text-xs text-gray-600 mb-1">Included Credits</div>
+          <div className="text-lg font-bold text-purple-600">{subscription.plan.includedCredits}</div>
+        </div>
+        <div className="bg-white/60 backdrop-blur-sm rounded-lg p-3 border border-purple-200">
+          <div className="text-xs text-gray-600 mb-1">Total Revenue</div>
+          <div className="text-lg font-bold text-green-600">${(subscription.totalRevenue || 0).toFixed(2)}</div>
+        </div>
+      </div>
     </div>
   );
 };
 
 export default AdminTenants;
-
-

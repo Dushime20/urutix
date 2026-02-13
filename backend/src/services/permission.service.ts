@@ -85,24 +85,89 @@ export class RolePermissionService {
      * Get all roles
      */
     async getAllRoles(): Promise<Role[]> {
-        return await this.roleRepository.find({
-            relations: ['permissions', 'inheritsFrom'],
-            order: { name: 'ASC' },
-        });
+        // Use raw SQL query instead of TypeORM relations
+        // because role_permissions table uses 'role' column (string) not 'role_id' (UUID)
+        const query = `
+            SELECT 
+                r.id,
+                r.name,
+                r.description,
+                r.is_system as "isSystem",
+                r.created_at as "createdAt",
+                r.updated_at as "updatedAt",
+                COALESCE(
+                    json_agg(
+                        json_build_object(
+                            'id', p.id,
+                            'resource', p.resource,
+                            'action', p.action,
+                            'description', p.description
+                        )
+                    ) FILTER (WHERE p.id IS NOT NULL),
+                    '[]'
+                ) as permissions
+            FROM roles r
+            LEFT JOIN role_permissions rp ON r.name = rp.role
+            LEFT JOIN permissions p ON rp.permission_id = p.id
+            GROUP BY r.id, r.name, r.description, r.is_system, r.created_at, r.updated_at
+            ORDER BY r.name ASC
+        `;
+
+        const roles = await this.roleRepository.manager.query(query);
+        
+        // Parse JSON permissions back to objects
+        return roles.map(role => ({
+            ...role,
+            permissions: typeof role.permissions === 'string' 
+                ? JSON.parse(role.permissions) 
+                : role.permissions
+        }));
     }
 
     /**
      * Get role by ID
      */
     async getRoleById(id: string): Promise<Role> {
-        const role = await this.roleRepository.findOne({
-            where: { id },
-            relations: ['permissions', 'inheritsFrom'],
-        });
+        // Use raw SQL query instead of TypeORM relations
+        // because role_permissions table uses 'role' column (string) not 'role_id' (UUID)
+        const query = `
+            SELECT 
+                r.id,
+                r.name,
+                r.description,
+                r.is_system as "isSystem",
+                r.created_at as "createdAt",
+                r.updated_at as "updatedAt",
+                COALESCE(
+                    json_agg(
+                        json_build_object(
+                            'id', p.id,
+                            'resource', p.resource,
+                            'action', p.action,
+                            'description', p.description
+                        )
+                    ) FILTER (WHERE p.id IS NOT NULL),
+                    '[]'
+                ) as permissions
+            FROM roles r
+            LEFT JOIN role_permissions rp ON r.name = rp.role
+            LEFT JOIN permissions p ON rp.permission_id = p.id
+            WHERE r.id = $1
+            GROUP BY r.id, r.name, r.description, r.is_system, r.created_at, r.updated_at
+        `;
 
-        if (!role) {
+        const roles = await this.roleRepository.manager.query(query, [id]);
+
+        if (!roles || roles.length === 0) {
             throw new NotFoundException('Role not found');
         }
+
+        const role = roles[0];
+        
+        // Parse JSON permissions back to objects
+        role.permissions = typeof role.permissions === 'string' 
+            ? JSON.parse(role.permissions) 
+            : role.permissions;
 
         return role;
     }
@@ -119,24 +184,44 @@ export class RolePermissionService {
             throw new BadRequestException('Role already exists');
         }
 
-        const role = this.roleRepository.create({
-            name: data.name,
-            description: data.description,
-        });
+        const queryRunner = this.roleRepository.manager.connection.createQueryRunner();
+        await queryRunner.connect();
+        await queryRunner.startTransaction();
 
-        if (data.permissionIds && data.permissionIds.length > 0) {
-            role.permissions = await this.permissionRepository.find({
-                where: { id: In(data.permissionIds) },
-            });
+        try {
+            // Create the role
+            const result = await queryRunner.query(
+                `INSERT INTO roles (name, description, is_system, created_at, updated_at)
+                 VALUES ($1, $2, false, NOW(), NOW())
+                 RETURNING id, name, description, is_system as "isSystem", created_at as "createdAt", updated_at as "updatedAt"`,
+                [data.name, data.description || null]
+            );
+
+            const role = result[0];
+
+            // Assign permissions if provided
+            // Note: role_permissions uses 'role' column (string) not 'role_id'
+            if (data.permissionIds && data.permissionIds.length > 0) {
+                for (const permissionId of data.permissionIds) {
+                    await queryRunner.query(
+                        `INSERT INTO role_permissions (role, permission_id, granted_at, granted_by)
+                         VALUES ($1, $2, NOW(), 'system')
+                         ON CONFLICT (role, permission_id) DO NOTHING`,
+                        [role.name, permissionId]
+                    );
+                }
+            }
+
+            await queryRunner.commitTransaction();
+
+            // Return role with permissions
+            return await this.getRoleById(role.id);
+        } catch (error) {
+            await queryRunner.rollbackTransaction();
+            throw error;
+        } finally {
+            await queryRunner.release();
         }
-
-        if (data.inheritsFromRoleIds && data.inheritsFromRoleIds.length > 0) {
-            role.inheritsFrom = await this.roleRepository.find({
-                where: { id: In(data.inheritsFromRoleIds) },
-            });
-        }
-
-        return await this.roleRepository.save(role);
     }
 
     /**
@@ -149,30 +234,82 @@ export class RolePermissionService {
             throw new BadRequestException('Cannot modify system roles');
         }
 
-        if (data.name) role.name = data.name;
-        if (data.description !== undefined) role.description = data.description;
+        const queryRunner = this.roleRepository.manager.connection.createQueryRunner();
+        await queryRunner.connect();
+        await queryRunner.startTransaction();
 
-        if (data.permissionIds !== undefined) {
-            if (data.permissionIds.length > 0) {
-                role.permissions = await this.permissionRepository.find({
-                    where: { id: In(data.permissionIds) },
-                });
-            } else {
-                role.permissions = [];
+        try {
+            // Update role name and description
+            const updates: string[] = [];
+            const values: any[] = [];
+            let paramIndex = 1;
+
+            if (data.name !== undefined) {
+                // Check if new name conflicts with existing role
+                if (data.name !== role.name) {
+                    const nameConflict = await queryRunner.query(
+                        'SELECT id FROM roles WHERE name = $1 AND id != $2',
+                        [data.name, id]
+                    );
+
+                    if (nameConflict.length > 0) {
+                        throw new BadRequestException(`Role with name '${data.name}' already exists`);
+                    }
+                }
+
+                updates.push(`name = $${paramIndex++}`);
+                values.push(data.name);
             }
-        }
 
-        if (data.inheritsFromRoleIds !== undefined) {
-            if (data.inheritsFromRoleIds.length > 0) {
-                role.inheritsFrom = await this.roleRepository.find({
-                    where: { id: In(data.inheritsFromRoleIds) },
-                });
-            } else {
-                role.inheritsFrom = [];
+            if (data.description !== undefined) {
+                updates.push(`description = $${paramIndex++}`);
+                values.push(data.description);
             }
-        }
 
-        return await this.roleRepository.save(role);
+            if (updates.length > 0) {
+                updates.push(`updated_at = NOW()`);
+                values.push(id);
+
+                await queryRunner.query(
+                    `UPDATE roles SET ${updates.join(', ')} WHERE id = $${paramIndex}`,
+                    values
+                );
+            }
+
+            // Update permissions if provided
+            // Note: role_permissions uses 'role' column (string) not 'role_id'
+            if (data.permissionIds !== undefined) {
+                const roleName = data.name || role.name;
+
+                // Delete existing permissions
+                await queryRunner.query(
+                    'DELETE FROM role_permissions WHERE role = $1',
+                    [roleName]
+                );
+
+                // Insert new permissions
+                if (data.permissionIds.length > 0) {
+                    for (const permissionId of data.permissionIds) {
+                        await queryRunner.query(
+                            `INSERT INTO role_permissions (role, permission_id, granted_at, granted_by)
+                             VALUES ($1, $2, NOW(), 'system')
+                             ON CONFLICT (role, permission_id) DO NOTHING`,
+                            [roleName, permissionId]
+                        );
+                    }
+                }
+            }
+
+            await queryRunner.commitTransaction();
+
+            // Return updated role
+            return await this.getRoleById(id);
+        } catch (error) {
+            await queryRunner.rollbackTransaction();
+            throw error;
+        } finally {
+            await queryRunner.release();
+        }
     }
 
     /**
@@ -185,7 +322,41 @@ export class RolePermissionService {
             throw new BadRequestException('Cannot delete system roles');
         }
 
-        await this.roleRepository.remove(role);
+        // Check if any users have this role
+        const usersWithRole = await this.roleRepository.manager.query(
+            'SELECT COUNT(*) as count FROM users WHERE role = $1',
+            [role.name]
+        );
+
+        if (parseInt(usersWithRole[0].count) > 0) {
+            throw new BadRequestException(`Cannot delete role '${role.name}' because it is assigned to ${usersWithRole[0].count} user(s)`);
+        }
+
+        const queryRunner = this.roleRepository.manager.connection.createQueryRunner();
+        await queryRunner.connect();
+        await queryRunner.startTransaction();
+
+        try {
+            // Delete role permissions first
+            // Note: role_permissions uses 'role' column (string) not 'role_id'
+            await queryRunner.query(
+                'DELETE FROM role_permissions WHERE role = $1',
+                [role.name]
+            );
+
+            // Delete the role
+            await queryRunner.query(
+                'DELETE FROM roles WHERE id = $1',
+                [id]
+            );
+
+            await queryRunner.commitTransaction();
+        } catch (error) {
+            await queryRunner.rollbackTransaction();
+            throw error;
+        } finally {
+            await queryRunner.release();
+        }
     }
 
     /**
@@ -203,7 +374,7 @@ export class RolePermissionService {
                 permissionId: permission.id,
                 resource: permission.resource,
                 action: permission.action,
-                granted: role.permissions.some(p => p.id === permission.id),
+                granted: Array.isArray(role.permissions) && role.permissions.some(p => p.id === permission.id),
             })),
         }));
 
@@ -314,17 +485,48 @@ export class RolePermissionService {
      * Bulk assign permissions to role
      */
     async bulkAssignPermissions(roleId: string, permissionIds: string[]): Promise<Role> {
+        // Get role first to check if it exists and is not a system role
         const role = await this.getRoleById(roleId);
 
         if (role.isSystem) {
             throw new BadRequestException('Cannot modify system roles');
         }
 
-        role.permissions = await this.permissionRepository.find({
-            where: { id: In(permissionIds) },
-        });
+        // Use raw SQL to delete and insert permissions
+        // because role_permissions table uses 'role' column (string) not 'role_id' (UUID)
+        const queryRunner = this.roleRepository.manager.connection.createQueryRunner();
+        await queryRunner.connect();
+        await queryRunner.startTransaction();
 
-        return await this.roleRepository.save(role);
+        try {
+            // Delete existing permissions for this role
+            await queryRunner.query(
+                'DELETE FROM role_permissions WHERE role = $1',
+                [role.name]
+            );
+
+            // Insert new permissions
+            if (permissionIds && permissionIds.length > 0) {
+                for (const permissionId of permissionIds) {
+                    await queryRunner.query(
+                        `INSERT INTO role_permissions (role, permission_id, granted_at, granted_by)
+                         VALUES ($1, $2, NOW(), 'system')
+                         ON CONFLICT (role, permission_id) DO NOTHING`,
+                        [role.name, permissionId]
+                    );
+                }
+            }
+
+            await queryRunner.commitTransaction();
+
+            // Return updated role
+            return await this.getRoleById(roleId);
+        } catch (error) {
+            await queryRunner.rollbackTransaction();
+            throw error;
+        } finally {
+            await queryRunner.release();
+        }
     }
 
     /**

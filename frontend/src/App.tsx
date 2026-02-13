@@ -42,7 +42,6 @@ import LenderPasswordSetup from './pages/LenderPasswordSetup';
 import ReceiverPasswordSetup from './pages/ReceiverPasswordSetup';
 
 // Onboarding
-const OnboardingLayout = lazy(() => import('./components/Layout/OnboardingLayout'));
 const OnboardingWizard = lazy(() => import('./pages/onboarding/OnboardingWizard'));
 
 // Lazy load all page components to reduce initial bundle size
@@ -148,6 +147,12 @@ const CreditManagement = lazy(() => import('./pages/broker/CreditManagement'));
 const MultiStopManagement = lazy(() => import('./pages/broker/MultiStopManagement'));
 const PerformanceAnalytics = lazy(() => import('./pages/broker/PerformanceAnalytics'));
 
+// Subscription Pages
+const SubscriptionPlans = lazy(() => import('./pages/subscription/SubscriptionPlans'));
+const BillingDashboard = lazy(() => import('./pages/subscription/BillingDashboard'));
+const PurchaseCredits = lazy(() => import('./pages/subscription/PurchaseCredits'));
+const TenantSubscriptions = lazy(() => import('./pages/admin/TenantSubscriptions'));
+
 // Loading fallback component for lazy-loaded pages
 const PageLoadingFallback = () => (
   <div className="flex items-center justify-center min-h-screen">
@@ -189,9 +194,6 @@ function App() {
                     <Route path="/dashboard/fleet/reports" element={<FleetAnalytics />} />
                     <Route path="/dashboard/fleet/smart-bookings" element={<SmartBookingsPage />} />
                     <Route path="/auth" element={<Auth />} />
-                    <Route path="/onboarding" element={<OnboardingLayout />}>
-                      <Route index element={<OnboardingWizard />} />
-                    </Route>
                     <Route path="/driver/setup-password" element={<DriverPasswordSetup />} />
                     <Route path="/tenant/setup-password" element={<TenantPasswordSetup />} />
                     <Route path="/lender/setup-password" element={<LenderPasswordSetup />} />
@@ -365,7 +367,9 @@ function App() {
                       <Route path="lenders/register" element={<AdminLenderRegistrationPage />} />
                       <Route path="lenders" element={<Navigate to="lenders/register" replace />} />
                       <Route path="borrowers" element={<AdminBorrowersPage />} />
-                      <Route path="analytics" element={<Analytics />} />
+                      <Route path="analytics" element={<UnifiedAnalyticsManagement />} />
+                      <Route path="reports" element={<UnifiedAnalyticsManagement />} />
+                      <Route path="history" element={<UnifiedAnalyticsManagement />} />
 
                       <Route path="bidding" element={<BiddingManagement />} />
                       <Route path="disputes" element={<DisputeManagement />} />
@@ -387,6 +391,13 @@ function App() {
                       <Route path="activity-logs" element={<ActivityLogs />} />
                       <Route path="enhanced-permissions" element={<EnhancedPermissions />} />
                       <Route path="advanced-settings" element={<AdvancedSettings />} />
+                      <Route path="onboarding" element={<OnboardingWizard />} />
+                      
+                      {/* Subscription & Billing Routes */}
+                      <Route path="subscriptions" element={<TenantSubscriptions />} />
+                      <Route path="subscription/plans" element={<SubscriptionPlans />} />
+                      <Route path="billing" element={<BillingDashboard />} />
+                      <Route path="billing/purchase-credits" element={<PurchaseCredits />} />
                     </Route>
 
                     {/* Tenant Admin Routes */}

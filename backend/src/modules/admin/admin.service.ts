@@ -201,10 +201,41 @@ export class AdminService {
     const where = tenantId ? ({ tenantId } as any) : ({} as any);
     const trucks = await this.truckRepo.find({
       where,
+      relations: ['currentDriver', 'owner'],
       take: 500,
       order: { createdAt: 'DESC' } as any,
     });
-    return { trucks };
+
+    // Format trucks with readable location data
+    const formattedTrucks = trucks.map(truck => {
+      let locationString = null;
+      let coordinates = null;
+
+      // Parse PostGIS Point object if it exists
+      if (truck.currentLocation) {
+        try {
+          // PostGIS returns location as { type: 'Point', coordinates: [lng, lat] }
+          const loc = truck.currentLocation as any;
+          if (loc.coordinates && Array.isArray(loc.coordinates)) {
+            const [lng, lat] = loc.coordinates;
+            coordinates = { latitude: lat, longitude: lng };
+            locationString = `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+          }
+        } catch (error) {
+          this.logger.warn(`Failed to parse location for truck ${truck.id}:`, error);
+        }
+      }
+
+      return {
+        ...truck,
+        currentLocationString: locationString,
+        coordinates,
+        ownerName: truck.owner ? `${(truck.owner as any).firstName || ''} ${(truck.owner as any).lastName || ''}`.trim() : null,
+        currentDriverName: null, // TODO: Load driver relation if needed
+      };
+    });
+
+    return { trucks: formattedTrucks };
   }
 
   async listAllLoads(tenantId?: string) {

@@ -47,6 +47,7 @@ export const UserRole = {
     TRUCK_OWNER: 'TRUCK_OWNER',
     DRIVER: 'DRIVER',
     AGENT: 'AGENT',
+    BROKER: 'BROKER',
     LENDER: 'LENDER'
 } as const;
 

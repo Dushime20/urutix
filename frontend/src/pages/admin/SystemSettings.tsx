@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { 
+import {
   FaCog, FaBell, FaDatabase, FaShieldAlt,
   FaPalette, FaCode, FaUsers, FaKey, FaHistory,
   FaEdit, FaSave, FaUndo, FaExclamationTriangle,
@@ -7,6 +7,7 @@ import {
   FaDownload, FaTrash, FaCheck, FaTimes
 } from 'react-icons/fa';
 import { TranslatedText } from '../../components/translated-text';
+import AdminPageLayout from '../../components/Admin/AdminPageLayout';
 
 const SystemSettings: React.FC = () => {
   const [activeSection, setActiveSection] = useState('general');
@@ -220,7 +221,7 @@ const SystemSettings: React.FC = () => {
           />
         </div>
       </div>
-      
+
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">Site Description</label>
         <textarea
@@ -333,7 +334,7 @@ const SystemSettings: React.FC = () => {
               className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
             />
           </div>
-          
+
           <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
             <div>
               <h4 className="font-medium text-gray-800">IP Whitelist</h4>
@@ -384,7 +385,7 @@ const SystemSettings: React.FC = () => {
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
             />
           </div>
-          
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Password Min Length</label>
             <input
@@ -394,7 +395,7 @@ const SystemSettings: React.FC = () => {
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
             />
           </div>
-          
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Max Login Attempts</label>
             <input
@@ -434,7 +435,7 @@ const SystemSettings: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-4">
           <h3 className="text-lg font-semibold text-gray-800">System Notifications</h3>
-          
+
           {Object.entries(settings.notifications).map(([key, value]) => (
             <div key={key} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
               <div>
@@ -473,7 +474,7 @@ const SystemSettings: React.FC = () => {
               </div>
               <p className="text-sm text-gray-600 mt-1">Email sent to new users</p>
             </button>
-            
+
             <button className="w-full text-left p-4 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
               <div className="flex items-center justify-between">
                 <span className="font-medium text-gray-800">Password Reset</span>
@@ -481,7 +482,7 @@ const SystemSettings: React.FC = () => {
               </div>
               <p className="text-sm text-gray-600 mt-1">Password reset instructions</p>
             </button>
-            
+
             <button className="w-full text-left p-4 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
               <div className="flex items-center justify-between">
                 <span className="font-medium text-gray-800">Shipment Updates</span>
@@ -524,13 +525,13 @@ const SystemSettings: React.FC = () => {
                 {showApiKey ? <FaEyeSlash /> : <FaEye />}
               </button>
             </div>
-            <button 
+            <button
               onClick={copyApiKey}
               className="px-4 py-2 bg-gray-600 text-white hover:bg-gray-700 transition-colors"
             >
               <FaCopy />
             </button>
-            <button 
+            <button
               onClick={regenerateApiKey}
               className="px-4 py-2 bg-purple-600 text-white rounded-r-lg hover:bg-purple-700 transition-colors"
             >
@@ -539,7 +540,7 @@ const SystemSettings: React.FC = () => {
           </div>
           <p className="text-xs text-gray-500 mt-1">Keep this key secure. Regenerating will invalidate all existing integrations.</p>
         </div>
-        
+
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">Requests per Minute</label>
           <input
@@ -564,7 +565,7 @@ const SystemSettings: React.FC = () => {
             className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
           />
         </div>
-        
+
         <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
           <div>
             <h4 className="font-medium text-gray-800">CORS</h4>
@@ -577,7 +578,7 @@ const SystemSettings: React.FC = () => {
             className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
           />
         </div>
-        
+
         <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
           <div>
             <h4 className="font-medium text-gray-800">Webhooks</h4>
@@ -695,9 +696,8 @@ const SystemSettings: React.FC = () => {
                 </p>
               </div>
               <div className="flex items-center space-x-2">
-                <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                  backup.status === 'completed' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                }`}>
+                <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${backup.status === 'completed' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                  }`}>
                   {backup.status}
                 </span>
                 <button className="text-blue-600 hover:text-blue-800 p-1">
@@ -742,19 +742,12 @@ const SystemSettings: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-800">
-            <TranslatedText text="System Settings" />
-          </h2>
-          <p className="text-gray-600">
-            <TranslatedText text="Configure platform settings and preferences" />
-          </p>
-        </div>
-        {unsavedChanges && (
-          <div className="flex space-x-3">
+    <AdminPageLayout
+      title="System Settings"
+      description="Configure platform settings and preferences"
+      actions={
+        unsavedChanges && (
+          <>
             <button
               onClick={handleReset}
               className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
@@ -770,9 +763,10 @@ const SystemSettings: React.FC = () => {
               {isLoading ? <FaSync className="animate-spin" /> : <FaSave />}
               <span>{isLoading ? <TranslatedText text="Saving..." /> : <TranslatedText text="Save Changes" />}</span>
             </button>
-          </div>
-        )}
-      </div>
+          </>
+        )
+      }
+    >
 
       <div className="flex flex-col lg:flex-row gap-6">
         {/* Sidebar */}
@@ -784,11 +778,10 @@ const SystemSettings: React.FC = () => {
                 <button
                   key={section.id}
                   onClick={() => setActiveSection(section.id)}
-                  className={`w-full flex items-center px-4 py-3 rounded-lg transition-colors ${
-                    activeSection === section.id
+                  className={`w-full flex items-center px-4 py-3 rounded-lg transition-colors ${activeSection === section.id
                       ? 'bg-purple-100 text-purple-700 border-l-4 border-purple-500'
                       : 'text-gray-600 hover:bg-gray-50'
-                  }`}
+                    }`}
                 >
                   <Icon className="mr-3" />
                   <span className="font-medium"><TranslatedText text={section.label} /></span>
@@ -808,7 +801,7 @@ const SystemSettings: React.FC = () => {
           {renderContent()}
         </div>
       </div>
-    </div>
+    </AdminPageLayout>
   );
 };
 

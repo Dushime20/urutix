@@ -58,6 +58,16 @@ import { Role } from '../entities/role.entity';
 import { UserPermissionOverride } from '../entities/user-permission-override.entity';
 import { SystemSettings } from '../entities/system-settings.entity';
 
+// Subscription entities
+import { SubscriptionPlan } from '../entities/subscription-plan.entity';
+import { TenantSubscription } from '../entities/tenant-subscription.entity';
+import { SubscriptionPayment } from '../entities/subscription-payment.entity';
+import { CreditAccount } from '../entities/credit-account.entity';
+import { CreditTransaction } from '../entities/credit-transaction.entity';
+import { CreditPackage } from '../entities/credit-package.entity';
+import { FeatureCreditCost } from '../entities/feature-credit-cost.entity';
+import { CreditPricingRule } from '../entities/credit-pricing-rule.entity';
+
 // Financial entities
 import {
   Invoice,
@@ -165,8 +175,17 @@ export const databaseConfig: TypeOrmModuleOptions = {
     Role,
     UserPermissionOverride,
     SystemSettings,
+    // Subscription entities
+    SubscriptionPlan,
+    TenantSubscription,
+    SubscriptionPayment,
+    CreditAccount,
+    CreditTransaction,
+    CreditPackage,
+    FeatureCreditCost,
+    CreditPricingRule,
   ],
-  synchronize: process.env.NODE_ENV !== 'production',
+  synchronize: false, // Disabled to prevent schema conflicts - use migrations instead
   autoLoadEntities: false,
   logging: process.env.NODE_ENV === 'development',
   ssl:
@@ -259,6 +278,15 @@ export const testDatabaseConfig: TypeOrmModuleOptions = {
     Role,
     UserPermissionOverride,
     SystemSettings,
+    // Subscription entities
+    SubscriptionPlan,
+    TenantSubscription,
+    SubscriptionPayment,
+    CreditAccount,
+    CreditTransaction,
+    CreditPackage,
+    FeatureCreditCost,
+    CreditPricingRule,
   ],
   synchronize: true,
   autoLoadEntities: false,

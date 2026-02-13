@@ -75,3 +75,37 @@ export class RevokeRolePermissionDto {
     @IsNotEmpty()
     permission: string;
 }
+
+export class CreateRoleDto {
+    @ApiProperty({ example: 'CONTENT_MANAGER' })
+    @IsString()
+    @IsNotEmpty()
+    name: string;
+
+    @ApiProperty({ example: 'Manages content and documentation' })
+    @IsString()
+    @IsOptional()
+    description?: string;
+
+    @ApiProperty({ example: ['cargo:view', 'cargo:create'], type: [String] })
+    @IsOptional()
+    permissionIds?: string[];
+}
+
+export class UpdateRoleDto {
+    @ApiProperty({ example: 'CONTENT_MANAGER' })
+    @IsString()
+    @IsOptional()
+    name?: string;
+
+    @ApiProperty({ example: 'Manages content and documentation' })
+    @IsString()
+    @IsOptional()
+    description?: string;
+}
+
+export class BulkAssignPermissionsDto {
+    @ApiProperty({ example: ['cargo:view', 'cargo:create', 'truck:view'], type: [String] })
+    @IsNotEmpty()
+    permissionIds: string[];
+}

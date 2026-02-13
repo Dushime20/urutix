@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { 
+import {
   FaTruck, FaEdit, FaTrash, FaPlus, FaSearch, FaFilter, FaDownload,
   FaEye, FaMapMarkerAlt, FaGasPump, FaTools, FaCheckCircle, FaExclamationTriangle
 } from 'react-icons/fa';
+import AdminPageLayout from '../../components/Admin/AdminPageLayout';
 
 interface Truck {
   id: string;
@@ -94,25 +95,23 @@ const FleetManagement: React.FC = () => {
 
   const filteredTrucks = trucks.filter(truck => {
     const matchesSearch = truck.plateNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         truck.make.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         truck.driver.toLowerCase().includes(searchTerm.toLowerCase());
+      truck.make.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      truck.driver.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = !filterStatus || truck.status === filterStatus;
     return matchesSearch && matchesStatus;
   });
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-800">Fleet Management</h2>
-          <p className="text-gray-600">Monitor and manage your truck fleet</p>
-        </div>
+    <AdminPageLayout
+      title="Fleet Management"
+      description="Monitor and manage your truck fleet"
+      actions={
         <button className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors">
           <FaPlus />
           <span>Add Truck</span>
         </button>
-      </div>
+      }
+    >
 
       {/* Filters */}
       <div className="bg-white rounded-xl shadow-lg p-6">
@@ -228,7 +227,7 @@ const FleetManagement: React.FC = () => {
                   <span className="text-gray-600">Fuel Level:</span>
                   <div className="flex items-center space-x-2">
                     <div className="w-16 h-2 bg-gray-200 rounded-full">
-                      <div 
+                      <div
                         className={`h-2 rounded-full ${getFuelLevelColor(truck.fuelLevel)}`}
                         style={{ width: `${truck.fuelLevel}%` }}
                       ></div>
@@ -263,7 +262,7 @@ const FleetManagement: React.FC = () => {
           </div>
         ))}
       </div>
-    </div>
+    </AdminPageLayout>
   );
 };
 

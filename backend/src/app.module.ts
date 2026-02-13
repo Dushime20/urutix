@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { APP_INTERCEPTOR } from '@nestjs/core';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -34,6 +35,8 @@ import { databaseConfig } from './config/database.config';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { EventsModule } from './modules/events/events.module';
 import { OnboardingModule } from './modules/onboarding/onboarding.module';
+import { PermissionHelper } from './utils/permission-helper';
+import { ActivityLogInterceptor } from './interceptors/activity-log.interceptor';
 
 @Module({
   imports: [
@@ -71,6 +74,14 @@ import { OnboardingModule } from './modules/onboarding/onboarding.module';
     OnboardingModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    PermissionHelper,
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: ActivityLogInterceptor,
+    },
+  ],
+  exports: [PermissionHelper],
 })
 export class AppModule { }

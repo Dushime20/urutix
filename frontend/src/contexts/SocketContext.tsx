@@ -30,7 +30,7 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         }
 
         // Use environment variable or default
-        const SOCKET_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+        const SOCKET_URL = import.meta.env.VITE_API_URL || import.meta.env.VITE_WEBSOCKET_URL || 'http://localhost:3002';
 
         console.log('Connecting to Global Socket:', `${SOCKET_URL}/events`);
 

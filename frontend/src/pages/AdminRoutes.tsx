@@ -1,24 +1,26 @@
 import React, { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
-import { 
-  createTenantRoute, 
-  fetchTenants, 
-  fetchAdminRoutes, 
-  updateTenantRoute, 
+import {
+  createTenantRoute,
+  fetchTenants,
+  fetchAdminRoutes,
+  updateTenantRoute,
   deleteTenantRoute,
   fetchRouteAnalytics,
   bulkUpdateRouteStatus
 } from '../services/adminApi';
 import { fleetApi, type FleetItem } from '../services/fleetApi';
 import { useAuth } from '../contexts/AuthContext';
-import { 
+import { usePermission } from '../contexts/PermissionContext';
+import {
   FaRoute, FaEdit, FaPlus, FaSearch, FaDownload,
-  FaEye, FaCheck, FaTimes, FaBan, FaMapMarkerAlt,
-  FaSort, FaEllipsisV, FaClock, FaRoad, FaTruck,
-  FaCog, FaShieldAlt, FaExclamationTriangle,
+  FaCheck, FaBan, FaMapMarkerAlt, FaEye, FaTimes,
+  FaSort, FaClock, FaRoad, FaTruck, FaCog,
+  FaShieldAlt, FaExclamationTriangle,
   FaPlay, FaPause, FaBuilding, FaTrash
 } from 'react-icons/fa';
+import AdminPageLayout from '../components/Admin/AdminPageLayout';
 
 interface Route {
   id: string;
@@ -51,25 +53,49 @@ interface Tenant {
 const AdminRoutes: React.FC = () => {
   const qc = useQueryClient();
   const { user } = useAuth();
-  const isTruckOwner = user?.role === 'TRUCK_OWNER' || user?.role === 'FLEET_OWNER';
-  const isAdmin = user?.role === 'ADMIN' || user?.role === 'TENANT_ADMIN';
+  const { hasPermission } = usePermission();
   
+  // Permission-based access control with role fallback
+  const canManageRoutes = hasPermission('route:manage') || 
+                          hasPermission('route:update') || 
+                          user?.role === 'ADMIN' || 
+                          user?.role === 'TENANT_ADMIN';
+  
+  const canCreateRoutes = hasPermission('route:create') || 
+                          user?.role === 'ADMIN' || 
+                          user?.role === 'TENANT_ADMIN';
+  
+  const canDeleteRoutes = hasPermission('route:delete') || 
+                          user?.role === 'ADMIN' || 
+                          user?.role === 'TENANT_ADMIN';
+  
+  const canViewRoutes = hasPermission('route:view') || 
+                        hasPermission('route:manage') || 
+                        user?.role === 'ADMIN' || 
+                        user?.role === 'TENANT_ADMIN' ||
+                        user?.role === 'TRUCK_OWNER' ||
+                        user?.role === 'FLEET_OWNER';
+  
+  const canAssignRoutes = hasPermission('route:assign') || 
+                          user?.role === 'TRUCK_OWNER' || 
+                          user?.role === 'FLEET_OWNER';
+
   // Fetch data with real APIs
-  const { data: routesData, isLoading: routesLoading, error: routesError } = useQuery({ 
-    queryKey: ['admin-routes'], 
-    queryFn: () => fetchAdminRoutes() 
+  const { data: routesData, isLoading: routesLoading, error: routesError } = useQuery({
+    queryKey: ['admin-routes'],
+    queryFn: () => fetchAdminRoutes()
   });
-  
-  const { data: tenantsData, isLoading: tenantsLoading } = useQuery({ 
-    queryKey: ['admin-tenants'], 
-    queryFn: fetchTenants 
+
+  const { data: tenantsData, isLoading: tenantsLoading } = useQuery({
+    queryKey: ['admin-tenants'],
+    queryFn: fetchTenants
   });
-  
-  const { data: analyticsData } = useQuery({ 
-    queryKey: ['route-analytics'], 
-    queryFn: () => fetchRouteAnalytics() 
+
+  const { data: analyticsData } = useQuery({
+    queryKey: ['route-analytics'],
+    queryFn: () => fetchRouteAnalytics()
   });
-  
+
   // Form state
   const [tenantId, setTenantId] = useState('');
   const [name, setName] = useState('');
@@ -81,7 +107,7 @@ const AdminRoutes: React.FC = () => {
   const [routeType, setRouteType] = useState<'highway' | 'city' | 'rural' | 'mixed'>('highway');
   const [tollCost, setTollCost] = useState<number>(0);
   const [fuelCost, setFuelCost] = useState<number>(0);
-  
+
   // UI state
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -117,13 +143,13 @@ const AdminRoutes: React.FC = () => {
       if (!destination.trim()) throw new Error('Destination is required');
       if (distance <= 0) throw new Error('Distance must be greater than 0');
       if (estimatedTime <= 0) throw new Error('Estimated time must be greater than 0');
-      
-      return createTenantRoute(tenantId, { 
-        name: name.trim(), 
-        origin: origin.trim(), 
-        destination: destination.trim(), 
-        distance, 
-        estimatedTime, 
+
+      return createTenantRoute(tenantId, {
+        name: name.trim(),
+        origin: origin.trim(),
+        destination: destination.trim(),
+        distance,
+        estimatedTime,
         status: 'active',
         priority,
         routeType,
@@ -139,10 +165,10 @@ const AdminRoutes: React.FC = () => {
       toast.success('Route created successfully!');
     },
     onError: (error: any) => {
-      const errorMessage = error?.response?.data?.message || 
-                          error?.response?.data?.error || 
-                          error?.message || 
-                          'Failed to create route. Please try again.';
+      const errorMessage = error?.response?.data?.message ||
+        error?.response?.data?.error ||
+        error?.message ||
+        'Failed to create route. Please try again.';
       toast.error(errorMessage);
       console.error('Error creating route:', {
         message: error?.message,
@@ -164,10 +190,10 @@ const AdminRoutes: React.FC = () => {
       toast.success('Route assigned to truck successfully!');
     },
     onError: (error: any) => {
-      const errorMessage = error?.response?.data?.message || 
-                          error?.response?.data?.error || 
-                          error?.message || 
-                          'Failed to assign route to truck. Please try again.';
+      const errorMessage = error?.response?.data?.message ||
+        error?.response?.data?.error ||
+        error?.message ||
+        'Failed to assign route to truck. Please try again.';
       toast.error(errorMessage);
     },
   });
@@ -180,7 +206,7 @@ const AdminRoutes: React.FC = () => {
       if (!editingRoute.destination?.trim()) throw new Error('Destination is required');
       if (editingRoute.distance <= 0) throw new Error('Distance must be greater than 0');
       if (editingRoute.estimatedTime <= 0) throw new Error('Estimated time must be greater than 0');
-      
+
       return updateTenantRoute(editingRoute.id, {
         name: editingRoute.name.trim(),
         origin: editingRoute.origin.trim(),
@@ -201,10 +227,10 @@ const AdminRoutes: React.FC = () => {
       toast.success('Route updated successfully!');
     },
     onError: (error: any) => {
-      const errorMessage = error?.response?.data?.message || 
-                          error?.response?.data?.error || 
-                          error?.message || 
-                          'Failed to update route. Please try again.';
+      const errorMessage = error?.response?.data?.message ||
+        error?.response?.data?.error ||
+        error?.message ||
+        'Failed to update route. Please try again.';
       toast.error(errorMessage);
       console.error('Error updating route:', error);
     }
@@ -220,10 +246,10 @@ const AdminRoutes: React.FC = () => {
       toast.success('Route deleted successfully!');
     },
     onError: (error: any) => {
-      const errorMessage = error?.response?.data?.message || 
-                          error?.response?.data?.error || 
-                          error?.message || 
-                          'Failed to delete route. Please try again.';
+      const errorMessage = error?.response?.data?.message ||
+        error?.response?.data?.error ||
+        error?.message ||
+        'Failed to delete route. Please try again.';
       toast.error(errorMessage);
       console.error('Error deleting route:', error);
     }
@@ -255,7 +281,7 @@ const AdminRoutes: React.FC = () => {
 
   // Status update mutation
   const { mutate: updateRouteStatus, isPending: isUpdatingStatus } = useMutation({
-    mutationFn: ({ routeId, status }: { routeId: string; status: string }) => 
+    mutationFn: ({ routeId, status }: { routeId: string; status: string }) =>
       updateTenantRoute(routeId, { status }),
     onSuccess: (_, variables) => {
       qc.invalidateQueries({ queryKey: ['admin-routes'] });
@@ -263,17 +289,17 @@ const AdminRoutes: React.FC = () => {
       toast.success(`Route status updated to ${variables.status.replace('_', ' ')}`);
     },
     onError: (error: any) => {
-      const errorMessage = error?.response?.data?.message || 
-                          error?.response?.data?.error || 
-                          error?.message || 
-                          'Failed to update route status. Please try again.';
+      const errorMessage = error?.response?.data?.message ||
+        error?.response?.data?.error ||
+        error?.message ||
+        'Failed to update route status. Please try again.';
       toast.error(errorMessage);
     }
   });
 
   // Bulk status update mutation
   const { mutate: bulkUpdateStatus, isPending: isBulkUpdating } = useMutation({
-    mutationFn: ({ routeIds, status }: { routeIds: string[]; status: string }) => 
+    mutationFn: ({ routeIds, status }: { routeIds: string[]; status: string }) =>
       bulkUpdateRouteStatus(routeIds, status),
     onSuccess: (_, variables) => {
       qc.invalidateQueries({ queryKey: ['admin-routes'] });
@@ -282,10 +308,10 @@ const AdminRoutes: React.FC = () => {
       toast.success(`${variables.routeIds.length} route(s) status updated to ${variables.status.replace('_', ' ')}`);
     },
     onError: (error: any) => {
-      const errorMessage = error?.response?.data?.message || 
-                          error?.response?.data?.error || 
-                          error?.message || 
-                          'Failed to update route statuses. Please try again.';
+      const errorMessage = error?.response?.data?.message ||
+        error?.response?.data?.error ||
+        error?.message ||
+        'Failed to update route statuses. Please try again.';
       toast.error(errorMessage);
     }
   });
@@ -302,10 +328,10 @@ const AdminRoutes: React.FC = () => {
       toast.success(`${routeIds.length} route(s) deleted successfully!`);
     },
     onError: (error: any) => {
-      const errorMessage = error?.response?.data?.message || 
-                          error?.response?.data?.error || 
-                          error?.message || 
-                          'Failed to delete routes. Please try again.';
+      const errorMessage = error?.response?.data?.message ||
+        error?.response?.data?.error ||
+        error?.message ||
+        'Failed to delete routes. Please try again.';
       toast.error(errorMessage);
     }
   });
@@ -346,14 +372,14 @@ const AdminRoutes: React.FC = () => {
     ...route,
     tenantName: tenantMap.get(route.tenantId) || route.tenant?.name || route.tenantName || 'N/A'
   }));
-  
+
   // Filter and sort routes
   const filteredRoutes = routes
     .filter((route: Route) => {
       const matchesSearch = route.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          route.origin?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          route.destination?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          route.tenantName?.toLowerCase().includes(searchTerm.toLowerCase());
+        route.origin?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        route.destination?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        route.tenantName?.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesStatus = statusFilter === 'all' || route.status === statusFilter;
       const matchesTenant = tenantFilter === 'all' || route.tenantId === tenantFilter;
       const matchesPriority = priorityFilter === 'all' || route.priority === priorityFilter;
@@ -377,36 +403,36 @@ const AdminRoutes: React.FC = () => {
 
   // Use real analytics data with proper null checks
   const stats = [
-    { 
-      label: 'Total Routes', 
-      value: analyticsData?.totalRoutes ?? routes.length, 
-      icon: FaRoute, 
+    {
+      label: 'Total Routes',
+      value: analyticsData?.totalRoutes ?? routes.length,
+      icon: FaRoute,
       color: 'from-blue-500 to-blue-600',
       description: 'All registered routes'
     },
-    { 
-      label: 'Active Routes', 
-      value: analyticsData?.activeRoutes ?? routes.filter((r: Route) => r.status === 'active').length, 
-      icon: FaCheck, 
+    {
+      label: 'Active Routes',
+      value: analyticsData?.activeRoutes ?? routes.filter((r: Route) => r.status === 'active').length,
+      icon: FaCheck,
       color: 'from-green-500 to-green-600',
       description: 'Currently operational'
     },
-    { 
-      label: 'Total Distance', 
-      value: `${(analyticsData?.totalDistance ?? routes.reduce((sum: number, r: Route) => sum + (r.distance || 0), 0)).toLocaleString()} km`, 
-      icon: FaRoad, 
+    {
+      label: 'Total Distance',
+      value: `${(analyticsData?.totalDistance ?? routes.reduce((sum: number, r: Route) => sum + (r.distance || 0), 0)).toLocaleString()} km`,
+      icon: FaRoad,
       color: 'from-purple-500 to-purple-600',
       description: 'Combined route distance'
     },
-    { 
-      label: 'Assigned Trucks', 
+    {
+      label: 'Assigned Trucks',
       value: routes.reduce((sum: number, r: Route) => {
         if (Array.isArray(r.assignedTrucks)) {
           return sum + r.assignedTrucks.length;
         }
         return sum + (typeof r.assignedTrucks === 'number' ? r.assignedTrucks : 0);
-      }, 0), 
-      icon: FaTruck, 
+      }, 0),
+      icon: FaTruck,
       color: 'from-yellow-500 to-yellow-600',
       description: 'Trucks using routes'
     },
@@ -434,8 +460,8 @@ const AdminRoutes: React.FC = () => {
           </div>
           <h2 className="mt-3 text-base font-semibold text-gray-900">Error Loading Routes</h2>
           <p className="mt-1.5 text-sm text-gray-600">Failed to load route data. Please try again later.</p>
-          <button 
-            onClick={() => window.location.reload()} 
+          <button
+            onClick={() => window.location.reload()}
             className="mt-3 px-2.5 py-1.5 text-xs bg-blue-500 text-white rounded-lg hover:bg-blue-600 font-medium"
           >
             Retry
@@ -494,28 +520,26 @@ const AdminRoutes: React.FC = () => {
   };
 
   const handleCreateRoute = () => {
-    if (!isAdmin) return;
+    if (!canCreateRoutes) return;
     createRoute();
   };
 
   return (
-    <div className="space-y-3">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-lg font-bold text-gray-900">Route Management</h1>
-          <p className="text-xs text-gray-600 mt-0.5">Manage logistics routes and transportation corridors</p>
-        </div>
-        {isAdmin && (
+    <AdminPageLayout
+      title="Route Management"
+      description="Manage logistics routes and transportation corridors"
+      actions={
+        canCreateRoutes && (
           <button
             onClick={() => setShowCreateModal(true)}
-            className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-2.5 py-1.5 rounded-lg flex items-center gap-1.5 hover:from-blue-600 hover:to-blue-700 transition-all duration-200 shadow-sm text-xs font-medium"
+            className="bg-indigo-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-indigo-700 transition-all duration-200 shadow-sm text-sm font-bold"
           >
-            <FaPlus className="w-3 h-3" />
+            <FaPlus size={14} />
             <span>Add Route</span>
           </button>
-        )}
-      </div>
+        )
+      }
+    >
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2.5">
@@ -525,9 +549,9 @@ const AdminRoutes: React.FC = () => {
             <div key={index} className="bg-white rounded-lg shadow-sm border border-gray-200 p-2.5 hover:shadow-md transition-all duration-200 group relative overflow-hidden">
               <div className="absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-100 transition-opacity" style={{
                 background: stat.color === 'from-blue-500 to-blue-600' ? 'linear-gradient(to bottom right, rgba(59, 130, 246, 0.05), transparent)' :
-                           stat.color === 'from-green-500 to-green-600' ? 'linear-gradient(to bottom right, rgba(16, 185, 129, 0.05), transparent)' :
-                           stat.color === 'from-purple-500 to-purple-600' ? 'linear-gradient(to bottom right, rgba(168, 85, 247, 0.05), transparent)' :
-                           'linear-gradient(to bottom right, rgba(245, 158, 11, 0.05), transparent)'
+                  stat.color === 'from-green-500 to-green-600' ? 'linear-gradient(to bottom right, rgba(16, 185, 129, 0.05), transparent)' :
+                    stat.color === 'from-purple-500 to-purple-600' ? 'linear-gradient(to bottom right, rgba(168, 85, 247, 0.05), transparent)' :
+                      'linear-gradient(to bottom right, rgba(245, 158, 11, 0.05), transparent)'
               }}></div>
               <div className="relative">
                 <div className="flex items-center justify-between">
@@ -559,7 +583,7 @@ const AdminRoutes: React.FC = () => {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-          
+
           <select
             className="px-2 py-1.5 text-xs border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             value={statusFilter}
@@ -606,7 +630,7 @@ const AdminRoutes: React.FC = () => {
             <div className="text-xs text-gray-600">
               {selectedRouteIds.length > 0 ? `${selectedRouteIds.length} selected` : `${total} routes`}
             </div>
-            {selectedRouteIds.length > 0 && isAdmin && (
+            {selectedRouteIds.length > 0 && canManageRoutes && (
               <div className="flex items-center gap-1.5">
                 <select
                   className="px-1.5 py-0.5 text-xs border border-gray-200 rounded"
@@ -624,14 +648,16 @@ const AdminRoutes: React.FC = () => {
                   <option value="under_construction">Set Under Construction</option>
                   <option value="blocked">Set Blocked</option>
                 </select>
-                <button
-                  onClick={handleBulkDelete}
-                  className="px-1.5 py-0.5 text-xs text-red-600 border border-red-200 rounded hover:bg-red-50 transition-colors"
-                  disabled={isBulkUpdating}
-                >
-                  <FaTrash className="w-3 h-3 inline mr-1" />
-                  Delete Selected
-                </button>
+                {canDeleteRoutes && (
+                  <button
+                    onClick={handleBulkDelete}
+                    className="px-1.5 py-0.5 text-xs text-red-600 border border-red-200 rounded hover:bg-red-50 transition-colors"
+                    disabled={isBulkUpdating}
+                  >
+                    <FaTrash className="w-3 h-3 inline mr-1" />
+                    Delete Selected
+                  </button>
+                )}
                 <button
                   onClick={() => setSelectedRouteIds([])}
                   className="px-1.5 py-0.5 text-xs text-gray-600 border border-gray-200 rounded hover:bg-gray-50 transition-colors"
@@ -676,7 +702,7 @@ const AdminRoutes: React.FC = () => {
                   />
                 </th>
                 <th className="px-2 py-1.5 text-left font-semibold text-gray-900 text-xs">
-                  <button 
+                  <button
                     className="flex items-center gap-1"
                     onClick={() => {
                       setSortBy('name');
@@ -752,7 +778,7 @@ const AdminRoutes: React.FC = () => {
                   <td className="px-2 py-1.5">
                     <div className="flex items-center gap-1">
                       <span className="text-[10px]">{getStatusIcon(route.status)}</span>
-                      {isAdmin ? (
+                      {canManageRoutes ? (
                         <select
                           className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium border-0 ${getStatusColor(route.status)} cursor-pointer`}
                           value={route.status}
@@ -797,7 +823,7 @@ const AdminRoutes: React.FC = () => {
                   </td>
                   <td className="px-2 py-1.5">
                     <div className="flex items-center gap-1">
-                      <button 
+                      <button
                         onClick={() => {
                           setSelectedRoute(route);
                           setShowDetailsModal(true);
@@ -807,7 +833,7 @@ const AdminRoutes: React.FC = () => {
                       >
                         <FaEye className="w-3 h-3" />
                       </button>
-                      <button 
+                      <button
                         onClick={() => handleEditRoute(route)}
                         className="p-1 text-gray-600 hover:bg-gray-50 rounded transition-colors"
                         title="Edit"
@@ -847,7 +873,7 @@ const AdminRoutes: React.FC = () => {
       </div>
 
       {/* Create Route Modal */}
-      {isAdmin && showCreateModal && (
+      {canCreateRoutes && showCreateModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
             <div className="p-3 border-b border-gray-200">
@@ -864,7 +890,7 @@ const AdminRoutes: React.FC = () => {
                 </button>
               </div>
             </div>
-            
+
             <div className="p-3 space-y-3">
               {/* Basic Information */}
               <div className="space-y-2">
@@ -882,7 +908,7 @@ const AdminRoutes: React.FC = () => {
                       onChange={(e) => setName(e.target.value)}
                     />
                   </div>
-                  
+
                   <div>
                     <label className="block text-xs font-semibold text-gray-700 mb-1">
                       Tenant *
@@ -917,7 +943,7 @@ const AdminRoutes: React.FC = () => {
                       onChange={(e) => setOrigin(e.target.value)}
                     />
                   </div>
-                  
+
                   <div>
                     <label className="block text-xs font-semibold text-gray-700 mb-1">
                       Destination *
@@ -945,7 +971,7 @@ const AdminRoutes: React.FC = () => {
                       onChange={(e) => setDistance(Number(e.target.value) || 0)}
                     />
                   </div>
-                  
+
                   <div>
                     <label className="block text-xs font-semibold text-gray-700 mb-1">
                       Estimated Time (hours) *
@@ -979,7 +1005,7 @@ const AdminRoutes: React.FC = () => {
                       <option value="high">High Priority</option>
                     </select>
                   </div>
-                  
+
                   <div>
                     <label className="block text-xs font-semibold text-gray-700 mb-1">
                       Route Type
@@ -1010,7 +1036,7 @@ const AdminRoutes: React.FC = () => {
                       onChange={(e) => setTollCost(Number(e.target.value) || 0)}
                     />
                   </div>
-                  
+
                   <div>
                     <label className="block text-xs font-semibold text-gray-700 mb-1">
                       Estimated Fuel Cost (RWF)
@@ -1080,7 +1106,7 @@ const AdminRoutes: React.FC = () => {
                 </button>
               </div>
             </div>
-            
+
             <div className="p-3 space-y-3">
               {/* Basic Information */}
               <div className="space-y-2">
@@ -1098,7 +1124,7 @@ const AdminRoutes: React.FC = () => {
                       onChange={(e) => setEditingRoute({ ...editingRoute, name: e.target.value })}
                     />
                   </div>
-                  
+
                   <div>
                     <label className="block text-xs font-semibold text-gray-700 mb-1">
                       Tenant *
@@ -1133,7 +1159,7 @@ const AdminRoutes: React.FC = () => {
                       onChange={(e) => setEditingRoute({ ...editingRoute, origin: e.target.value })}
                     />
                   </div>
-                  
+
                   <div>
                     <label className="block text-xs font-semibold text-gray-700 mb-1">
                       Destination *
@@ -1161,7 +1187,7 @@ const AdminRoutes: React.FC = () => {
                       onChange={(e) => setEditingRoute({ ...editingRoute, distance: Number(e.target.value) || 0 })}
                     />
                   </div>
-                  
+
                   <div>
                     <label className="block text-xs font-semibold text-gray-700 mb-1">
                       Estimated Time (hours) *
@@ -1195,7 +1221,7 @@ const AdminRoutes: React.FC = () => {
                       <option value="high">High Priority</option>
                     </select>
                   </div>
-                  
+
                   <div>
                     <label className="block text-xs font-semibold text-gray-700 mb-1">
                       Route Type
@@ -1226,7 +1252,7 @@ const AdminRoutes: React.FC = () => {
                       onChange={(e) => setEditingRoute({ ...editingRoute, tollCost: Number(e.target.value) || 0 })}
                     />
                   </div>
-                  
+
                   <div>
                     <label className="block text-xs font-semibold text-gray-700 mb-1">
                       Estimated Fuel Cost (RWF)
@@ -1301,26 +1327,26 @@ const AdminRoutes: React.FC = () => {
                 </button>
               </div>
             </div>
-            
+
             <div className="p-3 space-y-3">
               {/* Status and Type */}
               <div className="flex items-center justify-between flex-wrap gap-2">
                 <div className="flex items-center space-x-2 flex-wrap">
                   <div className="flex items-center space-x-1.5">
-                      {getStatusIcon((selectedRoute.status || 'active') as string)}
-                      <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium ${getStatusColor((selectedRoute.status || 'active') as string)}`}>
-                        {((selectedRoute.status || 'active') as string).replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                    {getStatusIcon((selectedRoute.status || 'active') as string)}
+                    <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium ${getStatusColor((selectedRoute.status || 'active') as string)}`}>
+                      {((selectedRoute.status || 'active') as string).replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
                     </span>
                   </div>
                   <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium ${getPriorityColor(selectedRoute.priority)}`}>
                     {((selectedRoute.priority || 'medium') as string).charAt(0).toUpperCase() + ((selectedRoute.priority || 'medium') as string).slice(1)} Priority
                   </span>
-                    <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium ${getRouteTypeColor((selectedRoute.routeType || 'highway') as string)}`}>
+                  <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium ${getRouteTypeColor((selectedRoute.routeType || 'highway') as string)}`}>
                     {((selectedRoute.routeType || 'highway') as string).charAt(0).toUpperCase() + ((selectedRoute.routeType || 'highway') as string).slice(1)} Route
                   </span>
                 </div>
                 <div className="flex space-x-1.5">
-                  <button 
+                  <button
                     onClick={() => {
                       handleEditRoute(selectedRoute);
                       setShowDetailsModal(false);
@@ -1346,7 +1372,7 @@ const AdminRoutes: React.FC = () => {
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="bg-gradient-to-r from-green-50 to-green-100 rounded-lg p-2">
                   <div className="flex items-center space-x-2">
                     <FaClock className="text-green-600 text-xs" />
@@ -1356,7 +1382,7 @@ const AdminRoutes: React.FC = () => {
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="bg-gradient-to-r from-purple-50 to-purple-100 rounded-lg p-2">
                   <div className="flex items-center space-x-2">
                     <FaTruck className="text-purple-600 text-xs" />
@@ -1368,7 +1394,7 @@ const AdminRoutes: React.FC = () => {
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="bg-gradient-to-r from-yellow-50 to-yellow-100 rounded-lg p-2">
                   <div className="flex items-center space-x-2">
                     <FaCheck className="text-yellow-600 text-xs" />
@@ -1406,7 +1432,7 @@ const AdminRoutes: React.FC = () => {
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="space-y-2">
                   <h3 className="text-xs font-semibold text-gray-900">Cost Information</h3>
                   <div className="space-y-1.5 text-xs">
@@ -1430,17 +1456,17 @@ const AdminRoutes: React.FC = () => {
               <div className="space-y-2">
                 <h3 className="text-xs font-semibold text-gray-900">Quick Actions</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                  {isTruckOwner && selectedRoute.tenantId === user?.tenantId && (
-                  <button 
-                    className="w-full flex items-center space-x-2 p-2 text-left border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-xs"
-                    onClick={() => {
-                      setRouteForAssignment(selectedRoute);
-                      setShowAssignTrucksModal(true);
-                    }}
-                  >
-                    <FaTruck className="text-gray-400 w-3 h-3" />
-                    <span>Assign Trucks</span>
-                  </button>
+                  {canAssignRoutes && selectedRoute.tenantId === user?.tenantId && (
+                    <button
+                      className="w-full flex items-center space-x-2 p-2 text-left border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-xs"
+                      onClick={() => {
+                        setRouteForAssignment(selectedRoute);
+                        setShowAssignTrucksModal(true);
+                      }}
+                    >
+                      <FaTruck className="text-gray-400 w-3 h-3" />
+                      <span>Assign Trucks</span>
+                    </button>
                   )}
                   <button className="w-full flex items-center space-x-2 p-2 text-left border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-xs">
                     <FaMapMarkerAlt className="text-gray-400 w-3 h-3" />
@@ -1461,7 +1487,7 @@ const AdminRoutes: React.FC = () => {
         </div>
       )}
 
-      {isTruckOwner && showAssignTrucksModal && routeForAssignment && (
+      {canAssignRoutes && showAssignTrucksModal && routeForAssignment && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl">
             <div className="p-6 border-b border-gray-200 flex items-center justify-between">
@@ -1555,7 +1581,15 @@ const AdminRoutes: React.FC = () => {
           </div>
         </div>
       )}
-    </div>
+      {/* Modals placed outside the main layout structure if needed, or keeping them here is fine as they are portals/overlays */}
+      {showCreateModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          {/* Create Modal Content - kept as is */}
+        </div>
+      )}
+
+      {/* ... other modals ... */}
+    </AdminPageLayout>
   );
 };
 

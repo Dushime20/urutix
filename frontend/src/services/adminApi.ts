@@ -175,8 +175,19 @@ export const getTenantById = async (tenantId: string) => {
 
 // Update tenant
 export const updateTenant = async (tenantId: string, payload: any) => {
-  const res = await api.put(`/tenants/${tenantId}`, payload);
-  return res.data;
+  console.log('🔄 updateTenant API call:', { tenantId, payload });
+  try {
+    const res = await api.put(`/tenants/${tenantId}`, payload);
+    console.log('✅ updateTenant success:', res.data);
+    return res.data;
+  } catch (error: any) {
+    console.error('❌ updateTenant error:', error);
+    console.error('Error response:', error?.response);
+    console.error('Error status:', error?.response?.status);
+    console.error('Error data:', error?.response?.data);
+    console.error('Error headers:', error?.response?.headers);
+    throw error;
+  }
 };
 
 // Activate tenant

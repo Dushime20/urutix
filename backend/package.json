@@ -49,6 +49,16 @@
     "seed:users": "ts-node src/scripts/seed-users.ts",
     "seed:matching": "ts-node -r tsconfig-paths/register src/scripts/seed-matching-data.ts",
     "seed:matching-demo": "ts-node -r tsconfig-paths/register src/scripts/seed-matching-demo.ts",
-    "seed:matching-algorithms": "ts-node -r tsconfig-paths/register src/scripts/seed-matching-algorithms-test.ts"
+    "seed:matching-algorithms": "ts-node -r tsconfig-paths/register src/scripts/seed-matching-algorithms-test.ts",
+    "seed:subscriptions": "node seed-all-subscriptions.js",
+    "seed:subscription-plans": "node seed-subscription-plans.js",
+    "seed:credit-packages": "node seed-credit-packages.js",
+    "seed:feature-costs": "node seed-feature-credit-costs.js",
+    "seed:tenant-subscriptions": "node seed-tenant-subscriptions.js",
+    "seed:pricing-rules": "node seed-pricing-rules.js",
+    "migrate:subscriptions": "node run-subscription-migration.js",
+    "migrate:pricing": "node run-pricing-migration.js",
+    "check:subscription-data": "node check-subscription-data.js",
+    "test:credit-deduction": "node test-credit-deduction.js"
   }
 }

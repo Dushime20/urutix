@@ -1,15 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useLocation } from 'react-router-dom';
 import {
     FaDownload,
     FaExclamationTriangle, FaTimesCircle,
-    FaDesktop, FaMobile, FaGlobe, FaSync
+    FaDesktop, FaMobile, FaGlobe, FaSync,
+    FaFilter, FaChartLine, FaUser, FaClock,
+    FaSearch, FaEye, FaShieldAlt, FaBuilding
 } from 'react-icons/fa';
-import { FileText, Activity } from 'lucide-react';
+import { FileText, Activity, TrendingUp } from 'lucide-react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import { useSocket } from '../../contexts/SocketContext';
-import AdminHeader from '../../components/Admin/AdminHeader';
+import AdminPageLayout from '../../components/Admin/AdminPageLayout';
 
 interface ActivityLog {
     id: string;
@@ -35,21 +38,37 @@ interface UserSession {
 }
 
 const ActivityLogs: React.FC = () => {
-    const [activeTab, setActiveTab] = useState<'logs' | 'sessions'>('logs');
+    const location = useLocation();
+    const [activeTab, setActiveTab] = useState<'logs' | 'sessions' | 'analytics'>('logs');
     const [filters, setFilters] = useState({
         action: '',
         resource: '',
         isSuspicious: '',
         startDate: '',
         endDate: '',
+        search: '',
         page: 1,
     });
+    const [showFilters, setShowFilters] = useState(true);
+    const [selectedLog, setSelectedLog] = useState<ActivityLog | null>(null);
+    const [tenantFilter, setTenantFilter] = useState<{ id: string; name: string } | null>(null);
 
     const { socket, connected: socketConnected } = useSocket();
 
+    // Handle incoming tenant filter from navigation
+    useEffect(() => {
+        if (location.state?.filterTenantId && location.state?.filterTenantName) {
+            setTenantFilter({
+                id: location.state.filterTenantId,
+                name: location.state.filterTenantName
+            });
+            toast.success(`Filtering logs for tenant: ${location.state.filterTenantName}`);
+        }
+    }, [location.state]);
+
     // Fetch activity logs
     const { data: logsData, isLoading: logsLoading, refetch: refetchLogs } = useQuery({
-        queryKey: ['activity-logs', filters],
+        queryKey: ['activity-logs', filters, tenantFilter],
         queryFn: async () => {
             const params = new URLSearchParams();
             if (filters.action) params.append('action', filters.action);
@@ -57,6 +76,8 @@ const ActivityLogs: React.FC = () => {
             if (filters.isSuspicious) params.append('isSuspicious', filters.isSuspicious);
             if (filters.startDate) params.append('startDate', filters.startDate);
             if (filters.endDate) params.append('endDate', filters.endDate);
+            if (filters.search) params.append('search', filters.search);
+            if (tenantFilter?.id) params.append('tenantId', tenantFilter.id);
             params.append('page', filters.page.toString());
             params.append('limit', '50');
 
@@ -82,6 +103,16 @@ const ActivityLogs: React.FC = () => {
             const response = await axios.get('/api/admin/activity-logs/suspicious/list?limit=10');
             return response.data;
         },
+    });
+
+    // Fetch analytics data
+    const { data: analyticsData, isLoading: analyticsLoading } = useQuery({
+        queryKey: ['activity-analytics'],
+        queryFn: async () => {
+            const response = await axios.get('/api/admin/activity-logs/analytics');
+            return response.data;
+        },
+        enabled: activeTab === 'analytics',
     });
 
     // Socket listeners
@@ -169,272 +200,549 @@ const ActivityLogs: React.FC = () => {
     };
 
     return (
-        <div className="min-h-screen bg-slate-50 font-sans">
-            {/* Dark Header */}
-            <div className="bg-[#0f172a] text-white">
-                <AdminHeader
-                    searchPlaceholder="Search activities..."
-                    customRightContent={
-                        <div className={`w-3 h-3 rounded-full ${socketConnected ? 'bg-green-500' : 'bg-red-500'} ring-2 ring-white/10`} title={socketConnected ? 'Real-time updates active' : 'Disconnected from real-time stream'}></div>
-                    }
-                />
+        <AdminPageLayout
+            title="Activity Logs & Sessions"
+            description="Monitor user activities, track sessions, and detect suspicious behavior across the platform"
+            actions={
+                <div className="flex items-center gap-3">
+                    {socketConnected && (
+                        <div className="flex items-center gap-2 px-3 py-2 bg-green-50 border border-green-200 rounded-lg">
+                            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                            <span className="text-xs font-medium text-green-700">Live</span>
+                        </div>
+                    )}
+                    <button
+                        onClick={() => setShowFilters(!showFilters)}
+                        className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-medium transition-all"
+                    >
+                        <FaFilter size={14} /> {showFilters ? 'Hide' : 'Show'} Filters
+                    </button>
+                    <button
+                        onClick={() => activeTab === 'logs' ? refetchLogs() : refetchSessions()}
+                        className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold shadow-md transition-all"
+                    >
+                        <FaSync size={14} /> Refresh
+                    </button>
+                    {activeTab === 'logs' && (
+                        <button
+                            onClick={handleExport}
+                            className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold shadow-md transition-all"
+                        >
+                            <FaDownload size={14} /> Export
+                        </button>
+                    )}
+                </div>
+            }
+        >
 
-                {/* Hero Section */}
-                <div className="bg-gradient-to-b from-[#0f172a] to-[#1e293b]">
-                    <div className="max-w-[1536px] mx-auto px-4 md:px-8 lg:px-12 xl:px-20 py-8 pb-12 flex flex-col md:flex-row md:items-center justify-between gap-6">
-                        <div>
-                            <h1 className="text-3xl md:text-4xl font-black text-white mb-2 tracking-tight">Activity Logs & Sessions</h1>
-                            <p className="text-slate-400 max-w-xl">Monitor user activities, track sessions, and detect suspicious behavior across the platform.</p>
-                        </div>
-                        <div className="flex items-center gap-3">
-                            <button
-                                onClick={() => activeTab === 'logs' ? refetchLogs() : refetchSessions()}
-                                className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-bold shadow-lg shadow-blue-600/20 transition-all"
-                            >
-                                <FaSync size={14} /> Refresh
-                            </button>
-                            {activeTab === 'logs' && (
-                                <button
-                                    onClick={handleExport}
-                                    className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-bold shadow-lg shadow-emerald-600/20 transition-all"
-                                >
-                                    <FaDownload size={14} /> Export CSV
-                                </button>
-                            )}
-                        </div>
+            {/* Statistics Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-4 text-white shadow-lg">
+                    <div className="flex items-center justify-between mb-2">
+                        <Activity className="w-8 h-8 opacity-80" />
+                        <span className="text-2xl font-bold">{logsData?.total || 0}</span>
                     </div>
+                    <p className="text-sm opacity-90">Total Activities</p>
+                    <p className="text-xs opacity-75 mt-1">Last 24 hours</p>
+                </div>
+
+                <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-4 text-white shadow-lg">
+                    <div className="flex items-center justify-between mb-2">
+                        <FaDesktop className="w-8 h-8 opacity-80" />
+                        <span className="text-2xl font-bold">{sessionsData?.length || 0}</span>
+                    </div>
+                    <p className="text-sm opacity-90">Active Sessions</p>
+                    <p className="text-xs opacity-75 mt-1">Currently online</p>
+                </div>
+
+                <div className="bg-gradient-to-br from-red-500 to-red-600 rounded-xl p-4 text-white shadow-lg">
+                    <div className="flex items-center justify-between mb-2">
+                        <FaShieldAlt className="w-8 h-8 opacity-80" />
+                        <span className="text-2xl font-bold">{suspiciousData?.length || 0}</span>
+                    </div>
+                    <p className="text-sm opacity-90">Suspicious Activities</p>
+                    <p className="text-xs opacity-75 mt-1">Requires attention</p>
+                </div>
+
+                <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-4 text-white shadow-lg">
+                    <div className="flex items-center justify-between mb-2">
+                        <FaUser className="w-8 h-8 opacity-80" />
+                        <span className="text-2xl font-bold">{analyticsData?.uniqueUsers || 0}</span>
+                    </div>
+                    <p className="text-sm opacity-90">Active Users</p>
+                    <p className="text-xs opacity-75 mt-1">Last 24 hours</p>
                 </div>
             </div>
 
-            <main className="max-w-[1536px] mx-auto px-4 md:px-8 lg:px-12 xl:px-20 -mt-8 pb-12">
-
-                {/* Suspicious Activities Alert */}
-                {suspiciousData && suspiciousData.length > 0 && (
-                    <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6 rounded-r-lg">
-                        <div className="flex items-center gap-3">
-                            <FaExclamationTriangle className="text-red-500 text-xl" />
-                            <div>
-                                <h3 className="font-bold text-red-800">Suspicious Activity Detected</h3>
-                                <p className="text-sm text-red-600">{suspiciousData.length} suspicious activities require your attention</p>
-                            </div>
+            {/* Suspicious Activities Alert */}
+            {suspiciousData && suspiciousData.length > 0 && (
+                <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6 rounded-r-lg">
+                    <div className="flex items-center gap-3">
+                        <FaExclamationTriangle className="text-red-500 text-xl" />
+                        <div>
+                            <h3 className="font-bold text-red-800">Suspicious Activity Detected</h3>
+                            <p className="text-sm text-red-600">{suspiciousData.length} suspicious activities require your attention</p>
                         </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Tabs */}
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 mb-6">
+                <div className="border-b border-slate-200">
+                    <nav className="flex gap-1 px-4">
+                        <button
+                            onClick={() => setActiveTab('logs')}
+                            className={`py-3 px-4 border-b-2 font-bold text-sm transition-colors ${activeTab === 'logs'
+                                ? 'border-indigo-600 text-indigo-600'
+                                : 'border-transparent text-slate-500 hover:text-slate-700'
+                                }`}
+                        >
+                            <div className="flex items-center gap-2">
+                                <FileText size={16} />
+                                Activity Logs
+                                {logsData?.total && (
+                                    <span className="px-2 py-0.5 bg-indigo-100 text-indigo-600 rounded-full text-xs font-bold">
+                                        {logsData.total}
+                                    </span>
+                                )}
+                            </div>
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('sessions')}
+                            className={`py-3 px-4 border-b-2 font-bold text-sm transition-colors ${activeTab === 'sessions'
+                                ? 'border-indigo-600 text-indigo-600'
+                                : 'border-transparent text-slate-500 hover:text-slate-700'
+                                }`}
+                        >
+                            <div className="flex items-center gap-2">
+                                <FaDesktop size={16} />
+                                Active Sessions
+                                {sessionsData?.length > 0 && (
+                                    <span className="px-2 py-0.5 bg-green-100 text-green-600 rounded-full text-xs font-bold">
+                                        {sessionsData.length}
+                                    </span>
+                                )}
+                            </div>
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('analytics')}
+                            className={`py-3 px-4 border-b-2 font-bold text-sm transition-colors ${activeTab === 'analytics'
+                                ? 'border-indigo-600 text-indigo-600'
+                                : 'border-transparent text-slate-500 hover:text-slate-700'
+                                }`}
+                        >
+                            <div className="flex items-center gap-2">
+                                <FaChartLine size={16} />
+                                Analytics
+                            </div>
+                        </button>
+                    </nav>
+                </div>
+
+                {/* Activity Logs Tab */}
+                {activeTab === 'logs' && (
+                    <div className="p-6">
+                        {/* Filters */}
+                        {showFilters && (
+                            <div className="mb-6 p-4 bg-slate-50 rounded-lg border border-slate-200">
+                                {/* Search Bar */}
+                                <div className="mb-4">
+                                    <div className="relative">
+                                        <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" />
+                                        <input
+                                            type="text"
+                                            placeholder="Search by user email, IP address, or resource..."
+                                            value={filters.search}
+                                            onChange={(e) => setFilters({ ...filters, search: e.target.value, page: 1 })}
+                                            className="w-full pl-10 pr-4 py-2.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                        />
+                                    </div>
+                                </div>
+
+                                {/* Filter Grid */}
+                                <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+                                    <select
+                                        value={filters.action}
+                                        onChange={(e) => setFilters({ ...filters, action: e.target.value, page: 1 })}
+                                        className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500"
+                                    >
+                                        <option value="">All Actions</option>
+                                        <option value="LOGIN">Login</option>
+                                        <option value="LOGOUT">Logout</option>
+                                        <option value="CREATE">Create</option>
+                                        <option value="UPDATE">Update</option>
+                                        <option value="DELETE">Delete</option>
+                                        <option value="VIEW">View</option>
+                                    </select>
+
+                                    <select
+                                        value={filters.resource}
+                                        onChange={(e) => setFilters({ ...filters, resource: e.target.value, page: 1 })}
+                                        className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500"
+                                    >
+                                        <option value="">All Resources</option>
+                                        <option value="users">Users</option>
+                                        <option value="loads">Loads</option>
+                                        <option value="trucks">Trucks</option>
+                                        <option value="payments">Payments</option>
+                                        <option value="permissions">Permissions</option>
+                                        <option value="roles">Roles</option>
+                                    </select>
+
+                                    <select
+                                        value={filters.isSuspicious}
+                                        onChange={(e) => setFilters({ ...filters, isSuspicious: e.target.value, page: 1 })}
+                                        className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500"
+                                    >
+                                        <option value="">All Activities</option>
+                                        <option value="true">Suspicious Only</option>
+                                        <option value="false">Normal Only</option>
+                                    </select>
+
+                                    <input
+                                        type="date"
+                                        value={filters.startDate}
+                                        onChange={(e) => setFilters({ ...filters, startDate: e.target.value, page: 1 })}
+                                        placeholder="Start Date"
+                                        className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500"
+                                    />
+
+                                    <input
+                                        type="date"
+                                        value={filters.endDate}
+                                        onChange={(e) => setFilters({ ...filters, endDate: e.target.value, page: 1 })}
+                                        placeholder="End Date"
+                                        className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500"
+                                    />
+                                </div>
+
+                                {/* Quick Filters */}
+                                <div className="flex items-center gap-2 mt-3 flex-wrap">
+                                    <span className="text-xs font-medium text-slate-600">Quick Filters:</span>
+                                    <button
+                                        onClick={() => setFilters({ ...filters, startDate: new Date().toISOString().split('T')[0], endDate: '', page: 1 })}
+                                        className="px-3 py-1 text-xs bg-white border border-slate-300 rounded-md hover:bg-slate-50 transition-colors"
+                                    >
+                                        Today
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            const date = new Date();
+                                            date.setDate(date.getDate() - 7);
+                                            setFilters({ ...filters, startDate: date.toISOString().split('T')[0], endDate: '', page: 1 });
+                                        }}
+                                        className="px-3 py-1 text-xs bg-white border border-slate-300 rounded-md hover:bg-slate-50 transition-colors"
+                                    >
+                                        Last 7 Days
+                                    </button>
+                                    <button
+                                        onClick={() => setFilters({ ...filters, isSuspicious: 'true', page: 1 })}
+                                        className="px-3 py-1 text-xs bg-red-50 border border-red-200 text-red-700 rounded-md hover:bg-red-100 transition-colors"
+                                    >
+                                        Suspicious Only
+                                    </button>
+                                    
+                                    {/* Tenant Filter Badge */}
+                                    {tenantFilter && (
+                                        <div className="flex items-center gap-2 px-3 py-1 bg-indigo-50 border border-indigo-200 rounded-md">
+                                            <FaBuilding className="text-indigo-600 text-xs" />
+                                            <span className="text-xs font-medium text-indigo-700">
+                                                Tenant: {tenantFilter.name}
+                                            </span>
+                                            <button
+                                                onClick={() => setTenantFilter(null)}
+                                                className="ml-1 text-indigo-600 hover:text-indigo-800"
+                                            >
+                                                <FaTimesCircle className="text-xs" />
+                                            </button>
+                                        </div>
+                                    )}
+                                    
+                                    <button
+                                        onClick={() => {
+                                            setFilters({ action: '', resource: '', isSuspicious: '', startDate: '', endDate: '', search: '', page: 1 });
+                                            setTenantFilter(null);
+                                        }}
+                                        className="px-3 py-1 text-xs bg-slate-200 text-slate-700 rounded-md hover:bg-slate-300 transition-colors ml-auto"
+                                    >
+                                        Clear All
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
+                        {logsLoading ? (
+                            <div className="text-center py-12">
+                                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
+                                <p className="mt-4 text-slate-600">Loading activities...</p>
+                            </div>
+                        ) : logsData?.activities?.length === 0 ? (
+                            <div className="text-center py-16">
+                                <Activity className="w-16 h-16 text-slate-300 mx-auto mb-4" />
+                                <h3 className="text-lg font-bold text-slate-700 mb-2">No Activities Found</h3>
+                                <p className="text-slate-500">Try adjusting your filters or check back later.</p>
+                            </div>
+                        ) : (
+                            <div className="space-y-3">
+                                {logsData?.activities?.map((log: ActivityLog) => (
+                                    <div
+                                        key={log.id}
+                                        onClick={() => setSelectedLog(log)}
+                                        className={`p-4 rounded-lg border cursor-pointer ${log.isSuspicious
+                                            ? 'border-red-200 bg-red-50 hover:border-red-300'
+                                            : 'border-slate-200 bg-white hover:border-indigo-300 hover:shadow-md'
+                                            } transition-all`}
+                                    >
+                                        <div className="flex items-start justify-between">
+                                            <div className="flex-1">
+                                                <div className="flex items-center gap-3 mb-2 flex-wrap">
+                                                    <span className={`px-2.5 py-1 rounded-md text-xs font-bold ${getActionColor(log.action)}`}>
+                                                        {log.action}
+                                                    </span>
+                                                    {log.resource && (
+                                                        <span className="text-sm text-slate-600 font-medium">
+                                                            {log.resource} {log.resourceId && `#${log.resourceId.slice(0, 8)}`}
+                                                        </span>
+                                                    )}
+                                                    {log.isSuspicious && (
+                                                        <span className="flex items-center gap-1 px-2 py-1 bg-red-100 text-red-700 rounded-md text-xs font-bold">
+                                                            <FaExclamationTriangle /> Suspicious
+                                                        </span>
+                                                    )}
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setSelectedLog(log);
+                                                        }}
+                                                        className="ml-auto text-indigo-600 hover:text-indigo-700 text-sm font-medium flex items-center gap-1"
+                                                    >
+                                                        <FaEye size={14} /> Details
+                                                    </button>
+                                                </div>
+                                                <div className="flex items-center gap-4 text-sm text-slate-600 flex-wrap">
+                                                    <span className="flex items-center gap-1.5 font-medium">
+                                                        <FaUser size={12} /> {log.user?.email || 'Unknown User'}
+                                                    </span>
+                                                    <span className="flex items-center gap-1.5">
+                                                        <FaGlobe size={12} /> {log.ipAddress}
+                                                    </span>
+                                                    <span className="flex items-center gap-1.5">
+                                                        <FaClock size={12} /> {new Date(log.createdAt).toLocaleString()}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+
+                                {/* Pagination */}
+                                {logsData && logsData.totalPages > 1 && (
+                                    <div className="flex items-center justify-between pt-4">
+                                        <p className="text-sm text-slate-600">
+                                            Page {logsData.page} of {logsData.totalPages} ({logsData.total} total)
+                                        </p>
+                                        <div className="flex gap-2">
+                                            <button
+                                                onClick={() => setFilters({ ...filters, page: filters.page - 1 })}
+                                                disabled={filters.page === 1}
+                                                className="px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm font-medium hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                            >
+                                                Previous
+                                            </button>
+                                            <button
+                                                onClick={() => setFilters({ ...filters, page: filters.page + 1 })}
+                                                disabled={filters.page === logsData.totalPages}
+                                                className="px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm font-medium hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                            >
+                                                Next
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
                     </div>
                 )}
 
-                {/* Tabs */}
-                <div className="bg-white rounded-xl shadow-sm border border-slate-200 mb-6">
-                    <div className="border-b border-slate-200">
-                        <nav className="flex gap-1 px-4">
-                            <button
-                                onClick={() => setActiveTab('logs')}
-                                className={`py-3 px-4 border-b-2 font-bold text-sm transition-colors ${activeTab === 'logs'
-                                    ? 'border-indigo-600 text-indigo-600'
-                                    : 'border-transparent text-slate-500 hover:text-slate-700'
-                                    }`}
-                            >
-                                <div className="flex items-center gap-2">
-                                    <FileText size={16} />
-                                    Activity Logs
-                                </div>
-                            </button>
-                            <button
-                                onClick={() => setActiveTab('sessions')}
-                                className={`py-3 px-4 border-b-2 font-bold text-sm transition-colors ${activeTab === 'sessions'
-                                    ? 'border-indigo-600 text-indigo-600'
-                                    : 'border-transparent text-slate-500 hover:text-slate-700'
-                                    }`}
-                            >
-                                <div className="flex items-center gap-2">
-                                    <FaDesktop size={16} />
-                                    Active Sessions ({sessionsData?.length || 0})
-                                </div>
-                            </button>
-                        </nav>
-                    </div>
-
-                    {/* Activity Logs Tab */}
-                    {activeTab === 'logs' && (
-                        <div className="p-6">
-                            {/* Filters */}
-                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                                <select
-                                    value={filters.action}
-                                    onChange={(e) => setFilters({ ...filters, action: e.target.value, page: 1 })}
-                                    className="px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500"
-                                >
-                                    <option value="">All Actions</option>
-                                    <option value="LOGIN">Login</option>
-                                    <option value="LOGOUT">Logout</option>
-                                    <option value="CREATE">Create</option>
-                                    <option value="UPDATE">Update</option>
-                                    <option value="DELETE">Delete</option>
-                                </select>
-
-                                <select
-                                    value={filters.resource}
-                                    onChange={(e) => setFilters({ ...filters, resource: e.target.value, page: 1 })}
-                                    className="px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500"
-                                >
-                                    <option value="">All Resources</option>
-                                    <option value="users">Users</option>
-                                    <option value="loads">Loads</option>
-                                    <option value="trucks">Trucks</option>
-                                    <option value="payments">Payments</option>
-                                </select>
-
-                                <select
-                                    value={filters.isSuspicious}
-                                    onChange={(e) => setFilters({ ...filters, isSuspicious: e.target.value, page: 1 })}
-                                    className="px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500"
-                                >
-                                    <option value="">All Activities</option>
-                                    <option value="true">Suspicious Only</option>
-                                    <option value="false">Normal Only</option>
-                                </select>
-
-                                <input
-                                    type="date"
-                                    value={filters.startDate}
-                                    onChange={(e) => setFilters({ ...filters, startDate: e.target.value, page: 1 })}
-                                    className="px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500"
-                                />
+                {/* Sessions Tab */}
+                {activeTab === 'sessions' && (
+                    <div className="p-6">
+                        {sessionsLoading ? (
+                            <div className="text-center py-12">
+                                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
+                                <p className="mt-4 text-slate-600">Loading sessions...</p>
                             </div>
-
-                            {/* Activity List */}
-                            {logsLoading ? (
-                                <div className="text-center py-12">
-                                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
-                                    <p className="mt-4 text-slate-600">Loading activities...</p>
-                                </div>
-                            ) : (
-                                <div className="space-y-3">
-                                    {logsData?.activities?.map((log: ActivityLog) => (
-                                        <div
-                                            key={log.id}
-                                            className={`p-4 rounded-lg border ${log.isSuspicious
-                                                ? 'border-red-200 bg-red-50'
-                                                : 'border-slate-200 bg-white hover:border-indigo-200'
-                                                } transition-colors`}
-                                        >
-                                            <div className="flex items-start justify-between">
-                                                <div className="flex-1">
-                                                    <div className="flex items-center gap-3 mb-2">
-                                                        <span className={`px-2 py-1 rounded-md text-xs font-bold ${getActionColor(log.action)}`}>
-                                                            {log.action}
-                                                        </span>
-                                                        {log.resource && (
-                                                            <span className="text-sm text-slate-600">
-                                                                {log.resource} {log.resourceId && `#${log.resourceId.slice(0, 8)}`}
-                                                            </span>
-                                                        )}
-                                                        {log.isSuspicious && (
-                                                            <span className="flex items-center gap-1 text-xs text-red-600 font-bold">
-                                                                <FaExclamationTriangle /> Suspicious
-                                                            </span>
-                                                        )}
+                        ) : sessionsData?.length === 0 ? (
+                            <div className="text-center py-16">
+                                <FaDesktop className="w-16 h-16 text-slate-300 mx-auto mb-4" />
+                                <h3 className="text-lg font-bold text-slate-700 mb-2">No Active Sessions</h3>
+                                <p className="text-slate-500">There are currently no active user sessions.</p>
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {sessionsData?.map((session: UserSession) => (
+                                    <div key={session.id} className="p-4 bg-white border border-slate-200 rounded-lg hover:border-indigo-200 hover:shadow-md transition-all">
+                                        <div className="flex items-start justify-between mb-3">
+                                            <div className="flex items-center gap-3">
+                                                {session.deviceInfo?.isMobile ? (
+                                                    <div className="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center">
+                                                        <FaMobile className="text-indigo-600 text-lg" />
                                                     </div>
-                                                    <div className="flex items-center gap-4 text-sm text-slate-600">
-                                                        <span className="font-medium">{log.user?.email || 'Unknown User'}</span>
-                                                        <span className="flex items-center gap-1">
-                                                            <FaGlobe size={12} /> {log.ipAddress}
-                                                        </span>
-                                                        <span>{new Date(log.createdAt).toLocaleString()}</span>
+                                                ) : (
+                                                    <div className="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center">
+                                                        <FaDesktop className="text-indigo-600 text-lg" />
                                                     </div>
+                                                )}
+                                                <div>
+                                                    <p className="font-bold text-slate-800">{session.user?.email}</p>
+                                                    <p className="text-xs text-slate-500">
+                                                        {session.deviceInfo?.browser} on {session.deviceInfo?.os}
+                                                    </p>
                                                 </div>
                                             </div>
+                                            <button
+                                                onClick={() => terminateSession(session.id)}
+                                                className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                                title="Terminate session"
+                                            >
+                                                <FaTimesCircle size={18} />
+                                            </button>
                                         </div>
-                                    ))}
-
-                                    {/* Pagination */}
-                                    {logsData && logsData.totalPages > 1 && (
-                                        <div className="flex items-center justify-between pt-4">
-                                            <p className="text-sm text-slate-600">
-                                                Page {logsData.page} of {logsData.totalPages} ({logsData.total} total)
-                                            </p>
-                                            <div className="flex gap-2">
-                                                <button
-                                                    onClick={() => setFilters({ ...filters, page: filters.page - 1 })}
-                                                    disabled={filters.page === 1}
-                                                    className="px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm font-medium hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                                                >
-                                                    Previous
-                                                </button>
-                                                <button
-                                                    onClick={() => setFilters({ ...filters, page: filters.page + 1 })}
-                                                    disabled={filters.page === logsData.totalPages}
-                                                    className="px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm font-medium hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                                                >
-                                                    Next
-                                                </button>
+                                        <div className="grid grid-cols-2 gap-3 text-sm">
+                                            <div>
+                                                <p className="text-slate-500 text-xs mb-1">IP Address</p>
+                                                <p className="font-medium text-slate-700">{session.ipAddress}</p>
+                                            </div>
+                                            <div>
+                                                <p className="text-slate-500 text-xs mb-1">Location</p>
+                                                <p className="font-medium text-slate-700">{session.location?.city || 'Unknown'}, {session.location?.country || 'N/A'}</p>
+                                            </div>
+                                            <div>
+                                                <p className="text-slate-500 text-xs mb-1">Last Activity</p>
+                                                <p className="font-medium text-slate-700">{new Date(session.lastActivity).toLocaleString()}</p>
+                                            </div>
+                                            <div>
+                                                <p className="text-slate-500 text-xs mb-1">Session Started</p>
+                                                <p className="font-medium text-slate-700">{new Date(session.createdAt).toLocaleString()}</p>
                                             </div>
                                         </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {/* Analytics Tab */}
+                {activeTab === 'analytics' && (
+                    <div className="p-6">
+                        {analyticsLoading ? (
+                            <div className="text-center py-12">
+                                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
+                                <p className="mt-4 text-slate-600">Loading analytics...</p>
+                            </div>
+                        ) : (
+                            <div className="space-y-6">
+                                {/* Coming Soon Message */}
+                                <div className="text-center py-16 bg-gradient-to-br from-indigo-50 to-purple-50 rounded-xl border border-indigo-100">
+                                    <TrendingUp className="w-16 h-16 text-indigo-400 mx-auto mb-4" />
+                                    <h3 className="text-xl font-bold text-slate-800 mb-2">Analytics Dashboard Coming Soon</h3>
+                                    <p className="text-slate-600 max-w-md mx-auto">
+                                        We're building comprehensive analytics to help you understand activity patterns, user behavior, and security trends.
+                                    </p>
+                                    <div className="mt-6 flex items-center justify-center gap-4 text-sm text-slate-600">
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                                            <span>Activity Trends</span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                                            <span>User Insights</span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                                            <span>Security Reports</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                )}
+            </div>
+
+            {/* Activity Details Modal */}
+            {selectedLog && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setSelectedLog(null)}>
+                    <div className="bg-white rounded-xl max-w-2xl w-full max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+                        <div className="sticky top-0 bg-white border-b border-slate-200 p-4 flex items-center justify-between">
+                            <h3 className="text-lg font-bold text-slate-800">Activity Details</h3>
+                            <button
+                                onClick={() => setSelectedLog(null)}
+                                className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+                            >
+                                <FaTimesCircle className="text-slate-400" />
+                            </button>
+                        </div>
+                        <div className="p-6 space-y-4">
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <p className="text-sm text-slate-500 mb-1">Action</p>
+                                    <span className={`inline-block px-3 py-1 rounded-md text-sm font-bold ${getActionColor(selectedLog.action)}`}>
+                                        {selectedLog.action}
+                                    </span>
+                                </div>
+                                <div>
+                                    <p className="text-sm text-slate-500 mb-1">Resource</p>
+                                    <p className="font-medium text-slate-800">{selectedLog.resource || 'N/A'}</p>
+                                </div>
+                                <div>
+                                    <p className="text-sm text-slate-500 mb-1">User</p>
+                                    <p className="font-medium text-slate-800">{selectedLog.user?.email || 'Unknown'}</p>
+                                </div>
+                                <div>
+                                    <p className="text-sm text-slate-500 mb-1">IP Address</p>
+                                    <p className="font-medium text-slate-800">{selectedLog.ipAddress}</p>
+                                </div>
+                                <div>
+                                    <p className="text-sm text-slate-500 mb-1">Timestamp</p>
+                                    <p className="font-medium text-slate-800">{new Date(selectedLog.createdAt).toLocaleString()}</p>
+                                </div>
+                                <div>
+                                    <p className="text-sm text-slate-500 mb-1">Status</p>
+                                    {selectedLog.isSuspicious ? (
+                                        <span className="inline-flex items-center gap-1 px-2 py-1 bg-red-100 text-red-700 rounded-md text-sm font-bold">
+                                            <FaExclamationTriangle /> Suspicious
+                                        </span>
+                                    ) : (
+                                        <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 rounded-md text-sm font-bold">
+                                            <FaShieldAlt /> Normal
+                                        </span>
                                     )}
                                 </div>
-                            )}
-                        </div>
-                    )}
-
-                    {/* Sessions Tab */}
-                    {activeTab === 'sessions' && (
-                        <div className="p-6">
-                            {sessionsLoading ? (
-                                <div className="text-center py-12">
-                                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
-                                    <p className="mt-4 text-slate-600">Loading sessions...</p>
+                            </div>
+                            {selectedLog.userAgent && (
+                                <div>
+                                    <p className="text-sm text-slate-500 mb-1">User Agent</p>
+                                    <p className="text-sm text-slate-700 bg-slate-50 p-3 rounded-lg font-mono break-all">
+                                        {selectedLog.userAgent}
+                                    </p>
                                 </div>
-                            ) : (
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    {sessionsData?.map((session: UserSession) => (
-                                        <div key={session.id} className="p-4 bg-white border border-slate-200 rounded-lg hover:border-indigo-200 transition-colors">
-                                            <div className="flex items-start justify-between mb-3">
-                                                <div className="flex items-center gap-3">
-                                                    {session.deviceInfo?.isMobile ? (
-                                                        <FaMobile className="text-indigo-600 text-xl" />
-                                                    ) : (
-                                                        <FaDesktop className="text-indigo-600 text-xl" />
-                                                    )}
-                                                    <div>
-                                                        <p className="font-bold text-slate-800">{session.user?.email}</p>
-                                                        <p className="text-xs text-slate-500">
-                                                            {session.deviceInfo?.browser} on {session.deviceInfo?.os}
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                                <button
-                                                    onClick={() => terminateSession(session.id)}
-                                                    className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                                                    title="Terminate session"
-                                                >
-                                                    <FaTimesCircle size={18} />
-                                                </button>
-                                            </div>
-                                            <div className="grid grid-cols-2 gap-2 text-sm">
-                                                <div>
-                                                    <p className="text-slate-500">IP Address</p>
-                                                    <p className="font-medium">{session.ipAddress}</p>
-                                                </div>
-                                                <div>
-                                                    <p className="text-slate-500">Location</p>
-                                                    <p className="font-medium">{session.location?.city || 'Unknown'}, {session.location?.country || 'N/A'}</p>
-                                                </div>
-                                                <div>
-                                                    <p className="text-slate-500">Last Activity</p>
-                                                    <p className="font-medium">{new Date(session.lastActivity).toLocaleString()}</p>
-                                                </div>
-                                                <div>
-                                                    <p className="text-slate-500">Session Started</p>
-                                                    <p className="font-medium">{new Date(session.createdAt).toLocaleString()}</p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    ))}
+                            )}
+                            {selectedLog.details && Object.keys(selectedLog.details).length > 0 && (
+                                <div>
+                                    <p className="text-sm text-slate-500 mb-1">Additional Details</p>
+                                    <pre className="text-xs text-slate-700 bg-slate-50 p-3 rounded-lg overflow-x-auto">
+                                        {JSON.stringify(selectedLog.details, null, 2)}
+                                    </pre>
                                 </div>
                             )}
                         </div>
-                    )}
+                    </div>
                 </div>
-            </main>
-        </div>
+            )}
+        </AdminPageLayout>
     );
 };
 

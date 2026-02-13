@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, UseGuards, Req, Logger, Query } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards, Req, Logger, Query } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiOkResponse } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from './roles.guard';
@@ -162,5 +162,98 @@ export class AdminPermissionsController {
         );
         this.logger.log(`Permission ${dto.permission} revoked from ROLE ${dto.role} by ${adminId}`);
         return { success: true, message: 'Role permission revoked successfully' };
+    }
+
+    @Get('roles')
+    @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN)
+    @ApiOperation({ summary: 'List all roles with their permissions' })
+    @ApiOkResponse({ description: 'List of all roles' })
+    async getAllRoles() {
+        const roles = await this.permissionService.getAllRoles();
+        return { success: true, data: roles };
+    }
+
+    @Get('roles/:roleId')
+    @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN)
+    @ApiOperation({ summary: 'Get a specific role by ID' })
+    @ApiOkResponse({ description: 'Role details with permissions' })
+    async getRoleById(@Param('roleId') roleId: string) {
+        const role = await this.permissionService.getRoleById(roleId);
+        if (!role) {
+            return { success: false, message: 'Role not found' };
+        }
+        return { success: true, data: role };
+    }
+
+    @Post('roles')
+    @Roles(UserRole.SUPER_ADMIN)
+    @ApiOperation({ summary: 'Create a new custom role' })
+    @ApiOkResponse({ description: 'Role created successfully' })
+    async createRole(
+        @Body() dto: any,
+        @Req() req: Request,
+    ) {
+        const adminId = req['user']?.userId;
+        const role = await this.permissionService.createRole(
+            dto.name,
+            dto.description,
+            dto.permissionIds || [],
+            adminId
+        );
+        this.logger.log(`Role ${dto.name} created by ${adminId}`);
+        return { success: true, data: role, message: 'Role created successfully' };
+    }
+
+    @Put('roles/:roleId')
+    @Roles(UserRole.SUPER_ADMIN)
+    @ApiOperation({ summary: 'Update a role (name and description)' })
+    @ApiOkResponse({ description: 'Role updated successfully' })
+    async updateRole(
+        @Param('roleId') roleId: string,
+        @Body() dto: any,
+        @Req() req: Request,
+    ) {
+        const adminId = req['user']?.userId;
+        const role = await this.permissionService.updateRole(
+            roleId,
+            dto.name,
+            dto.description,
+            adminId
+        );
+        this.logger.log(`Role ${roleId} updated by ${adminId}`);
+        return { success: true, data: role, message: 'Role updated successfully' };
+    }
+
+    @Delete('roles/:roleId')
+    @Roles(UserRole.SUPER_ADMIN)
+    @ApiOperation({ summary: 'Delete a custom role' })
+    @ApiOkResponse({ description: 'Role deleted successfully' })
+    async deleteRole(
+        @Param('roleId') roleId: string,
+        @Req() req: Request,
+    ) {
+        const adminId = req['user']?.userId;
+        await this.permissionService.deleteRole(roleId, adminId);
+        this.logger.log(`Role ${roleId} deleted by ${adminId}`);
+        return { success: true, message: 'Role deleted successfully' };
+    }
+
+    @Post('roles/:roleId/bulk-assign')
+    @Roles(UserRole.SUPER_ADMIN)
+    @ApiOperation({ summary: 'Bulk assign permissions to a role' })
+    @ApiOkResponse({ description: 'Permissions assigned successfully' })
+    async bulkAssignPermissions(
+        @Param('roleId') roleId: string,
+        @Body() dto: any,
+        @Req() req: Request,
+    ) {
+        const adminId = req['user']?.userId;
+        await this.permissionService.bulkAssignPermissions(
+            roleId,
+            dto.permissionIds || [],
+            adminId
+        );
+        this.logger.log(`Bulk permissions assigned to role ${roleId} by ${adminId}`);
+        return { success: true, message: 'Permissions assigned successfully' };
     }
 }

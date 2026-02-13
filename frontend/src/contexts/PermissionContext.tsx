@@ -39,6 +39,7 @@ export const PermissionProvider = ({ children }: PermissionProviderProps) => {
     const { user } = useAuth();
     const [permissions, setPermissions] = useState<string[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [rolePermissionsCache, setRolePermissionsCache] = useState<Record<string, string[]>>({});
 
     const fetchPermissions = async () => {
         if (!user) {
@@ -49,16 +50,63 @@ export const PermissionProvider = ({ children }: PermissionProviderProps) => {
 
         try {
             setIsLoading(true);
-            const response = await axios.get('/api/auth/permissions');
+            const token = localStorage.getItem('accessToken');
+            const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3002/api';
+            
+            // Fetch user-specific permissions
+            const response = await axios.get(`${baseURL}/auth/permissions`, {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            });
 
+            let userPermissions: string[] = [];
             if (response.data.success) {
-                setPermissions(response.data.data.permissions || []);
-            } else {
-                console.error('Failed to fetch permissions:', response.data.message);
-                setPermissions([]);
+                userPermissions = response.data.data || response.data.data?.permissions || [];
             }
-        } catch (error) {
+
+            // Fetch role-based permissions from database if not cached
+            let rolePermissions: string[] = [];
+            if (user.role && !rolePermissionsCache[user.role]) {
+                try {
+                    const rolesResponse = await axios.get(`${baseURL}/admin/permissions/roles`, {
+                        headers: {
+                            Authorization: `Bearer ${token}`
+                        }
+                    });
+
+                    const roles = rolesResponse.data?.data || [];
+                    const role = roles.find((r: any) => r.name === user.role);
+                    
+                    if (role) {
+                        rolePermissions = role.permissions.map((p: any) => `${p.resource}:${p.action}`);
+                        
+                        // Cache role permissions
+                        setRolePermissionsCache(prev => ({
+                            ...prev,
+                            [user.role]: rolePermissions
+                        }));
+                    }
+                } catch (roleError) {
+                    console.warn('Could not fetch role permissions from database, using user permissions only:', roleError);
+                }
+            } else if (user.role && rolePermissionsCache[user.role]) {
+                rolePermissions = rolePermissionsCache[user.role];
+            }
+
+            // Merge user-specific and role-based permissions (user-specific takes precedence)
+            const allPermissions = Array.from(new Set([...rolePermissions, ...userPermissions]));
+            setPermissions(allPermissions);
+
+        } catch (error: any) {
             console.error('Error fetching permissions:', error);
+            
+            // If it's a 500 error, the permissions system might not be set up yet
+            // Set empty permissions array and continue (don't block the app)
+            if (error?.response?.status === 500) {
+                console.warn('Permissions system not available (500 error). Using role-based access only.');
+            }
+            
             setPermissions([]);
         } finally {
             setIsLoading(false);
