@@ -5,8 +5,8 @@
   "description": "UrutiX Smart Logistic - Intelligent logistics and fleet management platform",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc && vite build",
+    "dev": "node init && vite",
+    "build": "node init && tsc && vite build",
     "lint": "eslint .",
     "preview": "vite preview"
   },
