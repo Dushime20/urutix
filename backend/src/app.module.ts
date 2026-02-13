@@ -32,6 +32,7 @@ import { ReceiversModule } from './modules/receivers/receivers.module';
 import { BrokersModule } from './modules/brokers/brokers.module';
 import { FuelModule } from './modules/fuel/fuel.module';
 import { TenantSubscriptionsModule } from './modules/tenant-subscriptions/tenant-subscriptions.module';
+import { GovernanceModule } from './modules/governance/governance.module';
 import { databaseConfig } from './config/database.config';
 import { ThrottlerModule } from '@nestjs/throttler';
 
@@ -70,6 +71,7 @@ import { ThrottlerModule } from '@nestjs/throttler';
     BrokersModule,
     FuelModule,
     TenantSubscriptionsModule,
+    GovernanceModule,
   ],
   controllers: [AppController],
   providers: [AppService],

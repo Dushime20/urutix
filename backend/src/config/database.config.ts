@@ -53,6 +53,8 @@ import {
   BrokerTransporterPerformance,
 } from '../entities/broker-intelligence.entity';
 import { FuelLog } from '../entities/fuel-log.entity';
+import { TenantPlan } from '../entities/tenant-plan.entity';
+import { UserSubscription } from '../entities/user-subscription.entity';
 
 
 // Financial entities
@@ -159,6 +161,9 @@ export const databaseConfig: TypeOrmModuleOptions = {
     LoadMatch,
     // Fuel entities
     FuelLog,
+    // Tenant Subscription entities
+    TenantPlan,
+    UserSubscription,
 
   ],
   synchronize: false,
@@ -249,6 +254,9 @@ export const testDatabaseConfig: TypeOrmModuleOptions = {
     BrokerTransporterPerformance,
     // Fuel entities
     FuelLog,
+    // Tenant Subscription entities
+    TenantPlan,
+    UserSubscription,
   ],
   synchronize: true,
   autoLoadEntities: false,

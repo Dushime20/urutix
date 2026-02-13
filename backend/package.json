@@ -57,7 +57,11 @@
     "seed:users": "ts-node src/scripts/seed-users.ts",
     "seed:matching": "ts-node -r tsconfig-paths/register src/scripts/seed-matching-data.ts",
     "seed:matching-demo": "ts-node -r tsconfig-paths/register src/scripts/seed-matching-demo.ts",
-    "seed:matching-algorithms": "ts-node -r tsconfig-paths/register src/scripts/seed-matching-algorithms-test.ts"
+    "seed:matching-algorithms": "ts-node -r tsconfig-paths/register src/scripts/seed-matching-algorithms-test.ts",
+    "redis:health": "node scripts/check-redis.js",
+    "redis:start": "docker-compose -f docker-compose.redis.yml up -d",
+    "redis:stop": "docker-compose -f docker-compose.redis.yml down",
+    "redis:logs": "docker-compose -f docker-compose.redis.yml logs -f redis"
   },
   "devDependencies": {
     "@nestjs/cli": "^11.0.14",
@@ -66,6 +70,7 @@
   },
   "dependencies": {
     "@nestjs/axios": "^4.0.1",
+    "@nestjs/cache-manager": "^3.1.0",
     "@nestjs/common": "^11.1.11",
     "@nestjs/config": "^4.0.2",
     "@nestjs/core": "^11.1.11",
@@ -87,6 +92,8 @@
     "@types/pg": "^8.16.0",
     "axios": "^1.13.3",
     "bcryptjs": "^3.0.3",
+    "cache-manager": "^7.2.8",
+    "cache-manager-redis-store": "^3.0.1",
     "canvas": "^3.2.0",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.3",
@@ -104,6 +111,7 @@
     "pdf-parse": "^2.4.5",
     "pdfjs-dist": "^3.5.141",
     "pg": "^8.17.2",
+    "redis": "^5.10.0",
     "rxjs": "^7.8.2",
     "tesseract.js": "^7.0.0",
     "ts-node": "^10.9.2",
