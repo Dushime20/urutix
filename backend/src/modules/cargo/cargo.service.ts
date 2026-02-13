@@ -56,6 +56,9 @@ export interface LoadDetails {
   deliveryDate: Date | null;
   revenue: number;
   rating: number | null;
+  // Tenant relationship indicators
+  isOwnCargo: boolean;  // Created by tenant's cargo owner
+  isOwnFleet: boolean;  // Assigned to tenant's truck
 }
 
 @Injectable()
@@ -73,10 +76,12 @@ export class CargoService {
       where: { tenantId, role: UserRole.CARGO_OWNER },
     });
 
-    // Get all loads for tenant
-    const loads = await this.loadRepository.find({
-      where: { tenantId },
-    });
+    // Get all loads for tenant (both created by cargo owners AND assigned to tenant's trucks)
+    const loads = await this.loadRepository
+      .createQueryBuilder('load')
+      .leftJoin('trucks', 'truck', 'truck.id = load.assignedTruckId')
+      .where('(load.tenantId = :tenantId OR truck.tenantId = :tenantId)', { tenantId })
+      .getMany();
 
     // Calculate cargo owner statistics
     const activeCargoOwners = cargoOwners.filter((o) => o.status === 'ACTIVE').length;
@@ -206,6 +211,7 @@ export class CargoService {
       search?: string;
       page?: number;
       limit?: number;
+      loadType?: 'all' | 'own-cargo' | 'own-fleet';  // NEW: Filter by relationship type
     },
   ): Promise<{ loads: LoadDetails[]; total: number }> {
     const query = this.loadRepository
@@ -213,12 +219,19 @@ export class CargoService {
       .leftJoinAndSelect('load.cargoOwner', 'owner')
       .leftJoinAndSelect('owner.profile', 'ownerProfile')
       .leftJoin('trucks', 'truck', 'truck.id = load.assignedTruckId')
-      .addSelect(['truck.id', 'truck.plateNumber'])
-      .leftJoin('users', 'driver', 'driver.id = load.assignedDriverId')
+      .addSelect(['truck.id', 'truck.plateNumber', 'truck.tenantId', 'truck.currentDriverId'])
+      .leftJoin('users', 'driver', 'driver.id = truck.currentDriverId')
       .addSelect(['driver.id', 'driver.email'])
       .leftJoin('user_profiles', 'driverProfile', 'driverProfile.userId = driver.id')
       .addSelect(['driverProfile.firstName', 'driverProfile.lastName'])
-      .where('load.tenantId = :tenantId', { tenantId });
+      .where('(load.tenantId = :tenantId OR truck.tenantId = :tenantId)', { tenantId });
+
+    // Apply load type filter
+    if (filters?.loadType === 'own-cargo') {
+      query.andWhere('load.tenantId = :tenantId', { tenantId });
+    } else if (filters?.loadType === 'own-fleet') {
+      query.andWhere('truck.tenantId = :tenantId', { tenantId });
+    }
 
     // Filter by owner if specified
     if (filters?.ownerId) {
@@ -282,6 +295,9 @@ export class CargoService {
       deliveryDate: load.deliveryDate,
       revenue: load.pricing?.spotRateAmount || 0,
       rating: load.rating,
+      // Determine relationship to tenant
+      isOwnCargo: load.tenantId === tenantId,
+      isOwnFleet: load.truck?.tenantId === tenantId,
     }));
 
     return { loads: loadsDetails, total };
@@ -344,6 +360,41 @@ export class CargoService {
       totalRevenue: parseFloat(raw.totalRevenue) || 0,
       averageRating: parseFloat(raw.averageRating) || 0,
       joinedDate: owner.createdAt,
+    };
+  }
+
+  async getLoadById(tenantId: string, loadId: string): Promise<any | null> {
+    const load = await this.loadRepository.findOne({
+      where: { id: loadId, tenantId },
+    });
+
+    if (!load) {
+      return null;
+    }
+
+    const pickupLoc = load.pickupLocation;
+    const deliveryLoc = load.deliveryLocation;
+
+    return {
+      id: load.id,
+      reference: load.reference || 'N/A',
+      cargoType: load.cargoType,
+      origin: pickupLoc?.locationData 
+        ? `${pickupLoc.locationData.city || ''}, ${pickupLoc.locationData.state || ''}`.trim() || pickupLoc.locationData.address
+        : 'Unknown',
+      destination: deliveryLoc?.locationData 
+        ? `${deliveryLoc.locationData.city || ''}, ${deliveryLoc.locationData.state || ''}`.trim() || deliveryLoc.locationData.address
+        : 'Unknown',
+      status: load.status,
+      weight: load.weight || 0,
+      volume: load.volume || 0,
+      description: load.description,
+      pickupDate: load.pickupDate,
+      deliveryDate: load.deliveryDate,
+      revenue: load.pricing?.spotRateAmount || 0,
+      rating: load.rating || null,
+      createdAt: load.createdAt,
+      updatedAt: load.updatedAt,
     };
   }
 }

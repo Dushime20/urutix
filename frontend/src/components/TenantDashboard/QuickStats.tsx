@@ -34,7 +34,8 @@ const QuickStats: React.FC<QuickStatsProps> = ({ metrics }) => {
     return new Intl.NumberFormat('en-US').format(num);
   };
 
-  const formatPercentage = (num: number) => {
+  const formatPercentage = (num: number | undefined) => {
+    if (num === undefined || num === null) return '0.0%';
     return `${num.toFixed(1)}%`;
   };
 
@@ -77,7 +78,7 @@ const QuickStats: React.FC<QuickStatsProps> = ({ metrics }) => {
     },
     {
       title: 'Active Fleet',
-      value: metrics.activeFleet.toString(),
+      value: metrics.activeFleet?.toString() || '0',
       icon: FaTruck,
       iconColor: 'text-purple-600',
       bgColor: 'bg-purple-50',
@@ -97,7 +98,7 @@ const QuickStats: React.FC<QuickStatsProps> = ({ metrics }) => {
     },
     {
       title: 'Customer Satisfaction',
-      value: `${metrics.customerSatisfaction}/5`,
+      value: `${metrics.customerSatisfaction || 0}/5`,
       icon: FaStar,
       iconColor: 'text-yellow-600',
       bgColor: 'bg-yellow-50',

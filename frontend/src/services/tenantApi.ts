@@ -115,7 +115,7 @@ export const tenantApi = {
 
   // Get tenant metrics
   getTenantMetrics: async (tenantId: string, timeRange: string = '7d'): Promise<TenantMetrics> => {
-    const response = await api.get(`/tenants/${tenantId}/metrics`, {
+    const response = await api.get(`/tenant-dashboard/${tenantId}/metrics`, {
       params: { timeRange }
     });
     return response.data;
@@ -123,7 +123,7 @@ export const tenantApi = {
 
   // Get tenant trends
   getTenantTrends: async (tenantId: string, timeRange: string = '7d'): Promise<TenantTrends> => {
-    const response = await api.get(`/tenants/${tenantId}/trends`, {
+    const response = await api.get(`/tenant-dashboard/${tenantId}/trends`, {
       params: { timeRange }
     });
     return response.data;
@@ -131,7 +131,7 @@ export const tenantApi = {
 
   // Get recent activity
   getRecentActivity: async (tenantId: string, limit: number = 10): Promise<TenantActivity[]> => {
-    const response = await api.get(`/tenants/${tenantId}/activity`, {
+    const response = await api.get(`/tenant-dashboard/${tenantId}/activity`, {
       params: { limit }
     });
     return response.data;
@@ -205,7 +205,29 @@ export const tenantApi = {
 };
 
 // Mock data for development/testing
-export const mockTenantData = {
+export const mockTenantData: {
+  id: string;
+  name: string;
+  status: string;
+  type: string;
+  createdAt: string;
+  updatedAt: string;
+  contactInfo: {
+    email: string;
+    phone: string;
+    address: string;
+  };
+  subscription: {
+    plan: string;
+    status: string;
+    expiresAt: string;
+  };
+  metrics: TenantMetrics;
+  trends: TenantTrends;
+  recentActivity: TenantActivity[];
+  performanceMetrics: PerformanceMetric[];
+  financialMetrics: FinancialMetrics;
+} = {
   id: "00000000-0000-0000-0000-000000000001",
   name: "Default Tenant",
   status: "active",
@@ -239,11 +261,11 @@ export const mockTenantData = {
     fuelEfficiency: [8.2, 8.5, 8.1, 8.8, 8.9, 8.6, 8.7],
   },
   recentActivity: [
-    { id: 1, type: 'shipment', action: 'completed', description: 'Load #L-2024-001 delivered successfully', timestamp: '2 hours ago', status: 'success' },
-    { id: 2, type: 'maintenance', action: 'scheduled', description: 'Truck #T-001 maintenance scheduled', timestamp: '4 hours ago', status: 'info' },
-    { id: 3, type: 'payment', action: 'received', description: 'Payment received for Load #L-2024-002', timestamp: '6 hours ago', status: 'success' },
-    { id: 4, type: 'dispute', action: 'resolved', description: 'Dispute resolved for Load #L-2024-003', timestamp: '1 day ago', status: 'warning' },
-  ],
+    { id: 1, type: 'shipment' as const, action: 'completed', description: 'Load #L-2024-001 delivered successfully', timestamp: '2 hours ago', status: 'success' as const },
+    { id: 2, type: 'maintenance' as const, action: 'scheduled', description: 'Truck #T-001 maintenance scheduled', timestamp: '4 hours ago', status: 'info' as const },
+    { id: 3, type: 'payment' as const, action: 'received', description: 'Payment received for Load #L-2024-002', timestamp: '6 hours ago', status: 'success' as const },
+    { id: 4, type: 'dispute' as const, action: 'resolved', description: 'Dispute resolved for Load #L-2024-003', timestamp: '1 day ago', status: 'warning' as const },
+  ] as TenantActivity[],
   performanceMetrics: [
     {
       name: 'Revenue Growth',

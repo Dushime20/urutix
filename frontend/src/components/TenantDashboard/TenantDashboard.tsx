@@ -3,8 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { 
   FaTruck, FaBox, FaDollarSign, FaChartLine, 
   FaRoute, FaExclamationTriangle,
-  FaArrowUp, FaArrowDown, FaMinus,
-  FaDownload
+  FaDownload, FaUsers
 } from 'react-icons/fa';
 import { Line, Bar } from 'react-chartjs-2';
 import {
@@ -29,7 +28,13 @@ import FinancialMetrics from './FinancialMetrics';
 import OperationalInsights from './OperationalInsights';
 import PerformanceMetrics from './PerformanceMetrics';
 import RecentActivity from './RecentActivity';
+import UserManagement from './UserManagement/UserManagement';
+import BidManagement from './BidManagement/BidManagement';
+import BillingManagement from './BillingManagement/BillingManagement';
+import ProfileSettings from './ProfileSettings';
+import SystemSettings from './SystemSettings';
 import { tenantApi, mockTenantData } from '../../services/tenantApi';
+import type { TenantMetrics, TenantTrends, TenantActivity } from '../../services/tenantApi';
 import { useAuth } from '../../contexts/AuthContext';
 
 ChartJS.register(
@@ -57,7 +62,7 @@ const TenantDashboard: React.FC<TenantDashboardProps> = ({
   const { user } = useAuth();
   const [timeRange, setTimeRange] = useState('7d');
   const [lastUpdated, setLastUpdated] = useState(new Date());
-  const [selectedView, setSelectedView] = useState<'overview' | 'fleet' | 'cargo' | 'financial' | 'operations'>('overview');
+  const [selectedView, setSelectedView] = useState<'overview' | 'fleet' | 'cargo' | 'financial' | 'operations' | 'users' | 'bids' | 'billing' | 'profile' | 'settings'>('overview');
 
   // Create tenant data object from authenticated user
   const currentTenant = useMemo(() => {
@@ -78,7 +83,11 @@ const TenantDashboard: React.FC<TenantDashboardProps> = ({
   }, [user]);
 
   // Use React Query for data fetching with fallback to mock data
-  const { data: tenantData, isLoading, error, refetch } = useQuery({
+  const { data: tenantData, isLoading, error, refetch } = useQuery<{
+    metrics: TenantMetrics;
+    trends: TenantTrends;
+    activity: TenantActivity[];
+  }>({
     queryKey: ['tenant', tenantId, timeRange],
     queryFn: async () => {
       try {
@@ -248,6 +257,10 @@ const TenantDashboard: React.FC<TenantDashboardProps> = ({
     ]
   };
 
+  const handleViewChange = (view: string) => {
+    setSelectedView(view as 'overview' | 'fleet' | 'cargo' | 'financial' | 'operations' | 'users' | 'bids' | 'billing' | 'profile' | 'settings');
+  };
+
   return (
     <div className={`min-h-screen bg-gray-50 ${className}`}>
       {/* Header */}
@@ -255,14 +268,18 @@ const TenantDashboard: React.FC<TenantDashboardProps> = ({
         tenant={currentTenant}
         onRefresh={handleRefresh}
         lastUpdated={lastUpdated}
+        onViewChange={handleViewChange}
       />
 
       {/* Navigation Tabs */}
-      <div className="bg-white border-b border-gray-200">
+      <div className="bg-white border-b border-gray-200 sticky top-[180px] z-40 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <nav className="flex space-x-8">
+          <nav className="flex space-x-8 overflow-x-auto scrollbar-hide">
             {[
               { id: 'overview', label: 'Overview', icon: FaChartLine },
+              { id: 'users', label: 'Users', icon: FaUsers },
+              { id: 'bids', label: 'Bids', icon: FaRoute },
+              { id: 'billing', label: 'Billing', icon: FaDollarSign },
               { id: 'fleet', label: 'Fleet', icon: FaTruck },
               { id: 'cargo', label: 'Cargo', icon: FaBox },
               { id: 'financial', label: 'Financial', icon: FaDollarSign },
@@ -274,7 +291,7 @@ const TenantDashboard: React.FC<TenantDashboardProps> = ({
                   key={tab.id}
                   onClick={() => setSelectedView(tab.id as any)}
                   className={`
-                    py-4 px-1 border-b-2 font-medium text-sm transition-colors
+                    py-4 px-1 border-b-2 font-medium text-sm transition-colors whitespace-nowrap flex-shrink-0
                     ${selectedView === tab.id
                       ? 'border-blue-500 text-blue-600'
                       : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
@@ -397,20 +414,40 @@ const TenantDashboard: React.FC<TenantDashboardProps> = ({
           </div>
         )}
 
+        {selectedView === 'users' && (
+          <UserManagement tenantId={currentTenant.id} />
+        )}
+
+        {selectedView === 'bids' && (
+          <BidManagement tenantId={currentTenant.id} />
+        )}
+
+        {selectedView === 'billing' && (
+          <BillingManagement tenantId={currentTenant.id} />
+        )}
+
         {selectedView === 'fleet' && (
-          <FleetOverview tenantId={tenantId} />
+          <FleetOverview tenantId={tenantId || currentTenant.id} />
         )}
 
         {selectedView === 'cargo' && (
-          <CargoAnalytics tenantId={tenantId} />
+          <CargoAnalytics tenantId={tenantId || currentTenant.id} />
         )}
 
         {selectedView === 'financial' && (
-          <FinancialMetrics tenantId={tenantId} />
+          <FinancialMetrics tenantId={tenantId || currentTenant.id} />
         )}
 
         {selectedView === 'operations' && (
-          <OperationalInsights tenantId={tenantId} />
+          <OperationalInsights tenantId={tenantId || currentTenant.id} />
+        )}
+
+        {selectedView === 'profile' && (
+          <ProfileSettings />
+        )}
+
+        {selectedView === 'settings' && (
+          <SystemSettings />
         )}
       </div>
     </div>

@@ -95,6 +95,12 @@ export class CargoController {
   @ApiQuery({ name: 'search', required: false, description: 'Search term' })
   @ApiQuery({ name: 'page', required: false, description: 'Page number' })
   @ApiQuery({ name: 'limit', required: false, description: 'Items per page' })
+  @ApiQuery({ 
+    name: 'loadType', 
+    required: false, 
+    description: 'Filter by load type: all, own-cargo, own-fleet',
+    enum: ['all', 'own-cargo', 'own-fleet']
+  })
   @ApiOkResponse({
     description: 'Loads retrieved successfully',
     type: ApiResponseDto,
@@ -106,6 +112,7 @@ export class CargoController {
     @Query('search') search?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
+    @Query('loadType') loadType?: 'all' | 'own-cargo' | 'own-fleet',
   ): Promise<ApiResponseDto<any>> {
     const filters = {
       ownerId,
@@ -113,6 +120,7 @@ export class CargoController {
       search,
       page: page ? parseInt(page) : undefined,
       limit: limit ? parseInt(limit) : undefined,
+      loadType: loadType || 'all',
     };
 
     const result = await this.cargoService.getLoads(tenantId, filters);
@@ -161,6 +169,42 @@ export class CargoController {
       statusCode: 200,
       message: 'Cargo owner details retrieved successfully',
       data: owner,
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  @Get(':tenantId/loads/:loadId')
+  @ApiOperation({
+    summary: 'Get load details',
+    description: 'Get detailed information about a specific load',
+  })
+  @ApiParam({ name: 'tenantId', description: 'Tenant ID' })
+  @ApiParam({ name: 'loadId', description: 'Load ID' })
+  @ApiOkResponse({
+    description: 'Load details retrieved successfully',
+    type: ApiResponseDto,
+  })
+  async getLoadById(
+    @Param('tenantId') tenantId: string,
+    @Param('loadId') loadId: string,
+  ): Promise<ApiResponseDto<any>> {
+    const load = await this.cargoService.getLoadById(tenantId, loadId);
+
+    if (!load) {
+      return {
+        success: false,
+        statusCode: 404,
+        message: 'Load not found',
+        data: null,
+        timestamp: new Date().toISOString(),
+      };
+    }
+
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Load details retrieved successfully',
+      data: load,
       timestamp: new Date().toISOString(),
     };
   }

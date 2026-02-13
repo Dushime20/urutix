@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Search, Box, Truck, CreditCard, Loader2, X } from 'lucide-react';
-import { fetchCargos } from '../../services/cargoApi';
+import { cargoApi } from '../../services/cargoApi';
 import api from '../../services/api';
 
 interface Entity {
@@ -35,11 +35,12 @@ const EntitySelector: React.FC<EntitySelectorProps> = ({
     queryKey: ['entities', entityType, searchTerm],
     queryFn: async () => {
       if (entityType === 'CARGO') {
-        const cargos = await fetchCargos(1, searchTerm);
-        return cargos.map((cargo: any) => ({
+        const tenantId = localStorage.getItem('tenantId') || '';
+        const result = await cargoApi.getLoads(tenantId, { search: searchTerm, limit: 20 });
+        return result.loads.map((cargo: any) => ({
           id: cargo.id,
-          name: cargo.title || cargo.description || `Cargo ${cargo.id?.slice(0, 8)}`,
-          description: cargo.pickupLocation?.address || cargo.deliveryLocation?.address,
+          name: cargo.loadNumber || cargo.description || `Cargo ${cargo.id?.slice(0, 8)}`,
+          description: `${cargo.origin} → ${cargo.destination}`,
           type: 'CARGO',
         }));
       } else if (entityType === 'TRIP') {

@@ -1,17 +1,9 @@
 import React from 'react';
 import { FaCheckCircle, FaExclamationTriangle, FaInfoCircle, FaClock } from 'react-icons/fa';
-
-interface Activity {
-  id: number;
-  type: string;
-  action: string;
-  description: string;
-  timestamp: string;
-  status: 'success' | 'warning' | 'error' | 'info';
-}
+import type { TenantActivity } from '../../services/tenantApi';
 
 interface RecentActivityProps {
-  activities: Activity[];
+  activities: TenantActivity[];
   maxItems?: number;
 }
 
@@ -68,7 +60,7 @@ const RecentActivity: React.FC<RecentActivityProps> = ({
     }
   };
 
-  const displayedActivities = activities.slice(0, maxItems);
+  const displayedActivities = Array.isArray(activities) ? activities.slice(0, maxItems) : [];
 
   return (
     <div className="bg-white rounded-lg shadow">

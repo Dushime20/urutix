@@ -188,4 +188,40 @@ export class FleetController {
       timestamp: new Date().toISOString(),
     };
   }
+
+  @Get(':tenantId/trucks/:truckId')
+  @ApiOperation({
+    summary: 'Get truck details',
+    description: 'Get detailed information about a specific truck',
+  })
+  @ApiParam({ name: 'tenantId', description: 'Tenant ID' })
+  @ApiParam({ name: 'truckId', description: 'Truck ID' })
+  @ApiOkResponse({
+    description: 'Truck details retrieved successfully',
+    type: ApiResponseDto,
+  })
+  async getTruckById(
+    @Param('tenantId') tenantId: string,
+    @Param('truckId') truckId: string,
+  ): Promise<ApiResponseDto<any>> {
+    const truck = await this.fleetService.getTruckById(tenantId, truckId);
+
+    if (!truck) {
+      return {
+        success: false,
+        statusCode: 404,
+        message: 'Truck not found',
+        data: null,
+        timestamp: new Date().toISOString(),
+      };
+    }
+
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Truck details retrieved successfully',
+      data: truck,
+      timestamp: new Date().toISOString(),
+    };
+  }
 }

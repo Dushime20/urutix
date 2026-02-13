@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import {
   FaBox,
   FaTruck,
@@ -6,168 +6,115 @@ import {
   FaClock,
   FaCheckCircle,
   FaExclamationTriangle,
-  FaRoute,
   FaDollarSign,
   FaSearch,
-  FaFilter,
-  FaPlus,
   FaEye,
-  FaChartLine,
-  FaSave,
-  FaCheck,
-  FaRocket,
   FaLayerGroup,
+  FaUsers,
+  FaArrowLeft,
 } from "react-icons/fa";
-import { Line, Bar, Doughnut } from "react-chartjs-2";
 import FilterSelect from "@/components/common/FilterSelect";
+import { cargoApi } from "@/services/cargoApi";
+import type { CargoSummary, CargoOwner, Load } from "@/services/cargoApi";
+import CargoOwnerDetailsDrawer from './CargoOwnerDetailsDrawer';
+import LoadDetailsDrawer from './LoadDetailsDrawer';
 
 interface CargoAnalyticsProps {
   tenantId?: string;
 }
 
+type ViewMode = 'cargo-owners' | 'all-loads';
+type LoadTypeFilter = 'all' | 'own-cargo' | 'own-fleet';
+
 const CargoAnalytics: React.FC<CargoAnalyticsProps> = ({ tenantId }) => {
+  const [viewMode, setViewMode] = useState<ViewMode>('cargo-owners');
+  const [selectedOwnerId, setSelectedOwnerId] = useState<string | null>(null);
   const [selectedFilter, setSelectedFilter] = useState("");
+  const [loadTypeFilter, setLoadTypeFilter] = useState<LoadTypeFilter>('all');
   const [searchTerm, setSearchTerm] = useState("");
-  const [timeRange, setTimeRange] = useState("7d");
+  const [ownerDrawerOpen, setOwnerDrawerOpen] = useState(false);
+  const [loadDrawerOpen, setLoadDrawerOpen] = useState(false);
+  const [selectedOwnerForDrawer, setSelectedOwnerForDrawer] = useState<string | null>(null);
+  const [selectedLoadForDrawer, setSelectedLoadForDrawer] = useState<string | null>(null);
+  
+  const [summary, setSummary] = useState<CargoSummary | null>(null);
+  const [cargoOwners, setCargoOwners] = useState<CargoOwner[]>([]);
+  const [loads, setLoads] = useState<Load[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Mock cargo data - in real app, this would come from API
-  const cargoData = useMemo(() => ({
-    summary: {
-      totalLoads: 1247,
-      activeLoads: 47,
-      completedLoads: 1189,
-      pendingLoads: 11,
-      totalRevenue: 12500000,
-      averageDeliveryTime: 2.3,
-      onTimeDelivery: 94.2,
-    },
-    trends: {
-      weekly: [45, 67, 52, 89, 76, 98, 84],
-      monthly: [234, 267, 289, 312, 298, 345, 378, 356, 389, 412, 398, 445],
-      revenue: [1250000, 1890000, 1500000, 2500000, 2200000, 3000000, 2800000],
-    },
-    loads: [
-      { 
-        id: 'L-2024-001', 
-        cargoType: 'Electronics', 
-        origin: 'Kigali', 
-        destination: 'Huye', 
-        status: 'completed', 
-        weight: '2.5 tons', 
-        value: 450000, 
-        driver: 'John Doe', 
-        truck: 'T-001',
-        pickupDate: '2024-01-20',
-        deliveryDate: '2024-01-22',
-        revenue: 125000
-      },
-      { 
-        id: 'L-2024-002', 
-        cargoType: 'Agricultural', 
-        origin: 'Musanze', 
-        destination: 'Kigali', 
-        status: 'in-transit', 
-        weight: '5.0 tons', 
-        value: 320000, 
-        driver: 'Jane Smith', 
-        truck: 'T-002',
-        pickupDate: '2024-01-23',
-        deliveryDate: '2024-01-25',
-        revenue: 180000
-      },
-      { 
-        id: 'L-2024-003', 
-        cargoType: 'Construction', 
-        origin: 'Huye', 
-        destination: 'Musanze', 
-        status: 'pending', 
-        weight: '8.0 tons', 
-        value: 680000, 
-        driver: 'Mike Johnson', 
-        truck: 'T-003',
-        pickupDate: '2024-01-26',
-        deliveryDate: '2024-01-28',
-        revenue: 220000
-      },
-      { 
-        id: 'L-2024-004', 
-        cargoType: 'Textiles', 
-        origin: 'Kigali', 
-        destination: 'Rubavu', 
-        status: 'completed', 
-        weight: '1.5 tons', 
-        value: 280000, 
-        driver: 'Sarah Wilson', 
-        truck: 'T-004',
-        pickupDate: '2024-01-18',
-        deliveryDate: '2024-01-19',
-        revenue: 95000
-      },
-      { 
-        id: 'L-2024-005', 
-        cargoType: 'Machinery', 
-        origin: 'Rubavu', 
-        destination: 'Kigali', 
-        status: 'in-transit', 
-        weight: '12.0 tons', 
-        value: 1200000, 
-        driver: 'David Brown', 
-        truck: 'T-005',
-        pickupDate: '2024-01-24',
-        deliveryDate: '2024-01-27',
-        revenue: 350000
-      },
-    ],
-    cargoTypes: [
-      { type: 'Electronics', count: 234, revenue: 3200000 },
-      { type: 'Agricultural', count: 456, revenue: 2800000 },
-      { type: 'Construction', count: 189, revenue: 2100000 },
-      { type: 'Textiles', count: 167, revenue: 1800000 },
-      { type: 'Machinery', count: 89, revenue: 1500000 },
-      { type: 'Other', count: 112, revenue: 1100000 },
-    ]
-  }), []);
+  useEffect(() => {
+    if (tenantId) {
+      fetchData();
+    }
+  }, [tenantId, viewMode, selectedOwnerId, selectedFilter, searchTerm, loadTypeFilter]);
 
-  const filteredLoads = useMemo(() => {
-    let filtered = cargoData.loads;
+  const fetchData = async () => {
+    if (!tenantId) return;
     
-    if (selectedFilter) {
-      filtered = filtered.filter(load => load.status === selectedFilter);
+    setLoading(true);
+    try {
+      // Fetch summary
+      const summaryData = await cargoApi.getCargoSummary(tenantId);
+      setSummary(summaryData);
+
+      if (viewMode === 'cargo-owners') {
+        // Fetch cargo owners
+        const ownersData = await cargoApi.getCargoOwners(tenantId, {
+          status: selectedFilter || undefined,
+          search: searchTerm || undefined,
+          limit: 100,
+        });
+        setCargoOwners(ownersData.cargoOwners);
+      } else {
+        // Fetch loads
+        const loadsData = await cargoApi.getLoads(tenantId, {
+          ownerId: selectedOwnerId || undefined,
+          status: selectedFilter || undefined,
+          search: searchTerm || undefined,
+          loadType: loadTypeFilter,
+          limit: 100,
+        });
+        setLoads(loadsData.loads);
+      }
+    } catch (error) {
+      console.error('Error fetching cargo data:', error);
+    } finally {
+      setLoading(false);
     }
-    
-    if (searchTerm) {
-      filtered = filtered.filter(load => 
-        load.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        load.cargoType.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        load.origin.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        load.destination.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-    
-    return filtered;
-  }, [cargoData.loads, selectedFilter, searchTerm]);
+  };
+
+  const handleOwnerClick = (ownerId: string) => {
+    setSelectedOwnerId(ownerId);
+    setViewMode('all-loads');
+    setSelectedFilter('');
+    setSearchTerm('');
+  };
+
+  const handleBackToOwners = () => {
+    setSelectedOwnerId(null);
+    setViewMode('cargo-owners');
+    setSelectedFilter('');
+    setLoadTypeFilter('all');
+    setSearchTerm('');
+  };
 
   const getStatusColor = (status: string) => {
-    switch (status) {
+    switch (status.toLowerCase()) {
       case 'draft': return 'text-gray-600 bg-gray-100';
       case 'created': return 'text-blue-600 bg-blue-100';
       case 'published': return 'text-green-600 bg-green-100';
-      case 'completed': return 'text-green-600 bg-green-100';
-      case 'in-transit': return 'text-blue-600 bg-blue-100';
-      case 'pending': return 'text-yellow-600 bg-yellow-100';
+      case 'assigned': return 'text-purple-600 bg-purple-100';
+      case 'in_transit': return 'text-blue-600 bg-blue-100';
+      case 'delivered': return 'text-green-600 bg-green-100';
       case 'cancelled': return 'text-red-600 bg-red-100';
       default: return 'text-gray-600 bg-gray-100';
     }
   };
 
   const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'draft': return <FaSave className="w-4 h-4" />;
-      case 'created': return <FaCheck className="w-4 h-4" />;
-      case 'published': return <FaRocket className="w-4 h-4" />;
-      case 'completed': return <FaCheckCircle className="w-4 h-4" />;
-      case 'in-transit': return <FaTruck className="w-4 h-4" />;
-      case 'pending': return <FaClock className="w-4 h-4" />;
+    switch (status.toLowerCase()) {
+      case 'delivered': return <FaCheckCircle className="w-4 h-4" />;
+      case 'in_transit': return <FaTruck className="w-4 h-4" />;
       case 'cancelled': return <FaExclamationTriangle className="w-4 h-4" />;
       default: return <FaClock className="w-4 h-4" />;
     }
@@ -192,113 +139,13 @@ const CargoAnalytics: React.FC<CargoAnalyticsProps> = ({ tenantId }) => {
     }).format(amount);
   };
 
-  const shipmentTrendData = {
-    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-    datasets: [
-      {
-        label: 'Shipments',
-        data: cargoData.trends.weekly,
-        borderColor: 'rgb(59, 130, 246)',
-        backgroundColor: 'rgba(59, 130, 246, 0.1)',
-        borderWidth: 3,
-        fill: true,
-        tension: 0.4,
-      }
-    ]
-  };
-
-  const revenueData = {
-    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-    datasets: [
-      {
-        label: 'Revenue (RWF)',
-        data: cargoData.trends.revenue,
-        borderColor: 'rgb(34, 197, 94)',
-        backgroundColor: 'rgba(34, 197, 94, 0.1)',
-        borderWidth: 3,
-        fill: true,
-        tension: 0.4,
-      }
-    ]
-  };
-
-  const cargoTypeData = {
-    labels: cargoData.cargoTypes.map(item => item.type),
-    datasets: [
-      {
-        label: 'Revenue by Cargo Type',
-        data: cargoData.cargoTypes.map(item => item.revenue),
-        backgroundColor: [
-          'rgba(59, 130, 246, 0.8)',
-          'rgba(34, 197, 94, 0.8)',
-          'rgba(251, 191, 36, 0.8)',
-          'rgba(239, 68, 68, 0.8)',
-          'rgba(168, 85, 247, 0.8)',
-          'rgba(16, 185, 129, 0.8)',
-        ],
-        borderColor: [
-          'rgb(59, 130, 246)',
-          'rgb(34, 197, 94)',
-          'rgb(251, 191, 36)',
-          'rgb(239, 68, 68)',
-          'rgb(168, 85, 247)',
-          'rgb(16, 185, 129)',
-        ],
-        borderWidth: 2
-      }
-    ]
-  };
-
-  const chartOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        position: 'bottom' as const,
-        labels: { 
-          font: { size: 12 },
-          usePointStyle: true,
-          padding: 20
-        }
-      },
-      tooltip: {
-        backgroundColor: 'rgba(0, 0, 0, 0.8)',
-        titleColor: '#fff',
-        bodyColor: '#fff',
-        cornerRadius: 8,
-        padding: 12
-      }
-    },
-    scales: {
-      y: {
-        beginAtZero: true,
-        grid: { 
-          color: 'rgba(0, 0, 0, 0.05)',
-          drawBorder: false
-        },
-        ticks: {
-          font: { size: 11 },
-          color: '#6B7280'
-        }
-      },
-      x: {
-        grid: { 
-          color: 'rgba(0, 0, 0, 0.05)',
-          drawBorder: false
-        },
-        ticks: {
-          font: { size: 11 },
-          color: '#6B7280'
-        }
-      }
-    },
-    elements: {
-      point: {
-        radius: 4,
-        hoverRadius: 6
-      }
-    }
-  };
+  if (loading || !summary) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-gray-500">Loading cargo data...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">
@@ -308,7 +155,7 @@ const CargoAnalytics: React.FC<CargoAnalyticsProps> = ({ tenantId }) => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-500 mb-1">Total Loads</p>
-              <p className="text-3xl font-bold text-gray-900">{cargoData.summary.totalLoads.toLocaleString()}</p>
+              <p className="text-3xl font-bold text-gray-900">{summary.totalLoads.toLocaleString()}</p>
             </div>
             <div className="p-3 bg-blue-50 rounded-xl">
               <FaBox className="w-6 h-6 text-blue-600" />
@@ -320,7 +167,7 @@ const CargoAnalytics: React.FC<CargoAnalyticsProps> = ({ tenantId }) => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-500 mb-1">Completed</p>
-              <p className="text-3xl font-bold text-gray-900">{cargoData.summary.completedLoads.toLocaleString()}</p>
+              <p className="text-3xl font-bold text-gray-900">{summary.completedLoads.toLocaleString()}</p>
             </div>
             <div className="p-3 bg-green-50 rounded-xl">
               <FaCheckCircle className="w-6 h-6 text-green-600" />
@@ -332,7 +179,7 @@ const CargoAnalytics: React.FC<CargoAnalyticsProps> = ({ tenantId }) => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-500 mb-1">Total Revenue</p>
-              <p className="text-3xl font-bold text-gray-900">{formatCurrency(cargoData.summary.totalRevenue)}</p>
+              <p className="text-3xl font-bold text-gray-900">{formatCurrency(summary.totalRevenue)}</p>
             </div>
             <div className="p-3 bg-purple-50 rounded-xl">
               <FaDollarSign className="w-6 h-6 text-purple-600" />
@@ -343,69 +190,57 @@ const CargoAnalytics: React.FC<CargoAnalyticsProps> = ({ tenantId }) => {
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-500 mb-1">On-Time Rate</p>
-              <p className="text-3xl font-bold text-gray-900">{cargoData.summary.onTimeDelivery}%</p>
+              <p className="text-sm font-medium text-gray-500 mb-1">Cargo Owners</p>
+              <p className="text-3xl font-bold text-gray-900">{summary.totalCargoOwners}</p>
             </div>
             <div className="p-3 bg-orange-50 rounded-xl">
-              <FaRoute className="w-6 h-6 text-orange-600" />
+              <FaUsers className="w-6 h-6 text-orange-600" />
             </div>
           </div>
         </div>
       </div>
 
-      {/* Charts Row */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-        {/* Shipment Trend */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-semibold text-gray-900">Weekly Shipment Trend</h3>
-            <FilterSelect
-              value={timeRange}
-              onChange={(value) => setTimeRange(value || "7d")}
-              placeholder="Select range"
-              options={[
-                { value: "7d", label: "7 Days" },
-                { value: "30d", label: "30 Days" },
-                { value: "90d", label: "90 Days" },
-              ]}
-              icon={<FaFilter className="text-blue-500" />}
-              className="w-40"
-            />
-          </div>
-          <div className="h-72">
-            <Line data={shipmentTrendData} options={chartOptions} />
-          </div>
-        </div>
-
-        {/* Revenue Trend */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-6">Weekly Revenue Trend</h3>
-          <div className="h-72">
-            <Line data={revenueData} options={chartOptions} />
-          </div>
-        </div>
-      </div>
-
-      {/* Cargo Type Distribution */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="text-lg font-semibold text-gray-900">Revenue by Cargo Type</h3>
-          <div className="text-sm text-gray-500">Total: {formatCurrency(cargoData.cargoTypes.reduce((sum, item) => sum + item.revenue, 0))}</div>
-        </div>
-        <div className="h-80">
-          <Bar data={cargoTypeData} options={chartOptions} />
-        </div>
-      </div>
-
-      {/* Loads Table */}
+      {/* View Toggle and Table */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-gray-900">Cargo Loads</h3>
-            <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center shadow-sm">
-              <FaPlus className="w-4 h-4 mr-2" />
-              New Load
-            </button>
+            <div className="flex items-center space-x-4">
+              {selectedOwnerId && (
+                <button
+                  onClick={handleBackToOwners}
+                  className="text-blue-600 hover:text-blue-700 flex items-center"
+                >
+                  <FaArrowLeft className="w-4 h-4 mr-2" />
+                  Back to Cargo Owners
+                </button>
+              )}
+              {!selectedOwnerId && (
+                <>
+                  <button
+                    onClick={() => setViewMode('cargo-owners')}
+                    className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                      viewMode === 'cargo-owners'
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }`}
+                  >
+                    <FaUsers className="inline w-4 h-4 mr-2" />
+                    Cargo Owners
+                  </button>
+                  <button
+                    onClick={() => setViewMode('all-loads')}
+                    className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                      viewMode === 'all-loads'
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }`}
+                  >
+                    <FaBox className="inline w-4 h-4 mr-2" />
+                    All Loads
+                  </button>
+                </>
+              )}
+            </div>
           </div>
         </div>
 
@@ -417,7 +252,7 @@ const CargoAnalytics: React.FC<CargoAnalyticsProps> = ({ tenantId }) => {
                 <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                 <input
                   type="text"
-                  placeholder="Search loads..."
+                  placeholder={viewMode === 'cargo-owners' ? "Search cargo owners..." : "Search loads..."}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -429,80 +264,252 @@ const CargoAnalytics: React.FC<CargoAnalyticsProps> = ({ tenantId }) => {
               value={selectedFilter}
               onChange={setSelectedFilter}
               placeholder="All Status"
-              options={[
-                { value: "pending", label: "Pending" },
-                { value: "in-transit", label: "In Transit" },
-                { value: "completed", label: "Completed" },
-                { value: "cancelled", label: "Cancelled" },
-              ]}
+              options={
+                viewMode === 'cargo-owners'
+                  ? [
+                      { value: "ACTIVE", label: "Active" },
+                      { value: "SUSPENDED", label: "Suspended" },
+                      { value: "DEACTIVATED", label: "Deactivated" },
+                    ]
+                  : [
+                      { value: "DRAFT", label: "Draft" },
+                      { value: "PUBLISHED", label: "Published" },
+                      { value: "ASSIGNED", label: "Assigned" },
+                      { value: "IN_TRANSIT", label: "In Transit" },
+                      { value: "DELIVERED", label: "Delivered" },
+                      { value: "CANCELLED", label: "Cancelled" },
+                    ]
+              }
               icon={<FaLayerGroup className="text-purple-500" />}
               className="sm:min-w-[180px]"
             />
+            {viewMode === 'all-loads' && !selectedOwnerId && (
+              <FilterSelect
+                label="Load Type"
+                value={loadTypeFilter}
+                onChange={(value) => setLoadTypeFilter(value as LoadTypeFilter)}
+                placeholder="All Loads"
+                options={[
+                  { value: "all", label: "All Loads" },
+                  { value: "own-cargo", label: "Our Cargo" },
+                  { value: "own-fleet", label: "Our Fleet" },
+                ]}
+                icon={<FaTruck className="text-blue-500" />}
+                className="sm:min-w-[180px]"
+              />
+            )}
           </div>
         </div>
 
-        {/* Table */}
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Load ID</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cargo Type</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Route</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Weight</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Revenue</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Driver/Truck</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {filteredLoads.map((load) => (
-                <tr key={load.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">{load.id}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">{load.cargoType}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <FaMapMarkerAlt className="w-4 h-4 text-gray-400 mr-2" />
-                      <div>
-                        <div className="text-sm text-gray-900">{load.origin}</div>
-                        <div className="text-sm text-gray-500">→ {load.destination}</div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(load.status)}`}>
-                      {getStatusIcon(load.status)}
-                      <span className="ml-1.5 capitalize">{load.status}</span>
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {load.weight}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {formatFullCurrency(load.revenue)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div>
-                      <div className="text-sm text-gray-900">{load.driver}</div>
-                      <div className="text-sm text-gray-500">{load.truck}</div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <button className="text-blue-600 hover:text-blue-900 mr-3">
-                      <FaEye className="w-4 h-4" />
-                    </button>
-                  </td>
+        {/* Cargo Owners Table */}
+        {viewMode === 'cargo-owners' && (
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Owner</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Company</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Loads</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Active</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Completed</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Revenue</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rating</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {cargoOwners.map((owner) => (
+                  <tr key={owner.id} className="hover:bg-gray-50 cursor-pointer" onClick={() => handleOwnerClick(owner.id)}>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div>
+                        <div className="text-sm font-medium text-gray-900">{owner.name}</div>
+                        <div className="text-sm text-gray-500">{owner.email}</div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {owner.companyName || '-'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(owner.status)}`}>
+                        {owner.status}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {owner.totalLoads}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {owner.activeLoads}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {owner.completedLoads}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {formatCurrency(owner.totalRevenue)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {owner.averageRating > 0 ? owner.averageRating.toFixed(1) : '-'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedOwnerForDrawer(owner.id);
+                          setOwnerDrawerOpen(true);
+                        }}
+                        className="text-blue-600 hover:text-blue-900"
+                      >
+                        <FaEye className="w-4 h-4" />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+                {cargoOwners.length === 0 && (
+                  <tr>
+                    <td colSpan={9} className="px-6 py-8 text-center text-gray-500">
+                      No cargo owners found
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {/* Loads Table */}
+        {viewMode === 'all-loads' && (
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Load #</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cargo Type</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Route</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Owner</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Weight</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Revenue</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Truck/Driver</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {loads.map((load) => (
+                  <tr key={load.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-medium text-gray-900 flex items-center gap-2">
+                        {load.loadNumber}
+                        <div className="flex gap-1">
+                          {load.isOwnCargo && (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800" title="Created by our cargo owner">
+                              📦 Our Cargo
+                            </span>
+                          )}
+                          {load.isOwnFleet && (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800" title="Assigned to our truck">
+                              🚛 Our Fleet
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {load.cargoType}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center">
+                        <FaMapMarkerAlt className="w-4 h-4 text-gray-400 mr-2" />
+                        <div>
+                          <div className="text-sm text-gray-900">{load.origin}</div>
+                          <div className="text-sm text-gray-500">→ {load.destination}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div>
+                        <div className="text-sm text-gray-900">{load.owner.name}</div>
+                        {load.owner.companyName && (
+                          <div className="text-sm text-gray-500">{load.owner.companyName}</div>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(load.status)}`}>
+                        {getStatusIcon(load.status)}
+                        <span className="ml-1.5 capitalize">{load.status.replace('_', ' ')}</span>
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {load.weight > 0 ? `${load.weight} kg` : '-'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {load.revenue > 0 ? formatFullCurrency(load.revenue) : '-'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div>
+                        <div className="text-sm text-gray-900">
+                          {load.assignedTruck?.plateNumber || '-'}
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          {load.assignedDriver?.name || '-'}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <button
+                        onClick={() => {
+                          setSelectedLoadForDrawer(load.id);
+                          setLoadDrawerOpen(true);
+                        }}
+                        className="text-blue-600 hover:text-blue-900"
+                      >
+                        <FaEye className="w-4 h-4" />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+                {loads.length === 0 && (
+                  <tr>
+                    <td colSpan={9} className="px-6 py-8 text-center text-gray-500">
+                      No loads found
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
+
+      {/* Drawers */}
+      {selectedOwnerForDrawer && (
+        <CargoOwnerDetailsDrawer
+          ownerId={selectedOwnerForDrawer}
+          tenantId={tenantId || ''}
+          isOpen={ownerDrawerOpen}
+          onClose={() => {
+            setOwnerDrawerOpen(false);
+            setSelectedOwnerForDrawer(null);
+          }}
+          onViewLoad={(loadId) => {
+            setOwnerDrawerOpen(false);
+            setSelectedLoadForDrawer(loadId);
+            setLoadDrawerOpen(true);
+          }}
+        />
+      )}
+
+      {selectedLoadForDrawer && (
+        <LoadDetailsDrawer
+          loadId={selectedLoadForDrawer}
+          tenantId={tenantId || ''}
+          isOpen={loadDrawerOpen}
+          onClose={() => {
+            setLoadDrawerOpen(false);
+            setSelectedLoadForDrawer(null);
+          }}
+        />
+      )}
     </div>
   );
 };

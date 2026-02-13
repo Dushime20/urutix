@@ -347,4 +347,54 @@ export class FleetService {
       joinedDate: owner.createdAt,
     };
   }
+
+  async getTruckById(tenantId: string, truckId: string): Promise<any | null> {
+    const truck = await this.truckRepository
+      .createQueryBuilder('truck')
+      .leftJoinAndSelect('truck.owner', 'owner')
+      .leftJoinAndSelect('owner.profile', 'ownerProfile')
+      .leftJoinAndSelect('truck.currentDriver', 'driver')
+      .leftJoinAndSelect('driver.profile', 'driverProfile')
+      .where('truck.id = :truckId', { truckId })
+      .andWhere('truck.tenantId = :tenantId', { tenantId })
+      .andWhere('truck.isActive = :isActive', { isActive: true })
+      .getOne();
+
+    if (!truck) {
+      return null;
+    }
+
+    return {
+      id: truck.id,
+      plateNumber: truck.plateNumber,
+      make: truck.make,
+      model: truck.model,
+      year: truck.year,
+      truckType: truck.truckType,
+      status: truck.status,
+      capacityWeight: truck.capacityWeight,
+      capacityVolume: truck.capacityVolume,
+      registrationNumber: truck.registrationNumber,
+      vin: truck.vin,
+      owner: truck.owner
+        ? {
+            id: truck.owner.id,
+            name: truck.owner.profile
+              ? `${truck.owner.profile.firstName} ${truck.owner.profile.lastName}`
+              : truck.owner.email,
+            email: truck.owner.email,
+            phone: truck.owner.phone,
+            companyName: truck.owner.profile?.companyName || null,
+          }
+        : null,
+      driver: truck.currentDriverId ? { id: truck.currentDriverId } : null,
+      location: truck.currentLocation || 'Unknown',
+      lastMaintenanceDate: truck.lastMaintenanceDate,
+      nextMaintenanceDate: truck.nextMaintenanceDate,
+      mileage: truck.mileage || 0,
+      fuelEfficiency: truck.fuelEfficiency,
+      createdAt: truck.createdAt,
+      updatedAt: truck.updatedAt,
+    };
+  }
 }
