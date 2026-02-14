@@ -203,7 +203,7 @@ export class AdminService {
       where,
       relations: ['currentDriver', 'owner'],
       take: 500,
-      order: { createdAt: 'DESC' } as any,
+      // Removed createdAt ordering as it may not exist on trucks table
     });
 
     // Format trucks with readable location data
