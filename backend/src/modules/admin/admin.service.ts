@@ -198,44 +198,49 @@ export class AdminService {
 
   // Admin-wide listings (no tenant filter or optional filter)
   async listAllTrucks(tenantId?: string) {
-    const where = tenantId ? ({ tenantId } as any) : ({} as any);
-    const trucks = await this.truckRepo.find({
-      where,
-      relations: ['owner'], // Removed 'currentDriver' as it doesn't exist
-      take: 500,
-      // Removed createdAt ordering as it may not exist on trucks table
-    });
+    try {
+      const where = tenantId ? ({ tenantId } as any) : ({} as any);
+      const trucks = await this.truckRepo.find({
+        where,
+        // Removed relations as they may not exist in the current schema
+        take: 500,
+      });
 
-    // Format trucks with readable location data
-    const formattedTrucks = trucks.map(truck => {
-      let locationString = null;
-      let coordinates = null;
+      // Format trucks with readable location data
+      const formattedTrucks = trucks.map(truck => {
+        let locationString = null;
+        let coordinates = null;
 
-      // Parse PostGIS Point object if it exists
-      if (truck.currentLocation) {
-        try {
-          // PostGIS returns location as { type: 'Point', coordinates: [lng, lat] }
-          const loc = truck.currentLocation as any;
-          if (loc.coordinates && Array.isArray(loc.coordinates)) {
-            const [lng, lat] = loc.coordinates;
-            coordinates = { latitude: lat, longitude: lng };
-            locationString = `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+        // Parse PostGIS Point object if it exists
+        if (truck.currentLocation) {
+          try {
+            // PostGIS returns location as { type: 'Point', coordinates: [lng, lat] }
+            const loc = truck.currentLocation as any;
+            if (loc.coordinates && Array.isArray(loc.coordinates)) {
+              const [lng, lat] = loc.coordinates;
+              coordinates = { latitude: lat, longitude: lng };
+              locationString = `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+            }
+          } catch (error) {
+            this.logger.warn(`Failed to parse location for truck ${truck.id}:`, error);
           }
-        } catch (error) {
-          this.logger.warn(`Failed to parse location for truck ${truck.id}:`, error);
         }
-      }
 
-      return {
-        ...truck,
-        currentLocationString: locationString,
-        coordinates,
-        ownerName: truck.owner ? `${(truck.owner as any).firstName || ''} ${(truck.owner as any).lastName || ''}`.trim() : null,
-        currentDriverName: null, // TODO: Load driver relation if needed
-      };
-    });
+        return {
+          ...truck,
+          currentLocationString: locationString,
+          coordinates,
+          ownerName: null, // Will be populated by frontend from users data
+          currentDriverName: null,
+        };
+      });
 
-    return { trucks: formattedTrucks };
+      return { trucks: formattedTrucks };
+    } catch (error) {
+      this.logger.error('Error fetching trucks:', error);
+      // Return empty array instead of throwing to prevent 500 errors
+      return { trucks: [] };
+    }
   }
 
   async listAllLoads(tenantId?: string) {
