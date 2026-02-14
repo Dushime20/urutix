@@ -40,6 +40,7 @@
     "verify:cargo-owner": "node src/database/seeds/verify-cargo-owner.js",
     "seed:admin": "node src/database/seeds/seed-admin.js",
     "seed:admin-user": "node src/database/seeds/seed-admin-user.js",
+    "seed:super-admin": "node seed-super-admin.js",
     "seed:payments": "node src/database/seeds/seed-payment-workflow.js",
     "create:admin": "ts-node src/scripts/create-admin-user.ts",
     "user:set-password": "ts-node src/scripts/set-user-password.ts",

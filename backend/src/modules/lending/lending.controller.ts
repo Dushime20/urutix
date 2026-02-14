@@ -1321,7 +1321,8 @@ export class LendingController {
     @Param('tenantId', ParseUUIDPipe) tenantId: string,
     @Query('status') status?: string,
   ) {
-    return await this.lendingService.getLoansByTenantId(tenantId, status);
+    // TODO: Implement getLoansByTenantId method in LendingService
+    return { message: 'Method not implemented yet', tenantId, status };
   }
 
   // ===== RISK ASSESSMENT ENDPOINTS =====

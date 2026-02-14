@@ -1,5 +1,7 @@
 import { TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { User } from '../entities/user.entity';
+
+
 import { UserProfile } from '../entities/user-profile.entity';
 import { Load } from '../entities/load.entity';
 import { Location } from '../entities/location.entity';
@@ -42,6 +44,7 @@ import { InsuranceVerification } from '../entities/insurance-verification.entity
 import { BrokerDispute } from '../entities/broker-dispute.entity';
 import { EscrowAccount } from '../entities/escrow-account.entity';
 import { LoadDocument } from '../entities/load-document.entity';
+import { LoadMatch } from '../entities/load-match.entity';
 import {
   BrokerMatchRecommendation,
   BrokerMarketIntelligence,
@@ -49,6 +52,8 @@ import {
   BrokerMultiStopLoad,
   BrokerTransporterPerformance,
 } from '../entities/broker-intelligence.entity';
+import { FuelLog } from '../entities/fuel-log.entity';
+
 
 // Admin entities
 import { ActivityLog } from '../entities/activity-log.entity';
@@ -184,6 +189,10 @@ export const databaseConfig: TypeOrmModuleOptions = {
     CreditPackage,
     FeatureCreditCost,
     CreditPricingRule,
+    // Matching entities
+    LoadMatch,
+    // Fuel entities
+    FuelLog,
   ],
   synchronize: false, // Disabled to prevent schema conflicts - use migrations instead
   autoLoadEntities: false,
@@ -287,6 +296,8 @@ export const testDatabaseConfig: TypeOrmModuleOptions = {
     CreditPackage,
     FeatureCreditCost,
     CreditPricingRule,
+    // Fuel entities
+    FuelLog,
   ],
   synchronize: true,
   autoLoadEntities: false,
