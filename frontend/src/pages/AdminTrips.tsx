@@ -2,11 +2,11 @@ import React, { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { fetchAllTrips, fetchTenants } from '../services/adminApi';
 import {
-  FaTruck, FaEdit, FaPlus, FaSearch, FaDownload,
-  FaEye, FaCheck, FaTimes, FaBan, FaMapMarkerAlt,
-  FaSort, FaClock, FaRoad, FaShippingFast,
-  FaExclamationTriangle, FaBuilding, FaBox,
-  FaRoute, FaUser, FaDollarSign, FaWeightHanging, FaBarcode
+  FaTruck, FaEdit, FaSearch, FaDownload,
+  FaEye, FaCheck, FaTimes, FaMapMarkerAlt,
+  FaSort, FaShippingFast,
+  FaExclamationTriangle,
+  FaUser, FaDollarSign, FaWeightHanging, FaBarcode
 } from 'react-icons/fa';
 import AdminPageLayout from '../components/Admin/AdminPageLayout';
 
@@ -78,7 +78,7 @@ const AdminTrips: React.FC = () => {
   const [sortBy, setSortBy] = useState<string>('createdAt');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize] = useState(10);
 
   // Use API data or fallback to mock data for demonstration
   const mockTrips: Trip[] = [
@@ -394,26 +394,6 @@ const AdminTrips: React.FC = () => {
     }
   };
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'high': return 'bg-gray-100 text-gray-700';
-      case 'medium': return 'bg-gray-100 text-gray-700';
-      case 'low': return 'bg-gray-100 text-gray-700';
-      default: return 'bg-gray-100 text-gray-700';
-    }
-  };
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'scheduled': return <FaClock className="text-gray-500 text-[10px]" />;
-      case 'in_progress': return <FaShippingFast className="text-gray-600 text-[10px]" />;
-      case 'completed': return <FaCheck className="text-gray-500 text-[10px]" />;
-      case 'cancelled': return <FaBan className="text-gray-400 text-[10px]" />;
-      case 'delayed': return <FaExclamationTriangle className="text-gray-500 text-[10px]" />;
-      default: return <FaClock className="text-gray-500 text-[10px]" />;
-    }
-  };
-
   const getProgressColor = (progress: number, status: string) => {
     if (status === 'completed') return 'bg-gray-400';
     if (status === 'cancelled') return 'bg-gray-300';
@@ -423,18 +403,6 @@ const AdminTrips: React.FC = () => {
     return 'bg-gray-300';
   };
 
-  // Helper functions for better data display
-  const formatDate = (dateString: string) => {
-    if (!dateString) return 'N/A';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-  };
-
-  const formatTime = (dateString: string) => {
-    if (!dateString) return 'N/A';
-    const date = new Date(dateString);
-    return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-  };
 
   const formatDateTime = (dateString: string) => {
     if (!dateString) return 'N/A';
@@ -442,61 +410,21 @@ const AdminTrips: React.FC = () => {
     return date.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
   };
 
-  const getTimeAgo = (dateString: string) => {
-    if (!dateString) return '';
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMs / 3600000);
-    const diffDays = Math.floor(diffMs / 86400000);
-
-    if (diffMins < 1) return 'Just now';
-    if (diffMins < 60) return `${diffMins}m ago`;
-    if (diffHours < 24) return `${diffHours}h ago`;
-    if (diffDays < 7) return `${diffDays}d ago`;
-    return formatDate(dateString);
+  const formatCurrency = (amount: number | null | undefined) => {
+    return `RWF ${(amount ?? 0).toLocaleString()}`;
   };
 
-  const getTimeUntil = (dateString: string) => {
-    if (!dateString) return '';
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffMs = date.getTime() - now.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMs / 3600000);
-    const diffDays = Math.floor(diffMs / 86400000);
-
-    if (diffMs < 0) return 'Past';
-    if (diffMins < 60) return `In ${diffMins}m`;
-    if (diffHours < 24) return `In ${diffHours}h`;
-    if (diffDays < 7) return `In ${diffDays}d`;
-    return formatDate(dateString);
+  const formatDistance = (distance: number | null | undefined) => {
+    return `${(distance ?? 0).toLocaleString()} km`;
   };
 
-  const formatCurrency = (amount: number) => {
-    if (!amount && amount !== 0) return 'N/A';
-    return `RWF ${amount.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
-  };
-
-  const formatDistance = (distance: number) => {
-    if (!distance && distance !== 0) return 'N/A';
-    return `${distance.toLocaleString('en-US')} km`;
-  };
-
-  const formatWeight = (weight: number) => {
-    if (!weight && weight !== 0) return 'N/A';
-    return `${weight.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}T`;
-  };
-
-  const formatVolume = (volume: number) => {
-    if (!volume && volume !== 0) return null;
-    return `${volume.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} m³`;
+  const formatWeight = (weight: number | null | undefined) => {
+    return `${(weight ?? 0).toLocaleString()} kg`;
   };
 
   const formatDuration = (hours: number) => {
-    if (!hours && hours !== 0) return 'N/A';
-    if (hours < 1) return `${Math.round(hours * 60)}m`;
+    if (hours === 0) return '0h';
+    if (hours < 1) return `${(hours * 60).toFixed(0)}m`;
     if (hours < 24) return `${hours.toFixed(1)}h`;
     const days = Math.floor(hours / 24);
     const remainingHours = hours % 24;
@@ -554,7 +482,7 @@ const AdminTrips: React.FC = () => {
           <div className="text-sm text-slate-400 mr-2">
             <span className="font-bold text-white">{mappedTrips.filter(t => t.status === 'in_progress').length}</span> active trips
           </div>
-          <button className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-bold shadow-lg shadow-indigo-600/20 transition-all">
+          <button className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-50 text-white rounded-lg font-bold shadow-lg shadow-indigo-600/20 transition-all text-xs">
             <FaDownload size={14} /> Export Report
           </button>
         </div>
@@ -581,23 +509,27 @@ const AdminTrips: React.FC = () => {
       )}
 
       {!isLoading && !error && (
-        <div className="space-y-6">
+        <div className="space-y-6 text-gray-900">
           {/* Stats Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {stats.map((stat, index) => {
               const Icon = stat.icon;
               return (
-                <div key={index} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-all duration-200 group relative overflow-hidden">
-                  <div className="absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-100 transition-opacity bg-gray-50"></div>
-                  <div className="relative flex items-start justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-slate-500 mb-1">{stat.label}</p>
-                      <p className="text-2xl font-black text-slate-800 mb-1">{stat.value}</p>
-                      <p className="text-xs text-slate-400">{stat.description}</p>
+                <div key={index} className="bg-white rounded-2xl border border-gray-100 p-6 hover:shadow-xl hover:shadow-gray-100/50 transition-all duration-300 group relative overflow-hidden">
+                  <div className="absolute top-0 right-0 p-4 opacity-[0.03] group-hover:scale-110 transition-transform duration-500">
+                    <Icon size={100} className="text-gray-900" />
+                  </div>
+                  <div className="relative">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center text-gray-400 group-hover:text-indigo-600 group-hover:bg-indigo-50 transition-all duration-300">
+                        <Icon size={20} />
+                      </div>
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">{stat.label}</p>
                     </div>
-                    <div className="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center group-hover:bg-indigo-50 group-hover:text-indigo-600 transition-colors text-slate-600">
-                      <Icon size={20} />
+                    <div className="flex items-baseline gap-2">
+                      <h3 className="text-2xl font-black text-gray-900 leading-none tracking-tight">{stat.value}</h3>
                     </div>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-4 leading-none">{stat.description}</p>
                   </div>
                 </div>
               );
@@ -605,21 +537,21 @@ const AdminTrips: React.FC = () => {
           </div>
 
           {/* Filters and Search */}
-          <div className="bg-white rounded-lg shadow-sm p-2.5 border border-gray-200">
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-2">
+          <div className="bg-white rounded-2xl shadow-sm p-4 border border-gray-100">
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
               <div className="relative">
-                <FaSearch className="absolute left-2.5 top-1/2 transform -translate-y-1/2 text-gray-400 w-3.5 h-3.5" />
+                <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-3.5 h-3.5" />
                 <input
                   type="text"
                   placeholder="Search trips..."
-                  className="w-full pl-9 pr-3 py-1.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent"
+                  className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
               </div>
 
               <select
-                className="px-2 py-1.5 text-xs border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent"
+                className="px-3 py-2 text-xs border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 transition-all font-black uppercase tracking-widest text-slate-400"
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
               >
@@ -632,7 +564,7 @@ const AdminTrips: React.FC = () => {
               </select>
 
               <select
-                className="px-2 py-1.5 text-xs border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent"
+                className="px-3 py-2 text-xs border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 transition-all font-black uppercase tracking-widest text-slate-400"
                 value={tenantFilter}
                 onChange={(e) => setTenantFilter(e.target.value)}
               >
@@ -643,7 +575,7 @@ const AdminTrips: React.FC = () => {
               </select>
 
               <select
-                className="px-2 py-1.5 text-xs border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent"
+                className="px-3 py-2 text-xs border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 transition-all font-black uppercase tracking-widest text-slate-400"
                 value={priorityFilter}
                 onChange={(e) => setPriorityFilter(e.target.value)}
               >
@@ -653,321 +585,160 @@ const AdminTrips: React.FC = () => {
                 <option value="low">Low Priority</option>
               </select>
 
-              <button className="px-2 py-1.5 text-xs border border-gray-200 rounded-lg flex items-center justify-center gap-1.5 hover:bg-gray-50 transition-colors">
-                <FaDownload className="w-3 h-3" />
+              <button className="px-3 py-2 text-xs border border-gray-200 rounded-xl flex items-center justify-center gap-2 hover:bg-gray-50 transition-all font-black uppercase tracking-widest text-slate-400">
+                <FaDownload className="w-3.5 h-3.5" />
                 <span>Export</span>
               </button>
             </div>
-
-            <div className="mt-2 flex items-center justify-between">
-              <div className="text-xs text-gray-600">
-                {total} trips
-              </div>
-              <div className="flex items-center gap-1.5">
-                <select
-                  className="px-1.5 py-0.5 text-xs border border-gray-200 rounded"
-                  value={pageSize}
-                  onChange={(e) => { setPageSize(Number(e.target.value)); setPage(1); }}
-                >
-                  <option value={10}>10 / page</option>
-                  <option value={25}>25 / page</option>
-                  <option value={50}>50 / page</option>
-                  <option value={100}>100 / page</option>
-                </select>
-              </div>
-            </div>
           </div>
 
-          {/* Trips Table */}
-          <div className="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-200">
+          {/* Table Container */}
+          <div className="bg-white rounded-3xl shadow-xl shadow-gray-100/50 overflow-hidden border border-gray-100">
             <div className="overflow-x-auto">
-              <table className="w-full text-xs">
-                <thead className="bg-gray-50 border-b border-gray-200 sticky top-0 z-10">
-                  <tr>
-                    <th className="px-2 py-1.5 text-left text-xs font-semibold text-gray-900">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-[#fafafa] border-b border-gray-100">
+                    <th className="px-6 py-4">
                       <button
-                        className="flex items-center gap-1"
+                        className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-gray-900 transition-colors"
                         onClick={() => {
                           setSortBy('reference');
                           setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
                         }}
                       >
-                        <span>Trip</span>
-                        <FaSort className="w-3 h-3" />
+                        Trip Reference
+                        <FaSort size={10} />
                       </button>
                     </th>
-                    <th className="px-2 py-1.5 text-left text-xs font-semibold text-gray-900">Route & Schedule</th>
-                    <th className="px-2 py-1.5 text-left text-xs font-semibold text-gray-900">Driver & Truck</th>
-                    <th className="px-2 py-1.5 text-left text-xs font-semibold text-gray-900">Cargo Details</th>
-                    <th className="px-2 py-1.5 text-left text-xs font-semibold text-gray-900">Status & Progress</th>
-                    <th className="px-2 py-1.5 text-left text-xs font-semibold text-gray-900">Financial</th>
-                    <th className="px-2 py-1.5 text-left text-xs font-semibold text-gray-900">Actions</th>
+                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Route & Progress</th>
+                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Driver & Assets</th>
+                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Cargo Detail</th>
+                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Financials</th>
+                    <th className="px-6 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">Action</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-200">
+                <tbody className="divide-y divide-gray-50">
                   {pagedTrips.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="px-2 py-8 text-center text-xs text-gray-500">
-                        No trips found
-                      </td>
+                      <td colSpan={6} className="px-6 py-12 text-center text-slate-400 font-black uppercase tracking-widest text-[10px]">No trips identified.</td>
                     </tr>
                   ) : (
-                    pagedTrips.map((trip: Trip) => {
-                      const profit = calculateProfit(trip.revenue ?? 0, trip.fuelCost ?? 0, trip.tollCost ?? 0);
-                      const profitMargin = getProfitMargin(trip.revenue ?? 0, trip.fuelCost ?? 0, trip.tollCost ?? 0);
-                      const totalCost = (trip.fuelCost ?? 0) + (trip.tollCost ?? 0);
-
-                      return (
-                        <tr key={trip.id} className="hover:bg-gray-50 transition-colors">
-                          <td className="px-2 py-1.5">
-                            <div className="flex items-center gap-1.5">
-                              <div className="w-8 h-8 bg-gray-700 rounded-lg flex items-center justify-center flex-shrink-0">
-                                <FaBarcode className="text-white text-xs" />
-                              </div>
-                              <div className="min-w-0 flex-1">
-                                <div className="font-semibold text-gray-900 text-xs truncate">{trip.reference}</div>
-                                <div className="text-[10px] text-gray-500 flex items-center gap-0.5">
-                                  <FaBuilding className="text-[10px] flex-shrink-0" />
-                                  <span className="truncate">{trip.tenantName}</span>
-                                </div>
-                                <div className="text-[10px] text-gray-400">
-                                  Created {getTimeAgo(trip.createdAt)}
-                                </div>
-                              </div>
+                    pagedTrips.map((trip: Trip) => (
+                      <tr key={trip.id} className="hover:bg-gray-50/50 transition-colors group">
+                        <td className="px-6 py-5">
+                          <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 bg-gray-900 rounded-2xl flex items-center justify-center shadow-lg shadow-gray-900/10">
+                              <FaBarcode className="text-white text-lg" />
                             </div>
-                          </td>
-                          <td className="px-2 py-1.5">
+                            <div>
+                              <div className="text-sm font-black text-gray-900 tracking-tight">{trip.reference}</div>
+                              <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-0.5">{trip.tenantName}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-5">
+                          <div className="space-y-3">
                             <div className="space-y-1">
-                              <div className="text-xs font-medium text-gray-900 truncate">{trip.routeName || 'N/A'}</div>
-                              <div className="space-y-0.5">
-                                <div className="text-[10px] text-gray-600 flex items-center gap-0.5">
-                                  <FaMapMarkerAlt className="text-green-500 text-[10px] flex-shrink-0" />
-                                  <span className="truncate">{trip.origin}</span>
-                                </div>
-                                <div className="text-[10px] text-gray-600 flex items-center gap-0.5">
-                                  <FaMapMarkerAlt className="text-red-500 text-[10px] flex-shrink-0" />
-                                  <span className="truncate">{trip.destination}</span>
-                                </div>
+                              <div className="flex items-center gap-2 text-xs font-black text-gray-900 tracking-tight">
+                                <FaMapMarkerAlt className="text-emerald-500 w-3 h-3" /> {(trip.origin || 'N/A').split(',')[0]}
                               </div>
-                              <div className="text-[10px] text-gray-500">
-                                {formatDistance(trip.distance ?? 0)} • {formatDuration(trip.estimatedDuration ?? 0)}
-                              </div>
-                              <div className="text-[10px] text-gray-500 space-y-0.5">
-                                <div>Start: {formatDateTime(trip.startTime)}</div>
-                                {trip.endTime && (
-                                  <div>End: {formatDateTime(trip.endTime)}</div>
-                                )}
-                                {!trip.endTime && trip.status === 'in_progress' && (
-                                  <div className="text-gray-400">ETA: {trip.estimatedDuration ? getTimeUntil(new Date(new Date(trip.startTime).getTime() + (trip.estimatedDuration * 3600000)).toISOString()) : 'N/A'}</div>
-                                )}
+                              <div className="flex items-center gap-2 text-xs font-black text-gray-900 tracking-tight">
+                                <FaMapMarkerAlt className="text-rose-500 w-3 h-3" /> {(trip.destination || 'N/A').split(',')[0]}
                               </div>
                             </div>
-                          </td>
-                          <td className="px-2 py-1.5">
-                            <div className="space-y-1">
-                              <div className="flex items-center gap-0.5">
-                                <FaUser className="text-gray-400 text-[10px] flex-shrink-0" />
-                                <span className="text-xs font-medium text-gray-900 truncate">{trip.driverName}</span>
-                              </div>
-                              <div className="flex items-center gap-0.5">
-                                <FaTruck className="text-gray-400 text-[10px] flex-shrink-0" />
-                                <span className="text-[10px] text-gray-500 truncate">{trip.truckNumber}</span>
-                              </div>
-                              {trip.currentLocation && (
-                                <div className="text-[10px] text-gray-500 truncate" title={trip.currentLocation}>
-                                  📍 {trip.currentLocation}
-                                </div>
-                              )}
-                              {trip.actualDuration && (
-                                <div className="text-[10px] text-gray-500">
-                                  Actual: {formatDuration(trip.actualDuration)}
-                                </div>
-                              )}
-                            </div>
-                          </td>
-                          <td className="px-2 py-1.5">
-                            <div className="space-y-1">
-                              {/* Cargo Title or Type */}
-                              {trip.cargoTitle ? (
-                                <div className="text-xs font-semibold text-gray-900 truncate" title={trip.cargoTitle}>
-                                  {trip.cargoTitle}
-                                </div>
-                              ) : (
-                                <div className="flex items-center gap-0.5">
-                                  <FaBox className="text-gray-400 text-[10px] flex-shrink-0" />
-                                  <span className="text-xs font-medium text-gray-900 truncate">{trip.cargoType || 'N/A'}</span>
-                                </div>
-                              )}
-
-                              {/* Cargo Type (if title exists) */}
-                              {trip.cargoTitle && (
-                                <div className="text-[10px] text-gray-500 truncate">
-                                  {trip.cargoType || 'General'}
-                                </div>
-                              )}
-
-                              {/* Weight and Volume */}
-                              <div className="space-y-0.5">
-                                <div className="flex items-center gap-0.5">
-                                  <FaWeightHanging className="text-gray-400 text-[10px] flex-shrink-0" />
-                                  <span className="text-[10px] text-gray-600">{formatWeight(trip.cargoWeight ?? 0)}</span>
-                                </div>
-                                {trip.cargoVolume && (
-                                  <div className="text-[10px] text-gray-500">
-                                    Vol: {formatVolume(trip.cargoVolume)}
-                                  </div>
-                                )}
-                              </div>
-
-                              {/* Special Requirements Badges */}
-                              <div className="flex items-center gap-0.5 flex-wrap">
-                                {trip.isFragile && (
-                                  <span className="px-1 py-0.5 rounded text-[9px] font-medium bg-red-50 text-red-700 border border-red-200" title="Fragile cargo - handle with care">
-                                    ⚠️ Fragile
-                                  </span>
-                                )}
-                                {trip.isHazardous && (
-                                  <span className="px-1 py-0.5 rounded text-[9px] font-medium bg-orange-50 text-orange-700 border border-orange-200" title="Hazardous materials">
-                                    ☢️ Hazmat
-                                  </span>
-                                )}
-                                {trip.requiresRefrigeration && (
-                                  <span className="px-1 py-0.5 rounded text-[9px] font-medium bg-blue-50 text-blue-700 border border-blue-200" title="Requires refrigeration">
-                                    ❄️ Refrigerated
-                                  </span>
-                                )}
-                              </div>
-
-                              {/* Additional Info */}
-                              <div className="space-y-0.5">
-                                {(trip.numberOfPieces || trip.numberOfPallets) && (
-                                  <div className="text-[10px] text-gray-500">
-                                    {trip.numberOfPieces && `${trip.numberOfPieces} pieces`}
-                                    {trip.numberOfPieces && trip.numberOfPallets && ' • '}
-                                    {trip.numberOfPallets && `${trip.numberOfPallets} pallets`}
-                                  </div>
-                                )}
-                                {trip.packagingType && (
-                                  <div className="text-[10px] text-gray-500">
-                                    📦 {trip.packagingType}
-                                  </div>
-                                )}
-                                {trip.loadValue && (
-                                  <div className="text-[10px] text-gray-500">
-                                    Value: {formatCurrency(trip.loadValue)}
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-2 py-1.5">
                             <div className="space-y-1.5">
-                              <div className="flex items-center gap-1 flex-wrap">
-                                {getStatusIcon(trip.status)}
-                                <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium ${getStatusColor(trip.status || 'scheduled')}`}>
-                                  {trip.status ? trip.status.replace('_', ' ').replace(/\b\w/g, (l: string) => l.toUpperCase()) : 'Scheduled'}
+                              <div className="flex justify-between items-end">
+                                <span className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest ${getStatusColor(trip.status || 'scheduled')}`}>
+                                  {(trip.status || 'scheduled').replace('_', ' ')}
                                 </span>
-                                <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium ${getPriorityColor(trip.priority || 'medium')}`}>
-                                  {trip.priority ? (trip.priority.charAt(0).toUpperCase() + trip.priority.slice(1)) : 'Medium'}
-                                </span>
+                                <span className="text-[10px] font-black text-gray-900">{trip.progress ?? 0}%</span>
                               </div>
-                              <div className="space-y-0.5">
-                                <div className="flex items-center justify-between">
-                                  <span className="text-[10px] text-gray-600">Progress</span>
-                                  <span className="text-xs font-medium text-gray-900">{trip.progress}%</span>
-                                </div>
-                                <div className="w-full bg-gray-200 rounded-full h-1.5">
-                                  <div
-                                    className={`h-1.5 rounded-full transition-all duration-300 ${getProgressColor(trip.progress, trip.status)}`}
-                                    style={{ width: `${trip.progress}%` }}
-                                  ></div>
-                                </div>
+                              <div className="w-32 bg-gray-100 h-1 rounded-full overflow-hidden">
+                                <div
+                                  className={`h-full rounded-full transition-all duration-500 ${getProgressColor(trip.progress, trip.status)}`}
+                                  style={{ width: `${trip.progress}%` }}
+                                />
                               </div>
-                              {trip.delay && trip.delay > 0 && (
-                                <div className="text-[10px] text-gray-500">
-                                  ⚠️ +{formatDuration(trip.delay)} delay
-                                </div>
-                              )}
-                              {trip.actualDuration && trip.estimatedDuration && (
-                                <div className="text-[10px] text-gray-500">
-                                  {trip.actualDuration > trip.estimatedDuration ? (
-                                    <span className="text-gray-600">+{formatDuration(trip.actualDuration - trip.estimatedDuration)} over</span>
-                                  ) : (
-                                    <span className="text-gray-600">-{formatDuration(trip.estimatedDuration - trip.actualDuration)} under</span>
-                                  )}
-                                </div>
-                              )}
                             </div>
-                          </td>
-                          <td className="px-2 py-1.5">
-                            <div className="space-y-1">
-                              <div className="text-xs font-semibold text-gray-900">
-                                {formatCurrency(trip.revenue ?? 0)}
+                          </div>
+                        </td>
+                        <td className="px-6 py-5">
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2">
+                              <FaUser className="text-slate-400 w-3 h-3" />
+                              <span className="text-xs font-black text-gray-900 tracking-tight">{trip.driverName}</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <FaTruck className="text-slate-400 w-3 h-3" />
+                              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{trip.truckNumber}</span>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-5">
+                          <div className="space-y-2">
+                            <div className="text-xs font-black text-gray-900 tracking-tight">{trip.cargoType}</div>
+                            <div className="flex items-center gap-4">
+                              <div className="flex items-center gap-1.5">
+                                <FaWeightHanging className="text-slate-400 w-3 h-3" />
+                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{formatWeight(trip.cargoWeight)}</span>
                               </div>
-                              <div className="text-[10px] text-gray-500">
-                                Cost: {formatCurrency(totalCost)}
-                              </div>
-                              <div className={`text-[10px] font-medium ${profit >= 0 ? 'text-gray-700' : 'text-gray-600'}`}>
-                                Profit: {formatCurrency(profit)}
-                              </div>
-                              {profitMargin !== '0.0' && (
-                                <div className="text-[10px] text-gray-500">
-                                  Margin: {profitMargin}%
-                                </div>
+                              {trip.isFragile && (
+                                <span className="text-[9px] font-black uppercase tracking-widest text-rose-500 bg-rose-50 px-1.5 py-0.5 rounded">Fragile</span>
                               )}
                             </div>
-                          </td>
-                          <td className="px-2 py-1.5">
-                            <div className="flex items-center gap-1">
-                              <button
-                                onClick={() => {
-                                  setSelectedTrip(trip);
-                                  setShowDetailsModal(true);
-                                }}
-                                className="p-1 text-gray-600 hover:bg-gray-100 rounded transition-colors"
-                                title="View Details"
-                              >
-                                <FaEye className="w-3 h-3" />
-                              </button>
-                              <button
-                                className="p-1 text-gray-600 hover:bg-gray-50 rounded transition-colors"
-                                title="Edit"
-                              >
-                                <FaEdit className="w-3 h-3" />
-                              </button>
-                              <button
-                                className="p-1 text-gray-600 hover:bg-gray-50 rounded transition-colors"
-                                title="Track"
-                              >
-                                <FaMapMarkerAlt className="w-3 h-3" />
-                              </button>
+                          </div>
+                        </td>
+                        <td className="px-6 py-5">
+                          <div className="space-y-1">
+                            <div className="text-sm font-black text-gray-900 tracking-tight">{formatCurrency(trip.revenue)}</div>
+                            <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                              Net Profit: <span className="text-indigo-600">{formatCurrency(calculateProfit(trip.revenue, trip.fuelCost, trip.tollCost))}</span>
                             </div>
-                          </td>
-                        </tr>
-                      );
-                    })
+                          </div>
+                        </td>
+                        <td className="px-6 py-5">
+                          <div className="flex justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button
+                              onClick={() => {
+                                setSelectedTrip(trip);
+                                setShowDetailsModal(true);
+                              }}
+                              className="p-2.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-2xl transition-all"
+                            >
+                              <FaEye size={16} />
+                            </button>
+                            <button className="p-2.5 text-slate-400 hover:text-gray-900 hover:bg-gray-100 rounded-2xl transition-all">
+                              <FaEdit size={16} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
                   )}
                 </tbody>
               </table>
             </div>
-            {/* Pagination */}
-            <div className="flex items-center justify-between p-2 border-t border-gray-200 bg-gray-50">
-              <div className="text-[10px] text-gray-600">
-                Showing {Math.min(endIdx, total)} of {total}
+
+            {/* Pagination Controls */}
+            <div className="px-6 py-5 border-t border-gray-50 flex items-center justify-between bg-[#fafafa]">
+              <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                Showing {startIdx + 1}-{Math.min(endIdx, total)} of {total} Records
               </div>
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-2">
                 <button
-                  className="px-1.5 py-0.5 text-xs border border-gray-300 rounded disabled:opacity-50 hover:bg-gray-100"
-                  onClick={() => setPage(Math.max(1, currentPage - 1))}
                   disabled={currentPage === 1}
+                  onClick={() => setPage(page - 1)}
+                  className="px-4 py-2 text-[10px] font-black uppercase tracking-widest text-slate-400 border border-gray-200 rounded-xl disabled:opacity-30 hover:bg-white transition-all"
                 >
-                  Previous
+                  Prev
                 </button>
-                <span className="text-[10px] text-gray-700">Page {currentPage} / {totalPages}</span>
+                <div className="bg-white border border-gray-200 rounded-xl px-4 py-2 text-[10px] font-black text-gray-900">
+                  {currentPage} <span className="mx-1 text-slate-300">/</span> {totalPages}
+                </div>
                 <button
-                  className="px-1.5 py-0.5 text-xs border border-gray-300 rounded disabled:opacity-50 hover:bg-gray-100"
-                  onClick={() => setPage(Math.min(totalPages, currentPage + 1))}
                   disabled={currentPage === totalPages}
+                  onClick={() => setPage(page + 1)}
+                  className="px-4 py-2 text-[10px] font-black uppercase tracking-widest text-slate-400 border border-gray-200 rounded-xl disabled:opacity-30 hover:bg-white transition-all"
                 >
                   Next
                 </button>
@@ -977,278 +748,158 @@ const AdminTrips: React.FC = () => {
         </div>
       )}
 
-      {/* Trip Details Modal */}
+      {/* Modern Perspective Modal */}
       {showDetailsModal && selectedTrip && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-            <div className="p-3 border-b border-gray-200">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-gray-700 rounded-lg flex items-center justify-center">
-                    <FaBarcode className="text-white text-sm" />
-                  </div>
-                  <div>
-                    <h2 className="text-lg font-bold text-gray-900">{selectedTrip.reference}</h2>
-                    <p className="text-xs text-gray-600">{selectedTrip.routeName}</p>
-                    <p className="text-[10px] text-gray-500">{selectedTrip.origin} → {selectedTrip.destination}</p>
-                  </div>
+        <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col border border-white/20 animate-in fade-in zoom-in duration-300">
+            <div className="p-10 border-b border-gray-50 flex items-center justify-between bg-[#fafafa]/50">
+              <div className="flex items-center gap-6">
+                <div className="w-16 h-16 bg-gray-900 rounded-[1.5rem] flex items-center justify-center shadow-2xl shadow-gray-900/20">
+                  <FaBarcode className="text-white text-2xl" />
                 </div>
-                <button
-                  onClick={() => setShowDetailsModal(false)}
-                  className="p-1.5 text-gray-400 hover:text-gray-600 rounded-lg transition-colors"
-                >
-                  <FaTimes className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-
-            <div className="p-3 space-y-3">
-              {/* Status and Progress */}
-              <div className="flex items-center justify-between flex-wrap gap-2">
-                <div className="flex items-center space-x-2 flex-wrap">
-                  <div className="flex items-center space-x-1.5">
-                    {getStatusIcon(selectedTrip.status)}
-                    <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium ${getStatusColor(selectedTrip.status || 'scheduled')}`}>
-                      {selectedTrip.status ? selectedTrip.status.replace('_', ' ').replace(/\b\w/g, (l: string) => l.toUpperCase()) : 'Scheduled'}
+                <div>
+                  <h2 className="text-3xl font-black text-gray-900 tracking-tight leading-none mb-2">{selectedTrip.reference}</h2>
+                  <div className="flex items-center gap-3">
+                    <span className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest ${getStatusColor(selectedTrip.status)}`}>
+                      {(selectedTrip.status || 'scheduled').replace('_', ' ')}
+                    </span>
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                      Tenant Identifier: <span className="text-gray-900">{selectedTrip.tenantName}</span>
                     </span>
                   </div>
-                  <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium ${getPriorityColor(selectedTrip.priority || 'medium')}`}>
-                    {selectedTrip.priority ? (selectedTrip.priority.charAt(0).toUpperCase() + selectedTrip.priority.slice(1)) : 'Medium'} Priority
-                  </span>
-                  <div className="flex items-center space-x-1.5">
-                    <span className="text-xs text-gray-600">Progress:</span>
-                    <div className="w-24 bg-gray-200 rounded-full h-1.5">
-                      <div
-                        className={`h-1.5 rounded-full ${getProgressColor(selectedTrip.progress, selectedTrip.status)}`}
-                        style={{ width: `${selectedTrip.progress}%` }}
-                      ></div>
-                    </div>
-                    <span className="text-xs font-medium text-gray-900">{selectedTrip.progress}%</span>
-                  </div>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowDetailsModal(false)}
+                className="w-12 h-12 flex items-center justify-center text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-[1rem] transition-all"
+              >
+                <FaTimes size={20} />
+              </button>
+            </div>
+
+            <div className="p-10 overflow-y-auto custom-scrollbar bg-white">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
+                <div className="bg-[#fafafa] rounded-3xl p-6 border border-gray-100 group hover:border-indigo-100 transition-all">
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Route Distance</p>
+                  <h4 className="text-3xl font-black text-gray-900 tracking-tight">{formatDistance(selectedTrip.distance)}</h4>
+                </div>
+                <div className="bg-[#fafafa] rounded-3xl p-6 border border-gray-100 group hover:border-indigo-100 transition-all">
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Current Duration</p>
+                  <h4 className="text-3xl font-black text-gray-900 tracking-tight">{formatDuration((selectedTrip.actualDuration || selectedTrip.estimatedDuration) || 0)}</h4>
+                </div>
+                <div className="bg-[#fafafa] rounded-3xl p-6 border border-gray-100 group hover:border-indigo-100 transition-all">
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Payload Weight</p>
+                  <h4 className="text-3xl font-black text-gray-900 tracking-tight">{formatWeight(selectedTrip.cargoWeight)}</h4>
+                </div>
+                <div className="bg-[#fafafa] rounded-3xl p-6 border border-gray-100 group hover:border-indigo-100 transition-all">
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Gross Revenue</p>
+                  <h4 className="text-3xl font-black text-indigo-600 tracking-tight">{formatCurrency(selectedTrip.revenue)}</h4>
                 </div>
               </div>
 
-              {/* Key Metrics */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                <div className="bg-gray-50 rounded-lg p-2 border border-gray-200">
-                  <div className="flex items-center space-x-2">
-                    <FaRoad className="text-gray-600 text-xs" />
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
+                <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-12 text-gray-900">
+                  <div className="space-y-8">
                     <div>
-                      <div className="text-base font-bold text-gray-900">{formatDistance(selectedTrip.distance ?? 0)}</div>
-                      <div className="text-[10px] text-gray-700">Total Distance</div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-gray-50 rounded-lg p-2 border border-gray-200">
-                  <div className="flex items-center space-x-2">
-                    <FaClock className="text-gray-600 text-xs" />
-                    <div>
-                      <div className="text-base font-bold text-gray-900">{formatDuration(selectedTrip.estimatedDuration ?? 0)}</div>
-                      <div className="text-[10px] text-gray-700">
-                        {selectedTrip.actualDuration ? 'Actual' : 'Est. Duration'}
-                      </div>
-                      {selectedTrip.actualDuration && (
-                        <div className="text-[10px] text-gray-500">
-                          Est: {formatDuration(selectedTrip.estimatedDuration ?? 0)}
+                      <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-3">
+                        <div className="w-2 h-2 rounded-full bg-indigo-500 shadow-lg shadow-indigo-500/50" />
+                        Operation Actors
+                      </h3>
+                      <div className="space-y-6">
+                        <div className="flex justify-between items-center bg-[#fafafa] p-4 rounded-2xl border border-gray-50">
+                          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Driver</span>
+                          <span className="text-sm font-black text-gray-900 tracking-tight">{selectedTrip.driverName}</span>
                         </div>
-                      )}
+                        <div className="flex justify-between items-center bg-[#fafafa] p-4 rounded-2xl border border-gray-50">
+                          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Truck Num</span>
+                          <span className="text-sm font-black text-gray-900 tracking-tight">{selectedTrip.truckNumber}</span>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </div>
 
-                <div className="bg-gray-50 rounded-lg p-2 border border-gray-200">
-                  <div className="flex items-center space-x-2">
-                    <FaWeightHanging className="text-gray-600 text-xs" />
                     <div>
-                      <div className="text-base font-bold text-gray-900">{formatWeight(selectedTrip.cargoWeight ?? 0)}</div>
-                      <div className="text-[10px] text-gray-700">Cargo Weight</div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-gray-50 rounded-lg p-2 border border-gray-200">
-                  <div className="flex items-center space-x-2">
-                    <FaDollarSign className="text-gray-600 text-xs" />
-                    <div>
-                      <div className="text-base font-bold text-gray-900">{formatCurrency(selectedTrip.revenue ?? 0)}</div>
-                      <div className="text-[10px] text-gray-700">Revenue</div>
-                      <div className="text-[10px] text-gray-500">
-                        Margin: {getProfitMargin(selectedTrip.revenue ?? 0, selectedTrip.fuelCost ?? 0, selectedTrip.tollCost ?? 0)}%
+                      <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-3">
+                        <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-lg shadow-emerald-500/50" />
+                        Manifest Details
+                      </h3>
+                      <div className="space-y-6">
+                        <div className="flex justify-between items-center bg-[#fafafa] p-4 rounded-2xl border border-gray-50">
+                          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Cargo Type</span>
+                          <span className="text-sm font-black text-gray-900 tracking-tight">{selectedTrip.cargoType}</span>
+                        </div>
+                        <div className="flex justify-between items-center bg-[#fafafa] p-4 rounded-2xl border border-gray-50">
+                          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Load Value</span>
+                          <span className="text-sm font-black text-gray-900 tracking-tight">{formatCurrency(selectedTrip.loadValue ?? 0)}</span>
+                        </div>
                       </div>
                     </div>
                   </div>
+
+                  <div className="space-y-8">
+                    <div>
+                      <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-3">
+                        <div className="w-2 h-2 rounded-full bg-rose-500 shadow-lg shadow-rose-500/50" />
+                        Logistic Schedule
+                      </h3>
+                      <div className="space-y-6">
+                        <div className="flex justify-between items-center bg-[#fafafa] p-4 rounded-2xl border border-gray-50">
+                          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Departure</span>
+                          <span className="text-sm font-black text-gray-900 tracking-tight">{formatDateTime(selectedTrip.startTime || '')}</span>
+                        </div>
+                        <div className="flex justify-between items-center bg-[#fafafa] p-4 rounded-2xl border border-gray-50">
+                          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Estimated End</span>
+                          <span className="text-sm font-black text-gray-900 tracking-tight">{formatDateTime(selectedTrip.endTime ?? '')}</span>
+                        </div>
+                        <div className="flex justify-between items-center bg-[#fafafa] p-4 rounded-2xl border border-gray-50">
+                          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Origin</span>
+                          <span className="text-sm font-black text-gray-900 tracking-tight truncate ml-4 text-right">{(selectedTrip.origin || '').split(',')[0]}</span>
+                        </div>
+                        <div className="flex justify-between items-center bg-[#fafafa] p-4 rounded-2xl border border-gray-50">
+                          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Destination</span>
+                          <span className="text-sm font-black text-gray-900 tracking-tight truncate ml-4 text-right">{(selectedTrip.destination || '').split(',')[0]}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-8">
+                  <div>
+                    <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6">Financial Analytics</h3>
+                    <div className="bg-gray-900 rounded-[2rem] p-8 text-white shadow-2xl shadow-gray-900/40 relative overflow-hidden group">
+                      <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-110 transition-transform duration-1000">
+                        <FaDollarSign size={80} />
+                      </div>
+                      <div className="relative space-y-6">
+                        <div>
+                          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Net Economic Win</p>
+                          <h4 className="text-3xl font-black text-indigo-400">{formatCurrency(calculateProfit(selectedTrip.revenue, selectedTrip.fuelCost, selectedTrip.tollCost))}</h4>
+                        </div>
+                        <div className="h-px bg-white/10" />
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Profit Margin</p>
+                            <p className="text-xl font-black">{getProfitMargin(selectedTrip.revenue, selectedTrip.fuelCost, selectedTrip.tollCost)}%</p>
+                          </div>
+                          <div>
+                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Logistic Cost</p>
+                            <p className="text-xl font-black text-rose-400">{formatCurrency((selectedTrip.fuelCost ?? 0) + (selectedTrip.tollCost ?? 0))}</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {selectedTrip.notes && (
+                    <div>
+                      <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Dispatcher Notes</h3>
+                      <div className="bg-indigo-50/50 rounded-3xl p-6 border border-indigo-100/50 italic text-sm text-indigo-900/70 leading-relaxed shadow-inner">
+                        "{selectedTrip.notes}"
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
-
-              {/* Trip Information Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                {/* Trip Details */}
-                <div className="space-y-2">
-                  <h3 className="text-xs font-semibold text-gray-900">Trip Details</h3>
-                  <div className="space-y-1.5 text-xs">
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Tenant:</span>
-                      <span className="font-medium">{selectedTrip.tenantName}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Driver:</span>
-                      <span className="font-medium">{selectedTrip.driverName}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Truck:</span>
-                      <span className="font-medium">{selectedTrip.truckNumber}</span>
-                    </div>
-                    {selectedTrip.cargoTitle && (
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Cargo Title:</span>
-                        <span className="font-medium">{selectedTrip.cargoTitle}</span>
-                      </div>
-                    )}
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Cargo Type:</span>
-                      <span className="font-medium">{selectedTrip.cargoType || 'N/A'}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Weight:</span>
-                      <span className="font-medium">{formatWeight(selectedTrip.cargoWeight ?? 0)}</span>
-                    </div>
-                    {selectedTrip.cargoVolume && (
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Volume:</span>
-                        <span className="font-medium">{formatVolume(selectedTrip.cargoVolume)}</span>
-                      </div>
-                    )}
-                    {selectedTrip.loadValue && (
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Load Value:</span>
-                        <span className="font-medium">{formatCurrency(selectedTrip.loadValue)}</span>
-                      </div>
-                    )}
-                    {(selectedTrip.numberOfPieces || selectedTrip.numberOfPallets) && (
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Quantity:</span>
-                        <span className="font-medium">
-                          {selectedTrip.numberOfPieces && `${selectedTrip.numberOfPieces} pieces`}
-                          {selectedTrip.numberOfPieces && selectedTrip.numberOfPallets && ' • '}
-                          {selectedTrip.numberOfPallets && `${selectedTrip.numberOfPallets} pallets`}
-                        </span>
-                      </div>
-                    )}
-                    {selectedTrip.packagingType && (
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Packaging:</span>
-                        <span className="font-medium">{selectedTrip.packagingType}</span>
-                      </div>
-                    )}
-                    {(selectedTrip.isFragile || selectedTrip.isHazardous || selectedTrip.requiresRefrigeration) && (
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Special Requirements:</span>
-                        <span className="font-medium">
-                          {[
-                            selectedTrip.isFragile && 'Fragile',
-                            selectedTrip.isHazardous && 'Hazardous',
-                            selectedTrip.requiresRefrigeration && 'Refrigerated'
-                          ].filter(Boolean).join(', ')}
-                        </span>
-                      </div>
-                    )}
-                    {selectedTrip.currentLocation && (
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Current Location:</span>
-                        <span className="font-medium text-gray-700">{selectedTrip.currentLocation}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Schedule Information */}
-                <div className="space-y-2">
-                  <h3 className="text-xs font-semibold text-gray-900">Schedule</h3>
-                  <div className="space-y-1.5 text-xs">
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Created:</span>
-                      <span className="font-medium">{new Date(selectedTrip.createdAt).toLocaleString()}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Start Time:</span>
-                      <span className="font-medium">{formatDateTime(selectedTrip.startTime)}</span>
-                    </div>
-                    {selectedTrip.endTime && (
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">End Time:</span>
-                        <span className="font-medium">{formatDateTime(selectedTrip.endTime)}</span>
-                      </div>
-                    )}
-                    {selectedTrip.actualDuration && (
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Actual Duration:</span>
-                        <span className="font-medium">{formatDuration(selectedTrip.actualDuration)}</span>
-                      </div>
-                    )}
-                    {selectedTrip.delay && selectedTrip.delay > 0 && (
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Delay:</span>
-                        <span className="font-medium text-gray-600">+{formatDuration(selectedTrip.delay)}</span>
-                      </div>
-                    )}
-                    {selectedTrip.actualDuration && selectedTrip.estimatedDuration && (
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Time Difference:</span>
-                        <span className={`font-medium ${selectedTrip.actualDuration > selectedTrip.estimatedDuration ? 'text-gray-600' : 'text-gray-700'}`}>
-                          {selectedTrip.actualDuration > selectedTrip.estimatedDuration ? '+' : '-'}
-                          {formatDuration(Math.abs(selectedTrip.actualDuration - selectedTrip.estimatedDuration))}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Financial Information */}
-                <div className="space-y-2">
-                  <h3 className="text-xs font-semibold text-gray-900">Financial</h3>
-                  <div className="space-y-1.5 text-xs">
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Revenue:</span>
-                      <span className="font-medium text-gray-700">{formatCurrency(selectedTrip.revenue ?? 0)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Fuel Cost:</span>
-                      <span className="font-medium text-gray-600">{formatCurrency(selectedTrip.fuelCost ?? 0)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Toll Cost:</span>
-                      <span className="font-medium text-gray-600">{formatCurrency(selectedTrip.tollCost ?? 0)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Total Cost:</span>
-                      <span className="font-medium text-gray-600">{formatCurrency((selectedTrip.fuelCost ?? 0) + (selectedTrip.tollCost ?? 0))}</span>
-                    </div>
-                    <div className="flex justify-between border-t pt-1.5">
-                      <span className="text-gray-600 font-semibold">Net Profit:</span>
-                      <span className={`font-bold ${calculateProfit(selectedTrip.revenue ?? 0, selectedTrip.fuelCost ?? 0, selectedTrip.tollCost ?? 0) >= 0 ? 'text-gray-700' : 'text-gray-600'}`}>
-                        {formatCurrency(calculateProfit(selectedTrip.revenue ?? 0, selectedTrip.fuelCost ?? 0, selectedTrip.tollCost ?? 0))}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Profit Margin:</span>
-                      <span className="font-medium text-gray-700">
-                        {getProfitMargin(selectedTrip.revenue ?? 0, selectedTrip.fuelCost ?? 0, selectedTrip.tollCost ?? 0)}%
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Trip Notes */}
-              {selectedTrip.notes && (
-                <div className="space-y-2">
-                  <h3 className="text-xs font-semibold text-gray-900">Notes</h3>
-                  <div className="bg-gray-50 rounded-lg p-2">
-                    <p className="text-xs text-gray-700">{selectedTrip.notes}</p>
-                  </div>
-                </div>
-              )}
             </div>
           </div>
         </div>

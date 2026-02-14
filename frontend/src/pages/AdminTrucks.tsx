@@ -8,12 +8,12 @@ import AdminPageLayout from '../components/Admin/AdminPageLayout';
 import { useAuth } from '../contexts/AuthContext';
 import { usePermission } from '../contexts/PermissionContext';
 import {
-  FaTruck, FaEdit, FaPlus, FaSearch, FaDownload,
-  FaEye, FaCheck, FaTimes, FaBan, FaMapMarkerAlt,
-  FaSort, FaClock, FaRoad, FaUser, FaBuilding,
-  FaShieldAlt, FaExclamationTriangle, FaPlay, FaPause,
-  FaTrash, FaWrench, FaLayerGroup
-} from 'react-icons/fa';
+  Truck as LucideTruck, Edit, Plus, Search, Download,
+  Eye, Check, X, Ban, MapPin,
+  ChevronsUpDown, Clock, User, Building2,
+  ShieldCheck, AlertTriangle, Play, Pause,
+  Trash2, Wrench, Layers, Milestone
+} from 'lucide-react';
 
 interface Truck extends FleetItem {
   tenantId?: string;
@@ -26,15 +26,27 @@ interface Truck extends FleetItem {
     longitude: number;
   };
   locationUpdatedAt?: string;
+  tenant?: {
+    id: string;
+    name: string;
+    subdomain?: string;
+    status?: string;
+    type?: string;
+  };
   owner?: {
     id: string;
     email: string;
+    phoneNumber?: string;
     profile?: {
       firstName?: string;
       lastName?: string;
       companyName?: string;
     };
   };
+  ownerEmail?: string | null;
+  ownerPhone?: string | null;
+  currentDriverName?: string | null;
+  currentDriverPhone?: string | null;
 }
 
 interface Tenant {
@@ -48,7 +60,7 @@ const AdminTrucks: React.FC = () => {
   const qc = useQueryClient();
   const { user } = useAuth();
   const { hasPermission } = usePermission();
-  
+
   // Check permissions instead of hardcoded role
   const canManageTrucks = hasPermission('truck:manage') || hasPermission('truck:update') || user?.role === 'ADMIN' || user?.role === 'TENANT_ADMIN';
 
@@ -102,7 +114,6 @@ const AdminTrucks: React.FC = () => {
   const [pageSize, setPageSize] = useState(10);
   const [selectedTruckIds, setSelectedTruckIds] = useState<string[]>([]);
   const [groupByOwner, setGroupByOwner] = useState(false);
-  const [expandedOwners, setExpandedOwners] = useState<Set<string>>(new Set());
 
   // Get tenants for mapping
   const tenants: Tenant[] = tenantsData?.tenants || [];
@@ -136,29 +147,31 @@ const AdminTrucks: React.FC = () => {
     }
     console.log('🔄 Mapping', trucksData.length, 'trucks');
     const mapped = trucksData.map((truck: any) => {
-      let ownerName = 'N/A';
-      if (truck.ownerId) {
-        // First try to get from ownerMap
-        ownerName = ownerMap.get(truck.ownerId) || 'N/A';
+      // Backend now provides ownerName, tenantName, and full objects
+      // Use backend data if available, otherwise fall back to local mapping
+      let ownerName = truck.ownerName || 'No Owner';
+      let tenantName = truck.tenantName || 'Unknown Tenant';
 
-        // If not in map, try to get from truck.owner object
-        if (ownerName === 'N/A' && truck.owner) {
-          if (truck.owner.profile?.firstName || truck.owner.profile?.lastName) {
-            ownerName = `${truck.owner.profile.firstName || ''} ${truck.owner.profile.lastName || ''}`.trim() || truck.owner.profile.companyName || truck.owner.email || 'N/A';
-          } else if (truck.owner.profile?.companyName) {
-            ownerName = truck.owner.profile.companyName;
-          } else if (truck.owner.email) {
-            ownerName = truck.owner.email;
-          }
-        }
+      // Fallback to local mapping if backend didn't provide names
+      if (ownerName === 'No Owner' && truck.ownerId) {
+        ownerName = ownerMap.get(truck.ownerId) || 'N/A';
+      }
+
+      if (tenantName === 'Unknown Tenant' && truck.tenantId) {
+        tenantName = tenantMap.get(truck.tenantId) || 'N/A';
       }
 
       return {
         ...truck,
-        tenantId: truck.tenantId,
-        tenantName: truck.tenantId ? (tenantMap.get(truck.tenantId) || 'N/A') : 'N/A',
-        ownerId: truck.ownerId,
-        ownerName: ownerName
+        tenantName,
+        ownerName,
+        // Include additional info from backend
+        ownerEmail: truck.ownerEmail || truck.owner?.email || null,
+        ownerPhone: truck.ownerPhone || truck.owner?.phoneNumber || null,
+        tenantStatus: truck.tenant?.status || null,
+        tenantType: truck.tenant?.type || null,
+        currentDriverName: truck.currentDriverName || null,
+        currentDriverPhone: truck.currentDriverPhone || truck.driver?.phoneNumber || null,
       };
     });
     console.log('✅ Mapped trucks:', mapped.length);
@@ -173,7 +186,7 @@ const AdminTrucks: React.FC = () => {
         tenantTruckCounts.set(truck.tenantId, (tenantTruckCounts.get(truck.tenantId) || 0) + 1);
       }
     });
-    
+
     return tenants
       .filter(tenant => tenantTruckCounts.has(tenant.id))
       .map(tenant => ({
@@ -332,7 +345,7 @@ const AdminTrucks: React.FC = () => {
   // Group trucks by owner if enabled
   const groupedTrucks = useMemo(() => {
     if (!groupByOwner) return null;
-    
+
     const groups = new Map<string, Truck[]>();
     filteredTrucks.forEach((truck: Truck) => {
       const ownerKey = truck.ownerId || 'unassigned';
@@ -341,7 +354,7 @@ const AdminTrucks: React.FC = () => {
       }
       groups.get(ownerKey)!.push(truck);
     });
-    
+
     return Array.from(groups.entries()).map(([ownerId, trucks]) => ({
       ownerId,
       ownerName: trucks[0]?.ownerName || 'Unassigned',
@@ -367,29 +380,29 @@ const AdminTrucks: React.FC = () => {
       label: 'Total Trucks',
       value: filteredTrucks.length,
       description: tenantFilter !== 'all' ? 'In selected tenant' : 'All registered trucks',
-      color: 'from-blue-500 to-blue-600',
-      icon: FaTruck
+      color: 'bg-gray-800',
+      icon: LucideTruck
     },
     {
       label: 'Available',
       value: filteredTrucks.filter((t: Truck) => t.status === 'available').length,
       description: 'Ready for assignment',
-      color: 'from-green-500 to-green-600',
-      icon: FaCheck
+      color: 'bg-gray-800',
+      icon: Check
     },
     {
       label: 'In Use',
       value: filteredTrucks.filter((t: Truck) => t.status === 'in_use' || t.status === 'on_trip').length,
       description: 'Currently assigned',
-      color: 'from-purple-500 to-purple-600',
-      icon: FaPlay
+      color: 'bg-gray-800',
+      icon: Play
     },
     {
       label: 'Maintenance',
       value: filteredTrucks.filter((t: Truck) => t.status === 'maintenance').length,
       description: 'Under maintenance',
-      color: 'from-yellow-500 to-yellow-600',
-      icon: FaWrench
+      color: 'bg-gray-800',
+      icon: Wrench
     }
   ];
 
@@ -406,12 +419,12 @@ const AdminTrucks: React.FC = () => {
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'available': return <FaCheck className="text-green-500 text-[10px]" />;
+      case 'available': return <Check className="text-green-500" size={12} />;
       case 'in_use':
-      case 'on_trip': return <FaPlay className="text-blue-500 text-[10px]" />;
-      case 'maintenance': return <FaWrench className="text-yellow-500 text-[10px]" />;
-      case 'unavailable': return <FaBan className="text-red-500 text-[10px]" />;
-      default: return <FaPause className="text-gray-500 text-[10px]" />;
+      case 'on_trip': return <Play className="text-indigo-500" size={12} />;
+      case 'maintenance': return <Wrench className="text-yellow-500" size={12} />;
+      case 'unavailable': return <Ban className="text-red-500" size={12} />;
+      default: return <Pause className="text-gray-500" size={12} />;
     }
   };
 
@@ -426,12 +439,18 @@ const AdminTrucks: React.FC = () => {
 
   if (trucksError) {
     return (
-      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-        <div className="flex items-center gap-2">
-          <FaExclamationTriangle className="text-red-600" />
-          <h2 className="text-base font-semibold text-gray-900">Error Loading Trucks</h2>
+      <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
+        <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <AlertTriangle className="text-red-600" size={24} />
         </div>
-        <p className="text-sm text-gray-600 mt-2">Please try refreshing the page.</p>
+        <h2 className="text-lg font-bold text-gray-900 mb-2">Error Loading Trucks</h2>
+        <p className="text-sm text-gray-600 mb-4">Failed to load truck data. Please try again later.</p>
+        <button
+          onClick={() => window.location.reload()}
+          className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium"
+        >
+          Retry
+        </button>
       </div>
     );
   }
@@ -444,9 +463,9 @@ const AdminTrucks: React.FC = () => {
         canManageTrucks ? (
           <button
             onClick={() => setShowCreateModal(true)}
-            className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-2.5 py-1.5 rounded-lg flex items-center gap-1.5 hover:from-blue-600 hover:to-blue-700 transition-all duration-200 shadow-sm text-xs font-medium"
+            className="bg-indigo-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-indigo-700 transition-all duration-200 text-sm font-bold"
           >
-            <FaPlus className="w-3 h-3" />
+            <Plus size={16} />
             <span>Add Truck</span>
           </button>
         ) : undefined
@@ -458,22 +477,17 @@ const AdminTrucks: React.FC = () => {
         {stats.map((stat, index) => {
           const Icon = stat.icon;
           return (
-            <div key={index} className="bg-white rounded-lg shadow-sm border border-gray-200 p-2.5 hover:shadow-md transition-all duration-200 group relative overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-100 transition-opacity" style={{
-                background: stat.color === 'from-blue-500 to-blue-600' ? 'linear-gradient(to bottom right, rgba(59, 130, 246, 0.05), transparent)' :
-                  stat.color === 'from-green-500 to-green-600' ? 'linear-gradient(to bottom right, rgba(16, 185, 129, 0.05), transparent)' :
-                    stat.color === 'from-purple-500 to-purple-600' ? 'linear-gradient(to bottom right, rgba(168, 85, 247, 0.05), transparent)' :
-                      'linear-gradient(to bottom right, rgba(245, 158, 11, 0.05), transparent)'
-              }}></div>
+            <div key={index} className="bg-white rounded-xl border border-gray-200 p-6 hover:border-gray-300 transition-all duration-200 group relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-100 transition-opacity bg-gray-50"></div>
               <div className="relative">
                 <div className="flex items-center justify-between">
                   <div className="flex-1">
-                    <p className="text-xs text-gray-600 mb-0.5">{stat.label}</p>
-                    <p className="text-lg font-bold text-gray-900 mb-0.5">{stat.value}</p>
-                    <p className="text-[10px] text-gray-500">{stat.description}</p>
+                    <p className="text-xs text-gray-600 mb-1">{stat.label}</p>
+                    <p className="text-2xl font-black text-gray-900 mb-0.5">{stat.value}</p>
+                    <p className="text-xs text-gray-500">{stat.description}</p>
                   </div>
-                  <div className={`w-10 h-10 bg-gradient-to-r ${stat.color} rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform`}>
-                    <Icon className="text-white text-sm" />
+                  <div className="w-12 h-12 bg-gray-800 rounded-xl flex items-center justify-center group-hover:bg-gray-900 transition-colors">
+                    <Icon className="text-white" size={20} />
                   </div>
                 </div>
               </div>
@@ -483,14 +497,14 @@ const AdminTrucks: React.FC = () => {
       </div>
 
       {/* Toolbar */}
-      <div className="bg-white rounded-lg shadow-sm p-2.5 border border-gray-200">
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-2">
+      <div className="bg-white rounded-xl border border-gray-200 p-4">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
           <div className="relative">
-            <FaSearch className="absolute left-2.5 top-1/2 transform -translate-y-1/2 text-gray-400 w-3.5 h-3.5" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
             <input
               type="text"
               placeholder="Search trucks..."
-              className="w-full pl-9 pr-3 py-1.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full pl-10 pr-4 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -522,27 +536,21 @@ const AdminTrucks: React.FC = () => {
             ))}
           </select>
 
-          <button 
+          <button
             onClick={() => {
               setGroupByOwner(!groupByOwner);
-              if (!groupByOwner) {
-                // Expand all owners by default when grouping is enabled
-                const allOwnerIds = new Set(trucks.map(t => t.ownerId || 'unassigned'));
-                setExpandedOwners(allOwnerIds);
-              }
             }}
-            className={`px-2 py-1.5 text-xs border rounded-lg flex items-center justify-center gap-1.5 transition-all ${
-              groupByOwner 
-                ? 'bg-blue-50 border-blue-300 text-blue-700 font-medium' 
-                : 'border-gray-200 hover:bg-gray-50'
-            }`}
+            className={`px-3 py-2 text-xs border rounded-lg flex items-center justify-center gap-2 transition-all ${groupByOwner
+              ? 'bg-indigo-50 border-indigo-200 text-indigo-700 font-bold'
+              : 'border-gray-200 hover:bg-gray-50 text-gray-600'
+              }`}
           >
-            <FaLayerGroup className="w-3 h-3" />
+            <Layers size={14} />
             <span>Group by Owner</span>
           </button>
 
-          <button className="px-2 py-1.5 text-xs border border-gray-200 rounded-lg flex items-center justify-center gap-1.5 hover:bg-gray-50 transition-colors">
-            <FaDownload className="w-3 h-3" />
+          <button className="px-3 py-2 text-xs border border-gray-200 rounded-lg flex items-center justify-center gap-2 hover:bg-gray-50 transition-colors text-gray-600">
+            <Download size={14} />
             <span>Export</span>
           </button>
         </div>
@@ -570,10 +578,10 @@ const AdminTrucks: React.FC = () => {
       </div>
 
       {/* Trucks Table */}
-      <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200">
+      <div className="bg-white rounded-xl overflow-hidden border border-gray-200">
         <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gradient-to-r from-gray-50 to-gray-100 border-b-2 border-gray-200">
+          <table className="w-full text-xs">
+            <thead className="bg-gray-50 border-b border-gray-200 sticky top-0 z-10">
               <tr>
                 <th className="px-4 py-3 w-12">
                   <input
@@ -591,14 +599,14 @@ const AdminTrucks: React.FC = () => {
                 </th>
                 <th className="px-4 py-3 text-left">
                   <button
-                    className="flex items-center gap-2 text-xs font-semibold text-gray-700 uppercase tracking-wider hover:text-gray-900 transition-colors"
+                    className="flex items-center gap-1 font-semibold text-gray-900 text-xs"
                     onClick={() => {
                       setSortBy('plateNumber');
                       setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
                     }}
                   >
                     <span>Truck Details</span>
-                    <FaSort className="w-3 h-3 opacity-50" />
+                    <ChevronsUpDown size={14} />
                   </button>
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
@@ -624,7 +632,7 @@ const AdminTrucks: React.FC = () => {
                   <td colSpan={7} className="px-4 py-16 text-center">
                     <div className="flex flex-col items-center justify-center">
                       <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-                        <FaTruck className="w-8 h-8 text-gray-400" />
+                        <LucideTruck className="w-8 h-8 text-gray-400" />
                       </div>
                       <h3 className="text-sm font-medium text-gray-900 mb-1">No trucks found</h3>
                       <p className="text-xs text-gray-500">Try adjusting your search or filters</p>
@@ -633,7 +641,7 @@ const AdminTrucks: React.FC = () => {
                 </tr>
               ) : (
                 pagedTrucks.map((truck: Truck) => (
-                  <tr key={truck.id} className="hover:bg-blue-50/30 transition-colors group">
+                  <tr key={truck.id} className="hover:bg-gray-50 transition-colors group border-b border-gray-100 last:border-0">
                     <td className="px-4 py-4 w-12">
                       <input
                         type="checkbox"
@@ -645,24 +653,24 @@ const AdminTrucks: React.FC = () => {
                             setSelectedTruckIds(selectedTruckIds.filter(id => id !== truck.id));
                           }
                         }}
-                        className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-2 focus:ring-blue-500"
+                        className="w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-2 focus:ring-indigo-500"
                       />
                     </td>
-                    
+
                     {/* Truck Details */}
                     <td className="px-4 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-md group-hover:shadow-lg transition-shadow">
-                          <FaTruck className="text-white text-lg" />
+                        <div className="w-10 h-10 bg-indigo-50 rounded-lg flex items-center justify-center border border-indigo-100">
+                          <LucideTruck className="text-indigo-600" size={18} />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
+                          <div className="flex items-center gap-2 mb-0.5">
                             <p className="text-sm font-bold text-gray-900 truncate">{truck.plateNumber}</p>
-                            <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs font-medium rounded">
+                            <span className="px-1.5 py-0.5 bg-gray-100 text-gray-600 text-[10px] font-bold rounded">
                               {truck.year}
                             </span>
                           </div>
-                          <p className="text-xs text-gray-600 truncate">
+                          <p className="text-[10px] text-gray-500 truncate capitalize">
                             {truck.make} {truck.model}
                           </p>
                         </div>
@@ -690,12 +698,11 @@ const AdminTrucks: React.FC = () => {
                     {/* Status */}
                     <td className="px-4 py-4">
                       <div className="flex items-center gap-2">
-                        <div className={`w-2 h-2 rounded-full ${
-                          truck.status === 'available' ? 'bg-green-500 animate-pulse' :
+                        <div className={`w-2 h-2 rounded-full ${truck.status === 'available' ? 'bg-green-500 animate-pulse' :
                           truck.status === 'in_use' || truck.status === 'on_trip' ? 'bg-blue-500' :
-                          truck.status === 'maintenance' ? 'bg-yellow-500' :
-                          'bg-red-500'
-                        }`}></div>
+                            truck.status === 'maintenance' ? 'bg-yellow-500' :
+                              'bg-red-500'
+                          }`}></div>
                         {canManageTrucks ? (
                           <select
                             className={`px-3 py-1.5 rounded-lg text-xs font-medium border-0 ${getStatusColor(truck.status)} cursor-pointer hover:shadow-md transition-shadow`}
@@ -720,22 +727,59 @@ const AdminTrucks: React.FC = () => {
                     {/* Organization */}
                     <td className="px-4 py-4">
                       <div className="space-y-2">
-                        <div className="flex items-center gap-2">
-                          <div className="w-6 h-6 bg-purple-100 rounded-lg flex items-center justify-center">
-                            <FaBuilding className="text-purple-600 text-xs" />
+                        {/* Tenant Info */}
+                        <div className="flex items-center gap-2 group/tenant relative">
+                          <div className="w-6 h-6 bg-indigo-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                            <Building2 className="text-indigo-600" size={12} />
                           </div>
-                          <span className="text-xs text-gray-900 font-medium truncate max-w-[150px]">
-                            {truck.tenantName || 'N/A'}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <div className="w-6 h-6 bg-blue-100 rounded-lg flex items-center justify-center">
-                            <FaUser className="text-blue-600 text-xs" />
+                          <div className="flex-1 min-w-0">
+                            <span className="text-[11px] text-gray-900 font-bold truncate block">
+                              {truck.tenantName || 'N/A'}
+                            </span>
+                            {truck.tenant?.subdomain && (
+                              <span className="text-[10px] text-gray-500 truncate block">
+                                {truck.tenant.subdomain}
+                              </span>
+                            )}
                           </div>
-                          <span className="text-xs text-gray-600 truncate max-w-[150px]">
-                            {truck.ownerName || 'N/A'}
-                          </span>
                         </div>
+
+                        {/* Owner Info */}
+                        <div className="flex items-center gap-2 group/owner relative">
+                          <div className="w-6 h-6 bg-gray-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                            <User className="text-gray-600" size={12} />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <span className="text-[11px] text-gray-900 font-bold truncate block">
+                              {truck.ownerName || 'No Owner'}
+                            </span>
+                            {truck.ownerEmail && (
+                              <span className="text-[10px] text-gray-500 truncate block">
+                                {truck.ownerEmail}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Current Driver Info (if assigned) */}
+                        {truck.currentDriverName && (
+                          <div className="flex items-center gap-2 pt-1 border-t border-gray-100">
+                            <div className="w-6 h-6 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                              <User className="text-green-600" size={12} />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <span className="text-[10px] text-gray-500 block">Driver:</span>
+                              <span className="text-xs text-gray-900 font-medium truncate block">
+                                {truck.currentDriverName}
+                              </span>
+                              {truck.currentDriverPhone && (
+                                <span className="text-[10px] text-gray-500 truncate block">
+                                  {truck.currentDriverPhone}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </td>
 
@@ -758,8 +802,8 @@ const AdminTrucks: React.FC = () => {
                           </div>
                         </div>
                         {truck.currentLocationString && (
-                          <div className="flex items-center gap-1 text-xs text-gray-500 mt-1">
-                            <FaMapMarkerAlt className="text-red-500" />
+                          <div className="flex items-center gap-1 text-[10px] text-gray-500 mt-1">
+                            <MapPin className="text-red-500" size={10} />
                             <span className="truncate max-w-[120px]" title={truck.currentLocationString}>
                               {truck.currentLocationString}
                             </span>
@@ -776,10 +820,10 @@ const AdminTrucks: React.FC = () => {
                             setSelectedTruck(truck);
                             setShowDetailsModal(true);
                           }}
-                          className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-all hover:scale-110"
+                          className="p-1.5 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
                           title="View Details"
                         >
-                          <FaEye className="w-4 h-4" />
+                          <Eye size={14} />
                         </button>
                         {truck.coordinates && (
                           <button
@@ -787,27 +831,27 @@ const AdminTrucks: React.FC = () => {
                               const { latitude, longitude } = truck.coordinates!;
                               window.open(`https://www.google.com/maps?q=${latitude},${longitude}`, '_blank');
                             }}
-                            className="p-2 text-green-600 hover:bg-green-100 rounded-lg transition-all hover:scale-110"
+                            className="p-1.5 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
                             title="View Location on Map"
                           >
-                            <FaMapMarkerAlt className="w-4 h-4" />
+                            <MapPin size={14} />
                           </button>
                         )}
                         {canManageTrucks && (
                           <>
                             <button
                               onClick={() => handleEditTruck(truck)}
-                              className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-all hover:scale-110"
+                              className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
                               title="Edit"
                             >
-                              <FaEdit className="w-4 h-4" />
+                              <Edit size={14} />
                             </button>
                             <button
                               onClick={() => handleDeleteTruck(truck.id)}
-                              className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-all hover:scale-110"
+                              className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                               title="Delete"
                             >
-                              <FaTrash className="w-4 h-4" />
+                              <Trash2 size={14} />
                             </button>
                           </>
                         )}
@@ -819,7 +863,7 @@ const AdminTrucks: React.FC = () => {
             </tbody>
           </table>
         </div>
-        
+
         {/* Enhanced Pagination */}
         <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200 bg-gradient-to-r from-gray-50 to-gray-100">
           <div className="flex items-center gap-2">
@@ -853,11 +897,10 @@ const AdminTrucks: React.FC = () => {
                   <button
                     key={i}
                     onClick={() => setPage(pageNum)}
-                    className={`w-8 h-8 text-xs font-medium rounded-lg transition-all ${
-                      currentPage === pageNum
-                        ? 'bg-blue-600 text-white shadow-md'
-                        : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
-                    }`}
+                    className={`w-8 h-8 text-xs font-medium rounded-lg transition-all ${currentPage === pageNum
+                      ? 'bg-blue-600 text-white shadow-md'
+                      : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
+                      }`}
                   >
                     {pageNum}
                   </button>
@@ -887,9 +930,9 @@ const AdminTrucks: React.FC = () => {
                     setShowCreateModal(false);
                     resetForm();
                   }}
-                  className="p-1 text-gray-400 hover:text-gray-600 rounded transition-colors"
+                  className="p-1.5 text-gray-400 hover:text-gray-600 rounded-lg transition-colors"
                 >
-                  <FaTimes className="w-4 h-4" />
+                  <X size={18} />
                 </button>
               </div>
             </div>
@@ -998,12 +1041,12 @@ const AdminTrucks: React.FC = () => {
                 </select>
               </div>
 
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-2">
-                <div className="flex items-start gap-1.5">
-                  <FaShieldAlt className="text-blue-600 mt-0.5 text-xs" />
+              <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-3">
+                <div className="flex items-start gap-2">
+                  <ShieldCheck className="text-indigo-600 mt-0.5" size={16} />
                   <div>
-                    <h4 className="font-semibold text-blue-900 text-xs">Truck Information</h4>
-                    <p className="text-[10px] text-blue-700 mt-0.5">
+                    <h4 className="font-semibold text-indigo-900 text-xs">Truck Information</h4>
+                    <p className="text-[10px] text-indigo-700 mt-0.5">
                       Ensure all information is accurate. The truck will be available for assignment after creation.
                     </p>
                   </div>
@@ -1046,9 +1089,9 @@ const AdminTrucks: React.FC = () => {
                     setShowEditModal(false);
                     setEditingTruck(null);
                   }}
-                  className="p-1 text-gray-400 hover:text-gray-600 rounded transition-colors"
+                  className="p-1.5 text-gray-400 hover:text-gray-600 rounded-lg transition-colors"
                 >
-                  <FaTimes className="w-4 h-4" />
+                  <X size={18} />
                 </button>
               </div>
             </div>
@@ -1188,8 +1231,8 @@ const AdminTrucks: React.FC = () => {
             <div className="p-3 border-b border-gray-200">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
-                    <FaTruck className="text-white text-sm" />
+                  <div className="w-10 h-10 bg-indigo-50 rounded-lg flex items-center justify-center border border-indigo-100">
+                    <LucideTruck className="text-indigo-600" size={18} />
                   </div>
                   <div>
                     <h2 className="text-lg font-bold text-gray-900">{selectedTruck.plateNumber}</h2>
@@ -1200,7 +1243,7 @@ const AdminTrucks: React.FC = () => {
                   onClick={() => setShowDetailsModal(false)}
                   className="p-1.5 text-gray-400 hover:text-gray-600 rounded-lg transition-colors"
                 >
-                  <FaTimes className="w-4 h-4" />
+                  <X size={18} />
                 </button>
               </div>
             </div>
@@ -1229,41 +1272,41 @@ const AdminTrucks: React.FC = () => {
 
               {/* Key Metrics */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                <div className="bg-blue-50 rounded-lg p-2 border border-blue-200">
+                <div className="bg-indigo-50 rounded-lg p-3 border border-indigo-100">
                   <div className="flex items-center space-x-2">
-                    <FaRoad className="text-blue-600 text-xs" />
+                    <Milestone className="text-indigo-600" size={16} />
                     <div>
-                      <div className="text-base font-bold text-blue-900">{(selectedTruck.capacityWeight || 0).toLocaleString()}</div>
-                      <div className="text-[10px] text-blue-700">Weight (kg)</div>
+                      <div className="text-sm font-black text-indigo-900">{(selectedTruck.capacityWeight || 0).toLocaleString()}</div>
+                      <div className="text-[10px] text-indigo-700">Weight (kg)</div>
                     </div>
                   </div>
                 </div>
 
-                <div className="bg-green-50 rounded-lg p-2 border border-green-200">
+                <div className="bg-gray-50 rounded-lg p-3 border border-gray-100">
                   <div className="flex items-center space-x-2">
-                    <FaTruck className="text-green-600 text-xs" />
+                    <LucideTruck className="text-gray-600" size={16} />
                     <div>
-                      <div className="text-base font-bold text-green-900">{(selectedTruck.capacityVolume || 0).toLocaleString()}</div>
-                      <div className="text-[10px] text-green-700">Volume (m³)</div>
+                      <div className="text-sm font-black text-gray-900">{(selectedTruck.capacityVolume || 0).toLocaleString()}</div>
+                      <div className="text-[10px] text-gray-500">Volume (m³)</div>
                     </div>
                   </div>
                 </div>
 
-                <div className="bg-purple-50 rounded-lg p-2 border border-purple-200">
+                <div className="bg-green-50 rounded-lg p-3 border border-green-100">
                   <div className="flex items-center space-x-2">
-                    <FaCheck className="text-purple-600 text-xs" />
+                    <Check className="text-green-600" size={16} />
                     <div>
-                      <div className="text-base font-bold text-purple-900">{selectedTruck.totalTrips || 0}</div>
-                      <div className="text-[10px] text-purple-700">Total Trips</div>
+                      <div className="text-sm font-black text-green-900">{selectedTruck.totalTrips || 0}</div>
+                      <div className="text-[10px] text-green-700">Total Trips</div>
                     </div>
                   </div>
                 </div>
 
-                <div className="bg-yellow-50 rounded-lg p-2 border border-yellow-200">
+                <div className="bg-yellow-50 rounded-lg p-3 border border-yellow-100">
                   <div className="flex items-center space-x-2">
-                    <FaClock className="text-yellow-600 text-xs" />
+                    <Clock className="text-yellow-600" size={16} />
                     <div>
-                      <div className="text-base font-bold text-yellow-900">{Number(selectedTruck.averageRating || 0).toFixed(1)}</div>
+                      <div className="text-sm font-black text-yellow-900">{Number(selectedTruck.averageRating || 0).toFixed(1)}</div>
                       <div className="text-[10px] text-yellow-700">Rating</div>
                     </div>
                   </div>
@@ -1355,7 +1398,7 @@ const AdminTrucks: React.FC = () => {
                     {selectedTruck.assignedDrivers.map((driver: any, index: number) => (
                       <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg text-xs">
                         <div className="flex items-center gap-2">
-                          <FaUser className="text-gray-400 w-3 h-3" />
+                          <User className="text-gray-400" size={12} />
                           <span className="font-medium">{driver.driverName || 'Unknown'}</span>
                         </div>
                         <span className="text-gray-500">{new Date(driver.assignmentDate).toLocaleDateString()}</span>

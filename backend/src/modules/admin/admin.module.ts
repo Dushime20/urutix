@@ -38,8 +38,10 @@ import { TenantSubscription } from '../../entities/tenant-subscription.entity';
 import { CreditAccount } from '../../entities/credit-account.entity';
 import { CreditTransaction } from '../../entities/credit-transaction.entity';
 import { FeatureCreditCost } from '../../entities/feature-credit-cost.entity';
+import { CreditPricingRule } from '../../entities/credit-pricing-rule.entity';
 import { SubscriptionService } from '../../services/subscription.service';
 import { CreditService } from '../../services/credit.service';
+import { PricingService } from '../../services/pricing.service';
 
 @Module({
   imports: [
@@ -67,6 +69,7 @@ import { CreditService } from '../../services/credit.service';
       CreditAccount,
       CreditTransaction,
       FeatureCreditCost,
+      CreditPricingRule,
     ]),
     UsersModule, // Import UsersModule to use UsersService
     EnhancedAuthModule, // Import EnhancedAuthModule to use PermissionService
@@ -90,6 +93,7 @@ import { CreditService } from '../../services/credit.service';
     // Subscription services
     SubscriptionService,
     CreditService,
+    PricingService,
   ],
   exports: [
     ActivityLogService,
@@ -97,6 +101,7 @@ import { CreditService } from '../../services/credit.service';
     SystemSettingsService,
     SubscriptionService,
     CreditService,
+    PricingService,
   ],
 })
 export class AdminModule { }

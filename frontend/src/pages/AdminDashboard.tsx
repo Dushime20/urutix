@@ -1,21 +1,19 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {
-  FaCheckCircle, FaExclamationTriangle,
-  FaArrowUp, FaArrowDown,
-  FaBell,
-  FaCreditCard
-} from 'react-icons/fa';
 import AdminPageLayout from '../components/Admin/AdminPageLayout';
+import { StatCard, DataCard } from '../components/EnliteUI';
 import UserManagementWidget from '../components/Admin/Widgets/UserManagementWidget';
 import TenantManagementWidget from '../components/Admin/Widgets/TenantManagementWidget';
-import FinancialWidget from '../components/Admin/Widgets/FinancialWidget';
 import SystemHealthWidget from '../components/Admin/Widgets/SystemHealthWidget';
+import AdminQuickActions from '../components/Admin/AdminQuickActions';
+import AdminActivityFeed from '../components/Admin/AdminActivityFeed';
+import AdminGeographicMap from '../components/Admin/Widgets/AdminGeographicMap';
 import {
-  Zap, Activity, Layers,
-  Users, Truck
+  Activity, Layers,
+  Users, Truck, Map as MapIcon,
+  TrendingUp
 } from 'lucide-react';
-import { Line, Doughnut } from 'react-chartjs-2';
+import { Line, Doughnut, Bar } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -45,64 +43,6 @@ const AdminDashboard: React.FC = () => {
   const [timeRange, setTimeRange] = useState('7d');
   const navigate = useNavigate();
 
-  const stats = [
-    {
-      label: 'Total Users',
-      value: '1,284',
-      change: '+12.5%',
-      changeType: 'positive',
-      icon: Users,
-      color: 'blue',
-      description: 'Active platform users',
-      trend: [65, 59, 80, 81, 56, 55, 40],
-      link: '/admin/users'
-    },
-    {
-      label: 'Active Fleet',
-      value: '428',
-      change: '+8.2%',
-      changeType: 'positive',
-      icon: Truck,
-      color: 'emerald',
-      description: 'Trucks currently active',
-      trend: [28, 48, 40, 19, 86, 27, 90],
-      link: '/admin/trucks'
-    },
-    {
-      label: 'Total Shipments',
-      value: '876',
-      change: '+15.3%',
-      changeType: 'positive',
-      icon: Layers,
-      color: 'indigo',
-      description: 'Managed this month',
-      trend: [65, 59, 80, 81, 56, 55, 40],
-      link: '/admin/loads'
-    },
-    {
-      label: 'Total Revenue',
-      value: '$45.2K',
-      change: '+23.1%',
-      changeType: 'positive',
-      icon: Activity,
-      color: 'amber',
-      description: 'Monthly earnings',
-      trend: [28, 48, 40, 19, 86, 27, 90],
-      link: '/admin/financial'
-    },
-    {
-      label: 'Subscriptions',
-      value: '156',
-      change: '+18.7%',
-      changeType: 'positive',
-      icon: FaCreditCard,
-      color: 'purple',
-      description: 'Active subscriptions',
-      trend: [45, 52, 48, 65, 72, 68, 75],
-      link: '/admin/subscriptions'
-    },
-  ];
-
   const chartOptions = {
     responsive: true,
     maintainAspectRatio: false,
@@ -122,11 +62,11 @@ const AdminDashboard: React.FC = () => {
     scales: {
       x: {
         grid: { display: false },
-        ticks: { color: '#64748b', font: { size: 11 } }
+        ticks: { color: '#64748b', font: { size: 10 } }
       },
       y: {
         grid: { color: '#f1f5f9' },
-        ticks: { color: '#64748b', font: { size: 11 } }
+        ticks: { color: '#64748b', font: { size: 10 } }
       }
     }
   };
@@ -138,14 +78,46 @@ const AdminDashboard: React.FC = () => {
         fill: true,
         label: 'Revenue',
         data: [12500, 19200, 15800, 25300, 22700, 30100, 28500],
-        borderColor: '#3b82f6',
-        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+        borderColor: '#4f46e5',
+        backgroundColor: 'rgba(79, 70, 229, 0.05)',
         tension: 0.4,
         borderWidth: 2,
         pointRadius: 0,
         pointHoverRadius: 4,
       },
     ],
+  };
+
+  const userGrowthData = {
+    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+    datasets: [
+      {
+        label: 'New Users',
+        data: [120, 150, 180, 210, 250, 290],
+        borderColor: '#4f46e5',
+        backgroundColor: 'rgba(79, 70, 229, 0.05)',
+        tension: 0.4,
+        fill: true,
+        pointRadius: 3,
+      }
+    ]
+  };
+
+  const fleetUtilizationData = {
+    labels: ['Active', 'Maintenance', 'Standby', 'Reserved'],
+    datasets: [
+      {
+        label: 'Fleet Distribution',
+        data: [280, 45, 68, 35],
+        backgroundColor: [
+          '#4f46e5',
+          '#94a3b8',
+          '#cbd5e1',
+          '#f1f5f9'
+        ],
+        borderRadius: 6,
+      }
+    ]
   };
 
   const donutOptions = {
@@ -161,154 +133,223 @@ const AdminDashboard: React.FC = () => {
       {
         data: [45, 15, 5, 35],
         backgroundColor: [
-          '#10b981', // Emerald
-          '#f59e0b', // Amber
-          '#ef4444', // Red
-          '#3b82f6', // Blue
+          '#10b981', // Emerald for success
+          '#94a3b8', // Slate for neutral
+          '#ef4444', // Red for issues
+          '#4f46e5', // Indigo for active/completed
         ],
         borderWidth: 0,
       },
     ],
   };
 
-  const recentActivities = [
-    { icon: FaCheckCircle, color: 'text-emerald-500', bg: 'bg-emerald-500/10', title: 'Shipment #SH-8821 Completed', desc: 'Successfully delivered to Mombasa Port', time: '2 min ago' },
-    { icon: FaBell, color: 'text-blue-500', bg: 'bg-blue-500/10', title: 'New Tenant Registered', desc: 'ABC Logistics joined the platform', time: '15 min ago' },
-    { icon: FaExclamationTriangle, color: 'text-amber-500', bg: 'bg-amber-500/10', title: 'Maintenance Alert', desc: 'Truck KCA-452 requires urgent service', time: '1 hr ago' },
-  ];
-
   return (
     <AdminPageLayout
-      title="Super Admin Dashboard"
-      description="Centralized control panel for managing all platform operations, users, tenants, and system health."
+      title="Platform Overview"
+      description="Welcome back. Here's a summary of what's happening across your platform today."
       actions={
-        <>
-          <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm font-bold">
+        <div className="flex items-center gap-4">
+          <div className="hidden md:flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-bold border border-slate-700">
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
             </span>
-            All Systems Operational
+            System Healthy: 99.9% Uptime
           </div>
-          <button className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-bold shadow-lg shadow-indigo-600/20 transition-all">
-            <Zap size={16} /> Quick Actions
-          </button>
-        </>
+          <AdminQuickActions />
+        </div>
       }
     >
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        {stats.map((stat, idx) => {
-          const Icon = stat.icon;
-          return (
-            <div
-              key={idx}
-              onClick={() => stat.link && navigate(stat.link)}
-              className={`bg-white rounded-xl p-6 shadow-sm border border-slate-200 hover:shadow-md transition-all group ${stat.link ? 'cursor-pointer hover:border-indigo-200' : ''}`}
+      {/* Top Banner & Filters */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+        <div>
+          <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
+            <TrendingUp size={20} className="text-indigo-600" />
+            Performance Trends
+          </h2>
+          <p className="text-sm text-slate-500 font-medium">Insights based on latest data</p>
+        </div>
+
+        <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200">
+          {[
+            { id: '24h', label: 'Last 24h' },
+            { id: '7d', label: '7 Days' },
+            { id: '30d', label: '30 Days' },
+            { id: '1y', label: '1 Year' }
+          ].map((range) => (
+            <button
+              key={range.id}
+              onClick={() => setTimeRange(range.id)}
+              className={`px-4 py-1.5 text-xs font-bold rounded-lg transition-all ${timeRange === range.id
+                ? 'bg-white text-indigo-600 border border-slate-200'
+                : 'text-slate-500 hover:text-slate-700'
+                }`}
             >
-              <div className="flex items-start justify-between mb-4">
-                <div className={`p-3 rounded-xl bg-${stat.color}-50 text-${stat.color}-600 group-hover:bg-${stat.color}-600 group-hover:text-white transition-colors duration-300`}>
-                  <Icon size={24} />
-                </div>
-                <span className={`flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-full ${stat.changeType === 'positive' ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'}`}>
-                  {stat.changeType === 'positive' ? <FaArrowUp size={10} /> : <FaArrowDown size={10} />}
-                  {stat.change}
-                </span>
-              </div>
-              <div>
-                <h3 className="text-3xl font-black text-slate-800 mb-1">{stat.value}</h3>
-                <p className="text-sm font-semibold text-slate-500">{stat.label}</p>
-              </div>
-            </div>
-          );
-        })}
+              {range.label}
+            </button>
+          ))}
+        </div>
       </div>
 
-      {/* Widgets Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 mb-8">
+      {/* Primary Metrics Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <StatCard
+          title="Total Users"
+          value="1,284"
+          icon={<Users size={20} />}
+          trend="+12%"
+          trendDirection="up"
+          color="primary"
+          subtitle="Recent registrations"
+          onClick={() => navigate('/admin/users')}
+        />
+
+        <StatCard
+          title="Fleet Pulse"
+          value="84%"
+          icon={<Truck size={20} />}
+          trend="+3%"
+          trendDirection="up"
+          color="primary"
+          subtitle="Vehicles in operation"
+          onClick={() => navigate('/admin/trucks')}
+        />
+
+        <StatCard
+          title="Active Orders"
+          value="876"
+          icon={<Layers size={20} />}
+          trend="+15%"
+          trendDirection="up"
+          color="primary"
+          subtitle="Currently in transit"
+          onClick={() => navigate('/admin/loads')}
+        />
+
+        <StatCard
+          title="Revenue"
+          value="$45,280"
+          icon={<Activity size={20} />}
+          trend="+23%"
+          trendDirection="up"
+          color="primary"
+          subtitle="Month to date"
+          onClick={() => navigate('/admin/financial')}
+        />
+      </div>
+
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 mb-8">
+        {/* Main Analytics Section */}
+        <div className="xl:col-span-2 space-y-8">
+          {/* Revenue Performance */}
+          <DataCard
+            title="Revenue Trajectory"
+            subtitle="Historical performance overview"
+          >
+            <div className="h-[320px]">
+              <Line data={revenueData} options={chartOptions} />
+            </div>
+          </DataCard>
+
+          {/* Regional Activity Map */}
+          <DataCard
+            title="Geographic Hub Distribution"
+            subtitle="Platform census across key hubs"
+            actions={
+              <button className="flex items-center gap-1.5 px-3 py-1.5 text-indigo-600 hover:bg-indigo-50 rounded-lg text-xs font-bold transition-all">
+                <MapIcon size={14} /> View Map
+              </button>
+            }
+          >
+            <AdminGeographicMap />
+          </DataCard>
+
+          {/* Secondary Analytics Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <DataCard title="User Growth" subtitle="New platform members" >
+              <div className="h-[200px]">
+                <Line data={userGrowthData} options={chartOptions} />
+              </div>
+            </DataCard>
+            <DataCard title="Fleet Status" subtitle="Resource allocation" >
+              <div className="h-[200px]">
+                <Bar
+                  data={fleetUtilizationData}
+                  options={{
+                    ...chartOptions,
+                    scales: {
+                      ...chartOptions.scales,
+                      y: { ...chartOptions.scales.y, beginAtZero: true }
+                    }
+                  }}
+                />
+              </div>
+            </DataCard>
+          </div>
+        </div>
+
+        {/* Side Panel: Management & Activity */}
+        <div className="space-y-8">
+          {/* Real-time Health */}
+          <SystemHealthWidget />
+
+          {/* Platform Event Log */}
+          <DataCard
+            title="Recent Activity"
+            subtitle="Latest system and user events"
+            actions={
+              <button
+                onClick={() => navigate('/admin/activity-logs')}
+                className="text-xs font-bold text-indigo-600 hover:underline transition-all"
+              >
+                Full Log
+              </button>
+            }
+          >
+            <AdminActivityFeed />
+          </DataCard>
+
+          {/* Quick Stats/Donut */}
+          <DataCard
+            title="Shipment Pipeline"
+            subtitle="Current status distribution"
+          >
+            <div className="relative w-[180px] h-[180px] mx-auto">
+              <Doughnut data={statusData} options={donutOptions} />
+              <div className="absolute inset-0 flex items-center justify-center flex-col pointer-events-none">
+                <span className="text-3xl font-black text-slate-800">876</span>
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Orders</span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 mt-6">
+              {[
+                { label: 'Active', val: '45%', color: 'bg-indigo-600' },
+                { label: 'Pending', val: '15%', color: 'bg-slate-400' },
+                { label: 'Issues', val: '5%', color: 'bg-red-500' },
+                { label: 'Success', val: '35%', color: 'bg-emerald-500' }
+              ].map((item, i) => (
+                <div key={i} className="flex items-center justify-between p-2 rounded-lg bg-slate-50 border border-slate-100">
+                  <div className="flex items-center gap-2">
+                    <div className={`w-2 h-2 rounded-full ${item.color}`}></div>
+                    <span className="text-[10px] font-bold text-slate-600 uppercase tracking-tight">{item.label}</span>
+                  </div>
+                  <span className="text-xs font-black text-slate-900">{item.val}</span>
+                </div>
+              ))}
+            </div>
+          </DataCard>
+        </div>
+      </div>
+
+      {/* Management Widgets Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 pb-12">
         <UserManagementWidget />
         <TenantManagementWidget />
-        <FinancialWidget />
-        <SystemHealthWidget />
-
-        {/* Order Status Donut */}
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-          <h3 className="text-lg font-bold text-slate-800 mb-1">Order Status</h3>
-          <p className="text-sm text-slate-500 mb-6">Distribution of current shipments</p>
-
-          <div className="relative w-[200px] h-[200px] mx-auto">
-            <Doughnut data={statusData} options={donutOptions} />
-            <div className="absolute inset-0 flex items-center justify-center flex-col pointer-events-none">
-              <span className="text-3xl font-black text-slate-800">876</span>
-              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Total</span>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4 mt-8">
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-emerald-500"></div>
-              <span className="text-sm font-medium text-slate-600">Active</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-amber-500"></div>
-              <span className="text-sm font-medium text-slate-600">Pending</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-blue-500"></div>
-              <span className="text-sm font-medium text-slate-600">Completed</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-red-500"></div>
-              <span className="text-sm font-medium text-slate-600">Issues</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Recent Activity */}
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-bold text-slate-800">Live Activity</h3>
-            <button className="text-sm font-bold text-indigo-600 hover:text-indigo-700">View All</button>
-          </div>
-          <div className="space-y-6">
-            {recentActivities.map((activity, idx) => {
-              const Icon = activity.icon;
-              return (
-                <div key={idx} className="flex gap-4">
-                  <div className={`w-10 h-10 rounded-full ${activity.bg} flex items-center justify-center flex-shrink-0`}>
-                    <Icon className={activity.color} size={16} />
-                  </div>
-                  <div className="flex-1">
-                    <h4 className="text-sm font-bold text-slate-800">{activity.title}</h4>
-                    <p className="text-xs text-slate-500 mt-0.5">{activity.desc}</p>
-                  </div>
-                  <span className="text-[10px] font-bold text-slate-400 whitespace-nowrap">{activity.time}</span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-
-      {/* Revenue Chart - Full Width */}
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h3 className="text-lg font-bold text-slate-800">Financial Performance</h3>
-            <p className="text-sm text-slate-500">Revenue trajectory over the last 7 days</p>
-          </div>
-          <div className="flex bg-slate-100 p-1 rounded-lg">
-            <button className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${timeRange === '7d' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`} onClick={() => setTimeRange('7d')}>7 Days</button>
-            <button className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${timeRange === '30d' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`} onClick={() => setTimeRange('30d')}>30 Days</button>
-            <button className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${timeRange === '1y' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`} onClick={() => setTimeRange('1y')}>Year</button>
-          </div>
-        </div>
-        <div className="h-[300px]">
-          <Line data={revenueData} options={chartOptions} />
-        </div>
       </div>
     </AdminPageLayout>
   );
 };
 
 export default AdminDashboard;
+

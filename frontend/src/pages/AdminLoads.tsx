@@ -6,12 +6,12 @@ import { fetchTenants, fetchAllUsers, fetchAllLoads } from '../services/adminApi
 import AdminPageLayout from '../components/Admin/AdminPageLayout';
 
 import {
-  FaBox, FaSearch, FaDownload,
-  FaEye, FaCheck, FaTimes, FaBan, FaMapMarkerAlt,
-  FaSort, FaUser, FaBuilding,
-  FaExclamationTriangle, FaPlay, FaPause,
-  FaTrash, FaDollarSign, FaWeight, FaCube, FaCalendarAlt
-} from 'react-icons/fa';
+  Package, Search, Download,
+  Eye, Check, X, Ban, MapPin,
+  ChevronsUpDown, User, Building2,
+  AlertTriangle, Play, Pause,
+  Trash2, DollarSign, Weight, Box, Calendar
+} from 'lucide-react';
 
 interface Load {
   id: string;
@@ -266,29 +266,29 @@ const AdminLoads: React.FC = () => {
       label: 'Total Loads',
       value: loads.length,
       description: 'All registered loads',
-      color: 'from-blue-500 to-blue-600',
-      icon: FaBox
+      color: 'bg-gray-800',
+      icon: Package
     },
     {
       label: 'Active',
       value: loads.filter((l: Load) => l.status === 'CREATED' || l.status === 'PUBLISHED' || l.status === 'IN_PROGRESS').length,
       description: 'Currently active',
-      color: 'from-green-500 to-green-600',
-      icon: FaCheck
+      color: 'bg-gray-800',
+      icon: Play
     },
     {
       label: 'Draft',
       value: loads.filter((l: Load) => l.status === 'DRAFT').length,
       description: 'Draft loads',
-      color: 'from-yellow-500 to-yellow-600',
-      icon: FaPause
+      color: 'bg-gray-800',
+      icon: Pause
     },
     {
       label: 'Completed',
       value: loads.filter((l: Load) => l.status === 'COMPLETED' || l.status === 'DELIVERED').length,
       description: 'Completed deliveries',
-      color: 'from-purple-500 to-purple-600',
-      icon: FaCheck
+      color: 'bg-gray-800',
+      icon: Check
     }
   ];
 
@@ -309,12 +309,12 @@ const AdminLoads: React.FC = () => {
     switch (status) {
       case 'CREATED':
       case 'PUBLISHED':
-      case 'IN_PROGRESS': return <FaPlay className="text-green-500 text-[10px]" />;
-      case 'DRAFT': return <FaPause className="text-yellow-500 text-[10px]" />;
+      case 'IN_PROGRESS': return <Play className="text-green-500" size={10} />;
+      case 'DRAFT': return <Pause className="text-yellow-500" size={10} />;
       case 'COMPLETED':
-      case 'DELIVERED': return <FaCheck className="text-blue-500 text-[10px]" />;
-      case 'CANCELLED': return <FaBan className="text-red-500 text-[10px]" />;
-      default: return <FaPause className="text-gray-500 text-[10px]" />;
+      case 'DELIVERED': return <Check className="text-blue-500" size={10} />;
+      case 'CANCELLED': return <Ban className="text-red-500" size={10} />;
+      default: return <Pause className="text-gray-500" size={10} />;
     }
   };
 
@@ -339,12 +339,16 @@ const AdminLoads: React.FC = () => {
 
   if (loadsError) {
     return (
-      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-        <div className="flex items-center gap-2">
-          <FaExclamationTriangle className="text-red-600" />
-          <h2 className="text-base font-semibold text-gray-900">Error Loading Loads</h2>
+      <div className="bg-red-50 border border-red-200 rounded-xl p-6">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
+            <AlertTriangle className="text-red-600" size={20} />
+          </div>
+          <div>
+            <h2 className="text-base font-bold text-gray-900">Error Loading Loads</h2>
+            <p className="text-sm text-gray-600 mt-0.5">Please try refreshing the page or contact support.</p>
+          </div>
         </div>
-        <p className="text-sm text-gray-600 mt-2">Please try refreshing the page.</p>
       </div>
     );
   }
@@ -356,26 +360,21 @@ const AdminLoads: React.FC = () => {
     >
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2.5">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {stats.map((stat, index) => {
           const Icon = stat.icon;
           return (
-            <div key={index} className="bg-white rounded-lg shadow-sm border border-gray-200 p-2.5 hover:shadow-md transition-all duration-200 group relative overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-100 transition-opacity" style={{
-                background: stat.color === 'from-blue-500 to-blue-600' ? 'linear-gradient(to bottom right, rgba(59, 130, 246, 0.05), transparent)' :
-                  stat.color === 'from-green-500 to-green-600' ? 'linear-gradient(to bottom right, rgba(16, 185, 129, 0.05), transparent)' :
-                    stat.color === 'from-purple-500 to-purple-600' ? 'linear-gradient(to bottom right, rgba(168, 85, 247, 0.05), transparent)' :
-                      'linear-gradient(to bottom right, rgba(245, 158, 11, 0.05), transparent)'
-              }}></div>
+            <div key={index} className="bg-white rounded-xl border border-gray-200 p-6 hover:border-gray-300 transition-all duration-200 group relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-100 transition-opacity bg-gray-50"></div>
               <div className="relative">
                 <div className="flex items-center justify-between">
                   <div className="flex-1">
-                    <p className="text-xs text-gray-600 mb-0.5">{stat.label}</p>
-                    <p className="text-lg font-bold text-gray-900 mb-0.5">{stat.value}</p>
-                    <p className="text-[10px] text-gray-500">{stat.description}</p>
+                    <p className="text-xs text-gray-600 mb-1">{stat.label}</p>
+                    <p className="text-2xl font-black text-gray-900 mb-0.5">{stat.value}</p>
+                    <p className="text-xs text-gray-500">{stat.description}</p>
                   </div>
-                  <div className={`w-10 h-10 bg-gradient-to-r ${stat.color} rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform`}>
-                    <Icon className="text-white text-sm" />
+                  <div className="w-12 h-12 bg-gray-800 rounded-xl flex items-center justify-center group-hover:bg-gray-900 transition-colors">
+                    <Icon className="text-white" size={20} />
                   </div>
                 </div>
               </div>
@@ -385,21 +384,21 @@ const AdminLoads: React.FC = () => {
       </div>
 
       {/* Toolbar */}
-      <div className="bg-white rounded-lg shadow-sm p-2.5 border border-gray-200">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
+      <div className="bg-white rounded-xl border border-gray-200 p-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="relative">
-            <FaSearch className="absolute left-2.5 top-1/2 transform -translate-y-1/2 text-gray-400 w-3.5 h-3.5" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
             <input
               type="text"
               placeholder="Search loads..."
-              className="w-full pl-9 pr-3 py-1.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full pl-10 pr-4 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
 
           <select
-            className="px-2 py-1.5 text-xs border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
           >
@@ -414,7 +413,7 @@ const AdminLoads: React.FC = () => {
           </select>
 
           <select
-            className="px-2 py-1.5 text-xs border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
             value={cargoTypeFilter}
             onChange={(e) => setCargoTypeFilter(e.target.value)}
           >
@@ -427,8 +426,8 @@ const AdminLoads: React.FC = () => {
             <option value="VEHICLES">Vehicles</option>
           </select>
 
-          <button className="px-2 py-1.5 text-xs border border-gray-200 rounded-lg flex items-center justify-center gap-1.5 hover:bg-gray-50 transition-colors">
-            <FaDownload className="w-3 h-3" />
+          <button className="px-3 py-2 text-sm border border-gray-200 rounded-lg flex items-center justify-center gap-2 hover:bg-gray-50 transition-colors text-gray-600">
+            <Download size={16} />
             <span>Export</span>
           </button>
         </div>
@@ -471,7 +470,7 @@ const AdminLoads: React.FC = () => {
                     }}
                   />
                 </th>
-                <th className="px-2 py-1.5 text-left font-semibold text-gray-900 text-xs">
+                <th className="px-3 py-3 text-left font-black text-gray-900 text-xs">
                   <button
                     className="flex items-center gap-1"
                     onClick={() => {
@@ -480,16 +479,15 @@ const AdminLoads: React.FC = () => {
                     }}
                   >
                     <span>Load</span>
-                    <FaSort className="w-3 h-3" />
+                    <ChevronsUpDown size={14} />
                   </button>
                 </th>
-                <th className="px-2 py-1.5 text-left font-semibold text-gray-900 text-xs">Cargo Details</th>
-                <th className="px-2 py-1.5 text-left font-semibold text-gray-900 text-xs">Route</th>
-                <th className="px-2 py-1.5 text-left font-semibold text-gray-900 text-xs">Status</th>
-                <th className="px-2 py-1.5 text-left font-semibold text-gray-900 text-xs">Tenant</th>
-                <th className="px-2 py-1.5 text-left font-semibold text-gray-900 text-xs">Owner</th>
-                <th className="px-2 py-1.5 text-left font-semibold text-gray-900 text-xs">Value</th>
-                <th className="px-2 py-1.5 text-left font-semibold text-gray-900 text-xs">Actions</th>
+                <th className="px-3 py-3 text-left font-black text-gray-900 text-xs">Cargo Details</th>
+                <th className="px-3 py-3 text-left font-black text-gray-900 text-xs">Route</th>
+                <th className="px-3 py-3 text-left font-black text-gray-900 text-xs">Status</th>
+                <th className="px-3 py-3 text-left font-black text-gray-900 text-xs">Organization</th>
+                <th className="px-3 py-3 text-left font-black text-gray-900 text-xs">Value</th>
+                <th className="px-3 py-3 text-center font-black text-gray-900 text-xs">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
@@ -515,51 +513,55 @@ const AdminLoads: React.FC = () => {
                         }}
                       />
                     </td>
-                    <td className="px-2 py-1.5">
-                      <div className="flex items-center gap-1.5">
-                        <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
-                          <FaBox className="text-white text-xs" />
+                    <td className="px-3 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-indigo-50 rounded-lg flex items-center justify-center border border-indigo-100">
+                          <Package className="text-indigo-600" size={18} />
                         </div>
-                        <div>
-                          <div className="font-semibold text-gray-900 text-xs">{load.title}</div>
-                          <div className="text-[10px] text-gray-500 line-clamp-1">{load.description || 'No description'}</div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-bold text-gray-900 truncate">{load.title}</p>
+                          <p className="text-[10px] text-gray-500 truncate mt-0.5">{load.description || 'No description'}</p>
                         </div>
                       </div>
                     </td>
-                    <td className="px-2 py-1.5">
-                      <div className="space-y-0.5">
-                        <div className="flex items-center gap-0.5">
-                          <FaWeight className="text-gray-400 text-[10px]" />
-                          <span className="text-xs font-medium text-gray-900">{(load.weight || 0).toLocaleString()} kg</span>
+                    <td className="px-3 py-4">
+                      <div className="space-y-1.5">
+                        <div className="flex items-center gap-1.5">
+                          <Weight className="text-gray-400" size={12} />
+                          <span className="text-[11px] font-bold text-gray-900">{(load.weight || 0).toLocaleString()} kg</span>
                         </div>
                         {load.volume && (
-                          <div className="flex items-center gap-0.5">
-                            <FaCube className="text-gray-400 text-[10px]" />
+                          <div className="flex items-center gap-1.5">
+                            <Box className="text-gray-400" size={12} />
                             <span className="text-[10px] text-gray-500">{(load.volume || 0).toLocaleString()} m³</span>
                           </div>
                         )}
-                        <span className={`px-1 py-0.5 rounded text-[10px] font-medium ${getCargoTypeColor(load.cargoType || 'GENERAL')}`}>
+                        <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${getCargoTypeColor(load.cargoType || 'GENERAL')}`}>
                           {load.cargoType || 'GENERAL'}
                         </span>
                       </div>
                     </td>
-                    <td className="px-2 py-1.5">
-                      <div className="space-y-0.5">
+                    <td className="px-3 py-4">
+                      <div className="space-y-1.5">
                         {load.pickupLocation && (
-                          <div className="flex items-center gap-0.5">
-                            <FaMapMarkerAlt className="text-green-500 text-[10px]" />
-                            <span className="text-[10px] text-gray-600">{load.pickupLocation.name || load.pickupLocation.address || 'Pickup'}</span>
+                          <div className="flex items-center gap-1.5">
+                            <MapPin className="text-green-500" size={10} />
+                            <span className="text-[10px] text-gray-600 font-medium truncate max-w-[120px]" title={load.pickupLocation.name || load.pickupLocation.address}>
+                              {load.pickupLocation.name || load.pickupLocation.address || 'Pickup'}
+                            </span>
                           </div>
                         )}
                         {load.deliveryLocation && (
-                          <div className="flex items-center gap-0.5">
-                            <FaMapMarkerAlt className="text-red-500 text-[10px]" />
-                            <span className="text-[10px] text-gray-600">{load.deliveryLocation.name || load.deliveryLocation.address || 'Delivery'}</span>
+                          <div className="flex items-center gap-1.5">
+                            <MapPin className="text-red-500" size={10} />
+                            <span className="text-[10px] text-gray-600 font-medium truncate max-w-[120px]" title={load.deliveryLocation.name || load.deliveryLocation.address}>
+                              {load.deliveryLocation.name || load.deliveryLocation.address || 'Delivery'}
+                            </span>
                           </div>
                         )}
                         {load.pickupDate && (
-                          <div className="flex items-center gap-0.5">
-                            <FaCalendarAlt className="text-gray-400 text-[10px]" />
+                          <div className="flex items-center gap-1.5 mt-1 pt-1 border-t border-gray-50">
+                            <Calendar className="text-gray-400" size={10} />
                             <span className="text-[10px] text-gray-500">{new Date(load.pickupDate).toLocaleDateString()}</span>
                           </div>
                         )}
@@ -573,49 +575,60 @@ const AdminLoads: React.FC = () => {
                         </span>
                       </div>
                     </td>
-                    <td className="px-2 py-1.5">
-                      <div className="flex items-center gap-1">
-                        <FaBuilding className="text-gray-400 text-xs" />
-                        <span className="text-xs text-gray-900">{load.tenantName || 'N/A'}</span>
+                    <td className="px-3 py-4">
+                      <div className="space-y-1.5">
+                        <div className="flex items-center gap-2">
+                          <div className="w-6 h-6 bg-indigo-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                            <Building2 className="text-indigo-600" size={12} />
+                          </div>
+                          <span className="text-[11px] text-gray-900 font-bold truncate max-w-[100px]">
+                            {load.tenantName || 'N/A'}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="w-6 h-6 bg-gray-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                            <User className="text-gray-600" size={12} />
+                          </div>
+                          <span className="text-[11px] text-gray-900 font-bold truncate max-w-[100px]">
+                            {load.cargoOwnerName || 'N/A'}
+                          </span>
+                        </div>
                       </div>
                     </td>
-                    <td className="px-2 py-1.5">
-                      <div className="flex items-center gap-1">
-                        <FaUser className="text-gray-400 text-xs" />
-                        <span className="text-xs text-gray-900">{load.cargoOwnerName || 'N/A'}</span>
-                      </div>
-                    </td>
-                    <td className="px-2 py-1.5">
-                      <div className="space-y-0.5">
+                    <td className="px-3 py-4">
+                      <div className="space-y-1">
                         {load.offeredPrice && (
-                          <div className="flex items-center gap-0.5">
-                            <FaDollarSign className="text-gray-400 text-[10px]" />
-                            <span className="text-xs font-medium text-gray-900">{(load.offeredPrice || 0).toLocaleString()} {load.currencyCode || 'RWF'}</span>
+                          <div className="flex items-center gap-1">
+                            <DollarSign className="text-green-600" size={12} />
+                            <span className="text-[11px] font-black text-gray-900">{(load.offeredPrice || 0).toLocaleString()}</span>
+                            <span className="text-[9px] text-gray-500 font-bold">{load.currencyCode || 'RWF'}</span>
                           </div>
                         )}
                         {load.loadValue && (
-                          <div className="text-[10px] text-gray-500">Value: {(load.loadValue || 0).toLocaleString()}</div>
+                          <div className="text-[10px] text-gray-500 font-medium">
+                            Value: {(load.loadValue || 0).toLocaleString()}
+                          </div>
                         )}
                       </div>
                     </td>
-                    <td className="px-2 py-1.5">
-                      <div className="flex items-center gap-1">
+                    <td className="px-3 py-4">
+                      <div className="flex items-center justify-center gap-1">
                         <button
                           onClick={() => {
                             setSelectedLoad(load);
                             setShowDetailsModal(true);
                           }}
-                          className="p-1 text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                          className="p-1.5 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
                           title="View Details"
                         >
-                          <FaEye className="w-3 h-3" />
+                          <Eye size={14} />
                         </button>
                         <button
                           onClick={() => handleDeleteLoad(load.id)}
-                          className="p-1 text-red-600 hover:bg-red-50 rounded transition-colors"
+                          className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                           title="Delete"
                         >
-                          <FaTrash className="w-3 h-3" />
+                          <Trash2 size={14} />
                         </button>
                       </div>
                     </td>
@@ -657,19 +670,19 @@ const AdminLoads: React.FC = () => {
             <div className="p-3 border-b border-gray-200">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
-                    <FaBox className="text-white text-sm" />
+                  <div className="w-10 h-10 bg-indigo-50 rounded-lg flex items-center justify-center border border-indigo-100">
+                    <Package className="text-indigo-600" size={18} />
                   </div>
                   <div>
                     <h2 className="text-lg font-bold text-gray-900">{selectedLoad.title}</h2>
-                    <p className="text-xs text-gray-600">{selectedLoad.description || 'No description'}</p>
+                    <p className="text-xs text-gray-500">{selectedLoad.description || 'No description'}</p>
                   </div>
                 </div>
                 <button
                   onClick={() => setShowDetailsModal(false)}
                   className="p-1.5 text-gray-400 hover:text-gray-600 rounded-lg transition-colors"
                 >
-                  <FaTimes className="w-4 h-4" />
+                  <X size={18} />
                 </button>
               </div>
             </div>
@@ -695,46 +708,46 @@ const AdminLoads: React.FC = () => {
 
               {/* Key Metrics */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                <div className="bg-blue-50 rounded-lg p-2 border border-blue-200">
+                <div className="bg-indigo-50 rounded-lg p-3 border border-indigo-100">
                   <div className="flex items-center space-x-2">
-                    <FaWeight className="text-blue-600 text-xs" />
+                    <Weight className="text-indigo-600" size={16} />
                     <div>
-                      <div className="text-base font-bold text-blue-900">{(selectedLoad.weight || 0).toLocaleString()}</div>
-                      <div className="text-[10px] text-blue-700">Weight (kg)</div>
+                      <div className="text-sm font-black text-indigo-900">{(selectedLoad.weight || 0).toLocaleString()}</div>
+                      <div className="text-[10px] text-indigo-700">Weight (kg)</div>
                     </div>
                   </div>
                 </div>
 
                 {selectedLoad.volume && (
-                  <div className="bg-green-50 rounded-lg p-2 border border-green-200">
+                  <div className="bg-gray-50 rounded-lg p-3 border border-gray-100">
                     <div className="flex items-center space-x-2">
-                      <FaCube className="text-green-600 text-xs" />
+                      <Box className="text-gray-600" size={16} />
                       <div>
-                        <div className="text-base font-bold text-green-900">{(selectedLoad.volume || 0).toLocaleString()}</div>
-                        <div className="text-[10px] text-green-700">Volume (m³)</div>
+                        <div className="text-sm font-black text-gray-900">{(selectedLoad.volume || 0).toLocaleString()}</div>
+                        <div className="text-[10px] text-gray-500">Volume (m³)</div>
                       </div>
                     </div>
                   </div>
                 )}
 
                 {selectedLoad.offeredPrice && (
-                  <div className="bg-purple-50 rounded-lg p-2 border border-purple-200">
+                  <div className="bg-green-50 rounded-lg p-3 border border-green-100">
                     <div className="flex items-center space-x-2">
-                      <FaDollarSign className="text-purple-600 text-xs" />
+                      <DollarSign className="text-green-600" size={16} />
                       <div>
-                        <div className="text-base font-bold text-purple-900">{(selectedLoad.offeredPrice || 0).toLocaleString()}</div>
-                        <div className="text-[10px] text-purple-700">Offered Price</div>
+                        <div className="text-sm font-black text-green-900">{(selectedLoad.offeredPrice || 0).toLocaleString()}</div>
+                        <div className="text-[10px] text-green-700">Offered Price</div>
                       </div>
                     </div>
                   </div>
                 )}
 
                 {selectedLoad.loadValue && (
-                  <div className="bg-yellow-50 rounded-lg p-2 border border-yellow-200">
+                  <div className="bg-yellow-50 rounded-lg p-3 border border-yellow-100">
                     <div className="flex items-center space-x-2">
-                      <FaDollarSign className="text-yellow-600 text-xs" />
+                      <DollarSign className="text-yellow-600" size={16} />
                       <div>
-                        <div className="text-base font-bold text-yellow-900">{(selectedLoad.loadValue || 0).toLocaleString()}</div>
+                        <div className="text-sm font-black text-yellow-900">{(selectedLoad.loadValue || 0).toLocaleString()}</div>
                         <div className="text-[10px] text-yellow-700">Load Value</div>
                       </div>
                     </div>

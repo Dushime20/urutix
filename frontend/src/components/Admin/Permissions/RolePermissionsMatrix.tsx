@@ -37,7 +37,8 @@ export const RolePermissionsMatrix: React.FC<RolePermissionsMatrixProps> = ({ cl
     // Determine current state helper
     const hasPermission = (role: string, permission: string) => {
         if (role === 'SUPER_ADMIN') return true;
-        return roleMatrix.some((rp: any) => rp.role === role && rp.permission === permission);
+        const matrixArray = Array.isArray(roleMatrix) ? roleMatrix : [];
+        return matrixArray.some((rp: any) => rp.role === role && rp.permission === permission);
     };
 
     // Mutation for Grant
@@ -45,8 +46,9 @@ export const RolePermissionsMatrix: React.FC<RolePermissionsMatrixProps> = ({ cl
         mutationFn: ({ role, permission }: { role: string; permission: string }) =>
             permissionApi.grantRolePermission(role, permission),
         onSuccess: (_, variables) => {
-            queryClient.setQueryData(['admin-role-matrix'], (old: any[]) => {
-                return [...old, { role: variables.role, permission: variables.permission }];
+            queryClient.setQueryData(['admin-role-matrix'], (old: any) => {
+                const oldArray = Array.isArray(old) ? old : [];
+                return [...oldArray, { role: variables.role, permission: variables.permission }];
             });
             toast.success(`✓ Granted ${variables.permission} to ${variables.role}`);
         },
@@ -58,8 +60,9 @@ export const RolePermissionsMatrix: React.FC<RolePermissionsMatrixProps> = ({ cl
         mutationFn: ({ role, permission }: { role: string; permission: string }) =>
             permissionApi.revokeRolePermission(role, permission),
         onSuccess: (_, variables) => {
-            queryClient.setQueryData(['admin-role-matrix'], (old: any[]) => {
-                return old.filter((rp: any) => !(rp.role === variables.role && rp.permission === variables.permission));
+            queryClient.setQueryData(['admin-role-matrix'], (old: any) => {
+                const oldArray = Array.isArray(old) ? old : [];
+                return oldArray.filter((rp: any) => !(rp.role === variables.role && rp.permission === variables.permission));
             });
             toast.success(`✓ Revoked ${variables.permission} from ${variables.role}`);
         },
@@ -166,7 +169,8 @@ export const RolePermissionsMatrix: React.FC<RolePermissionsMatrixProps> = ({ cl
     // Calculate statistics
     const stats = useMemo(() => {
         const roleStats = roles.map(role => {
-            const granted = roleMatrix.filter((rp: any) => rp.role === role).length;
+            const matrixArray = Array.isArray(roleMatrix) ? roleMatrix : [];
+            const granted = matrixArray.filter((rp: any) => rp.role === role).length;
             const total = permissions.length;
             return {
                 role,

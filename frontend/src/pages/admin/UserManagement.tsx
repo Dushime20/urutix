@@ -29,29 +29,29 @@ interface User {
 const UserManagement: React.FC = () => {
   const { user } = useAuth();
   const { hasPermission } = usePermission();
-  
+
   // Permission-based access control with role fallback
-  const canManageUsers = hasPermission('user:manage') || 
-                         hasPermission('user:update') || 
-                         user?.role === 'ADMIN' || 
-                         user?.role === 'SUPER_ADMIN' ||
-                         user?.role === 'TENANT_ADMIN';
-  
-  const canCreateUsers = hasPermission('user:create') || 
-                         user?.role === 'ADMIN' || 
-                         user?.role === 'SUPER_ADMIN' ||
-                         user?.role === 'TENANT_ADMIN';
-  
-  const canDeleteUsers = hasPermission('user:delete') || 
-                         user?.role === 'ADMIN' || 
-                         user?.role === 'SUPER_ADMIN';
-  
-  const canViewUsers = hasPermission('user:view') || 
-                       hasPermission('user:manage') || 
-                       user?.role === 'ADMIN' || 
-                       user?.role === 'SUPER_ADMIN' ||
-                       user?.role === 'TENANT_ADMIN';
-  
+  const canManageUsers = hasPermission('user:manage') ||
+    hasPermission('user:update') ||
+    user?.role === 'ADMIN' ||
+    user?.role === 'SUPER_ADMIN' ||
+    user?.role === 'TENANT_ADMIN';
+
+  const canCreateUsers = hasPermission('user:create') ||
+    user?.role === 'ADMIN' ||
+    user?.role === 'SUPER_ADMIN' ||
+    user?.role === 'TENANT_ADMIN';
+
+  const canDeleteUsers = hasPermission('user:delete') ||
+    user?.role === 'ADMIN' ||
+    user?.role === 'SUPER_ADMIN';
+
+  const canViewUsers = hasPermission('user:view') ||
+    hasPermission('user:manage') ||
+    user?.role === 'ADMIN' ||
+    user?.role === 'SUPER_ADMIN' ||
+    user?.role === 'TENANT_ADMIN';
+
   const [users, setUsers] = useState<User[]>([
     {
       id: '1',
@@ -374,7 +374,7 @@ const UserManagement: React.FC = () => {
       <div className="bg-white rounded-lg shadow-md overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[800px]">
-            <thead className="bg-gray-50 border-b border-gray-200">
+            <thead className="bg-[#fafafa] border-b border-slate-200">
               <tr>
                 <th className="px-4 lg:px-6 py-4 text-left">
                   <input
@@ -384,34 +384,34 @@ const UserManagement: React.FC = () => {
                     className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                   />
                 </th>
-                <th className="px-4 lg:px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 lg:px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">
                   <button
                     onClick={() => {
                       setSortBy('name');
                       setSortOrder(sortBy === 'name' && sortOrder === 'asc' ? 'desc' : 'asc');
                     }}
-                    className="flex items-center space-x-1 hover:text-gray-700"
+                    className="flex items-center space-x-1 hover:text-slate-900 transition-colors"
                   >
                     <span>User</span>
-                    <FaSort className="text-xs" />
+                    <FaSort className="text-[10px]" />
                   </button>
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Verification</th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Role</th>
+                <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
+                <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Verification</th>
+                <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">
                   <button
                     onClick={() => {
                       setSortBy('joinDate');
                       setSortOrder(sortBy === 'joinDate' && sortOrder === 'asc' ? 'desc' : 'asc');
                     }}
-                    className="flex items-center space-x-1 hover:text-gray-700"
+                    className="flex items-center space-x-1 hover:text-slate-900 transition-colors"
                   >
                     <span>Join Date</span>
-                    <FaSort className="text-xs" />
+                    <FaSort className="text-[10px]" />
                   </button>
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Actions</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
@@ -498,8 +498,8 @@ const UserManagement: React.FC = () => {
         <div className="bg-white rounded-xl shadow-lg p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-2xl font-bold text-gray-800">{users.length}</p>
-              <p className="text-gray-600">Total Users</p>
+              <p className="text-2xl font-black text-gray-900 leading-none tracking-tight">{users.length}</p>
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1 leading-none">Total Users</p>
             </div>
             <FaUsers className="text-blue-500 text-3xl" />
           </div>
@@ -507,8 +507,8 @@ const UserManagement: React.FC = () => {
         <div className="bg-white rounded-xl shadow-lg p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-2xl font-bold text-gray-800">{users.filter(u => u.status === 'active').length}</p>
-              <p className="text-gray-600">Active Users</p>
+              <p className="text-2xl font-black text-gray-900 leading-none tracking-tight">{users.filter(u => u.status === 'active').length}</p>
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1 leading-none">Active Users</p>
             </div>
             <FaUserCheck className="text-green-500 text-3xl" />
           </div>
@@ -516,8 +516,8 @@ const UserManagement: React.FC = () => {
         <div className="bg-white rounded-xl shadow-lg p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-2xl font-bold text-gray-800">{users.filter(u => u.status === 'pending').length}</p>
-              <p className="text-gray-600">Pending Users</p>
+              <p className="text-2xl font-black text-gray-900 leading-none tracking-tight">{users.filter(u => u.status === 'pending').length}</p>
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1 leading-none">Pending Users</p>
             </div>
             <FaUserTimes className="text-yellow-500 text-3xl" />
           </div>
@@ -525,8 +525,8 @@ const UserManagement: React.FC = () => {
         <div className="bg-white rounded-xl shadow-lg p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-2xl font-bold text-gray-800">{users.filter(u => u.role === 'ADMIN').length}</p>
-              <p className="text-gray-600">Admins</p>
+              <p className="text-2xl font-black text-gray-900 leading-none tracking-tight">{users.filter(u => u.role === 'ADMIN').length}</p>
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1 leading-none">Admins</p>
             </div>
             <FaShieldAlt className="text-purple-500 text-3xl" />
           </div>
@@ -534,8 +534,8 @@ const UserManagement: React.FC = () => {
         <div className="bg-white rounded-xl shadow-lg p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-2xl font-bold text-gray-800">{users.filter(u => u.verificationStatus === 'verified').length}</p>
-              <p className="text-gray-600">Verified</p>
+              <p className="text-2xl font-black text-gray-900 leading-none tracking-tight">{users.filter(u => u.verificationStatus === 'verified').length}</p>
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1 leading-none">Verified</p>
             </div>
             <FaCheck className="text-green-500 text-3xl" />
           </div>

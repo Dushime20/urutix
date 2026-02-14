@@ -20,7 +20,7 @@ import { CreditConsumptionListener } from '../../services/credit-consumption.lis
 
 @ApiTags('Credits')
 @ApiBearerAuth()
-@Controller('api/credits')
+@Controller('credits')
 @UseGuards(JwtAuthGuard)
 export class CreditController {
   constructor(

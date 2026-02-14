@@ -1,25 +1,24 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import toast from 'react-hot-toast';
 import AdminPageLayout from '../../components/Admin/AdminPageLayout';
 import {
   FaCreditCard,
   FaSearch,
-  FaFilter,
   FaEye,
-  FaEdit,
   FaBan,
   FaCheckCircle,
   FaExclamationTriangle,
   FaClock,
-  FaDownload,
   FaPlus,
   FaGift,
   FaSync,
   FaTimes,
   FaBuilding,
   FaChartLine,
+  FaHistory,
 } from 'react-icons/fa';
 
 interface TenantSubscription {
@@ -47,6 +46,7 @@ interface TenantSubscription {
 
 const TenantSubscriptions: React.FC = () => {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [planFilter, setPlanFilter] = useState<string>('all');
@@ -416,6 +416,17 @@ const TenantSubscriptions: React.FC = () => {
                             title="View Details"
                           >
                             <FaEye />
+                          </button>
+                          <button
+                            onClick={() => {
+                              navigate('/admin/credit-usage', { 
+                                state: { tenantId: subscription.tenantId, tenantName: subscription.tenantName } 
+                              });
+                            }}
+                            className="p-2 text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
+                            title="View Credit Usage History"
+                          >
+                            <FaHistory />
                           </button>
                           <button
                             onClick={() => {

@@ -3,29 +3,14 @@ import { lendingApi } from '../services/lending/lendingApi';
 import toast from 'react-hot-toast';
 import AdminPageLayout from '../components/Admin/AdminPageLayout';
 import {
-  FaTrash,
-  FaPlus,
-  FaKey,
-  FaEnvelope,
-  FaPhone,
-  FaBuilding,
-  FaEllipsisH,
-  FaCopy,
-  FaCheck,
-  FaSearch,
-  FaChartLine,
-  FaDollarSign,
-  FaUsers,
-  FaHandshake,
-  FaArrowUp,
-  FaDownload,
-  FaExclamationTriangle,
-  FaCheckCircle,
-  FaClock,
-  FaEye,
-  FaPercent,
-  FaTimes
-} from 'react-icons/fa';
+  Trash2, Plus, Key, Mail,
+  Phone, Building2, MoreHorizontal,
+  Copy, Check, Search, TrendingUp,
+  DollarSign, ArrowUp,
+  Download, AlertTriangle, CheckCircle2,
+  Clock, Eye, Percent, X,
+  Briefcase, ShieldCheck
+} from 'lucide-react';
 
 interface Lender {
   id: string;
@@ -337,10 +322,10 @@ const AdminLenderRegistrationPage: React.FC = () => {
 
   const getRiskColor = (risk?: string) => {
     switch (risk) {
-      case 'low': return 'bg-gray-100 text-gray-700 border-gray-200';
-      case 'medium': return 'bg-gray-100 text-gray-600 border-gray-200';
-      case 'high': return 'bg-gray-100 text-gray-600 border-gray-200';
-      default: return 'bg-gray-100 text-gray-600 border-gray-200';
+      case 'low': return 'bg-green-50 text-green-700 border-green-200';
+      case 'medium': return 'bg-yellow-50 text-yellow-700 border-yellow-200';
+      case 'high': return 'bg-red-50 text-red-700 border-red-200';
+      default: return 'bg-gray-50 text-gray-700 border-gray-200';
     }
   };
 
@@ -352,23 +337,23 @@ const AdminLenderRegistrationPage: React.FC = () => {
         <div className="flex gap-2">
           <button
             onClick={() => setShowAnalytics(!showAnalytics)}
-            className="px-2.5 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg flex items-center gap-1.5 transition-colors text-xs font-medium"
+            className="px-3 py-2 bg-white border border-gray-200 hover:border-gray-300 text-gray-600 rounded-xl flex items-center gap-2 transition-all duration-200 text-xs font-black"
           >
-            <FaChartLine className="w-3 h-3" />
+            <TrendingUp size={14} />
             {showAnalytics ? 'Hide' : 'Show'} Analytics
           </button>
           <button
             onClick={handleExport}
-            className="px-2.5 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg flex items-center gap-1.5 transition-colors text-xs font-medium"
+            className="px-3 py-2 bg-white border border-gray-200 hover:border-gray-300 text-gray-600 rounded-xl flex items-center gap-2 transition-all duration-200 text-xs font-black"
           >
-            <FaDownload className="w-3 h-3" />
+            <Download size={14} />
             Export
           </button>
           <button
             onClick={() => setShowModal(true)}
-            className="px-2.5 py-1.5 bg-gray-800 text-white rounded-lg hover:bg-gray-900 flex items-center gap-1.5 transition-colors text-xs font-medium"
+            className="px-3 py-2 bg-gray-800 text-white rounded-xl hover:bg-gray-900 flex items-center gap-2 transition-all duration-200 text-xs font-black"
           >
-            <FaPlus className="w-3 h-3" />
+            <Plus size={14} />
             New Lender
           </button>
         </div>
@@ -377,59 +362,65 @@ const AdminLenderRegistrationPage: React.FC = () => {
 
       {/* Analytics Dashboard */}
       {showAnalytics && analytics && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5">
-          <div className="bg-white rounded-lg border border-gray-200 p-2.5 hover:shadow-md transition-all duration-200">
-            <div className="flex items-center justify-between">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="bg-white rounded-xl border border-gray-200 p-6 hover:border-gray-300 transition-all duration-200 group relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-100 transition-opacity bg-gray-50"></div>
+            <div className="relative flex items-center justify-between">
               <div>
-                <p className="text-lg font-bold text-gray-900">{analytics?.totalLenders}</p>
-                <p className="text-xs text-gray-600">Total Lenders</p>
-                <p className="text-[10px] text-gray-500 flex items-center gap-0.5 mt-0.5">
-                  <FaArrowUp className="w-2 h-2" /> +{analytics?.monthlyGrowth}% this month
-                </p>
+                <p className="text-xs text-gray-600 mb-1">Total Lenders</p>
+                <div className="flex items-baseline gap-2">
+                  <p className="text-2xl font-black text-gray-900 leading-none">{analytics?.totalLenders}</p>
+                  <p className="text-[10px] text-green-600 font-bold flex items-center gap-0.5">
+                    <ArrowUp size={10} /> +{analytics?.monthlyGrowth}%
+                  </p>
+                </div>
               </div>
-              <div className="w-8 h-8 bg-gray-700 rounded-lg flex items-center justify-center">
-                <FaUsers className="text-white text-xs" />
+              <div className="w-12 h-12 bg-gray-800 rounded-xl flex items-center justify-center group-hover:bg-gray-900 transition-colors">
+                <Building2 className="text-white" size={20} />
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-lg border border-gray-200 p-2.5 hover:shadow-md transition-all duration-200">
-            <div className="flex items-center justify-between">
+          <div className="bg-white rounded-xl border border-gray-200 p-6 hover:border-gray-300 transition-all duration-200 group relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-100 transition-opacity bg-gray-50"></div>
+            <div className="relative flex items-center justify-between">
               <div>
-                <p className="text-lg font-bold text-gray-900">{analytics?.activeLenders}</p>
-                <p className="text-xs text-gray-600">Active Lenders</p>
-                <p className="text-[10px] text-gray-500 mt-0.5">
+                <p className="text-xs text-gray-600 mb-1">Active Lenders</p>
+                <p className="text-2xl font-black text-gray-900 leading-none">{analytics?.activeLenders}</p>
+                <p className="text-[10px] text-gray-500 font-bold mt-1.5">
                   {((analytics?.activeLenders || 0) / (analytics?.totalLenders || 1) * 100).toFixed(1)}% active rate
                 </p>
               </div>
-              <div className="w-8 h-8 bg-gray-700 rounded-lg flex items-center justify-center">
-                <FaCheckCircle className="text-white text-xs" />
+              <div className="w-12 h-12 bg-gray-800 rounded-xl flex items-center justify-center group-hover:bg-gray-900 transition-colors">
+                <CheckCircle2 className="text-white" size={20} />
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-lg border border-gray-200 p-2.5 hover:shadow-md transition-all duration-200">
-            <div className="flex items-center justify-between">
+          <div className="bg-white rounded-xl border border-gray-200 p-6 hover:border-gray-300 transition-all duration-200 group relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-100 transition-opacity bg-gray-50"></div>
+            <div className="relative flex items-center justify-between">
               <div>
-                <p className="text-lg font-bold text-gray-900">{(analytics?.totalLoansIssued || 0).toLocaleString()}</p>
-                <p className="text-xs text-gray-600">Total Loans</p>
-                <p className="text-[10px] text-gray-500 mt-0.5">Loans issued</p>
+                <p className="text-xs text-gray-600 mb-1">Total Loans</p>
+                <p className="text-2xl font-black text-gray-900 leading-none">{(analytics?.totalLoansIssued || 0).toLocaleString()}</p>
+                <p className="text-[10px] text-gray-500 font-bold mt-1.5">Loans issued</p>
               </div>
-              <div className="w-8 h-8 bg-gray-700 rounded-lg flex items-center justify-center">
-                <FaHandshake className="text-white text-xs" />
+              <div className="w-12 h-12 bg-gray-800 rounded-xl flex items-center justify-center group-hover:bg-gray-900 transition-colors">
+                <Briefcase className="text-white" size={20} />
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-lg border border-gray-200 p-2.5 hover:shadow-md transition-all duration-200">
-            <div className="flex items-center justify-between">
+          <div className="bg-white rounded-xl border border-gray-200 p-6 hover:border-gray-300 transition-all duration-200 group relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-100 transition-opacity bg-gray-50"></div>
+            <div className="relative flex items-center justify-between">
               <div>
-                <p className="text-lg font-bold text-gray-900">RWF {((analytics?.totalAmountDisbursed || 0) / 1000000).toFixed(1)}M</p>
-                <p className="text-xs text-gray-600">Amount Disbursed</p>
-                <p className="text-[10px] text-gray-500 mt-0.5">Avg: {analytics?.avgApprovalRate.toFixed(1)}% approval</p>
+                <p className="text-xs text-gray-600 mb-1">Amount Disbursed</p>
+                <p className="text-2xl font-black text-gray-900 leading-none">RWF {((analytics?.totalAmountDisbursed || 0) / 1000000).toFixed(1)}M</p>
+                <p className="text-[10px] text-gray-500 font-bold mt-1.5">Avg: {analytics?.avgApprovalRate.toFixed(1)}% approval</p>
               </div>
-              <div className="w-8 h-8 bg-gray-700 rounded-lg flex items-center justify-center">
-                <FaDollarSign className="text-white text-xs" />
+              <div className="w-12 h-12 bg-gray-800 rounded-xl flex items-center justify-center group-hover:bg-gray-900 transition-colors">
+                <DollarSign className="text-white" size={20} />
               </div>
             </div>
           </div>
@@ -438,89 +429,87 @@ const AdminLenderRegistrationPage: React.FC = () => {
 
       {/* Performance Insights */}
       {showAnalytics && analytics && (
-        <div className="bg-white rounded-lg border border-gray-200 p-3">
-          <h3 className="text-xs font-semibold text-gray-900 mb-3 flex items-center gap-1.5">
-            <FaChartLine className="text-gray-600 text-xs" /> Performance Insights
+        <div className="bg-white rounded-xl border border-gray-200 p-4">
+          <h3 className="text-xs font-black text-gray-900 mb-4 flex items-center gap-2">
+            <TrendingUp className="text-indigo-600" size={16} /> Performance Insights
           </h3>
-          <div className="grid grid-cols-3 gap-2.5">
-            <div className="text-center p-2 bg-gray-50 rounded-lg border border-gray-200">
-              <FaPercent className="text-gray-600 text-sm mx-auto mb-1" />
-              <p className="text-[10px] text-gray-600">Avg Approval Rate</p>
-              <p className="text-sm font-bold text-gray-900">{analytics?.avgApprovalRate.toFixed(1)}%</p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="text-center p-4 bg-gray-50 rounded-xl border border-gray-100 hover:border-gray-200 transition-colors group">
+              <Percent className="text-gray-400 group-hover:text-blue-500 transition-colors mx-auto mb-2" size={20} />
+              <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Avg Approval Rate</p>
+              <p className="text-xl font-black text-gray-900">{analytics?.avgApprovalRate.toFixed(1)}%</p>
             </div>
-            <div className="text-center p-2 bg-gray-50 rounded-lg border border-gray-200">
-              <FaClock className="text-gray-600 text-sm mx-auto mb-1" />
-              <p className="text-[10px] text-gray-600">Avg Processing Time</p>
-              <p className="text-sm font-bold text-gray-900">{analytics?.avgProcessingTime.toFixed(1)} days</p>
+            <div className="text-center p-4 bg-gray-50 rounded-xl border border-gray-100 hover:border-gray-200 transition-colors group">
+              <Clock className="text-gray-400 group-hover:text-orange-500 transition-colors mx-auto mb-2" size={20} />
+              <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Avg Processing Time</p>
+              <p className="text-xl font-black text-gray-900">{analytics?.avgProcessingTime.toFixed(1)} days</p>
             </div>
-            <div className="text-center p-2 bg-gray-50 rounded-lg border border-gray-200">
-              <FaChartLine className="text-gray-600 text-sm mx-auto mb-1" />
-              <p className="text-[10px] text-gray-600">Monthly Growth</p>
-              <p className="text-sm font-bold text-gray-900">+{analytics?.monthlyGrowth.toFixed(1)}%</p>
+            <div className="text-center p-4 bg-gray-50 rounded-xl border border-gray-100 hover:border-gray-200 transition-colors group">
+              <TrendingUp className="text-gray-400 group-hover:text-green-500 transition-colors mx-auto mb-2" size={20} />
+              <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Monthly Growth</p>
+              <p className="text-xl font-black text-gray-900">+{analytics?.monthlyGrowth.toFixed(1)}%</p>
             </div>
           </div>
         </div>
       )}
 
       {/* Filters */}
-      <div className="bg-white rounded-lg border border-gray-200 p-2.5">
-        <div className="flex flex-col lg:flex-row lg:items-center gap-2">
-          <div className="relative flex-1">
-            <FaSearch className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 text-xs" />
+      <div className="bg-white rounded-xl border border-gray-200 p-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-bold" size={14} />
             <input
               value={search}
               onChange={e => setSearch(e.target.value)}
-              placeholder="Search by name, email, or phone..."
-              className="pl-7 pr-2 py-1.5 w-full rounded-lg border border-gray-200 focus:ring-2 focus:ring-gray-500 focus:border-transparent text-xs"
+              placeholder="Search lenders..."
+              className="pl-10 pr-4 py-2 w-full rounded-xl border border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm bg-white outline-none transition-all"
             />
           </div>
 
-          <div className="flex gap-2">
-            <select
-              value={statusFilter}
-              onChange={e => setStatusFilter(e.target.value as any)}
-              className="px-2 py-1.5 rounded-lg border border-gray-200 focus:ring-2 focus:ring-gray-500 focus:border-transparent text-xs bg-white"
-            >
-              <option value="all">All Status</option>
-              <option value="active">Active</option>
-              <option value="pending">Pending</option>
-              <option value="inactive">Inactive</option>
-            </select>
+          <select
+            value={statusFilter}
+            onChange={e => setStatusFilter(e.target.value as any)}
+            className="px-3 py-2 rounded-xl border border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm bg-white outline-none"
+          >
+            <option value="all">All Status</option>
+            <option value="active">Active</option>
+            <option value="pending">Pending</option>
+            <option value="inactive">Inactive</option>
+          </select>
 
-            <select
-              value={riskFilter}
-              onChange={e => setRiskFilter(e.target.value as any)}
-              className="px-2 py-1.5 rounded-lg border border-gray-200 focus:ring-2 focus:ring-gray-500 focus:border-transparent text-xs bg-white"
-            >
-              <option value="all">All Risk Levels</option>
-              <option value="low">Low Risk</option>
-              <option value="medium">Medium Risk</option>
-              <option value="high">High Risk</option>
-            </select>
-          </div>
+          <select
+            value={riskFilter}
+            onChange={e => setRiskFilter(e.target.value as any)}
+            className="px-3 py-2 rounded-xl border border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm bg-white outline-none"
+          >
+            <option value="all">All Risk Levels</option>
+            <option value="low">Low Risk</option>
+            <option value="medium">Medium Risk</option>
+            <option value="high">High Risk</option>
+          </select>
         </div>
       </div>
 
       {/* Registration Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-lg relative">
-            <div className="sticky top-0 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
-              <h2 className="text-sm font-bold text-gray-900 flex items-center gap-1.5">
-                <FaPlus className="text-gray-600 text-xs" /> Register New Lender
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg relative overflow-hidden ring-1 ring-black/5">
+            <div className="bg-gray-50/50 px-6 py-4 flex items-center justify-between border-b border-gray-100">
+              <h2 className="text-sm font-black text-gray-900 flex items-center gap-2">
+                <Plus className="text-indigo-600" size={18} /> Register New Lender
               </h2>
               <button
-                className="text-gray-400 hover:text-gray-600 transition-colors"
+                className="p-1.5 text-gray-400 hover:text-gray-600 rounded-lg transition-colors"
                 onClick={() => setShowModal(false)}
                 title="Close"
               >
-                <FaTimes className="w-4 h-4" />
+                <X size={18} />
               </button>
             </div>
-            <form onSubmit={handleSubmit} className="p-4 space-y-3">
+            <form onSubmit={handleSubmit} className="p-6 space-y-4">
               <div>
-                <label className="text-xs font-medium text-gray-700 mb-1 flex items-center gap-1">
-                  <FaBuilding className="text-gray-500 text-xs" /> Lender Name
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-wider mb-1.5 flex items-center gap-1">
+                  <Building2 size={12} /> Lender Name
                 </label>
                 <input
                   type="text"
@@ -528,13 +517,13 @@ const AdminLenderRegistrationPage: React.FC = () => {
                   value={form.name}
                   onChange={handleChange}
                   required
-                  className="w-full px-2.5 py-1.5 text-xs border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent"
-                  placeholder="Company Name"
+                  className="w-full px-4 py-2.5 text-sm rounded-xl border border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all"
+                  placeholder="e.g. Acme Credit Corp"
                 />
               </div>
               <div>
-                <label className="text-xs font-medium text-gray-700 mb-1 flex items-center gap-1">
-                  <FaEnvelope className="text-gray-500 text-xs" /> Email
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-wider mb-1.5 flex items-center gap-1">
+                  <Mail size={12} /> Email Address
                 </label>
                 <input
                   type="email"
@@ -542,13 +531,13 @@ const AdminLenderRegistrationPage: React.FC = () => {
                   value={form.email}
                   onChange={handleChange}
                   required
-                  className="w-full px-2.5 py-1.5 text-xs border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent"
-                  placeholder="Contact Email"
+                  className="w-full px-4 py-2.5 text-sm rounded-xl border border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all"
+                  placeholder="contact@lender.com"
                 />
               </div>
               <div>
-                <label className="text-xs font-medium text-gray-700 mb-1 flex items-center gap-1">
-                  <FaPhone className="text-gray-500 text-xs" /> Phone
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-wider mb-1.5 flex items-center gap-1">
+                  <Phone size={12} /> Business Phone
                 </label>
                 <input
                   type="text"
@@ -556,32 +545,38 @@ const AdminLenderRegistrationPage: React.FC = () => {
                   value={form.phone}
                   onChange={handleChange}
                   required
-                  className="w-full px-2.5 py-1.5 text-xs border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent"
-                  placeholder="Contact Phone"
+                  className="w-full px-4 py-2.5 text-sm rounded-xl border border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all"
+                  placeholder="+250 7..."
                 />
               </div>
               {error && (
-                <div className="bg-red-50 border border-red-200 rounded p-2 text-xs">
-                  <div className="flex items-center gap-1.5">
-                    <FaExclamationTriangle className="text-red-600 flex-shrink-0 w-3 h-3" />
-                    <p className="text-red-700">{error}</p>
+                <div className="bg-red-50 border border-red-100 rounded-xl p-3">
+                  <div className="flex items-center gap-2 text-red-700">
+                    <AlertTriangle size={16} className="shrink-0" />
+                    <p className="text-xs font-bold leading-tight">{error}</p>
                   </div>
                 </div>
               )}
               {success && (
-                <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-xs">
-                  <div className="flex items-center gap-2">
-                    <FaCheckCircle className="text-green-600" />
-                    <p className="text-green-800 font-semibold">Lender registered successfully!</p>
+                <div className="bg-green-50 border border-green-100 rounded-xl p-3">
+                  <div className="flex items-center gap-2 text-green-700">
+                    <CheckCircle2 size={16} className="shrink-0" />
+                    <p className="text-xs font-bold leading-tight">Lender registered successfully!</p>
                   </div>
                 </div>
               )}
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-1.5 bg-gray-800 text-white rounded-lg font-medium hover:bg-gray-900 transition-colors text-xs"
+                className="w-full py-3 bg-gray-900 text-white rounded-xl font-black hover:bg-black transition-all duration-200 shadow-lg shadow-black/10 flex items-center justify-center gap-2 text-sm mt-2 disabled:bg-gray-300 disabled:shadow-none"
               >
-                {loading ? 'Registering...' : 'Register Lender'}
+                {loading ? (
+                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : (
+                  <>
+                    <Check size={18} /> Register Lender
+                  </>
+                )}
               </button>
             </form>
           </div>
@@ -596,11 +591,11 @@ const AdminLenderRegistrationPage: React.FC = () => {
           ))}
         </div>
       ) : sorted.length === 0 ? (
-        <div className="text-center py-12 border-2 border-dashed border-gray-200 rounded-lg bg-gray-50">
-          <div className="mx-auto mb-3 w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center">
-            <FaBuilding className="text-gray-500 text-lg" />
+        <div className="text-center py-12 border-2 border-dashed border-gray-200 rounded-xl bg-gray-50">
+          <div className="mx-auto mb-3 w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center">
+            <Building2 className="text-gray-500" size={24} />
           </div>
-          <h3 className="text-sm font-semibold text-gray-800 mb-1">No lenders found</h3>
+          <h3 className="text-sm font-black text-gray-900 mb-1">No lenders found</h3>
           <p className="text-xs text-gray-500 mb-4">
             {search || statusFilter !== 'all' || riskFilter !== 'all'
               ? 'Try adjusting your filters or search terms.'
@@ -610,40 +605,40 @@ const AdminLenderRegistrationPage: React.FC = () => {
           {!search && statusFilter === 'all' && riskFilter === 'all' && (
             <button
               onClick={() => setShowModal(true)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-800 text-white rounded-lg font-medium hover:bg-gray-900 transition-colors text-xs"
+              className="px-3 py-2 bg-gray-800 text-white rounded-xl hover:bg-gray-900 flex items-center gap-2 transition-all duration-200 text-xs font-black"
             >
-              <FaPlus className="text-xs" /> Add Lender
+              <Plus size={14} /> Add Lender
             </button>
           )}
         </div>
       ) : (
-        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
-                  <th onClick={() => toggleSort('name')} className="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase tracking-wider cursor-pointer">
+                  <th onClick={() => toggleSort('name')} className="px-3 py-3 text-left text-xs font-black text-gray-900 uppercase tracking-wider cursor-pointer">
                     <div className="inline-flex items-center gap-1">
                       Lender
-                      {sortBy === 'name' && <span className="text-[10px]">{sortDir === 'asc' ? '▲' : '▼'}</span>}
+                      {sortBy === 'name' && <TrendingUp size={10} className={sortDir === 'asc' ? '' : 'rotate-180'} />}
                     </div>
                   </th>
-                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Contact</th>
-                  <th onClick={() => toggleSort('totalLoans')} className="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase tracking-wider cursor-pointer">
+                  <th className="px-3 py-3 text-left text-xs font-black text-gray-900 uppercase tracking-wider">Contact</th>
+                  <th onClick={() => toggleSort('totalLoans')} className="px-3 py-3 text-left text-xs font-black text-gray-900 uppercase tracking-wider cursor-pointer">
                     <div className="inline-flex items-center gap-1">
                       Performance
-                      {sortBy === 'totalLoans' && <span className="text-[10px]">{sortDir === 'asc' ? '▲' : '▼'}</span>}
+                      {sortBy === 'totalLoans' && <TrendingUp size={10} className={sortDir === 'asc' ? '' : 'rotate-180'} />}
                     </div>
                   </th>
-                  <th onClick={() => toggleSort('approvalRate')} className="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase tracking-wider cursor-pointer">
+                  <th onClick={() => toggleSort('approvalRate')} className="px-3 py-3 text-left text-xs font-black text-gray-900 uppercase tracking-wider cursor-pointer">
                     <div className="inline-flex items-center gap-1">
                       Approval Rate
-                      {sortBy === 'approvalRate' && <span className="text-[10px]">{sortDir === 'asc' ? '▲' : '▼'}</span>}
+                      {sortBy === 'approvalRate' && <TrendingUp size={10} className={sortDir === 'asc' ? '' : 'rotate-180'} />}
                     </div>
                   </th>
-                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">API Key</th>
-                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Risk</th>
-                  <th className="px-3 py-2 text-right text-xs font-medium text-gray-600 uppercase tracking-wider">Actions</th>
+                  <th className="px-3 py-3 text-left text-xs font-black text-gray-900 uppercase tracking-wider">Credentials</th>
+                  <th className="px-3 py-3 text-left text-xs font-black text-gray-900 uppercase tracking-wider">Risk</th>
+                  <th className="px-3 py-3 text-right text-xs font-black text-gray-900 uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
@@ -675,22 +670,22 @@ const AdminLenderRegistrationPage: React.FC = () => {
                         </div>
                       </td>
                       <td className="px-3 py-2.5 whitespace-nowrap">
-                        <div className="space-y-0.5">
-                          <p className="text-xs text-gray-700 flex items-center gap-1">
-                            <FaEnvelope className="text-gray-400 text-[10px]" />
+                        <div className="space-y-1">
+                          <p className="text-xs text-gray-700 flex items-center gap-2">
+                            <Mail className="text-gray-400 font-bold" size={10} />
                             {l.email}
                           </p>
-                          <p className="text-xs text-gray-700 flex items-center gap-1">
-                            <FaPhone className="text-gray-400 text-[10px]" />
+                          <p className="text-xs text-gray-700 flex items-center gap-2">
+                            <Phone className="text-gray-400 font-bold" size={10} />
                             {l.phone}
                           </p>
                         </div>
                       </td>
                       <td className="px-3 py-2.5 whitespace-nowrap">
-                        <div className="space-y-0.5">
-                          <p className="text-xs font-medium text-gray-900">{(l.totalLoans || 0).toLocaleString()} loans</p>
-                          <p className="text-[10px] text-gray-600">RWF {((l.totalAmount || 0) / 1000000).toFixed(1)}M disbursed</p>
-                          <p className="text-[10px] text-gray-500">{l.avgProcessingTime?.toFixed(1) || 'N/A'} days avg</p>
+                        <div className="space-y-1">
+                          <p className="text-sm font-bold text-gray-900">{(l.totalLoans || 0).toLocaleString()} loans</p>
+                          <p className="text-[10px] text-gray-600 font-medium">RWF {((l.totalAmount || 0) / 1000000).toFixed(1)}M disbursed</p>
+                          <p className="text-[10px] text-gray-500 font-medium">{l.avgProcessingTime?.toFixed(1) || 'N/A'} days avg</p>
                         </div>
                       </td>
                       <td className="px-3 py-2.5 whitespace-nowrap">
@@ -707,23 +702,23 @@ const AdminLenderRegistrationPage: React.FC = () => {
                         </div>
                       </td>
                       <td className="px-3 py-2.5 whitespace-nowrap">
-                        <div className="inline-flex items-center gap-1.5 font-mono text-[10px] bg-gray-100 rounded-md px-2 py-1 border border-gray-200">
-                          <FaKey className="text-gray-400 text-[10px]" />
-                          <span>{masked}</span>
+                        <div className="inline-flex items-center gap-2 font-mono text-[10px] bg-gray-50 rounded-xl px-3 py-1.5 border border-gray-100">
+                          <Key className="text-gray-400" size={10} />
+                          <span className="text-gray-600 font-bold">{masked}</span>
                           <button
                             onClick={() => handleCopy(l.id, l.api_key)}
-                            className="text-gray-400 hover:text-gray-600 transition"
+                            className="text-gray-400 hover:text-indigo-600 transition-colors"
                             title="Copy API Key"
                           >
-                            {copiedId === l.id ? <FaCheck className="text-gray-600 text-[10px]" /> : <FaCopy className="text-[10px]" />}
+                            {copiedId === l.id ? <Check className="text-green-600" size={10} /> : <Copy size={10} />}
                           </button>
                         </div>
                       </td>
                       <td className="px-3 py-2.5 whitespace-nowrap">
-                        <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium border ${getRiskColor(l.riskRating)}`}>
-                          {l.riskRating === 'low' ? <FaCheckCircle className="w-2.5 h-2.5" /> :
-                            l.riskRating === 'medium' ? <FaClock className="w-2.5 h-2.5" /> :
-                              <FaExclamationTriangle className="w-2.5 h-2.5" />}
+                        <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-black border ${getRiskColor(l.riskRating)}`}>
+                          {l.riskRating === 'low' ? <CheckCircle2 size={10} /> :
+                            l.riskRating === 'medium' ? <Clock size={10} /> :
+                              <AlertTriangle size={10} />}
                           {(l.riskRating || 'low').charAt(0).toUpperCase() + (l.riskRating || 'low').slice(1)}
                         </span>
                       </td>
@@ -731,45 +726,45 @@ const AdminLenderRegistrationPage: React.FC = () => {
                         <div className="inline-flex items-center gap-1">
                           <button
                             onClick={() => handleViewDetails(l)}
-                            className="p-1 rounded-lg hover:bg-gray-100 text-gray-600 hover:text-gray-900 transition"
+                            className="p-1.5 rounded-lg hover:bg-gray-100 text-indigo-600 hover:text-indigo-700 transition-colors"
                             title="View Details"
                           >
-                            <FaEye className="w-3 h-3" />
+                            <Eye size={16} />
                           </button>
                           <button
                             onClick={() => setOpenActionRow(r => r === l.id ? null : l.id)}
-                            className="p-1 rounded-lg hover:bg-gray-100 text-gray-600 hover:text-gray-900 transition"
+                            className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-600 hover:text-gray-900 transition-colors"
                             title="More Actions"
                           >
-                            <FaEllipsisH className="w-3 h-3" />
+                            <MoreHorizontal size={16} />
                           </button>
                         </div>
                         {openActionRow === l.id && (
-                          <div className="absolute right-3 mt-1 w-40 bg-white rounded-lg shadow-lg border border-gray-200 z-10 py-1 text-xs">
+                          <div className="absolute right-3 mt-1 w-44 bg-white rounded-xl shadow-xl border border-gray-200 z-10 py-1 text-xs overflow-hidden">
                             <button
                               onClick={() => { handleViewDetails(l); setOpenActionRow(null); }}
-                              className="w-full text-left px-3 py-1.5 hover:bg-gray-50 text-gray-700 flex items-center gap-1.5"
+                              className="w-full text-left px-3 py-2 hover:bg-gray-50 text-gray-700 flex items-center gap-2 font-medium"
                             >
-                              <FaEye className="text-gray-500 text-xs" /> View Details
+                              <Eye className="text-indigo-600" size={14} /> View Member
                             </button>
                             <button
                               onClick={() => { setOpenActionRow(null); }}
-                              className="w-full text-left px-3 py-1.5 hover:bg-gray-50 text-gray-700 flex items-center gap-1.5"
+                              className="w-full text-left px-3 py-2 hover:bg-gray-50 text-gray-700 flex items-center gap-2 font-medium"
                             >
-                              <FaKey className="text-gray-500 text-xs" /> Update API Key
+                              <Key className="text-gray-600" size={14} /> Update API Key
                             </button>
                             <button
                               onClick={() => { setOpenActionRow(null); }}
-                              className="w-full text-left px-3 py-1.5 hover:bg-gray-50 text-gray-700 flex items-center gap-1.5"
+                              className="w-full text-left px-3 py-2 hover:bg-gray-50 text-gray-700 flex items-center gap-2 font-medium"
                             >
-                              <FaChartLine className="text-gray-500 text-xs" /> Performance
+                              <TrendingUp className="text-gray-600" size={14} /> Performance
                             </button>
-                            <div className="border-t border-gray-200 my-1"></div>
+                            <div className="border-t border-gray-100 my-1"></div>
                             <button
                               onClick={() => { handleDelete(l.id); setOpenActionRow(null); }}
-                              className="w-full text-left px-3 py-1.5 hover:bg-red-50 text-red-600 flex items-center gap-1.5"
+                              className="w-full text-left px-3 py-2 hover:bg-red-50 text-red-600 flex items-center gap-2 font-black"
                             >
-                              <FaTrash className="text-red-500 text-xs" /> Remove
+                              <Trash2 className="text-red-500" size={14} /> Remove
                             </button>
                           </div>
                         )}
@@ -792,102 +787,115 @@ const AdminLenderRegistrationPage: React.FC = () => {
 
       {/* Lender Details Modal */}
       {showDetailsModal && selectedLender && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="sticky top-0 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
-              <h3 className="text-sm font-bold text-gray-900">Lender Details</h3>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden flex flex-col ring-1 ring-black/5">
+            <div className="bg-gray-50/50 px-6 py-4 flex items-center justify-between border-b border-gray-100">
+              <h3 className="text-sm font-black text-gray-900 flex items-center gap-2">
+                <Building2 className="text-indigo-600" size={18} /> Lender Member Profile
+              </h3>
               <button
                 onClick={() => setShowDetailsModal(false)}
-                className="text-gray-400 hover:text-gray-600 transition-colors"
+                className="p-1.5 text-gray-400 hover:text-gray-600 rounded-lg transition-colors"
+                title="Close"
               >
-                <FaTimes className="w-4 h-4" />
+                <X size={20} />
               </button>
             </div>
-            <div className="p-4 space-y-3">
-              {/* Basic Information */}
-              <div className="grid grid-cols-2 gap-3">
-                <div className="bg-gray-50 rounded-lg p-2.5 border border-gray-200">
-                  <div className="text-[10px] text-gray-600 mb-0.5">Name</div>
-                  <div className="text-xs font-medium text-gray-900">{selectedLender?.name}</div>
+            <div className="p-6 space-y-6 overflow-y-auto">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="bg-gray-50 rounded-xl p-4 border border-gray-100 hover:border-gray-200 transition-colors">
+                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Business Name</p>
+                  <p className="text-sm font-black text-gray-900">{selectedLender.name}</p>
                 </div>
-                <div className="bg-gray-50 rounded-lg p-2.5 border border-gray-200">
-                  <div className="text-[10px] text-gray-600 mb-0.5">Status</div>
-                  <div className="flex items-center gap-1.5">
-                    <span className={`text-xs font-medium ${getStatusColor(selectedLender?.status || 'inactive')}`}>
-                      {(selectedLender?.status || 'active').charAt(0).toUpperCase() + (selectedLender?.status || 'active').slice(1)}
-                    </span>
-                  </div>
+                <div className="bg-gray-50 rounded-xl p-4 border border-gray-100 hover:border-gray-200 transition-colors">
+                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Account Status</p>
+                  <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black border ${getStatusColor(selectedLender.status)}`}>
+                    <span className="w-1.5 h-1.5 rounded-full bg-current"></span>
+                    {(selectedLender.status || 'active').toUpperCase()}
+                  </span>
                 </div>
-                <div className="bg-gray-50 rounded-lg p-2.5 border border-gray-200">
-                  <div className="text-[10px] text-gray-600 mb-0.5">Email</div>
-                  <div className="text-xs text-gray-900">{selectedLender?.email}</div>
+                <div className="bg-gray-50 rounded-xl p-4 border border-gray-100 hover:border-gray-200 transition-colors">
+                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 flex items-center gap-1">
+                    <Mail size={10} /> Email Address
+                  </p>
+                  <p className="text-sm font-bold text-gray-900">{selectedLender.email}</p>
                 </div>
-                <div className="bg-gray-50 rounded-lg p-2.5 border border-gray-200">
-                  <div className="text-[10px] text-gray-600 mb-0.5">Phone</div>
-                  <div className="text-xs text-gray-900">{selectedLender?.phone}</div>
-                </div>
-              </div>
-
-              {/* Performance Metrics */}
-              <div className="bg-gray-50 rounded-lg p-2.5 border border-gray-200">
-                <div className="text-xs font-medium text-gray-900 mb-2">Performance Metrics</div>
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <div className="text-[10px] text-gray-600">Total Loans</div>
-                    <div className="text-xs font-medium text-gray-900">{(selectedLender?.totalLoans || 0).toLocaleString()}</div>
-                  </div>
-                  <div>
-                    <div className="text-[10px] text-gray-600">Total Amount</div>
-                    <div className="text-xs font-medium text-gray-900">RWF {((selectedLender?.totalAmount || 0) / 1000000).toFixed(1)}M</div>
-                  </div>
-                  <div>
-                    <div className="text-[10px] text-gray-600">Approval Rate</div>
-                    <div className="text-xs font-medium text-gray-900">{selectedLender?.approvalRate?.toFixed(1) || 0}%</div>
-                  </div>
-                  <div>
-                    <div className="text-[10px] text-gray-600">Avg Processing Time</div>
-                    <div className="text-xs font-medium text-gray-900">{selectedLender?.avgProcessingTime?.toFixed(1) || 'N/A'} days</div>
-                  </div>
+                <div className="bg-gray-50 rounded-xl p-4 border border-gray-100 hover:border-gray-200 transition-colors">
+                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 flex items-center gap-1">
+                    <Phone size={10} /> Contact Phone
+                  </p>
+                  <p className="text-sm font-bold text-gray-900">{selectedLender.phone}</p>
                 </div>
               </div>
 
-              {/* API Key */}
-              <div className="bg-gray-50 rounded-lg p-2.5 border border-gray-200">
-                <div className="text-xs font-medium text-gray-900 mb-1">API Key</div>
-                <div className="inline-flex items-center gap-1.5 font-mono text-xs bg-gray-100 rounded-md px-2 py-1 border border-gray-200">
-                  <FaKey className="text-gray-400 text-xs" />
-                  <span>{selectedLender?.api_key}</span>
+              <div className="bg-indigo-50/50 rounded-2xl p-4 border border-indigo-100 relative overflow-hidden group">
+                <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform">
+                  <Key size={64} className="text-indigo-600" />
+                </div>
+                <h4 className="text-xs font-black text-indigo-900 flex items-center gap-2 mb-3">
+                  <Key size={14} /> API Integration Credentials
+                </h4>
+                <div className="bg-white rounded-xl p-3 border border-indigo-100 flex items-center justify-between shadow-sm">
+                  <code className="text-xs font-mono text-indigo-600 font-black">{selectedLender.api_key}</code>
                   <button
-                    onClick={() => selectedLender && handleCopy(selectedLender.id, selectedLender.api_key)}
-                    className="text-gray-400 hover:text-gray-600 transition"
-                    title="Copy API Key"
+                    onClick={() => handleCopy(selectedLender.id, selectedLender.api_key)}
+                    className="p-2 text-indigo-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
+                    title="Copy Key"
                   >
-                    {selectedLender && copiedId === selectedLender.id ? <FaCheck className="text-gray-600 text-xs" /> : <FaCopy className="text-xs" />}
+                    {copiedId === selectedLender.id ? <Check size={16} /> : <Copy size={16} />}
                   </button>
                 </div>
               </div>
 
-              {/* Additional Info */}
-              <div className="grid grid-cols-2 gap-3">
-                <div className="bg-gray-50 rounded-lg p-2.5 border border-gray-200">
-                  <div className="text-[10px] text-gray-600 mb-0.5">Risk Rating</div>
-                  <div className="flex items-center gap-1.5">
-                    <span className={`text-xs font-medium ${getRiskColor(selectedLender?.riskRating)}`}>
-                      {(selectedLender?.riskRating || 'low').charAt(0).toUpperCase() + (selectedLender?.riskRating || 'low').slice(1)}
-                    </span>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <h4 className="text-xs font-black text-gray-900 mb-4 flex items-center gap-2 tracking-tight">
+                    <TrendingUp className="text-indigo-600" size={16} /> Performance Metrics
+                  </h4>
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-end">
+                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider">Approval Rate</p>
+                      <p className="text-sm font-black text-gray-900">{selectedLender.approvalRate?.toFixed(1)}%</p>
+                    </div>
+                    <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-indigo-600 rounded-full transition-all duration-500"
+                        style={{ width: `${selectedLender.approvalRate}%` }}
+                      ></div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3 pt-2">
+                      <div className="p-3 bg-gray-50 rounded-xl border border-gray-100">
+                        <p className="text-[10px] font-black text-gray-400 uppercase mb-1">Total Loans</p>
+                        <p className="text-sm font-black text-gray-900">{selectedLender.totalLoans}</p>
+                      </div>
+                      <div className="p-3 bg-gray-50 rounded-xl border border-gray-100">
+                        <p className="text-[10px] font-black text-gray-400 uppercase mb-1">Risk Rating</p>
+                        <span className={`text-[10px] font-black uppercase ${selectedLender.riskRating === 'low' ? 'text-green-600' : 'text-yellow-600'}`}>
+                          {selectedLender.riskRating}
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 </div>
-                <div className="bg-gray-50 rounded-lg p-2.5 border border-gray-200">
-                  <div className="text-[10px] text-gray-600 mb-0.5">Interest Rate</div>
-                  <div className="text-xs font-medium text-gray-900">{selectedLender?.interestRate || 'N/A'}%</div>
-                </div>
-                <div className="bg-gray-50 rounded-lg p-2.5 border border-gray-200">
-                  <div className="text-[10px] text-gray-600 mb-0.5">Max Loan Amount</div>
-                  <div className="text-xs font-medium text-gray-900">RWF {(selectedLender?.maxLoanAmount || 0).toLocaleString()}</div>
-                </div>
-                <div className="bg-gray-50 rounded-lg p-2.5 border border-gray-200">
-                  <div className="text-[10px] text-gray-600 mb-0.5">Created At</div>
-                  <div className="text-xs text-gray-900">{selectedLender?.createdAt || 'N/A'}</div>
+
+                <div>
+                  <h4 className="text-xs font-black text-gray-900 mb-4 flex items-center gap-2 tracking-tight">
+                    <ShieldCheck className="text-indigo-600" size={16} /> Configuration
+                  </h4>
+                  <div className="space-y-3 bg-gray-50 rounded-2xl p-4 border border-gray-100">
+                    <div className="flex items-center justify-between py-2 border-b border-gray-200">
+                      <p className="text-[10px] font-black text-gray-400 uppercase">Interest Rate</p>
+                      <p className="text-xs font-black text-gray-900">{selectedLender.interestRate}%</p>
+                    </div>
+                    <div className="flex items-center justify-between py-2 border-b border-gray-200">
+                      <p className="text-[10px] font-black text-gray-400 uppercase">Max Amount</p>
+                      <p className="text-xs font-black text-gray-900">RWF {((selectedLender.maxLoanAmount || 0) / 1000000).toFixed(1)}M</p>
+                    </div>
+                    <div className="flex items-center justify-between py-2">
+                      <p className="text-[10px] font-black text-gray-400 uppercase">Registered</p>
+                      <p className="text-xs font-black text-gray-900">{selectedLender.createdAt ? new Date(selectedLender.createdAt).toLocaleDateString() : 'N/A'}</p>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>

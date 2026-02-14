@@ -3,6 +3,7 @@ import {
   Get,
   Post,
   Put,
+  Patch,
   Delete,
   Body,
   Param,
@@ -16,7 +17,7 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @ApiTags('Subscriptions')
 @ApiBearerAuth()
-@Controller('api/subscriptions')
+@Controller('subscriptions')
 @UseGuards(JwtAuthGuard)
 export class SubscriptionController {
   constructor(private readonly subscriptionService: SubscriptionService) {}
@@ -167,6 +168,53 @@ export class SubscriptionController {
     return {
       success: true,
       data: trials,
+    };
+  }
+
+  // Pricing Rules Endpoints
+  @Get('pricing-rules')
+  @ApiOperation({ summary: 'Get all pricing rules (admin only)' })
+  @ApiResponse({ status: 200, description: 'Returns list of pricing rules' })
+  async getAllPricingRules() {
+    const rules = await this.subscriptionService.getAllPricingRules();
+    return {
+      success: true,
+      data: rules,
+    };
+  }
+
+  @Post('pricing-rules')
+  @ApiOperation({ summary: 'Create a new pricing rule (admin only)' })
+  @ApiResponse({ status: 201, description: 'Pricing rule created successfully' })
+  async createPricingRule(@Body() data: any) {
+    const rule = await this.subscriptionService.createPricingRule(data);
+    return {
+      success: true,
+      message: 'Pricing rule created successfully',
+      data: rule,
+    };
+  }
+
+  @Patch('pricing-rules/:id')
+  @ApiOperation({ summary: 'Update a pricing rule (admin only)' })
+  @ApiResponse({ status: 200, description: 'Pricing rule updated successfully' })
+  async updatePricingRule(@Param('id') id: string, @Body() data: any) {
+    const rule = await this.subscriptionService.updatePricingRule(id, data);
+    return {
+      success: true,
+      message: 'Pricing rule updated successfully',
+      data: rule,
+    };
+  }
+
+  @Delete('pricing-rules/:id')
+  @ApiOperation({ summary: 'Delete a pricing rule (admin only)' })
+  @ApiResponse({ status: 200, description: 'Pricing rule deleted successfully' })
+  async deletePricingRule(@Param('id') id: string) {
+    await this.subscriptionService.deletePricingRule(id);
+    return {
+      success: true,
+      message: 'Pricing rule deleted successfully',
     };
   }
 }

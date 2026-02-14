@@ -3,31 +3,14 @@ import { fetchUsers } from '../services/adminApi';
 import toast from 'react-hot-toast';
 import AdminPageLayout from '../components/Admin/AdminPageLayout';
 import {
-  FaUser,
-  FaEnvelope,
-  FaPhone,
-  FaBuilding,
-  FaEllipsisH,
-  FaSearch,
-  FaChartLine,
-  FaDollarSign,
-  FaUsers,
-  FaHandshake,
-  FaArrowUp,
-  FaDownload,
-  FaExclamationTriangle,
-  FaCheckCircle,
-  FaClock,
-  FaEye,
-  FaPercent,
-  FaMapMarkerAlt,
-  FaIdCard,
-  FaHistory,
-  FaStar,
-  FaBan,
-  FaEdit,
-  FaTimes
-} from 'react-icons/fa';
+  User, Mail, Phone, Building2,
+  MoreHorizontal, Search, TrendingUp,
+  DollarSign, Users, ArrowUp,
+  Download, AlertTriangle, CheckCircle2,
+  Clock, Eye, Percent, MapPin,
+  CreditCard, History, Star, Ban,
+  Edit, X
+} from 'lucide-react';
 
 interface Lender {
   id: string;
@@ -323,13 +306,13 @@ const BorrowerRow: React.FC<{
             borrower.status === 'suspended' ? 'bg-gray-500' :
               borrower.status === 'pending' ? 'bg-gray-500' : 'bg-gray-400'
             }`}>
-            {borrower.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
+            <User className="text-white" size={14} />
           </div>
           <div>
-            <p className="text-xs font-medium text-gray-900">{borrower.name}</p>
+            <p className="text-sm font-bold text-gray-900">{borrower.name}</p>
             {borrower.company && (
               <p className="text-[10px] text-gray-500 flex items-center gap-1">
-                <FaBuilding className="text-[10px]" />
+                <Building2 size={10} />
                 {borrower.company}
               </p>
             )}
@@ -343,17 +326,17 @@ const BorrowerRow: React.FC<{
         </div>
       </td>
       <td className="px-3 py-2.5 whitespace-nowrap">
-        <div className="space-y-0.5">
-          <p className="text-xs text-gray-700 flex items-center gap-1">
-            <FaEnvelope className="text-gray-400 text-[10px]" />
+        <div className="space-y-1">
+          <p className="text-xs text-gray-700 flex items-center gap-2">
+            <Mail className="text-gray-400 font-bold" size={10} />
             {borrower.email}
           </p>
-          <p className="text-xs text-gray-700 flex items-center gap-1">
-            <FaPhone className="text-gray-400 text-[10px]" />
+          <p className="text-xs text-gray-700 flex items-center gap-2">
+            <Phone className="text-gray-400 font-bold" size={10} />
             {borrower.phone}
           </p>
-          <p className="text-[10px] text-gray-500 flex items-center gap-1">
-            <FaMapMarkerAlt className="text-gray-400 text-[10px]" />
+          <p className="text-[10px] text-gray-500 flex items-center gap-2">
+            <MapPin className="text-gray-400 font-bold" size={10} />
             {borrower.address}
           </p>
         </div>
@@ -361,47 +344,47 @@ const BorrowerRow: React.FC<{
       <td className="px-3 py-2.5 whitespace-nowrap">
         <div className="space-y-1">
           <div className="flex items-center gap-1.5">
-            <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-medium border ${getCreditScoreColor(borrower.creditScore)}`}>
-              <FaStar className="w-2.5 h-2.5" />
+            <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-bold border ${getCreditScoreColor(borrower.creditScore)}`}>
+              <Star size={10} />
               {borrower.creditScore}
             </span>
-            <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium border ${getRiskColor(borrower.riskRating)}`}>
-              {borrower.riskRating === 'low' ? <FaCheckCircle className="w-2.5 h-2.5" /> :
-                borrower.riskRating === 'medium' ? <FaClock className="w-2.5 h-2.5" /> :
-                  <FaExclamationTriangle className="w-2.5 h-2.5" />}
+            <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold border ${getRiskColor(borrower.riskRating)}`}>
+              {borrower.riskRating === 'low' ? <CheckCircle2 size={10} /> :
+                borrower.riskRating === 'medium' ? <Clock size={10} /> :
+                  <AlertTriangle size={10} />}
               {borrower.riskRating.charAt(0).toUpperCase() + borrower.riskRating.slice(1)}
             </span>
           </div>
         </div>
       </td>
       <td className="px-3 py-2.5 whitespace-nowrap">
-        <div className="space-y-0.5">
-          <p className="text-xs font-medium text-gray-900">{borrower.totalLoans} loans</p>
-          <p className="text-[10px] text-gray-600">RWF {(borrower.totalBorrowed / 1000000).toFixed(1)}M borrowed</p>
-          <p className="text-[10px] text-gray-500">RWF {(borrower.outstandingAmount / 1000000).toFixed(1)}M outstanding</p>
-          <div className="flex items-center gap-1 text-[10px]">
-            <span className="text-gray-600">{borrower.onTimePayments} on-time</span>
-            <span className="text-gray-400">•</span>
-            <span className="text-gray-600">{borrower.latePayments} late</span>
+        <div className="space-y-1">
+          <p className="text-sm font-bold text-gray-900">{borrower.totalLoans} loans</p>
+          <p className="text-[10px] text-gray-600 font-medium">RWF {(borrower.totalBorrowed / 1000000).toFixed(1)}M borrowed</p>
+          <p className="text-[10px] text-gray-500 font-medium">RWF {(borrower.outstandingAmount / 1000000).toFixed(1)}M outstanding</p>
+          <div className="flex items-center gap-1 text-[10px] font-bold">
+            <span className="text-green-600">{borrower.onTimePayments} on-time</span>
+            <span className="text-gray-300">•</span>
+            <span className="text-yellow-600">{borrower.latePayments} late</span>
             {borrower.defaultedLoans > 0 && (
               <>
-                <span className="text-gray-400">•</span>
-                <span className="text-gray-600">{borrower.defaultedLoans} default</span>
+                <span className="text-gray-300">•</span>
+                <span className="text-red-600">{borrower.defaultedLoans} default</span>
               </>
             )}
           </div>
         </div>
       </td>
       <td className="px-3 py-2.5 whitespace-nowrap">
-        <div className="space-y-0.5">
-          <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium border ${getVerificationColor(borrower.verificationStatus)}`}>
-            {borrower.verificationStatus === 'verified' ? <FaCheckCircle className="w-2.5 h-2.5" /> :
-              borrower.verificationStatus === 'pending' ? <FaClock className="w-2.5 h-2.5" /> :
-                <FaBan className="w-2.5 h-2.5" />}
+        <div className="space-y-1.5">
+          <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold border ${getVerificationColor(borrower.verificationStatus)}`}>
+            {borrower.verificationStatus === 'verified' ? <CheckCircle2 size={10} /> :
+              borrower.verificationStatus === 'pending' ? <Clock size={10} /> :
+                <Ban size={10} />}
             {borrower.verificationStatus.charAt(0).toUpperCase() + borrower.verificationStatus.slice(1)}
           </span>
-          <div className="flex items-center gap-1 text-[10px] text-gray-500">
-            <FaIdCard className="text-gray-400 text-[10px]" />
+          <div className="flex items-center gap-1.5 text-[10px] text-gray-500 font-bold">
+            <CreditCard className="text-gray-400" size={10} />
             ID: {borrower.nationalId.slice(-4)}
           </div>
         </div>
@@ -436,49 +419,49 @@ const BorrowerRow: React.FC<{
         <div className="inline-flex items-center gap-1">
           <button
             onClick={() => setOpenActionRow(openActionRow === borrower.id ? null : borrower.id)}
-            className="p-1 rounded-lg hover:bg-gray-100 text-gray-600 hover:text-gray-900 transition"
+            className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-600 hover:text-gray-900 transition-colors"
             title="More Actions"
           >
-            <FaEllipsisH className="w-3 h-3" />
+            <MoreHorizontal size={14} />
           </button>
         </div>
         {openActionRow === borrower.id && (
-          <div className="absolute right-3 mt-1 w-40 bg-white rounded-lg shadow-lg border border-gray-200 z-10 py-1 text-xs">
+          <div className="absolute right-3 mt-1 w-44 bg-white rounded-xl shadow-xl border border-gray-200 z-10 py-1 text-xs overflow-hidden">
             <button
               onClick={() => { if (onViewDetails) onViewDetails(borrower); setOpenActionRow(null); }}
-              className="w-full text-left px-3 py-1.5 hover:bg-gray-50 text-gray-700 flex items-center gap-1.5"
+              className="w-full text-left px-3 py-2 hover:bg-gray-50 text-gray-700 flex items-center gap-2 font-medium"
             >
-              <FaEye className="text-gray-500 text-xs" /> View Profile
+              <Eye className="text-indigo-600" size={14} /> View Profile
             </button>
             <button
               onClick={() => { setOpenActionRow(null); }}
-              className="w-full text-left px-3 py-1.5 hover:bg-gray-50 text-gray-700 flex items-center gap-1.5"
+              className="w-full text-left px-3 py-2 hover:bg-gray-50 text-gray-700 flex items-center gap-2 font-medium"
             >
-              <FaEdit className="text-gray-500 text-xs" /> Edit Details
+              <Edit className="text-gray-600" size={14} /> Edit Details
             </button>
             <button
               onClick={() => { setOpenActionRow(null); }}
-              className="w-full text-left px-3 py-1.5 hover:bg-gray-50 text-gray-700 flex items-center gap-1.5"
+              className="w-full text-left px-3 py-2 hover:bg-gray-50 text-gray-700 flex items-center gap-2 font-medium"
             >
-              <FaHistory className="text-gray-500 text-xs" /> Loan History
+              <History className="text-gray-600" size={14} /> Loan History
             </button>
             <button
               onClick={() => { setOpenActionRow(null); }}
-              className="w-full text-left px-3 py-1.5 hover:bg-gray-50 text-gray-700 flex items-center gap-1.5"
+              className="w-full text-left px-3 py-2 hover:bg-gray-50 text-gray-700 flex items-center gap-2 font-medium"
             >
-              <FaIdCard className="text-gray-500 text-xs" /> Documents
+              <CreditCard className="text-gray-600" size={14} /> Documents
             </button>
-            <div className="border-t border-gray-200 my-1"></div>
+            <div className="border-t border-gray-100 my-1"></div>
             <button
               onClick={() => { setOpenActionRow(null); }}
-              className="w-full text-left px-3 py-1.5 hover:bg-red-50 text-red-600 flex items-center gap-1.5"
+              className="w-full text-left px-3 py-2 hover:bg-red-50 text-red-600 flex items-center gap-2 font-black"
             >
-              <FaBan className="text-red-500 text-xs" /> Suspend
+              <Ban className="text-red-500" size={14} /> Suspend
             </button>
           </div>
         )}
       </td>
-    </tr>
+    </tr >
   );
 };
 
@@ -640,26 +623,26 @@ const AdminBorrowersPage: React.FC = () => {
         <div className="flex gap-2">
           <button
             onClick={() => setGroupByLender(!groupByLender)}
-            className={`px-2.5 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors text-xs font-medium ${groupByLender
+            className={`px-3 py-2 rounded-xl flex items-center gap-2 transition-all duration-200 text-xs font-black ${groupByLender
               ? 'bg-gray-800 text-white'
-              : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+              : 'bg-white border border-gray-200 hover:border-gray-300 text-gray-600'
               }`}
           >
-            <FaUsers className="w-3 h-3" />
+            <Users size={14} />
             {groupByLender ? 'Grouped' : 'Group'} by Lender
           </button>
           <button
             onClick={() => setShowAnalytics(!showAnalytics)}
-            className="px-2.5 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg flex items-center gap-1.5 transition-colors text-xs font-medium"
+            className="px-3 py-2 bg-white border border-gray-200 hover:border-gray-300 text-gray-600 rounded-xl flex items-center gap-2 transition-all duration-200 text-xs font-black"
           >
-            <FaChartLine className="w-3 h-3" />
+            <TrendingUp size={14} />
             {showAnalytics ? 'Hide' : 'Show'} Analytics
           </button>
           <button
             onClick={handleExport}
-            className="px-2.5 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg flex items-center gap-1.5 transition-colors text-xs font-medium"
+            className="px-3 py-2 bg-white border border-gray-200 hover:border-gray-300 text-gray-600 rounded-xl flex items-center gap-2 transition-all duration-200 text-xs font-black"
           >
-            <FaDownload className="w-3 h-3" />
+            <Download size={14} />
             Export
           </button>
         </div>
@@ -668,63 +651,65 @@ const AdminBorrowersPage: React.FC = () => {
 
       {/* Analytics Dashboard */}
       {showAnalytics && analytics && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5">
-          <div className="bg-white rounded-lg border border-gray-200 p-2.5 hover:shadow-md transition-all duration-200">
-            <div className="flex items-center justify-between">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="bg-white rounded-xl border border-gray-200 p-6 hover:border-gray-300 transition-all duration-200 group relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-100 transition-opacity bg-gray-50"></div>
+            <div className="relative flex items-center justify-between">
               <div>
-                <p className="text-lg font-bold text-gray-900">{analytics?.totalBorrowers}</p>
-                <p className="text-xs text-gray-600">Total Borrowers</p>
-                <p className="text-[10px] text-gray-500 flex items-center gap-0.5 mt-0.5">
-                  <FaArrowUp className="w-2 h-2" /> +{analytics?.monthlyGrowth}% this month
-                </p>
+                <p className="text-xs text-gray-600 mb-1">Total Borrowers</p>
+                <div className="flex items-baseline gap-2">
+                  <p className="text-2xl font-black text-gray-900 leading-none">{analytics?.totalBorrowers}</p>
+                  <p className="text-[10px] text-green-600 font-bold flex items-center gap-0.5">
+                    <ArrowUp size={10} /> +{analytics?.monthlyGrowth}%
+                  </p>
+                </div>
               </div>
-              <div className="w-8 h-8 bg-gray-700 rounded-lg flex items-center justify-center">
-                <FaUsers className="text-white text-xs" />
+              <div className="w-12 h-12 bg-gray-800 rounded-xl flex items-center justify-center group-hover:bg-gray-900 transition-colors">
+                <Users className="text-white" size={20} />
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-lg border border-gray-200 p-2.5 hover:shadow-md transition-all duration-200">
-            <div className="flex items-center justify-between">
+          <div className="bg-white rounded-xl border border-gray-200 p-6 hover:border-gray-300 transition-all duration-200 group relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-100 transition-opacity bg-gray-50"></div>
+            <div className="relative flex items-center justify-between">
               <div>
-                <p className="text-lg font-bold text-gray-900">{analytics?.activeBorrowers}</p>
-                <p className="text-xs text-gray-600">Active Borrowers</p>
-                <p className="text-[10px] text-gray-500 mt-0.5">
+                <p className="text-xs text-gray-600 mb-1">Active Borrowers</p>
+                <p className="text-2xl font-black text-gray-900 leading-none">{analytics?.activeBorrowers}</p>
+                <p className="text-[10px] text-gray-500 font-bold mt-1.5">
                   {((analytics?.activeBorrowers || 0) / (analytics?.totalBorrowers || 1) * 100).toFixed(1)}% active rate
                 </p>
               </div>
-              <div className="w-8 h-8 bg-gray-700 rounded-lg flex items-center justify-center">
-                <FaCheckCircle className="text-white text-xs" />
+              <div className="w-12 h-12 bg-gray-800 rounded-xl flex items-center justify-center group-hover:bg-gray-900 transition-colors">
+                <CheckCircle2 className="text-white" size={20} />
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-lg border border-gray-200 p-2.5 hover:shadow-md transition-all duration-200">
-            <div className="flex items-center justify-between">
+          <div className="bg-white rounded-xl border border-gray-200 p-6 hover:border-gray-300 transition-all duration-200 group relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-100 transition-opacity bg-gray-50"></div>
+            <div className="relative flex items-center justify-between">
               <div>
-                <p className="text-lg font-bold text-gray-900">RWF {(analytics.totalAmountBorrowed / 1000000).toFixed(1)}M</p>
-                <p className="text-xs text-gray-600">Total Borrowed</p>
-                <p className="text-[10px] text-gray-500 mt-0.5">
-                  {analytics.totalLoansIssued} loans
-                </p>
+                <p className="text-xs text-gray-600 mb-1">Total Borrowed</p>
+                <p className="text-2xl font-black text-gray-900 leading-none">RWF {(analytics.totalAmountBorrowed / 1000000).toFixed(1)}M</p>
+                <p className="text-[10px] text-gray-500 font-bold mt-1.5">{analytics.totalLoansIssued} loans</p>
               </div>
-              <div className="w-8 h-8 bg-gray-700 rounded-lg flex items-center justify-center">
-                <FaDollarSign className="text-white text-xs" />
+              <div className="w-12 h-12 bg-gray-800 rounded-xl flex items-center justify-center group-hover:bg-gray-900 transition-colors">
+                <DollarSign className="text-white" size={20} />
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-lg border border-gray-200 p-2.5 hover:shadow-md transition-all duration-200">
-            <div className="flex items-center justify-between">
+          <div className="bg-white rounded-xl border border-gray-200 p-6 hover:border-gray-300 transition-all duration-200 group relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-100 transition-opacity bg-gray-50"></div>
+            <div className="relative flex items-center justify-between">
               <div>
-                <p className="text-lg font-bold text-gray-900">{analytics.avgCreditScore}</p>
-                <p className="text-xs text-gray-600">Avg Credit Score</p>
-                <p className="text-[10px] text-gray-500 mt-0.5">
-                  {analytics.defaultRate.toFixed(1)}% default rate
-                </p>
+                <p className="text-xs text-gray-600 mb-1">Avg Credit Score</p>
+                <p className="text-2xl font-black text-gray-900 leading-none">{analytics.avgCreditScore}</p>
+                <p className="text-[10px] text-red-600 font-bold mt-1.5">{analytics.defaultRate.toFixed(1)}% default rate</p>
               </div>
-              <div className="w-8 h-8 bg-gray-700 rounded-lg flex items-center justify-center">
-                <FaStar className="text-white text-xs" />
+              <div className="w-12 h-12 bg-gray-800 rounded-xl flex items-center justify-center group-hover:bg-gray-900 transition-colors">
+                <Star className="text-white" size={20} />
               </div>
             </div>
           </div>
@@ -733,47 +718,47 @@ const AdminBorrowersPage: React.FC = () => {
 
       {/* Performance Insights */}
       {showAnalytics && analytics && (
-        <div className="bg-white rounded-lg border border-gray-200 p-3">
-          <h3 className="text-xs font-semibold text-gray-900 mb-3 flex items-center gap-1.5">
-            <FaChartLine className="text-gray-600 text-xs" /> Borrower Performance Insights
+        <div className="bg-white rounded-xl border border-gray-200 p-4">
+          <h3 className="text-xs font-black text-gray-900 mb-4 flex items-center gap-2">
+            <TrendingUp className="text-indigo-600" size={16} /> Borrower Performance Insights
           </h3>
-          <div className="grid grid-cols-3 gap-2.5">
-            <div className="text-center p-2 bg-gray-50 rounded-lg border border-gray-200">
-              <FaStar className="text-gray-600 text-sm mx-auto mb-1" />
-              <p className="text-[10px] text-gray-600">Avg Credit Score</p>
-              <p className="text-sm font-bold text-gray-900">{analytics?.avgCreditScore}</p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="text-center p-4 bg-gray-50 rounded-xl border border-gray-100 hover:border-gray-200 transition-colors group">
+              <Star className="text-gray-400 group-hover:text-yellow-500 transition-colors mx-auto mb-2" size={20} />
+              <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Avg Credit Score</p>
+              <p className="text-xl font-black text-gray-900">{analytics?.avgCreditScore}</p>
             </div>
-            <div className="text-center p-2 bg-gray-50 rounded-lg border border-gray-200">
-              <FaPercent className="text-gray-600 text-sm mx-auto mb-1" />
-              <p className="text-[10px] text-gray-600">Repayment Rate</p>
-              <p className="text-sm font-bold text-gray-900">{(100 - (analytics?.defaultRate || 0)).toFixed(1)}%</p>
+            <div className="text-center p-4 bg-gray-50 rounded-xl border border-gray-100 hover:border-gray-200 transition-colors group">
+              <Percent className="text-gray-400 group-hover:text-blue-500 transition-colors mx-auto mb-2" size={20} />
+              <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Repayment Rate</p>
+              <p className="text-xl font-black text-gray-900">{(100 - (analytics?.defaultRate || 0)).toFixed(1)}%</p>
             </div>
-            <div className="text-center p-2 bg-gray-50 rounded-lg border border-gray-200">
-              <FaChartLine className="text-gray-600 text-sm mx-auto mb-1" />
-              <p className="text-[10px] text-gray-600">Monthly Growth</p>
-              <p className="text-sm font-bold text-gray-900">+{analytics?.monthlyGrowth.toFixed(1)}%</p>
+            <div className="text-center p-4 bg-gray-50 rounded-xl border border-gray-100 hover:border-gray-200 transition-colors group">
+              <TrendingUp className="text-gray-400 group-hover:text-green-500 transition-colors mx-auto mb-2" size={20} />
+              <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Monthly Growth</p>
+              <p className="text-xl font-black text-gray-900">+{analytics?.monthlyGrowth.toFixed(1)}%</p>
             </div>
           </div>
         </div>
       )}
 
       {/* Filters */}
-      <div className="bg-white rounded-lg border border-gray-200 p-2.5">
-        <div className="flex flex-col lg:flex-row lg:items-center gap-2">
-          <div className="relative flex-1">
-            <FaSearch className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 text-xs" />
+      <div className="bg-white rounded-xl border border-gray-200 p-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-bold" size={14} />
             <input
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder="Search borrowers..."
-              className="pl-7 pr-2 py-1.5 w-full rounded-lg border border-gray-200 focus:ring-2 focus:ring-gray-500 focus:border-transparent text-xs"
+              className="pl-10 pr-4 py-2 w-full rounded-xl border border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm bg-white outline-none transition-all"
             />
           </div>
 
           <select
             value={statusFilter}
             onChange={e => setStatusFilter(e.target.value as any)}
-            className="px-2 py-1.5 rounded-lg border border-gray-200 focus:ring-2 focus:ring-gray-500 focus:border-transparent text-xs bg-white"
+            className="px-3 py-2 rounded-xl border border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm bg-white outline-none"
           >
             <option value="all">All Status</option>
             <option value="active">Active</option>
@@ -785,7 +770,7 @@ const AdminBorrowersPage: React.FC = () => {
           <select
             value={riskFilter}
             onChange={e => setRiskFilter(e.target.value as any)}
-            className="px-2 py-1.5 rounded-lg border border-gray-200 focus:ring-2 focus:ring-gray-500 focus:border-transparent text-xs bg-white"
+            className="px-3 py-2 rounded-xl border border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm bg-white outline-none"
           >
             <option value="all">All Risk Levels</option>
             <option value="low">Low Risk</option>
@@ -796,9 +781,9 @@ const AdminBorrowersPage: React.FC = () => {
           <select
             value={verificationFilter}
             onChange={e => setVerificationFilter(e.target.value as any)}
-            className="px-2 py-1.5 rounded-lg border border-gray-200 focus:ring-2 focus:ring-gray-500 focus:border-transparent text-xs bg-white"
+            className="px-3 py-2 rounded-xl border border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm bg-white outline-none"
           >
-            <option value="all">All Verification</option>
+            <option value="all">All Verifications</option>
             <option value="verified">Verified</option>
             <option value="pending">Pending</option>
             <option value="rejected">Rejected</option>
@@ -807,7 +792,7 @@ const AdminBorrowersPage: React.FC = () => {
           <select
             value={lenderFilter}
             onChange={e => setLenderFilter(e.target.value)}
-            className="px-2 py-1.5 rounded-lg border border-gray-200 focus:ring-2 focus:ring-gray-500 focus:border-transparent text-xs bg-white"
+            className="px-3 py-2 rounded-xl border border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm bg-white outline-none"
           >
             <option value="all">All Lenders</option>
             {uniqueLenders.map(lender => (
@@ -818,304 +803,308 @@ const AdminBorrowersPage: React.FC = () => {
       </div>
 
       {/* Borrower Table */}
-      {fetching ? (
-        <div className="animate-pulse space-y-2">
-          {[...Array(3)].map((_, i) => (
-            <div key={i} className="h-12 bg-gray-100 rounded-lg" />
-          ))}
-        </div>
-      ) : sorted.length === 0 ? (
-        <div className="text-center py-12 border-2 border-dashed border-gray-200 rounded-lg bg-gray-50">
-          <div className="mx-auto mb-3 w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center">
-            <FaUser className="text-gray-500 text-lg" />
+      {
+        fetching ? (
+          <div className="animate-pulse space-y-2">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="h-12 bg-gray-100 rounded-lg" />
+            ))}
           </div>
-          <h3 className="text-sm font-semibold text-gray-800 mb-1">No borrowers found</h3>
-          <p className="text-xs text-gray-500">
-            {search || statusFilter !== 'all' || riskFilter !== 'all' || verificationFilter !== 'all' || lenderFilter !== 'all'
-              ? 'Try adjusting your filters or search terms.'
-              : 'No borrowers have been registered yet.'
-            }
-          </p>
-        </div>
-      ) : (
-        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-          {groupByLender ? (
-            <div className="space-y-3">
-              {Object.entries(groupedByLender).map(([lenderId, group]) => (
-                <div key={lenderId} className="border border-gray-200 rounded-lg overflow-hidden">
-                  <div className="bg-gray-50 px-3 py-2 border-b border-gray-200">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-xs font-bold bg-gray-700">
-                          {group.lender.name.charAt(0)}
-                        </div>
-                        <div>
-                          <h3 className="text-xs font-semibold text-gray-900">{group.lender.name}</h3>
-                          <div className="flex items-center gap-2 text-[10px] text-gray-500">
-                            <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-gray-100 text-gray-700 border border-gray-200">
-                              {group.lender.type.charAt(0).toUpperCase() + group.lender.type.slice(1)}
-                            </span>
-                            <span>{group.borrowers.length} borrowers</span>
+        ) : sorted.length === 0 ? (
+          <div className="text-center py-12 border-2 border-dashed border-gray-200 rounded-lg bg-gray-50">
+            <div className="mx-auto mb-3 w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center">
+              <User className="text-gray-500" size={24} />
+            </div>
+            <h3 className="text-sm font-semibold text-gray-800 mb-1">No borrowers found</h3>
+            <p className="text-xs text-gray-500">
+              {search || statusFilter !== 'all' || riskFilter !== 'all' || verificationFilter !== 'all' || lenderFilter !== 'all'
+                ? 'Try adjusting your filters or search terms.'
+                : 'No borrowers have been registered yet.'
+              }
+            </p>
+          </div>
+        ) : (
+          <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+            {groupByLender ? (
+              <div className="space-y-3">
+                {Object.entries(groupedByLender).map(([lenderId, group]) => (
+                  <div key={lenderId} className="border border-gray-200 rounded-lg overflow-hidden">
+                    <div className="bg-gray-50 px-3 py-2 border-b border-gray-200">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-xs font-bold bg-gray-700">
+                            {group.lender.name.charAt(0)}
+                          </div>
+                          <div>
+                            <h3 className="text-xs font-semibold text-gray-900">{group.lender.name}</h3>
+                            <div className="flex items-center gap-2 text-[10px] text-gray-500">
+                              <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-gray-100 text-gray-700 border border-gray-200">
+                                {group.lender.type.charAt(0).toUpperCase() + group.lender.type.slice(1)}
+                              </span>
+                              <span>{group.borrowers.length} borrowers</span>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-xs font-medium text-gray-900">RWF {(group.borrowers.reduce((sum, b) => sum + b.outstandingAmount, 0) / 1000000).toFixed(1)}M</div>
-                        <div className="text-[10px] text-gray-500">outstanding</div>
+                        <div className="text-right">
+                          <div className="text-xs font-medium text-gray-900">RWF {(group.borrowers.reduce((sum, b) => sum + b.outstandingAmount, 0) / 1000000).toFixed(1)}M</div>
+                          <div className="text-[10px] text-gray-500">outstanding</div>
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead className="bg-gray-50 border-b border-gray-200">
-                        <tr>
-                          <th className="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Borrower</th>
-                          <th className="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Contact</th>
-                          <th className="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Credit Profile</th>
-                          <th className="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Loan History</th>
-                          <th className="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Verification</th>
-                          <th className="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Documents</th>
-                          <th className="px-3 py-2 text-right text-xs font-medium text-gray-600 uppercase tracking-wider">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody className="bg-white divide-y divide-gray-200">
-                        {group.borrowers.map((borrower) => (
-                          <BorrowerRow
-                            key={borrower.id}
-                            borrower={borrower}
-                            openActionRow={openActionRow}
-                            setOpenActionRow={setOpenActionRow}
-                            onViewDetails={handleViewDetails}
-                          />
-                        ))}
-                      </tbody>
-                    </table>
+                    <div className="overflow-x-auto">
+                      <table className="w-full">
+                        <thead className="bg-gray-50 border-b border-gray-200">
+                          <tr>
+                            <th className="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Borrower</th>
+                            <th className="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Contact</th>
+                            <th className="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Credit Profile</th>
+                            <th className="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Loan History</th>
+                            <th className="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Verification</th>
+                            <th className="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Documents</th>
+                            <th className="px-3 py-2 text-right text-xs font-medium text-gray-600 uppercase tracking-wider">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                          {group.borrowers.map((borrower) => (
+                            <BorrowerRow
+                              key={borrower.id}
+                              borrower={borrower}
+                              openActionRow={openActionRow}
+                              setOpenActionRow={setOpenActionRow}
+                              onViewDetails={handleViewDetails}
+                            />
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-50 border-b border-gray-200">
-                  <tr>
-                    <th onClick={() => toggleSort('name')} className="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase tracking-wider cursor-pointer">
-                      <div className="inline-flex items-center gap-1">
-                        Borrower
-                        {sortBy === 'name' && <span className="text-[10px]">{sortDir === 'asc' ? '▲' : '▼'}</span>}
-                      </div>
-                    </th>
-                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Contact</th>
-                    <th onClick={() => toggleSort('creditScore')} className="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase tracking-wider cursor-pointer">
-                      <div className="inline-flex items-center gap-1">
-                        Credit Profile
-                        {sortBy === 'creditScore' && <span className="text-[10px]">{sortDir === 'asc' ? '▲' : '▼'}</span>}
-                      </div>
-                    </th>
-                    <th onClick={() => toggleSort('totalLoans')} className="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase tracking-wider cursor-pointer">
-                      <div className="inline-flex items-center gap-1">
-                        Loan History
-                        {sortBy === 'totalLoans' && <span className="text-[10px]">{sortDir === 'asc' ? '▲' : '▼'}</span>}
-                      </div>
-                    </th>
-                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Verification</th>
-                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Documents</th>
-                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Lender</th>
-                    <th className="px-3 py-2 text-right text-xs font-medium text-gray-600 uppercase tracking-wider">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {sorted.map((borrower) => (
-                    <BorrowerRow
-                      key={borrower.id}
-                      borrower={borrower}
-                      openActionRow={openActionRow}
-                      setOpenActionRow={setOpenActionRow}
-                      showLender={true}
-                      onViewDetails={handleViewDetails}
-                    />
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-          <div className="flex justify-between items-center px-3 py-2 border-t border-gray-200 text-[10px] text-gray-500">
-            <span>{sorted.length} borrower{sorted.length !== 1 && 's'} shown</span>
-            <div className="flex items-center gap-3">
-              <span className="hidden sm:inline">Sorted by {sortBy} ({sortDir})</span>
-              <span>Total Outstanding: RWF {(sorted.reduce((acc, b) => acc + b.outstandingAmount, 0) / 1000000).toFixed(1)}M</span>
+                ))}
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-50 border-b border-gray-200">
+                    <tr>
+                      <th onClick={() => toggleSort('name')} className="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase tracking-wider cursor-pointer">
+                        <div className="inline-flex items-center gap-1">
+                          Borrower
+                          {sortBy === 'name' && <span className="text-[10px]">{sortDir === 'asc' ? '▲' : '▼'}</span>}
+                        </div>
+                      </th>
+                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Contact</th>
+                      <th onClick={() => toggleSort('creditScore')} className="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase tracking-wider cursor-pointer">
+                        <div className="inline-flex items-center gap-1">
+                          Credit Profile
+                          {sortBy === 'creditScore' && <span className="text-[10px]">{sortDir === 'asc' ? '▲' : '▼'}</span>}
+                        </div>
+                      </th>
+                      <th onClick={() => toggleSort('totalLoans')} className="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase tracking-wider cursor-pointer">
+                        <div className="inline-flex items-center gap-1">
+                          Loan History
+                          {sortBy === 'totalLoans' && <span className="text-[10px]">{sortDir === 'asc' ? '▲' : '▼'}</span>}
+                        </div>
+                      </th>
+                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Verification</th>
+                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Documents</th>
+                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Lender</th>
+                      <th className="px-3 py-2 text-right text-xs font-medium text-gray-600 uppercase tracking-wider">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {sorted.map((borrower) => (
+                      <BorrowerRow
+                        key={borrower.id}
+                        borrower={borrower}
+                        openActionRow={openActionRow}
+                        setOpenActionRow={setOpenActionRow}
+                        showLender={true}
+                        onViewDetails={handleViewDetails}
+                      />
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+            <div className="flex justify-between items-center px-3 py-2 border-t border-gray-200 text-[10px] text-gray-500">
+              <span>{sorted.length} borrower{sorted.length !== 1 && 's'} shown</span>
+              <div className="flex items-center gap-3">
+                <span className="hidden sm:inline">Sorted by {sortBy} ({sortDir})</span>
+                <span>Total Outstanding: RWF {(sorted.reduce((acc, b) => acc + b.outstandingAmount, 0) / 1000000).toFixed(1)}M</span>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )
+      }
 
       {/* Borrower Details Modal */}
-      {showDetailsModal && selectedBorrower && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="sticky top-0 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
-              <h3 className="text-sm font-bold text-gray-900">Borrower Details</h3>
-              <button
-                onClick={() => setShowDetailsModal(false)}
-                className="text-gray-400 hover:text-gray-600 transition-colors"
-              >
-                <FaTimes className="w-4 h-4" />
-              </button>
-            </div>
-            <div className="p-4 space-y-3">
-              {/* Basic Information */}
-              <div className="grid grid-cols-2 gap-3">
-                <div className="bg-gray-50 rounded-lg p-2.5 border border-gray-200">
-                  <div className="text-[10px] text-gray-600 mb-0.5">Name</div>
-                  <div className="text-xs font-medium text-gray-900">{selectedBorrower?.name}</div>
-                </div>
-                <div className="bg-gray-50 rounded-lg p-2.5 border border-gray-200">
-                  <div className="text-[10px] text-gray-600 mb-0.5">Status</div>
-                  <div className="flex items-center gap-1.5">
-                    <span className={`text-xs font-medium ${getStatusColor(selectedBorrower?.status || 'inactive')}`}>
-                      {(selectedBorrower?.status || 'inactive').charAt(0).toUpperCase() + (selectedBorrower?.status || 'inactive').slice(1)}
-                    </span>
-                  </div>
-                </div>
-                <div className="bg-gray-50 rounded-lg p-2.5 border border-gray-200">
-                  <div className="text-[10px] text-gray-600 mb-0.5">Email</div>
-                  <div className="text-xs text-gray-900">{selectedBorrower?.email}</div>
-                </div>
-                <div className="bg-gray-50 rounded-lg p-2.5 border border-gray-200">
-                  <div className="text-[10px] text-gray-600 mb-0.5">Phone</div>
-                  <div className="text-xs text-gray-900">{selectedBorrower?.phone}</div>
-                </div>
-                {selectedBorrower?.company && (
-                  <div className="bg-gray-50 rounded-lg p-2.5 border border-gray-200">
-                    <div className="text-[10px] text-gray-600 mb-0.5">Company</div>
-                    <div className="text-xs text-gray-900">{selectedBorrower?.company}</div>
-                  </div>
-                )}
-                <div className="bg-gray-50 rounded-lg p-2.5 border border-gray-200">
-                  <div className="text-[10px] text-gray-600 mb-0.5">Address</div>
-                  <div className="text-xs text-gray-900">{selectedBorrower.address}</div>
-                </div>
+      {
+        showDetailsModal && selectedBorrower && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="sticky top-0 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
+                <h3 className="text-sm font-bold text-gray-900">Borrower Details</h3>
+                <button
+                  onClick={() => setShowDetailsModal(false)}
+                  className="p-1.5 text-gray-400 hover:text-gray-600 rounded-lg transition-colors"
+                >
+                  <X size={18} />
+                </button>
               </div>
-
-              {/* Credit Profile */}
-              <div className="bg-gray-50 rounded-lg p-2.5 border border-gray-200">
-                <div className="text-xs font-medium text-gray-900 mb-2">Credit Profile</div>
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <div className="text-[10px] text-gray-600">Credit Score</div>
-                    <div className="text-xs font-medium text-gray-900">{selectedBorrower?.creditScore}</div>
+              <div className="p-4 space-y-3">
+                {/* Basic Information */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="bg-gray-50 rounded-lg p-2.5 border border-gray-200">
+                    <div className="text-[10px] text-gray-600 mb-0.5">Name</div>
+                    <div className="text-xs font-medium text-gray-900">{selectedBorrower?.name}</div>
                   </div>
-                  <div>
-                    <div className="text-[10px] text-gray-600">Risk Rating</div>
+                  <div className="bg-gray-50 rounded-lg p-2.5 border border-gray-200">
+                    <div className="text-[10px] text-gray-600 mb-0.5">Status</div>
                     <div className="flex items-center gap-1.5">
-                      <span className={`text-xs font-medium ${getRiskColor(selectedBorrower?.riskRating)}`}>
-                        {(selectedBorrower?.riskRating || 'medium').charAt(0).toUpperCase() + (selectedBorrower?.riskRating || 'medium').slice(1)}
+                      <span className={`text-xs font-medium ${getStatusColor(selectedBorrower?.status || 'inactive')}`}>
+                        {(selectedBorrower?.status || 'inactive').charAt(0).toUpperCase() + (selectedBorrower?.status || 'inactive').slice(1)}
                       </span>
                     </div>
                   </div>
-                </div>
-              </div>
-
-              {/* Loan History */}
-              <div className="bg-gray-50 rounded-lg p-2.5 border border-gray-200">
-                <div className="text-xs font-medium text-gray-900 mb-2">Loan History</div>
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <div className="text-[10px] text-gray-600">Total Loans</div>
-                    <div className="text-xs font-medium text-gray-900">{selectedBorrower?.totalLoans}</div>
+                  <div className="bg-gray-50 rounded-lg p-2.5 border border-gray-200">
+                    <div className="text-[10px] text-gray-600 mb-0.5">Email</div>
+                    <div className="text-xs text-gray-900">{selectedBorrower?.email}</div>
                   </div>
-                  <div>
-                    <div className="text-[10px] text-gray-600">Total Borrowed</div>
-                    <div className="text-xs font-medium text-gray-900">RWF {((selectedBorrower?.totalBorrowed || 0) / 1000000).toFixed(1)}M</div>
+                  <div className="bg-gray-50 rounded-lg p-2.5 border border-gray-200">
+                    <div className="text-[10px] text-gray-600 mb-0.5">Phone</div>
+                    <div className="text-xs text-gray-900">{selectedBorrower?.phone}</div>
                   </div>
-                  <div>
-                    <div className="text-[10px] text-gray-600">Total Repaid</div>
-                    <div className="text-xs font-medium text-gray-900">RWF {((selectedBorrower?.totalRepaid || 0) / 1000000).toFixed(1)}M</div>
-                  </div>
-                  <div>
-                    <div className="text-[10px] text-gray-600">Outstanding</div>
-                    <div className="text-xs font-medium text-gray-900">RWF {((selectedBorrower?.outstandingAmount || 0) / 1000000).toFixed(1)}M</div>
-                  </div>
-                  <div>
-                    <div className="text-[10px] text-gray-600">On-Time Payments</div>
-                    <div className="text-xs font-medium text-gray-900">{selectedBorrower?.onTimePayments}</div>
-                  </div>
-                  <div>
-                    <div className="text-[10px] text-gray-600">Late Payments</div>
-                    <div className="text-xs font-medium text-gray-900">{selectedBorrower?.latePayments}</div>
-                  </div>
-                  {(selectedBorrower?.defaultedLoans || 0) > 0 && (
-                    <div>
-                      <div className="text-[10px] text-gray-600">Defaulted Loans</div>
-                      <div className="text-xs font-medium text-gray-900">{selectedBorrower?.defaultedLoans}</div>
+                  {selectedBorrower?.company && (
+                    <div className="bg-gray-50 rounded-lg p-2.5 border border-gray-200">
+                      <div className="text-[10px] text-gray-600 mb-0.5">Company</div>
+                      <div className="text-xs text-gray-900">{selectedBorrower?.company}</div>
                     </div>
                   )}
-                </div>
-              </div>
-
-              {/* Verification & Documents */}
-              <div className="grid grid-cols-2 gap-3">
-                <div className="bg-gray-50 rounded-lg p-2.5 border border-gray-200">
-                  <div className="text-[10px] text-gray-600 mb-0.5">Verification Status</div>
-                  <div className="flex items-center gap-1.5">
-                    <span className={`text-xs font-medium ${getVerificationColor(selectedBorrower?.verificationStatus || 'pending')}`}>
-                      {(selectedBorrower?.verificationStatus || 'pending').charAt(0).toUpperCase() + (selectedBorrower?.verificationStatus || 'pending').slice(1)}
-                    </span>
+                  <div className="bg-gray-50 rounded-lg p-2.5 border border-gray-200">
+                    <div className="text-[10px] text-gray-600 mb-0.5">Address</div>
+                    <div className="text-xs text-gray-900">{selectedBorrower.address}</div>
                   </div>
                 </div>
-                <div className="bg-gray-50 rounded-lg p-2.5 border border-gray-200">
-                  <div className="text-[10px] text-gray-600 mb-0.5">National ID</div>
-                  <div className="text-xs text-gray-900">{selectedBorrower?.nationalId}</div>
-                </div>
-              </div>
 
-              {/* Documents */}
-              <div className="bg-gray-50 rounded-lg p-2.5 border border-gray-200">
-                <div className="text-xs font-medium text-gray-900 mb-2">Documents</div>
-                <div className="grid grid-cols-2 gap-2">
-                  {Object.entries(selectedBorrower?.documents || {}).map(([doc, status]) => (
-                    <div key={doc} className="flex items-center justify-between">
-                      <span className="text-[10px] text-gray-600 capitalize">{doc.replace(/([A-Z])/g, ' $1').trim()}</span>
-                      <span className={`text-xs ${status ? 'text-gray-700' : 'text-gray-500'}`}>
-                        {status ? '✓' : '✗'}
+                {/* Credit Profile */}
+                <div className="bg-gray-50 rounded-lg p-2.5 border border-gray-200">
+                  <div className="text-xs font-medium text-gray-900 mb-2">Credit Profile</div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <div className="text-[10px] text-gray-600">Credit Score</div>
+                      <div className="text-xs font-medium text-gray-900">{selectedBorrower?.creditScore}</div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] text-gray-600">Risk Rating</div>
+                      <div className="flex items-center gap-1.5">
+                        <span className={`text-xs font-medium ${getRiskColor(selectedBorrower?.riskRating)}`}>
+                          {(selectedBorrower?.riskRating || 'medium').charAt(0).toUpperCase() + (selectedBorrower?.riskRating || 'medium').slice(1)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Loan History */}
+                <div className="bg-gray-50 rounded-lg p-2.5 border border-gray-200">
+                  <div className="text-xs font-medium text-gray-900 mb-2">Loan History</div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <div className="text-[10px] text-gray-600">Total Loans</div>
+                      <div className="text-xs font-medium text-gray-900">{selectedBorrower?.totalLoans}</div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] text-gray-600">Total Borrowed</div>
+                      <div className="text-xs font-medium text-gray-900">RWF {((selectedBorrower?.totalBorrowed || 0) / 1000000).toFixed(1)}M</div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] text-gray-600">Total Repaid</div>
+                      <div className="text-xs font-medium text-gray-900">RWF {((selectedBorrower?.totalRepaid || 0) / 1000000).toFixed(1)}M</div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] text-gray-600">Outstanding</div>
+                      <div className="text-xs font-medium text-gray-900">RWF {((selectedBorrower?.outstandingAmount || 0) / 1000000).toFixed(1)}M</div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] text-gray-600">On-Time Payments</div>
+                      <div className="text-xs font-medium text-gray-900">{selectedBorrower?.onTimePayments}</div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] text-gray-600">Late Payments</div>
+                      <div className="text-xs font-medium text-gray-900">{selectedBorrower?.latePayments}</div>
+                    </div>
+                    {(selectedBorrower?.defaultedLoans || 0) > 0 && (
+                      <div>
+                        <div className="text-[10px] text-gray-600">Defaulted Loans</div>
+                        <div className="text-xs font-medium text-gray-900">{selectedBorrower?.defaultedLoans}</div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Verification & Documents */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="bg-gray-50 rounded-lg p-2.5 border border-gray-200">
+                    <div className="text-[10px] text-gray-600 mb-0.5">Verification Status</div>
+                    <div className="flex items-center gap-1.5">
+                      <span className={`text-xs font-medium ${getVerificationColor(selectedBorrower?.verificationStatus || 'pending')}`}>
+                        {(selectedBorrower?.verificationStatus || 'pending').charAt(0).toUpperCase() + (selectedBorrower?.verificationStatus || 'pending').slice(1)}
                       </span>
                     </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Lender Information */}
-              <div className="bg-gray-50 rounded-lg p-2.5 border border-gray-200">
-                <div className="text-xs font-medium text-gray-900 mb-2">Lender Information</div>
-                <div className="space-y-1">
-                  <div>
-                    <div className="text-[10px] text-gray-600">Lender Name</div>
-                    <div className="text-xs text-gray-900">{selectedBorrower?.lender?.name}</div>
                   </div>
-                  <div>
-                    <div className="text-[10px] text-gray-600">Type</div>
-                    <div className="text-xs text-gray-900">{(selectedBorrower?.lender?.type || 'bank').charAt(0).toUpperCase() + (selectedBorrower?.lender?.type || 'bank').slice(1)}</div>
+                  <div className="bg-gray-50 rounded-lg p-2.5 border border-gray-200">
+                    <div className="text-[10px] text-gray-600 mb-0.5">National ID</div>
+                    <div className="text-xs text-gray-900">{selectedBorrower?.nationalId}</div>
                   </div>
                 </div>
-              </div>
 
-              {/* Timeline */}
-              <div className="grid grid-cols-2 gap-3">
+                {/* Documents */}
                 <div className="bg-gray-50 rounded-lg p-2.5 border border-gray-200">
-                  <div className="text-[10px] text-gray-600 mb-0.5">Joined Date</div>
-                  <div className="text-xs text-gray-900">{selectedBorrower?.joinedDate ? new Date(selectedBorrower.joinedDate).toLocaleDateString() : 'N/A'}</div>
+                  <div className="text-xs font-medium text-gray-900 mb-2">Documents</div>
+                  <div className="grid grid-cols-2 gap-2">
+                    {Object.entries(selectedBorrower?.documents || {}).map(([doc, status]) => (
+                      <div key={doc} className="flex items-center justify-between">
+                        <span className="text-[10px] text-gray-600 capitalize">{doc.replace(/([A-Z])/g, ' $1').trim()}</span>
+                        <span className={`text-xs ${status ? 'text-gray-700' : 'text-gray-500'}`}>
+                          {status ? '✓' : '✗'}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
+
+                {/* Lender Information */}
                 <div className="bg-gray-50 rounded-lg p-2.5 border border-gray-200">
-                  <div className="text-[10px] text-gray-600 mb-0.5">Last Activity</div>
-                  <div className="text-xs text-gray-900">{selectedBorrower?.lastActivity ? new Date(selectedBorrower.lastActivity).toLocaleDateString() : 'N/A'}</div>
+                  <div className="text-xs font-medium text-gray-900 mb-2">Lender Information</div>
+                  <div className="space-y-1">
+                    <div>
+                      <div className="text-[10px] text-gray-600">Lender Name</div>
+                      <div className="text-xs text-gray-900">{selectedBorrower?.lender?.name}</div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] text-gray-600">Type</div>
+                      <div className="text-xs text-gray-900">{(selectedBorrower?.lender?.type || 'bank').charAt(0).toUpperCase() + (selectedBorrower?.lender?.type || 'bank').slice(1)}</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Timeline */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="bg-gray-50 rounded-lg p-2.5 border border-gray-200">
+                    <div className="text-[10px] text-gray-600 mb-0.5">Joined Date</div>
+                    <div className="text-xs text-gray-900">{selectedBorrower?.joinedDate ? new Date(selectedBorrower.joinedDate).toLocaleDateString() : 'N/A'}</div>
+                  </div>
+                  <div className="bg-gray-50 rounded-lg p-2.5 border border-gray-200">
+                    <div className="text-[10px] text-gray-600 mb-0.5">Last Activity</div>
+                    <div className="text-xs text-gray-900">{selectedBorrower?.lastActivity ? new Date(selectedBorrower.lastActivity).toLocaleDateString() : 'N/A'}</div>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
-    </AdminPageLayout>
+        )
+      }
+    </AdminPageLayout >
   );
 };
 

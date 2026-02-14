@@ -9,6 +9,7 @@ import {
 } from '../entities/tenant-subscription.entity';
 import { Tenant } from '../entities/tenant.entity';
 import { CreditService } from './credit.service';
+import { PricingService } from './pricing.service';
 
 export interface CreateSubscriptionDto {
   tenantId: string;
@@ -39,6 +40,7 @@ export class SubscriptionService {
     @InjectRepository(Tenant)
     private tenantRepository: Repository<Tenant>,
     private creditService: CreditService,
+    private pricingService: PricingService,
   ) {}
 
   /**
@@ -520,5 +522,22 @@ export class SubscriptionService {
       .andWhere('subscription.trialEnd <= :futureDate', { futureDate })
       .andWhere('subscription.trialEnd > :now', { now: new Date() })
       .getMany();
+  }
+
+  // Pricing Rules Management
+  async getAllPricingRules() {
+    return this.pricingService.getAllRules();
+  }
+
+  async createPricingRule(data: any) {
+    return this.pricingService.createRule(data);
+  }
+
+  async updatePricingRule(id: string, data: any) {
+    return this.pricingService.updateRule(id, data);
+  }
+
+  async deletePricingRule(id: string) {
+    return this.pricingService.deleteRule(id);
   }
 }

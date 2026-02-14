@@ -39,6 +39,7 @@ const CargoList = lazy(() => import('./pages/dashboard/cargos/list'));
 const CargoOwnerContracts = lazy(() => import('./pages/cargo-owner/Contracts'));
 const EnhancedJourneyFlow = lazy(() => import('./components/CargoOwnerJourney/EnhancedJourneyFlow'));
 const EnhancedCargoDemo = lazy(() => import('./pages/EnhancedCargoDemo'));
+const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
 
 const TruckRecordsPage = lazy(() => import('./pages/TruckRecordsPage'));
 const UnifiedFleetManagement = lazy(() => import('./pages/UnifiedFleetManagement'));
@@ -57,6 +58,12 @@ const MonitoringDashboard = lazy(() => import('./pages/admin/MonitoringDashboard
 const BiddingManagement = lazy(() => import('./pages/admin/BiddingManagement'));
 const DisputeManagement = lazy(() => import('./pages/admin/DisputeManagement'));
 const FinancialAdminDashboard = lazy(() => import('./pages/admin/FinancialAdminDashboard'));
+const EnhancedPermissions = lazy(() => import('./pages/admin/EnhancedPermissions'));
+const ActivityLogs = lazy(() => import('./pages/admin/ActivityLogs'));
+const CreditUsageHistory = lazy(() => import('./pages/admin/CreditUsageHistory'));
+const TenantSubscriptions = lazy(() => import('./pages/admin/TenantSubscriptions'));
+const RoleManagement = lazy(() => import('./pages/admin/RoleManagement'));
+const CreditPricingRules = lazy(() => import('./pages/admin/CreditPricingRules'));
 const TenantDashboardPage = lazy(() => import('./pages/TenantDashboard'));
 const TenantFleetManagement = lazy(() => import('./components/TenantAdmin/TenantFleetManagement'));
 
@@ -339,7 +346,7 @@ function App() {
 
                 {/* Admin Routes */}
                 <Route path="/admin" element={<AdminLayout />}>
-                  <Route index element={<Navigate to="/admin/users" replace />} />
+                  <Route index element={<AdminDashboard />} />
                   <Route path="lenders/register" element={<AdminLenderRegistrationPage />} />
                   <Route path="lenders" element={<Navigate to="lenders/register" replace />} />
                   <Route path="borrowers" element={<AdminBorrowersPage />} />
@@ -357,6 +364,13 @@ function App() {
                   <Route path="trips" element={<AdminTrips />} />
                   <Route path="tenants" element={<AdminTenants />} />
                   <Route path="routes" element={<AdminRoutes />} />
+                  <Route path="subscriptions" element={<TenantSubscriptions />} />
+                  <Route path="pricing-rules" element={<CreditPricingRules />} />
+                  <Route path="credit-usage" element={<CreditUsageHistory />} />
+                  <Route path="roles" element={<RoleManagement />} />
+                  <Route path="permissions" element={<EnhancedPermissions />} />
+                  <Route path="enhanced-permissions" element={<EnhancedPermissions />} />
+                  <Route path="activity-logs" element={<ActivityLogs />} />
                   <Route path="reports" element={<Analytics />} />
                   <Route path="help" element={<Settings />} />
                   <Route path="profile" element={<Profile />} />

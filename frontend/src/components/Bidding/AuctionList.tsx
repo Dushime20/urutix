@@ -2,12 +2,12 @@ import React, { useState, useEffect } from 'react';
 import {
   Gavel,
   Clock,
-  MapPin,
-  Eye,
   Heart,
   Grid,
   Table,
-  Download
+  Download,
+  X,
+  AlertCircle
 } from 'lucide-react';
 import { biddingAPI } from '../../services/biddingApi';
 import toast from 'react-hot-toast';
@@ -194,14 +194,14 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
 
   const getStatusBadge = (status: string) => {
     const variants: { [key: string]: string } = {
-      ACTIVE: 'bg-green-100 text-green-800',
-      SCHEDULED: 'bg-yellow-100 text-yellow-800',
-      CLOSED: 'bg-gray-100 text-gray-800',
-      CANCELLED: 'bg-red-100 text-red-800',
-      PAUSED: 'bg-blue-100 text-blue-800',
+      ACTIVE: 'bg-emerald-50 text-emerald-600 ring-emerald-100',
+      SCHEDULED: 'bg-amber-50 text-amber-600 ring-amber-100',
+      CLOSED: 'bg-gray-50 text-gray-600 ring-gray-100',
+      CANCELLED: 'bg-red-50 text-red-600 ring-red-100',
+      PAUSED: 'bg-indigo-50 text-indigo-600 ring-indigo-100',
     };
     return (
-      <span className={`px-2 py-1 text-xs font-medium rounded-full ${variants[status] || 'bg-gray-100 text-gray-800'}`}>
+      <span className={`px-2 py-0.5 text-[10px] font-black uppercase tracking-wider rounded-md ring-1 ring-inset ${variants[status] || 'bg-gray-50 text-gray-600 ring-gray-100'}`}>
         {status}
       </span>
     );
@@ -209,13 +209,13 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
 
   const getAuctionTypeBadge = (type: string) => {
     const variants: { [key: string]: string } = {
-      REVERSE: 'bg-blue-100 text-blue-800',
-      FORWARD: 'bg-green-100 text-green-800',
-      DUTCH: 'bg-yellow-100 text-yellow-800',
-      SEALED: 'bg-purple-100 text-purple-800',
+      REVERSE: 'bg-slate-900 text-white',
+      FORWARD: 'bg-gray-100 text-gray-900',
+      DUTCH: 'bg-indigo-600 text-white',
+      SEALED: 'bg-purple-600 text-white',
     };
     return (
-      <span className={`px-2 py-1 text-xs font-medium rounded-full ${variants[type] || 'bg-gray-100 text-gray-800'}`}>
+      <span className={`px-2 py-0.5 text-[10px] font-black uppercase tracking-wider rounded-md ${variants[type] || 'bg-gray-100 text-gray-900'}`}>
         {type}
       </span>
     );
@@ -239,179 +239,154 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
   };
 
   const renderFilters = () => (
-    <div className="bg-white rounded-lg shadow p-3 sm:p-4 md:p-6 mb-4 sm:mb-6">
-      <h6 className="text-base sm:text-lg font-medium text-gray-900 mb-3 sm:mb-4">Filters</h6>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        <div>
-          <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Status</label>
-          <select
-            value={filters.status}
-            onChange={(e) => setFilters({ ...filters, status: e.target.value })}
-            className="w-full px-2.5 sm:px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 touch-manipulation min-h-[44px] sm:min-h-0"
-          >
-            <option value="all">All Status</option>
-            <option value="ACTIVE">Active</option>
-            <option value="SCHEDULED">Scheduled</option>
-            <option value="CLOSED">Closed</option>
-          </select>
-        </div>
-        <div>
-          <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Auction Type</label>
-          <select
-            value={filters.auctionType}
-            onChange={(e) => setFilters({ ...filters, auctionType: e.target.value })}
-            className="w-full px-2.5 sm:px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 touch-manipulation min-h-[44px] sm:min-h-0"
-          >
-            <option value="all">All Types</option>
-            <option value="REVERSE">Reverse</option>
-            <option value="FORWARD">Forward</option>
-            <option value="DUTCH">Dutch</option>
-            <option value="SEALED">Sealed</option>
-          </select>
-        </div>
-        <div className="flex items-center pt-6 sm:pt-0">
-          <input
-            type="checkbox"
-            id="showWatchedOnly"
-            checked={filters.showWatchedOnly}
-            onChange={(e) => setFilters({ ...filters, showWatchedOnly: e.target.checked })}
-            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded touch-manipulation"
-          />
-          <label htmlFor="showWatchedOnly" className="ml-2 block text-xs sm:text-sm text-gray-700">
-            Show Watched Only
-          </label>
-        </div>
-        <div>
-          <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Min Value</label>
-          <input
-            type="number"
-            placeholder="Min value"
-            value={filters.minValue}
-            onChange={(e) => setFilters({ ...filters, minValue: e.target.value })}
-            className="w-full px-2.5 sm:px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 touch-manipulation min-h-[44px] sm:min-h-0"
-          />
-        </div>
-        <div>
-          <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Max Value</label>
-          <input
-            type="number"
-            placeholder="Max value"
-            value={filters.maxValue}
-            onChange={(e) => setFilters({ ...filters, maxValue: e.target.value })}
-            className="w-full px-2.5 sm:px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 touch-manipulation min-h-[44px] sm:min-h-0"
-          />
+    <div className="bg-white rounded-xl border border-gray-200 p-6 mb-8 relative overflow-hidden group">
+      <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
+        <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div>
+            <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1.5 ml-1">Status</label>
+            <select
+              value={filters.status}
+              onChange={(e) => setFilters({ ...filters, status: e.target.value })}
+              className="w-full px-4 py-2 text-xs font-black bg-gray-50 border border-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900/5 focus:border-gray-900 transition-all appearance-none cursor-pointer"
+            >
+              <option value="all">All Status</option>
+              <option value="ACTIVE">Active</option>
+              <option value="SCHEDULED">Scheduled</option>
+              <option value="CLOSED">Closed</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1.5 ml-1">Auction Type</label>
+            <select
+              value={filters.auctionType}
+              onChange={(e) => setFilters({ ...filters, auctionType: e.target.value })}
+              className="w-full px-4 py-2 text-xs font-black bg-gray-50 border border-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900/5 focus:border-gray-900 transition-all appearance-none cursor-pointer"
+            >
+              <option value="all">All Types</option>
+              <option value="REVERSE">Reverse</option>
+              <option value="FORWARD">Forward</option>
+              <option value="DUTCH">Dutch</option>
+              <option value="SEALED">Sealed</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1.5 ml-1">Watchlist</label>
+            <button
+              onClick={() => setFilters({ ...filters, showWatchedOnly: !filters.showWatchedOnly })}
+              className={`w-full px-4 py-2 text-xs font-black rounded-xl border transition-all flex items-center justify-between gap-2 ${filters.showWatchedOnly
+                ? 'bg-red-50 border-red-100 text-red-600'
+                : 'bg-gray-50 border-gray-100 text-gray-500 hover:text-gray-900'
+                }`}
+            >
+              <span className="flex items-center gap-2">
+                <Heart size={14} className={filters.showWatchedOnly ? 'fill-current' : ''} />
+                {filters.showWatchedOnly ? 'Showing Watched' : 'All Auctions'}
+              </span>
+            </button>
+          </div>
+          <div className="relative group/search">
+            <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1.5 ml-1">Search Range</label>
+            <div className="flex items-center gap-2">
+              <input
+                type="number"
+                placeholder="Min"
+                value={filters.minValue}
+                onChange={(e) => setFilters({ ...filters, minValue: e.target.value })}
+                className="w-full px-4 py-2 text-xs font-black bg-gray-50 border border-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900/5 focus:border-gray-900 transition-all"
+              />
+              <span className="text-gray-300 font-bold">-</span>
+              <input
+                type="number"
+                placeholder="Max"
+                value={filters.maxValue}
+                onChange={(e) => setFilters({ ...filters, maxValue: e.target.value })}
+                className="w-full px-4 py-2 text-xs font-black bg-gray-50 border border-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900/5 focus:border-gray-900 transition-all"
+              />
+            </div>
+          </div>
         </div>
       </div>
     </div>
   );
 
   const renderAuctionCard = (auction: Auction) => (
-    <div key={auction.id} className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200">
-      <div className="p-3 sm:p-4 md:p-6 border-b border-gray-200">
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 sm:gap-0 mb-3 sm:mb-4">
+    <div key={auction.id} className="bg-white rounded-2xl border border-gray-200 hover:border-gray-900 overflow-hidden transition-all duration-300 group flex flex-col">
+      <div className="p-6 flex-1">
+        <div className="flex justify-between items-start mb-6">
           <div className="flex flex-wrap gap-2">
             {getStatusBadge(auction.status)}
             {getAuctionTypeBadge(auction.auctionType)}
           </div>
-          <div className="flex items-center space-x-2 flex-shrink-0">
-            <button
-              onClick={() => handleWatchToggle(auction.id)}
-              disabled={watchingAuctions.has(auction.id)}
-              className={`p-2 rounded-full transition-colors duration-200 touch-manipulation min-w-[36px] min-h-[36px] flex items-center justify-center ${watchedAuctions.has(auction.id)
-                ? 'text-red-500 hover:text-red-600'
-                : 'text-gray-400 hover:text-red-500'
-                } ${watchingAuctions.has(auction.id) ? 'opacity-50 cursor-not-allowed' : ''}`}
-              title={watchedAuctions.has(auction.id) ? 'Unwatch auction' : 'Watch auction'}
-            >
-              {watchingAuctions.has(auction.id) ? (
-                <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-              ) : watchedAuctions.has(auction.id) ? (
-                <Heart className="w-4 h-4 fill-current" />
-              ) : (
-                <Heart className="w-4 h-4" />
-              )}
-            </button>
-            <Gavel className="text-gray-500 w-4 h-4" />
+          <button
+            onClick={() => handleWatchToggle(auction.id)}
+            disabled={watchingAuctions.has(auction.id)}
+            className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all ${watchedAuctions.has(auction.id)
+              ? 'bg-red-50 text-red-500'
+              : 'bg-gray-50 text-gray-400 hover:bg-red-50 hover:text-red-500'
+              }`}
+          >
+            {watchingAuctions.has(auction.id) ? (
+              <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <Heart size={16} className={watchedAuctions.has(auction.id) ? 'fill-current' : ''} />
+            )}
+          </button>
+        </div>
+
+        <div className="mb-4">
+          <h3 className="text-lg font-black text-gray-900 tracking-tight leading-tight group-hover:text-indigo-600 transition-colors">
+            {auction.load.title}
+          </h3>
+          <p className="text-xs text-gray-500 font-medium mt-1 uppercase tracking-wider italic">
+            ID: {auction.id.slice(0, 8)}
+          </p>
+        </div>
+
+        <div className="space-y-4 mb-6">
+          <div className="relative pl-6 before:absolute before:left-2 before:top-2 before:bottom-2 before:w-0.5 before:bg-gray-100">
+            <div className="mb-4 relative">
+              <div className="absolute -left-[1.375rem] top-0 w-3 h-3 rounded-full bg-white border-2 border-gray-900 z-10"></div>
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-0.5 leading-none">Pickup</p>
+              <p className="text-xs font-black text-gray-900 truncate">{auction.load.pickupLocation}</p>
+            </div>
+            <div className="relative">
+              <div className="absolute -left-[1.375rem] top-0 w-3 h-3 rounded-full bg-white border-2 border-indigo-600 z-10"></div>
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-0.5 leading-none">Delivery</p>
+              <p className="text-xs font-black text-gray-900 truncate">{auction.load.deliveryLocation}</p>
+            </div>
           </div>
         </div>
 
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
-          <h6 className="text-base sm:text-lg font-semibold text-gray-900 break-words">{auction.load.title}</h6>
-          {watchedAuctions.has(auction.id) && (
-            <span className="text-xs bg-red-100 text-red-800 px-2 py-1 rounded-full flex items-center w-fit">
-              <Heart className="w-3 h-3 mr-1 fill-current" />
-              Watched
-            </span>
-          )}
-        </div>
-        <p className="text-gray-600 text-xs sm:text-sm mb-3 sm:mb-4 line-clamp-2 break-words">{auction.load.description}</p>
-
-        <div className="space-y-1.5 sm:space-y-2 mb-3 sm:mb-4">
-          <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-0 text-xs sm:text-sm">
-            <span className="text-gray-500 flex items-center">
-              <MapPin className="mr-1 flex-shrink-0 w-3 h-3" />
-              Pickup
-            </span>
-            <span className="text-gray-700 break-words text-right sm:text-left">{auction.load.pickupLocation}</span>
-          </div>
-          <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-0 text-xs sm:text-sm">
-            <span className="text-gray-500 flex items-center">
-              <MapPin className="mr-1 flex-shrink-0 w-3 h-3" />
-              Delivery
-            </span>
-            <span className="text-gray-700 break-words text-right sm:text-left">{auction.load.deliveryLocation}</span>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-3 gap-2 sm:gap-4 text-center mb-3 sm:mb-4">
+        <div className="grid grid-cols-2 gap-4 pt-4 border-t border-gray-50">
           <div>
-            <div className="text-xs sm:text-sm text-gray-500">Weight</div>
-            <div className="font-semibold text-gray-900 text-xs sm:text-sm break-words">{auction.load.weight} kg</div>
+            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 leading-none">Current Bid</p>
+            <p className="text-lg font-black text-emerald-600">
+              {auction.currentHighestBid ? formatCurrency(auction.currentHighestBid) : '---'}
+            </p>
           </div>
-          <div>
-            <div className="text-xs sm:text-sm text-gray-500">Value</div>
-            <div className="font-semibold text-gray-900 text-xs sm:text-sm break-words">{formatCurrency(auction.load.loadValue)}</div>
-          </div>
-          <div>
-            <div className="text-xs sm:text-sm text-gray-500">Bids</div>
-            <div className="font-semibold text-gray-900 text-xs sm:text-sm">{auction.totalBids}</div>
-          </div>
-        </div>
-
-        {auction.currentHighestBid && (
-          <div className="mb-3 sm:mb-4">
-            <div className="text-xs sm:text-sm text-gray-500">Current Highest Bid:</div>
-            <div className="text-base sm:text-lg font-bold text-green-600 break-words">{formatCurrency(auction.currentHighestBid)}</div>
-          </div>
-        )}
-
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 sm:gap-0 text-xs sm:text-sm text-gray-500">
-          <div className="flex items-center">
-            <Clock className="mr-1 flex-shrink-0 w-4 h-4" />
-            <span className="break-words">Ends {formatDate(auction.auctionEnd)}</span>
-          </div>
-          <div>
-            <span>{auction.uniqueBidders} bidders</span>
+          <div className="text-right">
+            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 leading-none">Weight</p>
+            <p className="text-sm font-black text-gray-900">{auction.load.weight.toLocaleString()} kg</p>
           </div>
         </div>
       </div>
 
-      <div className="p-3 sm:p-4 md:p-6 bg-gray-50">
-        <div className="flex flex-col sm:flex-row gap-2">
+      <div className="px-6 py-4 bg-gray-50/50 border-t border-gray-100 flex items-center justify-between">
+        <div className="flex items-center gap-2 text-gray-500">
+          <Clock size={14} />
+          <span className="text-[10px] font-black uppercase tracking-tight">{formatDate(auction.auctionEnd)}</span>
+        </div>
+        <div className="flex gap-2">
           <button
             onClick={() => handleBidClick(auction)}
             disabled={auction.status !== 'ACTIVE' || userRole === 'CARGO_OWNER'}
-            className={`flex-1 px-3 sm:px-4 py-2.5 sm:py-2 text-xs sm:text-sm font-medium rounded-md transition-colors duration-200 touch-manipulation min-h-[44px] sm:min-h-0 flex items-center justify-center gap-1.5 ${auction.status !== 'ACTIVE' || userRole === 'CARGO_OWNER'
-              ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-              : 'bg-blue-600 text-white hover:bg-blue-700'
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase transition-all ${auction.status !== 'ACTIVE' || userRole === 'CARGO_OWNER'
+              ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+              : 'bg-gray-900 text-white hover:bg-black shadow-lg shadow-gray-200'
               }`}
           >
-            <Gavel className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-            <span>{userRole === 'CARGO_OWNER' ? 'View Bids' : 'Place Bid'}</span>
-          </button>
-          <button className="flex-1 px-3 sm:px-4 py-2.5 sm:py-2 text-xs sm:text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors duration-200 touch-manipulation min-h-[44px] sm:min-h-0 flex items-center justify-center gap-1.5">
-            <Eye className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-            <span>Details</span>
+            <Gavel size={14} />
+            {userRole === 'CARGO_OWNER' ? 'View Bids' : 'Bid Now'}
           </button>
         </div>
       </div>
@@ -432,72 +407,66 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
       {renderFilters()}
 
       {/* View Mode Toggle & Actions */}
-      <div className="flex items-center justify-end gap-2 mb-4">
+      <div className="flex items-center justify-between mb-6">
         <button
           onClick={handleExport}
-          className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 rounded-md text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors mr-auto"
+          className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 text-gray-600 rounded-xl hover:bg-gray-50 transition-all font-black text-[10px] uppercase tracking-wider group"
         >
-          <Download className="w-3.5 h-3.5" />
-          <span className="hidden sm:inline">Export History</span>
+          <Download size={14} className="group-hover:translate-y-0.5 transition-transform" />
+          Export Data
         </button>
 
-        <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-lg p-1">
+        <div className="flex items-center gap-1 bg-gray-50/50 p-1 rounded-xl border border-gray-100 shadow-inner">
           <button
             onClick={() => setViewMode('card')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${viewMode === 'card'
-              ? 'bg-gray-900 text-white'
-              : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-tight transition-all ${viewMode === 'card'
+              ? 'bg-white text-gray-900 shadow-sm ring-1 ring-black/5'
+              : 'text-gray-500 hover:text-gray-900'
               }`}
           >
-            <Grid className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Cards</span>
+            <Grid size={14} />
+            Cards
           </button>
           <button
             onClick={() => setViewMode('table')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${viewMode === 'table'
-              ? 'bg-gray-900 text-white'
-              : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-tight transition-all ${viewMode === 'table'
+              ? 'bg-white text-gray-900 shadow-sm ring-1 ring-black/5'
+              : 'text-gray-500 hover:text-gray-900'
               }`}
           >
-            <Table className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Table</span>
+            <Table size={14} />
+            Table
           </button>
         </div>
       </div>
 
       {filters.showWatchedOnly && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-3 sm:p-4 mb-4 sm:mb-6">
-          <div className="flex items-center flex-wrap gap-2">
-            <Heart className="text-red-500 mr-1 flex-shrink-0 fill-current" />
-            <h3 className="text-base sm:text-lg font-medium text-red-800">Watched Auctions</h3>
-            <span className="text-xs sm:text-sm text-red-600">({auctions.length} auctions)</span>
+        <div className="bg-red-50/50 border border-red-100 px-4 py-3 rounded-xl mb-6 flex items-center gap-3">
+          <div className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center shrink-0">
+            <Heart className="text-red-500 fill-current" size={16} />
+          </div>
+          <div>
+            <h3 className="text-xs font-black text-red-900 uppercase tracking-tight italic">
+              Watched Auctions <span className="text-red-400 font-light ml-2">({auctions.length} total)</span>
+            </h3>
           </div>
         </div>
       )}
 
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-3 sm:p-4 mb-4 sm:mb-6">
-          <div className="flex items-start sm:items-center">
-            <div className="flex-shrink-0 mt-0.5 sm:mt-0">
-              <svg className="h-4 w-4 sm:h-5 sm:w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-              </svg>
-            </div>
-            <div className="ml-2 flex-1 min-w-0">
-              <h3 className="text-xs sm:text-sm font-medium text-red-800 break-words">{error}</h3>
-            </div>
-            <div className="ml-2 flex-shrink-0">
-              <button
-                onClick={() => setError(null)}
-                className="inline-flex text-red-400 hover:text-red-500 transition-colors touch-manipulation min-w-[32px] min-h-[32px] flex items-center justify-center"
-                aria-label="Dismiss error"
-              >
-                <svg className="h-4 w-4 sm:h-5 sm:w-5" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                </svg>
-              </button>
-            </div>
+        <div className="bg-red-50 border border-red-100 p-4 rounded-xl mb-6 flex items-center gap-3">
+          <div className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center shrink-0">
+            <AlertCircle className="text-red-600" size={18} />
           </div>
+          <div className="flex-1 min-w-0">
+            <h3 className="text-xs font-black text-red-900 uppercase tracking-tight italic">{error}</h3>
+          </div>
+          <button
+            onClick={() => setError(null)}
+            className="p-1 text-red-400 hover:text-red-600 rounded-lg transition-colors border border-red-100 rounded-lg"
+          >
+            <X size={16} />
+          </button>
         </div>
       )}
 
@@ -511,76 +480,75 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
       ) : (
         <>
           {viewMode === 'card' ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4 md:gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
               {auctions.map(renderAuctionCard)}
             </div>
           ) : (
-            <div className="bg-white rounded-lg shadow overflow-hidden border border-gray-200">
+            <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
               <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50 text-gray-500 uppercase tracking-wider text-[10px] font-semibold">
-                    <tr>
-                      <th className="px-4 py-3 text-left">Auction / Load</th>
-                      <th className="px-4 py-3 text-left">Route</th>
-                      <th className="px-4 py-3 text-left">Type / weight</th>
-                      <th className="px-4 py-3 text-left font-bold text-gray-900">Current Bid</th>
-                      <th className="px-4 py-3 text-left">Time Left</th>
-                      <th className="px-4 py-3 text-right">Action</th>
+                <table className="w-full text-left">
+                  <thead>
+                    <tr className="bg-gray-50/50 border-b border-gray-100">
+                      <th className="px-6 py-4 text-[10px] font-black text-gray-500 uppercase tracking-widest">Auction / Load</th>
+                      <th className="px-6 py-4 text-[10px] font-black text-gray-500 uppercase tracking-widest">Route</th>
+                      <th className="px-6 py-4 text-[10px] font-black text-gray-500 uppercase tracking-widest">Type / weight</th>
+                      <th className="px-6 py-4 text-[10px] font-black text-gray-500 uppercase tracking-widest">Current Bid</th>
+                      <th className="px-6 py-4 text-[10px] font-black text-gray-500 uppercase tracking-widest">Time Left</th>
+                      <th className="px-6 py-4 text-right text-[10px] font-black text-gray-500 uppercase tracking-widest">Action</th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
+                  <tbody className="divide-y divide-gray-50">
                     {auctions.map((auction) => (
-                      <tr key={auction.id} className="hover:bg-gray-50 transition-colors group">
-                        <td className="px-4 py-3">
-                          <div className="flex items-center gap-3">
-                            <div className="flex-shrink-0 w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
-                              <Gavel className="w-4 h-4 text-gray-400 group-hover:text-gray-600 transition-colors" />
+                      <tr key={auction.id} className="hover:bg-gray-50/50 transition-colors group">
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-4">
+                            <div className="w-10 h-10 bg-gray-900 rounded-xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                              <Gavel size={18} className="text-white" />
                             </div>
                             <div>
-                              <div className="text-sm font-semibold text-gray-900">{auction.load.title}</div>
-                              <div className="text-[10px] flex gap-1 mt-0.5">
-                                {getStatusBadge(auction.status)}
-                              </div>
+                              <p className="text-sm font-black text-gray-900 leading-tight">{auction.load.title}</p>
+                              <div className="mt-1">{getStatusBadge(auction.status)}</div>
                             </div>
                           </div>
                         </td>
-                        <td className="px-4 py-3">
-                          <div className="text-xs text-gray-900">{auction.load.pickupLocation}</div>
-                          <div className="text-[10px] text-gray-400">to</div>
-                          <div className="text-xs text-gray-900">{auction.load.deliveryLocation}</div>
+                        <td className="px-6 py-4">
+                          <div className="flex flex-col">
+                            <span className="text-xs font-black text-gray-900">{auction.load.pickupLocation}</span>
+                            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-tight italic">to</span>
+                            <span className="text-xs font-black text-gray-900">{auction.load.deliveryLocation}</span>
+                          </div>
                         </td>
-                        <td className="px-4 py-3 whitespace-nowrap">
-                          <div className="text-xs text-gray-900">{auction.load.weight} kg</div>
-                          <div className="text-[10px] text-gray-500">{auction.auctionType}</div>
+                        <td className="px-6 py-4">
+                          <div className="flex flex-col gap-1">
+                            <span className="text-xs font-black text-gray-900">{auction.load.weight.toLocaleString()} kg</span>
+                            <div>{getAuctionTypeBadge(auction.auctionType)}</div>
+                          </div>
                         </td>
-                        <td className="px-4 py-3 whitespace-nowrap">
+                        <td className="px-6 py-4">
                           {auction.currentHighestBid ? (
-                            <div className="text-sm font-bold text-green-600">{formatCurrency(auction.currentHighestBid)}</div>
+                            <div className="text-sm font-black text-emerald-600">{formatCurrency(auction.currentHighestBid)}</div>
                           ) : (
-                            <div className="text-sm text-gray-400">No bids</div>
+                            <div className="text-xs font-bold text-gray-300 italic uppercase">No bids</div>
                           )}
-                          <div className="text-[10px] text-gray-500">{auction.totalBids} total bids</div>
+                          <div className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter mt-0.5">{auction.totalBids} total bids</div>
                         </td>
-                        <td className="px-4 py-3 whitespace-nowrap">
-                          <div className="flex items-center text-[11px] text-gray-600 gap-1">
-                            <Clock className="w-3 h-3 text-gray-400" />
-                            {new Date(auction.auctionEnd).toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-2 text-gray-500">
+                            <Clock size={12} />
+                            <span className="text-[10px] font-black uppercase tracking-tight">{formatDate(auction.auctionEnd)}</span>
                           </div>
                         </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-right">
-                          <div className="flex items-center justify-end gap-2">
-                            <button
-                              onClick={() => handleBidClick(auction)}
-                              disabled={auction.status !== 'ACTIVE' || userRole === 'CARGO_OWNER'}
-                              className={`p-2 rounded-lg transition-all ${auction.status !== 'ACTIVE' || userRole === 'CARGO_OWNER'
-                                ? 'bg-gray-50 text-gray-300 cursor-not-allowed'
-                                : 'bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white'
-                                }`}
-                              title={userRole === 'CARGO_OWNER' ? 'View Bids' : 'Place Bid'}
-                            >
-                              <Gavel className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
+                        <td className="px-6 py-4 text-right">
+                          <button
+                            onClick={() => handleBidClick(auction)}
+                            disabled={auction.status !== 'ACTIVE' || userRole === 'CARGO_OWNER'}
+                            className={`p-2 rounded-xl transition-all ${auction.status !== 'ACTIVE' || userRole === 'CARGO_OWNER'
+                                ? 'bg-gray-50 text-gray-300'
+                                : 'bg-gray-900 text-white hover:bg-black shadow-lg shadow-gray-200'
+                              }`}
+                          >
+                            <Gavel size={16} />
+                          </button>
                         </td>
                       </tr>
                     ))}
@@ -594,21 +562,21 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
 
       {/* Bid Modal */}
       {showBidModal && selectedAuction && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 p-3 sm:p-4">
-          <div className="relative top-4 sm:top-10 md:top-20 mx-auto p-3 sm:p-4 md:p-5 border w-full max-w-2xl shadow-lg rounded-md bg-white max-h-[90vh] overflow-y-auto">
-            <div className="mt-0 sm:mt-3">
-              <div className="flex justify-between items-center mb-3 sm:mb-4">
-                <h3 className="text-base sm:text-lg font-medium text-gray-900">Place Bid</h3>
-                <button
-                  onClick={() => setShowBidModal(false)}
-                  className="text-gray-400 hover:text-gray-600 transition-colors touch-manipulation min-w-[32px] min-h-[32px] flex items-center justify-center"
-                  aria-label="Close"
-                >
-                  <svg className="h-5 w-5 sm:h-6 sm:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col ring-1 ring-black/5">
+            <div className="bg-gray-50/50 px-6 py-4 flex items-center justify-between border-b border-gray-100">
+              <h3 className="text-sm font-black text-gray-900 flex items-center gap-2">
+                <Gavel className="text-indigo-600" size={18} /> Place Your Bid
+              </h3>
+              <button
+                onClick={() => setShowBidModal(false)}
+                className="p-1.5 text-gray-400 hover:text-gray-600 rounded-lg transition-colors border border-gray-100"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="p-6 overflow-y-auto">
               <BidForm
                 auction={selectedAuction}
                 onSubmit={handleBidSubmit}

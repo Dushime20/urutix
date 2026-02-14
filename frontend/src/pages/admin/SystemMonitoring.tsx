@@ -139,13 +139,13 @@ const SystemMonitoring: React.FC = () => {
                     <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center gap-3">
                             {getStatusIcon(health?.status || 'unknown')}
-                            <h3 className="font-bold text-slate-700">System Status</h3>
+                            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">System Status</h3>
                         </div>
                     </div>
-                    <div className={`text-2xl font-black mb-2 ${getStatusColor(health?.status || 'unknown')}`}>
+                    <div className={`text-2xl font-black mb-1 leading-none tracking-tight ${getStatusColor(health?.status || 'unknown')}`}>
                         {health?.status?.toUpperCase() || 'UNKNOWN'}
                     </div>
-                    <div className="text-sm text-slate-500">
+                    <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">
                         Uptime: {health?.uptime.formatted || 'N/A'}
                     </div>
                 </div>
@@ -154,12 +154,12 @@ const SystemMonitoring: React.FC = () => {
                 <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
                     <div className="flex items-center gap-3 mb-4">
                         <FaDatabase className="text-blue-600" size={24} />
-                        <h3 className="font-bold text-slate-700">Database</h3>
+                        <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Database</h3>
                     </div>
-                    <div className={`text-2xl font-black mb-2 ${getStatusColor(health?.services.database.status || 'unknown')}`}>
+                    <div className={`text-2xl font-black mb-1 leading-none tracking-tight ${getStatusColor(health?.services.database.status || 'unknown')}`}>
                         {health?.services.database.status?.toUpperCase() || 'UNKNOWN'}
                     </div>
-                    <div className="text-sm text-slate-500">
+                    <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">
                         Response: {health?.services.database.responseTime || 'N/A'}
                     </div>
                 </div>
@@ -168,12 +168,12 @@ const SystemMonitoring: React.FC = () => {
                 <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
                     <div className="flex items-center gap-3 mb-4">
                         <FaMemory className="text-purple-600" size={24} />
-                        <h3 className="font-bold text-slate-700">Memory</h3>
+                        <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Memory</h3>
                     </div>
-                    <div className="text-2xl font-black text-purple-600 mb-2">
+                    <div className="text-2xl font-black text-purple-600 mb-1 leading-none tracking-tight">
                         {health?.resources.memory.system.usagePercent || 0}%
                     </div>
-                    <div className="text-sm text-slate-500">
+                    <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">
                         {health?.resources.memory.system.used || 0}GB / {health?.resources.memory.system.total || 0}GB
                     </div>
                     <div className="mt-2 h-2 bg-slate-100 rounded-full overflow-hidden">
@@ -188,12 +188,12 @@ const SystemMonitoring: React.FC = () => {
                 <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
                     <div className="flex items-center gap-3 mb-4">
                         <Cpu className="text-orange-600" size={24} />
-                        <h3 className="font-bold text-slate-700">CPU</h3>
+                        <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">CPU</h3>
                     </div>
-                    <div className="text-2xl font-black text-orange-600 mb-2">
+                    <div className="text-2xl font-black text-orange-600 mb-1 leading-none tracking-tight">
                         {health?.resources.cpu.cores || 0} Cores
                     </div>
-                    <div className="text-sm text-slate-500 truncate">
+                    <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none truncate">
                         {health?.resources.cpu.model || 'Unknown'}
                     </div>
                 </div>
@@ -205,27 +205,26 @@ const SystemMonitoring: React.FC = () => {
                 <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
                     <div className="flex items-center gap-3 mb-4">
                         <FaSync className="text-cyan-600" size={24} />
-                        <h3 className="font-bold text-slate-700">Network Traffic</h3>
+                        <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Network Traffic</h3>
                     </div>
                     <div className="grid grid-cols-3 gap-4">
                         <div>
-                            <div className="text-2xl font-black text-slate-800">
+                            <div className="text-2xl font-black text-slate-800 leading-none tracking-tight mb-1">
                                 {metrics?.requests?.perSecond || 0}
                             </div>
-                            <div className="text-xs text-slate-500 font-bold uppercase tracking-wider">Req/Sec</div>
+                            <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Req/Sec</div>
                         </div>
                         <div>
-                            <div className="text-2xl font-black text-slate-800">
-                                {metrics?.requests?.avgResponseTime || 0}
-                                <span className="text-sm font-normal text-slate-400 ml-1">ms</span>
+                            <div className="text-2xl font-black text-slate-800 leading-none tracking-tight mb-1">
+                                {metrics?.requests?.avgResponseTime || 0}<span className="text-xs font-normal text-slate-400 ml-1">ms</span>
                             </div>
-                            <div className="text-xs text-slate-500 font-bold uppercase tracking-wider">Avg Latency</div>
+                            <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Avg Latency</div>
                         </div>
                         <div>
-                            <div className="text-2xl font-black text-slate-800">
+                            <div className="text-2xl font-black text-slate-800 leading-none tracking-tight mb-1">
                                 {metrics?.requests?.total?.toLocaleString() || 0}
                             </div>
-                            <div className="text-xs text-slate-500 font-bold uppercase tracking-wider">Total Req</div>
+                            <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Total Req</div>
                         </div>
                     </div>
                 </div>
@@ -234,21 +233,21 @@ const SystemMonitoring: React.FC = () => {
                 <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
                     <div className="flex items-center gap-3 mb-4">
                         <FaExclamationTriangle className="text-red-500" size={24} />
-                        <h3 className="font-bold text-slate-700">Error Rate</h3>
+                        <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Error Rate</h3>
                     </div>
                     <div className="flex items-center gap-8">
                         <div>
-                            <div className={`text-4xl font-black ${metrics?.errors?.rate && metrics.errors.rate > 1 ? 'text-red-600' : 'text-emerald-600'}`}>
+                            <div className={`text-4xl font-black leading-none tracking-tight mb-1 ${metrics?.errors?.rate && metrics.errors.rate > 1 ? 'text-red-600' : 'text-emerald-600'}`}>
                                 {metrics?.errors?.rate || 0}%
                             </div>
-                            <div className="text-sm text-slate-500 mt-1">Request Failure Rate</div>
+                            <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Request Failure Rate</div>
                         </div>
                         <div className="h-12 w-px bg-slate-100"></div>
                         <div>
-                            <div className="text-2xl font-bold text-slate-700">
+                            <div className="text-2xl font-black text-slate-800 leading-none tracking-tight mb-1">
                                 {metrics?.errors?.total || 0}
                             </div>
-                            <div className="text-xs text-slate-500 font-bold uppercase tracking-wider">Total Errors</div>
+                            <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Total Errors</div>
                         </div>
                     </div>
                 </div>
@@ -360,14 +359,14 @@ const SystemMonitoring: React.FC = () => {
 
                 <div className="overflow-x-auto">
                     <table className="w-full text-sm">
-                        <thead className="bg-slate-100 border-b border-slate-200">
+                        <thead className="bg-[#fafafa] border-b border-slate-200">
                             <tr>
-                                <th className="px-6 py-3 text-left font-bold text-slate-700">Timestamp</th>
-                                <th className="px-6 py-3 text-left font-bold text-slate-700">Admin</th>
-                                <th className="px-6 py-3 text-left font-bold text-slate-700">User</th>
-                                <th className="px-6 py-3 text-left font-bold text-slate-700">Action</th>
-                                <th className="px-6 py-3 text-left font-bold text-slate-700">Permission</th>
-                                <th className="px-6 py-3 text-left font-bold text-slate-700">Reason</th>
+                                <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Timestamp</th>
+                                <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Admin</th>
+                                <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">User</th>
+                                <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Action</th>
+                                <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Permission</th>
+                                <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Reason</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">

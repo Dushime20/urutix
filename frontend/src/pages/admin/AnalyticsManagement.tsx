@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   FaChartLine, FaUsers, FaTruck, FaBox, FaDollarSign,
-  FaExclamationTriangle, FaCheckCircle, FaClock, FaMapMarkerAlt,
-  FaThermometerHalf, FaShieldAlt, FaRoute, FaCalendarAlt
+  FaExclamationTriangle, FaCheckCircle, FaClock, FaMapMarkerAlt
 } from 'react-icons/fa';
 import { Line, Bar, Doughnut, Radar } from 'react-chartjs-2';
 import {
@@ -35,7 +34,6 @@ ChartJS.register(
 
 const AnalyticsManagement: React.FC = () => {
   const [timeRange, setTimeRange] = useState('7d');
-  const [selectedMetric, setSelectedMetric] = useState('overview');
   const [isRealTime, setIsRealTime] = useState(false);
 
   // Real-time data simulation
@@ -202,8 +200,8 @@ const AnalyticsManagement: React.FC = () => {
           <button
             onClick={() => setIsRealTime(!isRealTime)}
             className={`px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors ${isRealTime
-                ? 'bg-green-600 hover:bg-green-700 text-white'
-                : 'bg-gray-200 hover:bg-gray-300 text-gray-700'
+              ? 'bg-green-600 hover:bg-green-700 text-white'
+              : 'bg-gray-200 hover:bg-gray-300 text-gray-700'
               }`}
           >
             <FaChartLine />
@@ -219,14 +217,14 @@ const AnalyticsManagement: React.FC = () => {
           <div key={index} className="bg-white rounded-xl shadow-lg p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">{card.title}</p>
-                <p className="text-2xl font-bold text-gray-900">{card.value}</p>
-                <div className="flex items-center space-x-2 mt-1">
-                  <span className={`text-sm font-medium ${card.changeType === 'positive' ? 'text-green-600' : 'text-red-600'
+                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 leading-none">{card.title}</p>
+                <p className="text-2xl font-black text-gray-900 leading-none tracking-tight">{card.value}</p>
+                <div className="flex items-center space-x-2 mt-2">
+                  <span className={`text-[10px] font-black uppercase tracking-widest ${card.changeType === 'positive' ? 'text-green-600' : 'text-red-600'
                     }`}>
                     {card.change}
                   </span>
-                  <span className="text-sm text-gray-500">{card.description}</span>
+                  <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{card.description}</span>
                 </div>
               </div>
               <div className={`p-3 rounded-full bg-gradient-to-r ${card.color}`}>
@@ -246,8 +244,8 @@ const AnalyticsManagement: React.FC = () => {
                 <alert.icon className={`text-2xl ${alert.color}`} />
               </div>
               <div>
-                <p className="text-3xl font-bold text-gray-900">{alert.count}</p>
-                <p className="text-sm text-gray-600">{alert.label}</p>
+                <p className="text-3xl font-black text-gray-900 leading-none tracking-tight">{alert.count}</p>
+                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1 leading-none">{alert.label}</p>
               </div>
             </div>
           </div>

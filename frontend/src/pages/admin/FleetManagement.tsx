@@ -152,8 +152,8 @@ const FleetManagement: React.FC = () => {
         <div className="bg-white rounded-xl shadow-lg p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-2xl font-bold text-gray-800">{trucks.length}</p>
-              <p className="text-gray-600">Total Trucks</p>
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 leading-none">Total Trucks</p>
+              <p className="text-2xl font-black text-gray-900 leading-none tracking-tight">{trucks.length}</p>
             </div>
             <FaTruck className="text-blue-500 text-3xl" />
           </div>
@@ -161,8 +161,8 @@ const FleetManagement: React.FC = () => {
         <div className="bg-white rounded-xl shadow-lg p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-2xl font-bold text-gray-800">{trucks.filter(t => t.status === 'active').length}</p>
-              <p className="text-gray-600">Active</p>
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 leading-none">Active</p>
+              <p className="text-2xl font-black text-gray-900 leading-none tracking-tight">{trucks.filter(t => t.status === 'active').length}</p>
             </div>
             <FaCheckCircle className="text-green-500 text-3xl" />
           </div>
@@ -170,8 +170,8 @@ const FleetManagement: React.FC = () => {
         <div className="bg-white rounded-xl shadow-lg p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-2xl font-bold text-gray-800">{trucks.filter(t => t.status === 'maintenance').length}</p>
-              <p className="text-gray-600">Maintenance</p>
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 leading-none">Maintenance</p>
+              <p className="text-2xl font-black text-gray-900 leading-none tracking-tight">{trucks.filter(t => t.status === 'maintenance').length}</p>
             </div>
             <FaTools className="text-yellow-500 text-3xl" />
           </div>
@@ -179,8 +179,8 @@ const FleetManagement: React.FC = () => {
         <div className="bg-white rounded-xl shadow-lg p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-2xl font-bold text-gray-800">{Math.round(trucks.reduce((acc, t) => acc + t.fuelLevel, 0) / trucks.length)}%</p>
-              <p className="text-gray-600">Avg Fuel Level</p>
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 leading-none">Avg Fuel Level</p>
+              <p className="text-2xl font-black text-gray-900 leading-none tracking-tight">{Math.round(trucks.reduce((acc, t) => acc + t.fuelLevel, 0) / trucks.length)}%</p>
             </div>
             <FaGasPump className="text-purple-500 text-3xl" />
           </div>
@@ -198,8 +198,8 @@ const FleetManagement: React.FC = () => {
                     <FaTruck className="text-white text-lg" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-800">{truck.plateNumber}</h3>
-                    <p className="text-sm text-gray-500">{truck.make} {truck.model}</p>
+                    <h3 className="text-lg font-black text-gray-900 tracking-tight leading-none mb-1">{truck.plateNumber}</h3>
+                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none">{truck.make} {truck.model}</p>
                   </div>
                 </div>
                 <div className="flex items-center space-x-2">

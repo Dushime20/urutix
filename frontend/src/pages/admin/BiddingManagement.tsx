@@ -2,10 +2,9 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   FaChartLine, FaDollarSign, FaTruck, FaSearch, FaFilter, FaDownload,
-  FaEye, FaEdit, FaCalendar, FaClock,
+  FaEye, FaClock,
   FaGavel, FaCheckCircle, FaTimesCircle, FaExclamationTriangle, FaTimes
 } from 'react-icons/fa';
-import { useAdminLayout } from '../../contexts/AdminLayoutContext';
 import toast from 'react-hot-toast';
 import { biddingAPI } from '../../services/biddingApi';
 import AdminPageLayout from '../../components/Admin/AdminPageLayout';
@@ -27,7 +26,6 @@ interface Bid {
 }
 
 const BiddingManagement: React.FC = () => {
-  const { viewMode } = useAdminLayout();
   const qc = useQueryClient();
 
   // Fetch bids from API
@@ -142,7 +140,7 @@ const BiddingManagement: React.FC = () => {
     return matchesSearch && matchesStatus && matchesCargoId;
   });
 
-  const { mutate: acceptBid, isPending: isAccepting } = useMutation({
+  const { mutate: acceptBid } = useMutation({
     mutationFn: async (bidId: string) => {
       await biddingAPI.acceptBid(bidId);
     },
@@ -156,10 +154,9 @@ const BiddingManagement: React.FC = () => {
     }
   });
 
-  const { mutate: rejectBid, isPending: isRejecting } = useMutation({
+  const { mutate: rejectBid } = useMutation({
     mutationFn: async (bidId: string) => {
-      // Since there's no reject endpoint, we'll use updateBid to change status
-      await biddingAPI.updateBid(bidId, { status: 'rejected' });
+      await (biddingAPI as any).updateBid(bidId, { status: 'rejected' });
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['admin-bids'] });
@@ -204,8 +201,8 @@ const BiddingManagement: React.FC = () => {
         <div className="bg-white rounded-lg border border-gray-200 p-2.5 hover:shadow-md transition-all duration-200">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-lg font-bold text-gray-900">{stats.total}</p>
-              <p className="text-xs text-gray-600">Total Bids</p>
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 leading-none">Total Bids</p>
+              <p className="text-lg font-black text-gray-900 leading-none tracking-tight">{stats.total}</p>
             </div>
             <div className="w-8 h-8 bg-gray-700 rounded-lg flex items-center justify-center">
               <FaGavel className="text-white text-xs" />
@@ -215,8 +212,8 @@ const BiddingManagement: React.FC = () => {
         <div className="bg-white rounded-lg border border-gray-200 p-2.5 hover:shadow-md transition-all duration-200">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-lg font-bold text-gray-900">{stats.pending}</p>
-              <p className="text-xs text-gray-600">Pending</p>
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 leading-none">Pending</p>
+              <p className="text-lg font-black text-gray-900 leading-none tracking-tight">{stats.pending}</p>
             </div>
             <div className="w-8 h-8 bg-gray-700 rounded-lg flex items-center justify-center">
               <FaClock className="text-white text-xs" />
@@ -226,8 +223,8 @@ const BiddingManagement: React.FC = () => {
         <div className="bg-white rounded-lg border border-gray-200 p-2.5 hover:shadow-md transition-all duration-200">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-lg font-bold text-gray-900">{stats.accepted}</p>
-              <p className="text-xs text-gray-600">Accepted</p>
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 leading-none">Accepted</p>
+              <p className="text-lg font-black text-gray-900 leading-none tracking-tight">{stats.accepted}</p>
             </div>
             <div className="w-8 h-8 bg-gray-700 rounded-lg flex items-center justify-center">
               <FaCheckCircle className="text-white text-xs" />
@@ -237,8 +234,8 @@ const BiddingManagement: React.FC = () => {
         <div className="bg-white rounded-lg border border-gray-200 p-2.5 hover:shadow-md transition-all duration-200">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-lg font-bold text-gray-900">{stats.rejected}</p>
-              <p className="text-xs text-gray-600">Rejected</p>
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 leading-none">Rejected</p>
+              <p className="text-lg font-black text-gray-900 leading-none tracking-tight">{stats.rejected}</p>
             </div>
             <div className="w-8 h-8 bg-gray-700 rounded-lg flex items-center justify-center">
               <FaTimesCircle className="text-white text-xs" />
@@ -248,8 +245,8 @@ const BiddingManagement: React.FC = () => {
         <div className="bg-white rounded-lg border border-gray-200 p-2.5 hover:shadow-md transition-all duration-200">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-lg font-bold text-gray-900">${stats.totalValue.toLocaleString()}</p>
-              <p className="text-xs text-gray-600">Total Value</p>
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 leading-none">Total Value</p>
+              <p className="text-lg font-black text-gray-900 leading-none tracking-tight">${stats.totalValue.toLocaleString()}</p>
             </div>
             <div className="w-8 h-8 bg-gray-700 rounded-lg flex items-center justify-center">
               <FaDollarSign className="text-white text-xs" />
@@ -259,8 +256,8 @@ const BiddingManagement: React.FC = () => {
         <div className="bg-white rounded-lg border border-gray-200 p-2.5 hover:shadow-md transition-all duration-200">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-lg font-bold text-gray-900">{stats.avgRating}</p>
-              <p className="text-xs text-gray-600">Avg Rating</p>
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 leading-none">Avg Rating</p>
+              <p className="text-lg font-black text-gray-900 leading-none tracking-tight">{stats.avgRating}</p>
             </div>
             <div className="w-8 h-8 bg-gray-700 rounded-lg flex items-center justify-center">
               <FaChartLine className="text-white text-xs" />
@@ -329,12 +326,12 @@ const BiddingManagement: React.FC = () => {
             <table className="w-full">
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
-                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Bid Details</th>
-                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Bidder</th>
-                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Amount</th>
-                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Status</th>
-                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Timeline</th>
-                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Actions</th>
+                  <th className="px-3 py-2 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Bid Details</th>
+                  <th className="px-3 py-2 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Bidder</th>
+                  <th className="px-3 py-2 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Amount</th>
+                  <th className="px-3 py-2 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Status</th>
+                  <th className="px-3 py-2 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Timeline</th>
+                  <th className="px-3 py-2 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Actions</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">

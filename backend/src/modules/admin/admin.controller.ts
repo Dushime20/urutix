@@ -286,6 +286,7 @@ export class AdminController {
   async getTenantCreditTransactions(
     @Param('tenantId') tenantId: string,
     @Query('type') type?: string,
+    @Query('days') days?: string,
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
     @Query('limit') limit?: string,
@@ -293,6 +294,7 @@ export class AdminController {
   ) {
     const filters: any = {};
     if (type) filters.type = type;
+    if (days) filters.days = parseInt(days);
     if (startDate) filters.startDate = new Date(startDate);
     if (endDate) filters.endDate = new Date(endDate);
     if (limit) filters.limit = parseInt(limit);
@@ -317,6 +319,7 @@ export class AdminController {
   async getAllCreditTransactions(
     @Query('tenantId') tenantId?: string,
     @Query('type') type?: string,
+    @Query('days') days?: string,
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
     @Query('limit') limit?: string,
@@ -327,6 +330,7 @@ export class AdminController {
       return this.getTenantCreditTransactions(
         tenantId,
         type,
+        days,
         startDate,
         endDate,
         limit,
@@ -337,6 +341,7 @@ export class AdminController {
     // Otherwise, get all transactions (admin view)
     const filters: any = {};
     if (type) filters.type = type;
+    if (days) filters.days = parseInt(days);
     if (startDate) filters.startDate = new Date(startDate);
     if (endDate) filters.endDate = new Date(endDate);
     filters.limit = limit ? parseInt(limit) : 50;

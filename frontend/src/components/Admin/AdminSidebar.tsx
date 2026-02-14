@@ -1,18 +1,39 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
-    FaChartLine, FaUsers, FaBuilding, FaTruck, FaBox, FaRoute,
-    FaDollarSign, FaShieldAlt, FaCog, FaExclamationCircle,
-    FaChevronLeft, FaChevronRight, FaUserShield, FaKey,
-    FaClipboardList, FaServer, FaBell, FaFileAlt, FaGavel,
-    FaHandshake, FaUniversity, FaUserTie
-} from 'react-icons/fa';
-import { Activity, BarChart3, Settings } from 'lucide-react';
+    LayoutDashboard,
+    BarChart3,
+    Users,
+    Building2,
+    Route,
+    Truck,
+    Package,
+    Activity,
+    DollarSign,
+    ShieldCheck,
+    Gavel,
+    FileText,
+    Landmark,
+    UserCircle,
+    FileCheck,
+    Tags,
+    CreditCard,
+    Shield,
+    Key,
+    ClipboardList,
+    Server,
+    Bell,
+    Settings,
+    ChevronLeft,
+    ChevronRight,
+    UserCheck,
+    ArrowRight
+} from 'lucide-react';
 import logoUrutiX from '../../assets/logo-urutix.svg';
 
 interface NavItem {
     label: string;
-    icon: React.ComponentType<{ size?: number; className?: string }>;
+    icon: React.ComponentType<{ size?: string | number; className?: string }>;
     path: string;
     badge?: string | number;
 }
@@ -30,56 +51,64 @@ const AdminSidebar: React.FC = () => {
         {
             title: 'Overview',
             items: [
-                { label: 'Dashboard', icon: FaChartLine, path: '/admin' },
+                { label: 'Dashboard', icon: LayoutDashboard, path: '/admin' },
                 { label: 'Analytics', icon: BarChart3, path: '/admin/analytics' },
             ]
         },
         {
             title: 'Management',
             items: [
-                { label: 'Users', icon: FaUsers, path: '/admin/users' },
-                { label: 'Tenants', icon: FaBuilding, path: '/admin/tenants' },
-                { label: 'Routes', icon: FaRoute, path: '/admin/routes' },
+                { label: 'Users', icon: Users, path: '/admin/users' },
+                { label: 'Tenants', icon: Building2, path: '/admin/tenants' },
+                { label: 'Routes', icon: Route, path: '/admin/routes' },
             ]
         },
         {
             title: 'Operations',
             items: [
-                { label: 'Trucks', icon: FaTruck, path: '/admin/trucks' },
-                { label: 'Loads', icon: FaBox, path: '/admin/loads' },
+                { label: 'Trucks', icon: Truck, path: '/admin/trucks' },
+                { label: 'Loads', icon: Package, path: '/admin/loads' },
                 { label: 'Trips', icon: Activity, path: '/admin/trips' },
             ]
         },
         {
             title: 'Financial',
             items: [
-                { label: 'Transactions', icon: FaDollarSign, path: '/admin/financial' },
-                { label: 'Escrow', icon: FaHandshake, path: '/admin/escrow-management' },
-                { label: 'Disputes', icon: FaGavel, path: '/admin/disputes' },
-                { label: 'Bidding', icon: FaFileAlt, path: '/admin/bidding' },
+                { label: 'Transactions', icon: DollarSign, path: '/admin/financial' },
+                { label: 'Escrow', icon: ShieldCheck, path: '/admin/escrow-management' },
+                { label: 'Disputes', icon: Gavel, path: '/admin/disputes' },
+                { label: 'Bidding', icon: FileText, path: '/admin/bidding' },
             ]
         },
         {
             title: 'Lending',
             items: [
-                { label: 'Lenders', icon: FaUniversity, path: '/admin/lenders/register' },
-                { label: 'Borrowers', icon: FaUserTie, path: '/admin/borrowers' },
+                { label: 'Lenders', icon: Landmark, path: '/admin/lenders/register' },
+                { label: 'Borrowers', icon: UserCircle, path: '/admin/borrowers' },
+            ]
+        },
+        {
+            title: 'Subscription',
+            items: [
+                { label: 'Subscriptions', icon: FileCheck, path: '/admin/subscriptions' },
+                { label: 'Pricing Rules', icon: Tags, path: '/admin/pricing-rules' },
+                { label: 'Credit Usage', icon: CreditCard, path: '/admin/credit-usage' },
             ]
         },
         {
             title: 'Security',
             items: [
-                { label: 'Permissions', icon: FaShieldAlt, path: '/admin/permissions' },
-                { label: 'Roles', icon: FaUserShield, path: '/admin/roles' },
-                { label: 'Enhanced Permissions', icon: FaKey, path: '/admin/enhanced-permissions' },
-                { label: 'Activity Logs', icon: FaClipboardList, path: '/admin/activity-logs' },
+                { label: 'Permissions', icon: Shield, path: '/admin/permissions' },
+                { label: 'Roles', icon: UserCheck, path: '/admin/roles' },
+                { label: 'Enhanced Permissions', icon: Key, path: '/admin/enhanced-permissions' },
+                { label: 'Activity Logs', icon: ClipboardList, path: '/admin/activity-logs' },
             ]
         },
         {
             title: 'System',
             items: [
-                { label: 'Monitoring', icon: FaServer, path: '/admin/monitoring' },
-                { label: 'Onboarding', icon: FaBell, path: '/admin/onboarding' },
+                { label: 'Monitoring', icon: Server, path: '/admin/monitoring' },
+                { label: 'Onboarding', icon: Bell, path: '/admin/onboarding' },
                 { label: 'Settings', icon: Settings, path: '/admin/advanced-settings' },
             ]
         },
@@ -94,49 +123,36 @@ const AdminSidebar: React.FC = () => {
 
     return (
         <aside
-            className={`${collapsed ? 'w-20' : 'w-64'} bg-[#0f172a] text-white h-full transition-all duration-300 flex flex-col border-r border-white/10 flex-shrink-0 z-20`}
+            className={`${collapsed ? 'w-20' : 'w-64'} bg-white h-full transition-all duration-300 flex flex-col border-r border-slate-200 flex-shrink-0 z-20`}
         >
-            {/* UrutiX Logo */}
-            <div className="p-4 border-b border-white/10">
+            {/* Logo Section */}
+            <div className="p-6 h-20 flex items-center justify-between border-b border-slate-50">
                 {!collapsed ? (
-                    <div className="flex items-center gap-3">
-                        <img 
-                            src={logoUrutiX} 
-                            alt="UrutiX Logo" 
-                            className="w-10 h-10 object-contain"
+                    <div className="flex items-center gap-2">
+                        <img
+                            src={logoUrutiX}
+                            alt="UrutiX Logo"
+                            className="w-8 h-8 object-contain"
                         />
-                        <div>
-                            <h1 className="font-black text-xl text-white">UrutiX</h1>
-                            <p className="text-[10px] text-indigo-400 font-semibold uppercase tracking-wider">Admin Portal</p>
-                        </div>
+                        <span className="font-bold text-lg text-slate-800 tracking-tight">UrutiX</span>
                     </div>
                 ) : (
-                    <div className="flex justify-center">
-                        <img 
-                            src={logoUrutiX} 
-                            alt="UrutiX Logo" 
-                            className="w-10 h-10 object-contain"
+                    <div className="flex justify-center w-full">
+                        <img
+                            src={logoUrutiX}
+                            alt="UrutiX Logo"
+                            className="w-8 h-8 object-contain"
                         />
                     </div>
                 )}
             </div>
 
-            {/* Toggle Button */}
-            <div className="px-4 py-2 border-b border-white/10 flex items-center justify-end">
-                <button
-                    onClick={() => setCollapsed(!collapsed)}
-                    className="p-2 hover:bg-white/10 rounded-lg transition-colors"
-                >
-                    {collapsed ? <FaChevronRight size={14} /> : <FaChevronLeft size={14} />}
-                </button>
-            </div>
-
             {/* Navigation */}
-            <nav className="flex-1 overflow-y-auto py-4 px-2 space-y-6">
+            <nav className="flex-1 overflow-y-auto py-6 px-4 space-y-8 scrollbar-hide">
                 {navCategories.map((category, idx) => (
-                    <div key={idx}>
+                    <div key={idx} className="space-y-2">
                         {!collapsed && (
-                            <h3 className="px-3 mb-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                            <h3 className="px-3 text-[10px] font-black text-slate-400 uppercase tracking-[0.1em]">
                                 {category.title}
                             </h3>
                         )}
@@ -148,24 +164,28 @@ const AdminSidebar: React.FC = () => {
                                     <Link
                                         key={itemIdx}
                                         to={item.path}
-                                        className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all group ${active
-                                            ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20'
-                                            : 'text-slate-300 hover:bg-white/5 hover:text-white'
+                                        className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all group relative ${active
+                                            ? 'bg-indigo-50 text-indigo-600'
+                                            : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'
                                             }`}
                                         title={collapsed ? item.label : undefined}
                                     >
+                                        {active && (
+                                            <div className="absolute left-[-1rem] top-1/4 bottom-1/4 w-1 bg-indigo-600 rounded-r-full" />
+                                        )}
                                         <Icon
-                                            size={18}
-                                            className={active ? 'text-white' : 'text-slate-400 group-hover:text-white'}
+                                            size={20}
+                                            className={active ? 'text-indigo-600' : 'text-slate-400 group-hover:text-slate-600'}
                                         />
                                         {!collapsed && (
                                             <>
-                                                <span className="text-sm font-medium flex-1">{item.label}</span>
+                                                <span className="text-sm font-bold flex-1">{item.label}</span>
                                                 {item.badge && (
-                                                    <span className="px-2 py-0.5 bg-red-500 text-white text-[10px] font-bold rounded-full">
+                                                    <span className="px-1.5 py-0.5 bg-indigo-600 text-white text-[10px] font-black rounded-md">
                                                         {item.badge}
                                                     </span>
                                                 )}
+                                                {active && <ArrowRight size={14} className="opacity-50" />}
                                             </>
                                         )}
                                     </Link>
@@ -176,31 +196,20 @@ const AdminSidebar: React.FC = () => {
                 ))}
             </nav>
 
-            {/* Footer Stats */}
-            {!collapsed && (
-                <div className="p-4 border-t border-white/10 space-y-2">
-                    <div className="flex items-center justify-between text-xs">
-                        <span className="text-slate-400">System Status</span>
-                        <div className="flex items-center gap-1.5">
-                            <span className="relative flex h-2 w-2">
-                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                            </span>
-                            <span className="text-emerald-400 font-bold">Operational</span>
+            {/* Footer / Toggle */}
+            <div className="p-4 border-t border-slate-50">
+                <button
+                    onClick={() => setCollapsed(!collapsed)}
+                    className="w-full flex items-center justify-center p-2.5 hover:bg-slate-50 rounded-xl text-slate-400 transition-all border border-transparent hover:border-slate-100"
+                >
+                    {collapsed ? <ChevronRight size={18} /> : (
+                        <div className="flex items-center gap-2">
+                            <ChevronLeft size={18} />
+                            <span className="text-xs font-bold">Minimize Sidebar</span>
                         </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-2 text-xs">
-                        <div className="bg-white/5 rounded p-2">
-                            <div className="text-slate-400 text-[10px]">Uptime</div>
-                            <div className="font-bold text-white">99.9%</div>
-                        </div>
-                        <div className="bg-white/5 rounded p-2">
-                            <div className="text-slate-400 text-[10px]">Active</div>
-                            <div className="font-bold text-white">1,284</div>
-                        </div>
-                    </div>
-                </div>
-            )}
+                    )}
+                </button>
+            </div>
         </aside>
     );
 };

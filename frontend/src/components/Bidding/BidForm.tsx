@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { DollarSign, Calendar, Truck, TrendingUp } from 'lucide-react';
+import { DollarSign, Calendar, Truck, TrendingUp, Info, ShieldCheck, AlertCircle, X, ChevronRight } from 'lucide-react';
 
 interface Auction {
   id: string;
@@ -149,244 +149,308 @@ const BidForm: React.FC<BidFormProps> = ({ auction, onSubmit, onCancel }) => {
   };
 
   const renderAuctionSummary = () => (
-    <div className="bg-white rounded-lg shadow p-6 mb-6">
-      <h6 className="text-lg font-medium text-gray-900 mb-4">Auction Summary</h6>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <div className="mb-2">
-            <span className="font-medium">Load:</span> {auction.load.title}
-          </div>
-          <div className="mb-2">
-            <span className="font-medium">Weight:</span> {auction.load.weight} kg
-          </div>
-          <div className="mb-2">
-            <span className="font-medium">Value:</span> {formatCurrency(auction.load.loadValue)}
-          </div>
-        </div>
-        <div>
-          <div className="mb-2">
-            <span className="font-medium">Type:</span>
-            <span className="ml-2 px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">
-              {auction.auctionType}
-            </span>
-          </div>
-          {auction.currentHighestBid && (
-            <div className="mb-2">
-              <span className="font-medium">Current Bid:</span> {formatCurrency(auction.currentHighestBid)}
+    <div className="bg-gray-50/50 rounded-2xl border border-gray-100 p-6 mb-8 relative overflow-hidden group">
+      <div className="absolute -right-4 -top-4 opacity-5 group-hover:scale-110 transition-transform">
+        <Truck size={100} className="text-gray-900" />
+      </div>
+      <div className="relative">
+        <h6 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+          <Info size={12} className="text-indigo-600" />
+          Auction Overview
+        </h6>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="space-y-4">
+            <div>
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 leading-none">Load Title</p>
+              <p className="text-sm font-black text-gray-900">{auction.load.title}</p>
             </div>
-          )}
-          {auction.minimumBidIncrement && (
-            <div className="mb-2">
-              <span className="font-medium">Min Increment:</span> {formatCurrency(auction.minimumBidIncrement)}
+          </div>
+          <div className="space-y-4 border-l border-gray-100 pl-6">
+            <div>
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 leading-none">Weight & Value</p>
+              <div className="flex items-center gap-2 mt-1">
+                <span className="px-2 py-0.5 bg-gray-900 text-white text-[10px] font-black rounded">{auction.load.weight.toLocaleString()} kg</span>
+                <span className="text-sm font-black text-emerald-600">{formatCurrency(auction.load.loadValue)}</span>
+              </div>
             </div>
-          )}
+          </div>
+          <div className="space-y-4 border-l border-gray-100 pl-6">
+            <div>
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 leading-none">Auction Type</p>
+              <span className="inline-block px-2 py-0.5 bg-indigo-50 text-indigo-600 ring-1 ring-indigo-100 text-[10px] font-black uppercase tracking-wider rounded-md mt-1">
+                {auction.auctionType}
+              </span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
   );
 
   const renderBidDetails = () => (
-    <div className="bg-white rounded-lg shadow p-6 mb-6">
-      <h6 className="text-lg font-medium text-gray-900 mb-4">Bid Details</h6>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            <DollarSign className="inline mr-1" />
-            Bid Amount *
-          </label>
-          <input
-            type="number"
-            step="0.01"
-            value={formData.bidAmount}
-            onChange={(e) => handleInputChange('bidAmount', e.target.value)}
-            placeholder="Enter bid amount"
-            required
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          />
-          {auction.currentHighestBid && (
-            <p className="text-sm text-gray-500 mt-1">
-              Current highest: {formatCurrency(auction.currentHighestBid)}
-            </p>
-          )}
+    <div className="space-y-8 mb-8">
+      <div className="flex items-center gap-4 mb-6">
+        <div className="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center shrink-0 shadow-sm ring-1 ring-indigo-100">
+          <DollarSign size={20} />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Currency</label>
-          <select
-            value={formData.bidCurrency}
-            onChange={(e) => handleInputChange('bidCurrency', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          >
-            <option value="USD">USD</option>
-            <option value="EUR">EUR</option>
-            <option value="GBP">GBP</option>
-          </select>
+          <h4 className="text-sm font-black text-gray-900 uppercase tracking-tight italic">Pricing & Logistics</h4>
+          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest italic">Set your bid amount and dates</p>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            <Calendar className="inline mr-1" />
-            Proposed Pickup Date
-          </label>
-          <input
-            type="date"
-            value={formData.proposedPickupDate}
-            onChange={(e) => handleInputChange('proposedPickupDate', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="space-y-4">
+          <div>
+            <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1.5 ml-1">Bid Amount *</label>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                <span className="text-gray-400 font-black text-sm">$</span>
+              </div>
+              <input
+                type="number"
+                step="0.01"
+                value={formData.bidAmount}
+                onChange={(e) => handleInputChange('bidAmount', e.target.value)}
+                placeholder="0.00"
+                required
+                className="w-full pl-8 pr-4 py-2.5 text-sm font-black bg-gray-50 border border-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900/5 focus:border-gray-900 transition-all"
+              />
+            </div>
+            {auction.currentHighestBid && (
+              <p className="text-[10px] font-bold text-emerald-600 uppercase mt-1 ml-1 tracking-tight">
+                Current highest: {formatCurrency(auction.currentHighestBid)}
+              </p>
+            )}
+          </div>
+          <div>
+            <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1.5 ml-1">Currency</label>
+            <select
+              value={formData.bidCurrency}
+              onChange={(e) => handleInputChange('bidCurrency', e.target.value)}
+              className="w-full px-4 py-2.5 text-xs font-black bg-gray-50 border border-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900/5 focus:border-gray-900 transition-all appearance-none cursor-pointer"
+            >
+              <option value="USD">USD - US Dollar</option>
+              <option value="EUR">EUR - Euro</option>
+              <option value="GBP">GBP - British Pound</option>
+            </select>
+          </div>
         </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            <Calendar className="inline mr-1" />
-            Proposed Delivery Date
-          </label>
-          <input
-            type="date"
-            value={formData.proposedDeliveryDate}
-            onChange={(e) => handleInputChange('proposedDeliveryDate', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          />
+
+        <div className="space-y-4">
+          <div>
+            <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1.5 ml-1">Proposed Pickup Date</label>
+            <div className="relative">
+              <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+              <input
+                type="date"
+                value={formData.proposedPickupDate}
+                onChange={(e) => handleInputChange('proposedPickupDate', e.target.value)}
+                className="w-full pl-12 pr-4 py-2.5 text-sm font-black bg-gray-50 border border-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900/5 focus:border-gray-900 transition-all"
+              />
+            </div>
+          </div>
+          <div>
+            <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1.5 ml-1">Proposed Delivery Date</label>
+            <div className="relative">
+              <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+              <input
+                type="date"
+                value={formData.proposedDeliveryDate}
+                onChange={(e) => handleInputChange('proposedDeliveryDate', e.target.value)}
+                className="w-full pl-12 pr-4 py-2.5 text-sm font-black bg-gray-50 border border-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900/5 focus:border-gray-900 transition-all"
+              />
+            </div>
+          </div>
         </div>
       </div>
 
-      <div className="mt-4">
-        <label className="block text-sm font-medium text-gray-700 mb-1">Additional Notes</label>
+      <div>
+        <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1.5 ml-1">Additional Notes & Terms</label>
         <textarea
           rows={3}
           value={formData.bidNotes}
           onChange={(e) => handleInputChange('bidNotes', e.target.value)}
-          placeholder="Any additional information about your bid..."
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          placeholder="Describe your service level, insurance details, or specific terms..."
+          className="w-full px-4 py-3 text-xs font-black bg-gray-50 border border-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900/5 focus:border-gray-900 transition-all resize-none"
         />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-        <label className="flex items-center">
-          <input
-            type="checkbox"
-            checked={formData.isAutoBid}
-            onChange={(e) => handleInputChange('isAutoBid', e.target.checked)}
-            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-          />
-          <span className="ml-2 text-sm text-gray-700">Auto-bid (increase automatically if outbid)</span>
+      <div className="flex flex-wrap gap-4 pt-4">
+        <label className="flex items-center gap-3 cursor-pointer group">
+          <div className="relative flex items-center justify-center">
+            <input
+              type="checkbox"
+              checked={formData.isAutoBid}
+              onChange={(e) => handleInputChange('isAutoBid', e.target.checked)}
+              className="peer appearance-none w-5 h-5 border-2 border-gray-200 rounded-lg checked:bg-gray-900 checked:border-gray-900 transition-all"
+            />
+            <div className="absolute text-white opacity-0 peer-checked:opacity-100 transition-opacity">
+              <ShieldCheck size={12} />
+            </div>
+          </div>
+          <span className="text-[11px] font-black text-gray-500 uppercase tracking-tight group-hover:text-gray-900 transition-colors">Auto-bid System</span>
         </label>
-        <label className="flex items-center">
-          <input
-            type="checkbox"
-            checked={formData.isCounterOffer}
-            onChange={(e) => handleInputChange('isCounterOffer', e.target.checked)}
-            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-          />
-          <span className="ml-2 text-sm text-gray-700">Counter-offer</span>
+        <label className="flex items-center gap-3 cursor-pointer group">
+          <div className="relative flex items-center justify-center">
+            <input
+              type="checkbox"
+              checked={formData.isCounterOffer}
+              onChange={(e) => handleInputChange('isCounterOffer', e.target.checked)}
+              className="peer appearance-none w-5 h-5 border-2 border-gray-200 rounded-lg checked:bg-indigo-600 checked:border-indigo-600 transition-all"
+            />
+            <div className="absolute text-white opacity-0 peer-checked:opacity-100 transition-opacity">
+              <TrendingUp size={12} />
+            </div>
+          </div>
+          <span className="text-[11px] font-black text-gray-500 uppercase tracking-tight group-hover:text-gray-900 transition-colors">Counter-offer Mode</span>
         </label>
       </div>
     </div>
   );
 
   const renderTruckSpecifications = () => (
-    <div className="bg-white rounded-lg shadow p-6 mb-6">
-      <h6 className="text-lg font-medium text-gray-900 mb-4">
-        <Truck className="inline mr-1" />
-        Truck Specifications
-      </h6>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Truck ID</label>
-          <input
-            type="text"
-            value={formData.bidDetails.truckSpecifications.truckId}
-            onChange={(e) => handleInputChange('bidDetails.truckSpecifications.truckId', e.target.value)}
-            placeholder="Enter truck ID"
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          />
+    <div className="space-y-8 mb-8 pt-8 border-t border-gray-100">
+      <div className="flex items-center gap-4 mb-6">
+        <div className="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center shrink-0 shadow-sm ring-1 ring-indigo-100">
+          <Truck size={20} />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Capacity Weight (kg)</label>
-          <input
-            type="number"
-            value={formData.bidDetails.truckSpecifications.capacityWeight}
-            onChange={(e) => handleInputChange('bidDetails.truckSpecifications.capacityWeight', e.target.value)}
-            placeholder="Enter capacity"
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          />
+          <h4 className="text-sm font-black text-gray-900 uppercase tracking-tight italic">Truck Specifications</h4>
+          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest italic">Provide vehicle and capacity details</p>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Truck Type</label>
-          <select
-            value={formData.bidDetails.truckSpecifications.truckType}
-            onChange={(e) => handleInputChange('bidDetails.truckSpecifications.truckType', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          >
-            <option value="">Select truck type</option>
-            <option value="FLATBED">Flatbed</option>
-            <option value="REEFER">Reefer</option>
-            <option value="DRY_VAN">Dry Van</option>
-            <option value="POWER_ONLY">Power Only</option>
-            <option value="STEP_DECK">Step Deck</option>
-          </select>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="space-y-4">
+          <div>
+            <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1.5 ml-1">Truck ID</label>
+            <input
+              type="text"
+              value={formData.bidDetails.truckSpecifications.truckId}
+              onChange={(e) => handleInputChange('bidDetails.truckSpecifications.truckId', e.target.value)}
+              placeholder="e.g. TRK-4502"
+              className="w-full px-4 py-2.5 text-sm font-black bg-gray-50 border border-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900/5 focus:border-gray-900 transition-all"
+            />
+          </div>
+          <div>
+            <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1.5 ml-1">Capacity Weight (kg)</label>
+            <input
+              type="number"
+              value={formData.bidDetails.truckSpecifications.capacityWeight}
+              onChange={(e) => handleInputChange('bidDetails.truckSpecifications.capacityWeight', e.target.value)}
+              placeholder="0"
+              className="w-full px-4 py-2.5 text-sm font-black bg-gray-50 border border-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900/5 focus:border-gray-900 transition-all"
+            />
+          </div>
         </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Capacity Volume (m³)</label>
-          <input
-            type="number"
-            value={formData.bidDetails.truckSpecifications.capacityVolume}
-            onChange={(e) => handleInputChange('bidDetails.truckSpecifications.capacityVolume', e.target.value)}
-            placeholder="Enter volume capacity"
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          />
+
+        <div className="space-y-4">
+          <div>
+            <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1.5 ml-1">Truck Type</label>
+            <select
+              value={formData.bidDetails.truckSpecifications.truckType}
+              onChange={(e) => handleInputChange('bidDetails.truckSpecifications.truckType', e.target.value)}
+              className="w-full px-4 py-2.5 text-xs font-black bg-gray-50 border border-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900/5 focus:border-gray-900 transition-all appearance-none cursor-pointer"
+            >
+              <option value="">Select truck type</option>
+              <option value="FLATBED">Flatbed</option>
+              <option value="REEFER">Reefer</option>
+              <option value="DRY_VAN">Dry Van</option>
+              <option value="POWER_ONLY">Power Only</option>
+              <option value="STEP_DECK">Step Deck</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1.5 ml-1">Capacity Volume (m³)</label>
+            <input
+              type="number"
+              value={formData.bidDetails.truckSpecifications.capacityVolume}
+              onChange={(e) => handleInputChange('bidDetails.truckSpecifications.capacityVolume', e.target.value)}
+              placeholder="0"
+              className="w-full px-4 py-2.5 text-sm font-black bg-gray-50 border border-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900/5 focus:border-gray-900 transition-all"
+            />
+          </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-        <label className="flex items-center">
-          <input
-            type="checkbox"
-            checked={formData.bidDetails.truckSpecifications.hasRefrigeration}
-            onChange={(e) => handleInputChange('bidDetails.truckSpecifications.hasRefrigeration', e.target.checked)}
-            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-          />
-          <span className="ml-2 text-sm text-gray-700">Has Refrigeration</span>
+      <div className="flex flex-wrap gap-4 pt-4">
+        <label className="flex items-center gap-3 cursor-pointer group">
+          <div className="relative flex items-center justify-center">
+            <input
+              type="checkbox"
+              checked={formData.bidDetails.truckSpecifications.hasRefrigeration}
+              onChange={(e) => handleInputChange('bidDetails.truckSpecifications.hasRefrigeration', e.target.checked)}
+              className="peer appearance-none w-5 h-5 border-2 border-gray-200 rounded-lg checked:bg-indigo-600 checked:border-indigo-600 transition-all"
+            />
+            <Info size={10} className="absolute text-white opacity-0 peer-checked:opacity-100 transition-opacity" />
+          </div>
+          <span className="text-[11px] font-black text-gray-500 uppercase tracking-tight group-hover:text-gray-900 transition-colors">Refrigeration</span>
         </label>
-        <label className="flex items-center">
-          <input
-            type="checkbox"
-            checked={formData.bidDetails.truckSpecifications.hasHazmatPermit}
-            onChange={(e) => handleInputChange('bidDetails.truckSpecifications.hasHazmatPermit', e.target.checked)}
-            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-          />
-          <span className="ml-2 text-sm text-gray-700">Has Hazmat Permit</span>
+        <label className="flex items-center gap-3 cursor-pointer group">
+          <div className="relative flex items-center justify-center">
+            <input
+              type="checkbox"
+              checked={formData.bidDetails.truckSpecifications.hasHazmatPermit}
+              onChange={(e) => handleInputChange('bidDetails.truckSpecifications.hasHazmatPermit', e.target.checked)}
+              className="peer appearance-none w-5 h-5 border-2 border-gray-200 rounded-lg checked:bg-amber-600 checked:border-amber-600 transition-all"
+            />
+            <AlertCircle size={10} className="absolute text-white opacity-0 peer-checked:opacity-100 transition-opacity" />
+          </div>
+          <span className="text-[11px] font-black text-gray-500 uppercase tracking-tight group-hover:text-gray-900 transition-colors">Has Hazmat Permit</span>
         </label>
       </div>
     </div>
   );
 
   const renderSuccessProbability = () => (
-    <div className="bg-white rounded-lg shadow p-6 mb-6">
-      <h6 className="text-lg font-medium text-gray-900 mb-4">
-        <TrendingUp className="inline mr-1" />
-        Bid Analysis
-      </h6>
-      <div className="text-center">
-        <h4 className={`text-2xl font-bold mb-2 ${successProbability > 70 ? 'text-green-600' :
-          successProbability > 40 ? 'text-yellow-600' : 'text-red-600'
-          }`}>
-          {successProbability}% Success Probability
-        </h4>
-        <div className="w-full bg-gray-200 rounded-full h-2 mb-3">
-          <div
-            className={`h-2 rounded-full ${successProbability > 70 ? 'bg-green-500' :
-              successProbability > 40 ? 'bg-yellow-500' : 'bg-red-500'
-              }`}
-            style={{ width: `${successProbability}%` }}
-          ></div>
+    <div className="bg-white rounded-2xl border border-gray-200 p-8 mb-8 text-center relative overflow-hidden group">
+      <div className="absolute inset-0 bg-gradient-to-br from-gray-50/50 to-transparent transition-opacity"></div>
+      <div className="relative">
+        <h6 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-6">Market Analysis</h6>
+
+        <div className="flex flex-col items-center">
+          <div className="relative w-32 h-32 mb-6">
+            <svg className="w-full h-full transform -rotate-90">
+              <circle
+                cx="64"
+                cy="64"
+                r="58"
+                stroke="currentColor"
+                strokeWidth="12"
+                fill="transparent"
+                className="text-gray-100"
+              />
+              <circle
+                cx="64"
+                cy="64"
+                r="58"
+                stroke="currentColor"
+                strokeWidth="12"
+                fill="transparent"
+                strokeDasharray={364.4}
+                strokeDashoffset={364.4 * (1 - successProbability / 100)}
+                className={`transition-all duration-1000 ${successProbability > 70 ? 'text-emerald-500' :
+                    successProbability > 40 ? 'text-amber-500' : 'text-red-500'
+                  }`}
+              />
+            </svg>
+            <div className="absolute inset-0 flex flex-col items-center justify-center">
+              <span className="text-3xl font-black text-gray-900 leading-none">{successProbability}%</span>
+              <span className="text-[8px] font-black text-gray-400 uppercase tracking-tighter mt-1 italic">Score</span>
+            </div>
+          </div>
+
+          <h4 className="text-sm font-black text-gray-900 uppercase tracking-tight italic mb-2">
+            Success Probability: <span className={
+              successProbability > 70 ? 'text-emerald-600' :
+                successProbability > 40 ? 'text-amber-600' : 'text-red-600'
+            }>{successProbability > 70 ? 'Excellent' : successProbability > 40 ? 'Moderate' : 'Low'}</span>
+          </h4>
+          <p className="text-[10px] font-bold text-gray-500 leading-relaxed max-w-xs">
+            Based on current bid intensity, load value, and historical success rates for similar routes.
+          </p>
         </div>
-        <p className="text-sm text-gray-500">
-          Based on bid amount, market conditions, and historical data
-        </p>
       </div>
     </div>
   );
@@ -401,34 +465,41 @@ const BidForm: React.FC<BidFormProps> = ({ auction, onSubmit, onCancel }) => {
         {renderSuccessProbability()}
 
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-            <div className="flex">
-              <div className="flex-shrink-0">
-                <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                </svg>
-              </div>
-              <div className="ml-3">
-                <h3 className="text-sm font-medium text-red-800">{error}</h3>
-              </div>
+          <div className="bg-red-50 border border-red-100 p-4 rounded-xl mb-8 flex items-center gap-3">
+            <div className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center shrink-0">
+              <AlertCircle className="text-red-600" size={18} />
             </div>
+            <div className="flex-1 min-w-0">
+              <h3 className="text-xs font-black text-red-900 uppercase tracking-tight italic">{error}</h3>
+            </div>
+            <button
+              onClick={() => setError(null)}
+              className="p-1 text-red-400 hover:text-red-600 rounded-lg transition-colors"
+            >
+              <X size={16} />
+            </button>
           </div>
         )}
 
-        <div className="flex justify-end space-x-3">
+        <div className="flex items-center justify-end gap-3 pt-6 border-t border-gray-100 mt-8">
           <button
             type="button"
             onClick={onCancel}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            className="px-6 py-2.5 text-[10px] font-black text-gray-500 uppercase tracking-widest bg-gray-50 border border-gray-100 rounded-xl hover:bg-gray-100 transition-all"
           >
-            Cancel
+            Discard
           </button>
           <button
             type="submit"
             disabled={loading || !formData.bidAmount}
-            className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center gap-2 px-8 py-2.5 bg-gray-900 text-white rounded-xl hover:bg-black transition-all font-black text-[10px] uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-gray-200 group"
           >
-            {loading ? 'Submitting...' : 'Submit Bid'}
+            {loading ? 'Processing...' : (
+              <>
+                Confirm Bid
+                <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
+              </>
+            )}
           </button>
         </div>
       </form>

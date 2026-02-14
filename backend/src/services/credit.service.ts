@@ -30,6 +30,7 @@ export interface ConsumeCreditsDto {
 
 export interface CreditTransactionFilters {
   type?: CreditTransactionType;
+  days?: number;
   startDate?: Date;
   endDate?: Date;
   limit?: number;
@@ -437,11 +438,20 @@ export class CreditService {
   ): Promise<{ transactions: CreditTransaction[]; total: number }> {
     const query = this.creditTransactionRepository
       .createQueryBuilder('transaction')
+      .leftJoinAndSelect('transaction.creditAccount', 'creditAccount')
+      .leftJoinAndSelect('creditAccount.tenant', 'tenant')
       .where('transaction.tenantId = :tenantId', { tenantId })
       .orderBy('transaction.createdAt', 'DESC');
 
     if (filters?.type) {
       query.andWhere('transaction.type = :type', { type: filters.type });
+    }
+
+    // Handle days filter (e.g., last 30 days)
+    if (filters?.days) {
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - filters.days);
+      query.andWhere('transaction.createdAt >= :startDate', { startDate });
     }
 
     if (filters?.startDate) {
@@ -546,16 +556,25 @@ export class CreditService {
     type?: CreditTransactionType;
     startDate?: Date;
     endDate?: Date;
+    days?: number;
     limit?: number;
     offset?: number;
   }): Promise<{ transactions: CreditTransaction[]; total: number }> {
     const query = this.creditTransactionRepository
       .createQueryBuilder('transaction')
       .leftJoinAndSelect('transaction.creditAccount', 'creditAccount')
+      .leftJoinAndSelect('creditAccount.tenant', 'tenant')
       .orderBy('transaction.createdAt', 'DESC');
 
     if (filters?.type) {
       query.andWhere('transaction.type = :type', { type: filters.type });
+    }
+
+    // Handle days filter (e.g., last 30 days)
+    if (filters?.days) {
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - filters.days);
+      query.andWhere('transaction.createdAt >= :startDate', { startDate });
     }
 
     if (filters?.startDate) {
