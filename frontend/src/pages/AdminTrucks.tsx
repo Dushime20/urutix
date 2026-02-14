@@ -12,7 +12,7 @@ import {
   FaEye, FaCheck, FaTimes, FaBan, FaMapMarkerAlt,
   FaSort, FaClock, FaRoad, FaUser, FaBuilding,
   FaShieldAlt, FaExclamationTriangle, FaPlay, FaPause,
-  FaTrash, FaWrench, FaLayerGroup, FaChevronDown, FaChevronRight
+  FaTrash, FaWrench, FaLayerGroup
 } from 'react-icons/fa';
 
 interface Truck extends FleetItem {
@@ -306,16 +306,6 @@ const AdminTrucks: React.FC = () => {
 
   const handleStatusUpdate = (truckId: string, newStatus: string) => {
     updateTruckStatus({ truckId, status: newStatus });
-  };
-
-  const toggleOwnerExpansion = (ownerId: string) => {
-    const newExpanded = new Set(expandedOwners);
-    if (newExpanded.has(ownerId)) {
-      newExpanded.delete(ownerId);
-    } else {
-      newExpanded.add(ownerId);
-    }
-    setExpandedOwners(newExpanded);
   };
 
   // Filter and sort trucks
@@ -794,7 +784,7 @@ const AdminTrucks: React.FC = () => {
                         {truck.coordinates && (
                           <button
                             onClick={() => {
-                              const { latitude, longitude } = truck.coordinates;
+                              const { latitude, longitude } = truck.coordinates!;
                               window.open(`https://www.google.com/maps?q=${latitude},${longitude}`, '_blank');
                             }}
                             className="p-2 text-green-600 hover:bg-green-100 rounded-lg transition-all hover:scale-110"
@@ -1304,7 +1294,7 @@ const AdminTrucks: React.FC = () => {
                         {selectedTruck.coordinates && (
                           <button
                             onClick={() => {
-                              const { latitude, longitude } = selectedTruck.coordinates;
+                              const { latitude, longitude } = selectedTruck.coordinates!;
                               window.open(`https://www.google.com/maps?q=${latitude},${longitude}`, '_blank');
                             }}
                             className="text-blue-600 hover:text-blue-700 text-xs underline"
