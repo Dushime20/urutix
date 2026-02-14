@@ -44,7 +44,7 @@ import { InsuranceVerification } from '../entities/insurance-verification.entity
 import { BrokerDispute } from '../entities/broker-dispute.entity';
 import { EscrowAccount } from '../entities/escrow-account.entity';
 import { LoadDocument } from '../entities/load-document.entity';
-import { LoadMatch } from '../entities/load-match.entity';
+// import { LoadMatch } from '../entities/load-match.entity'; // Entity doesn't exist yet
 import {
   BrokerMatchRecommendation,
   BrokerMarketIntelligence,
@@ -52,7 +52,7 @@ import {
   BrokerMultiStopLoad,
   BrokerTransporterPerformance,
 } from '../entities/broker-intelligence.entity';
-import { FuelLog } from '../entities/fuel-log.entity';
+// import { FuelLog } from '../entities/fuel-log.entity'; // Entity doesn't exist yet
 
 
 // Admin entities
@@ -190,9 +190,9 @@ export const databaseConfig: TypeOrmModuleOptions = {
     FeatureCreditCost,
     CreditPricingRule,
     // Matching entities
-    LoadMatch,
+    // LoadMatch, // Entity doesn't exist yet
     // Fuel entities
-    FuelLog,
+    // FuelLog, // Entity doesn't exist yet
   ],
   synchronize: false, // Disabled to prevent schema conflicts - use migrations instead
   autoLoadEntities: false,
@@ -297,7 +297,7 @@ export const testDatabaseConfig: TypeOrmModuleOptions = {
     FeatureCreditCost,
     CreditPricingRule,
     // Fuel entities
-    FuelLog,
+    // FuelLog, // Entity doesn't exist yet
   ],
   synchronize: true,
   autoLoadEntities: false,

@@ -93,7 +93,7 @@ export class BrokersService {
 
     const defaultCommissionRate =
       createBrokerDto.defaultCommissionRate ??
-      (tenant?.brokerSettings as any)?.defaultCommissionRate ??
+      ((tenant as any)?.brokerSettings as any)?.defaultCommissionRate ??
       5.0; // Default 5%
 
     // Create broker user
