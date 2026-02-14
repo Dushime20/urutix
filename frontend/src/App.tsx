@@ -117,10 +117,10 @@ const LenderSupportPage = lazy(() => import('./pages/LenderSupportPage'));
 const LenderTeamManagementPage = lazy(() => import('./pages/LenderTeamManagementPage'));
 
 // Broker Pages
-const SimpleBrokerDashboard = lazy(() => import('./pages/broker/SimpleBrokerDashboard'));
+const SimpleBrokerDashboard = lazy(() => import('./pages/broker/BrokerDashboard'));
 
 const BrokerProfile = lazy(() => import('./pages/broker/BrokerProfile'));
-const BrokerBidding = lazy(() => import('./pages/broker/BrokerBidding'));
+const BrokerBidding = lazy(() => import('./pages/broker/BrokerDashboard')); // Use dashboard for now
 const CargoDiscovery = lazy(() => import('./pages/broker/CargoDiscovery'));
 const DealFacilitation = lazy(() => import('./pages/broker/DealFacilitation'));
 const CommissionsPage = lazy(() => import('./pages/broker/CommissionsPage'));
