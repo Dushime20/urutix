@@ -201,7 +201,7 @@ export class AdminService {
     const where = tenantId ? ({ tenantId } as any) : ({} as any);
     const trucks = await this.truckRepo.find({
       where,
-      relations: ['currentDriver', 'owner'],
+      relations: ['owner'], // Removed 'currentDriver' as it doesn't exist
       take: 500,
       // Removed createdAt ordering as it may not exist on trucks table
     });
