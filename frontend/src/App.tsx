@@ -25,7 +25,6 @@ import AdminLayout from './components/Layout/AdminLayout';
 import TenantAdminLayout from './components/Layout/TenantAdminLayout';
 import LenderLayout from './components/Layout/LenderLayout';
 import BrokerLayout from './components/Layout/BrokerLayout';
-import BrokerRouteTest from './components/BrokerRouteTest';
 
 import Auth from './pages/Auth';
 import Home from './pages/Home';
@@ -408,7 +407,6 @@ function App() {
                 {/* Broker Routes */}
                 <Route path="/dashboard/broker" element={<BrokerLayout />}>
                   <Route index element={<SimpleBrokerDashboard />} />
-                  <Route path="test" element={<BrokerRouteTest />} />
                   <Route path="loads" element={<BrokerLoadsPage />} />
                   <Route path="loads/:loadId" element={<BrokerLoadDetail />} />
                   <Route path="loads/:loadId/tracking" element={<LoadTracking />} />
