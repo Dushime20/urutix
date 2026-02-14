@@ -93,8 +93,8 @@ const CargoInspectionPage = lazy(() => import('./pages/cargo-owner/CargoInspecti
 const ReceiptViewer = lazy(() => import('./components/Lender/ReceiptViewer'));
 
 const UnifiedNotificationManagement = lazy(() => import('./pages/dashboard/notifications'));
-const SmartBookingRequests = lazy(() => import('./pages/SmartBookingRequests'));
-const FuelManagement = lazy(() => import('./pages/FuelManagement'));
+const SmartBookingRequests = lazy(() => import('./pages/SmartBookingsPage'));
+const FuelManagement = lazy(() => import('./pages/FuelPage'));
 const UnifiedReputationManagement = lazy(() => import('./pages/dashboard/reputation'));
 const UnifiedAccountManagement = lazy(() => import('./pages/dashboard/account'));
 const UnifiedAnalyticsManagement = lazy(() => import('./pages/dashboard/analytics'));
