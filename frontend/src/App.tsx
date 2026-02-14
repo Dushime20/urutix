@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from './contexts/AuthContext';
 import { NotificationProvider } from './contexts/NotificationContext';
+import { PermissionProvider } from './contexts/PermissionContext';
 import { I18nProvider } from './contexts/i18n-context';
 import { Toaster } from 'react-hot-toast';
 import { lazy, Suspense } from 'react';
@@ -167,16 +168,17 @@ function App() {
         googleTranslateApiKey={import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY}
       >
         <AuthProvider>
-          <NotificationProvider>
-          <Router>
-            <Suspense fallback={<PageLoadingFallback />}>
-              <Routes>
-                <Route path="/" element={<Home />} />
-                <Route path="/auth" element={<Auth />} />
-                <Route path="/driver/setup-password" element={<DriverPasswordSetup />} />
-                <Route path="/tenant/setup-password" element={<TenantPasswordSetup />} />
-                <Route path="/lender/setup-password" element={<LenderPasswordSetup />} />
-                <Route path="/receiver/setup-password" element={<ReceiverPasswordSetup />} />
+          <PermissionProvider>
+            <NotificationProvider>
+              <Router>
+                <Suspense fallback={<PageLoadingFallback />}>
+                  <Routes>
+                    <Route path="/" element={<Home />} />
+                    <Route path="/auth" element={<Auth />} />
+                    <Route path="/driver/setup-password" element={<DriverPasswordSetup />} />
+                    <Route path="/tenant/setup-password" element={<TenantPasswordSetup />} />
+                    <Route path="/lender/setup-password" element={<LenderPasswordSetup />} />
+                    <Route path="/receiver/setup-password" element={<ReceiverPasswordSetup />} />
 
                 {/* Cargo Owner Routes */}
                 <Route path="/dashboard" element={<CargoOwnerLayout />}>
@@ -437,7 +439,8 @@ function App() {
               </Routes>
             </Suspense>
           </Router>
-          </NotificationProvider>
+            </NotificationProvider>
+          </PermissionProvider>
         </AuthProvider>
         <Toaster
           position="bottom-right"
