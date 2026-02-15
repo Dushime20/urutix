@@ -18,6 +18,7 @@ export interface CreateSubscriptionDto {
   paymentMethodId?: string;
   startTrial?: boolean;
   trialDays?: number;
+  userId?: string;
 }
 
 export interface UpgradeSubscriptionDto {
@@ -41,7 +42,7 @@ export class SubscriptionService {
     private tenantRepository: Repository<Tenant>,
     private creditService: CreditService,
     private pricingService: PricingService,
-  ) {}
+  ) { }
 
   /**
    * Get all available subscription plans
@@ -69,21 +70,35 @@ export class SubscriptionService {
   }
 
   /**
-   * Get tenant's current active subscription
+   * Get tenant's or user's current active subscription
    */
-  async getCurrentSubscription(tenantId: string): Promise<TenantSubscription | null> {
+  async getCurrentSubscription(tenantId: string, userId?: string): Promise<TenantSubscription | null> {
+    const where: any = { tenantId, status: SubscriptionStatus.ACTIVE };
+    if (userId) {
+      where.userId = userId;
+    } else {
+      where.userId = null;
+    }
+
     return this.tenantSubscriptionRepository.findOne({
-      where: { tenantId, status: SubscriptionStatus.ACTIVE },
+      where,
       relations: ['plan'],
     });
   }
 
   /**
-   * Get tenant's subscription history
+   * Get tenant's or user's subscription history
    */
-  async getSubscriptionHistory(tenantId: string): Promise<TenantSubscription[]> {
+  async getSubscriptionHistory(tenantId: string, userId?: string): Promise<TenantSubscription[]> {
+    const where: any = { tenantId };
+    if (userId) {
+      where.userId = userId;
+    } else {
+      where.userId = null;
+    }
+
     return this.tenantSubscriptionRepository.find({
-      where: { tenantId },
+      where,
       relations: ['plan'],
       order: { createdAt: 'DESC' },
     });
@@ -113,17 +128,15 @@ export class SubscriptionService {
 
     const subscriptions = await queryBuilder.getMany();
 
-    // Enrich with tenant name and credit balance
     const enrichedSubscriptions = await Promise.all(
       subscriptions.map(async (sub) => {
-        // Get credit account for this tenant
-        const creditAccount = await this.creditService.getOrCreateCreditAccount(sub.tenantId);
-        
+        const creditAccount = await this.creditService.getOrCreateCreditAccount(sub.tenantId, sub.userId);
+
         return {
           ...sub,
           tenantName: sub.tenant?.name || 'Unknown',
           creditBalance: creditAccount?.currentBalance || 0,
-          totalRevenue: 0, // TODO: Calculate from subscription_payments table
+          totalRevenue: 0,
         };
       })
     );
@@ -132,19 +145,16 @@ export class SubscriptionService {
   }
 
   /**
-   * Create a new subscription for a tenant
+   * Create a new subscription for a tenant or user
    */
   async createSubscription(dto: CreateSubscriptionDto): Promise<TenantSubscription> {
-    // Check if tenant already has an active subscription
-    const existingSubscription = await this.getCurrentSubscription(dto.tenantId);
+    const existingSubscription = await this.getCurrentSubscription(dto.tenantId, dto.userId);
     if (existingSubscription) {
-      throw new BadRequestException('Tenant already has an active subscription');
+      throw new BadRequestException(`${dto.userId ? 'User' : 'Tenant'} already has an active subscription`);
     }
 
-    // Get the plan
     const plan = await this.getPlan(dto.planId);
 
-    // Calculate period dates
     const now = new Date();
     let currentPeriodStart = now;
     let currentPeriodEnd: Date;
@@ -152,27 +162,24 @@ export class SubscriptionService {
     let trialEnd: Date | undefined;
     let status = SubscriptionStatus.ACTIVE;
 
-    // Handle trial period
     if (dto.startTrial) {
-      const trialDays = dto.trialDays || 14; // Default 14 days
+      const trialDays = dto.trialDays || 14;
       trialStart = now;
       trialEnd = new Date(now.getTime() + trialDays * 24 * 60 * 60 * 1000);
       currentPeriodEnd = trialEnd;
       status = SubscriptionStatus.TRIAL;
     } else {
-      // Calculate period end based on billing cycle
+      currentPeriodEnd = new Date(now);
       if (dto.billingCycle === BillingCycle.MONTHLY) {
-        currentPeriodEnd = new Date(now);
         currentPeriodEnd.setMonth(currentPeriodEnd.getMonth() + 1);
       } else {
-        currentPeriodEnd = new Date(now);
         currentPeriodEnd.setFullYear(currentPeriodEnd.getFullYear() + 1);
       }
     }
 
-    // Create subscription
     const subscription = this.tenantSubscriptionRepository.create({
       tenantId: dto.tenantId,
+      userId: dto.userId || null,
       planId: plan.id,
       status,
       billingCycle: dto.billingCycle,
@@ -187,30 +194,28 @@ export class SubscriptionService {
 
     const savedSubscription = await this.tenantSubscriptionRepository.save(subscription);
 
-    // Grant initial credits (even for trial)
     await this.creditService.grantSubscriptionCredits(
       dto.tenantId,
       plan.includedCredits,
       savedSubscription.id,
       currentPeriodEnd,
+      dto.userId,
     );
 
-    // Update tenant status
-    await this.tenantRepository.update(dto.tenantId, {
-      isActive: true,
-      activatedAt: now,
-    });
+    if (!dto.userId) {
+      await this.tenantRepository.update(dto.tenantId, {
+        isActive: true,
+        activatedAt: now,
+      });
+    }
 
     return savedSubscription;
   }
 
   /**
-   * Upgrade subscription to a higher tier
+   * Upgrade subscription
    */
-  async upgradeSubscription(
-    subscriptionId: string,
-    dto: UpgradeSubscriptionDto,
-  ): Promise<TenantSubscription> {
+  async upgradeSubscription(subscriptionId: string, dto: UpgradeSubscriptionDto): Promise<TenantSubscription> {
     const subscription = await this.tenantSubscriptionRepository.findOne({
       where: { id: subscriptionId },
       relations: ['plan'],
@@ -227,53 +232,43 @@ export class SubscriptionService {
     const newPlan = await this.getPlan(dto.newPlanId);
     const oldPlan = subscription.plan;
 
-    // Validate it's an upgrade (higher price)
     if (Number(newPlan.priceMonthly) <= Number(oldPlan.priceMonthly)) {
       throw new BadRequestException('New plan must be a higher tier');
     }
 
-    // Calculate prorated credits
-    const daysRemaining = subscription.daysUntilRenewal;
-    const totalDays =
-      subscription.billingCycle === BillingCycle.MONTHLY ? 30 : 365;
+    // Pro-rata credit calculation (simplified)
+    const now = new Date();
+    const totalPeriodDays = subscription.billingCycle === BillingCycle.MONTHLY ? 30 : 365;
+    const daysRemaining = Math.ceil((subscription.currentPeriodEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
     const creditDifference = newPlan.includedCredits - oldPlan.includedCredits;
-    const proratedCredits = Math.floor((creditDifference * daysRemaining) / totalDays);
+    const proratedCredits = Math.max(0, Math.floor((creditDifference * daysRemaining) / totalPeriodDays));
 
-    // Update subscription
     subscription.planId = newPlan.id;
     subscription.metadata = {
       ...subscription.metadata,
       upgradedFrom: oldPlan.id,
-      upgradedAt: new Date().toISOString(),
+      upgradedAt: now.toISOString(),
     };
 
     const updatedSubscription = await this.tenantSubscriptionRepository.save(subscription);
 
-    // Grant prorated credits immediately
     if (proratedCredits > 0) {
       await this.creditService.grantBonusCredits(
         subscription.tenantId,
         proratedCredits,
         `Prorated credits for upgrade to ${newPlan.name}`,
         subscription.currentPeriodEnd,
+        subscription.userId,
       );
     }
-
-    // Update tenant tier (removed subscriptionTier as it doesn't exist in entity)
-    // await this.tenantRepository.update(subscription.tenantId, {
-    //   subscriptionTier: newPlan.slug,
-    // });
 
     return updatedSubscription;
   }
 
   /**
-   * Downgrade subscription to a lower tier
+   * Downgrade subscription
    */
-  async downgradeSubscription(
-    subscriptionId: string,
-    dto: UpgradeSubscriptionDto,
-  ): Promise<TenantSubscription> {
+  async downgradeSubscription(subscriptionId: string, dto: UpgradeSubscriptionDto): Promise<TenantSubscription> {
     const subscription = await this.tenantSubscriptionRepository.findOne({
       where: { id: subscriptionId },
       relations: ['plan'],
@@ -286,26 +281,18 @@ export class SubscriptionService {
     const newPlan = await this.getPlan(dto.newPlanId);
     const oldPlan = subscription.plan;
 
-    // Validate it's a downgrade (lower price)
     if (Number(newPlan.priceMonthly) >= Number(oldPlan.priceMonthly)) {
       throw new BadRequestException('New plan must be a lower tier');
     }
 
     if (dto.immediate) {
-      // Immediate downgrade
       subscription.planId = newPlan.id;
       subscription.metadata = {
         ...subscription.metadata,
         downgradedFrom: oldPlan.id,
         downgradedAt: new Date().toISOString(),
       };
-
-      // Update tenant tier (removed subscriptionTier as it doesn't exist in entity)
-      // await this.tenantRepository.update(subscription.tenantId, {
-      //   subscriptionTier: newPlan.slug,
-      // });
     } else {
-      // Schedule downgrade for end of period
       subscription.metadata = {
         ...subscription.metadata,
         scheduledDowngrade: {
@@ -321,10 +308,7 @@ export class SubscriptionService {
   /**
    * Cancel subscription
    */
-  async cancelSubscription(
-    subscriptionId: string,
-    dto: CancelSubscriptionDto,
-  ): Promise<TenantSubscription> {
+  async cancelSubscription(subscriptionId: string, dto: CancelSubscriptionDto): Promise<TenantSubscription> {
     const subscription = await this.tenantSubscriptionRepository.findOne({
       where: { id: subscriptionId },
     });
@@ -336,37 +320,29 @@ export class SubscriptionService {
     const now = new Date();
 
     if (dto.immediate) {
-      // Immediate cancellation
       subscription.status = SubscriptionStatus.CANCELLED;
       subscription.cancelledAt = now;
       subscription.cancellationReason = dto.reason;
       subscription.autoRenew = false;
 
-      // Suspend tenant
-      await this.tenantRepository.update(subscription.tenantId, {
-        isActive: false,
-        suspendedAt: now,
-        suspendedReason: 'Subscription cancelled',
-      });
+      if (!subscription.userId) {
+        await this.tenantRepository.update(subscription.tenantId, {
+          isActive: false,
+          suspendedAt: now,
+          suspendedReason: 'Subscription cancelled',
+        });
+      }
     } else {
-      // Cancel at end of period
       subscription.autoRenew = false;
       subscription.cancelledAt = now;
       subscription.cancellationReason = dto.reason;
-      subscription.metadata = {
-        ...subscription.metadata,
-        scheduledCancellation: {
-          effectiveDate: subscription.currentPeriodEnd.toISOString(),
-          reason: dto.reason,
-        },
-      };
     }
 
     return this.tenantSubscriptionRepository.save(subscription);
   }
 
   /**
-   * Reactivate a cancelled subscription
+   * Reactivate subscription
    */
   async reactivateSubscription(subscriptionId: string): Promise<TenantSubscription> {
     const subscription = await this.tenantSubscriptionRepository.findOne({
@@ -381,38 +357,24 @@ export class SubscriptionService {
       throw new BadRequestException('Can only reactivate cancelled subscriptions');
     }
 
-    // Check if within 30 days of cancellation
-    const daysSinceCancellation = subscription.cancelledAt
-      ? Math.floor(
-          (new Date().getTime() - subscription.cancelledAt.getTime()) /
-            (1000 * 60 * 60 * 24),
-        )
-      : 999;
-
-    if (daysSinceCancellation > 30) {
-      throw new BadRequestException(
-        'Cannot reactivate subscription after 30 days. Please create a new subscription.',
-      );
-    }
-
     subscription.status = SubscriptionStatus.ACTIVE;
     subscription.autoRenew = true;
     subscription.cancelledAt = null;
     subscription.cancellationReason = null;
-    delete subscription.metadata.scheduledCancellation;
 
-    // Reactivate tenant
-    await this.tenantRepository.update(subscription.tenantId, {
-      isActive: true,
-      suspendedAt: null,
-      suspendedReason: null,
-    });
+    if (!subscription.userId) {
+      await this.tenantRepository.update(subscription.tenantId, {
+        isActive: true,
+        suspendedAt: null,
+        suspendedReason: null,
+      });
+    }
 
     return this.tenantSubscriptionRepository.save(subscription);
   }
 
   /**
-   * Renew subscription (called by scheduled job)
+   * Renew subscription
    */
   async renewSubscription(subscriptionId: string, paymentId?: string): Promise<TenantSubscription> {
     const subscription = await this.tenantSubscriptionRepository.findOne({
@@ -420,18 +382,13 @@ export class SubscriptionService {
       relations: ['plan'],
     });
 
-    if (!subscription) {
-      throw new NotFoundException('Subscription not found');
-    }
+    if (!subscription) return null;
 
-    // Check for scheduled downgrade
     if (subscription.metadata?.scheduledDowngrade) {
-      const newPlanId = subscription.metadata.scheduledDowngrade.planId;
-      subscription.planId = newPlanId;
+      subscription.planId = subscription.metadata.scheduledDowngrade.planId;
       delete subscription.metadata.scheduledDowngrade;
     }
 
-    // Calculate new period
     const now = new Date();
     subscription.currentPeriodStart = now;
 
@@ -448,54 +405,47 @@ export class SubscriptionService {
 
     const updatedSubscription = await this.tenantSubscriptionRepository.save(subscription);
 
-    // Grant new period credits
     await this.creditService.grantSubscriptionCredits(
       subscription.tenantId,
       subscription.plan.includedCredits,
       subscription.id,
       subscription.currentPeriodEnd,
+      subscription.userId,
     );
 
     return updatedSubscription;
   }
 
   /**
-   * Handle trial expiry (called by scheduled job)
+   * Trial expiry
    */
   async handleTrialExpiry(subscriptionId: string): Promise<void> {
     const subscription = await this.tenantSubscriptionRepository.findOne({
       where: { id: subscriptionId },
     });
 
-    if (!subscription || subscription.status !== SubscriptionStatus.TRIAL) {
-      return;
-    }
+    if (!subscription || subscription.status !== SubscriptionStatus.TRIAL) return;
 
-    if (!subscription.trialEnd || new Date() < subscription.trialEnd) {
-      return; // Trial not expired yet
-    }
+    const now = new Date();
+    if (!subscription.trialEnd || now < subscription.trialEnd) return;
 
     if (subscription.paymentMethodId) {
-      // Convert to paid subscription
       subscription.status = SubscriptionStatus.ACTIVE;
       await this.tenantSubscriptionRepository.save(subscription);
-      // Payment processing would happen here
     } else {
-      // No payment method, suspend
       subscription.status = SubscriptionStatus.SUSPENDED;
       await this.tenantSubscriptionRepository.save(subscription);
 
-      await this.tenantRepository.update(subscription.tenantId, {
-        isActive: false,
-        suspendedAt: new Date(),
-        suspendedReason: 'Trial expired without payment method',
-      });
+      if (!subscription.userId) {
+        await this.tenantRepository.update(subscription.tenantId, {
+          isActive: false,
+          suspendedAt: now,
+          suspendedReason: 'Trial expired without payment method',
+        });
+      }
     }
   }
 
-  /**
-   * Get subscriptions expiring soon (for scheduled job)
-   */
   async getExpiringSubscriptions(daysAhead: number = 7): Promise<TenantSubscription[]> {
     const futureDate = new Date();
     futureDate.setDate(futureDate.getDate() + daysAhead);
@@ -509,9 +459,6 @@ export class SubscriptionService {
       .getMany();
   }
 
-  /**
-   * Get trial subscriptions expiring soon
-   */
   async getExpiringTrials(daysAhead: number = 3): Promise<TenantSubscription[]> {
     const futureDate = new Date();
     futureDate.setDate(futureDate.getDate() + daysAhead);
@@ -524,7 +471,6 @@ export class SubscriptionService {
       .getMany();
   }
 
-  // Pricing Rules Management
   async getAllPricingRules() {
     return this.pricingService.getAllRules();
   }

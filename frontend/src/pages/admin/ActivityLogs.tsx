@@ -6,9 +6,9 @@ import {
     FaExclamationTriangle, FaTimesCircle,
     FaDesktop, FaMobile, FaGlobe, FaSync,
     FaFilter, FaChartLine, FaUser, FaClock,
-    FaSearch, FaEye, FaShieldAlt, FaBuilding
+    FaSearch, FaShieldAlt, FaBuilding
 } from 'react-icons/fa';
-import { FileText, Activity, TrendingUp } from 'lucide-react';
+import { FileText, Activity, TrendingUp, Eye } from 'lucide-react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import { useSocket } from '../../contexts/SocketContext';
@@ -143,7 +143,7 @@ const ActivityLogs: React.FC = () => {
             refetchLogs();
         };
 
-        const handleSuspiciousActivity = (activity: ActivityLog) => {
+        const handleSuspiciousActivity = (_activity: ActivityLog) => {
             // Refetch logs on suspicious activity. 
             // Global alert is handled by SocketContext
             refetchLogs();
@@ -191,13 +191,6 @@ const ActivityLogs: React.FC = () => {
         }
     };
 
-    const getActionColor = (action: string) => {
-        if (action.includes('DELETE')) return 'text-red-600 bg-red-50';
-        if (action.includes('CREATE')) return 'text-green-600 bg-green-50';
-        if (action.includes('UPDATE')) return 'text-blue-600 bg-blue-50';
-        if (action.includes('LOGIN')) return 'text-purple-600 bg-purple-50';
-        return 'text-gray-600 bg-gray-50';
-    };
 
     return (
         <AdminPageLayout
@@ -236,73 +229,85 @@ const ActivityLogs: React.FC = () => {
         >
 
             {/* Statistics Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-4 text-white shadow-lg">
-                    <div className="flex items-center justify-between mb-2">
-                        <Activity className="w-8 h-8 opacity-80" />
-                        <span className="text-2xl font-bold">{logsData?.total || 0}</span>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
+                <div className="bg-white rounded-[32px] p-8 border border-gray-100 hover:border-blue-100 transition-all group">
+                    <div className="flex items-center justify-between mb-6">
+                        <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                            <Activity className="text-blue-600" size={24} />
+                        </div>
+                        <span className="text-3xl font-black text-gray-900 tracking-tight leading-none">{logsData?.total || 0}</span>
                     </div>
-                    <p className="text-sm opacity-90">Total Activities</p>
-                    <p className="text-xs opacity-75 mt-1">Last 24 hours</p>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Activities</p>
+                    <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest mt-1 opacity-0 group-hover:opacity-100 transition-opacity">Last 24 hours</p>
                 </div>
 
-                <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-4 text-white shadow-lg">
-                    <div className="flex items-center justify-between mb-2">
-                        <FaDesktop className="w-8 h-8 opacity-80" />
-                        <span className="text-2xl font-bold">{sessionsData?.length || 0}</span>
+                <div className="bg-white rounded-[32px] p-8 border border-gray-100 hover:border-emerald-100 transition-all group">
+                    <div className="flex items-center justify-between mb-6">
+                        <div className="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                            <FaDesktop className="text-emerald-600" size={20} />
+                        </div>
+                        <span className="text-3xl font-black text-gray-900 tracking-tight leading-none">{sessionsData?.length || 0}</span>
                     </div>
-                    <p className="text-sm opacity-90">Active Sessions</p>
-                    <p className="text-xs opacity-75 mt-1">Currently online</p>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Active Sessions</p>
+                    <p className="text-[10px] font-black text-emerald-400 uppercase tracking-widest mt-1 opacity-0 group-hover:opacity-100 transition-opacity">Currently online</p>
                 </div>
 
-                <div className="bg-gradient-to-br from-red-500 to-red-600 rounded-xl p-4 text-white shadow-lg">
-                    <div className="flex items-center justify-between mb-2">
-                        <FaShieldAlt className="w-8 h-8 opacity-80" />
-                        <span className="text-2xl font-bold">{suspiciousData?.length || 0}</span>
+                <div className="bg-white rounded-[32px] p-8 border border-gray-100 hover:border-rose-100 transition-all group">
+                    <div className="flex items-center justify-between mb-6">
+                        <div className="w-12 h-12 bg-rose-50 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                            <FaShieldAlt className="text-rose-600" size={20} />
+                        </div>
+                        <span className="text-3xl font-black text-gray-900 tracking-tight leading-none">{suspiciousData?.length || 0}</span>
                     </div>
-                    <p className="text-sm opacity-90">Suspicious Activities</p>
-                    <p className="text-xs opacity-75 mt-1">Requires attention</p>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Anomalies Detected</p>
+                    <p className="text-[10px] font-black text-rose-400 uppercase tracking-widest mt-1 opacity-0 group-hover:opacity-100 transition-opacity">Requires Attention</p>
                 </div>
 
-                <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-4 text-white shadow-lg">
-                    <div className="flex items-center justify-between mb-2">
-                        <FaUser className="w-8 h-8 opacity-80" />
-                        <span className="text-2xl font-bold">{analyticsData?.uniqueUsers || 0}</span>
+                <div className="bg-white rounded-[32px] p-8 border border-gray-100 hover:border-indigo-100 transition-all group">
+                    <div className="flex items-center justify-between mb-6">
+                        <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                            <FaUser className="text-indigo-600" size={20} />
+                        </div>
+                        <span className="text-3xl font-black text-gray-900 tracking-tight leading-none">{analyticsData?.uniqueUsers || 0}</span>
                     </div>
-                    <p className="text-sm opacity-90">Active Users</p>
-                    <p className="text-xs opacity-75 mt-1">Last 24 hours</p>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Active Operatives</p>
+                    <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mt-1 opacity-0 group-hover:opacity-100 transition-opacity">Last 24 hours</p>
                 </div>
             </div>
 
             {/* Suspicious Activities Alert */}
             {suspiciousData && suspiciousData.length > 0 && (
-                <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6 rounded-r-lg">
-                    <div className="flex items-center gap-3">
-                        <FaExclamationTriangle className="text-red-500 text-xl" />
-                        <div>
-                            <h3 className="font-bold text-red-800">Suspicious Activity Detected</h3>
-                            <p className="text-sm text-red-600">{suspiciousData.length} suspicious activities require your attention</p>
-                        </div>
+                <div className="bg-rose-50 border border-rose-100 p-6 mb-10 rounded-[24px] flex items-center gap-4">
+                    <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm">
+                        <FaExclamationTriangle className="text-rose-500 text-xl" />
+                    </div>
+                    <div>
+                        <h3 className="text-[10px] font-black text-rose-600 uppercase tracking-widest mb-1">Security Protocol Alert</h3>
+                        <p className="text-sm font-black text-gray-900 tracking-tight uppercase">
+                            {suspiciousData.length} suspicious activities require immediate validation
+                        </p>
                     </div>
                 </div>
             )}
 
             {/* Tabs */}
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 mb-6">
-                <div className="border-b border-slate-200">
-                    <nav className="flex gap-1 px-4">
+            <div className="bg-white rounded-[32px] shadow-sm border border-gray-100 mb-10 overflow-hidden">
+                <div className="border-b border-gray-50 bg-[#fafafa]/50">
+                    <nav className="flex gap-8 px-8">
                         <button
                             onClick={() => setActiveTab('logs')}
-                            className={`py-3 px-4 border-b-2 font-bold text-sm transition-colors ${activeTab === 'logs'
-                                ? 'border-indigo-600 text-indigo-600'
-                                : 'border-transparent text-slate-500 hover:text-slate-700'
+                            className={`py-6 border-b-2 transition-all group ${activeTab === 'logs'
+                                ? 'border-indigo-600'
+                                : 'border-transparent'
                                 }`}
                         >
                             <div className="flex items-center gap-2">
-                                <FileText size={16} />
-                                Activity Logs
+                                <FileText size={14} className={activeTab === 'logs' ? 'text-indigo-600' : 'text-slate-400'} />
+                                <span className={`text-[10px] font-black uppercase tracking-widest ${activeTab === 'logs' ? 'text-gray-900' : 'text-slate-400 group-hover:text-gray-600'}`}>
+                                    Operation Logs
+                                </span>
                                 {logsData?.total && (
-                                    <span className="px-2 py-0.5 bg-indigo-100 text-indigo-600 rounded-full text-xs font-bold">
+                                    <span className="ml-1 px-2 py-0.5 bg-indigo-50 text-indigo-600 rounded-full text-[9px] font-black tracking-tighter">
                                         {logsData.total}
                                     </span>
                                 )}
@@ -310,16 +315,18 @@ const ActivityLogs: React.FC = () => {
                         </button>
                         <button
                             onClick={() => setActiveTab('sessions')}
-                            className={`py-3 px-4 border-b-2 font-bold text-sm transition-colors ${activeTab === 'sessions'
-                                ? 'border-indigo-600 text-indigo-600'
-                                : 'border-transparent text-slate-500 hover:text-slate-700'
+                            className={`py-6 border-b-2 transition-all group ${activeTab === 'sessions'
+                                ? 'border-indigo-600'
+                                : 'border-transparent'
                                 }`}
                         >
                             <div className="flex items-center gap-2">
-                                <FaDesktop size={16} />
-                                Active Sessions
+                                <FaDesktop size={14} className={activeTab === 'sessions' ? 'text-indigo-600' : 'text-slate-400'} />
+                                <span className={`text-[10px] font-black uppercase tracking-widest ${activeTab === 'sessions' ? 'text-gray-900' : 'text-slate-400 group-hover:text-gray-600'}`}>
+                                    Active Matrix
+                                </span>
                                 {sessionsData?.length > 0 && (
-                                    <span className="px-2 py-0.5 bg-green-100 text-green-600 rounded-full text-xs font-bold">
+                                    <span className="ml-1 px-2 py-0.5 bg-emerald-50 text-emerald-600 rounded-full text-[9px] font-black tracking-tighter">
                                         {sessionsData.length}
                                     </span>
                                 )}
@@ -327,14 +334,16 @@ const ActivityLogs: React.FC = () => {
                         </button>
                         <button
                             onClick={() => setActiveTab('analytics')}
-                            className={`py-3 px-4 border-b-2 font-bold text-sm transition-colors ${activeTab === 'analytics'
-                                ? 'border-indigo-600 text-indigo-600'
-                                : 'border-transparent text-slate-500 hover:text-slate-700'
+                            className={`py-6 border-b-2 transition-all group ${activeTab === 'analytics'
+                                ? 'border-indigo-600'
+                                : 'border-transparent'
                                 }`}
                         >
                             <div className="flex items-center gap-2">
-                                <FaChartLine size={16} />
-                                Analytics
+                                <FaChartLine size={14} className={activeTab === 'analytics' ? 'text-indigo-600' : 'text-slate-400'} />
+                                <span className={`text-[10px] font-black uppercase tracking-widest ${activeTab === 'analytics' ? 'text-gray-900' : 'text-slate-400 group-hover:text-gray-600'}`}>
+                                    Pattern Analysis
+                                </span>
                             </div>
                         </button>
                     </nav>
@@ -442,7 +451,7 @@ const ActivityLogs: React.FC = () => {
                                     >
                                         Suspicious Only
                                     </button>
-                                    
+
                                     {/* Tenant Filter Badge */}
                                     {tenantFilter && (
                                         <div className="flex items-center gap-2 px-3 py-1 bg-indigo-50 border border-indigo-200 rounded-md">
@@ -458,7 +467,7 @@ const ActivityLogs: React.FC = () => {
                                             </button>
                                         </div>
                                     )}
-                                    
+
                                     <button
                                         onClick={() => {
                                             setFilters({ action: '', resource: '', isSuspicious: '', startDate: '', endDate: '', search: '', page: 1 });
@@ -484,30 +493,34 @@ const ActivityLogs: React.FC = () => {
                                 <p className="text-slate-500">Try adjusting your filters or check back later.</p>
                             </div>
                         ) : (
-                            <div className="space-y-3">
+                            <div className="space-y-4">
                                 {logsData?.activities?.map((log: ActivityLog) => (
                                     <div
                                         key={log.id}
                                         onClick={() => setSelectedLog(log)}
-                                        className={`p-4 rounded-lg border cursor-pointer ${log.isSuspicious
-                                            ? 'border-red-200 bg-red-50 hover:border-red-300'
-                                            : 'border-slate-200 bg-white hover:border-indigo-300 hover:shadow-md'
-                                            } transition-all`}
+                                        className={`p-6 rounded-[24px] border border-gray-100 cursor-pointer ${log.isSuspicious
+                                            ? 'bg-rose-50/50 hover:border-rose-200'
+                                            : 'bg-white hover:border-indigo-200 hover:shadow-lg hover:shadow-indigo-50/50'
+                                            } transition-all group`}
                                     >
                                         <div className="flex items-start justify-between">
                                             <div className="flex-1">
-                                                <div className="flex items-center gap-3 mb-2 flex-wrap">
-                                                    <span className={`px-2.5 py-1 rounded-md text-xs font-bold ${getActionColor(log.action)}`}>
+                                                <div className="flex items-center gap-4 mb-4 flex-wrap">
+                                                    <span className={`text-[9px] font-black px-3 py-1 rounded-full uppercase tracking-widest border ${log.action.includes('DELETE') ? 'bg-rose-50 text-rose-600 border-rose-100' :
+                                                        log.action.includes('CREATE') ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
+                                                            log.action.includes('UPDATE') ? 'bg-blue-50 text-blue-600 border-blue-100' :
+                                                                'bg-gray-50 text-gray-600 border-gray-100'
+                                                        }`}>
                                                         {log.action}
                                                     </span>
                                                     {log.resource && (
-                                                        <span className="text-sm text-slate-600 font-medium">
-                                                            {log.resource} {log.resourceId && `#${log.resourceId.slice(0, 8)}`}
+                                                        <span className="text-sm font-black text-gray-900 tracking-tight uppercase">
+                                                            {log.resource} <span className="text-slate-400 font-medium">#{log.resourceId?.slice(0, 8)}</span>
                                                         </span>
                                                     )}
                                                     {log.isSuspicious && (
-                                                        <span className="flex items-center gap-1 px-2 py-1 bg-red-100 text-red-700 rounded-md text-xs font-bold">
-                                                            <FaExclamationTriangle /> Suspicious
+                                                        <span className="flex items-center gap-1.5 px-3 py-1 bg-rose-600 text-white rounded-full text-[9px] font-black uppercase tracking-widest animate-pulse">
+                                                            <FaExclamationTriangle size={10} /> Security Risk
                                                         </span>
                                                     )}
                                                     <button
@@ -515,21 +528,47 @@ const ActivityLogs: React.FC = () => {
                                                             e.stopPropagation();
                                                             setSelectedLog(log);
                                                         }}
-                                                        className="ml-auto text-indigo-600 hover:text-indigo-700 text-sm font-medium flex items-center gap-1"
+                                                        className="ml-auto text-[10px] font-black text-indigo-600 hover:text-indigo-700 uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-2"
                                                     >
-                                                        <FaEye size={14} /> Details
+                                                        Details <Eye size={12} />
                                                     </button>
                                                 </div>
-                                                <div className="flex items-center gap-4 text-sm text-slate-600 flex-wrap">
-                                                    <span className="flex items-center gap-1.5 font-medium">
-                                                        <FaUser size={12} /> {log.user?.email || 'Unknown User'}
-                                                    </span>
-                                                    <span className="flex items-center gap-1.5">
-                                                        <FaGlobe size={12} /> {log.ipAddress}
-                                                    </span>
-                                                    <span className="flex items-center gap-1.5">
-                                                        <FaClock size={12} /> {new Date(log.createdAt).toLocaleString()}
-                                                    </span>
+                                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-8 h-8 bg-gray-50 rounded-lg flex items-center justify-center text-slate-400">
+                                                            <FaUser size={12} />
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Operative</p>
+                                                            <p className="text-xs font-black text-gray-900 tracking-tight uppercase">{log.user?.email || 'System'}</p>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-8 h-8 bg-gray-50 rounded-lg flex items-center justify-center text-slate-400">
+                                                            <FaGlobe size={12} />
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Access Point</p>
+                                                            <p className="text-xs font-black text-gray-900 tracking-tight uppercase font-mono">{log.ipAddress}</p>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-8 h-8 bg-gray-50 rounded-lg flex items-center justify-center text-slate-400">
+                                                            <FaClock size={12} />
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Timestamp</p>
+                                                            <p className="text-xs font-black text-gray-900 tracking-tight uppercase">
+                                                                {new Date(log.createdAt).toLocaleString('en-US', {
+                                                                    month: 'short',
+                                                                    day: 'numeric',
+                                                                    hour: '2-digit',
+                                                                    minute: '2-digit',
+                                                                    second: '2-digit'
+                                                                })}
+                                                            </p>
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
@@ -674,66 +713,75 @@ const ActivityLogs: React.FC = () => {
 
             {/* Activity Details Modal */}
             {selectedLog && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setSelectedLog(null)}>
-                    <div className="bg-white rounded-xl max-w-2xl w-full max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-                        <div className="sticky top-0 bg-white border-b border-slate-200 p-4 flex items-center justify-between">
-                            <h3 className="text-lg font-bold text-slate-800">Activity Details</h3>
+                <div className="fixed inset-0 bg-gray-900/40 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={() => setSelectedLog(null)}>
+                    <div className="bg-white rounded-[32px] max-w-2xl w-full overflow-hidden shadow-2xl animate-enter" onClick={(e) => e.stopPropagation()}>
+                        <div className="sticky top-0 bg-white/80 backdrop-blur-md border-b border-gray-50 p-8 flex items-center justify-between z-10">
+                            <div>
+                                <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Analysis Protocol</h3>
+                                <p className="text-xl font-black text-gray-900 tracking-tight uppercase">Activity Matrix Details</p>
+                            </div>
                             <button
                                 onClick={() => setSelectedLog(null)}
-                                className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+                                className="w-10 h-10 bg-gray-50 hover:bg-gray-100 rounded-xl flex items-center justify-center text-slate-400 transition-colors"
                             >
-                                <FaTimesCircle className="text-slate-400" />
+                                <FaTimesCircle size={18} />
                             </button>
                         </div>
-                        <div className="p-6 space-y-4">
-                            <div className="grid grid-cols-2 gap-4">
+                        <div className="p-8 space-y-8 overflow-y-auto max-h-[70vh]">
+                            <div className="grid grid-cols-2 gap-8">
                                 <div>
-                                    <p className="text-sm text-slate-500 mb-1">Action</p>
-                                    <span className={`inline-block px-3 py-1 rounded-md text-sm font-bold ${getActionColor(selectedLog.action)}`}>
+                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Operation Type</p>
+                                    <span className={`inline-block px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border ${selectedLog.action.includes('DELETE') ? 'bg-rose-50 text-rose-600 border-rose-100' :
+                                        selectedLog.action.includes('CREATE') ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
+                                            selectedLog.action.includes('UPDATE') ? 'bg-blue-50 text-blue-600 border-blue-100' :
+                                                'bg-gray-50 text-gray-600 border-gray-100'
+                                        }`}>
                                         {selectedLog.action}
                                     </span>
                                 </div>
                                 <div>
-                                    <p className="text-sm text-slate-500 mb-1">Resource</p>
-                                    <p className="font-medium text-slate-800">{selectedLog.resource || 'N/A'}</p>
+                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Subject Resource</p>
+                                    <p className="text-sm font-black text-gray-900 tracking-tight uppercase">{selectedLog.resource || 'SYSTEM CORE'}</p>
                                 </div>
                                 <div>
-                                    <p className="text-sm text-slate-500 mb-1">User</p>
-                                    <p className="font-medium text-slate-800">{selectedLog.user?.email || 'Unknown'}</p>
+                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Matrix Operative</p>
+                                    <p className="text-sm font-black text-gray-900 tracking-tight uppercase">{selectedLog.user?.email || 'SYSTEM AUTOMATION'}</p>
                                 </div>
                                 <div>
-                                    <p className="text-sm text-slate-500 mb-1">IP Address</p>
-                                    <p className="font-medium text-slate-800">{selectedLog.ipAddress}</p>
+                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Source Protocol (IP)</p>
+                                    <p className="text-sm font-black text-gray-900 tracking-tight uppercase font-mono">{selectedLog.ipAddress}</p>
                                 </div>
                                 <div>
-                                    <p className="text-sm text-slate-500 mb-1">Timestamp</p>
-                                    <p className="font-medium text-slate-800">{new Date(selectedLog.createdAt).toLocaleString()}</p>
+                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Temporal Marker</p>
+                                    <p className="text-sm font-black text-gray-900 tracking-tight uppercase">{new Date(selectedLog.createdAt).toLocaleString()}</p>
                                 </div>
                                 <div>
-                                    <p className="text-sm text-slate-500 mb-1">Status</p>
+                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Security Status</p>
                                     {selectedLog.isSuspicious ? (
-                                        <span className="inline-flex items-center gap-1 px-2 py-1 bg-red-100 text-red-700 rounded-md text-sm font-bold">
-                                            <FaExclamationTriangle /> Suspicious
+                                        <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-rose-600 text-white rounded-full text-[9px] font-black uppercase tracking-widest">
+                                            <FaExclamationTriangle size={10} /> SECURITY ALERT
                                         </span>
                                     ) : (
-                                        <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 rounded-md text-sm font-bold">
-                                            <FaShieldAlt /> Normal
+                                        <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-50 text-emerald-600 rounded-full text-[9px] font-black uppercase tracking-widest border border-emerald-100">
+                                            <FaShieldAlt size={10} /> VALIDATED
                                         </span>
                                     )}
                                 </div>
                             </div>
+
                             {selectedLog.userAgent && (
-                                <div>
-                                    <p className="text-sm text-slate-500 mb-1">User Agent</p>
-                                    <p className="text-sm text-slate-700 bg-slate-50 p-3 rounded-lg font-mono break-all">
+                                <div className="p-6 bg-[#fafafa] rounded-[24px] border border-gray-100">
+                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Client Interface (User Agent)</p>
+                                    <p className="text-xs font-medium text-gray-600 leading-relaxed font-mono break-all italic">
                                         {selectedLog.userAgent}
                                     </p>
                                 </div>
                             )}
+
                             {selectedLog.details && Object.keys(selectedLog.details).length > 0 && (
-                                <div>
-                                    <p className="text-sm text-slate-500 mb-1">Additional Details</p>
-                                    <pre className="text-xs text-slate-700 bg-slate-50 p-3 rounded-lg overflow-x-auto">
+                                <div className="p-6 bg-gray-900 rounded-[24px] border border-gray-800">
+                                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3">Extended Payload</p>
+                                    <pre className="text-[11px] text-emerald-400 font-mono overflow-x-auto custom-scrollbar">
                                         {JSON.stringify(selectedLog.details, null, 2)}
                                     </pre>
                                 </div>

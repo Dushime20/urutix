@@ -391,14 +391,14 @@ const AdminLoads: React.FC = () => {
             <input
               type="text"
               placeholder="Search loads..."
-              className="w-full pl-10 pr-4 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              className="w-full pl-10 pr-4 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
 
           <select
-            className="px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
+            className="px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
           >
@@ -426,7 +426,7 @@ const AdminLoads: React.FC = () => {
             <option value="VEHICLES">Vehicles</option>
           </select>
 
-          <button className="px-3 py-2 text-sm border border-gray-200 rounded-lg flex items-center justify-center gap-2 hover:bg-gray-50 transition-colors text-gray-600">
+          <button className="px-3 py-2 text-sm border border-gray-200 rounded-xl flex items-center justify-center gap-2 hover:bg-gray-50 transition-colors text-gray-600">
             <Download size={16} />
             <span>Export</span>
           </button>
@@ -470,7 +470,7 @@ const AdminLoads: React.FC = () => {
                     }}
                   />
                 </th>
-                <th className="px-3 py-3 text-left font-black text-gray-900 text-xs">
+                <th className="px-3 py-3 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">
                   <button
                     className="flex items-center gap-1"
                     onClick={() => {
@@ -482,12 +482,12 @@ const AdminLoads: React.FC = () => {
                     <ChevronsUpDown size={14} />
                   </button>
                 </th>
-                <th className="px-3 py-3 text-left font-black text-gray-900 text-xs">Cargo Details</th>
-                <th className="px-3 py-3 text-left font-black text-gray-900 text-xs">Route</th>
-                <th className="px-3 py-3 text-left font-black text-gray-900 text-xs">Status</th>
-                <th className="px-3 py-3 text-left font-black text-gray-900 text-xs">Organization</th>
-                <th className="px-3 py-3 text-left font-black text-gray-900 text-xs">Value</th>
-                <th className="px-3 py-3 text-center font-black text-gray-900 text-xs">Actions</th>
+                <th className="px-3 py-3 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Cargo Details</th>
+                <th className="px-3 py-3 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Route</th>
+                <th className="px-3 py-3 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
+                <th className="px-3 py-3 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Organization</th>
+                <th className="px-3 py-3 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Value</th>
+                <th className="px-3 py-3 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
@@ -536,7 +536,7 @@ const AdminLoads: React.FC = () => {
                             <span className="text-[10px] text-gray-500">{(load.volume || 0).toLocaleString()} m³</span>
                           </div>
                         )}
-                        <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${getCargoTypeColor(load.cargoType || 'GENERAL')}`}>
+                        <span className={`px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-widest ${getCargoTypeColor(load.cargoType || 'GENERAL')}`}>
                           {load.cargoType || 'GENERAL'}
                         </span>
                       </div>
@@ -570,7 +570,7 @@ const AdminLoads: React.FC = () => {
                     <td className="px-2 py-1.5">
                       <div className="flex items-center gap-1">
                         {getStatusIcon(load.status)}
-                        <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium ${getStatusColor(load.status)}`}>
+                        <span className={`px-1.5 py-0.5 rounded text-[10px] font-black uppercase tracking-widest ${getStatusColor(load.status)}`}>
                           {load.status.replace('_', ' ')}
                         </span>
                       </div>
@@ -692,14 +692,14 @@ const AdminLoads: React.FC = () => {
               <div className="flex items-center justify-between flex-wrap gap-2">
                 <div className="flex items-center space-x-2">
                   {getStatusIcon(selectedLoad.status)}
-                  <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium ${getStatusColor(selectedLoad.status)}`}>
+                  <span className={`px-1.5 py-0.5 rounded text-[10px] font-black uppercase tracking-widest ${getStatusColor(selectedLoad.status)}`}>
                     {selectedLoad.status.replace('_', ' ')}
                   </span>
-                  <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium ${getCargoTypeColor(selectedLoad.cargoType || 'GENERAL')}`}>
+                  <span className={`px-1.5 py-0.5 rounded text-[10px] font-black uppercase tracking-widest ${getCargoTypeColor(selectedLoad.cargoType || 'GENERAL')}`}>
                     {selectedLoad.cargoType || 'GENERAL'}
                   </span>
                   {selectedLoad.urgencyLevel && (
-                    <span className="px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-orange-100 text-orange-800">
+                    <span className="px-1.5 py-0.5 rounded text-[10px] font-black uppercase tracking-widest bg-orange-100 text-orange-800">
                       {selectedLoad.urgencyLevel} Priority
                     </span>
                   )}
@@ -758,7 +758,7 @@ const AdminLoads: React.FC = () => {
               {/* Load Information */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div className="space-y-2">
-                  <h3 className="text-xs font-semibold text-gray-900">Load Information</h3>
+                  <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Load Information</h3>
                   <div className="space-y-1.5 text-xs">
                     <div className="flex justify-between">
                       <span className="text-gray-600">Title:</span>
@@ -790,7 +790,7 @@ const AdminLoads: React.FC = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <h3 className="text-xs font-semibold text-gray-900">Route & Dates</h3>
+                  <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Route & Dates</h3>
                   <div className="space-y-1.5 text-xs">
                     {selectedLoad.pickupLocation && (
                       <div className="flex justify-between">

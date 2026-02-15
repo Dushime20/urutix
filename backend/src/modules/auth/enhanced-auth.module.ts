@@ -10,6 +10,10 @@ import { PasswordResetToken } from '../../entities/password-reset-token.entity';
 import { EmailVerificationToken } from '../../entities/email-verification-token.entity';
 import { AuditLog } from '../../entities/audit-log.entity';
 import { Tenant } from '../../entities/tenant.entity';
+import { SecurityEvent } from '../../entities/security-event.entity';
+import { ActivityLog } from '../../entities/activity-log.entity';
+import { UserSession } from '../../entities/user-session.entity';
+import { SystemSettings } from '../../entities/system-settings.entity';
 import { EnhancedAuthService } from './enhanced-auth.service';
 import { EnhancedAuthController } from './enhanced-auth.controller';
 import { EnhancedJwtStrategy } from './enhanced-jwt.strategy';
@@ -22,6 +26,9 @@ import { JwtService } from '@nestjs/jwt';
 import { RolesGuard } from './roles.guard';
 import { PermissionService } from '../../services/permissionService';
 import { PermissionsGuard } from './permissions.guard';
+import { ActivityLogService } from '../../services/activity-log.service';
+import { EventsModule } from '../events/events.module';
+import { SystemSettingsService } from '../../services/system-settings.service';
 
 @Module({
   imports: [
@@ -33,9 +40,14 @@ import { PermissionsGuard } from './permissions.guard';
       EmailVerificationToken,
       AuditLog,
       Tenant,
+      SecurityEvent,
+      ActivityLog,
+      UserSession,
+      SystemSettings,
     ]),
     ConfigModule,
     PassportModule,
+    EventsModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
@@ -52,10 +64,11 @@ import { PermissionsGuard } from './permissions.guard';
     EmailService,
     TenantGuard,
     TenantService,
-    TenantService,
     RolesGuard,
     PermissionService,
     PermissionsGuard,
+    ActivityLogService,
+    SystemSettingsService,
   ],
   controllers: [EnhancedAuthController, TenantController],
   exports: [
@@ -66,10 +79,10 @@ import { PermissionsGuard } from './permissions.guard';
     TenantGuard,
     TenantService,
     RolesGuard,
-    RolesGuard,
     EmailService,
     PermissionService,
     PermissionsGuard,
+    ActivityLogService,
   ],
 })
 export class EnhancedAuthModule { }

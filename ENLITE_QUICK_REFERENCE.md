@@ -2,8 +2,17 @@
 
 ## Import
 ```typescript
-import { StatCard, DataCard, EnhancedTable } from '../../components/EnliteUI';
-import type { Column } from '../../components/EnliteUI';
+import { 
+  StatCard, 
+  DataCard, 
+  EnhancedTable,
+  Button,
+  Modal,
+  Input,
+  Select,
+  Textarea
+} from '../../components/EnliteUI';
+import type { Column, SelectOption } from '../../components/EnliteUI';
 ```
 
 ## StatCard
@@ -65,6 +74,102 @@ const columns: Column[] = [
 />
 ```
 
+## Button
+
+```typescript
+<Button
+  variant="primary"  // 'primary' | 'secondary' | 'success' | 'warning' | 'error' | 'info' | 'outline' | 'ghost'
+  size="md"          // 'sm' | 'md' | 'lg'
+  icon={<FaSave />}
+  iconPosition="left"  // 'left' | 'right'
+  loading={false}
+  disabled={false}
+  fullWidth={false}
+  onClick={handleClick}
+>
+  Save
+</Button>
+```
+
+## Modal
+
+```typescript
+<Modal
+  isOpen={isOpen}
+  onClose={() => setIsOpen(false)}
+  title="My Modal"
+  size="md"  // 'sm' | 'md' | 'lg' | 'xl' | 'full'
+  headerColor="primary"
+  showCloseButton={true}
+  closeOnOverlayClick={true}
+  footer={
+    <div className="flex gap-3">
+      <Button variant="outline">Cancel</Button>
+      <Button variant="primary">Confirm</Button>
+    </div>
+  }
+>
+  <p>Modal content</p>
+</Modal>
+```
+
+## Input
+
+```typescript
+<Input
+  label="Email"
+  type="email"
+  placeholder="your@email.com"
+  icon={<FaEnvelope />}
+  iconPosition="left"  // 'left' | 'right'
+  error="Invalid email"
+  helperText="Enter your email address"
+  required
+  fullWidth={true}
+  value={email}
+  onChange={(e) => setEmail(e.target.value)}
+/>
+```
+
+## Select
+
+```typescript
+const options: SelectOption[] = [
+  { value: 'admin', label: 'Administrator' },
+  { value: 'user', label: 'User' },
+];
+
+<Select
+  label="Role"
+  options={options}
+  placeholder="Select role"
+  error="Please select a role"
+  helperText="Choose user role"
+  required
+  fullWidth={true}
+  value={role}
+  onChange={(e) => setRole(e.target.value)}
+/>
+```
+
+## Textarea
+
+```typescript
+<Textarea
+  label="Message"
+  placeholder="Enter message"
+  rows={4}
+  showCharCount={true}
+  maxLength={500}
+  error="Message is required"
+  helperText="Describe your request"
+  required
+  fullWidth={true}
+  value={message}
+  onChange={(e) => setMessage(e.target.value)}
+/>
+```
+
 ## Colors
 
 - **primary** - Indigo/Purple
@@ -93,20 +198,67 @@ const columns: Column[] = [
 </DataCard>
 ```
 
-### Nested Cards
+### Form Layout
 ```typescript
-<DataCard title="Statistics" headerColor="primary">
-  <div className="grid grid-cols-3 gap-4">
-    <StatCard {...} />
-    <StatCard {...} />
-    <StatCard {...} />
+<div className="space-y-6">
+  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <Input label="First Name" />
+    <Input label="Last Name" />
   </div>
-</DataCard>
+  
+  <Select label="Role" options={roleOptions} />
+  
+  <Textarea label="Message" rows={4} />
+  
+  <div className="flex gap-3">
+    <Button variant="primary">Submit</Button>
+    <Button variant="outline">Cancel</Button>
+  </div>
+</div>
 ```
+
+### Modal with Form
+```typescript
+<Modal
+  isOpen={isOpen}
+  onClose={() => setIsOpen(false)}
+  title="Edit User"
+  footer={
+    <div className="flex gap-3 justify-end">
+      <Button variant="outline" onClick={() => setIsOpen(false)}>
+        Cancel
+      </Button>
+      <Button variant="primary" loading={isSubmitting}>
+        Save
+      </Button>
+    </div>
+  }
+>
+  <div className="space-y-4">
+    <Input label="Name" icon={<FaUser />} />
+    <Input label="Email" icon={<FaEnvelope />} />
+    <Select label="Role" options={roleOptions} />
+  </div>
+</Modal>
+```
+
+## Quick Links
+
+- **Showcase**: `/admin/component-showcase`
+- **Example**: `/admin/advanced-settings`
+- **Full Guide**: `ENLITE_NEW_COMPONENTS_GUIDE.md`
+- **Usage Guide**: `ENLITE_COMPONENTS_USAGE_GUIDE.md`
 
 ## Files
 
 - **Theme**: `src/theme/enlite/`
 - **Components**: `src/components/EnliteUI/`
-- **Example**: `src/pages/admin/AdminDashboard.enlite.tsx`
-- **Docs**: `ENLITE_COMPONENTS_USAGE_GUIDE.md`
+- **Examples**: 
+  - `src/pages/admin/AdminDashboard.enlite.tsx`
+  - `src/pages/admin/ComponentShowcase.tsx`
+  - `src/pages/admin/AdvancedSettings.tsx`
+- **Docs**: 
+  - `ENLITE_COMPONENTS_USAGE_GUIDE.md`
+  - `ENLITE_NEW_COMPONENTS_GUIDE.md`
+  - `ENLITE_QUICK_REFERENCE.md`
+

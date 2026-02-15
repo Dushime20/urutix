@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import logoUrutiX from '../assets/logo-urutix.svg';
 import { useAuth } from '../contexts/AuthContext';
 import { fleetApi } from '../services/fleetApi';
 import toast from 'react-hot-toast';
@@ -11,19 +12,30 @@ import {
     FaTruck,
     FaBox,
     FaStar,
-    FaChartLine
+    FaChartLine,
+    FaUserCircle,
+    FaBars,
+    FaTimes
 } from 'react-icons/fa';
 import {
-    Zap,
-    Bell,
+    Calendar,
+    Clock,
+    MapPin,
     Search,
-    X,
+    ChevronRight,
+    Play,
+    CheckCircle2,
+    XCircle,
+    Bell,
     Settings,
     LogOut,
-    AlertTriangle,
+    Menu as MenuIcon,
+    Zap,
+    X,
     CheckCircle,
     Droplets,
-    Fuel
+    Fuel,
+    AlertTriangle
 } from 'lucide-react';
 
 const SmartBookingsPage: React.FC = () => {
@@ -138,10 +150,7 @@ const SmartBookingsPage: React.FC = () => {
 
                         {/* Logo */}
                         <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate('/dashboard/fleet')}>
-                            <div className="size-10 bg-gradient-to-br from-blue-500 to-indigo-700 flex items-center justify-center rounded-xl shadow-lg shadow-blue-500/20">
-                                <FaTruck className="size-5 text-white" />
-                            </div>
-                            <h2 className="text-xl md:text-2xl font-black tracking-tighter text-white">UrutiX<span className="text-blue-400">.</span></h2>
+                            <img src={logoUrutiX} alt="UrutiX Logistics Logo" className="h-14 md:h-20 w-auto object-contain py-1" />
                         </div>
 
                         {/* Desktop Navigation */}
@@ -196,78 +205,82 @@ const SmartBookingsPage: React.FC = () => {
                                 className="flex items-center gap-3 pl-4 md:pl-6 border-l border-white/10 hover:opacity-80 transition-opacity cursor-pointer"
                             >
                                 <div className="text-right hidden sm:block">
-                                    <p className="text-sm font-bold">{user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : user?.email || 'Fleet Manager'}</p>
+                                    <p className="text-sm font-bold">{user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName} ` : user?.email || 'Fleet Manager'}</p>
                                     <p className="text-[9px] font-bold text-blue-400 uppercase tracking-widest">Fleet Owner</p>
                                 </div>
                                 <div className="size-10 rounded-full bg-gradient-to-br from-blue-400 to-indigo-600 border-2 border-white/20 shadow-inner overflow-hidden">
                                     <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.email || 'Fleet'}`} alt="User" className="size-full" />
-                                </div>
-                            </button>
+                                </div >
+                            </button >
 
                             {/* Dropdown Menu */}
-                            {showUserMenu && (
-                                <div className="absolute top-full right-0 mt-2 w-56 bg-[#1e293b] rounded-lg shadow-2xl border border-white/10 z-[9999] overflow-hidden">
-                                    <div className="p-2">
-                                        <div className="px-3 py-2 border-b border-white/10">
-                                            <div className="text-sm font-semibold text-white">
-                                                {user?.firstName && user?.lastName
-                                                    ? `${user.firstName} ${user.lastName}`
-                                                    : user?.firstName || user?.email || 'User'
-                                                }
+                            {
+                                showUserMenu && (
+                                    <div className="absolute top-full right-0 mt-2 w-56 bg-[#1e293b] rounded-lg shadow-2xl border border-white/10 z-[9999] overflow-hidden">
+                                        <div className="p-2">
+                                            <div className="px-3 py-2 border-b border-white/10">
+                                                <div className="text-sm font-semibold text-white">
+                                                    {user?.firstName && user?.lastName
+                                                        ? `${user.firstName} ${user.lastName}`
+                                                        : user?.firstName || user?.email || 'User'
+                                                    }
+                                                </div>
+                                                <div className="text-xs text-gray-400 truncate">{user?.email}</div>
                                             </div>
-                                            <div className="text-xs text-gray-400 truncate">{user?.email}</div>
+                                            <button
+                                                onClick={() => {
+                                                    setShowUserMenu(false);
+                                                    navigate('/dashboard/fleet/settings');
+                                                }}
+                                                className="w-full text-left px-3 py-2 text-sm text-white hover:bg-white/10 rounded-md transition-colors flex items-center gap-2 mt-1"
+                                            >
+                                                <Settings size={16} />
+                                                Profile Settings
+                                            </button>
+                                            <button
+                                                onClick={() => {
+                                                    setShowUserMenu(false);
+                                                    navigate('/dashboard/fleet/trucks');
+                                                }}
+                                                className="w-full text-left px-3 py-2 text-sm text-white hover:bg-white/10 rounded-md transition-colors flex items-center gap-2"
+                                            >
+                                                <FaTruck size={16} />
+                                                Manage Fleet
+                                            </button>
+                                            <div className="border-t border-white/10 my-1"></div>
+                                            <button
+                                                onClick={handleLogout}
+                                                className="w-full text-left px-3 py-2 text-sm text-red-400 hover:bg-red-500/10 rounded-md transition-colors flex items-center gap-2"
+                                            >
+                                                <LogOut size={16} />
+                                                Logout
+                                            </button>
                                         </div>
-                                        <button
-                                            onClick={() => {
-                                                setShowUserMenu(false);
-                                                navigate('/dashboard/fleet/settings');
-                                            }}
-                                            className="w-full text-left px-3 py-2 text-sm text-white hover:bg-white/10 rounded-md transition-colors flex items-center gap-2 mt-1"
-                                        >
-                                            <Settings size={16} />
-                                            Profile Settings
-                                        </button>
-                                        <button
-                                            onClick={() => {
-                                                setShowUserMenu(false);
-                                                navigate('/dashboard/fleet/trucks');
-                                            }}
-                                            className="w-full text-left px-3 py-2 text-sm text-white hover:bg-white/10 rounded-md transition-colors flex items-center gap-2"
-                                        >
-                                            <FaTruck size={16} />
-                                            Manage Fleet
-                                        </button>
-                                        <div className="border-t border-white/10 my-1"></div>
-                                        <button
-                                            onClick={handleLogout}
-                                            className="w-full text-left px-3 py-2 text-sm text-red-400 hover:bg-red-500/10 rounded-md transition-colors flex items-center gap-2"
-                                        >
-                                            <LogOut size={16} />
-                                            Logout
-                                        </button>
                                     </div>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                </header>
+                                )
+                            }
+                        </div >
+                    </div >
+                </header >
 
                 {/* Mobile Nav Menu */}
-                {isMobileMenuOpen && (
-                    <div className="lg:hidden absolute top-[120px] left-0 right-0 bg-[#0f172a] border-b border-white/10 p-4 z-50 shadow-xl">
-                        <nav className="flex flex-col space-y-3 text-sm font-semibold text-gray-400">
-                            <a href="/dashboard/fleet" className="text-white px-3 py-2 bg-white/5 rounded-lg">Dashboard</a>
-                            <a href="/dashboard/fleet/trucks" className="hover:text-white px-3 py-2">Fleet</a>
-                            <a href="/fleet-manager" className="hover:text-white px-3 py-2">Fleet Manager</a>
-                            <a href="/dashboard/fleet/drivers" className="hover:text-white px-3 py-2">Drivers</a>
-                            <a href="/dashboard/fleet/maintenance" className="hover:text-white px-3 py-2">Maintenance</a>
-                            <a href="/dashboard/fleet/bids" className="hover:text-white px-3 py-2">Load Board</a>
-                            <a href="/dashboard/fleet/smart-bookings" className="text-white px-3 py-2 bg-white/5 rounded-lg">Smart Bookings</a>
-                            <a href="/dashboard/fleet/reports" className="hover:text-white px-3 py-2">Reports</a>
-                        </nav>
-                    </div>
-                )}
-            </div>
+                {
+                    isMobileMenuOpen && (
+                        <div className="lg:hidden absolute top-[120px] left-0 right-0 bg-[#0f172a] border-b border-white/10 p-4 z-50 shadow-xl">
+                            <nav className="flex flex-col space-y-3 text-sm font-semibold text-gray-400">
+                                <a href="/dashboard/fleet" className="text-white px-3 py-2 bg-white/5 rounded-lg">Dashboard</a>
+                                <a href="/dashboard/fleet/trucks" className="hover:text-white px-3 py-2">Fleet</a>
+                                <a href="/fleet-manager" className="hover:text-white px-3 py-2">Fleet Manager</a>
+                                <a href="/dashboard/fleet/drivers" className="hover:text-white px-3 py-2">Drivers</a>
+                                <a href="/dashboard/fleet/maintenance" className="hover:text-white px-3 py-2">Maintenance</a>
+                                <a href="/dashboard/fleet/bids" className="hover:text-white px-3 py-2">Load Board</a>
+                                <a href="/dashboard/fleet/smart-bookings" className="text-white px-3 py-2 bg-white/5 rounded-lg">Smart Bookings</a>
+                                <a href="/dashboard/fleet/reports" className="hover:text-white px-3 py-2">Reports</a>
+                            </nav>
+                        </div>
+                    )
+                }
+            </div >
         </>
     );
 

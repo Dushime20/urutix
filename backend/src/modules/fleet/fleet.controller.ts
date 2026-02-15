@@ -2096,15 +2096,14 @@ export class FleetController {
     name: 'page',
     required: false,
     description: 'Page number for pagination (starts from 1)',
-    minimum: 1,
+    schema: { minimum: 1 },
     example: 1,
   })
   @ApiQuery({
     name: 'limit',
     required: false,
     description: 'Number of items per page (max 100)',
-    minimum: 1,
-    maximum: 100,
+    schema: { minimum: 1, maximum: 100 },
     example: 20,
   })
   @ApiResponse({

@@ -27,9 +27,10 @@ import {
     ChevronLeft,
     ChevronRight,
     UserCheck,
-    ArrowRight
+    ArrowRight,
+    Mail
 } from 'lucide-react';
-import logoUrutiX from '../../assets/logo-urutix.svg';
+import logoUrutiX from '../../assets/logo-urutix-logistics.svg';
 
 interface NavItem {
     label: string;
@@ -108,6 +109,7 @@ const AdminSidebar: React.FC = () => {
             title: 'System',
             items: [
                 { label: 'Monitoring', icon: Server, path: '/admin/monitoring' },
+                { label: 'Bulk Email', icon: Mail, path: '/admin/bulk-email' },
                 { label: 'Onboarding', icon: Bell, path: '/admin/onboarding' },
                 { label: 'Settings', icon: Settings, path: '/admin/advanced-settings' },
             ]
@@ -128,20 +130,21 @@ const AdminSidebar: React.FC = () => {
             {/* Logo Section */}
             <div className="p-6 h-20 flex items-center justify-between border-b border-slate-50">
                 {!collapsed ? (
-                    <div className="flex items-center gap-2">
-                        <img
-                            src={logoUrutiX}
-                            alt="UrutiX Logo"
-                            className="w-8 h-8 object-contain"
-                        />
-                        <span className="font-bold text-lg text-slate-800 tracking-tight">UrutiX</span>
-                    </div>
+                    <Link to="/admin" className="flex items-center">
+                        <div className="flex items-center justify-center w-full py-2">
+                            <img
+                                src={logoUrutiX}
+                                alt="UrutiX Logistics Logo"
+                                className="w-18 h-18 md:w-24 md:h-24 object-contain"
+                            />
+                        </div>
+                    </Link>
                 ) : (
                     <div className="flex justify-center w-full">
                         <img
                             src={logoUrutiX}
-                            alt="UrutiX Logo"
-                            className="w-8 h-8 object-contain"
+                            alt="UrutiX Logistics Logo"
+                            className="h-10 w-auto object-contain"
                         />
                     </div>
                 )}

@@ -9,14 +9,17 @@ import { Trip } from '../../entities/trip.entity';
 import { Payment } from '../../entities/payment.entity';
 import { Bid } from '../../entities/bid.entity';
 import { EnhancedAuthModule } from '../auth/enhanced-auth.module';
+import { SubscriptionModule } from '../subscription/subscription.module';
+import { PartnerBillingController } from './partner-billing-mgmt.controller';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Load, Truck, User, Trip, Payment, Bid]),
     EnhancedAuthModule,
+    SubscriptionModule,
   ],
-  controllers: [TenantDashboardController],
+  controllers: [TenantDashboardController, PartnerBillingController],
   providers: [TenantDashboardService],
   exports: [TenantDashboardService],
 })
-export class TenantDashboardModule {}
+export class TenantDashboardModule { }

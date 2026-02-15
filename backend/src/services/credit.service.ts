@@ -26,6 +26,7 @@ export interface ConsumeCreditsDto {
   referenceType?: string;
   referenceId?: string;
   metadata?: Record<string, any>;
+  userId?: string;
 }
 
 export interface CreditTransactionFilters {
@@ -35,6 +36,7 @@ export interface CreditTransactionFilters {
   endDate?: Date;
   limit?: number;
   offset?: number;
+  userId?: string;
 }
 
 @Injectable()
@@ -46,19 +48,27 @@ export class CreditService {
     private creditTransactionRepository: Repository<CreditTransaction>,
     @InjectRepository(FeatureCreditCost)
     private featureCreditCostRepository: Repository<FeatureCreditCost>,
-  ) {}
+  ) { }
 
   /**
-   * Get or create credit account for tenant
+   * Get or create credit account for tenant or user
    */
-  async getOrCreateCreditAccount(tenantId: string): Promise<CreditAccount> {
+  async getOrCreateCreditAccount(tenantId: string, userId?: string): Promise<CreditAccount> {
+    const where: any = { tenantId };
+    if (userId) {
+      where.userId = userId;
+    } else {
+      where.userId = null; // Important for tenant-level account
+    }
+
     let account = await this.creditAccountRepository.findOne({
-      where: { tenantId },
+      where,
     });
 
     if (!account) {
       account = this.creditAccountRepository.create({
         tenantId,
+        userId: userId || null,
         currentBalance: 0,
         subscriptionCredits: 0,
         purchasedCredits: 0,
@@ -73,10 +83,10 @@ export class CreditService {
   }
 
   /**
-   * Get credit balance for tenant
+   * Get credit balance for tenant or user
    */
-  async getCreditBalance(tenantId: string): Promise<CreditBalanceResponse> {
-    const account = await this.getOrCreateCreditAccount(tenantId);
+  async getCreditBalance(tenantId: string, userId?: string): Promise<CreditBalanceResponse> {
+    const account = await this.getOrCreateCreditAccount(tenantId, userId);
 
     return {
       currentBalance: account.currentBalance,
@@ -91,10 +101,10 @@ export class CreditService {
   }
 
   /**
-   * Check if tenant has sufficient credits
+   * Check if tenant or user has sufficient credits
    */
-  async hasSufficientCredits(tenantId: string, amount: number): Promise<boolean> {
-    const account = await this.getOrCreateCreditAccount(tenantId);
+  async hasSufficientCredits(tenantId: string, amount: number, userId?: string): Promise<boolean> {
+    const account = await this.getOrCreateCreditAccount(tenantId, userId);
     return account.currentBalance >= amount;
   }
 
@@ -125,8 +135,9 @@ export class CreditService {
     amount: number,
     subscriptionId: string,
     expiresAt: Date,
+    userId?: string,
   ): Promise<CreditTransaction> {
-    const account = await this.getOrCreateCreditAccount(tenantId);
+    const account = await this.getOrCreateCreditAccount(tenantId, userId);
 
     // Update account
     account.subscriptionCredits += amount;
@@ -140,6 +151,7 @@ export class CreditService {
     // Create transaction
     const transaction = this.creditTransactionRepository.create({
       tenantId,
+      userId: userId || null,
       creditAccountId: account.id,
       type: CreditTransactionType.SUBSCRIPTION_GRANT,
       amount,
@@ -161,8 +173,9 @@ export class CreditService {
     amount: number,
     paymentId: string,
     packageName: string,
+    userId?: string,
   ): Promise<CreditTransaction> {
-    const account = await this.getOrCreateCreditAccount(tenantId);
+    const account = await this.getOrCreateCreditAccount(tenantId, userId);
 
     // Purchased credits expire in 12 months
     const expiresAt = new Date();
@@ -178,6 +191,7 @@ export class CreditService {
     // Create transaction
     const transaction = this.creditTransactionRepository.create({
       tenantId,
+      userId: userId || null,
       creditAccountId: account.id,
       type: CreditTransactionType.PURCHASE,
       amount,
@@ -199,8 +213,9 @@ export class CreditService {
     amount: number,
     reason: string,
     expiresAt?: Date,
+    userId?: string,
   ): Promise<CreditTransaction> {
-    const account = await this.getOrCreateCreditAccount(tenantId);
+    const account = await this.getOrCreateCreditAccount(tenantId, userId);
 
     // Default expiry: 6 months
     const expiry = expiresAt || new Date(Date.now() + 6 * 30 * 24 * 60 * 60 * 1000);
@@ -215,6 +230,7 @@ export class CreditService {
     // Create transaction
     const transaction = this.creditTransactionRepository.create({
       tenantId,
+      userId: userId || null,
       creditAccountId: account.id,
       type: CreditTransactionType.BONUS,
       amount,
@@ -231,7 +247,7 @@ export class CreditService {
    * Consume credits for feature usage
    */
   async consumeCredits(dto: ConsumeCreditsDto): Promise<CreditTransaction> {
-    const account = await this.getOrCreateCreditAccount(dto.tenantId);
+    const account = await this.getOrCreateCreditAccount(dto.tenantId, dto.userId);
 
     // Check sufficient balance
     if (account.currentBalance < dto.amount) {
@@ -270,6 +286,7 @@ export class CreditService {
     // Create transaction
     const transaction = this.creditTransactionRepository.create({
       tenantId: dto.tenantId,
+      userId: dto.userId || null,
       creditAccountId: account.id,
       type: CreditTransactionType.CONSUMPTION,
       amount: -dto.amount, // Negative for consumption
@@ -295,8 +312,9 @@ export class CreditService {
     amount: number,
     reason: string,
     originalTransactionId?: string,
+    userId?: string,
   ): Promise<CreditTransaction> {
-    const account = await this.getOrCreateCreditAccount(tenantId);
+    const account = await this.getOrCreateCreditAccount(tenantId, userId);
 
     // Add to purchased credits bucket
     account.purchasedCredits += amount;
@@ -307,6 +325,7 @@ export class CreditService {
     // Create transaction
     const transaction = this.creditTransactionRepository.create({
       tenantId,
+      userId: userId || null,
       creditAccountId: account.id,
       type: CreditTransactionType.REFUND,
       amount,
@@ -329,8 +348,9 @@ export class CreditService {
     amount: number,
     reason: string,
     adminId: string,
+    userId?: string,
   ): Promise<CreditTransaction> {
-    const account = await this.getOrCreateCreditAccount(tenantId);
+    const account = await this.getOrCreateCreditAccount(tenantId, userId);
 
     // Determine which bucket to adjust
     if (amount > 0) {
@@ -356,6 +376,7 @@ export class CreditService {
     // Create transaction
     const transaction = this.creditTransactionRepository.create({
       tenantId,
+      userId: userId || null,
       creditAccountId: account.id,
       type: CreditTransactionType.ADJUSTMENT,
       amount,
@@ -440,8 +461,15 @@ export class CreditService {
       .createQueryBuilder('transaction')
       .leftJoinAndSelect('transaction.creditAccount', 'creditAccount')
       .leftJoinAndSelect('creditAccount.tenant', 'tenant')
-      .where('transaction.tenantId = :tenantId', { tenantId })
-      .orderBy('transaction.createdAt', 'DESC');
+      .where('transaction.tenantId = :tenantId', { tenantId });
+
+    if (filters?.userId) {
+      query.andWhere('transaction.userId = :userId', { userId: filters.userId });
+    } else if (filters?.userId === null) {
+      query.andWhere('transaction.userId IS NULL');
+    }
+
+    query.orderBy('transaction.createdAt', 'DESC');
 
     if (filters?.type) {
       query.andWhere('transaction.type = :type', { type: filters.type });
@@ -614,8 +642,9 @@ export class CreditService {
     referenceType?: string;
     referenceId?: string;
     calculationDetails?: Record<string, any>;
+    userId?: string;
   }): Promise<CreditTransaction> {
-    const account = await this.getOrCreateCreditAccount(dto.tenantId);
+    const account = await this.getOrCreateCreditAccount(dto.tenantId, dto.userId);
 
     // Check if enough credits
     if (account.currentBalance < dto.amount) {
@@ -632,6 +661,7 @@ export class CreditService {
     // Record transaction
     const transaction = this.creditTransactionRepository.create({
       tenantId: dto.tenantId,
+      userId: dto.userId || null,
       creditAccountId: account.id,
       type: CreditTransactionType.CONSUMPTION,
       amount: -dto.amount, // Negative for deduction

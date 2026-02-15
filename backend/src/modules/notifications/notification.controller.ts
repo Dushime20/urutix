@@ -39,7 +39,7 @@ import { Notification } from '../../entities/notification.entity';
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth()
 export class NotificationController {
-  constructor(private readonly notificationService: NotificationService) {}
+  constructor(private readonly notificationService: NotificationService) { }
 
   @Post()
   @Roles(
@@ -198,13 +198,12 @@ export class NotificationController {
   @ApiQuery({ name: 'isRead', required: false, type: Boolean })
   @ApiQuery({ name: 'requiresAction', required: false, type: Boolean })
   @ApiQuery({ name: 'search', required: false, type: String })
-  @ApiQuery({ name: 'page', required: false, type: Number, minimum: 1 })
+  @ApiQuery({ name: 'page', required: false, type: Number, schema: { minimum: 1 } })
   @ApiQuery({
     name: 'limit',
     required: false,
     type: Number,
-    minimum: 1,
-    maximum: 100,
+    schema: { minimum: 1, maximum: 100 },
   })
   @ApiResponse({
     status: 200,
@@ -246,8 +245,7 @@ export class NotificationController {
     name: 'limit',
     required: false,
     type: Number,
-    minimum: 1,
-    maximum: 100,
+    schema: { minimum: 1, maximum: 100 },
   })
   @ApiResponse({
     status: 200,
@@ -282,7 +280,7 @@ export class NotificationController {
     summary: 'Get current user notifications',
     description: 'Retrieve notifications for the currently authenticated user',
   })
-  @ApiQuery({ name: 'limit', required: false, type: Number, default: 50 })
+  @ApiQuery({ name: 'limit', required: false, type: Number, schema: { default: 50 } })
   @ApiResponse({
     status: 200,
     description: 'User notifications retrieved successfully',

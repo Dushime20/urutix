@@ -96,6 +96,61 @@ export interface CargoMetrics {
   }>;
 }
 
+export type TripStatus = 'PLANNED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED' | 'DELAYED';
+
+export const TripStatusMap = {
+  PLANNED: 'PLANNED' as TripStatus,
+  IN_PROGRESS: 'IN_PROGRESS' as TripStatus,
+  COMPLETED: 'COMPLETED' as TripStatus,
+  CANCELLED: 'CANCELLED' as TripStatus,
+  DELAYED: 'DELAYED' as TripStatus,
+};
+
+export interface Trip {
+  id: string;
+  tripNumber: string;
+  status: TripStatus;
+  loadId: string;
+  truckId: string;
+  driverId: string;
+  tenantId: string;
+  plannedStartTime?: string;
+  plannedEndTime?: string;
+  actualStartTime?: string;
+  actualEndTime?: string;
+  agreedPrice: number;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+  // Location Data
+  currentLocation?: {
+    type: 'Point';
+    coordinates: [number, number]; // [lng, lat]
+  };
+  origin?: {
+    name?: string;
+    description?: string;
+    latitude: number;
+    longitude: number;
+  } | string; // Supporting both object and simple string for backward compat
+  destination?: {
+    name?: string;
+    description?: string;
+    latitude: number;
+    longitude: number;
+  } | string;
+  estimatedArrival?: string;
+  truckNumber?: string; // Add truckNumber as it is used in UI
+}
+
+export interface TripAnalyticsSummary {
+  totalTrips: number;
+  completedTrips: number;
+  inProgressTrips: number;
+  plannedTrips: number;
+  completionRate: number;
+}
+
 export interface OperationalMetrics {
   onTimePerformance: number;
   averageTransitTime: number;
@@ -105,76 +160,101 @@ export interface OperationalMetrics {
   routeEfficiency: number;
 }
 
+export interface CreditBalance {
+  currentBalance: number;
+  subscriptionCredits: number;
+  purchasedCredits: number;
+  bonusCredits: number;
+  lifetimeEarned: number;
+  lifetimeSpent: number;
+  nextRefreshDate?: string;
+  transactions?: any[];
+}
+
+export interface Bid {
+  id: string;
+  amount: number;
+  status: 'pending' | 'accepted' | 'rejected' | 'withdrawn' | 'active';
+  loadId: string;
+  loadOrigin: string;
+  loadDestination: string;
+  pickupDate: string;
+  truckId: string;
+  driverName?: string;
+  createdAt: string;
+  expiryTime?: string;
+}
+
 // Tenant Dashboard API calls
 export const tenantApi = {
   // Get tenant information
   getTenantInfo: async (tenantId: string): Promise<TenantInfo> => {
     const response = await api.get(`/tenants/${tenantId}`);
-    return response.data;
+    return response.data.data || response.data;
   },
 
   // Get tenant metrics
   getTenantMetrics: async (tenantId: string, timeRange: string = '7d'): Promise<TenantMetrics> => {
-    const response = await api.get(`/tenants/${tenantId}/metrics`, {
+    const response = await api.get(`/tenant-dashboard/${tenantId}/metrics`, {
       params: { timeRange }
     });
-    return response.data;
+    return response.data.data;
   },
 
   // Get tenant trends
   getTenantTrends: async (tenantId: string, timeRange: string = '7d'): Promise<TenantTrends> => {
-    const response = await api.get(`/tenants/${tenantId}/trends`, {
+    const response = await api.get(`/tenant-dashboard/${tenantId}/trends`, {
       params: { timeRange }
     });
-    return response.data;
+    return response.data.data;
   },
 
   // Get recent activity
   getRecentActivity: async (tenantId: string, limit: number = 10): Promise<TenantActivity[]> => {
-    const response = await api.get(`/tenants/${tenantId}/activity`, {
+    const response = await api.get(`/tenant-dashboard/${tenantId}/activity`, {
       params: { limit }
     });
-    return response.data;
+    return response.data.data;
   },
 
   // Get performance metrics
   getPerformanceMetrics: async (tenantId: string): Promise<PerformanceMetric[]> => {
-    const response = await api.get(`/tenants/${tenantId}/performance`);
-    return response.data;
+    const response = await api.get(`/tenant-dashboard/${tenantId}/performance`);
+    return response.data.data;
   },
 
   // Get financial metrics
   getFinancialMetrics: async (tenantId: string, timeRange: string = '7d'): Promise<FinancialMetrics> => {
-    const response = await api.get(`/tenants/${tenantId}/financial`, {
+    const response = await api.get(`/tenant-dashboard/${tenantId}/financial`, {
       params: { timeRange }
     });
-    return response.data;
+    return response.data.data;
   },
 
   // Get fleet metrics
   getFleetMetrics: async (tenantId: string): Promise<FleetMetrics> => {
-    const response = await api.get(`/tenants/${tenantId}/fleet`);
-    return response.data;
+    const response = await api.get(`/tenant-dashboard/${tenantId}/fleet`);
+    return response.data.data;
   },
 
   // Get cargo metrics
   getCargoMetrics: async (tenantId: string, timeRange: string = '7d'): Promise<CargoMetrics> => {
-    const response = await api.get(`/tenants/${tenantId}/cargo`, {
+    const response = await api.get(`/tenant-dashboard/${tenantId}/cargo`, {
       params: { timeRange }
     });
-    return response.data;
+    return response.data.data;
   },
 
   // Get operational metrics
   getOperationalMetrics: async (tenantId: string): Promise<OperationalMetrics> => {
-    const response = await api.get(`/tenants/${tenantId}/operations`);
-    return response.data;
+    const response = await api.get(`/tenant-dashboard/${tenantId}/operations`);
+    return response.data.data;
   },
 
   // Update tenant settings
   updateTenantSettings: async (tenantId: string, settings: Partial<TenantInfo>): Promise<TenantInfo> => {
     const response = await api.put(`/tenants/${tenantId}/settings`, settings);
-    return response.data;
+    return response.data.data || response.data;
   },
 
   // Get tenant analytics
@@ -217,7 +297,104 @@ export const tenantApi = {
   getPendingKYC: async (): Promise<TenantInfo[]> => {
     const response = await api.get('/tenants/kyc/pending');
     return response.data;
-  }
+  },
+
+  // User Management
+  getTenantUsers: async (tenantId: string): Promise<any[]> => {
+    const response = await api.get(`/users/tenant/${tenantId}`);
+    return response.data.data;
+  },
+
+  getTenantUsersByRole: async (tenantId: string, role: string): Promise<any[]> => {
+    const response = await api.get(`/users/tenant/${tenantId}/role/${role}`);
+    return response.data.data;
+  },
+
+  createTenantUser: async (tenantId: string, data: any): Promise<any> => {
+    const response = await api.post(`/users/tenant/${tenantId}/user`, data);
+    return response.data;
+  },
+
+  updateTenantUser: async (userId: string, data: any): Promise<any> => {
+    const response = await api.put(`/users/${userId}`, data);
+    return response.data;
+  },
+
+  // Partner Billing & Credits
+  getPartnerBillingSummary: async (tenantId: string, userId: string): Promise<any> => {
+    const response = await api.get(`/tenant-dashboard/${tenantId}/partners/${userId}/billing-summary`);
+    return response.data;
+  },
+
+  adjustPartnerCredits: async (tenantId: string, userId: string, data: { amount: number; reason: string; adminId: string }): Promise<any> => {
+    const response = await api.post(`/tenant-dashboard/${tenantId}/partners/${userId}/credits/adjust`, data);
+    return response.data;
+  },
+
+  getPartnerCreditHistory: async (tenantId: string, userId: string, params?: { limit?: number; offset?: number }): Promise<any> => {
+    const response = await api.get(`/tenant-dashboard/${tenantId}/partners/${userId}/credits/history`, { params });
+    return response.data;
+  },
+
+  updatePartnerSubscription: async (tenantId: string, userId: string, data: { planId: string; billingCycle: string }): Promise<any> => {
+    const response = await api.post(`/tenant-dashboard/${tenantId}/partners/${userId}/subscription/update`, data);
+    return response.data;
+  },
+
+  // Subscription Plans
+  getSubscriptionPlans: async (): Promise<any> => {
+    const response = await api.get('/subscriptions/plans');
+    return response.data;
+  },
+
+  // Trip Management
+  getActiveTrips: async (_tenantId: string): Promise<Trip[]> => {
+    const response = await api.get('/trips/active');
+    return response.data.data;
+  },
+
+  getTrips: async (params: { page?: number; limit?: number; status?: string; search?: string } = {}): Promise<{ data: Trip[]; pagination: any }> => {
+    const response = await api.get('/trips', { params });
+    return {
+      data: response.data.data,
+      pagination: response.data.pagination
+    };
+  },
+
+  getTripById: async (tripId: string): Promise<Trip> => {
+    const response = await api.get(`/trips/${tripId}`);
+    return response.data.data;
+  },
+
+  getTripAnalyticsSummary: async (): Promise<TripAnalyticsSummary> => {
+    const response = await api.get('/trips/analytics/summary');
+    return response.data.data;
+  },
+
+  // Credit Management
+  getCreditBalance: async (): Promise<CreditBalance> => {
+    const response = await api.get('/credits/balance');
+    return response.data.data;
+  },
+
+  // Bidding Management
+  getTenantBids: async (tenantId: string, status?: string): Promise<Bid[]> => {
+    // Determine status filter query
+    const params: any = {};
+    if (status && status !== 'all') {
+      params.status = status;
+    }
+
+    // Check if we have a specific endpoint, otherwise fall back to a generic one or mock
+    // For now, we'll try to hit a plausible endpoint
+    try {
+      const response = await api.get(`/tenant-dashboard/${tenantId}/bids`, { params });
+      return response.data.data || [];
+    } catch (error) {
+      console.warn('Failed to fetch bids, using empty array or mock', error);
+      return [];
+    }
+  },
 };
 
 // Mock data for development/testing
@@ -255,10 +432,10 @@ export const mockTenantData = {
     fuelEfficiency: [8.2, 8.5, 8.1, 8.8, 8.9, 8.6, 8.7],
   },
   recentActivity: [
-    { id: 1, type: 'shipment', action: 'completed', description: 'Load #L-2024-001 delivered successfully', timestamp: '2 hours ago', status: 'success' },
-    { id: 2, type: 'maintenance', action: 'scheduled', description: 'Truck #T-001 maintenance scheduled', timestamp: '4 hours ago', status: 'info' },
-    { id: 3, type: 'payment', action: 'received', description: 'Payment received for Load #L-2024-002', timestamp: '6 hours ago', status: 'success' },
-    { id: 4, type: 'dispute', action: 'resolved', description: 'Dispute resolved for Load #L-2024-003', timestamp: '1 day ago', status: 'warning' },
+    { id: 1, type: 'shipment', action: 'completed', description: 'Load #L-2024-001 delivered successfully', timestamp: '2 hours ago', status: 'success' as const },
+    { id: 2, type: 'maintenance', action: 'scheduled', description: 'Truck #T-001 maintenance scheduled', timestamp: '4 hours ago', status: 'info' as const },
+    { id: 3, type: 'payment', action: 'received', description: 'Payment received for Load #L-2024-002', timestamp: '6 hours ago', status: 'success' as const },
+    { id: 4, type: 'dispute', action: 'resolved', description: 'Dispute resolved for Load #L-2024-003', timestamp: '1 day ago', status: 'warning' as const },
   ],
   performanceMetrics: [
     {

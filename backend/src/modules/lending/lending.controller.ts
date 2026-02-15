@@ -65,7 +65,7 @@ export class LendingController {
   // ===== ADMIN ENDPOINTS =====
 
   @Post('admin/lenders')
-  @Roles(UserRole.ADMIN, UserRole.TENANT_ADMIN)
+  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.TENANT_ADMIN)
   @ApiOperation({
     summary: 'Create a new lender',
     description:
@@ -118,7 +118,7 @@ export class LendingController {
   }
 
   @Post('admin/lenders/:lenderId/policy')
-  @Roles(UserRole.ADMIN, UserRole.TENANT_ADMIN)
+  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.TENANT_ADMIN)
   @ApiOperation({
     summary: 'Create lender policy',
     description:
@@ -179,7 +179,7 @@ export class LendingController {
   }
 
   @Post('admin/lenders/:lenderId/status')
-  @Roles(UserRole.ADMIN, UserRole.TENANT_ADMIN)
+  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.TENANT_ADMIN)
   @ApiOperation({
     summary: 'Update lender status',
     description: 'Admin endpoint to activate, pause, or suspend a lender',
@@ -230,7 +230,7 @@ export class LendingController {
   }
 
   @Get('admin/lenders')
-  @Roles(UserRole.ADMIN, UserRole.TENANT_ADMIN)
+  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.TENANT_ADMIN)
   @ApiOperation({
     summary: 'Get all lenders',
     description: 'Admin endpoint to retrieve list of all registered lenders',
@@ -270,7 +270,7 @@ export class LendingController {
 
 
   @Get('lending/tenant/lenders')
-  @Roles(UserRole.TENANT_ADMIN, UserRole.CARGO_OWNER)
+  @Roles(UserRole.SUPER_ADMIN, UserRole.TENANT_ADMIN, UserRole.CARGO_OWNER)
   @ApiOperation({
     summary: 'Get all lenders for tenant',
     description: 'Get list of active lenders available for the tenant, including loan officers from external systems',
@@ -448,7 +448,7 @@ export class LendingController {
     return [...lenders, ...loanOfficersAsLenders];
   }
 
-  @Roles(UserRole.ADMIN, UserRole.TENANT_ADMIN)
+  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.TENANT_ADMIN)
   @ApiOperation({
     summary: 'Get lender by ID',
     description:
@@ -1042,7 +1042,7 @@ export class LendingController {
     required: false,
     description: 'Time period for analytics',
     enum: ['7d', '30d', '90d', '12months'],
-    default: '30d',
+    schema: { default: '30d' },
   })
   @ApiResponse({
     status: 200,
@@ -1130,14 +1130,14 @@ export class LendingController {
     required: false,
     description: 'Page number for pagination',
     type: 'number',
-    default: 1,
+    schema: { default: 1 },
   })
   @ApiQuery({
     name: 'limit',
     required: false,
     description: 'Items per page',
     type: 'number',
-    default: 10,
+    schema: { default: 10 },
   })
   @ApiQuery({
     name: 'status',
@@ -1162,14 +1162,14 @@ export class LendingController {
     required: false,
     description: 'Sort field',
     enum: ['requestedDate', 'amount', 'status', 'borrowerName'],
-    default: 'requestedDate',
+    schema: { default: 'requestedDate' },
   })
   @ApiQuery({
     name: 'sortOrder',
     required: false,
     description: 'Sort order',
     enum: ['asc', 'desc'],
-    default: 'desc',
+    schema: { default: 'desc' },
   })
   @ApiResponse({
     status: 200,

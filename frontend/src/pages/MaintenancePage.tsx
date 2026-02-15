@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FaPlus, FaFilter, FaSearch, FaEllipsisV, FaTruck, FaChartLine, FaCheckCircle, FaStar, FaTimesCircle, FaClock, FaTools } from 'react-icons/fa';
+import { FaPlus, FaFilter, FaSearch, FaTools, FaUserCircle, FaBars, FaTimes } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import MaintenanceSchedulerModal from '../components/FleetDashboard/Maintenance/MaintenanceSchedulerModal';
@@ -7,6 +7,7 @@ import MaintenanceHistoryTable from '../components/FleetDashboard/Maintenance/Ma
 import MaintenanceStatsCards from '../components/FleetDashboard/Maintenance/MaintenanceStatsCards';
 import { fleetApi } from '../services/fleetApi';
 import toast from 'react-hot-toast';
+import logoUrutiX from '../assets/logo-urutix.svg';
 import {
     Zap,
     Bell,
@@ -176,12 +177,8 @@ const MaintenancePage: React.FC = () => {
                             )}
                         </button>
 
-                        {/* Logo */}
                         <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate('/dashboard/fleet')}>
-                            <div className="size-10 bg-gradient-to-br from-blue-500 to-indigo-700 flex items-center justify-center rounded-xl shadow-lg shadow-blue-500/20">
-                                <FaTruck className="size-5 text-white" />
-                            </div>
-                            <h2 className="text-xl md:text-2xl font-black tracking-tighter text-white">UrutiX<span className="text-blue-400">.</span></h2>
+                            <img src={logoUrutiX} alt="UrutiX Logistics Logo" className="h-14 md:h-20 w-auto object-contain py-1" />
                         </div>
 
                         {/* Desktop Navigation */}

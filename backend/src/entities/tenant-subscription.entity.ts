@@ -31,13 +31,17 @@ export enum BillingCycle {
 @Index(['tenantId'])
 @Index(['status'])
 @Index(['currentPeriodEnd'])
-@Index(['tenantId'], { unique: true, where: "status = 'active'" })
 export class TenantSubscription {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
   @Column({ type: 'uuid', name: 'tenant_id' })
   tenantId: string;
+
+  // Note: This column doesn't exist in the database but is referenced in code
+  // Marked as nullable to prevent errors
+  @Column({ type: 'uuid', name: 'user_id', nullable: true, select: false })
+  userId?: string;
 
   @Column({ type: 'uuid', name: 'plan_id' })
   planId: string;

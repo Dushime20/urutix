@@ -1,9 +1,10 @@
 import React from 'react';
-import { 
-  FaArrowUp, FaArrowDown, FaMinus, FaTruck, 
-  FaBox, FaDollarSign, FaCheckCircle, FaStar,
-  FaRoute, FaExclamationTriangle 
-} from 'react-icons/fa';
+import {
+  ArrowUp, ArrowDown, Minus, Truck,
+  Box, DollarSign, CheckCircle, Star,
+  Route, AlertTriangle
+} from 'lucide-react';
+import { motion } from 'framer-motion';
 
 interface Metrics {
   totalRevenue: number;
@@ -21,156 +22,180 @@ interface QuickStatsProps {
 }
 
 const QuickStats: React.FC<QuickStatsProps> = ({ metrics }) => {
-  const formatCurrency = (amount: number) => {
+  const formatCurrency = (amount: number | undefined) => {
     return new Intl.NumberFormat('en-RW', {
       style: 'currency',
       currency: 'RWF',
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
-    }).format(amount);
+    }).format(amount || 0);
   };
 
-  const formatNumber = (num: number) => {
-    return new Intl.NumberFormat('en-US').format(num);
+  const formatNumber = (num: number | undefined) => {
+    return new Intl.NumberFormat('en-US').format(num || 0);
   };
 
-  const formatPercentage = (num: number) => {
-    return `${num.toFixed(1)}%`;
+  const formatPercentage = (num: number | undefined) => {
+    return `${(num || 0).toFixed(1)}%`;
   };
 
   const getTrendIcon = (trend: 'up' | 'down' | 'stable') => {
     switch (trend) {
-      case 'up': return <FaArrowUp className="w-3 h-3 text-green-500" />;
-      case 'down': return <FaArrowDown className="w-3 h-3 text-red-500" />;
-      case 'stable': return <FaMinus className="w-3 h-3 text-gray-500" />;
+      case 'up': return <ArrowUp className="w-3 h-3 text-emerald-500" />;
+      case 'down': return <ArrowDown className="w-3 h-3 text-rose-500" />;
+      case 'stable': return <Minus className="w-3 h-3 text-slate-400" />;
     }
   };
 
   const getTrendColor = (trend: 'up' | 'down' | 'stable') => {
     switch (trend) {
-      case 'up': return 'text-green-600';
-      case 'down': return 'text-red-600';
-      case 'stable': return 'text-gray-600';
+      case 'up': return 'text-emerald-600';
+      case 'down': return 'text-rose-600';
+      case 'stable': return 'text-slate-500';
     }
   };
 
   const stats = [
     {
       title: 'Total Revenue',
-      value: formatCurrency(metrics.totalRevenue),
-      icon: FaDollarSign,
-      iconColor: 'text-green-600',
-      bgColor: 'bg-green-50',
+      value: formatCurrency(metrics?.totalRevenue),
+      icon: DollarSign,
+      iconColor: 'text-emerald-600',
+      bgColor: 'bg-emerald-50',
       trend: 'up' as const,
       change: '+12.5%',
-      description: 'vs last month'
+      description: 'vs prev cycle'
     },
     {
-      title: 'Total Shipments',
-      value: formatNumber(metrics.totalShipments),
-      icon: FaBox,
-      iconColor: 'text-blue-600',
-      bgColor: 'bg-blue-50',
+      title: 'Active Shipments',
+      value: formatNumber(metrics?.totalShipments),
+      icon: Box,
+      iconColor: 'text-indigo-600',
+      bgColor: 'bg-indigo-50',
       trend: 'up' as const,
       change: '+8.3%',
-      description: 'vs last month'
+      description: 'vs prev cycle'
     },
     {
-      title: 'Active Fleet',
-      value: metrics.activeFleet.toString(),
-      icon: FaTruck,
-      iconColor: 'text-purple-600',
-      bgColor: 'bg-purple-50',
+      title: 'Live Fleet',
+      value: (metrics?.activeFleet || 0).toString(),
+      icon: Truck,
+      iconColor: 'text-violet-600',
+      bgColor: 'bg-violet-50',
       trend: 'stable' as const,
       change: '0%',
-      description: 'vs last month'
+      description: 'vs prev cycle'
     },
     {
-      title: 'On-Time Delivery',
-      value: formatPercentage(metrics.onTimeDelivery),
-      icon: FaCheckCircle,
+      title: 'Reliability Rate',
+      value: formatPercentage(metrics?.onTimeDelivery),
+      icon: CheckCircle,
       iconColor: 'text-emerald-600',
       bgColor: 'bg-emerald-50',
       trend: 'up' as const,
       change: '+2.1%',
-      description: 'vs last month'
+      description: 'vs prev cycle'
     },
     {
-      title: 'Customer Satisfaction',
-      value: `${metrics.customerSatisfaction}/5`,
-      icon: FaStar,
-      iconColor: 'text-yellow-600',
-      bgColor: 'bg-yellow-50',
+      title: 'Partner Trust',
+      value: `${metrics?.customerSatisfaction || 0}/5`,
+      icon: Star,
+      iconColor: 'text-amber-600',
+      bgColor: 'bg-amber-50',
       trend: 'up' as const,
       change: '+0.2',
-      description: 'vs last month'
+      description: 'vs prev cycle'
     },
     {
-      title: 'Fuel Efficiency',
-      value: `${metrics.fuelEfficiency} km/L`,
-      icon: FaRoute,
-      iconColor: 'text-indigo-600',
-      bgColor: 'bg-indigo-50',
+      title: 'Fuel Optimization',
+      value: `${metrics?.fuelEfficiency || 0} km/L`,
+      icon: Route,
+      iconColor: 'text-sky-600',
+      bgColor: 'bg-sky-50',
       trend: 'up' as const,
       change: '+0.3',
-      description: 'vs last month'
+      description: 'vs prev cycle'
     },
     {
-      title: 'Load Utilization',
-      value: formatPercentage(metrics.averageLoadUtilization),
-      icon: FaBox,
+      title: 'Asset Yield',
+      value: formatPercentage(metrics?.averageLoadUtilization),
+      icon: Box,
       iconColor: 'text-orange-600',
       bgColor: 'bg-orange-50',
       trend: 'up' as const,
       change: '+3.7%',
-      description: 'vs last month'
+      description: 'vs prev cycle'
     },
     {
-      title: 'Dispute Rate',
-      value: formatPercentage(metrics.disputeRate),
-      icon: FaExclamationTriangle,
-      iconColor: 'text-red-600',
-      bgColor: 'bg-red-50',
+      title: 'Conflict Index',
+      value: formatPercentage(metrics?.disputeRate),
+      icon: AlertTriangle,
+      iconColor: 'text-rose-600',
+      bgColor: 'bg-rose-50',
       trend: 'down' as const,
       change: '-0.5%',
-      description: 'vs last month'
+      description: 'vs prev cycle'
     }
   ];
 
+  const container = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: { staggerChildren: 0.05 }
+    }
+  };
+
+  const item = {
+    hidden: { opacity: 0, y: 10 },
+    show: { opacity: 1, y: 0 }
+  };
+
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+    <motion.div
+      variants={container}
+      initial="hidden"
+      animate="show"
+      className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
+    >
       {stats.map((stat, index) => {
         const Icon = stat.icon;
         return (
-          <div key={index} className="bg-white rounded-lg shadow p-3 hover:shadow-md transition-shadow">
-            <div className="flex items-center justify-between">
-              <div className={`p-2 rounded-lg ${stat.bgColor}`}>
+          <motion.div
+            key={index}
+            variants={item}
+            whileHover={{ y: -4, scale: 1.02 }}
+            className="bg-white rounded-[24px] border border-gray-100 shadow-sm p-5 hover:shadow-lg hover:shadow-indigo-500/5 transition-all duration-300 group cursor-default"
+          >
+            <div className="flex items-center justify-between mb-4">
+              <div className={`p-2.5 rounded-xl ${stat.bgColor} transition-transform duration-300 group-hover:scale-110`}>
                 <Icon className={`w-4 h-4 ${stat.iconColor}`} />
               </div>
-              <div className="flex items-center space-x-1">
+              <div className="flex items-center space-x-1.5 bg-gray-50 px-2 py-0.5 rounded-full border border-gray-100">
                 {getTrendIcon(stat.trend)}
-                <span className={`text-xs font-medium ${getTrendColor(stat.trend)}`}>
+                <span className={`text-[11px] font-black ${getTrendColor(stat.trend)}`}>
                   {stat.change}
                 </span>
               </div>
             </div>
-            
-            <div className="mt-2">
-              <h3 className="text-xs font-medium text-gray-500 truncate">
+
+            <div>
+              <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest truncate mb-1">
                 {stat.title}
               </h3>
-              <p className="text-lg font-bold text-gray-900 mt-0.5">
+              <p className="text-2xl font-black text-slate-800 tracking-tight">
                 {stat.value}
               </p>
-              <p className="text-xs text-gray-400 mt-0.5">
+              <p className="text-[11px] font-bold text-slate-300 mt-1">
                 {stat.description}
               </p>
             </div>
-          </div>
+          </motion.div>
         );
       })}
-    </div>
+    </motion.div>
   );
 };
 
 export default QuickStats;
+

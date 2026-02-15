@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Search, Bell, User, Menu, X, ChevronDown, Package, Gavel, MapPin, BarChart3, CreditCard, FileText, Settings, HelpCircle, Truck, Users, Route, Shield, TrendingUp, Wallet, AlertCircle, DollarSign, Home, CheckCircle, Building, ClipboardList, Receipt, Fuel, AlertTriangle, Activity } from 'lucide-react';
+import { Search, Bell, User, Menu, X, ChevronDown, Package, Gavel, MapPin, BarChart3, CreditCard, FileText, Settings, HelpCircle, Truck, Users, Route, Shield, TrendingUp, Wallet, AlertCircle, DollarSign, Home, CheckCircle, Building, ClipboardList, Receipt, Fuel, AlertTriangle, Activity, Navigation } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useCargoOwnerNotifications } from '../../hooks/useCargoOwnerNotifications.tsx';
 import ContextualHelp from '../Help/ContextualHelp';
+import logoUrutiX from '../../assets/logo-urutix-logistics.svg';
 
 const DashboardHeader = () => {
   const { user, logout } = useAuth();
@@ -564,9 +565,9 @@ const DashboardHeader = () => {
           icon: Route
         },
         {
-          label: 'Trip Management',
+          label: 'Trips',
           path: '/tenant-admin/trips',
-          icon: ClipboardList
+          icon: Navigation
         },
         {
           label: 'Financial',
@@ -730,7 +731,7 @@ const DashboardHeader = () => {
       if (path.includes('/tenant-admin/drivers')) return 'Drivers';
       if (path.includes('/tenant-admin/lenders')) return 'Lenders';
       if (path.includes('/tenant-admin/routes')) return 'Routes';
-      if (path.includes('/tenant-admin/trips')) return 'Trip Management';
+      if (path.includes('/tenant-admin/trips')) return 'Trips';
       if (path.includes('/tenant-admin/financial')) return 'Financial';
       if (path.includes('/tenant-admin/analytics')) return 'Analytics';
       if (path.includes('/tenant-admin/reports')) return 'Reports';
@@ -781,11 +782,8 @@ const DashboardHeader = () => {
             </button>
 
             {/* Logo */}
-            <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
-              <div className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 bg-emerald-600 rounded-lg flex items-center justify-center">
-                <Truck className="w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5 text-white" />
-              </div>
-              <span className="text-base sm:text-lg md:text-xl font-bold">UrutiX</span>
+            <div className="flex items-center flex-shrink-0 cursor-pointer" onClick={() => navigate('/')}>
+              <img src={logoUrutiX} alt="UrutiX Logistics Logo" className="h-10 sm:h-14 md:h-18 lg:h-20 w-auto object-contain" />
             </div>
 
             {/* Desktop Nav */}

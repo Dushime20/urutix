@@ -20,7 +20,7 @@ async function bootstrap() {
 
   // Configure CORS origins.
   // In development you can set ALLOWED_ORIGINS="http://localhost:5173,http://localhost:5713"
-  // otherwise we fall back to sensible localhost entries.
+  // For production with subdomains: ALLOWED_ORIGINS="https://*.urutix.com,https://urutix.com"
   const allowedOrigins = process.env.ALLOWED_ORIGINS
     ? process.env.ALLOWED_ORIGINS.split(',').map((o) => o.trim())
     : [
@@ -32,7 +32,7 @@ async function bootstrap() {
         'http://127.0.0.1:5713',
       ];
 
-  // Enable CORS for HTTP requests
+  // Enable CORS for HTTP requests with subdomain support
   app.enableCors({
     origin: (origin, callback) => {
       // Allow requests with no origin (like mobile apps, curl, Postman)
@@ -45,8 +45,35 @@ async function bootstrap() {
         return callback(new Error('CORS not configured'), false);
       }
       
+      // Check exact match first
       if (allowedOrigins.includes(origin)) {
-        console.log(`✅ CORS: Allowed request from ${origin}`);
+        console.log(`✅ CORS: Allowed request from ${origin} (exact match)`);
+        return callback(null, true);
+      }
+      
+      // Check wildcard subdomain patterns (e.g., *.urutix.com)
+      const isWildcardMatch = allowedOrigins.some(allowed => {
+        if (allowed.includes('*')) {
+          // Convert wildcard pattern to regex
+          // *.urutix.com -> ^https?:\/\/[^.]+\.urutix\.com$
+          const pattern = allowed
+            .replace(/\./g, '\\.')
+            .replace(/\*/g, '[^.]+')
+            .replace(/^http/, 'https?');
+          const regex = new RegExp(`^${pattern}$`);
+          return regex.test(origin);
+        }
+        return false;
+      });
+      
+      if (isWildcardMatch) {
+        console.log(`✅ CORS: Allowed request from ${origin} (wildcard match)`);
+        return callback(null, true);
+      }
+      
+      // For development: allow .localhost subdomains
+      if (origin.includes('.localhost') || origin.includes('localhost')) {
+        console.log(`✅ CORS: Allowed request from ${origin} (localhost subdomain)`);
         return callback(null, true);
       }
       
@@ -60,6 +87,7 @@ async function bootstrap() {
       'Authorization',
       'x-tenant-id',
       'X-Tenant-ID',
+      'X-Tenant-Subdomain', // Add subdomain header
       'Accept',
       'Origin',
       'Cache-Control',

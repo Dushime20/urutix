@@ -13,15 +13,19 @@ import { Tenant } from './tenant.entity';
 import { CreditTransaction } from './credit-transaction.entity';
 
 @Entity('credit_accounts')
-@Index(['tenantId'], { unique: true })
+@Index(['tenantId', 'userId'], { unique: true })
 @Index(['currentBalance'])
 @Index(['nextRefreshDate'])
 export class CreditAccount {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ type: 'uuid', unique: true, name: 'tenant_id' })
+  @Column({ type: 'uuid', name: 'tenant_id', nullable: true })
   tenantId: string;
+
+  @Column({ type: 'uuid', name: 'user_id', nullable: true })
+  @Index()
+  userId: string;
 
   @Column({ type: 'int', default: 0, name: 'current_balance' })
   currentBalance: number;
@@ -97,8 +101,8 @@ export class CreditAccount {
     remaining: number;
     usageRate: number;
   } {
-    const usageRate = this.lifetimeEarned > 0 
-      ? Math.round((this.lifetimeSpent / this.lifetimeEarned) * 100) 
+    const usageRate = this.lifetimeEarned > 0
+      ? Math.round((this.lifetimeSpent / this.lifetimeEarned) * 100)
       : 0;
 
     return {

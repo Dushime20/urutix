@@ -1,10 +1,11 @@
 import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import { biddingAPI, biddingHelpers } from '../services/biddingApi';
 import { fleetApi } from '../services/fleetApi';
-import { FaSearch, FaGavel, FaDollarSign, FaClock, FaPlus, FaStar, FaRegStar, FaMapMarkerAlt, FaTimes, FaTruck, FaChartLine, FaCheckCircle, FaBolt, FaUser, FaRoute, FaFilter, FaArrowRight } from 'react-icons/fa';
-import { Grid, Table, AlertTriangle, Clock, MapPin, Search, Bell, Menu, X, Filter, Download, Calendar, ArrowUpRight, ArrowDownRight, MoreVertical, Shield, Zap, Settings, LogOut, CheckCircle, Droplets, Fuel, ChevronDown } from 'lucide-react';
+import { FaUserCircle, FaBars, FaTimes, FaTruck, FaPlus, FaStar, FaRegStar, FaBolt, FaUser, FaArrowRight, FaClock, FaGavel, FaMapMarkerAlt } from 'react-icons/fa';
+import { Grid, Table, Clock, Search, Bell, X, Filter, Download, ArrowUpRight, ArrowDownRight, MoreVertical, Shield, Zap, Settings, LogOut, CheckCircle, Droplets, Fuel, ChevronDown, MapPin, Menu as MenuIcon, Calendar, AlertTriangle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
+import logoUrutiX from '../assets/logo-urutix.svg';
 import { useAuth } from '../contexts/AuthContext';
 
 const TruckBidsPage: React.FC = () => {
@@ -586,12 +587,8 @@ const TruckBidsPage: React.FC = () => {
 							)}
 						</button>
 
-						{/* Logo */}
 						<div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate('/dashboard/fleet')}>
-							<div className="size-10 bg-gradient-to-br from-blue-500 to-indigo-700 flex items-center justify-center rounded-xl shadow-lg shadow-blue-500/20">
-								<FaTruck className="size-5 text-white" />
-							</div>
-							<h2 className="text-xl md:text-2xl font-black tracking-tighter text-white">UrutiX<span className="text-blue-400">.</span></h2>
+							<img src={logoUrutiX} alt="UrutiX Logistics Logo" className="h-14 md:h-20 w-auto object-contain py-1" />
 						</div>
 
 						{/* Desktop Navigation */}

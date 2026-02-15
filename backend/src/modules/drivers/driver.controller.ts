@@ -49,7 +49,7 @@ export class DriverController {
   constructor(
     private readonly driverService: DriverService,
     private readonly ocrService: OcrService,
-  ) {}
+  ) { }
 
   @Post()
   @ApiOperation({
@@ -95,28 +95,20 @@ export class DriverController {
     required: false,
   })
   @ApiQuery({ name: 'availabilityStatus', type: String, required: false })
-  @ApiQuery({
-    name: 'minRating',
-    type: Number,
-    minimum: 0,
-    maximum: 5,
-    required: false,
-  })
+  @ApiQuery({ name: 'minRating', type: Number, required: false, schema: { minimum: 0, maximum: 5 } })
   @ApiQuery({
     name: 'minSafetyScore',
     type: Number,
-    minimum: 0,
-    maximum: 100,
     required: false,
+    schema: { minimum: 0, maximum: 100 },
   })
   @ApiQuery({ name: 'search', type: String, required: false })
-  @ApiQuery({ name: 'page', type: Number, minimum: 1, required: false })
+  @ApiQuery({ name: 'page', type: Number, schema: { minimum: 1 }, required: false })
   @ApiQuery({
     name: 'limit',
     type: Number,
-    minimum: 1,
-    maximum: 100,
     required: false,
+    schema: { minimum: 1, maximum: 100 },
   })
   @ApiOkResponse({
     description: 'List of drivers retrieved successfully',

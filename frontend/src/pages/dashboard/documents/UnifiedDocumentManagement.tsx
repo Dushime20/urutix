@@ -82,11 +82,11 @@ const UnifiedDocumentManagement = () => {
   return (
     <div className="min-h-screen bg-gray-50 relative">
       {/* Background Logo */}
-      <img 
-        src={logoUrutiX} 
-        alt="UrutiX Logo Background" 
-        className="pointer-events-none select-none fixed inset-0 w-full h-full object-cover opacity-10 z-0" 
-        style={{objectPosition: 'center'}} 
+      <img
+        src={logoUrutiX}
+        alt="UrutiX Logo Background"
+        className="pointer-events-none select-none fixed inset-0 w-full h-full object-cover opacity-10 z-0"
+        style={{ objectPosition: 'center' }}
       />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 relative z-10">
         {/* Header */}
@@ -129,13 +129,13 @@ const UnifiedDocumentManagement = () => {
         <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
           <div className="p-6 pt-6">
             {/* Pass entityType to DocumentsPage based on active tab */}
-            <DocumentsPage 
-              key={activeTab} 
+            <DocumentsPage
+              key={activeTab}
               entityTypeOverride={
                 activeTab === 'cargo' ? 'CARGO' :
-                activeTab === 'trip' ? 'TRIP' :
-                activeTab === 'financial' ? 'FINANCIAL' :
-                undefined
+                  activeTab === 'trip' ? 'TRIP' :
+                    activeTab === 'financial' ? 'FINANCIAL' :
+                      undefined
               }
             />
           </div>

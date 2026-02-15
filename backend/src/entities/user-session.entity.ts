@@ -13,7 +13,7 @@ import { User } from './user.entity';
 @Index(['userId'])
 @Index(['expiresAt'])
 export class UserSession {
-    @PrimaryColumn({ type: 'varchar', length: 255 })
+    @PrimaryColumn({ name: 'session_id', type: 'varchar', length: 255 })
     id: string;
 
     @Column({ name: 'user_id', type: 'uuid' })
@@ -46,8 +46,11 @@ export class UserSession {
     @Column({ name: 'expires_at', type: 'timestamp' })
     expiresAt: Date;
 
-    @CreateDateColumn({ name: 'created_at' })
-    createdAt: Date;
+    @Column({ name: 'started_at', type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+    startedAt: Date;
+
+    @Column({ name: 'tenant_id', type: 'uuid' })
+    tenantId: string;
 
     @ManyToOne(() => User, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'user_id' })

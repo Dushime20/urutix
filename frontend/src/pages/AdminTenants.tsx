@@ -1,7 +1,17 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { createTenant, fetchTenants, getTenantById, updateTenant } from '../services/adminApi';
+import { 
+  createTenant, 
+  fetchTenants, 
+  fetchEnrichedTenants,
+  getTenantById, 
+  getTenantDetailsEnriched,
+  getTenantHealth,
+  updateTenant,
+  setTenantStatus,
+  bulkUpdateTenants
+} from '../services/adminApi';
 import toast from 'react-hot-toast';
 import TenantSettingsModal from '../components/TenantSettingsModal';
 import ManageUsersModal from '../components/ManageUsersModal';
@@ -11,7 +21,7 @@ import {
   Eye, Check, X,
   ChevronsUpDown, Globe, Users, TrendingUp,
   Calendar, Settings, ShieldCheck, AlertTriangle,
-  Truck, CreditCard, Clock
+  Truck, CreditCard, Clock, Activity, Heart
 } from 'lucide-react';
 import AdminPageLayout from '../components/Admin/AdminPageLayout';
 
@@ -32,25 +42,26 @@ interface Tenant {
   location?: string;
   kycStatus?: 'PENDING' | 'SUBMITTED' | 'APPROVED' | 'REJECTED' | 'INCOMPLETE';
   kycData?: any;
+  // Enhanced fields from new API
+  healthScore?: number;
+  subscription?: {
+    planName: string;
+    status: string;
+    expiresAt: Date;
+  };
+  credits?: {
+    balance: number;
+    lastPurchase: Date;
+  };
+  users?: {
+    total: number;
+    active: number;
+  };
 }
 
 const AdminTenants: React.FC = () => {
   const qc = useQueryClient();
   const navigate = useNavigate();
-
-  // Fetch tenants from API
-  const { data: tenantsData, isLoading: isLoadingTenants, error: tenantsError } = useQuery({
-    queryKey: ['admin-tenants'],
-    queryFn: async () => {
-      try {
-        const result = await fetchTenants();
-        return result;
-      } catch (error: any) {
-        console.error("Error fetching tenants:", error);
-        throw error;
-      }
-    }
-  });
 
   // Form state
   const [name, setName] = useState('');
@@ -92,6 +103,37 @@ const AdminTenants: React.FC = () => {
   const [editPostalCode, setEditPostalCode] = useState('');
   const [editWebsiteUrl, setEditWebsiteUrl] = useState('');
   const [editPlan, setEditPlan] = useState<'starter' | 'professional' | 'enterprise'>('starter');
+
+  // Toggle between basic and enriched data
+  const [useEnrichedData, setUseEnrichedData] = useState(true);
+
+  // Fetch tenants from API - use enriched data when enabled
+  const { data: tenantsData, isLoading: isLoadingTenants, error: tenantsError } = useQuery({
+    queryKey: ['admin-tenants', useEnrichedData, statusFilter, searchTerm],
+    queryFn: async () => {
+      try {
+        if (useEnrichedData) {
+          // Use new enriched API
+          const filters: any = {};
+          if (statusFilter !== 'all') {
+            filters.status = [statusFilter.toUpperCase()];
+          }
+          if (searchTerm) {
+            filters.search = searchTerm;
+          }
+          const result = await fetchEnrichedTenants(filters);
+          return result;
+        } else {
+          // Use legacy API
+          const result = await fetchTenants();
+          return result;
+        }
+      } catch (error: any) {
+        console.error("Error fetching tenants:", error);
+        throw error;
+      }
+    }
+  });
 
   // Map backend status to frontend status format
   const mapBackendStatus = (status: string): 'active' | 'inactive' | 'pending' | 'suspended' => {
@@ -137,23 +179,36 @@ const AdminTenants: React.FC = () => {
     console.log(`✅ Found ${tenantsArray.length} tenants to display`);
 
     const transformed = tenantsArray.map((tenant: any) => {
-      const mapped = {
+      // Check if this is enriched data (has subscription, credits, users objects)
+      const isEnriched = tenant.subscription || tenant.credits || tenant.users;
+      
+      const mapped: Tenant = {
         id: tenant.id,
         name: tenant.name,
         subdomain: tenant.subdomain || '',
         status: mapBackendStatus(tenant.status || 'PENDING_ACTIVATION'),
         createdAt: tenant.createdAt ? new Date(tenant.createdAt).toISOString() : new Date().toISOString(),
-        lastActivity: tenant.updatedAt ? new Date(tenant.updatedAt).toISOString() : tenant.createdAt ? new Date(tenant.createdAt).toISOString() : new Date().toISOString(),
-        userCount: 0, // Will be populated from relations if available
+        lastActivity: tenant.lastActivity ? new Date(tenant.lastActivity).toISOString() : 
+                      tenant.updatedAt ? new Date(tenant.updatedAt).toISOString() : 
+                      tenant.createdAt ? new Date(tenant.createdAt).toISOString() : 
+                      new Date().toISOString(),
+        userCount: isEnriched ? tenant.users?.total : 0,
         trucksCount: 0, // Will be populated from relations if available
         revenue: 0, // Will be calculated from billing data if available
-        plan: mapBackendPlan(tenant.subscriptionPlan),
+        plan: isEnriched && tenant.subscription?.planName ? 
+              mapBackendPlan(tenant.subscription.planName) : 
+              mapBackendPlan(tenant.subscriptionPlan),
         domain: tenant.domain || '',
         contactEmail: tenant.contactEmail || '',
         adminName: '', // Will be populated from admin user relation if available
         location: tenant.city && tenant.country ? `${tenant.city}, ${tenant.country}` : tenant.country || tenant.city || '',
         kycStatus: tenant.kycStatus || 'PENDING',
         kycData: tenant.kycData || {},
+        // Enhanced fields
+        healthScore: tenant.healthScore,
+        subscription: tenant.subscription,
+        credits: tenant.credits,
+        users: tenant.users,
       };
       return mapped;
     });
@@ -346,6 +401,15 @@ const AdminTenants: React.FC = () => {
     }
   };
 
+  const getHealthScoreColor = (score?: number) => {
+    if (!score) return { bg: 'bg-gray-100', text: 'text-gray-600', label: 'N/A' };
+    if (score >= 80) return { bg: 'bg-emerald-100', text: 'text-emerald-700', label: 'EXCELLENT' };
+    if (score >= 60) return { bg: 'bg-green-100', text: 'text-green-700', label: 'GOOD' };
+    if (score >= 40) return { bg: 'bg-yellow-100', text: 'text-yellow-700', label: 'FAIR' };
+    if (score >= 20) return { bg: 'bg-orange-100', text: 'text-orange-700', label: 'POOR' };
+    return { bg: 'bg-rose-100', text: 'text-rose-700', label: 'CRITICAL' };
+  };
+
   const handleCreateTenant = () => {
     // Use default admin names since admin info is stored in User entity, not Tenant
     const adminFirstName = 'Admin';
@@ -461,6 +525,18 @@ const AdminTenants: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-3">
+          <button 
+            onClick={() => setUseEnrichedData(!useEnrichedData)}
+            className={`px-4 py-2.5 text-[10px] font-black uppercase tracking-widest border rounded-xl flex items-center gap-2 transition-all shadow-sm ${
+              useEnrichedData 
+                ? 'bg-indigo-600 text-white border-indigo-600 hover:bg-indigo-700' 
+                : 'bg-white text-slate-600 border-gray-200 hover:bg-gray-50'
+            }`}
+            title={useEnrichedData ? 'Showing enriched data with health scores' : 'Showing basic data'}
+          >
+            <Heart className="w-3 h-3" /> 
+            {useEnrichedData ? 'Enhanced View' : 'Basic View'}
+          </button>
           <button className="px-4 py-2.5 text-[10px] font-black uppercase tracking-widest border border-gray-200 rounded-xl flex items-center gap-2 hover:bg-gray-50 bg-white transition-all shadow-sm text-slate-600">
             <Download className="w-3 h-3" /> Export
           </button>
@@ -515,6 +591,9 @@ const AdminTenants: React.FC = () => {
                   <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Network Node</th>
                   <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Access Plan</th>
                   <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
+                  {useEnrichedData && (
+                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Health</th>
+                  )}
                   <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">KYC Sync</th>
                   <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Capacity</th>
                   <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Fiscal Yield</th>
@@ -564,6 +643,23 @@ const AdminTenants: React.FC = () => {
                         <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest leading-none">{(tenant.status || '').replace('_', ' ')}</span>
                       </div>
                     </td>
+                    {useEnrichedData && (
+                      <td className="px-6 py-5">
+                        {tenant.healthScore !== undefined ? (
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                              <Heart className={`w-3 h-3 ${getHealthScoreColor(tenant.healthScore).text}`} />
+                              <span className="text-sm font-black text-gray-900 tracking-tight leading-none">{tenant.healthScore}</span>
+                            </div>
+                            <span className={`inline-flex px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest ${getHealthScoreColor(tenant.healthScore).bg} ${getHealthScoreColor(tenant.healthScore).text}`}>
+                              {getHealthScoreColor(tenant.healthScore).label}
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">N/A</span>
+                        )}
+                      </td>
+                    )}
                     <td className="px-6 py-5">
                       <span
                         className={`inline-flex px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest border transition-all cursor-pointer hover:scale-105 ${getKYCStatusColor(tenant.kycStatus || 'PENDING').replace('bg-', 'bg-').replace('text-', 'text-').replace('100', '50/50')} border-transparent shadow-sm`}
@@ -578,7 +674,15 @@ const AdminTenants: React.FC = () => {
                     </td>
                     <td className="px-6 py-5">
                       <div className="space-y-1">
-                        <div className="text-sm font-black text-gray-900 tracking-tight leading-none uppercase">{tenant.userCount || 0} SEATS</div>
+                        <div className="text-sm font-black text-gray-900 tracking-tight leading-none uppercase">
+                          {useEnrichedData && tenant.users ? tenant.users.total : tenant.userCount || 0} SEATS
+                        </div>
+                        {useEnrichedData && tenant.users && (
+                          <div className="text-[10px] font-black text-emerald-600 uppercase tracking-widest flex items-center gap-1.5 leading-none">
+                            <Activity size={10} className="text-emerald-500" />
+                            {tenant.users.active} ACTIVE
+                          </div>
+                        )}
                         <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5 leading-none">
                           <Truck size={10} className="text-indigo-400" />
                           {tenant.trucksCount || 0} ASSETS
@@ -586,8 +690,27 @@ const AdminTenants: React.FC = () => {
                       </div>
                     </td>
                     <td className="px-6 py-5">
-                      <div className="text-sm font-black text-emerald-600 tracking-tight leading-none uppercase">${tenant.revenue?.toLocaleString() || '0'} USD</div>
-                      <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1 leading-none">MONTHLY YIELD</div>
+                      <div className="space-y-1">
+                        {useEnrichedData && tenant.credits ? (
+                          <>
+                            <div className="text-sm font-black text-indigo-600 tracking-tight leading-none uppercase flex items-center gap-1.5">
+                              <CreditCard size={12} className="text-indigo-500" />
+                              {tenant.credits.balance.toLocaleString()} CREDITS
+                            </div>
+                            {tenant.credits.lastPurchase && (
+                              <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5 leading-none">
+                                <Clock size={10} className="text-slate-300" />
+                                {new Date(tenant.credits.lastPurchase).toLocaleDateString()}
+                              </div>
+                            )}
+                          </>
+                        ) : (
+                          <>
+                            <div className="text-sm font-black text-emerald-600 tracking-tight leading-none uppercase">${tenant.revenue?.toLocaleString() || '0'} USD</div>
+                            <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1 leading-none">MONTHLY YIELD</div>
+                          </>
+                        )}
+                      </div>
                     </td>
                     <td className="px-6 py-5">
                       <div className="flex justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">

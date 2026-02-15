@@ -29,6 +29,8 @@ import BrokerLayout from './components/Layout/BrokerLayout';
 
 import Auth from './pages/Auth';
 import Home from './pages/Home';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 import DriverPasswordSetup from './pages/DriverPasswordSetup';
 import TenantPasswordSetup from './pages/TenantPasswordSetup';
 import LenderPasswordSetup from './pages/LenderPasswordSetup';
@@ -64,6 +66,9 @@ const CreditUsageHistory = lazy(() => import('./pages/admin/CreditUsageHistory')
 const TenantSubscriptions = lazy(() => import('./pages/admin/TenantSubscriptions'));
 const RoleManagement = lazy(() => import('./pages/admin/RoleManagement'));
 const CreditPricingRules = lazy(() => import('./pages/admin/CreditPricingRules'));
+const AdvancedSettings = lazy(() => import('./pages/admin/AdvancedSettings'));
+const ComponentShowcase = lazy(() => import('./pages/admin/ComponentShowcase'));
+const BulkEmail = lazy(() => import('./pages/admin/BulkEmail'));
 const TenantDashboardPage = lazy(() => import('./pages/TenantDashboard'));
 const TenantFleetManagement = lazy(() => import('./components/TenantAdmin/TenantFleetManagement'));
 
@@ -182,6 +187,8 @@ function App() {
                   <Routes>
                     <Route path="/" element={<Home />} />
                     <Route path="/auth" element={<Auth />} />
+                    <Route path="/forgot-password" element={<ForgotPassword />} />
+                    <Route path="/reset-password" element={<ResetPassword />} />
                     <Route path="/driver/setup-password" element={<DriverPasswordSetup />} />
                     <Route path="/tenant/setup-password" element={<TenantPasswordSetup />} />
                     <Route path="/lender/setup-password" element={<LenderPasswordSetup />} />
@@ -371,6 +378,9 @@ function App() {
                   <Route path="permissions" element={<EnhancedPermissions />} />
                   <Route path="enhanced-permissions" element={<EnhancedPermissions />} />
                   <Route path="activity-logs" element={<ActivityLogs />} />
+                  <Route path="advanced-settings" element={<AdvancedSettings />} />
+                  <Route path="component-showcase" element={<ComponentShowcase />} />
+                  <Route path="bulk-email" element={<BulkEmail />} />
                   <Route path="reports" element={<Analytics />} />
                   <Route path="help" element={<Settings />} />
                   <Route path="profile" element={<Profile />} />

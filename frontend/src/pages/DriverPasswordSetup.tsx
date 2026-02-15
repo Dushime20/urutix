@@ -32,7 +32,7 @@ const DriverPasswordSetup = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token');
-  
+
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -125,10 +125,13 @@ const DriverPasswordSetup = () => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 relative overflow-hidden">
         {/* Full Page Background Logo */}
-        <img src={logoUrutiX} alt="UrutiX Logo Background" className="pointer-events-none select-none fixed inset-0 w-full h-full object-cover opacity-10 z-0" style={{objectPosition: 'center'}} />
+        <img src={logoUrutiX} alt="UrutiX Logo Background" className="pointer-events-none select-none fixed inset-0 w-full h-full object-cover opacity-10 z-0" style={{ objectPosition: 'center' }} />
         <div className="w-full max-w-md px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
-            <div className="px-6 pt-6 pb-4 text-center">
+            <div className="px-6 pt-8 pb-4 text-center">
+              <div className="flex justify-center mb-6">
+                <img src={logoUrutiX} alt="UrutiX Logistics" className="h-20 w-auto object-contain" />
+              </div>
               <div className="flex justify-center mb-4">
                 <div className="bg-green-100 rounded-full p-3">
                   <FaCheckCircle className="text-green-600 text-3xl" />
@@ -157,11 +160,15 @@ const DriverPasswordSetup = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 relative overflow-hidden">
       {/* Full Page Background Logo */}
-      <img src={logoUrutiX} alt="UrutiX Logo Background" className="pointer-events-none select-none fixed inset-0 w-full h-full object-cover opacity-10 z-0" style={{objectPosition: 'center'}} />
+      <img src={logoUrutiX} alt="UrutiX Logo Background" className="pointer-events-none select-none fixed inset-0 w-full h-full object-contain opacity-5 z-0" style={{ objectPosition: 'center' }} />
       {/* Centered Form */}
       <div className="w-full max-w-md px-4 sm:px-6 lg:px-8 relative z-10">
+        <div className="flex justify-center mb-8">
+          <img src={logoUrutiX} alt="UrutiX Logistics Logo" className="h-24 w-auto object-contain drop-shadow-md" />
+        </div>
+
         {/* Form Container */}
-        <div className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
+        <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
           {/* Form Header */}
           <div className="px-6 pt-6 pb-4">
             <div className="flex justify-center mb-4">

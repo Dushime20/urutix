@@ -1,20 +1,85 @@
 import React, { useState, useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query'; // Import useQuery
 import {
-  FaDollarSign, FaChartLine, FaArrowUp, FaArrowDown,
-  FaCalculator, FaReceipt, FaCreditCard, FaUniversity,
-  FaCalendar, FaFilter, FaDownload, FaEye
-} from 'react-icons/fa';
-import { Line, Bar, Doughnut } from 'react-chartjs-2';
+  DollarSign, TrendingUp, ArrowUpRight, ArrowDownRight,
+  Landmark, Calendar, Filter, Download, Eye,
+  Wallet // Import Wallet icon
+} from 'lucide-react';
+import { Line, Doughnut } from 'react-chartjs-2';
+import { motion, AnimatePresence } from 'framer-motion';
+import { tenantApi } from '../../services/tenantApi'; // Ensure tenantApi is imported
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement,
+  ArcElement,
+  Title,
+  Tooltip,
+  Legend,
+  Filler
+} from 'chart.js';
+
+// Register Chart.js components
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement,
+  ArcElement,
+  Title,
+  Tooltip,
+  Legend,
+  Filler
+);
 
 interface FinancialMetricsProps {
   tenantId?: string;
+  className?: string;
 }
 
-const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ tenantId }) => {
+const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ className = '' }) => {
   const [timeRange, setTimeRange] = useState('30d');
-  const [selectedMetric, setSelectedMetric] = useState('revenue');
+  const [activeTab, setActiveTab] = useState<'overview' | 'breakdown' | 'history'>('overview');
 
-  // Mock financial data - in real app, this would come from API
+  // Fetch Credit Balance
+  const { data: creditBalance } = useQuery({
+    queryKey: ['creditBalance'],
+    queryFn: () => tenantApi.getCreditBalance(),
+    // Fallback/Placeholder if API fails or is not ready
+    initialData: {
+      currentBalance: 2500,
+      subscriptionCredits: 1000,
+      purchasedCredits: 1500,
+      bonusCredits: 0,
+      lifetimeEarned: 5000,
+      lifetimeSpent: 2500
+    } as any
+  });
+
+  // Enlite Prime Theme Colors (Indigo focus)
+  const colors = {
+    primary: '#3F51B5', // Indigo
+    primaryLight: '#E8EAF6',
+    secondary: '#F50057', // Pink
+    background: '#F9FAFB',
+    surface: '#FFFFFF',
+    textPrimary: '#1F2937',
+    textSecondary: '#6B7280',
+    success: '#4CAF50',
+    successLight: '#E8F5E9',
+    error: '#F44336',
+    errorLight: '#FFEBEE',
+    warning: '#FF9800',
+    warningLight: '#FFF3E0',
+    info: '#2196F3',
+    infoLight: '#E3F2FD'
+  };
+
+  // Mock financial data
   const financialData = useMemo(() => ({
     summary: {
       totalRevenue: 12500000,
@@ -26,36 +91,35 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ tenantId }) => {
       totalLoads: 1247,
       activeContracts: 23,
     },
-    trends: {
-      revenue: [1250000, 1890000, 1500000, 2500000, 2200000, 3000000, 2800000, 3200000, 2900000, 3500000, 3100000, 3800000],
-      expenses: [890000, 1340000, 1060000, 1780000, 1560000, 2130000, 1990000, 2270000, 2060000, 2480000, 2200000, 2700000],
-      profit: [360000, 550000, 440000, 720000, 640000, 870000, 810000, 930000, 840000, 1020000, 900000, 1100000],
-    },
+    trends: [
+      { month: 'Jan', revenue: 1250000, expenses: 890000, profit: 360000 },
+      { month: 'Feb', revenue: 1890000, expenses: 1340000, profit: 550000 },
+      { month: 'Mar', revenue: 1500000, expenses: 1060000, profit: 440000 },
+      { month: 'Apr', revenue: 2500000, expenses: 1780000, profit: 720000 },
+      { month: 'May', revenue: 2200000, expenses: 1560000, profit: 640000 },
+      { month: 'Jun', revenue: 3000000, expenses: 2130000, profit: 870000 },
+      { month: 'Jul', revenue: 2800000, expenses: 1990000, profit: 810000 },
+      { month: 'Aug', revenue: 3200000, expenses: 2270000, profit: 930000 },
+      { month: 'Sep', revenue: 2900000, expenses: 2060000, profit: 840000 },
+      { month: 'Oct', revenue: 3500000, expenses: 2480000, profit: 1020000 },
+      { month: 'Nov', revenue: 3100000, expenses: 2200000, profit: 900000 },
+      { month: 'Dec', revenue: 3800000, expenses: 2700000, profit: 1100000 },
+    ],
     breakdown: {
-      revenue: {
-        'Freight Charges': 8500000,
-        'Additional Services': 2800000,
-        'Storage Fees': 800000,
-        'Insurance': 400000,
-      },
-      expenses: {
-        'Fuel Costs': 3200000,
-        'Driver Salaries': 2100000,
-        'Maintenance': 1800000,
-        'Insurance': 800000,
-        'Administrative': 600000,
-        'Other': 400000,
-      },
-      costs: {
-        'Fixed Costs': 3500000,
-        'Variable Costs': 5400000,
-      }
-    },
-    monthly: {
-      labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-      revenue: [1250000, 1890000, 1500000, 2500000, 2200000, 3000000, 2800000, 3200000, 2900000, 3500000, 3100000, 3800000],
-      expenses: [890000, 1340000, 1060000, 1780000, 1560000, 2130000, 1990000, 2270000, 2060000, 2480000, 2200000, 2700000],
-      profit: [360000, 550000, 440000, 720000, 640000, 870000, 810000, 930000, 840000, 1020000, 900000, 1100000],
+      revenue: [
+        { label: 'Freight Charges', value: 8500000, color: '#3F51B5' },
+        { label: 'Additional Services', value: 2800000, color: '#2196F3' },
+        { label: 'Storage Fees', value: 800000, color: '#4CAF50' },
+        { label: 'Insurance', value: 400000, color: '#FF9800' },
+      ],
+      expenses: [
+        { label: 'Fuel Costs', value: 3200000, color: '#F44336' },
+        { label: 'Driver Salaries', value: 2100000, color: '#3F51B5' },
+        { label: 'Maintenance', value: 1800000, color: '#FF9800' },
+        { label: 'Insurance', value: 800000, color: '#2196F3' },
+        { label: 'Administrative', value: 600000, color: '#607D8B' },
+        { label: 'Other', value: 400000, color: '#9E9E9E' },
+      ]
     }
   }), []);
 
@@ -68,111 +132,38 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ tenantId }) => {
     }).format(amount);
   };
 
-  const formatPercentage = (num: number) => {
-    return `${num.toFixed(1)}%`;
-  };
-
-  const getTrendIcon = (trend: 'up' | 'down' | 'stable') => {
-    switch (trend) {
-      case 'up': return <FaArrowUp className="w-4 h-4 text-green-500" />;
-      case 'down': return <FaArrowDown className="w-4 h-4 text-red-500" />;
-      case 'stable': return <FaChartLine className="w-4 h-4 text-gray-500" />;
-    }
-  };
-
-  const getTrendColor = (trend: 'up' | 'down' | 'stable') => {
-    switch (trend) {
-      case 'up': return 'text-green-600';
-      case 'down': return 'text-red-600';
-      case 'stable': return 'text-gray-600';
-    }
+  const getTrendIcon = (value: number) => {
+    return value >= 0
+      ? <ArrowUpRight className="w-4 h-4 text-emerald-500" />
+      : <ArrowDownRight className="w-4 h-4 text-rose-500" />;
   };
 
   const revenueChartData = {
-    labels: financialData.monthly.labels,
+    labels: financialData.trends.map(t => t.month),
     datasets: [
       {
         label: 'Revenue',
-        data: financialData.monthly.revenue,
-        borderColor: 'rgb(59, 130, 246)',
-        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+        data: financialData.trends.map(t => t.revenue),
+        borderColor: colors.primary,
+        backgroundColor: 'rgba(63, 81, 181, 0.05)',
         borderWidth: 3,
         fill: true,
         tension: 0.4,
+        pointBackgroundColor: colors.primary,
+        pointRadius: 0,
+        pointHoverRadius: 6,
       },
       {
         label: 'Expenses',
-        data: financialData.monthly.expenses,
-        borderColor: 'rgb(239, 68, 68)',
-        backgroundColor: 'rgba(239, 68, 68, 0.1)',
+        data: financialData.trends.map(t => t.expenses),
+        borderColor: colors.error,
+        backgroundColor: 'rgba(244, 67, 54, 0.05)',
         borderWidth: 3,
         fill: true,
         tension: 0.4,
-      }
-    ]
-  };
-
-  const profitChartData = {
-    labels: financialData.monthly.labels,
-    datasets: [
-      {
-        label: 'Net Profit',
-        data: financialData.monthly.profit,
-        borderColor: 'rgb(34, 197, 94)',
-        backgroundColor: 'rgba(34, 197, 94, 0.1)',
-        borderWidth: 3,
-        fill: true,
-        tension: 0.4,
-      }
-    ]
-  };
-
-  const revenueBreakdownData = {
-    labels: Object.keys(financialData.breakdown.revenue),
-    datasets: [
-      {
-        label: 'Revenue Breakdown',
-        data: Object.values(financialData.breakdown.revenue),
-        backgroundColor: [
-          'rgba(59, 130, 246, 0.8)',
-          'rgba(34, 197, 94, 0.8)',
-          'rgba(251, 191, 36, 0.8)',
-          'rgba(168, 85, 247, 0.8)',
-        ],
-        borderColor: [
-          'rgb(59, 130, 246)',
-          'rgb(34, 197, 94)',
-          'rgb(251, 191, 36)',
-          'rgb(168, 85, 247)',
-        ],
-        borderWidth: 2
-      }
-    ]
-  };
-
-  const expenseBreakdownData = {
-    labels: Object.keys(financialData.breakdown.expenses),
-    datasets: [
-      {
-        label: 'Expense Breakdown',
-        data: Object.values(financialData.breakdown.expenses),
-        backgroundColor: [
-          'rgba(239, 68, 68, 0.8)',
-          'rgba(59, 130, 246, 0.8)',
-          'rgba(251, 191, 36, 0.8)',
-          'rgba(168, 85, 247, 0.8)',
-          'rgba(16, 185, 129, 0.8)',
-          'rgba(107, 114, 128, 0.8)',
-        ],
-        borderColor: [
-          'rgb(239, 68, 68)',
-          'rgb(59, 130, 246)',
-          'rgb(251, 191, 36)',
-          'rgb(168, 85, 247)',
-          'rgb(16, 185, 129)',
-          'rgb(107, 114, 128)',
-        ],
-        borderWidth: 2
+        pointBackgroundColor: colors.error,
+        pointRadius: 0,
+        pointHoverRadius: 6,
       }
     ]
   };
@@ -182,233 +173,327 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ tenantId }) => {
     maintainAspectRatio: false,
     plugins: {
       legend: {
-        position: 'bottom' as const,
-        labels: { font: { size: 12 } }
+        display: false
+      },
+      tooltip: {
+        mode: 'index' as const,
+        intersect: false,
+        backgroundColor: colors.surface,
+        titleColor: colors.textPrimary,
+        bodyColor: colors.textSecondary,
+        borderColor: '#E2E8F0',
+        borderWidth: 1,
+        padding: 12,
+        boxPadding: 4,
+        usePointStyle: true,
       }
     },
     scales: {
       y: {
         beginAtZero: true,
-        grid: { color: 'rgba(0, 0, 0, 0.05)' }
+        border: { display: false },
+        grid: { color: 'rgba(0, 0, 0, 0.03)' },
+        ticks: { font: { size: 10, weight: 600 }, color: '#94A3B8', padding: 10 }
       },
       x: {
-        grid: { color: 'rgba(0, 0, 0, 0.05)' }
+        border: { display: false },
+        grid: { display: false },
+        ticks: { font: { size: 10, weight: 600 }, color: '#94A3B8', padding: 10 }
       }
     }
   };
 
-  const pieChartOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        position: 'bottom' as const,
-        labels: { font: { size: 12 } }
-      }
-    }
+  const doughnutData = {
+    labels: financialData.breakdown.revenue.map(r => r.label),
+    datasets: [{
+      data: financialData.breakdown.revenue.map(r => r.value),
+      backgroundColor: financialData.breakdown.revenue.map(r => r.color),
+      hoverOffset: 4,
+      borderWidth: 0,
+    }]
   };
 
   return (
-    <div className="space-y-8">
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center">
-            <div className="p-3 bg-green-50 rounded-lg">
-              <FaDollarSign className="w-6 h-6 text-green-600" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-500">Total Revenue</p>
-              <p className="text-2xl font-bold text-gray-900">{formatCurrency(financialData.summary.totalRevenue)}</p>
-              <div className="flex items-center mt-1">
-                {getTrendIcon('up')}
-                <span className={`text-sm font-medium ${getTrendColor('up')} ml-1`}>+12.5%</span>
-              </div>
-            </div>
-          </div>
+    <div className={`bg-[#F9FAFB] rounded-[32px] border border-slate-200 shadow-2xl overflow-hidden flex flex-col h-full max-h-[95vh] text-[#1F2937] antialiased ${className}`}>
+      {/* Header */}
+      <div className="px-10 py-8 bg-white border-b border-slate-100 flex items-center justify-between">
+        <div>
+          <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Fiscal Command</h3>
+          <h2 className="text-2xl font-black tracking-tight text-slate-900">Financial Metrics</h2>
         </div>
-
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center">
-            <div className="p-3 bg-red-50 rounded-lg">
-              <FaCalculator className="w-6 h-6 text-red-600" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-500">Total Expenses</p>
-              <p className="text-2xl font-bold text-gray-900">{formatCurrency(financialData.summary.totalExpenses)}</p>
-              <div className="flex items-center mt-1">
-                {getTrendIcon('up')}
-                <span className={`text-sm font-medium ${getTrendColor('up')} ml-1`}>+8.2%</span>
-              </div>
-            </div>
+        <div className="flex items-center gap-4">
+          <div className="flex bg-slate-50 p-1 rounded-xl border border-slate-100">
+            {(['7d', '30d', '90d'] as const).map((r) => (
+              <button
+                key={r}
+                onClick={() => setTimeRange(r)}
+                className={`px-4 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all ${timeRange === r ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'
+                  }`}
+              >
+                {r}
+              </button>
+            ))}
           </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center">
-            <div className="p-3 bg-blue-50 rounded-lg">
-                              <FaArrowUp className="w-6 h-6 text-blue-600" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-500">Net Profit</p>
-              <p className="text-2xl font-bold text-gray-900">{formatCurrency(financialData.summary.netProfit)}</p>
-              <div className="flex items-center mt-1">
-                {getTrendIcon('up')}
-                <span className={`text-sm font-medium ${getTrendColor('up')} ml-1`}>+18.7%</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center">
-            <div className="p-3 bg-purple-50 rounded-lg">
-              <FaChartLine className="w-6 h-6 text-purple-600" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-500">Profit Margin</p>
-              <p className="text-2xl font-bold text-gray-900">{formatPercentage(financialData.summary.profitMargin)}</p>
-              <div className="flex items-center mt-1">
-                {getTrendIcon('up')}
-                <span className={`text-sm font-medium ${getTrendColor('up')} ml-1`}>+2.1%</span>
-              </div>
-            </div>
-          </div>
+          <button className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl transition-all shadow-lg shadow-indigo-100 flex items-center text-[10px] font-black uppercase tracking-widest">
+            <Download className="w-4 h-4 mr-2" />
+            Export Ledger
+          </button>
         </div>
       </div>
 
-      {/* Additional Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="text-center">
-            <p className="text-sm font-medium text-gray-500">Revenue per Load</p>
-            <p className="text-2xl font-bold text-gray-900">{formatCurrency(financialData.summary.averageRevenuePerLoad)}</p>
-          </div>
-        </div>
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="text-center">
-            <p className="text-sm font-medium text-gray-500">Cost per Load</p>
-            <p className="text-2xl font-bold text-gray-900">{formatCurrency(financialData.summary.averageCostPerLoad)}</p>
-          </div>
-        </div>
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="text-center">
-            <p className="text-sm font-medium text-gray-500">Active Contracts</p>
-            <p className="text-2xl font-bold text-gray-900">{financialData.summary.activeContracts}</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Charts Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Revenue vs Expenses */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">Revenue vs Expenses</h3>
-            <select
-              value={timeRange}
-              onChange={(e) => setTimeRange(e.target.value)}
-              className="text-sm border border-gray-300 rounded px-2 py-1"
+      {/* Navigation Tabs */}
+      <div className="px-10 bg-white border-b border-slate-100 flex items-center justify-between">
+        <div className="flex gap-8">
+          {(['overview', 'breakdown', 'history'] as const).map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`py-5 text-[11px] font-black uppercase tracking-widest transition-all relative ${activeTab === tab ? 'text-indigo-600' : 'text-slate-400 hover:text-slate-600'
+                }`}
             >
-              <option value="7d">7 Days</option>
-              <option value="30d">30 Days</option>
-              <option value="90d">90 Days</option>
-              <option value="1y">1 Year</option>
-            </select>
-          </div>
-          <div className="h-64">
-            <Line data={revenueChartData} options={chartOptions} />
-          </div>
+              {tab === 'overview' && 'Core Metrics'}
+              {tab === 'breakdown' && 'Fiscal Segments'}
+              {tab === 'history' && 'Transaction Log'}
+              {activeTab === tab && (
+                <motion.div
+                  layoutId="finTabIndicator"
+                  className="absolute bottom-0 left-0 right-0 h-0.5 bg-indigo-600 rounded-full"
+                />
+              )}
+            </button>
+          ))}
         </div>
-
-        {/* Profit Trend */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Profit Trend</h3>
-          <div className="h-64">
-            <Line data={profitChartData} options={chartOptions} />
+        <div className="hidden md:flex items-center gap-6">
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-indigo-500"></div>
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Revenue</span>
           </div>
-        </div>
-      </div>
-
-      {/* Breakdown Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Revenue Breakdown */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Revenue Breakdown</h3>
-          <div className="h-64">
-            <Doughnut data={revenueBreakdownData} options={pieChartOptions} />
-          </div>
-        </div>
-
-        {/* Expense Breakdown */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Expense Breakdown</h3>
-          <div className="h-64">
-            <Doughnut data={expenseBreakdownData} options={pieChartOptions} />
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-rose-500"></div>
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Expenses</span>
           </div>
         </div>
       </div>
 
-      {/* Financial Summary Table */}
-      <div className="bg-white rounded-lg shadow">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-gray-900">Financial Summary</h3>
-            <div className="flex space-x-2">
-              <button className="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors flex items-center">
-                <FaFilter className="w-4 h-4 mr-2" />
-                Filter
-              </button>
-              <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center">
-                <FaDownload className="w-4 h-4 mr-2" />
-                Export
-              </button>
-            </div>
-          </div>
-        </div>
+      {/* Content Area */}
+      <div className="flex-1 overflow-y-auto p-10 custom-scrollbar">
+        <AnimatePresence mode="wait">
+          {activeTab === 'overview' && (
+            <motion.div
+              key="overview"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="space-y-10"
+            >
+              {/* Core KPI Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {[
+                  { label: 'Total Revenue', value: financialData.summary.totalRevenue, trend: 12.5, icon: DollarSign, color: 'indigo' },
+                  { label: 'Net Profit', value: financialData.summary.netProfit, trend: 18.7, icon: TrendingUp, color: 'emerald' },
+                  { label: 'Avg. Load Unit', value: financialData.summary.averageRevenuePerLoad, trend: 4.2, icon: Landmark, color: 'blue' },
+                  { label: 'Remaining Credits', value: creditBalance?.currentBalance ?? 0, trend: 0, icon: Wallet, color: 'violet', isCredit: true } // Add Credit Card
+                ].map((kpi, i) => {
+                  const isCredit = (kpi as any).isCredit;
+                  const isPercent = (kpi as any).isPercent;
 
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Percentage</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trend</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {Object.entries(financialData.breakdown.revenue).map(([category, amount]) => (
-                <tr key={category} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">{category}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {formatCurrency(amount)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {formatPercentage((amount / financialData.summary.totalRevenue) * 100)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      {getTrendIcon('up')}
-                      <span className="text-sm text-green-600 ml-1">+5.2%</span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <button className="text-blue-600 hover:text-blue-900">
-                      <FaEye className="w-4 h-4" />
+                  return (
+                    <motion.div
+                      key={kpi.label}
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: i * 0.05 }}
+                      className="bg-white p-8 rounded-[24px] border border-slate-100 shadow-[0_4px_20px_rgba(0,0,0,0.02)] group hover:border-indigo-100 transition-all"
+                    >
+                      <div className="flex justify-between items-start mb-6">
+                        <div className={`p-4 rounded-[18px] bg-${kpi.color}-50`}>
+                          <kpi.icon className={`w-6 h-6 text-${kpi.color}-600`} />
+                        </div>
+                        <div className="flex items-center gap-1.5 px-2 py-1 bg-slate-50 rounded-lg">
+                          {getTrendIcon(kpi.trend)}
+                          <span className="text-[10px] font-black text-slate-600">{kpi.trend}%</span>
+                        </div>
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{kpi.label}</p>
+                        <p className="text-2xl font-black text-slate-900 tracking-tight">
+                          {isCredit ? (kpi.value).toLocaleString() : (isPercent ? `${kpi.value}%` : formatCurrency(kpi.value))}
+                        </p>
+                      </div>
+                    </motion.div>
+                  )
+                })}
+              </div>
+
+              {/* Main Chart Section */}
+              <div className="bg-white p-10 rounded-[32px] border border-slate-100 shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
+                <div className="flex items-center justify-between mb-10">
+                  <div>
+                    <h4 className="text-lg font-black text-slate-900 tracking-tight">Performance Vector</h4>
+                    <p className="text-xs font-bold text-slate-400 mt-1 uppercase tracking-widest">Revenue vs Operating Expenses (12M Window)</p>
+                  </div>
+                  <div className="flex gap-4">
+                    <button className="p-2.5 bg-slate-50 border border-slate-100 rounded-xl text-slate-400 hover:text-indigo-600 hover:bg-white transition-all">
+                      <Filter className="w-5 h-5" />
                     </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                    <button className="p-2.5 bg-slate-50 border border-slate-100 rounded-xl text-slate-400 hover:text-indigo-600 hover:bg-white transition-all">
+                      <Calendar className="w-5 h-5" />
+                    </button>
+                  </div>
+                </div>
+                <div className="h-80 relative">
+                  <Line data={revenueChartData} options={chartOptions} />
+                </div>
+              </div>
+
+              {/* Detail Metrics Row */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div className="lg:col-span-1 bg-white p-8 rounded-[32px] border border-slate-100 shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
+                  <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6">Revenue Segments</h4>
+                  <div className="h-48 mb-6">
+                    <Doughnut data={doughnutData} options={{ ...chartOptions, plugins: { legend: { display: false } } }} />
+                  </div>
+                  <div className="space-y-3">
+                    {financialData.breakdown.revenue.map(item => (
+                      <div key={item.label} className="flex items-center justify-between p-3 bg-slate-50/50 rounded-xl border border-slate-100">
+                        <div className="flex items-center gap-3">
+                          <div className="w-2 h-2 rounded-full" style={{ backgroundColor: item.color }}></div>
+                          <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest">{item.label}</span>
+                        </div>
+                        <span className="text-xs font-black text-slate-900">{formatCurrency(item.value)}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="lg:col-span-2 bg-white p-8 rounded-[32px] border border-slate-100 shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
+                  <div className="flex items-center justify-between mb-8">
+                    <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Expense Hierarchy</h4>
+                    <button className="text-[10px] font-black text-indigo-600 hover:underline">View All Costs</button>
+                  </div>
+                  <div className="space-y-6">
+                    {financialData.breakdown.expenses.slice(0, 4).map(item => (
+                      <div key={item.label} className="space-y-2">
+                        <div className="flex justify-between items-center text-[10px] font-black text-slate-600 uppercase tracking-widest">
+                          <span>{item.label}</span>
+                          <span className="text-slate-900">{formatCurrency(item.value)}</span>
+                        </div>
+                        <div className="h-2 w-full bg-slate-50 rounded-full overflow-hidden">
+                          <motion.div
+                            initial={{ width: 0 }}
+                            animate={{ width: `${(item.value / financialData.summary.totalExpenses) * 100}%` }}
+                            className="h-full bg-indigo-500 rounded-full"
+                          />
+                        </div>
+                      </div>
+                    ))}
+                    <div className="mt-8 pt-8 border-t border-slate-50 grid grid-cols-2 gap-8">
+                      <div>
+                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Operating Ratio</p>
+                        <p className="text-xl font-black text-slate-900">71.2%</p>
+                      </div>
+                      <div>
+                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Burn Rate (Monthly)</p>
+                        <p className="text-xl font-black text-rose-500">{formatCurrency(741000)}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {activeTab === 'breakdown' && (
+            <motion.div
+              key="breakdown"
+              initial={{ opacity: 0, scale: 0.98 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.98 }}
+              className="py-12 flex flex-col items-center justify-center bg-indigo-600 rounded-[40px] text-white shadow-xl shadow-indigo-100 relative overflow-hidden group"
+            >
+              <div className="relative z-10 text-center">
+                <div className="w-16 h-16 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center mx-auto mb-4 border border-white/20">
+                  <PieChart className="w-8 h-8 text-white" />
+                </div>
+                <h4 className="text-xl font-black tracking-tight">Advanced Fiscal Segmentation</h4>
+                <p className="text-sm text-white/70 font-medium mb-6">Deep dive into cost centers and revenue streams with multi-dimensional filters.</p>
+                <button className="bg-white text-indigo-600 px-8 py-3 rounded-full font-black uppercase text-[10px] tracking-widest hover:bg-slate-50 transition-all active:scale-95 shadow-xl">Launch Fiscal Lab</button>
+              </div>
+              <div className="absolute top-0 right-0 w-80 h-80 bg-white/5 rounded-full -mr-32 -mt-32 backdrop-blur-3xl group-hover:bg-white/10 transition-colors duration-700"></div>
+            </motion.div>
+          )}
+
+          {activeTab === 'history' && (
+            <motion.div
+              key="history"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="bg-white rounded-[32px] border border-slate-100 shadow-[0_4px_20px_rgba(0,0,0,0.02)] overflow-hidden"
+            >
+              <table className="w-full text-left">
+                <thead className="bg-slate-50/50 border-b border-slate-100">
+                  <tr>
+                    <th className="px-10 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Contract Info</th>
+                    <th className="px-10 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Category</th>
+                    <th className="px-10 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Net Value</th>
+                    <th className="px-10 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-50">
+                  {[1, 2, 3, 4, 5].map(i => (
+                    <tr key={i} className="hover:bg-slate-50/50 transition-all">
+                      <td className="px-10 py-6">
+                        <div>
+                          <p className="text-sm font-black text-slate-900">Freight Segment-00{i}</p>
+                          <p className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-widest">Oct 2{i}, 2023 · #482910</p>
+                        </div>
+                      </td>
+                      <td className="px-10 py-6">
+                        <span className="px-3 py-1 bg-indigo-50 text-indigo-600 rounded-full text-[9px] font-black uppercase tracking-widest">Operational Revenue</span>
+                      </td>
+                      <td className="px-10 py-6 text-sm font-black text-slate-900">
+                        {formatCurrency(125000 * i)}
+                      </td>
+                      <td className="px-10 py-6 text-right">
+                        <button className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-slate-100 rounded-lg transition-all">
+                          <Eye className="w-5 h-5" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
+
+      <style>{`
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: #E2E8F0;
+          border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: #94A3B8;
+        }
+      `}</style>
     </div>
   );
 };
+
+// Simple Icon for the empty state
+const PieChart: React.FC<{ className?: string }> = ({ className }) => (
+  <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" />
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" />
+  </svg>
+);
 
 export default FinancialMetrics;

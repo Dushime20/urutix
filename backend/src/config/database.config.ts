@@ -73,6 +73,13 @@ import { CreditPackage } from '../entities/credit-package.entity';
 import { FeatureCreditCost } from '../entities/feature-credit-cost.entity';
 import { CreditPricingRule } from '../entities/credit-pricing-rule.entity';
 
+// Bulk Email entities
+import { EmailTemplate } from '../entities/email-template.entity';
+import { BulkEmailLog } from '../entities/bulk-email-log.entity';
+
+// System Health entities
+import { SystemHealthLog } from '../entities/system-health.entity';
+
 // Financial entities
 import {
   Invoice,
@@ -189,6 +196,11 @@ export const databaseConfig: TypeOrmModuleOptions = {
     CreditPackage,
     FeatureCreditCost,
     CreditPricingRule,
+    // Bulk Email entities
+    EmailTemplate,
+    BulkEmailLog,
+    // System Health entities
+    SystemHealthLog,
     // Matching entities
     // LoadMatch, // Entity doesn't exist yet
     // Fuel entities
@@ -296,6 +308,9 @@ export const testDatabaseConfig: TypeOrmModuleOptions = {
     CreditPackage,
     FeatureCreditCost,
     CreditPricingRule,
+    // Bulk Email entities
+    EmailTemplate,
+    BulkEmailLog,
     // Fuel entities
     // FuelLog, // Entity doesn't exist yet
   ],

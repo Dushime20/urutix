@@ -35,6 +35,10 @@ export class CreditTransaction {
   @Column({ type: 'uuid', name: 'tenant_id' })
   tenantId: string;
 
+  @Column({ type: 'uuid', name: 'user_id', nullable: true, select: false })
+  @Index()
+  userId?: string;
+
   @Column({ type: 'uuid', name: 'credit_account_id' })
   creditAccountId: string;
 

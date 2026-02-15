@@ -1,5 +1,9 @@
 import React from 'react';
-import { FaArrowUp, FaArrowDown, FaMinus, FaTrophy, FaBullseye, FaChartLine } from 'react-icons/fa';
+import {
+  ArrowUp, ArrowDown, Minus,
+  Trophy, Target, BarChart3,
+  ShieldCheck, Zap, Activity
+} from 'lucide-react';
 
 interface PerformanceMetric {
   name: string;
@@ -17,9 +21,8 @@ interface PerformanceMetricsProps {
   className?: string;
 }
 
-const PerformanceMetrics: React.FC<PerformanceMetricsProps> = ({ 
-  tenantId, 
-  className = '' 
+const PerformanceMetrics: React.FC<PerformanceMetricsProps> = ({
+  className = ''
 }) => {
   // Mock data - in real app, this would come from API calls
   const metrics: PerformanceMetric[] = [
@@ -108,50 +111,51 @@ const PerformanceMetrics: React.FC<PerformanceMetricsProps> = ({
   const getTrendIcon = (trend: string) => {
     switch (trend) {
       case 'up':
-        return <FaArrowUp className="text-green-500" />;
+        return <ArrowUp className="w-3 h-3 text-emerald-500" />;
       case 'down':
-        return <FaArrowDown className="text-red-500" />;
+        return <ArrowDown className="w-3 h-3 text-rose-500" />;
       default:
-        return <FaMinus className="text-gray-500" />;
+        return <Minus className="w-3 h-3 text-slate-400" />;
     }
   };
 
-  const getStatusColor = (status: string) => {
+  const getStatusStyle = (status: string) => {
     switch (status) {
       case 'excellent':
-        return 'bg-green-100 text-green-800 border-green-200';
+        return 'bg-emerald-50 text-emerald-700 border-emerald-100';
       case 'good':
-        return 'bg-blue-100 text-blue-800 border-blue-200';
+        return 'bg-indigo-50 text-indigo-700 border-indigo-100';
       case 'average':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+        return 'bg-amber-50 text-amber-700 border-amber-100';
       case 'poor':
-        return 'bg-red-100 text-red-800 border-red-200';
+        return 'bg-rose-50 text-rose-700 border-rose-100';
       default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
+        return 'bg-slate-50 text-slate-700 border-slate-100';
     }
   };
 
   const getCategoryIcon = (category: string) => {
+    const iconClass = "w-4 h-4";
     switch (category) {
       case 'revenue':
-        return <FaTrophy className="text-yellow-500" />;
+        return <Trophy className={`${iconClass} text-amber-500`} />;
       case 'efficiency':
-        return <FaChartLine className="text-blue-500" />;
+        return <Zap className={`${iconClass} text-indigo-500`} />;
       case 'quality':
-        return <FaBullseye className="text-green-500" />;
+        return <Target className={`${iconClass} text-emerald-500`} />;
       case 'safety':
-        return <FaBullseye className="text-red-500" />;
+        return <ShieldCheck className={`${iconClass} text-rose-500`} />;
       default:
-        return <FaBullseye className="text-gray-500" />;
+        return <Activity className={`${iconClass} text-slate-500`} />;
     }
   };
 
   const getProgressColor = (value: number, target: number) => {
     const percentage = (value / target) * 100;
-    if (percentage >= 100) return 'bg-green-500';
-    if (percentage >= 80) return 'bg-blue-500';
-    if (percentage >= 60) return 'bg-yellow-500';
-    return 'bg-red-500';
+    if (percentage >= 100) return 'bg-emerald-500';
+    if (percentage >= 80) return 'bg-indigo-500';
+    if (percentage >= 60) return 'bg-amber-500';
+    return 'bg-rose-500';
   };
 
   const getProgressWidth = (value: number, target: number) => {
@@ -160,97 +164,92 @@ const PerformanceMetrics: React.FC<PerformanceMetricsProps> = ({
   };
 
   return (
-    <div className={`bg-white rounded-lg shadow ${className}`}>
-      <div className="px-6 py-4 border-b border-gray-200">
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-gray-900">Performance Metrics</h3>
-          <div className="flex items-center space-x-2">
-            <FaChartLine className="text-blue-500" />
-            <span className="text-sm text-gray-500">Real-time tracking</span>
+    <div className={`space-y-8 ${className}`}>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {metrics.map((metric) => (
+          <div key={metric.name} className="bg-white rounded-[24px] p-6 border border-gray-100 shadow-sm hover:shadow-md transition-shadow duration-300">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center space-x-2">
+                <div className="p-2 bg-gray-50 rounded-xl">
+                  {getCategoryIcon(metric.category)}
+                </div>
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{metric.category}</span>
+              </div>
+              <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider border ${getStatusStyle(metric.status)}`}>
+                {metric.status}
+              </span>
+            </div>
+
+            <div className="mb-4">
+              <h4 className="text-sm font-black text-slate-800 tracking-tight mb-2">
+                {metric.name}
+              </h4>
+              <div className="flex items-end space-x-2">
+                <span className="text-2xl font-black text-slate-900 leading-none">
+                  {metric.value}
+                </span>
+                <span className="text-xs font-bold text-slate-400 mb-0.5">{metric.unit}</span>
+                <div className="flex items-center space-x-1 mb-1 ml-1">
+                  {getTrendIcon(metric.trend)}
+                  <span className={`text-[10px] font-bold ${metric.trend === 'up' ? 'text-emerald-600' :
+                      metric.trend === 'down' ? 'text-rose-600' : 'text-slate-500'
+                    }`}>
+                    {Math.abs(metric.value - metric.previous).toFixed(1)}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-[10px] font-bold text-slate-400">
+                <span className="uppercase tracking-wide">Target: {metric.target}{metric.unit}</span>
+                <span>{((metric.value / metric.target) * 100).toFixed(0)}%</span>
+              </div>
+              <div className="w-full bg-gray-50 rounded-full h-1.5 overflow-hidden">
+                <div
+                  className={`h-full rounded-full transition-all duration-500 ease-out ${getProgressColor(metric.value, metric.target)}`}
+                  style={{ width: getProgressWidth(metric.value, metric.target) }}
+                ></div>
+              </div>
+            </div>
           </div>
-        </div>
+        ))}
       </div>
 
-      <div className="p-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {metrics.map((metric) => (
-            <div key={metric.name} className="bg-gray-50 rounded-lg p-4">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center space-x-2">
-                  {getCategoryIcon(metric.category)}
-                  <span className="text-sm font-medium text-gray-900">{metric.category}</span>
-                </div>
-                <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(metric.status)}`}>
-                  {metric.status}
-                </span>
-              </div>
+      {/* Summary Section - Premium Enlite Card */}
+      <div className="bg-indigo-600 rounded-[32px] p-8 text-white relative overflow-hidden shadow-lg shadow-indigo-200">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-20 -mt-20 blur-3xl"></div>
+        <div className="absolute bottom-0 left-0 w-32 h-32 bg-white/5 rounded-full -ml-10 -mb-10 blur-2xl"></div>
 
-              <div className="mb-3">
-                <h4 className="text-lg font-semibold text-gray-900 mb-1">
-                  {metric.name}
-                </h4>
-                <div className="flex items-center space-x-2">
-                  <span className="text-2xl font-bold text-gray-900">
-                    {metric.value}
-                  </span>
-                  <span className="text-sm text-gray-500">{metric.unit}</span>
-                  <div className="flex items-center space-x-1">
-                    {getTrendIcon(metric.trend)}
-                    <span className={`text-xs font-medium ${
-                      metric.trend === 'up' ? 'text-green-600' : 
-                      metric.trend === 'down' ? 'text-red-600' : 'text-gray-600'
-                    }`}>
-                      {Math.abs(metric.value - metric.previous).toFixed(1)}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="mb-3">
-                <div className="flex items-center justify-between text-sm text-gray-600 mb-1">
-                  <span>Target: {metric.target}{metric.unit}</span>
-                  <span>{((metric.value / metric.target) * 100).toFixed(0)}%</span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div
-                    className={`h-2 rounded-full transition-all duration-300 ${getProgressColor(metric.value, metric.target)}`}
-                    style={{ width: getProgressWidth(metric.value, metric.target) }}
-                  ></div>
-                </div>
-              </div>
-
-              <div className="text-xs text-gray-500">
-                Previous: {metric.previous}{metric.unit}
-              </div>
+        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-8">
+          <div className="flex items-center space-x-4">
+            <div className="p-4 bg-white/20 backdrop-blur-md rounded-[20px]">
+              <Trophy className="text-white w-6 h-6" />
             </div>
-          ))}
-        </div>
-
-        {/* Summary Section */}
-        <div className="mt-8 bg-blue-50 rounded-lg p-6">
-          <div className="flex items-center space-x-3 mb-4">
-            <FaTrophy className="text-blue-500 text-xl" />
-            <h4 className="text-lg font-semibold text-blue-900">Performance Summary</h4>
+            <div>
+              <h4 className="text-lg font-black tracking-tight">System Performance Protocol</h4>
+              <p className="text-indigo-100 text-sm font-medium">Intelligence analysis of core operational vectors</p>
+            </div>
           </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-blue-900">
+
+          <div className="grid grid-cols-3 gap-8 md:gap-12">
+            <div>
+              <div className="text-3xl font-black">
                 {metrics.filter(m => m.status === 'excellent').length}
               </div>
-              <div className="text-sm text-blue-700">Excellent Metrics</div>
+              <div className="text-[10px] font-black uppercase tracking-widest text-indigo-100">Excellent</div>
             </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-blue-900">
+            <div>
+              <div className="text-3xl font-black">
                 {metrics.filter(m => m.trend === 'up').length}
               </div>
-              <div className="text-sm text-blue-700">Improving Metrics</div>
+              <div className="text-[10px] font-black uppercase tracking-widest text-indigo-100">Improving</div>
             </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-blue-900">
+            <div>
+              <div className="text-3xl font-black">
                 {((metrics.filter(m => m.value >= m.target).length / metrics.length) * 100).toFixed(0)}%
               </div>
-              <div className="text-sm text-blue-700">Target Achievement</div>
+              <div className="text-[10px] font-black uppercase tracking-widest text-indigo-100">Target</div>
             </div>
           </div>
         </div>
@@ -260,3 +259,4 @@ const PerformanceMetrics: React.FC<PerformanceMetricsProps> = ({
 };
 
 export default PerformanceMetrics;
+

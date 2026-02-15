@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Truck, Menu, X } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
+import logoUrutiX from '../../assets/logo-urutix-logistics.svg';
 
 interface LandingHeaderProps {
   onGetStarted?: () => void;
@@ -24,11 +25,8 @@ const LandingHeader: React.FC<LandingHeaderProps> = ({ onGetStarted }) => {
         <div className="flex justify-between items-center h-16 lg:h-20">
           {/* Logo */}
           <div className="flex items-center">
-            <div className="flex-shrink-0 flex items-center">
-              <div className="w-10 h-10 rounded-lg flex items-center justify-center">
-                <Truck className="w-6 h-6" style={{ color: '#111828' }} />
-              </div>
-              <span className="ml-3 text-xl font-bold" style={{ color: '#111828' }}>UrutiX</span>
+            <div className="flex-shrink-0 flex items-center cursor-pointer" onClick={() => navigate('/')}>
+              <img src={logoUrutiX} alt="UrutiX Logistics Logo" className="h-16 md:h-20 lg:h-24 w-auto object-contain transition-all duration-300 hover:scale-105" />
             </div>
           </div>
 

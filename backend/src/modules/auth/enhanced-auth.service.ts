@@ -20,6 +20,7 @@ import { PasswordResetToken } from '../../entities/password-reset-token.entity';
 import { EmailVerificationToken } from '../../entities/email-verification-token.entity';
 import { AuditLog, AuditAction } from '../../entities/audit-log.entity';
 import { Tenant } from '../../entities/tenant.entity';
+import { SecurityEvent, SecurityEventType, SecuritySeverity } from '../../entities/security-event.entity';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto, LoginResponseDto } from './dto/login.dto';
 import { RegisterResponseDto } from './dto/register.dto';
@@ -48,6 +49,7 @@ import { UpdateProfileDto } from './dto/update-profile.dto';
 import { EmailService } from './email.service';
 import { EnhancedRateLimitGuard } from './enhanced-rate-limit.guard';
 import { TenantService } from './tenant.service';
+import { ActivityLogService } from '../../services/activity-log.service';
 import * as bcrypt from 'bcryptjs';
 import * as crypto from 'crypto';
 
@@ -70,11 +72,14 @@ export class EnhancedAuthService {
     private readonly emailVerificationTokenRepository: Repository<EmailVerificationToken>,
     @InjectRepository(AuditLog)
     private readonly auditLogRepository: Repository<AuditLog>,
+    @InjectRepository(SecurityEvent)
+    private readonly securityEventRepository: Repository<SecurityEvent>,
     private jwtService: JwtService,
     private configService: ConfigService,
     private emailService: EmailService,
     private rateLimitGuard: EnhancedRateLimitGuard,
     private tenantService: TenantService,
+    private activityLogService: ActivityLogService,
   ) {}
 
   async register(
@@ -328,6 +333,20 @@ export class EnhancedAuthService {
           reason: 'Invalid password',
         });
 
+        // Create security event for failed login
+        await this.createSecurityEvent({
+          userId: user.id,
+          tenantId: user.tenantId,
+          eventType: SecurityEventType.FAILED_LOGIN,
+          severity: user.loginAttempts >= 3 ? SecuritySeverity.HIGH : SecuritySeverity.MEDIUM,
+          ipAddress: clientIp,
+          details: {
+            email: user.email,
+            loginAttempts: user.loginAttempts,
+            reason: 'Invalid password',
+          },
+        });
+
         this.logger.warn(`Failed login attempt: ${normalizedEmail} from IP: ${clientIp} (attempt ${user.loginAttempts})`);
         this.logger.debug(`Password comparison failed for user ${normalizedEmail}. Password hash exists: ${!!user.passwordHash}`);
         return null;
@@ -441,6 +460,26 @@ export class EnhancedAuthService {
         user,
         loginDto.rememberMe || false,
       );
+
+      // Create user session
+      try {
+        const sessionId = crypto.randomBytes(16).toString('hex');
+        const expiresAt = new Date(Date.now() + (loginDto.rememberMe ? 30 : 7) * 24 * 60 * 60 * 1000);
+        
+        // Note: userAgent should be passed from the controller via request headers
+        // For now, we'll use undefined and it can be added later
+        await this.activityLogService.upsertSession(sessionId, user.id, {
+          ipAddress: clientIp,
+          userAgent: undefined, // TODO: Pass from controller via @Headers('user-agent')
+          deviceInfo: undefined, // Will be parsed from userAgent when available
+          expiresAt,
+        });
+
+        this.logger.debug(`Session created for user ${user.email}: ${sessionId}`);
+      } catch (sessionError) {
+        // Log error but don't fail login if session creation fails
+        this.logger.error(`Failed to create session for user ${user.email}: ${sessionError.message}`);
+      }
 
       // Fetch tenant name separately using tenantId
       let tenantName = 'Default Tenant';
@@ -1741,5 +1780,69 @@ export class EnhancedAuthService {
     } catch (error) {
       this.logger.error(`Failed to log audit event: ${error.message}`);
     }
+  }
+
+  /**
+   * Create a security event
+   */
+  private async createSecurityEvent(data: {
+    userId: string;
+    tenantId: string;
+    eventType: SecurityEventType;
+    severity: SecuritySeverity;
+    ipAddress?: string;
+    details?: Record<string, any>;
+  }): Promise<void> {
+    try {
+      const securityEvent = this.securityEventRepository.create({
+        userId: data.userId,
+        tenantId: data.tenantId,
+        eventType: data.eventType,
+        severity: data.severity,
+        ipAddress: data.ipAddress,
+        details: data.details,
+      });
+
+      await this.securityEventRepository.save(securityEvent);
+    } catch (error) {
+      this.logger.error(`Failed to create security event: ${error.message}`);
+    }
+  }
+
+  /**
+   * Parse user agent string to extract device info
+   */
+  private parseUserAgent(userAgent?: string): any {
+    if (!userAgent) {
+      return {
+        browser: 'Unknown',
+        os: 'Unknown',
+        device: 'Unknown',
+        isMobile: false,
+      };
+    }
+
+    // Simple user agent parsing (in production, use a library like ua-parser-js)
+    const isMobile = /Mobile|Android|iPhone|iPad|iPod/i.test(userAgent);
+    
+    let browser = 'Unknown';
+    if (userAgent.includes('Chrome')) browser = 'Chrome';
+    else if (userAgent.includes('Firefox')) browser = 'Firefox';
+    else if (userAgent.includes('Safari')) browser = 'Safari';
+    else if (userAgent.includes('Edge')) browser = 'Edge';
+
+    let os = 'Unknown';
+    if (userAgent.includes('Windows')) os = 'Windows';
+    else if (userAgent.includes('Mac')) os = 'macOS';
+    else if (userAgent.includes('Linux')) os = 'Linux';
+    else if (userAgent.includes('Android')) os = 'Android';
+    else if (userAgent.includes('iOS')) os = 'iOS';
+
+    return {
+      browser,
+      os,
+      device: isMobile ? 'Mobile' : 'Desktop',
+      isMobile,
+    };
   }
 }

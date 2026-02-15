@@ -1,9 +1,9 @@
 import React, { useState, useMemo } from 'react';
-import { 
-  FaTruck, FaUser, FaRoute, FaTools, FaCheckCircle, 
-  FaExclamationTriangle, FaClock, FaMapMarkerAlt,
-  FaFilter, FaSearch, FaPlus, FaEye
-} from 'react-icons/fa';
+import {
+  Truck, User, Route, Wrench as Tools, CheckCircle,
+  AlertTriangle, Clock, MapPin as FaMapMarkerAlt,
+  Filter, Search, Plus, Eye
+} from 'lucide-react';
 import { Line, Doughnut } from 'react-chartjs-2';
 
 interface FleetOverviewProps {
@@ -49,37 +49,37 @@ const FleetOverview: React.FC<FleetOverviewProps> = ({ tenantId }) => {
 
   const filteredTrucks = useMemo(() => {
     let filtered = fleetData.trucks;
-    
+
     if (selectedFilter !== 'all') {
       filtered = filtered.filter(truck => truck.status === selectedFilter);
     }
-    
+
     if (searchTerm) {
-      filtered = filtered.filter(truck => 
+      filtered = filtered.filter(truck =>
         truck.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
         truck.plate.toLowerCase().includes(searchTerm.toLowerCase()) ||
         truck.driver.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
-    
+
     return filtered;
   }, [fleetData.trucks, selectedFilter, searchTerm]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'active': return 'text-green-600 bg-green-100';
-      case 'maintenance': return 'text-yellow-600 bg-yellow-100';
-      case 'inactive': return 'text-red-600 bg-red-100';
-      default: return 'text-gray-600 bg-gray-100';
+      case 'active': return 'text-emerald-600 bg-emerald-50 border-emerald-100';
+      case 'maintenance': return 'text-amber-600 bg-amber-50 border-amber-100';
+      case 'inactive': return 'text-rose-600 bg-rose-50 border-rose-100';
+      default: return 'text-slate-500 bg-slate-50 border-slate-100';
     }
   };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'active': return <FaCheckCircle className="w-4 h-4" />;
-      case 'maintenance': return <FaTools className="w-4 h-4" />;
-      case 'inactive': return <FaExclamationTriangle className="w-4 h-4" />;
-      default: return <FaClock className="w-4 h-4" />;
+      case 'active': return <CheckCircle className="w-3 h-3" />;
+      case 'maintenance': return <Tools className="w-3 h-3" />;
+      case 'inactive': return <AlertTriangle className="w-3 h-3" />;
+      default: return <Clock className="w-3 h-3" />;
     }
   };
 
@@ -89,11 +89,15 @@ const FleetOverview: React.FC<FleetOverviewProps> = ({ tenantId }) => {
       {
         label: 'Fleet Utilization (%)',
         data: fleetData.utilization.weekly,
-        borderColor: 'rgb(59, 130, 246)',
-        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+        borderColor: '#6366f1',
+        backgroundColor: 'rgba(99, 102, 241, 0.1)',
         borderWidth: 3,
         fill: true,
         tension: 0.4,
+        pointBackgroundColor: '#6366f1',
+        pointBorderColor: 'white',
+        pointBorderWidth: 2,
+        pointRadius: 4,
       }
     ]
   };
@@ -104,16 +108,12 @@ const FleetOverview: React.FC<FleetOverviewProps> = ({ tenantId }) => {
       {
         data: [fleetData.summary.activeTrucks, fleetData.summary.maintenanceTrucks, fleetData.summary.inactiveTrucks],
         backgroundColor: [
-          'rgba(34, 197, 94, 0.8)',
-          'rgba(251, 191, 36, 0.8)',
+          'rgba(16, 185, 129, 0.8)',
+          'rgba(245, 158, 11, 0.8)',
           'rgba(239, 68, 68, 0.8)',
         ],
-        borderColor: [
-          'rgb(34, 197, 94)',
-          'rgb(251, 191, 36)',
-          'rgb(239, 68, 68)',
-        ],
-        borderWidth: 2
+        hoverOffset: 4,
+        borderWidth: 0,
       }
     ]
   };
@@ -124,180 +124,189 @@ const FleetOverview: React.FC<FleetOverviewProps> = ({ tenantId }) => {
     plugins: {
       legend: {
         position: 'bottom' as const,
-        labels: { font: { size: 12 } }
+        labels: { font: { size: 10, weight: 'bold' as any }, usePointStyle: true, padding: 20 }
+      },
+      tooltip: {
+        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+        titleColor: '#1e293b',
+        bodyColor: '#475569',
+        borderColor: '#e2e8f0',
+        borderWidth: 1,
+        cornerRadius: 12,
+        padding: 12,
+      }
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        grid: { color: 'rgba(0, 0, 0, 0.05)', drawBorder: false },
+        ticks: { font: { size: 10 }, color: '#94a3b8' }
+      },
+      x: {
+        grid: { display: false },
+        ticks: { font: { size: 10 }, color: '#94a3b8' }
       }
     }
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-10">
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center">
-            <div className="p-3 bg-blue-50 rounded-lg">
-              <FaTruck className="w-6 h-6 text-blue-600" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-500">Total Trucks</p>
-              <p className="text-2xl font-bold text-gray-900">{fleetData.summary.totalTrucks}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center">
-            <div className="p-3 bg-green-50 rounded-lg">
-              <FaCheckCircle className="w-6 h-6 text-green-600" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-500">Active Trucks</p>
-              <p className="text-2xl font-bold text-gray-900">{fleetData.summary.activeTrucks}</p>
+        {[
+          { label: 'Total Trucks', value: fleetData.summary.totalTrucks, icon: Truck, color: 'indigo' },
+          { label: 'Active Trucks', value: fleetData.summary.activeTrucks, icon: CheckCircle, color: 'emerald' },
+          { label: 'Total Drivers', value: fleetData.summary.totalDrivers, icon: User, color: 'violet' },
+          { label: 'Utilization', value: `${fleetData.utilization.current}% `, icon: Route, color: 'amber' }
+        ].map((stat, i) => (
+          <div key={i} className="bg-white rounded-[24px] border border-gray-100 shadow-sm p-6">
+            <div className="flex items-center">
+              <div className={`p - 3 bg - ${stat.color} -50 rounded - xl`}>
+                <stat.icon className={`w - 6 h - 6 text - ${stat.color} -600`} />
+              </div>
+              <div className="ml-4">
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{stat.label}</p>
+                <p className="text-2xl font-black text-slate-800 tracking-tight leading-tight">{stat.value}</p>
+              </div>
             </div>
           </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center">
-            <div className="p-3 bg-purple-50 rounded-lg">
-              <FaUser className="w-6 h-6 text-purple-600" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-500">Total Drivers</p>
-              <p className="text-2xl font-bold text-gray-900">{fleetData.summary.totalDrivers}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center">
-            <div className="p-3 bg-orange-50 rounded-lg">
-              <FaRoute className="w-6 h-6 text-orange-600" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-500">Utilization</p>
-              <p className="text-2xl font-bold text-gray-900">{fleetData.utilization.current}%</p>
-            </div>
-          </div>
-        </div>
+        ))}
       </div>
 
       {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Utilization Trend */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Weekly Utilization Trend</h3>
+        <div className="bg-white rounded-[24px] border border-gray-100 shadow-sm p-8">
+          <div className="mb-6">
+            <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">Performance Trend</h3>
+            <h4 className="text-xl font-black text-slate-800 tracking-tight">Weekly Utilization</h4>
+          </div>
           <div className="h-64">
             <Line data={utilizationChartData} options={chartOptions} />
           </div>
         </div>
 
         {/* Status Distribution */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Truck Status Distribution</h3>
+        <div className="bg-white rounded-[24px] border border-gray-100 shadow-sm p-8">
+          <div className="mb-6">
+            <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">Inventory status</h3>
+            <h4 className="text-xl font-black text-slate-800 tracking-tight">Truck Distribution</h4>
+          </div>
           <div className="h-64">
-            <Doughnut data={statusChartData} options={chartOptions} />
+            <Doughnut data={statusChartData} options={{
+              ...chartOptions,
+              cutout: '75%',
+            }} />
           </div>
         </div>
       </div>
 
       {/* Trucks Table */}
-      <div className="bg-white rounded-lg shadow">
-        <div className="px-6 py-4 border-b border-gray-200">
+      <div className="bg-white rounded-[24px] border border-gray-100 shadow-sm overflow-hidden">
+        <div className="px-8 py-6 border-b border-gray-50 bg-gray-50/30">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-gray-900">Fleet Trucks</h3>
-            <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center">
-              <FaPlus className="w-4 h-4 mr-2" />
+            <div>
+              <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">Asset Repository</h3>
+              <h4 className="text-xl font-black text-slate-800 tracking-tight">Fleet Trucks</h4>
+            </div>
+            <button className="bg-indigo-600 text-white px-5 py-2.5 rounded-xl hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 flex items-center text-sm font-black uppercase tracking-widest">
+              <Plus className="w-4 h-4 mr-2" />
               Add Truck
             </button>
           </div>
         </div>
 
         {/* Filters and Search */}
-        <div className="px-6 py-4 border-b border-gray-200">
+        <div className="px-8 py-5 border-b border-gray-50">
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="flex-1">
               <div className="relative">
-                <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-300 w-4 h-4" />
                 <input
                   type="text"
-                  placeholder="Search trucks..."
+                  placeholder="Query assets..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full pl-11 pr-4 py-2.5 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-indigo-500/20 text-sm font-medium text-slate-600"
                 />
               </div>
             </div>
             <div className="flex gap-2">
-              <select
-                value={selectedFilter}
-                onChange={(e) => setSelectedFilter(e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              >
-                <option value="all">All Status</option>
-                <option value="active">Active</option>
-                <option value="maintenance">Maintenance</option>
-                <option value="inactive">Inactive</option>
-              </select>
+              <div className="relative">
+                <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-3.5 h-3.5 pointer-events-none" />
+                <select
+                  value={selectedFilter}
+                  onChange={(e) => setSelectedFilter(e.target.value)}
+                  className="pl-9 pr-8 py-2.5 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-indigo-500/20 text-xs font-black uppercase tracking-widest text-slate-500 appearance-none pointer-events-auto"
+                >
+                  <option value="all">Global Filter</option>
+                  <option value="active">Active Only</option>
+                  <option value="maintenance">Maintenance</option>
+                  <option value="inactive">Suspended</option>
+                </select>
+              </div>
             </div>
           </div>
         </div>
 
         {/* Table */}
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+          <table className="min-w-full divide-y divide-gray-50">
+            <thead className="bg-gray-50/50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Truck</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Driver</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Utilization</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Maintenance</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                <th className="px-8 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Truck Metadata</th>
+                <th className="px-8 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Operator</th>
+                <th className="px-8 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Geolocation</th>
+                <th className="px-8 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
+                <th className="px-8 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Efficiency</th>
+                <th className="px-8 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Service Log</th>
+                <th className="px-8 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-white divide-y divide-gray-50">
               {filteredTrucks.map((truck) => (
-                <tr key={truck.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div>
-                      <div className="text-sm font-medium text-gray-900">{truck.id}</div>
-                      <div className="text-sm text-gray-500">{truck.plate}</div>
+                <tr key={truck.id} className="hover:bg-indigo-50/10 transition-colors">
+                  <td className="px-8 py-5 whitespace-nowrap">
+                    <div className="flex flex-col">
+                      <span className="text-sm font-black text-slate-800">{truck.id}</span>
+                      <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">{truck.plate}</span>
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">{truck.driver}</div>
+                  <td className="px-8 py-5 whitespace-nowrap">
+                    <span className="text-sm font-bold text-slate-600">{truck.driver}</span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-8 py-5 whitespace-nowrap">
                     <div className="flex items-center">
-                      <FaMapMarkerAlt className="w-4 h-4 text-gray-400 mr-2" />
-                      <span className="text-sm text-gray-900">{truck.location}</span>
+                      <FaMapMarkerAlt className="w-3.5 h-3.5 text-indigo-400 mr-2" />
+                      <span className="text-sm font-medium text-slate-600">{truck.location}</span>
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(truck.status)}`}>
+                  <td className="px-8 py-5 whitespace-nowrap">
+                    <span className={`inline - flex items - center px - 2.5 py - 1 rounded - full text - [10px] font - black uppercase tracking - widest border ${getStatusColor(truck.status)} `}>
                       {getStatusIcon(truck.status)}
-                      <span className="ml-1.5 capitalize">{truck.status}</span>
+                      <span className="ml-1.5">{truck.status}</span>
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <div className="w-16 bg-gray-200 rounded-full h-2 mr-2">
-                        <div 
-                          className="bg-blue-600 h-2 rounded-full" 
-                          style={{ width: `${truck.utilization}%` }}
+                  <td className="px-8 py-5 whitespace-nowrap">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-16 bg-gray-100 rounded-full h-1.5 overflow-hidden">
+                        <div
+                          className="bg-indigo-600 h-full rounded-full"
+                          style={{ width: `${truck.utilization}% ` }}
                         ></div>
                       </div>
-                      <span className="text-sm text-gray-900">{truck.utilization}%</span>
+                      <span className="text-xs font-black text-slate-800">{truck.utilization}%</span>
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <td className="px-8 py-5 whitespace-nowrap text-sm font-bold text-slate-400">
                     {new Date(truck.lastMaintenance).toLocaleDateString()}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <button className="text-blue-600 hover:text-blue-900 mr-3">
-                      <FaEye className="w-4 h-4" />
+                  <td className="px-8 py-5 whitespace-nowrap text-right">
+                    <button className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all">
+                      <Eye className="w-4 h-4" />
+                    </button>
+                    <button className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all ml-1">
+                      <Plus className="w-4 h-4" />
                     </button>
                   </td>
                 </tr>

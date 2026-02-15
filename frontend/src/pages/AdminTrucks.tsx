@@ -11,7 +11,7 @@ import {
   Truck as LucideTruck, Edit, Plus, Search, Download,
   Eye, Check, X, Ban, MapPin,
   ChevronsUpDown, Clock, User, Building2,
-  ShieldCheck, AlertTriangle, Play, Pause,
+  AlertTriangle, Play, Pause,
   Trash2, Wrench, Layers, Milestone
 } from 'lucide-react';
 
@@ -408,23 +408,23 @@ const AdminTrucks: React.FC = () => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'available': return 'bg-green-100 text-green-800';
+      case 'available': return 'bg-emerald-50 text-emerald-600 border-emerald-100';
       case 'in_use':
-      case 'on_trip': return 'bg-blue-100 text-blue-800';
-      case 'maintenance': return 'bg-yellow-100 text-yellow-800';
-      case 'unavailable': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'on_trip': return 'bg-indigo-50 text-indigo-600 border-indigo-100';
+      case 'maintenance': return 'bg-amber-50 text-amber-600 border-amber-100';
+      case 'unavailable': return 'bg-rose-50 text-rose-600 border-rose-100';
+      default: return 'bg-gray-50 text-gray-600 border-gray-100';
     }
   };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'available': return <Check className="text-green-500" size={12} />;
+      case 'available': return <Check className="w-3 h-3" />;
       case 'in_use':
-      case 'on_trip': return <Play className="text-indigo-500" size={12} />;
-      case 'maintenance': return <Wrench className="text-yellow-500" size={12} />;
-      case 'unavailable': return <Ban className="text-red-500" size={12} />;
-      default: return <Pause className="text-gray-500" size={12} />;
+      case 'on_trip': return <Play className="w-3 h-3" />;
+      case 'maintenance': return <Wrench className="w-3 h-3" />;
+      case 'unavailable': return <Ban className="w-3 h-3" />;
+      default: return <Pause className="w-3 h-3" />;
     }
   };
 
@@ -473,23 +473,27 @@ const AdminTrucks: React.FC = () => {
     >
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2.5">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {stats.map((stat, index) => {
           const Icon = stat.icon;
           return (
-            <div key={index} className="bg-white rounded-xl border border-gray-200 p-6 hover:border-gray-300 transition-all duration-200 group relative overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-100 transition-opacity bg-gray-50"></div>
+            <div key={index} className="bg-white rounded-2xl border border-gray-100 p-6 hover:shadow-xl hover:shadow-gray-100/50 transition-all duration-300 group relative overflow-hidden">
+              <div className="absolute top-0 right-0 p-4 opacity-[0.03] group-hover:scale-110 transition-transform duration-500">
+                <Icon size={80} className="text-gray-900" />
+              </div>
               <div className="relative">
-                <div className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <p className="text-xs text-gray-600 mb-1">{stat.label}</p>
-                    <p className="text-2xl font-black text-gray-900 mb-0.5">{stat.value}</p>
-                    <p className="text-xs text-gray-500">{stat.description}</p>
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center text-gray-400 group-hover:text-indigo-600 group-hover:bg-indigo-50 transition-all duration-300 shadow-sm">
+                    <Icon size={18} />
                   </div>
-                  <div className="w-12 h-12 bg-gray-800 rounded-xl flex items-center justify-center group-hover:bg-gray-900 transition-colors">
-                    <Icon className="text-white" size={20} />
-                  </div>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">{stat.label}</p>
                 </div>
+                <div className="flex items-baseline gap-2">
+                  <h3 className="text-2xl font-black text-gray-900 leading-none tracking-tight">
+                    {stat.value}
+                  </h3>
+                </div>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-4 leading-none">{stat.description}</p>
               </div>
             </div>
           );
@@ -497,93 +501,95 @@ const AdminTrucks: React.FC = () => {
       </div>
 
       {/* Toolbar */}
-      <div className="bg-white rounded-xl border border-gray-200 p-4">
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+      <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-center">
+          <div className="relative group">
             <input
               type="text"
-              placeholder="Search trucks..."
-              className="w-full pl-10 pr-4 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              placeholder="SEARCH TRUCKS..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10 pr-4 py-2.5 text-[10px] font-black uppercase tracking-widest border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent w-full bg-[#fafafa] transition-all shadow-sm"
             />
+            <Search className="absolute left-3.5 top-3 text-slate-400 group-hover:text-indigo-500 transition-colors w-3.5 h-3.5" />
           </div>
 
           <select
-            className="px-2 py-1.5 text-xs border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="px-4 py-2.5 text-[10px] font-black uppercase tracking-widest border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white shadow-sm cursor-pointer hover:border-indigo-200 transition-all"
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
           >
-            <option value="all">All Status</option>
-            <option value="available">Available</option>
-            <option value="in_use">In Use</option>
-            <option value="on_trip">On Trip</option>
-            <option value="maintenance">Maintenance</option>
-            <option value="unavailable">Unavailable</option>
+            <option value="all">ALL STATUS</option>
+            <option value="available">AVAILABLE</option>
+            <option value="in_use">IN USE</option>
+            <option value="on_trip">ON TRIP</option>
+            <option value="maintenance">MAINTENANCE</option>
+            <option value="unavailable">UNAVAILABLE</option>
           </select>
 
           <select
-            className="px-2 py-1.5 text-xs border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="px-4 py-2.5 text-[10px] font-black uppercase tracking-widest border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white shadow-sm cursor-pointer hover:border-indigo-200 transition-all"
             value={tenantFilter}
             onChange={(e) => setTenantFilter(e.target.value)}
           >
-            <option value="all">All Tenants ({tenantsWithTrucks.length})</option>
+            <option value="all">ALL TENANTS ({tenantsWithTrucks.length})</option>
             {tenantsWithTrucks.map((tenant) => (
               <option key={tenant.id} value={tenant.id}>
-                {tenant.name} ({tenant.truckCount} {tenant.truckCount === 1 ? 'truck' : 'trucks'})
+                {tenant.name.toUpperCase()} ({tenant.truckCount})
               </option>
             ))}
           </select>
 
           <button
-            onClick={() => {
-              setGroupByOwner(!groupByOwner);
-            }}
-            className={`px-3 py-2 text-xs border rounded-lg flex items-center justify-center gap-2 transition-all ${groupByOwner
-              ? 'bg-indigo-50 border-indigo-200 text-indigo-700 font-bold'
-              : 'border-gray-200 hover:bg-gray-50 text-gray-600'
+            onClick={() => setGroupByOwner(!groupByOwner)}
+            className={`px-4 py-2.5 text-[10px] font-black uppercase tracking-widest border rounded-xl flex items-center justify-center gap-2 transition-all shadow-sm ${groupByOwner
+              ? 'bg-indigo-600 border-indigo-600 text-white'
+              : 'border-gray-200 hover:border-indigo-200 text-slate-600 bg-white hover:text-indigo-600'
               }`}
           >
             <Layers size={14} />
-            <span>Group by Owner</span>
+            <span>{groupByOwner ? 'UNGROUP' : 'GROUP BY OWNER'}</span>
           </button>
 
-          <button className="px-3 py-2 text-xs border border-gray-200 rounded-lg flex items-center justify-center gap-2 hover:bg-gray-50 transition-colors text-gray-600">
+          <button className="px-4 py-2.5 text-[10px] font-black uppercase tracking-widest border border-gray-200 rounded-xl flex items-center justify-center gap-2 hover:border-indigo-200 text-slate-600 bg-white hover:text-indigo-600 transition-all shadow-sm">
             <Download size={14} />
-            <span>Export</span>
+            <span>EXPORT</span>
           </button>
         </div>
 
-        <div className="mt-2 flex items-center justify-between">
-          <div className="text-xs text-gray-600">
-            {selectedTruckIds.length > 0 ? `${selectedTruckIds.length} selected` : `${total} trucks`}
-            {groupByOwner && groupedTrucks && ` • ${groupedTrucks.length} owners`}
+        <div className="mt-4 flex items-center justify-between border-t border-gray-50 pt-4">
+          <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+            <div className="w-1 h-1 rounded-full bg-slate-300" />
+            {selectedTruckIds.length > 0 ? `${selectedTruckIds.length} SELECTED` : `${total} TRUCKS IDENTIFIED`}
+            {groupByOwner && groupedTrucks && ` • ${groupedTrucks.length} OWNERS`}
           </div>
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-3">
             {!groupByOwner && (
-              <select
-                className="px-1.5 py-0.5 text-xs border border-gray-200 rounded"
-                value={pageSize}
-                onChange={(e) => { setPageSize(Number(e.target.value)); setPage(1); }}
-              >
-                <option value={10}>10 / page</option>
-                <option value={25}>25 / page</option>
-                <option value={50}>50 / page</option>
-                <option value={100}>100 / page</option>
-              </select>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">VIEW:</span>
+                <select
+                  className="px-3 py-1.5 text-[10px] font-black border border-gray-200 rounded-lg bg-white shadow-sm focus:ring-2 focus:ring-indigo-500 transition-all cursor-pointer"
+                  value={pageSize}
+                  onChange={(e) => { setPageSize(Number(e.target.value)); setPage(1); }}
+                >
+                  <option value={10}>10 PER PAGE</option>
+                  <option value={25}>25 PER PAGE</option>
+                  <option value={50}>50 PER PAGE</option>
+                  <option value={100}>100 PER PAGE</option>
+                </select>
+              </div>
             )}
           </div>
         </div>
       </div>
 
       {/* Trucks Table */}
-      <div className="bg-white rounded-xl overflow-hidden border border-gray-200">
+      <div className="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm">
         <div className="overflow-x-auto">
-          <table className="w-full text-xs">
-            <thead className="bg-gray-50 border-b border-gray-200 sticky top-0 z-10">
+          <table className="w-full">
+            <thead className="bg-[#fafafa] border-b border-gray-100">
               <tr>
-                <th className="px-4 py-3 w-12">
+                <th className="px-6 py-4 w-12">
                   <input
                     type="checkbox"
                     checked={selectedTruckIds.length > 0 && selectedTruckIds.length === pagedTrucks.length}
@@ -594,39 +600,39 @@ const AdminTrucks: React.FC = () => {
                         setSelectedTruckIds([]);
                       }
                     }}
-                    className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-2 focus:ring-blue-500"
+                    className="w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-2 focus:ring-indigo-500"
                   />
                 </th>
-                <th className="px-4 py-3 text-left">
+                <th className="px-6 py-4 text-left">
                   <button
-                    className="flex items-center gap-1 font-semibold text-gray-900 text-xs"
+                    className="flex items-center gap-1.5"
                     onClick={() => {
                       setSortBy('plateNumber');
                       setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
                     }}
                   >
-                    <span>Truck Details</span>
-                    <ChevronsUpDown size={14} />
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Truck Identity</span>
+                    <ChevronsUpDown size={12} className="text-slate-300" />
                   </button>
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                  Specifications
+                <th className="px-6 py-4 text-left">
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Specifications</span>
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                  Status
+                <th className="px-6 py-4 text-left">
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</span>
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                  Organization
+                <th className="px-6 py-4 text-left">
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Organization</span>
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                  Performance
+                <th className="px-6 py-4 text-left">
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Performance</span>
                 </th>
-                <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                  Actions
+                <th className="px-6 py-4 text-center">
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Action</span>
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-gray-100 bg-white">
               {pagedTrucks.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="px-4 py-16 text-center">
@@ -641,8 +647,8 @@ const AdminTrucks: React.FC = () => {
                 </tr>
               ) : (
                 pagedTrucks.map((truck: Truck) => (
-                  <tr key={truck.id} className="hover:bg-gray-50 transition-colors group border-b border-gray-100 last:border-0">
-                    <td className="px-4 py-4 w-12">
+                  <tr key={truck.id} className="hover:bg-gray-50/50 transition-colors group">
+                    <td className="px-6 py-5 w-12">
                       <input
                         type="checkbox"
                         checked={selectedTruckIds.includes(truck.id)}
@@ -658,19 +664,19 @@ const AdminTrucks: React.FC = () => {
                     </td>
 
                     {/* Truck Details */}
-                    <td className="px-4 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-indigo-50 rounded-lg flex items-center justify-center border border-indigo-100">
-                          <LucideTruck className="text-indigo-600" size={18} />
+                    <td className="px-6 py-5">
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-xl flex items-center justify-center border border-indigo-100 bg-indigo-50 text-indigo-600 shadow-sm group-hover:scale-105 transition-transform">
+                          <LucideTruck size={18} />
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-0.5">
-                            <p className="text-sm font-bold text-gray-900 truncate">{truck.plateNumber}</p>
-                            <span className="px-1.5 py-0.5 bg-gray-100 text-gray-600 text-[10px] font-bold rounded">
+                        <div>
+                          <div className="flex items-center gap-2 mb-1">
+                            <p className="text-sm font-black text-gray-900 tracking-tight leading-tight uppercase">{truck.plateNumber}</p>
+                            <span className="text-[10px] font-black text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-100 leading-none">
                               {truck.year}
                             </span>
                           </div>
-                          <p className="text-[10px] text-gray-500 truncate capitalize">
+                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">
                             {truck.make} {truck.model}
                           </p>
                         </div>
@@ -678,149 +684,102 @@ const AdminTrucks: React.FC = () => {
                     </td>
 
                     {/* Specifications */}
-                    <td className="px-4 py-4">
-                      <div className="space-y-1.5">
+                    <td className="px-6 py-5">
+                      <div className="space-y-2">
                         <div className="flex items-center gap-2">
-                          <div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
-                          <span className="text-xs text-gray-900 font-medium">
-                            {(truck.capacityWeight || 0).toLocaleString()} kg
+                          <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full shadow-[0_0_8px_rgba(99,102,241,0.5)]"></div>
+                          <span className="text-[10px] font-black text-gray-900 uppercase tracking-tight">
+                            {(truck.capacityWeight || 0).toLocaleString()} KG
                           </span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <div className="w-1.5 h-1.5 bg-purple-500 rounded-full"></div>
-                          <span className="text-xs text-gray-600">
-                            {(truck.capacityVolume || 0).toLocaleString()} m³
+                          <div className="w-1.5 h-1.5 bg-purple-500 rounded-full shadow-[0_0_8px_rgba(168,85,247,0.5)]"></div>
+                          <span className="text-[10px] font-black text-slate-500 uppercase tracking-tight">
+                            {(truck.capacityVolume || 0).toLocaleString()} M³
                           </span>
                         </div>
                       </div>
                     </td>
 
                     {/* Status */}
-                    <td className="px-4 py-4">
+                    <td className="px-6 py-5">
                       <div className="flex items-center gap-2">
-                        <div className={`w-2 h-2 rounded-full ${truck.status === 'available' ? 'bg-green-500 animate-pulse' :
-                          truck.status === 'in_use' || truck.status === 'on_trip' ? 'bg-blue-500' :
-                            truck.status === 'maintenance' ? 'bg-yellow-500' :
-                              'bg-red-500'
-                          }`}></div>
                         {canManageTrucks ? (
                           <select
-                            className={`px-3 py-1.5 rounded-lg text-xs font-medium border-0 ${getStatusColor(truck.status)} cursor-pointer hover:shadow-md transition-shadow`}
+                            className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border text-[9px] font-black uppercase tracking-widest ${getStatusColor(truck.status)} shadow-sm cursor-pointer hover:shadow-md transition-all appearance-none pr-8 relative`}
+                            style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'currentColor\'%3E%3Cpath stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'org/2000/svg\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'currentColor\'%3E%3Cpath stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M19 9l-7 7-7-7\'%3E%3C/path%3E%3C/svg%3E")', backgroundPosition: 'right 0.5rem center', backgroundRepeat: 'no-repeat', backgroundSize: '1rem' }}
                             value={truck.status}
                             onChange={(e) => handleStatusUpdate(truck.id, e.target.value)}
                             disabled={isUpdatingStatus}
                           >
-                            <option value="available">Available</option>
-                            <option value="in_use">In Use</option>
-                            <option value="on_trip">On Trip</option>
-                            <option value="maintenance">Maintenance</option>
-                            <option value="unavailable">Unavailable</option>
+                            <option value="available">AVAILABLE</option>
+                            <option value="in_use">IN USE</option>
+                            <option value="on_trip">ON TRIP</option>
+                            <option value="maintenance">MAINTENANCE</option>
+                            <option value="unavailable">UNAVAILABLE</option>
                           </select>
                         ) : (
-                          <span className={`px-3 py-1.5 rounded-lg text-xs font-medium ${getStatusColor(truck.status)}`}>
-                            {truck.status.replace('_', ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())}
-                          </span>
+                          <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border text-[9px] font-black uppercase tracking-widest ${getStatusColor(truck.status)} shadow-sm`}>
+                            {getStatusIcon(truck.status)}
+                            {truck.status.replace('_', ' ')}
+                          </div>
                         )}
                       </div>
                     </td>
 
                     {/* Organization */}
-                    <td className="px-4 py-4">
-                      <div className="space-y-2">
-                        {/* Tenant Info */}
-                        <div className="flex items-center gap-2 group/tenant relative">
-                          <div className="w-6 h-6 bg-indigo-50 rounded-lg flex items-center justify-center flex-shrink-0">
-                            <Building2 className="text-indigo-600" size={12} />
+                    <td className="px-6 py-5">
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-lg bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 shadow-sm">
+                            <Building2 size={12} />
                           </div>
-                          <div className="flex-1 min-w-0">
-                            <span className="text-[11px] text-gray-900 font-bold truncate block">
-                              {truck.tenantName || 'N/A'}
-                            </span>
-                            {truck.tenant?.subdomain && (
-                              <span className="text-[10px] text-gray-500 truncate block">
-                                {truck.tenant.subdomain}
-                              </span>
-                            )}
+                          <div>
+                            <p className="text-[10px] font-black text-gray-900 uppercase tracking-tight leading-none">{truck.tenantName || 'N/A'}</p>
+                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1 leading-none">TENANT LOG</p>
                           </div>
                         </div>
 
-                        {/* Owner Info */}
-                        <div className="flex items-center gap-2 group/owner relative">
-                          <div className="w-6 h-6 bg-gray-50 rounded-lg flex items-center justify-center flex-shrink-0">
-                            <User className="text-gray-600" size={12} />
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-lg bg-gray-50 border border-gray-100 flex items-center justify-center text-slate-400 shadow-sm">
+                            <User size={12} />
                           </div>
-                          <div className="flex-1 min-w-0">
-                            <span className="text-[11px] text-gray-900 font-bold truncate block">
-                              {truck.ownerName || 'No Owner'}
-                            </span>
-                            {truck.ownerEmail && (
-                              <span className="text-[10px] text-gray-500 truncate block">
-                                {truck.ownerEmail}
-                              </span>
-                            )}
+                          <div>
+                            <p className="text-[10px] font-black text-gray-700 uppercase tracking-tight leading-none">{truck.ownerName || 'NO OWNER'}</p>
+                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1 leading-none">CAPITAL OWNER</p>
                           </div>
                         </div>
-
-                        {/* Current Driver Info (if assigned) */}
-                        {truck.currentDriverName && (
-                          <div className="flex items-center gap-2 pt-1 border-t border-gray-100">
-                            <div className="w-6 h-6 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                              <User className="text-green-600" size={12} />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <span className="text-[10px] text-gray-500 block">Driver:</span>
-                              <span className="text-xs text-gray-900 font-medium truncate block">
-                                {truck.currentDriverName}
-                              </span>
-                              {truck.currentDriverPhone && (
-                                <span className="text-[10px] text-gray-500 truncate block">
-                                  {truck.currentDriverPhone}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        )}
                       </div>
                     </td>
 
                     {/* Performance */}
-                    <td className="px-4 py-4">
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="text-xs text-gray-600">Trips:</span>
-                          <span className="text-xs font-bold text-gray-900 bg-gray-100 px-2 py-0.5 rounded">
-                            {truck.totalTrips || 0}
-                          </span>
+                    <td className="px-6 py-5">
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between gap-4 p-2 bg-slate-50 rounded-lg border border-slate-100">
+                          <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">FISCAL TRIPS</span>
+                          <span className="text-[10px] font-black text-slate-900">{truck.totalTrips || 0}</span>
                         </div>
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="text-xs text-gray-600">Rating:</span>
+                        <div className="flex items-center justify-between gap-4 p-2 bg-emerald-50 rounded-lg border border-emerald-100">
+                          <span className="text-[9px] font-black text-emerald-600 uppercase tracking-widest">YIELD RATING</span>
                           <div className="flex items-center gap-1">
-                            <span className="text-xs font-bold text-yellow-600">
+                            <span className="text-[10px] font-black text-emerald-700">
                               {Number(truck.averageRating || 0).toFixed(1)}
                             </span>
-                            <span className="text-yellow-500">⭐</span>
+                            <span className="text-emerald-500">★</span>
                           </div>
                         </div>
-                        {truck.currentLocationString && (
-                          <div className="flex items-center gap-1 text-[10px] text-gray-500 mt-1">
-                            <MapPin className="text-red-500" size={10} />
-                            <span className="truncate max-w-[120px]" title={truck.currentLocationString}>
-                              {truck.currentLocationString}
-                            </span>
-                          </div>
-                        )}
                       </div>
                     </td>
 
                     {/* Actions */}
-                    <td className="px-4 py-4">
-                      <div className="flex items-center justify-center gap-1">
+                    <td className="px-6 py-5">
+                      <div className="flex justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button
                           onClick={() => {
                             setSelectedTruck(truck);
                             setShowDetailsModal(true);
                           }}
-                          className="p-1.5 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                          className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all shadow-sm bg-white border border-gray-100"
                           title="View Details"
                         >
                           <Eye size={14} />
@@ -831,7 +790,7 @@ const AdminTrucks: React.FC = () => {
                               const { latitude, longitude } = truck.coordinates!;
                               window.open(`https://www.google.com/maps?q=${latitude},${longitude}`, '_blank');
                             }}
-                            className="p-1.5 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                            className="p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all shadow-sm bg-white border border-gray-100"
                             title="View Location on Map"
                           >
                             <MapPin size={14} />
@@ -841,14 +800,14 @@ const AdminTrucks: React.FC = () => {
                           <>
                             <button
                               onClick={() => handleEditTruck(truck)}
-                              className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                              className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all shadow-sm bg-white border border-gray-100"
                               title="Edit"
                             >
                               <Edit size={14} />
                             </button>
                             <button
                               onClick={() => handleDeleteTruck(truck.id)}
-                              className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                              className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all shadow-sm bg-white border border-gray-100"
                               title="Delete"
                             >
                               <Trash2 size={14} />
@@ -863,25 +822,24 @@ const AdminTrucks: React.FC = () => {
             </tbody>
           </table>
         </div>
-
         {/* Enhanced Pagination */}
-        <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200 bg-gradient-to-r from-gray-50 to-gray-100">
+        <div className="flex items-center justify-between px-6 py-4 border-t border-gray-50 bg-[#fafafa]">
           <div className="flex items-center gap-2">
-            <span className="text-xs text-gray-600">
-              Showing <span className="font-semibold text-gray-900">{startIdx + 1}</span> to{' '}
-              <span className="font-semibold text-gray-900">{Math.min(endIdx, total)}</span> of{' '}
-              <span className="font-semibold text-gray-900">{total}</span> trucks
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+              IDENTIFIED <span className="text-gray-900">{startIdx + 1}</span> -{' '}
+              <span className="text-gray-900">{Math.min(endIdx, total)}</span> OF{' '}
+              <span className="text-gray-900">{total}</span> TRUCK ENTITIES
             </span>
           </div>
           <div className="flex items-center gap-2">
             <button
-              className="px-3 py-1.5 text-xs font-medium border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-white hover:shadow-sm transition-all"
+              className="px-4 py-2 text-[10px] font-black uppercase tracking-widest border border-gray-200 rounded-xl disabled:opacity-30 disabled:cursor-not-allowed bg-white hover:bg-gray-50 hover:border-indigo-200 text-slate-600 transition-all shadow-sm"
               onClick={() => setPage(Math.max(1, currentPage - 1))}
               disabled={currentPage === 1}
             >
-              Previous
+              PREV
             </button>
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1.5">
               {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                 let pageNum;
                 if (totalPages <= 5) {
@@ -897,9 +855,9 @@ const AdminTrucks: React.FC = () => {
                   <button
                     key={i}
                     onClick={() => setPage(pageNum)}
-                    className={`w-8 h-8 text-xs font-medium rounded-lg transition-all ${currentPage === pageNum
-                      ? 'bg-blue-600 text-white shadow-md'
-                      : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
+                    className={`w-9 h-9 text-[10px] font-black rounded-xl transition-all border ${currentPage === pageNum
+                      ? 'bg-indigo-600 border-indigo-600 text-white shadow-md'
+                      : 'bg-white border-gray-200 text-slate-600 hover:bg-gray-50 hover:border-indigo-200'
                       }`}
                   >
                     {pageNum}
@@ -908,11 +866,11 @@ const AdminTrucks: React.FC = () => {
               })}
             </div>
             <button
-              className="px-3 py-1.5 text-xs font-medium border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-white hover:shadow-sm transition-all"
+              className="px-4 py-2 text-[10px] font-black uppercase tracking-widest border border-gray-200 rounded-xl disabled:opacity-30 disabled:cursor-not-allowed bg-white hover:bg-gray-50 hover:border-indigo-200 text-slate-600 transition-all shadow-sm"
               onClick={() => setPage(Math.min(totalPages, currentPage + 1))}
               disabled={currentPage === totalPages}
             >
-              Next
+              NEXT
             </button>
           </div>
         </div>
@@ -920,158 +878,141 @@ const AdminTrucks: React.FC = () => {
 
       {/* Create Truck Modal */}
       {canManageTrucks && showCreateModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <div className="p-3 border-b border-gray-200">
-              <div className="flex items-center justify-between">
-                <h2 className="text-base font-bold text-gray-900">Create New Truck</h2>
-                <button
-                  onClick={() => {
-                    setShowCreateModal(false);
-                    resetForm();
-                  }}
-                  className="p-1.5 text-gray-400 hover:text-gray-600 rounded-lg transition-colors"
-                >
-                  <X size={18} />
-                </button>
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden border border-white/20 animate-in fade-in zoom-in duration-300">
+            <div className="bg-slate-900 px-8 py-6 flex items-center justify-between">
+              <div>
+                <h2 className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em] mb-1">Fleet Expansion</h2>
+                <h3 className="text-xl font-black text-white uppercase tracking-tight">Register New Asset</h3>
               </div>
+              <button
+                onClick={() => { setShowCreateModal(false); resetForm(); }}
+                className="w-10 h-10 bg-white/10 hover:bg-white/20 text-white rounded-xl flex items-center justify-center transition-all"
+              >
+                <X size={20} />
+              </button>
             </div>
 
-            <div className="p-3 space-y-3">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+            <div className="p-8 space-y-8 bg-[#fafafa]">
+              <div className="space-y-6">
                 <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">
-                    Plate Number *
-                  </label>
-                  <input
-                    type="text"
-                    className="w-full px-2.5 py-1.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="ABC-123"
-                    value={plateNumber}
-                    onChange={(e) => setPlateNumber(e.target.value.toUpperCase())}
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">
-                    Year *
-                  </label>
-                  <input
-                    type="number"
-                    className="w-full px-2.5 py-1.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="2024"
-                    value={year || ''}
-                    onChange={(e) => setYear(Number(e.target.value) || new Date().getFullYear())}
-                    min="1900"
-                    max={new Date().getFullYear() + 1}
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">
-                    Make *
-                  </label>
-                  <input
-                    type="text"
-                    className="w-full px-2.5 py-1.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Volvo"
-                    value={make}
-                    onChange={(e) => setMake(e.target.value)}
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">
-                    Model *
-                  </label>
-                  <input
-                    type="text"
-                    className="w-full px-2.5 py-1.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="FH16"
-                    value={model}
-                    onChange={(e) => setModel(e.target.value)}
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">
-                    Capacity Weight (kg) *
-                  </label>
-                  <input
-                    type="number"
-                    className="w-full px-2.5 py-1.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="20000"
-                    value={capacityWeight || ''}
-                    onChange={(e) => setCapacityWeight(Number(e.target.value) || 0)}
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">
-                    Capacity Volume (m³) *
-                  </label>
-                  <input
-                    type="number"
-                    className="w-full px-2.5 py-1.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="1000"
-                    value={capacityVolume || ''}
-                    onChange={(e) => setCapacityVolume(Number(e.target.value) || 0)}
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">
-                  Status
-                </label>
-                <select
-                  className="w-full px-2.5 py-1.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  value={status}
-                  onChange={(e) => setStatus(e.target.value)}
-                >
-                  <option value="available">Available</option>
-                  <option value="in_use">In Use</option>
-                  <option value="on_trip">On Trip</option>
-                  <option value="maintenance">Maintenance</option>
-                  <option value="unavailable">Unavailable</option>
-                </select>
-              </div>
-
-              <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-3">
-                <div className="flex items-start gap-2">
-                  <ShieldCheck className="text-indigo-600 mt-0.5" size={16} />
-                  <div>
-                    <h4 className="font-semibold text-indigo-900 text-xs">Truck Information</h4>
-                    <p className="text-[10px] text-indigo-700 mt-0.5">
-                      Ensure all information is accurate. The truck will be available for assignment after creation.
-                    </p>
+                  <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full" />
+                    Identity & Manufacturing
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Plate Number</label>
+                      <input
+                        type="text"
+                        className="w-full px-4 py-3 text-[10px] font-black uppercase tracking-widest bg-white border border-gray-100 rounded-xl focus:ring-2 focus:ring-indigo-500 transition-all shadow-sm"
+                        placeholder="ABC-0000"
+                        value={plateNumber}
+                        onChange={(e) => setPlateNumber(e.target.value.toUpperCase())}
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Manufacturing Year</label>
+                      <input
+                        type="number"
+                        className="w-full px-4 py-3 text-[10px] font-black uppercase tracking-widest bg-white border border-gray-100 rounded-xl focus:ring-2 focus:ring-indigo-500 transition-all shadow-sm"
+                        placeholder="2024"
+                        value={year || ''}
+                        onChange={(e) => setYear(Number(e.target.value) || new Date().getFullYear())}
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Manufacturer (Make)</label>
+                      <input
+                        type="text"
+                        className="w-full px-4 py-3 text-[10px] font-black uppercase tracking-widest bg-white border border-gray-100 rounded-xl focus:ring-2 focus:ring-indigo-500 transition-all shadow-sm"
+                        placeholder="VOLVO"
+                        value={make}
+                        onChange={(e) => setMake(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Model Specification</label>
+                      <input
+                        type="text"
+                        className="w-full px-4 py-3 text-[10px] font-black uppercase tracking-widest bg-white border border-gray-100 rounded-xl focus:ring-2 focus:ring-indigo-500 transition-all shadow-sm"
+                        placeholder="FH-16"
+                        value={model}
+                        onChange={(e) => setModel(e.target.value)}
+                      />
+                    </div>
                   </div>
                 </div>
-              </div>
-            </div>
 
-            <div className="p-2.5 border-t border-gray-200 flex justify-end gap-2">
-              <button
-                onClick={() => {
-                  setShowCreateModal(false);
-                  resetForm();
-                }}
-                className="px-2.5 py-1.5 text-xs text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => createTruck()}
-                disabled={isCreating || !plateNumber || !make || !model || !capacityWeight || !capacityVolume}
-                className="px-2.5 py-1.5 text-xs bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5 font-medium"
-              >
-                {isCreating && <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></div>}
-                <span>{isCreating ? 'Creating...' : 'Create Truck'}</span>
-              </button>
+                <div>
+                  <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full" />
+                    Technical Capacity
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Weight Capacity (KG)</label>
+                      <div className="relative">
+                        <input
+                          type="number"
+                          className="w-full pl-4 pr-12 py-3 text-[10px] font-black uppercase tracking-widest bg-white border border-gray-100 rounded-xl focus:ring-2 focus:ring-indigo-500 transition-all shadow-sm"
+                          placeholder="20000"
+                          value={capacityWeight || ''}
+                          onChange={(e) => setCapacityWeight(Number(e.target.value) || 0)}
+                        />
+                        <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-300">KG</span>
+                      </div>
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Volume Capacity (M³)</label>
+                      <div className="relative">
+                        <input
+                          type="number"
+                          className="w-full pl-4 pr-12 py-3 text-[10px] font-black uppercase tracking-widest bg-white border border-gray-100 rounded-xl focus:ring-2 focus:ring-indigo-500 transition-all shadow-sm"
+                          placeholder="100"
+                          value={capacityVolume || ''}
+                          onChange={(e) => setCapacityVolume(Number(e.target.value) || 0)}
+                        />
+                        <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-300">M³</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full" />
+                    Asset Status
+                  </h4>
+                  <select
+                    className="w-full px-4 py-3 text-[10px] font-black uppercase tracking-widest bg-white border border-gray-100 rounded-xl focus:ring-2 focus:ring-indigo-500 transition-all shadow-sm cursor-pointer"
+                    value={status}
+                    onChange={(e) => setStatus(e.target.value)}
+                  >
+                    <option value="available">AVAILABLE</option>
+                    <option value="in_use">IN USE</option>
+                    <option value="on_trip">ON TRIP</option>
+                    <option value="maintenance">MAINTENANCE</option>
+                    <option value="unavailable">UNAVAILABLE</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-3 pt-4">
+                <button
+                  onClick={() => { setShowCreateModal(false); resetForm(); }}
+                  className="px-6 py-3 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-600 transition-colors"
+                >
+                  Discard
+                </button>
+                <button
+                  onClick={() => createTruck()}
+                  disabled={isCreating || !plateNumber || !make || !model || !capacityWeight || !capacityVolume}
+                  className="px-8 py-3 bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all shadow-lg hover:shadow-indigo-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                >
+                  {isCreating ? 'PROCESSING...' : 'INITIALIZE ASSET'}
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -1079,146 +1020,129 @@ const AdminTrucks: React.FC = () => {
 
       {/* Edit Truck Modal */}
       {showEditModal && editingTruck && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <div className="p-3 border-b border-gray-200">
-              <div className="flex items-center justify-between">
-                <h2 className="text-base font-bold text-gray-900">Edit Truck</h2>
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden border border-white/20 animate-in fade-in zoom-in duration-300">
+            <div className="bg-indigo-600 px-8 py-6 flex items-center justify-between">
+              <div>
+                <h2 className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em] mb-1">Asset Modification</h2>
+                <h3 className="text-xl font-black text-white uppercase tracking-tight">Edit Truck Identity</h3>
+              </div>
+              <button
+                onClick={() => { setShowEditModal(false); setEditingTruck(null); }}
+                className="w-10 h-10 bg-white/10 hover:bg-white/20 text-white rounded-xl flex items-center justify-center transition-all"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="p-8 space-y-8 bg-[#fafafa]">
+              <div className="space-y-6">
+                <div>
+                  <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full" />
+                    Core Identity
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Plate Number</label>
+                      <input
+                        type="text"
+                        className="w-full px-4 py-3 text-[10px] font-black uppercase tracking-widest bg-white border border-gray-100 rounded-xl focus:ring-2 focus:ring-indigo-500 transition-all shadow-sm"
+                        value={editingTruck.plateNumber || ''}
+                        onChange={(e) => setEditingTruck({ ...editingTruck, plateNumber: e.target.value.toUpperCase() })}
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Manufacturing Year</label>
+                      <input
+                        type="number"
+                        className="w-full px-4 py-3 text-[10px] font-black uppercase tracking-widest bg-white border border-gray-100 rounded-xl focus:ring-2 focus:ring-indigo-500 transition-all shadow-sm"
+                        value={editingTruck.year || ''}
+                        onChange={(e) => setEditingTruck({ ...editingTruck, year: Number(e.target.value) || new Date().getFullYear() })}
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Manufacturer</label>
+                      <input
+                        type="text"
+                        className="w-full px-4 py-3 text-[10px] font-black uppercase tracking-widest bg-white border border-gray-100 rounded-xl focus:ring-2 focus:ring-indigo-500 transition-all shadow-sm"
+                        value={editingTruck.make || ''}
+                        onChange={(e) => setEditingTruck({ ...editingTruck, make: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Model</label>
+                      <input
+                        type="text"
+                        className="w-full px-4 py-3 text-[10px] font-black uppercase tracking-widest bg-white border border-gray-100 rounded-xl focus:ring-2 focus:ring-indigo-500 transition-all shadow-sm"
+                        value={editingTruck.model || ''}
+                        onChange={(e) => setEditingTruck({ ...editingTruck, model: e.target.value })}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full" />
+                    Load Parameters
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Weight Capacity (KG)</label>
+                      <input
+                        type="number"
+                        className="w-full px-4 py-3 text-[10px] font-black uppercase tracking-widest bg-white border border-gray-100 rounded-xl focus:ring-2 focus:ring-indigo-500 transition-all shadow-sm"
+                        value={editingTruck.capacityWeight || ''}
+                        onChange={(e) => setEditingTruck({ ...editingTruck, capacityWeight: Number(e.target.value) || 0 })}
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Volume Capacity (M³)</label>
+                      <input
+                        type="number"
+                        className="w-full px-4 py-3 text-[10px] font-black uppercase tracking-widest bg-white border border-gray-100 rounded-xl focus:ring-2 focus:ring-indigo-500 transition-all shadow-sm"
+                        value={editingTruck.capacityVolume || ''}
+                        onChange={(e) => setEditingTruck({ ...editingTruck, capacityVolume: Number(e.target.value) || 0 })}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full" />
+                    Operational Status
+                  </h4>
+                  <select
+                    className="w-full px-4 py-3 text-[10px] font-black uppercase tracking-widest bg-white border border-gray-100 rounded-xl focus:ring-2 focus:ring-indigo-500 transition-all shadow-sm cursor-pointer"
+                    value={editingTruck.status || 'available'}
+                    onChange={(e) => setEditingTruck({ ...editingTruck, status: e.target.value })}
+                  >
+                    <option value="available">AVAILABLE</option>
+                    <option value="in_use">IN USE</option>
+                    <option value="on_trip">ON TRIP</option>
+                    <option value="maintenance">MAINTENANCE</option>
+                    <option value="unavailable">UNAVAILABLE</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-3 pt-4">
                 <button
-                  onClick={() => {
-                    setShowEditModal(false);
-                    setEditingTruck(null);
-                  }}
-                  className="p-1.5 text-gray-400 hover:text-gray-600 rounded-lg transition-colors"
+                  onClick={() => { setShowEditModal(false); setEditingTruck(null); }}
+                  className="px-6 py-3 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-600 transition-colors"
                 >
-                  <X size={18} />
+                  Discard
+                </button>
+                <button
+                  onClick={() => updateTruck()}
+                  disabled={isUpdating || !editingTruck.plateNumber || !editingTruck.make || !editingTruck.model}
+                  className="px-8 py-3 bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all shadow-lg hover:shadow-indigo-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                >
+                  {isUpdating ? 'SAVING...' : 'COMMIT CHANGES'}
                 </button>
               </div>
-            </div>
-
-            <div className="p-3 space-y-3">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">
-                    Plate Number *
-                  </label>
-                  <input
-                    type="text"
-                    className="w-full px-2.5 py-1.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="ABC-123"
-                    value={editingTruck.plateNumber || ''}
-                    onChange={(e) => setEditingTruck({ ...editingTruck, plateNumber: e.target.value.toUpperCase() })}
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">
-                    Year *
-                  </label>
-                  <input
-                    type="number"
-                    className="w-full px-2.5 py-1.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="2024"
-                    value={editingTruck.year || ''}
-                    onChange={(e) => setEditingTruck({ ...editingTruck, year: Number(e.target.value) || new Date().getFullYear() })}
-                    min="1900"
-                    max={new Date().getFullYear() + 1}
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">
-                    Make *
-                  </label>
-                  <input
-                    type="text"
-                    className="w-full px-2.5 py-1.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Volvo"
-                    value={editingTruck.make || ''}
-                    onChange={(e) => setEditingTruck({ ...editingTruck, make: e.target.value })}
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">
-                    Model *
-                  </label>
-                  <input
-                    type="text"
-                    className="w-full px-2.5 py-1.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="FH16"
-                    value={editingTruck.model || ''}
-                    onChange={(e) => setEditingTruck({ ...editingTruck, model: e.target.value })}
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">
-                    Capacity Weight (kg) *
-                  </label>
-                  <input
-                    type="number"
-                    className="w-full px-2.5 py-1.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="20000"
-                    value={editingTruck.capacityWeight || ''}
-                    onChange={(e) => setEditingTruck({ ...editingTruck, capacityWeight: Number(e.target.value) || 0 })}
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">
-                    Capacity Volume (m³) *
-                  </label>
-                  <input
-                    type="number"
-                    className="w-full px-2.5 py-1.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="1000"
-                    value={editingTruck.capacityVolume || ''}
-                    onChange={(e) => setEditingTruck({ ...editingTruck, capacityVolume: Number(e.target.value) || 0 })}
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">
-                  Status
-                </label>
-                <select
-                  className="w-full px-2.5 py-1.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  value={editingTruck.status || 'available'}
-                  onChange={(e) => setEditingTruck({ ...editingTruck, status: e.target.value })}
-                >
-                  <option value="available">Available</option>
-                  <option value="in_use">In Use</option>
-                  <option value="on_trip">On Trip</option>
-                  <option value="maintenance">Maintenance</option>
-                  <option value="unavailable">Unavailable</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="p-2.5 border-t border-gray-200 flex justify-end gap-2">
-              <button
-                onClick={() => {
-                  setShowEditModal(false);
-                  setEditingTruck(null);
-                }}
-                className="px-2.5 py-1.5 text-xs text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => updateTruck()}
-                disabled={isUpdating || !editingTruck.plateNumber || !editingTruck.make || !editingTruck.model}
-                className="px-2.5 py-1.5 text-xs bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5 font-medium"
-              >
-                {isUpdating && <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></div>}
-                <span>{isUpdating ? 'Saving...' : 'Save Changes'}</span>
-              </button>
             </div>
           </div>
         </div>
@@ -1226,182 +1150,139 @@ const AdminTrucks: React.FC = () => {
 
       {/* Truck Details Modal */}
       {showDetailsModal && selectedTruck && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-            <div className="p-3 border-b border-gray-200">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-indigo-50 rounded-lg flex items-center justify-center border border-indigo-100">
-                    <LucideTruck className="text-indigo-600" size={18} />
-                  </div>
-                  <div>
-                    <h2 className="text-lg font-bold text-gray-900">{selectedTruck.plateNumber}</h2>
-                    <p className="text-xs text-gray-600">{selectedTruck.make} {selectedTruck.model} ({selectedTruck.year})</p>
-                  </div>
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden border border-white/20 animate-in fade-in zoom-in duration-300 flex flex-col">
+            {/* Modal Header */}
+            <div className="bg-slate-900 px-8 py-8 flex items-center justify-between">
+              <div className="flex items-center gap-6">
+                <div className="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center border border-white/10">
+                  <LucideTruck className="text-white" size={32} />
                 </div>
+                <div>
+                  <div className="flex items-center gap-3 mb-1">
+                    <h2 className="text-2xl font-black text-white uppercase tracking-tight">{selectedTruck.plateNumber}</h2>
+                    <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border ${getStatusColor(selectedTruck.status)} bg-white/5`}>
+                      {selectedTruck.status.replace('_', ' ')}
+                    </span>
+                  </div>
+                  <p className="text-sm font-black text-slate-400 uppercase tracking-widest">{selectedTruck.make} — {selectedTruck.model} ({selectedTruck.year})</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={() => { handleEditTruck(selectedTruck); setShowDetailsModal(false); }}
+                  className="px-6 py-3 bg-white/5 hover:bg-white/10 text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all border border-white/10"
+                >
+                  Modify Asset
+                </button>
                 <button
                   onClick={() => setShowDetailsModal(false)}
-                  className="p-1.5 text-gray-400 hover:text-gray-600 rounded-lg transition-colors"
+                  className="w-12 h-12 bg-white/5 hover:bg-rose-500/20 text-white hover:text-rose-400 rounded-xl flex items-center justify-center transition-all border border-white/10 hover:border-rose-500/30"
                 >
-                  <X size={18} />
+                  <X size={20} />
                 </button>
               </div>
             </div>
 
-            <div className="p-3 space-y-3">
-              {/* Status */}
-              <div className="flex items-center justify-between flex-wrap gap-2">
-                <div className="flex items-center space-x-2">
-                  {getStatusIcon(selectedTruck.status)}
-                  <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium ${getStatusColor(selectedTruck.status)}`}>
-                    {selectedTruck.status.replace('_', ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())}
-                  </span>
-                </div>
-                <div className="flex space-x-1.5">
-                  <button
-                    onClick={() => {
-                      handleEditTruck(selectedTruck);
-                      setShowDetailsModal(false);
-                    }}
-                    className="px-2.5 py-1.5 text-xs bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                  >
-                    Edit Truck
-                  </button>
-                </div>
-              </div>
-
-              {/* Key Metrics */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                <div className="bg-indigo-50 rounded-lg p-3 border border-indigo-100">
-                  <div className="flex items-center space-x-2">
-                    <Milestone className="text-indigo-600" size={16} />
-                    <div>
-                      <div className="text-sm font-black text-indigo-900">{(selectedTruck.capacityWeight || 0).toLocaleString()}</div>
-                      <div className="text-[10px] text-indigo-700">Weight (kg)</div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-gray-50 rounded-lg p-3 border border-gray-100">
-                  <div className="flex items-center space-x-2">
-                    <LucideTruck className="text-gray-600" size={16} />
-                    <div>
-                      <div className="text-sm font-black text-gray-900">{(selectedTruck.capacityVolume || 0).toLocaleString()}</div>
-                      <div className="text-[10px] text-gray-500">Volume (m³)</div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-green-50 rounded-lg p-3 border border-green-100">
-                  <div className="flex items-center space-x-2">
-                    <Check className="text-green-600" size={16} />
-                    <div>
-                      <div className="text-sm font-black text-green-900">{selectedTruck.totalTrips || 0}</div>
-                      <div className="text-[10px] text-green-700">Total Trips</div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-yellow-50 rounded-lg p-3 border border-yellow-100">
-                  <div className="flex items-center space-x-2">
-                    <Clock className="text-yellow-600" size={16} />
-                    <div>
-                      <div className="text-sm font-black text-yellow-900">{Number(selectedTruck.averageRating || 0).toFixed(1)}</div>
-                      <div className="text-[10px] text-yellow-700">Rating</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Truck Information */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div className="space-y-2">
-                  <h3 className="text-xs font-semibold text-gray-900">Truck Information</h3>
-                  <div className="space-y-1.5 text-xs">
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Plate Number:</span>
-                      <span className="font-medium">{selectedTruck.plateNumber}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Make & Model:</span>
-                      <span className="font-medium">{selectedTruck.make} {selectedTruck.model}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Year:</span>
-                      <span className="font-medium">{selectedTruck.year}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Location:</span>
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium">{selectedTruck.currentLocationString || 'N/A'}</span>
-                        {selectedTruck.coordinates && (
-                          <button
-                            onClick={() => {
-                              const { latitude, longitude } = selectedTruck.coordinates!;
-                              window.open(`https://www.google.com/maps?q=${latitude},${longitude}`, '_blank');
-                            }}
-                            className="text-blue-600 hover:text-blue-700 text-xs underline"
-                            title="View on Google Maps"
-                          >
-                            View Map
-                          </button>
-                        )}
+            <div className="flex-1 overflow-y-auto p-8 bg-[#fafafa] space-y-8">
+              {/* Performance Metrics Section */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                {[
+                  { label: 'Weight Capacity', value: `${(selectedTruck.capacityWeight || 0).toLocaleString()}`, unit: 'KG', icon: Milestone, color: 'indigo' },
+                  { label: 'Volume Capacity', value: `${(selectedTruck.capacityVolume || 0).toLocaleString()}`, unit: 'M³', icon: LucideTruck, color: 'slate' },
+                  { label: 'Asset Utilization', value: `${selectedTruck.totalTrips || 0}`, unit: 'TRIPS', icon: Check, color: 'emerald' },
+                  { label: 'Driver Satisfaction', value: `${Number(selectedTruck.averageRating || 0).toFixed(1)}`, unit: '/ 5.0', icon: Clock, color: 'amber' }
+                ].map((metric, i) => (
+                  <div key={i} className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all group overflow-hidden relative">
+                    <metric.icon className="absolute -right-4 -bottom-4 text-gray-100 group-hover:text-gray-200 transition-colors" size={80} />
+                    <div className="relative">
+                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">{metric.label}</p>
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-2xl font-black text-slate-900 tracking-tight">{metric.value}</span>
+                        <span className="text-[10px] font-black text-slate-400">{metric.unit}</span>
                       </div>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Mileage:</span>
-                      <span className="font-medium">{(selectedTruck.mileage || 0).toLocaleString()} km</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Tenant:</span>
-                      <span className="font-medium">{selectedTruck.tenantName || 'N/A'}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Owner:</span>
-                      <span className="font-medium">{selectedTruck.ownerName || 'N/A'}</span>
-                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {/* Technical Specifications */}
+                <div className="space-y-4">
+                  <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full" />
+                    Asset Intelligence
+                  </h4>
+                  <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm">
+                    {[
+                      { label: 'Registry Plate', value: selectedTruck.plateNumber },
+                      { label: 'Manufacturer', value: selectedTruck.make },
+                      { label: 'Model Spec', value: selectedTruck.model },
+                      { label: 'Odometer (KM)', value: `${(selectedTruck.mileage || 0).toLocaleString()} km` },
+                      { label: 'Current Vector', value: selectedTruck.currentLocationString || 'STATIONARY' },
+                      { label: 'Efficiency', value: selectedTruck.fuelEfficiency ? `${selectedTruck.fuelEfficiency} km/L` : 'CALCULATING...' }
+                    ].map((row, i) => (
+                      <div key={i} className="px-6 py-4 flex items-center justify-between border-b border-gray-50 last:border-0 hover:bg-gray-50/50 transition-colors">
+                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{row.label}</span>
+                        <span className="text-xs font-black text-slate-900 uppercase tracking-tight">{row.value}</span>
+                      </div>
+                    ))}
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <h3 className="text-xs font-semibold text-gray-900">Performance</h3>
-                  <div className="space-y-1.5 text-xs">
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Total Trips:</span>
-                      <span className="font-medium">{selectedTruck.totalTrips || 0}</span>
+                {/* Organization & Fiscal Data */}
+                <div className="space-y-4">
+                  <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full" />
+                    Operational Structure
+                  </h4>
+                  <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm">
+                    <div className="p-6 border-b border-gray-50">
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Total Asset Revenue</p>
+                      <div className="flex items-baseline gap-2">
+                        <span className="text-[10px] font-black text-slate-400">RWF</span>
+                        <span className="text-4xl font-black text-slate-900 tracking-tighter">
+                          {(selectedTruck.totalRevenue || 0).toLocaleString()}
+                        </span>
+                      </div>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Total Revenue:</span>
-                      <span className="font-medium">RWF {(selectedTruck.totalRevenue || 0).toLocaleString()}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Average Rating:</span>
-                      <span className="font-medium">{Number(selectedTruck.averageRating || 0).toFixed(1)} ⭐</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Fuel Efficiency:</span>
-                      <span className="font-medium">{selectedTruck.fuelEfficiency ? `${selectedTruck.fuelEfficiency} km/L` : 'N/A'}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Created:</span>
-                      <span className="font-medium">{new Date(selectedTruck.createdAt).toLocaleDateString()}</span>
-                    </div>
+                    {[
+                      { label: 'Assigned Tenant', value: selectedTruck.tenantName || 'UNASSIGNED' },
+                      { label: 'Equity Owner', value: selectedTruck.ownerName || 'PLATFORM ASSET' },
+                      { label: 'Registry Date', value: new Date(selectedTruck.createdAt).toLocaleDateString() }
+                    ].map((row, i) => (
+                      <div key={i} className="px-6 py-4 flex items-center justify-between border-b border-gray-50 last:border-0">
+                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{row.label}</span>
+                        <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest">{row.value}</span>
+                      </div>
+                    ))}
                   </div>
                 </div>
               </div>
 
-              {/* Assigned Drivers */}
+              {/* Personnel Assignment Section */}
               {selectedTruck.assignedDrivers && selectedTruck.assignedDrivers.length > 0 && (
-                <div className="space-y-2">
-                  <h3 className="text-xs font-semibold text-gray-900">Assigned Drivers</h3>
-                  <div className="space-y-1.5">
+                <div className="space-y-4">
+                  <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full" />
+                    Assigned Human Capital
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {selectedTruck.assignedDrivers.map((driver: any, index: number) => (
-                      <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg text-xs">
-                        <div className="flex items-center gap-2">
-                          <User className="text-gray-400" size={12} />
-                          <span className="font-medium">{driver.driverName || 'Unknown'}</span>
+                      <div key={index} className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                          <div className="w-10 h-10 bg-emerald-50 rounded-xl flex items-center justify-center border border-emerald-100">
+                            <User className="text-emerald-600" size={18} />
+                          </div>
+                          <div>
+                            <p className="text-xs font-black text-slate-900 uppercase tracking-tight">{driver.driverName || 'IDENTIFYING...'}</p>
+                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Active Operator</p>
+                          </div>
                         </div>
-                        <span className="text-gray-500">{new Date(driver.assignmentDate).toLocaleDateString()}</span>
+                        <div className="text-right">
+                          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Commissioned</p>
+                          <p className="text-[10px] font-black text-slate-600 tracking-tight">{new Date(driver.assignmentDate).toLocaleDateString()}</p>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -1411,7 +1292,7 @@ const AdminTrucks: React.FC = () => {
           </div>
         </div>
       )}
-    </AdminPageLayout>
+    </AdminPageLayout >
   );
 };
 

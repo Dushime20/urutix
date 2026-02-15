@@ -18,7 +18,7 @@ import {
   FaBell,
   FaStar
 } from 'react-icons/fa';
-import logoUrutiX from '@/assets/logo-urutix.svg';
+import logoUrutiX from "@/assets/logo-urutix.svg";
 
 interface FAQItem {
   id: string;
@@ -111,7 +111,7 @@ const CargoHelpSupport: React.FC = () => {
 
   const filteredFAQs = faqs.filter(faq => {
     const matchesSearch = faq.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         faq.answer.toLowerCase().includes(searchQuery.toLowerCase());
+      faq.answer.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = selectedCategory === 'all' || faq.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
@@ -123,11 +123,11 @@ const CargoHelpSupport: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50 py-8 relative">
       {/* Background Logo */}
-      <img 
-        src={logoUrutiX} 
-        alt="UrutiX Logo Background" 
-        className="pointer-events-none select-none fixed inset-0 w-full h-full object-cover opacity-10 z-0" 
-        style={{objectPosition: 'center'}} 
+      <img
+        src={logoUrutiX}
+        alt="UrutiX Logo Background"
+        className="pointer-events-none select-none fixed inset-0 w-full h-full object-cover opacity-10 z-0"
+        style={{ objectPosition: 'center' }}
       />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         {/* Header */}
@@ -165,11 +165,10 @@ const CargoHelpSupport: React.FC = () => {
                 <button
                   key={category.id}
                   onClick={() => setSelectedCategory(category.id)}
-                  className={`p-4 rounded-lg border-2 transition-all ${
-                    selectedCategory === category.id
-                      ? 'border-primary-600 bg-primary-50 text-primary-700'
-                      : 'border-gray-200 bg-white text-gray-700 hover:border-primary-300 hover:bg-gray-50'
-                  }`}
+                  className={`p-4 rounded-lg border-2 transition-all ${selectedCategory === category.id
+                    ? 'border-primary-600 bg-primary-50 text-primary-700'
+                    : 'border-gray-200 bg-white text-gray-700 hover:border-primary-300 hover:bg-gray-50'
+                    }`}
                 >
                   <IconComponent className="w-6 h-6 mx-auto mb-2" />
                   <div className="text-sm font-medium">{category.name}</div>

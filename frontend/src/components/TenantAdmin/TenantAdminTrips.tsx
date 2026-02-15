@@ -13,10 +13,10 @@ import {
   FaEye,
   FaSync,
   FaMapMarkerAlt,
-  FaBox,
   FaUser,
   FaExclamationTriangle,
 } from 'react-icons/fa';
+import ActiveTrips from '../TenantDashboard/ActiveTrips';
 
 interface Trip {
   id: string;
@@ -197,7 +197,13 @@ const TenantAdminTrips: React.FC = () => {
   }
 
   return (
-    <div className="space-y-4 p-4">
+    <div className="space-y-6 p-4">
+      {user?.tenantId && (
+        <div className="bg-white rounded-[32px] border border-slate-100 shadow-sm p-6 mb-6">
+          <ActiveTrips tenantId={user.tenantId} />
+        </div>
+      )}
+
       {/* Header */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
         <div className="flex items-center justify-between mb-4">

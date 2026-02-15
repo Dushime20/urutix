@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import logoUrutiX from '../assets/logo-urutix-logistics.svg';
 import { fleetApi, type TCOAnalysis } from '../services/fleetApi';
 import TCOCharts from '../components/FleetDashboard/Analytics/TCOCharts';
 import { Loader2 } from 'lucide-react';
 
 const FleetAnalytics: React.FC = () => {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('overview');
   const [tcoData, setTcoData] = useState<TCOAnalysis | null>(null);
   const [loading, setLoading] = useState(false);
@@ -33,11 +36,8 @@ const FleetAnalytics: React.FC = () => {
         <header className="max-w-[1920px] mx-auto flex items-center justify-between px-4 md:px-8 lg:px-12 xl:px-20 py-5 border-b border-white/10">
           <div className="flex items-center gap-4 md:gap-10">
             {/* Logo */}
-            <a href="/dashboard/fleet" className="flex items-center gap-3 cursor-pointer">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-700 flex items-center justify-center rounded-xl shadow-lg shadow-blue-500/20">
-                <span className="material-symbols-outlined text-white text-xl">local_shipping</span>
-              </div>
-              <h2 className="text-xl md:text-2xl font-black tracking-tighter text-white">UrutiX<span className="text-blue-400">.</span></h2>
+            <a className="flex items-center gap-3 cursor-pointer" onClick={() => navigate('/dashboard/fleet')}>
+              <img src={logoUrutiX} alt="UrutiX Logistics Logo" className="h-14 md:h-20 w-auto object-contain py-1" />
             </a>
 
             {/* Desktop Navigation */}

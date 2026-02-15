@@ -1,5 +1,6 @@
 import React from 'react';
-import { Truck, Globe, Mail, MessageCircle } from 'lucide-react';
+import { Globe, Mail, MessageCircle } from 'lucide-react';
+import logoUrutiX from '../../assets/logo-urutix-logistics.svg';
 
 const LandingFooter: React.FC = () => {
   return (
@@ -9,13 +10,10 @@ const LandingFooter: React.FC = () => {
           {/* Company */}
           <div>
             <div className="flex items-center mb-6">
-              <div className="w-10 h-10 bg-primary-600 rounded-lg flex items-center justify-center">
-                <Truck className="w-6 h-6 text-white" />
-              </div>
-              <span className="ml-3 text-xl font-bold">UrutiX</span>
+              <img src={logoUrutiX} alt="UrutiX Logistics Logo" className="h-16 w-auto object-contain" />
             </div>
             <p className="text-gray-400 leading-relaxed mb-6">
-              The global platform for intelligent fleet and cargo management. 
+              The global platform for intelligent fleet and cargo management.
               Empowering businesses worldwide with cutting-edge logistics technology.
             </p>
             <div className="flex space-x-4">
@@ -30,7 +28,7 @@ const LandingFooter: React.FC = () => {
               </a>
             </div>
           </div>
-          
+
           {/* Product */}
           <div>
             <h4 className="text-lg font-semibold mb-6">Product</h4>
@@ -52,7 +50,7 @@ const LandingFooter: React.FC = () => {
               </li>
             </ul>
           </div>
-          
+
           {/* Company */}
           <div>
             <h4 className="text-lg font-semibold mb-6">Company</h4>
@@ -74,7 +72,7 @@ const LandingFooter: React.FC = () => {
               </li>
             </ul>
           </div>
-          
+
           {/* Support */}
           <div>
             <h4 className="text-lg font-semibold mb-6">Support</h4>
@@ -100,7 +98,7 @@ const LandingFooter: React.FC = () => {
             </ul>
           </div>
         </div>
-        
+
         <div className="border-t border-gray-800 pt-8">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <p className="text-gray-400 text-sm mb-4 md:mb-0">

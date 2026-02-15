@@ -1,4 +1,4 @@
-import { Truck } from 'lucide-react';
+import logoUrutiX from '../../assets/logo-urutix-logistics.svg';
 
 const DashboardFooter = () => {
   return (
@@ -6,11 +6,8 @@ const DashboardFooter = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col md:flex-row justify-between items-center gap-6 md:gap-4">
           {/* Logo Section */}
-          <div className="flex items-center gap-2.5 order-1 md:order-1">
-            <div className="w-8 h-8 bg-emerald-600 rounded-lg flex items-center justify-center shadow-sm shadow-emerald-600/20">
-              <Truck className="w-4 h-4 text-white" />
-            </div>
-            <span className="text-xl font-bold text-gray-900 tracking-tight">UrutiX</span>
+          <div className="flex items-center order-1 md:order-1">
+            <img src={logoUrutiX} alt="UrutiX Logistics Logo" className="h-12 w-auto object-contain" />
           </div>
 
           {/* Links Section */}

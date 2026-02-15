@@ -1,18 +1,18 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { 
-  FaTruck, 
-  FaUser, 
-  FaMapMarkerAlt, 
-  FaPhone, 
-  FaEnvelope, 
-  FaEdit, 
-  FaTrash, 
-  FaUserPlus, 
-  FaUserMinus, 
-  FaSearch, 
-  FaFilter, 
-  FaRoute, 
-  FaUsers, 
+import {
+  FaTruck,
+  FaUser,
+  FaMapMarkerAlt,
+  FaPhone,
+  FaEnvelope,
+  FaEdit,
+  FaTrash,
+  FaUserPlus,
+  FaUserMinus,
+  FaSearch,
+  FaFilter,
+  FaRoute,
+  FaUsers,
   FaFileAlt,
   FaPlus,
   FaEye,
@@ -39,7 +39,7 @@ import { FiGrid, FiList, FiMoreVertical } from 'react-icons/fi';
 import type { FleetItem, Route } from '../../types/fleet';
 import { fleetApi } from '../../services/fleetApi';
 import { fetchAdminRoutes } from '../../services/adminApi';
-import logoUrutiX from '../../assets/logo-urutix.svg';
+import logoUrutiX from '../../assets/logo-urutix-logistics.svg';
 
 // Debug the imported fleetApi
 console.log('🔍 TrucksList - Imported fleetApi:', fleetApi);
@@ -106,8 +106,8 @@ const EditTruckForm: React.FC<EditTruckFormProps> = ({ truck, onSave, onCancel }
     const { name, value, type } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : 
-              type === 'number' ? (value === '' ? '' : Number(value)) : value
+      [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked :
+        type === 'number' ? (value === '' ? '' : Number(value)) : value
     }));
   };
 
@@ -143,25 +143,23 @@ const EditTruckForm: React.FC<EditTruckFormProps> = ({ truck, onSave, onCancel }
                     setFormData(prev => ({ ...prev, vin: value }));
                   }
                 }}
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
-                  formData.vin?.length === 17 
-                    ? 'border-green-500 bg-green-50' 
-                    : formData.vin?.length > 0 
-                    ? 'border-yellow-400' 
-                    : 'border-gray-300'
-                }`}
+                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent ${formData.vin?.length === 17
+                    ? 'border-green-500 bg-green-50'
+                    : formData.vin?.length > 0
+                      ? 'border-yellow-400'
+                      : 'border-gray-300'
+                  }`}
                 required
                 maxLength={17}
                 placeholder="Enter 17-character VIN"
               />
               <div className="mt-1 flex items-center justify-between">
-                <span className={`text-xs ${
-                  formData.vin?.length === 17 
-                    ? 'text-green-600' 
-                    : formData.vin?.length > 0 
-                    ? 'text-yellow-600' 
-                    : 'text-gray-500'
-                }`}>
+                <span className={`text-xs ${formData.vin?.length === 17
+                    ? 'text-green-600'
+                    : formData.vin?.length > 0
+                      ? 'text-yellow-600'
+                      : 'text-gray-500'
+                  }`}>
                   {formData.vin?.length || 0} / 17 characters
                 </span>
                 {formData.vin?.length === 17 && (
@@ -207,11 +205,10 @@ const EditTruckForm: React.FC<EditTruckFormProps> = ({ truck, onSave, onCancel }
                 required
                 min="1900"
                 max={new Date().getFullYear() + 1}
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
-                  formData.year && typeof formData.year === 'number' && formData.year > new Date().getFullYear()
+                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent ${formData.year && typeof formData.year === 'number' && formData.year > new Date().getFullYear()
                     ? 'border-red-500 bg-red-50'
                     : 'border-gray-300'
-                }`}
+                  }`}
               />
               {formData.year && typeof formData.year === 'number' && formData.year > new Date().getFullYear() && (
                 <p className="mt-1 text-xs text-red-600 flex items-center gap-1">
@@ -532,7 +529,7 @@ const EditTruckForm: React.FC<EditTruckFormProps> = ({ truck, onSave, onCancel }
 
 export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigger }) => {
   const { user, accessToken, isLoading: authLoading } = useAuth();
-  
+
   console.log('🚀 TrucksList component rendering at:', new Date().toISOString());
   console.log('🚀 Component state:', { user: !!user, accessToken: !!accessToken, authLoading });
   const [trucks, setTrucks] = useState<any[]>([]);
@@ -563,20 +560,20 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
     console.log('User:', user);
     console.log('Access Token:', accessToken ? `${accessToken.substring(0, 20)}...` : 'No token');
     console.log('Auth Loading:', authLoading);
-    
+
     if (!user || !accessToken) {
       console.error('❌ User not authenticated');
       setError('Authentication required. Please log in.');
       setLoading(false);
       return;
     }
-    
+
     // Check user role and permissions
     console.log('🔍 User Role Check:');
     console.log('User Role:', user.role);
     console.log('User Tenant ID:', user.tenantId);
     console.log('User ID:', user.id);
-    
+
     // Check if user has permission to access fleet data
     const allowedRoles = ['TRUCK_OWNER', 'ADMIN', 'SUPER_ADMIN', 'CARGO_OWNER'];
     if (!allowedRoles.includes(user.role)) {
@@ -585,7 +582,7 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
       setLoading(false);
       return;
     }
-    
+
     // Check if tenant ID is present
     if (!user.tenantId) {
       console.error('❌ User tenant ID not found');
@@ -593,13 +590,13 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
       setLoading(false);
       return;
     }
-    
+
     setLoading(true);
     setError(null);
-		try {
-			console.log('🚛 Fetching trucks...');
-			const trucksData = await fleetApi.getTrucks({});
-			console.log('✅ Trucks data received:', trucksData);
+    try {
+      console.log('🚛 Fetching trucks...');
+      const trucksData = await fleetApi.getTrucks({});
+      console.log('✅ Trucks data received:', trucksData);
 
       // Enrich each truck with route assignments from route_trucks
       const trucksWithRoutes = await Promise.all(
@@ -619,11 +616,11 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
           }
         })
       );
-      
+
       console.log('👥 Fetching drivers...');
       const driversData = await fleetApi.getDrivers({});
       console.log('✅ Drivers data received:', driversData);
-      
+
       console.log('🛣️ Fetching routes...');
       console.log('🛣️ About to call fleetApi.fetchRoutes()...');
       console.log('🛣️ Current time:', new Date().toISOString());
@@ -659,8 +656,8 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
         console.error('❌ Route error status:', routeError.response?.status);
         routesData = []; // Set empty array on error
       }
-      
-			setTrucks(trucksWithRoutes || []);
+
+      setTrucks(trucksWithRoutes || []);
       setDrivers(driversData || []);
       setRoutes(routesData || []);
 
@@ -670,7 +667,7 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
       console.error('❌ Error status:', e.response?.status);
       console.error('❌ Error data:', e.response?.data);
       console.error('❌ Error message:', e.response?.data?.message);
-      
+
       if (e.response?.status === 403) {
         const errorMessage = e.response?.data?.message || 'Access denied. You may not have permission to view fleet data.';
         console.error('🔒 403 Forbidden Error Details:');
@@ -680,7 +677,7 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
         console.error('Request URL:', e.config?.url);
         console.error('Request Method:', e.config?.method);
         console.error('Request Headers:', e.config?.headers);
-        
+
         setError(errorMessage);
         toast.error(errorMessage);
       } else if (e.response?.status === 401) {
@@ -698,17 +695,17 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
   // Load filtered data (trucks and drivers) - depends on search and filters
   const loadFilteredData = useCallback(async () => {
     if (!user || !accessToken) return;
-    
-		try {
-			// Use the new getTrucks method with filters
-			const truckFilters: { search?: string; status?: string } = {};
-			if (search) truckFilters.search = search;
-			if (statusFilter) truckFilters.status = statusFilter;
-			
-			console.log('🚛 Fetching filtered trucks with filters:', truckFilters);
-			const trucksData = await fleetApi.getTrucks(truckFilters);
-			console.log('✅ Filtered trucks data received:', trucksData);
-			
+
+    try {
+      // Use the new getTrucks method with filters
+      const truckFilters: { search?: string; status?: string } = {};
+      if (search) truckFilters.search = search;
+      if (statusFilter) truckFilters.status = statusFilter;
+
+      console.log('🚛 Fetching filtered trucks with filters:', truckFilters);
+      const trucksData = await fleetApi.getTrucks(truckFilters);
+      console.log('✅ Filtered trucks data received:', trucksData);
+
       // Enrich trucks with assigned routes from route_trucks
       const trucksWithRoutes = await Promise.all(
         (trucksData || []).map(async (truck) => {
@@ -726,13 +723,13 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
           }
         })
       );
-			
-			console.log('👥 Fetching filtered drivers...');
-			const driversData = await fleetApi.getDrivers({ search });
-			console.log('✅ Filtered drivers data received:', driversData);
-			
-			setTrucks(trucksWithRoutes || []);
-			setDrivers(driversData || []);
+
+      console.log('👥 Fetching filtered drivers...');
+      const driversData = await fleetApi.getDrivers({ search });
+      console.log('✅ Filtered drivers data received:', driversData);
+
+      setTrucks(trucksWithRoutes || []);
+      setDrivers(driversData || []);
       // Keep existing routes list; refresh fallback if we have none
       if (!routes || routes.length === 0) {
         try {
@@ -761,9 +758,9 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
   // Debug useEffect - runs on every render
   useEffect(() => {
     console.log('🔍 Debug useEffect - Component rendered at:', new Date().toISOString());
-    console.log('🔍 Current state:', { 
-      user: !!user, 
-      accessToken: !!accessToken, 
+    console.log('🔍 Current state:', {
+      user: !!user,
+      accessToken: !!accessToken,
       authLoading,
       trucksCount: trucks.length,
       driversCount: drivers.length,
@@ -778,25 +775,25 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
       console.log('⏳ Waiting for authentication...');
       return;
     }
-    
+
     console.log('🚀 loadData function called at:', new Date().toISOString());
     console.log('Loading initial fleet data...');
     console.log('🔐 Auth Debug Info:');
     console.log('User:', user);
     console.log('Access Token:', accessToken ? `${accessToken.substring(0, 20)}...` : 'No token');
     console.log('Auth Loading:', authLoading);
-    
+
     setLoading(true);
     setError(null);
     try {
       console.log('🚛 Fetching trucks...');
       const trucksData = await fleetApi.getTrucks({});
       console.log('✅ Trucks data received:', trucksData);
-      
+
       console.log('👥 Fetching drivers...');
       const driversData = await fleetApi.getDrivers({});
       console.log('✅ Drivers data received:', driversData);
-      
+
       console.log('🛣️ Fetching routes...');
       console.log('🛣️ About to call fleetApi.fetchRoutes()...');
       console.log('🛣️ Current time:', new Date().toISOString());
@@ -832,7 +829,7 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
         console.error('❌ Route error status:', routeError.response?.status);
         routesData = []; // Set empty array on error
       }
-      
+
       setTrucks(trucksData || []);
       setDrivers(driversData || []);
       setRoutes(routesData || []);
@@ -841,7 +838,7 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
       console.error('❌ Error status:', e.response?.status);
       console.error('❌ Error data:', e.response?.data);
       console.error('❌ Error message:', e.response?.data?.message);
-      
+
       if (e.response?.status === 403) {
         const errorMessage = e.response?.data?.message || 'Access denied. You may not have permission to view fleet data.';
         console.error('🔒 403 Forbidden Error Details:');
@@ -851,7 +848,7 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
         console.error('Request URL:', e.config?.url);
         console.error('Request Method:', e.config?.method);
         console.error('Request Headers:', e.config?.headers);
-        
+
         setError(errorMessage);
         toast.error(errorMessage);
       } else if (e.response?.status === 401) {
@@ -870,20 +867,20 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
   useEffect(() => {
     console.log('🔄 useEffect triggered at:', new Date().toISOString());
     console.log('🔄 Dependencies:', { authLoading, hasUser: !!user, hasToken: !!accessToken, refreshTrigger });
-    
+
     if (authLoading) {
       console.log('🔄 Auth is still loading, waiting...');
       return;
     }
-    
+
     if (!user || !accessToken) {
       console.log('❌ User not authenticated, redirecting to login...');
       setError('Please log in to access fleet data.');
       return;
     }
-    
+
     console.log('✅ User authenticated, loading initial fleet data...');
-    
+
     // Call the loadData function defined outside useEffect
     loadData();
   }, [loadData, refreshTrigger]); // Added refreshTrigger to dependencies
@@ -891,7 +888,7 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
   // Load filtered data when search or filters change
   useEffect(() => {
     if (!user || !accessToken || authLoading) return;
-    
+
     console.log('🔍 Search or filters changed, loading filtered data...');
     loadFilteredData();
   }, [loadFilteredData, user, accessToken, authLoading]);
@@ -1017,26 +1014,26 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
         // Get createdAt from truck object (could be in different formats)
         const aDateValue = a.createdAt || a.created_at || aValue;
         const bDateValue = b.createdAt || b.created_at || bValue;
-        
+
         // Convert to Date objects for proper comparison
         let aDate = 0;
         let bDate = 0;
-        
+
         if (aDateValue) {
           const aParsed = new Date(aDateValue).getTime();
           aDate = isNaN(aParsed) ? 0 : aParsed;
         }
-        
+
         if (bDateValue) {
           const bParsed = new Date(bDateValue).getTime();
           bDate = isNaN(bParsed) ? 0 : bParsed;
         }
-        
+
         // If both are 0 (no date), keep original order
         if (aDate === 0 && bDate === 0) {
           return 0;
         }
-        
+
         // If one has no date, put it at the end
         if (aDate === 0) {
           return 1; // a goes to end
@@ -1044,7 +1041,7 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
         if (bDate === 0) {
           return -1; // b goes to end
         }
-        
+
         // Compare dates
         if (aDate < bDate) {
           return sortConfig.direction === 'asc' ? -1 : 1;
@@ -1074,7 +1071,7 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
   // Filtering function
   const filterTrucks = (trucks: any[]) => {
     return trucks.filter(truck => {
-      const matchesSearch = !search || 
+      const matchesSearch = !search ||
         truck.name?.toLowerCase().includes(search.toLowerCase()) ||
         truck.plateNumber?.toLowerCase().includes(search.toLowerCase()) ||
         truck.make?.toLowerCase().includes(search.toLowerCase()) ||
@@ -1086,11 +1083,11 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
         // Normalize both truck status and filter to uppercase for comparison
         const truckStatus = (truck.status || '').toUpperCase().trim();
         const filterStatus = statusFilter.toUpperCase().trim();
-        
+
         // Direct comparison (both should be uppercase enum values)
         // Also handle variations like "IN TRANSIT" vs "IN_TRANSIT"
-        matchesStatus = truckStatus === filterStatus || 
-                       truckStatus.replace(/_/g, ' ') === filterStatus.replace(/_/g, ' ');
+        matchesStatus = truckStatus === filterStatus ||
+          truckStatus.replace(/_/g, ' ') === filterStatus.replace(/_/g, ' ');
       }
 
       return matchesSearch && matchesStatus;
@@ -1119,30 +1116,30 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
       currentTruck: d.currentTruck,
       status: d.status
     })));
-    
+
     const filtered = drivers.filter((driver: any) => {
       const status = String(driver.status || '').toUpperCase();
       const isActive = status === 'ACTIVE';
-      
+
       // Check if driver has currentTruckId
       const hasCurrentTruckId = !!driver.currentTruckId;
-      
+
       // Check if driver has currentTruck object
       const hasCurrentTruck = !!driver.currentTruck;
-      
+
       // Check if driver is in any truck's assignedDrivers array
       const isInAssignedDrivers = trucks.some((truck: any) => {
         if (!Array.isArray(truck.assignedDrivers)) return false;
         return truck.assignedDrivers.some((d: any) => d.driverId === driver.id);
       });
-      
+
       // Driver is available if:
       // 1. They are ACTIVE
       // 2. They don't have a currentTruckId
       // 3. They don't have a currentTruck object
       // 4. They are not in any truck's assignedDrivers array
       const isAvailable = isActive && !hasCurrentTruckId && !hasCurrentTruck && !isInAssignedDrivers;
-      
+
       if (!isAvailable) {
         console.log(`🚫 Driver ${driver.firstName} ${driver.lastName} (${driver.id}) is NOT available:`, {
           isActive,
@@ -1153,13 +1150,13 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
           currentTruck: driver.currentTruck?.id,
         });
       }
-      
+
       return isAvailable;
     });
-    
+
     console.log('✅ Available drivers count:', filtered.length);
     console.log('✅ Available drivers:', filtered.map(d => `${d.firstName} ${d.lastName}`));
-    
+
     return filtered;
   }, [drivers, trucks]);
 
@@ -1186,18 +1183,18 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
       setLoading(true);
       setError('');
       console.log(`Assigning driver ${driverId} to truck ${truckId}`);
-      
+
       // Use the fleetApi assignment method
       await fleetApi.assignDriverToTruck(truckId, driverId);
-      
+
       // Close the modal first
       setShowAssignDriver(false);
       setSelectedTruck(null);
-      
+
       // Refresh data to get updated driver currentTruckId
       console.log('🔄 Refreshing data after driver assignment...');
       await loadData();
-      
+
       console.log('✅ Driver assigned successfully');
       console.log('✅ Data refreshed');
       toast.success('Driver assigned successfully!');
@@ -1205,15 +1202,15 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
       console.error('Error assigning driver:', error);
       console.error('Error response:', error.response);
       console.error('Error data:', error.response?.data);
-      
+
       // Provide more detailed error messages
       let errorMessage = 'Failed to assign driver to truck.';
-      
+
       if (error.response) {
         // Server responded with error
         const status = error.response.status;
         const data = error.response.data;
-        
+
         // Extract the actual error message from the response
         // NestJS error responses can have message in different places
         if (data?.message) {
@@ -1260,7 +1257,7 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
         // Other error
         errorMessage = error.message || 'An unexpected error occurred.';
       }
-      
+
       setError(errorMessage);
       toast.error(errorMessage);
     } finally {
@@ -1273,27 +1270,27 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
       setLoading(true);
       setError('');
       console.log(`Unassigning driver ${driverId} from truck ${truckId}`);
-      
+
       // Use the fleetApi unassignment method
       await fleetApi.unassignDriverFromTruck(truckId, driverId);
-      
+
       // Refresh data
       await loadData();
-      
+
       console.log('Driver unassigned successfully');
       toast.success('Driver unassigned successfully!');
     } catch (error: any) {
       console.error('Error unassigning driver:', error);
       console.error('Error response:', error.response);
       console.error('Error data:', error.response?.data);
-      
+
       // Provide more detailed error messages
       let errorMessage = 'Failed to unassign driver from truck.';
-      
+
       if (error.response) {
         const status = error.response.status;
         const data = error.response.data;
-        
+
         if (data?.message) {
           errorMessage = data.message;
         } else if (data?.error) {
@@ -1321,7 +1318,7 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
       } else {
         errorMessage = error.message || 'An unexpected error occurred.';
       }
-      
+
       setError(errorMessage);
       toast.error(errorMessage);
     } finally {
@@ -1334,24 +1331,24 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
       setLoading(true);
       setError('');
       console.log(`Assigning route ${routeId} to truck ${truckId}`);
-      
+
       await fleetApi.assignRouteToTruck(truckId, routeId);
-      
+
       // Refresh the trucks list
       await loadData();
-      
+
       toast.success('Route assigned successfully!');
     } catch (error: any) {
       console.error('Route assignment error:', error);
-      
+
       // Provide more detailed error messages
       let errorMessage = 'Failed to assign route to truck.';
-      
+
       if (error.response) {
         // Server responded with error
         const status = error.response.status;
         const data = error.response.data;
-        
+
         switch (status) {
           case 400:
             errorMessage = data.message || 'Invalid request. Please check the route and truck details.';
@@ -1375,7 +1372,7 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
         // Other error
         errorMessage = error.message || 'An unexpected error occurred.';
       }
-      
+
       setError(errorMessage);
       toast.error(errorMessage);
     } finally {
@@ -1388,24 +1385,24 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
       setLoading(true);
       setError('');
       console.log(`Unassigning route ${routeId} from truck ${truckId}`);
-      
+
       await fleetApi.unassignRouteFromTruck(truckId, routeId);
-      
+
       // Refresh the trucks list
       await loadData();
-      
+
       toast.success('Route unassigned successfully!');
     } catch (error: any) {
       console.error('Route unassignment error:', error);
-      
+
       // Provide more detailed error messages
       let errorMessage = 'Failed to unassign route from truck.';
-      
+
       if (error.response) {
         // Server responded with error
         const status = error.response.status;
         const data = error.response.data;
-        
+
         switch (status) {
           case 400:
             errorMessage = data.message || 'Invalid request. Please check the route and truck details.';
@@ -1426,7 +1423,7 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
         // Other error
         errorMessage = error.message || 'An unexpected error occurred.';
       }
-      
+
       setError(errorMessage);
       toast.error(errorMessage);
     } finally {
@@ -1469,1220 +1466,1212 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
   }
 
   console.log('Rendering TrucksList with:', { trucks: trucks.length, drivers: drivers.length, loading, error, filteredTrucks: filterTrucks(trucks).length });
-  
+
   return (
     <div className="relative min-h-screen">
       {/* Background Logo */}
-      <img 
-        src={logoUrutiX} 
-        alt="UrutiX Logo Background" 
-        className="pointer-events-none select-none fixed inset-0 w-full h-full object-cover opacity-5 z-0" 
-        style={{objectPosition: 'center'}} 
+      <img
+        src={logoUrutiX}
+        alt="UrutiX Logo Background"
+        className="pointer-events-none select-none fixed inset-0 w-full h-full object-cover opacity-5 z-0"
+        style={{ objectPosition: 'center' }}
       />
       {/* Content */}
       <div className="relative z-10">
-      {/* Statistics Cards */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-4">
-        {trucks.length === 0 && !loading && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-            <div className="flex items-start gap-3">
-              <FaInfoCircle className="text-blue-600 mt-0.5 flex-shrink-0" />
-              <div className="flex-1">
-                <p className="text-sm text-blue-900 font-medium mb-1">Getting Started</p>
-                <p className="text-sm text-blue-800">
-                  Start by adding your first truck. You can add truck details, upload documents (registration, insurance), schedule maintenance, and track everything in one place.
-                </p>
+        {/* Statistics Cards */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-4">
+          {trucks.length === 0 && !loading && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+              <div className="flex items-start gap-3">
+                <FaInfoCircle className="text-blue-600 mt-0.5 flex-shrink-0" />
+                <div className="flex-1">
+                  <p className="text-sm text-blue-900 font-medium mb-1">Getting Started</p>
+                  <p className="text-sm text-blue-800">
+                    Start by adding your first truck. You can add truck details, upload documents (registration, insurance), schedule maintenance, and track everything in one place.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Total Trucks</p>
+                  <p className="text-2xl font-bold text-gray-900">{trucks.length}</p>
+                </div>
+                <FaTruck className="w-8 h-8 text-primary-600" />
+              </div>
+            </div>
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Available</p>
+                  <p className="text-2xl font-bold text-green-600">
+                    {trucks.filter(t => t.status?.toLowerCase() === 'available').length}
+                  </p>
+                </div>
+                <FaCheckCircle className="w-8 h-8 text-green-600" />
+              </div>
+            </div>
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">In Transit</p>
+                  <p className="text-2xl font-bold text-blue-600">
+                    {trucks.filter(t => t.status?.toLowerCase() === 'in_transit' || t.status?.toLowerCase() === 'in transit').length}
+                  </p>
+                </div>
+                <FaClock className="w-8 h-8 text-blue-600" />
+              </div>
+            </div>
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Maintenance</p>
+                  <p className="text-2xl font-bold text-yellow-600">
+                    {trucks.filter(t => t.status?.toLowerCase() === 'maintenance').length}
+                  </p>
+                </div>
+                <FaExclamationTriangle className="w-8 h-8 text-yellow-600" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Filters and Search */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 mb-4">
+          <div className="flex flex-col lg:flex-row gap-3">
+            <div className="flex-1">
+              <div className="relative">
+                <FaSearch className="absolute left-2.5 top-1/2 transform -translate-y-1/2 text-gray-400 w-3.5 h-3.5" />
+                <input
+                  type="text"
+                  placeholder="Search by plate number, make, model..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="w-full pl-9 pr-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-400 focus:border-gray-400"
+                />
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              {/* Status Filter Tabs */}
+              <div className="flex items-center gap-1 border border-gray-200 rounded-md p-0.5 bg-gray-50">
+                <button
+                  onClick={() => setStatusFilter('')}
+                  className={`px-2.5 py-1 text-xs font-medium rounded transition-all ${statusFilter === ''
+                      ? 'bg-white text-gray-900 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900'
+                    }`}
+                >
+                  All
+                </button>
+                <button
+                  onClick={() => setStatusFilter('AVAILABLE')}
+                  className={`px-2.5 py-1 text-xs font-medium rounded transition-all ${statusFilter === 'AVAILABLE'
+                      ? 'bg-white text-gray-900 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900'
+                    }`}
+                >
+                  Available
+                </button>
+                <button
+                  onClick={() => setStatusFilter('IN_TRANSIT')}
+                  className={`px-2.5 py-1 text-xs font-medium rounded transition-all ${statusFilter === 'IN_TRANSIT'
+                      ? 'bg-white text-gray-900 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900'
+                    }`}
+                >
+                  In Transit
+                </button>
+                <button
+                  onClick={() => setStatusFilter('MAINTENANCE')}
+                  className={`px-2.5 py-1 text-xs font-medium rounded transition-all ${statusFilter === 'MAINTENANCE'
+                      ? 'bg-white text-gray-900 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900'
+                    }`}
+                >
+                  Maintenance
+                </button>
+              </div>
+              {/* View Toggle */}
+              <div className="flex items-center gap-1 border border-gray-200 rounded-md p-0.5 bg-gray-50">
+                <button
+                  onClick={() => setView('grid')}
+                  className={`px-2 py-1 rounded text-xs font-medium transition-all ${view === 'grid'
+                      ? 'bg-white text-gray-900 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900'
+                    }`}
+                  title="Grid View"
+                >
+                  <FiGrid className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  onClick={() => setView('list')}
+                  className={`px-2 py-1 rounded text-xs font-medium transition-all ${view === 'list'
+                      ? 'bg-white text-gray-900 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900'
+                    }`}
+                  title="List View"
+                >
+                  <FiList className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Results Summary */}
+        <div className="flex items-center justify-between mb-4">
+          <div className="text-sm text-gray-600">
+            Showing {paginatedTrucks().length} of {filterTrucks(trucks).length} trucks
+            {search && ` matching "${search}"`}
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-600">Sort by:</span>
+            <select
+              value={`${sortConfig.key}-${sortConfig.direction}`}
+              onChange={(e) => {
+                const [key, direction] = e.target.value.split('-');
+                setSortConfig({ key, direction: direction as 'asc' | 'desc' });
+              }}
+              className="text-sm border border-gray-300 rounded px-2 py-1"
+            >
+              <option value="name-asc">Name (A-Z)</option>
+              <option value="name-desc">Name (Z-A)</option>
+              <option value="status-asc">Status (A-Z)</option>
+              <option value="status-desc">Status (Z-A)</option>
+              <option value="year-desc">Year (Newest)</option>
+              <option value="year-asc">Year (Oldest)</option>
+              <option value="capacityWeight-desc">Capacity (High-Low)</option>
+              <option value="capacityWeight-asc">Capacity (Low-High)</option>
+              <option value="createdAt-desc">Date Added (Newest First)</option>
+              <option value="createdAt-asc">Date Added (Oldest First)</option>
+            </select>
+            <span className="ml-4 text-xs text-gray-500">
+              Routes assigned: {filterTrucks(trucks).reduce((sum, t) => sum + (Array.isArray(t.assignedRoutes) ? t.assignedRoutes.length : 0), 0)}
+            </span>
+          </div>
+        </div>
+
+        {/* Error Message */}
+        {error && (
+          <div className="bg-red-100 text-red-700 p-4 rounded flex items-center gap-2 mb-4" role="alert">
+            <FaEdit /> {error}
+          </div>
+        )}
+
+        {/* Trucks Grid/List */}
+        {view === 'grid' ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {paginatedTrucks().map((truck) => (
+              <div key={truck.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
+                {/* Truck Header */}
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <FaTruck className="w-6 h-6 text-primary-600" />
+                    <div>
+                      <h3>{truck.name || truck.plateNumber}</h3>
+                      <p className="text-sm text-gray-500">{truck.plateNumber}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {getStatusIcon(truck.status)}
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(truck.status)}`}>
+                      {getStatusText(truck.status)}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Truck Details */}
+                <div className="space-y-3 mb-4">
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className="text-gray-500">Make/Model:</span>
+                    <span className="text-gray-900">{truck.make} {truck.model}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className="text-gray-500">Year:</span>
+                    <span className="text-gray-900">{truck.year}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className="text-gray-500">Capacity:</span>
+                    <span className="text-gray-900">{truck.capacityWeight?.toLocaleString()} kg</span>
+                  </div>
+                  {truck.currentLocation && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <FaMapMarkerAlt className="w-3 h-3 text-gray-400" />
+                      <span className="text-gray-900">{truck.currentLocation.address}</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Driver Assignment */}
+                <div className="border-t border-gray-200 pt-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-sm font-medium text-gray-700">Driver Assignment</span>
+                    <button
+                      onClick={() => {
+                        setSelectedTruck(truck);
+                        setShowAssignDriver(true);
+                      }}
+                      className="text-primary-600 hover:text-primary-800 text-sm flex items-center gap-1"
+                    >
+                      <FaUserPlus className="w-3 h-3" />
+                      Assign Driver
+                    </button>
+                  </div>
+
+                  {truck.assignedDrivers && truck.assignedDrivers.length > 0 ? (
+                    <div className="space-y-2">
+                      {truck.assignedDrivers.map((assignment: any, index: number) => (
+                        <div key={assignment.id || `driver-${index}`} className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+                          <div className="flex items-center gap-2">
+                            <FaUser className="w-4 h-4 text-green-600" />
+                            <div>
+                              <p className="text-sm font-medium text-gray-900">{assignment.driverName || 'Unknown Driver'}</p>
+                              <p className="text-xs text-gray-500">
+                                {assignment.status === 'active' ? 'Active' : assignment.status}
+                              </p>
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => handleUnassignDriver(truck.id, assignment.driverId)}
+                            className="text-red-600 hover:text-red-800 text-sm"
+                          >
+                            <FaUserMinus className="w-3 h-3" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
+                      <FaUser className="w-4 h-4 text-gray-400" />
+                      <div>
+                        <p className="text-sm text-gray-500">No drivers assigned</p>
+                        <p className="text-xs text-gray-400">Click to assign</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Route Assignment */}
+                <div className="border-t border-gray-200 pt-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-sm font-medium text-gray-700">Route Assignment</span>
+                    <div className="flex items-center gap-3">
+                      {Array.isArray(truck.assignedRouteDetails) && truck.assignedRouteDetails.length > 0 && (
+                        <div className="relative group">
+                          <button
+                            onClick={() => {
+                              setSelectedTruck(truck);
+                              setShowTruckRoutes(true);
+                            }}
+                            className="text-blue-600 hover:text-blue-800 text-sm"
+                          >
+                            View
+                          </button>
+                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-white text-gray-900 text-xs font-medium rounded-md shadow-lg border border-gray-200 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                            View assigned routes
+                            <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-white"></div>
+                          </div>
+                        </div>
+                      )}
+                      <button
+                        onClick={() => {
+                          setSelectedTruck(truck);
+                          setShowAssignRoute(true);
+                        }}
+                        className="text-primary-600 hover:text-primary-800 text-sm flex items-center gap-1"
+                      >
+                        <FaRoute className="w-3 h-3" />
+                        {Array.isArray(truck.assignedRouteDetails) && truck.assignedRouteDetails.length > 0 ? 'Assign More' : 'Assign Route'}
+                      </button>
+                    </div>
+                  </div>
+
+                  {Array.isArray(truck.assignedRoutes) && truck.assignedRoutes.length > 0 ? (
+                    <div className="flex flex-wrap gap-2 p-3 bg-blue-50 rounded-lg">
+                      {truck.assignedRouteDetails?.map((r: any, index: number) => (
+                        <span key={r.id || `route-${index}`} className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800" title={`${r.origin} → ${r.destination} • ${r.distance ?? 0} km • ${r.estimatedTime ?? r.estimatedDuration ?? 0} h`}>
+                          {r.name}
+                          <button
+                            onClick={() => handleUnassignRoute(truck.id, r.id)}
+                            className="ml-1 text-blue-600 hover:text-blue-800 text-xs"
+                          >
+                            <FaUserMinus className="w-3 h-3" />
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
+                      <FaRoute className="w-4 h-4 text-gray-400" />
+                      <div>
+                        <p className="text-sm text-gray-500">No routes assigned</p>
+                        <p className="text-xs text-gray-400">Click to assign</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Actions */}
+                <div className="flex items-center gap-2 mt-4 pt-4 border-t border-gray-200">
+                  <button
+                    onClick={() => {
+                      setSelectedTruck(truck);
+                      setShowTruckDetails(true);
+                    }}
+                    className="flex-1 px-3 py-2 text-sm bg-blue-100 text-blue-700 rounded hover:bg-blue-200 flex items-center justify-center gap-1"
+                  >
+                    <FaEye className="w-3 h-3" />
+                    View
+                  </button>
+                  <a
+                    href={`/dashboard/fleet/trucks/${truck.id}/records`}
+                    className="flex-1 px-3 py-2 text-sm bg-green-100 text-green-700 rounded hover:bg-green-200 flex items-center justify-center gap-1"
+                  >
+                    <FaFileAlt className="w-3 h-3" />
+                    Records
+                  </a>
+                  <button
+                    onClick={() => {
+                      setEditingTruck(truck);
+                      setShowEditTruck(true);
+                    }}
+                    className="flex-1 px-3 py-2 text-sm bg-gray-100 text-gray-700 rounded hover:bg-gray-200 flex items-center justify-center gap-1"
+                  >
+                    <FaEdit className="w-3 h-3" />
+                    Edit
+                  </button>
+                  <button className="flex-1 px-3 py-2 text-sm bg-red-100 text-red-700 rounded hover:bg-red-200 flex items-center justify-center gap-1">
+                    <FaTrash className="w-3 h-3" />
+                    Delete
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Truck</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Drivers</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Routes</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {paginatedTrucks().map((truck) => (
+                    <tr key={truck.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4">
+                        <div className="flex items-center">
+                          <FaTruck className="w-5 h-5 text-primary-600 mr-3" />
+                          <div>
+                            <div className="text-sm font-medium text-gray-900">{truck.name || truck.plateNumber}</div>
+                            <div className="text-sm text-gray-500">{truck.plateNumber}</div>
+                            <div className="text-xs text-gray-400">{truck.make} {truck.model} ({truck.year})</div>
+                            {Array.isArray(truck.assignedRouteDetails) && truck.assignedRouteDetails.length > 0 && (
+                              <div className="text-xs text-blue-700 mt-1">
+                                Routes: {truck.assignedRouteDetails.length}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-2">
+                          {getStatusIcon(truck.status)}
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(truck.status)}`}>
+                            {getStatusText(truck.status)}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        {truck.currentLocation ? (
+                          <div className="flex items-center text-sm text-gray-900">
+                            <FaMapMarkerAlt className="w-3 h-3 text-gray-400 mr-1" />
+                            {truck.currentLocation.address}
+                          </div>
+                        ) : (
+                          <span className="text-sm text-gray-400">No location</span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4">
+                        {truck.assignedDrivers && truck.assignedDrivers.length > 0 ? (
+                          <div className="space-y-1">
+                            {truck.assignedDrivers.map((assignment: any, index: number) => (
+                              <div key={assignment.id || `driver-${index}`} className="flex items-center justify-between">
+                                <div className="flex items-center">
+                                  <FaUser className="w-3 h-3 text-green-600 mr-1" />
+                                  <span className="text-sm text-gray-900">{assignment.driverName}</span>
+                                </div>
+                                <button
+                                  onClick={() => handleUnassignDriver(truck.id, assignment.driverId)}
+                                  className="text-red-600 hover:text-red-800 text-xs"
+                                >
+                                  <FaUserMinus className="w-2 h-2" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="text-sm text-gray-400">No drivers assigned</span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4">
+                        {Array.isArray(truck.assignedRouteDetails) && truck.assignedRouteDetails.length > 0 ? (
+                          <div className="space-y-1">
+                            {(truck.assignedRouteDetails as any[]).slice(0, 3).map((r: any, index: number) => (
+                              <div key={r.id || `route-${index}`} className="flex items-center justify-between">
+                                <div className="flex items-center">
+                                  <FaRoute className="w-3 h-3 text-blue-600 mr-1" />
+                                  <span className="text-sm text-gray-900" title={`${r.origin} → ${r.destination}`}>{r.name}</span>
+                                </div>
+                                <button
+                                  onClick={() => handleUnassignRoute(truck.id, r.id)}
+                                  className="text-red-600 hover:text-red-800 text-xs"
+                                >
+                                  <FaUserMinus className="w-2 h-2" />
+                                </button>
+                              </div>
+                            ))}
+                            {truck.assignedRouteDetails.length > 3 && (
+                              <button
+                                onClick={() => { setSelectedTruck(truck); setShowTruckRoutes(true); }}
+                                className="text-xs text-blue-600 hover:text-blue-800"
+                              >
+                                +{truck.assignedRouteDetails.length - 3} more
+                              </button>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-sm text-gray-400">No routes assigned</span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-2">
+                          <div className="relative group">
+                            <button
+                              onClick={() => {
+                                setSelectedTruck(truck);
+                                setShowTruckDetails(true);
+                              }}
+                              className="text-blue-600 hover:text-blue-800 text-sm flex items-center gap-1"
+                            >
+                              <FaEye className="w-3 h-3" />
+                            </button>
+                            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-white text-gray-900 text-xs font-medium rounded-md shadow-lg border border-gray-200 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                              View Details
+                              <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-white"></div>
+                            </div>
+                          </div>
+                          <div className="relative group">
+                            <button
+                              onClick={() => {
+                                setSelectedTruck(truck);
+                                setShowAssignDriver(true);
+                              }}
+                              className="text-primary-600 hover:text-primary-800 text-sm flex items-center gap-1"
+                            >
+                              <FaUserPlus className="w-3 h-3" />
+                            </button>
+                            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-white text-gray-900 text-xs font-medium rounded-md shadow-lg border border-gray-200 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                              Assign Driver
+                              <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-white"></div>
+                            </div>
+                          </div>
+                          <div className="relative group">
+                            <button
+                              onClick={() => {
+                                setSelectedTruck(truck);
+                                setShowAssignRoute(true);
+                              }}
+                              className="text-blue-600 hover:text-blue-800 text-sm flex items-center gap-1"
+                            >
+                              <FaRoute className="w-3 h-3" />
+                            </button>
+                            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-white text-gray-900 text-xs font-medium rounded-md shadow-lg border border-gray-200 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                              Assign Route
+                              <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-white"></div>
+                            </div>
+                          </div>
+                          <div className="relative group">
+                            <a
+                              href={`/dashboard/fleet/trucks/${truck.id}/records`}
+                              className="text-green-600 hover:text-green-800 text-sm flex items-center gap-1"
+                            >
+                              <FaFileAlt className="w-3 h-3" />
+                            </a>
+                            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-white text-gray-900 text-xs font-medium rounded-md shadow-lg border border-gray-200 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                              View Records
+                              <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-white"></div>
+                            </div>
+                          </div>
+                          <div className="relative group">
+                            <button
+                              onClick={() => {
+                                setEditingTruck(truck);
+                                setShowEditTruck(true);
+                              }}
+                              className="text-gray-600 hover:text-gray-800 text-sm flex items-center gap-1"
+                            >
+                              <FaEdit className="w-3 h-3" />
+                            </button>
+                            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-white text-gray-900 text-xs font-medium rounded-md shadow-lg border border-gray-200 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                              Edit
+                              <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-white"></div>
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="flex justify-center items-center gap-2 mt-6">
+            <button
+              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+              disabled={currentPage === 1}
+              className="px-3 py-2 text-sm bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+            >
+              <FaSortUp className="w-3 h-3 rotate-90" />
+              Previous
+            </button>
+
+            <div className="flex items-center gap-1">
+              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                const pageNum = i + 1;
+                if (totalPages <= 5) {
+                  return (
+                    <button
+                      key={`page-${pageNum}`}
+                      onClick={() => setCurrentPage(pageNum)}
+                      className={`px-3 py-2 text-sm rounded-lg ${currentPage === pageNum
+                          ? 'bg-primary-600 text-white'
+                          : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                        }`}
+                    >
+                      {pageNum}
+                    </button>
+                  );
+                }
+
+                // Show first page, last page, current page, and pages around current
+                if (pageNum === 1 || pageNum === totalPages ||
+                  (pageNum >= currentPage - 1 && pageNum <= currentPage + 1)) {
+                  return (
+                    <button
+                      key={`page-${pageNum}`}
+                      onClick={() => setCurrentPage(pageNum)}
+                      className={`px-3 py-2 text-sm rounded-lg ${currentPage === pageNum
+                          ? 'bg-primary-600 text-white'
+                          : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                        }`}
+                    >
+                      {pageNum}
+                    </button>
+                  );
+                }
+
+                // Show ellipsis
+                if (pageNum === currentPage - 2 || pageNum === currentPage + 2) {
+                  return <span key={`ellipsis-${pageNum}`} className="px-2 text-gray-500">...</span>;
+                }
+
+                return null;
+              }).filter(Boolean)}
+            </div>
+
+            <button
+              onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+              disabled={currentPage === totalPages}
+              className="px-3 py-2 text-sm bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+            >
+              Next
+              <FaSortUp className="w-3 h-3 -rotate-90" />
+            </button>
+          </div>
+        )}
+
+
+        {/* Assign Driver Modal */}
+        {showAssignDriver && selectedTruck && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center modal-overlay">
+            <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3>Assign Driver to {selectedTruck.name}</h3>
+                  <button
+                    onClick={() => {
+                      setShowAssignDriver(false);
+                      setSelectedTruck(null);
+                    }}
+                    className="text-gray-400 hover:text-gray-600"
+                  >
+                    <FaEdit className="w-5 h-5" />
+                  </button>
+                </div>
+
+                <div className="space-y-4">
+                  <p className="text-sm text-gray-600">Select a driver to assign to this truck:</p>
+
+                  {availableDrivers.length === 0 ? (
+                    <div className="text-center py-4">
+                      <FaUser className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                      <p className="text-gray-500">No available drivers</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2 max-h-60 overflow-y-auto">
+                      {availableDrivers.map((driver, index) => (
+                        <button
+                          key={driver.id || `available-driver-${index}`}
+                          onClick={() => handleAssignDriver(selectedTruck.id, driver.id)}
+                          className="w-full p-3 text-left border border-gray-200 rounded-lg hover:bg-gray-50 flex items-center gap-3"
+                        >
+                          <FaUser className="w-4 h-4 text-primary-600" />
+                          <div>
+                            <p className="font-medium text-gray-900">{driver.firstName ? `${driver.firstName} ${driver.lastName || ''}`.trim() : (driver.name || 'Unnamed')}</p>
+                            <p className="text-sm text-gray-500">{driver.licenseNumber} • {driver.experience} years experience</p>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
         )}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Total Trucks</p>
-                <p className="text-2xl font-bold text-gray-900">{trucks.length}</p>
-              </div>
-              <FaTruck className="w-8 h-8 text-primary-600" />
-            </div>
-          </div>
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Available</p>
-                <p className="text-2xl font-bold text-green-600">
-                  {trucks.filter(t => t.status?.toLowerCase() === 'available').length}
-                </p>
-              </div>
-              <FaCheckCircle className="w-8 h-8 text-green-600" />
-            </div>
-          </div>
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">In Transit</p>
-                <p className="text-2xl font-bold text-blue-600">
-                  {trucks.filter(t => t.status?.toLowerCase() === 'in_transit' || t.status?.toLowerCase() === 'in transit').length}
-                </p>
-              </div>
-              <FaClock className="w-8 h-8 text-blue-600" />
-            </div>
-          </div>
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Maintenance</p>
-                <p className="text-2xl font-bold text-yellow-600">
-                  {trucks.filter(t => t.status?.toLowerCase() === 'maintenance').length}
-                </p>
-              </div>
-              <FaExclamationTriangle className="w-8 h-8 text-yellow-600" />
-            </div>
-          </div>
-        </div>
-      </div>
 
-      {/* Filters and Search */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 mb-4">
-        <div className="flex flex-col lg:flex-row gap-3">
-          <div className="flex-1">
-            <div className="relative">
-              <FaSearch className="absolute left-2.5 top-1/2 transform -translate-y-1/2 text-gray-400 w-3.5 h-3.5" />
-              <input
-                type="text"
-                placeholder="Search by plate number, make, model..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-9 pr-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-400 focus:border-gray-400"
-              />
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            {/* Status Filter Tabs */}
-            <div className="flex items-center gap-1 border border-gray-200 rounded-md p-0.5 bg-gray-50">
-              <button
-                onClick={() => setStatusFilter('')}
-                className={`px-2.5 py-1 text-xs font-medium rounded transition-all ${
-                  statusFilter === '' 
-                    ? 'bg-white text-gray-900 shadow-sm' 
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                All
-              </button>
-              <button
-                onClick={() => setStatusFilter('AVAILABLE')}
-                className={`px-2.5 py-1 text-xs font-medium rounded transition-all ${
-                  statusFilter === 'AVAILABLE' 
-                    ? 'bg-white text-gray-900 shadow-sm' 
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                Available
-              </button>
-              <button
-                onClick={() => setStatusFilter('IN_TRANSIT')}
-                className={`px-2.5 py-1 text-xs font-medium rounded transition-all ${
-                  statusFilter === 'IN_TRANSIT' 
-                    ? 'bg-white text-gray-900 shadow-sm' 
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                In Transit
-              </button>
-              <button
-                onClick={() => setStatusFilter('MAINTENANCE')}
-                className={`px-2.5 py-1 text-xs font-medium rounded transition-all ${
-                  statusFilter === 'MAINTENANCE' 
-                    ? 'bg-white text-gray-900 shadow-sm' 
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                Maintenance
-              </button>
-            </div>
-            {/* View Toggle */}
-            <div className="flex items-center gap-1 border border-gray-200 rounded-md p-0.5 bg-gray-50">
-              <button
-                onClick={() => setView('grid')}
-                className={`px-2 py-1 rounded text-xs font-medium transition-all ${
-                  view === 'grid' 
-                    ? 'bg-white text-gray-900 shadow-sm' 
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
-                title="Grid View"
-              >
-                <FiGrid className="w-3.5 h-3.5" />
-              </button>
-              <button
-                onClick={() => setView('list')}
-                className={`px-2 py-1 rounded text-xs font-medium transition-all ${
-                  view === 'list' 
-                    ? 'bg-white text-gray-900 shadow-sm' 
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
-                title="List View"
-              >
-                <FiList className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Results Summary */}
-      <div className="flex items-center justify-between mb-4">
-        <div className="text-sm text-gray-600">
-          Showing {paginatedTrucks().length} of {filterTrucks(trucks).length} trucks
-          {search && ` matching "${search}"`}
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-gray-600">Sort by:</span>
-          <select
-            value={`${sortConfig.key}-${sortConfig.direction}`}
-            onChange={(e) => {
-              const [key, direction] = e.target.value.split('-');
-              setSortConfig({ key, direction: direction as 'asc' | 'desc' });
-            }}
-            className="text-sm border border-gray-300 rounded px-2 py-1"
-          >
-            <option value="name-asc">Name (A-Z)</option>
-            <option value="name-desc">Name (Z-A)</option>
-            <option value="status-asc">Status (A-Z)</option>
-            <option value="status-desc">Status (Z-A)</option>
-            <option value="year-desc">Year (Newest)</option>
-            <option value="year-asc">Year (Oldest)</option>
-            <option value="capacityWeight-desc">Capacity (High-Low)</option>
-            <option value="capacityWeight-asc">Capacity (Low-High)</option>
-            <option value="createdAt-desc">Date Added (Newest First)</option>
-            <option value="createdAt-asc">Date Added (Oldest First)</option>
-          </select>
-          <span className="ml-4 text-xs text-gray-500">
-            Routes assigned: {filterTrucks(trucks).reduce((sum, t) => sum + (Array.isArray(t.assignedRoutes) ? t.assignedRoutes.length : 0), 0)}
-          </span>
-        </div>
-      </div>
-
-      {/* Error Message */}
-      {error && (
-        <div className="bg-red-100 text-red-700 p-4 rounded flex items-center gap-2 mb-4" role="alert">
-          <FaEdit /> {error}
-        </div>
-      )}
-
-      {/* Trucks Grid/List */}
-      {view === 'grid' ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {paginatedTrucks().map((truck) => (
-            <div key={truck.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
-              {/* Truck Header */}
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <FaTruck className="w-6 h-6 text-primary-600" />
-                  <div>
-                    <h3>{truck.name || truck.plateNumber}</h3>
-                    <p className="text-sm text-gray-500">{truck.plateNumber}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  {getStatusIcon(truck.status)}
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(truck.status)}`}>
-                    {getStatusText(truck.status)}
-                  </span>
-                </div>
-              </div>
-
-              {/* Truck Details */}
-              <div className="space-y-3 mb-4">
-                <div className="flex items-center gap-2 text-sm">
-                  <span className="text-gray-500">Make/Model:</span>
-                  <span className="text-gray-900">{truck.make} {truck.model}</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm">
-                  <span className="text-gray-500">Year:</span>
-                  <span className="text-gray-900">{truck.year}</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm">
-                  <span className="text-gray-500">Capacity:</span>
-                  <span className="text-gray-900">{truck.capacityWeight?.toLocaleString()} kg</span>
-                </div>
-                {truck.currentLocation && (
-                  <div className="flex items-center gap-2 text-sm">
-                    <FaMapMarkerAlt className="w-3 h-3 text-gray-400" />
-                    <span className="text-gray-900">{truck.currentLocation.address}</span>
-                  </div>
-                )}
-              </div>
-
-              {/* Driver Assignment */}
-              <div className="border-t border-gray-200 pt-4">
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-sm font-medium text-gray-700">Driver Assignment</span>
+        {/* Assign Route Modal */}
+        {showAssignRoute && selectedTruck && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center modal-overlay">
+            <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3>Assign Route to {selectedTruck.name}</h3>
                   <button
                     onClick={() => {
-                      setSelectedTruck(truck);
-                      setShowAssignDriver(true);
+                      setShowAssignRoute(false);
+                      setSelectedTruck(null);
                     }}
-                    className="text-primary-600 hover:text-primary-800 text-sm flex items-center gap-1"
+                    className="text-gray-400 hover:text-gray-600"
                   >
-                    <FaUserPlus className="w-3 h-3" />
-                    Assign Driver
+                    <FaEdit className="w-5 h-5" />
                   </button>
                 </div>
-                
-                {truck.assignedDrivers && truck.assignedDrivers.length > 0 ? (
-                  <div className="space-y-2">
-                    {truck.assignedDrivers.map((assignment: any, index: number) => (
-                      <div key={assignment.id || `driver-${index}`} className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
-                        <div className="flex items-center gap-2">
-                          <FaUser className="w-4 h-4 text-green-600" />
+
+                <div className="space-y-4">
+                  <p className="text-sm text-gray-600">Select a route to assign to this truck:</p>
+
+                  {/* Debug information */}
+                  <div className="bg-gray-50 p-3 rounded-lg text-xs text-gray-600">
+                    <p><strong>Debug Info:</strong></p>
+                    <p>Total routes in system: {routes.length}</p>
+                    <p>Available routes for this truck: {getAvailableRoutes(selectedTruck.id).length}</p>
+                    <p>Truck ID: {selectedTruck.id}</p>
+                  </div>
+
+                  {getAvailableRoutes(selectedTruck.id).length === 0 ? (
+                    <div className="text-center py-4">
+                      <FaRoute className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                      <p className="text-gray-500">No available routes</p>
+                      {routes.length === 0 && (
+                        <p className="text-xs text-gray-400 mt-2">No routes found in the system</p>
+                      )}
+                      {routes.length > 0 && (
+                        <p className="text-xs text-gray-400 mt-2">Routes exist but none are available for this truck</p>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="space-y-2 max-h-60 overflow-y-auto">
+                      {getAvailableRoutes(selectedTruck.id).map((route, index) => (
+                        <button
+                          key={route.id || `available-route-${index}`}
+                          onClick={() => handleAssignRoute(selectedTruck.id, route.id)}
+                          className="w-full p-3 text-left border border-gray-200 rounded-lg hover:bg-gray-50 flex items-center gap-3"
+                        >
+                          <FaRoute className="w-4 h-4 text-primary-600" />
                           <div>
-                            <p className="text-sm font-medium text-gray-900">{assignment.driverName || 'Unknown Driver'}</p>
-                            <p className="text-xs text-gray-500">
-                              {assignment.status === 'active' ? 'Active' : assignment.status}
-                            </p>
+                            <p className="font-medium text-gray-900">{route.name}</p>
+                            <p className="text-sm text-gray-500">{route.origin} to {route.destination}</p>
                           </div>
-                        </div>
-                        <button
-                          onClick={() => handleUnassignDriver(truck.id, assignment.driverId)}
-                          className="text-red-600 hover:text-red-800 text-sm"
-                        >
-                          <FaUserMinus className="w-3 h-3" />
                         </button>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
-                    <FaUser className="w-4 h-4 text-gray-400" />
-                    <div>
-                      <p className="text-sm text-gray-500">No drivers assigned</p>
-                      <p className="text-xs text-gray-400">Click to assign</p>
+                      ))}
                     </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Route Assignment */}
-              <div className="border-t border-gray-200 pt-4">
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-sm font-medium text-gray-700">Route Assignment</span>
-                  <div className="flex items-center gap-3">
-                    {Array.isArray(truck.assignedRouteDetails) && truck.assignedRouteDetails.length > 0 && (
-                      <div className="relative group">
-                        <button
-                          onClick={() => {
-                            setSelectedTruck(truck);
-                            setShowTruckRoutes(true);
-                          }}
-                          className="text-blue-600 hover:text-blue-800 text-sm"
-                        >
-                          View
-                        </button>
-                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-white text-gray-900 text-xs font-medium rounded-md shadow-lg border border-gray-200 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
-                          View assigned routes
-                          <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-white"></div>
-                        </div>
-                      </div>
-                    )}
-                    <button
-                      onClick={() => {
-                        setSelectedTruck(truck);
-                        setShowAssignRoute(true);
-                      }}
-                      className="text-primary-600 hover:text-primary-800 text-sm flex items-center gap-1"
-                    >
-                      <FaRoute className="w-3 h-3" />
-                      {Array.isArray(truck.assignedRouteDetails) && truck.assignedRouteDetails.length > 0 ? 'Assign More' : 'Assign Route'}
-                    </button>
-                  </div>
+                  )}
                 </div>
-                
-			{Array.isArray(truck.assignedRoutes) && truck.assignedRoutes.length > 0 ? (
-                  <div className="flex flex-wrap gap-2 p-3 bg-blue-50 rounded-lg">
-                    {truck.assignedRouteDetails?.map((r: any, index: number) => (
-                      <span key={r.id || `route-${index}`} className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800" title={`${r.origin} → ${r.destination} • ${r.distance ?? 0} km • ${r.estimatedTime ?? r.estimatedDuration ?? 0} h`}>
-                        {r.name}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Truck Routes Drawer */}
+        {showTruckRoutes && selectedTruck && (
+          <div className="fixed inset-0 flex z-50">
+            <div className="flex-1 bg-black/40" onClick={() => { setShowTruckRoutes(false); setSelectedTruck(null); }} />
+            <div className="w-full max-w-md bg-white h-full shadow-xl overflow-y-auto">
+              <div className="p-6 border-b">
+                <div className="flex items-center justify-between">
+                  <h3>Routes for {selectedTruck.name || selectedTruck.plateNumber}</h3>
+                  <button className="text-gray-400 hover:text-gray-600" onClick={() => { setShowTruckRoutes(false); setSelectedTruck(null); }}>
+                    <FaTimesCircle className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
+              <div className="p-6 space-y-3">
+                {Array.isArray(selectedTruck.assignedRouteDetails) && selectedTruck.assignedRouteDetails.length > 0 ? (
+                  selectedTruck.assignedRouteDetails.map((r: any) => (
+                    <div key={r.id} className="border rounded-lg p-4 flex items-start justify-between">
+                      <div>
+                        <div className="font-medium text-gray-900">{r.name}</div>
+                        <div className="text-sm text-gray-600">{r.origin} → {r.destination}</div>
+                        <div className="text-xs text-gray-500 mt-1">{(r.distance ?? 0)} km • {(r.estimatedTime ?? r.estimatedDuration ?? 0)} h • {r.status || 'active'}</div>
+                      </div>
+                      <div className="flex items-center gap-2">
                         <button
-                          onClick={() => handleUnassignRoute(truck.id, r.id)}
-                          className="ml-1 text-blue-600 hover:text-blue-800 text-xs"
+                          onClick={() => handleUnassignRoute(selectedTruck.id, r.id)}
+                          className="text-red-600 hover:text-red-800 text-xs"
                         >
-                          <FaUserMinus className="w-3 h-3" />
+                          Unassign
                         </button>
-                      </span>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
-                    <FaRoute className="w-4 h-4 text-gray-400" />
-                    <div>
-                      <p className="text-sm text-gray-500">No routes assigned</p>
-                      <p className="text-xs text-gray-400">Click to assign</p>
+                      </div>
                     </div>
-                  </div>
+                  ))
+                ) : (
+                  <div className="text-sm text-gray-500">No routes assigned</div>
                 )}
               </div>
-
-              {/* Actions */}
-              <div className="flex items-center gap-2 mt-4 pt-4 border-t border-gray-200">
+              <div className="p-6 border-t">
                 <button
-                  onClick={() => {
-                    setSelectedTruck(truck);
-                    setShowTruckDetails(true);
-                  }}
-                  className="flex-1 px-3 py-2 text-sm bg-blue-100 text-blue-700 rounded hover:bg-blue-200 flex items-center justify-center gap-1"
+                  onClick={() => { setShowTruckRoutes(false); setShowAssignRoute(true); }}
+                  className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
                 >
-                  <FaEye className="w-3 h-3" />
-                  View
-                </button>
-                <a
-                  href={`/dashboard/fleet/trucks/${truck.id}/records`}
-                  className="flex-1 px-3 py-2 text-sm bg-green-100 text-green-700 rounded hover:bg-green-200 flex items-center justify-center gap-1"
-                >
-                  <FaFileAlt className="w-3 h-3" />
-                  Records
-                </a>
-                <button 
-                  onClick={() => {
-                    setEditingTruck(truck);
-                    setShowEditTruck(true);
-                  }}
-                  className="flex-1 px-3 py-2 text-sm bg-gray-100 text-gray-700 rounded hover:bg-gray-200 flex items-center justify-center gap-1"
-                >
-                  <FaEdit className="w-3 h-3" />
-                  Edit
-                </button>
-                <button className="flex-1 px-3 py-2 text-sm bg-red-100 text-red-700 rounded hover:bg-red-200 flex items-center justify-center gap-1">
-                  <FaTrash className="w-3 h-3" />
-                  Delete
+                  Assign Route
                 </button>
               </div>
             </div>
-          ))}
-        </div>
-      ) : (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Truck</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Drivers</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Routes</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {paginatedTrucks().map((truck) => (
-                  <tr key={truck.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center">
-                        <FaTruck className="w-5 h-5 text-primary-600 mr-3" />
-                        <div>
-                          <div className="text-sm font-medium text-gray-900">{truck.name || truck.plateNumber}</div>
-                     <div className="text-sm text-gray-500">{truck.plateNumber}</div>
-                     <div className="text-xs text-gray-400">{truck.make} {truck.model} ({truck.year})</div>
-                     {Array.isArray(truck.assignedRouteDetails) && truck.assignedRouteDetails.length > 0 && (
-                       <div className="text-xs text-blue-700 mt-1">
-                         Routes: {truck.assignedRouteDetails.length}
-                       </div>
-                     )}
-                        </div>
+          </div>
+        )}
+
+        {/* Truck Details Modal */}
+        {showTruckDetails && selectedTruck && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <h2>Truck Details</h2>
+                  <button
+                    onClick={() => {
+                      setShowTruckDetails(false);
+                      setSelectedTruck(null);
+                    }}
+                    className="text-gray-400 hover:text-gray-600"
+                  >
+                    <FaTimesCircle className="w-6 h-6" />
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Basic Information */}
+                  <div className="space-y-4">
+                    <h4 className="border-b border-gray-200 pb-2">Basic Information</h4>
+                    <div className="space-y-3">
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Name:</span>
+                        <span className="font-medium">{selectedTruck.name || 'N/A'}</span>
                       </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
-                        {getStatusIcon(truck.status)}
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(truck.status)}`}>
-                          {getStatusText(truck.status)}
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Plate Number:</span>
+                        <span className="font-medium">{selectedTruck.plateNumber || 'N/A'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Make/Model:</span>
+                        <span className="font-medium">{selectedTruck.make} {selectedTruck.model}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Year:</span>
+                        <span className="font-medium">{selectedTruck.year}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Status:</span>
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(selectedTruck.status)}`}>
+                          {getStatusText(selectedTruck.status)}
                         </span>
                       </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      {truck.currentLocation ? (
-                        <div className="flex items-center text-sm text-gray-900">
-                          <FaMapMarkerAlt className="w-3 h-3 text-gray-400 mr-1" />
-                          {truck.currentLocation.address}
-                        </div>
-                      ) : (
-                        <span className="text-sm text-gray-400">No location</span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4">
-                      {truck.assignedDrivers && truck.assignedDrivers.length > 0 ? (
-                        <div className="space-y-1">
-                          {truck.assignedDrivers.map((assignment: any, index: number) => (
-                            <div key={assignment.id || `driver-${index}`} className="flex items-center justify-between">
-                              <div className="flex items-center">
-                                <FaUser className="w-3 h-3 text-green-600 mr-1" />
-                                <span className="text-sm text-gray-900">{assignment.driverName}</span>
-                              </div>
-                              <button
-                                onClick={() => handleUnassignDriver(truck.id, assignment.driverId)}
-                                className="text-red-600 hover:text-red-800 text-xs"
-                              >
-                                <FaUserMinus className="w-2 h-2" />
-                              </button>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <span className="text-sm text-gray-400">No drivers assigned</span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4">
-                     {Array.isArray(truck.assignedRouteDetails) && truck.assignedRouteDetails.length > 0 ? (
-                       <div className="space-y-1">
-                          {(truck.assignedRouteDetails as any[]).slice(0, 3).map((r: any, index: number) => (
-                            <div key={r.id || `route-${index}`} className="flex items-center justify-between">
-                              <div className="flex items-center">
-                                <FaRoute className="w-3 h-3 text-blue-600 mr-1" />
-                                <span className="text-sm text-gray-900" title={`${r.origin} → ${r.destination}`}>{r.name}</span>
-                              </div>
-                              <button
-                                onClick={() => handleUnassignRoute(truck.id, r.id)}
-                                className="text-red-600 hover:text-red-800 text-xs"
-                              >
-                                <FaUserMinus className="w-2 h-2" />
-                              </button>
-                            </div>
-                          ))}
-                          {truck.assignedRouteDetails.length > 3 && (
-                            <button
-                              onClick={() => { setSelectedTruck(truck); setShowTruckRoutes(true); }}
-                              className="text-xs text-blue-600 hover:text-blue-800"
-                            >
-                              +{truck.assignedRouteDetails.length - 3} more
-                            </button>
-                          )}
-                       </div>
-                      ) : (
-                        <span className="text-sm text-gray-400">No routes assigned</span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
-                        <div className="relative group">
-                          <button
-                            onClick={() => {
-                              setSelectedTruck(truck);
-                              setShowTruckDetails(true);
-                            }}
-                            className="text-blue-600 hover:text-blue-800 text-sm flex items-center gap-1"
-                          >
-                            <FaEye className="w-3 h-3" />
-                          </button>
-                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-white text-gray-900 text-xs font-medium rounded-md shadow-lg border border-gray-200 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
-                            View Details
-                            <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-white"></div>
-                          </div>
-                        </div>
-                        <div className="relative group">
-                          <button
-                            onClick={() => {
-                              setSelectedTruck(truck);
-                              setShowAssignDriver(true);
-                            }}
-                            className="text-primary-600 hover:text-primary-800 text-sm flex items-center gap-1"
-                          >
-                            <FaUserPlus className="w-3 h-3" />
-                          </button>
-                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-white text-gray-900 text-xs font-medium rounded-md shadow-lg border border-gray-200 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
-                            Assign Driver
-                            <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-white"></div>
-                          </div>
-                        </div>
-                        <div className="relative group">
-                          <button
-                            onClick={() => {
-                              setSelectedTruck(truck);
-                              setShowAssignRoute(true);
-                            }}
-                            className="text-blue-600 hover:text-blue-800 text-sm flex items-center gap-1"
-                          >
-                            <FaRoute className="w-3 h-3" />
-                          </button>
-                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-white text-gray-900 text-xs font-medium rounded-md shadow-lg border border-gray-200 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
-                            Assign Route
-                            <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-white"></div>
-                          </div>
-                        </div>
-                        <div className="relative group">
-                          <a
-                            href={`/dashboard/fleet/trucks/${truck.id}/records`}
-                            className="text-green-600 hover:text-green-800 text-sm flex items-center gap-1"
-                          >
-                            <FaFileAlt className="w-3 h-3" />
-                          </a>
-                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-white text-gray-900 text-xs font-medium rounded-md shadow-lg border border-gray-200 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
-                            View Records
-                            <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-white"></div>
-                          </div>
-                        </div>
-                        <div className="relative group">
-                          <button 
-                            onClick={() => {
-                              setEditingTruck(truck);
-                              setShowEditTruck(true);
-                            }}
-                            className="text-gray-600 hover:text-gray-800 text-sm flex items-center gap-1"
-                          >
-                            <FaEdit className="w-3 h-3" />
-                          </button>
-                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-white text-gray-900 text-xs font-medium rounded-md shadow-lg border border-gray-200 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
-                            Edit
-                            <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-white"></div>
-                          </div>
-                        </div>
+                    </div>
+                  </div>
+
+                  {/* Specifications */}
+                  <div className="space-y-4">
+                    <h4 className="text-lg font-semibold text-gray-900 border-b border-gray-200 pb-2">Specifications</h4>
+                    <div className="space-y-3">
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Capacity Weight:</span>
+                        <span className="font-medium">{selectedTruck.capacityWeight?.toLocaleString()} kg</span>
                       </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex justify-center items-center gap-2 mt-6">
-          <button
-            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-            disabled={currentPage === 1}
-            className="px-3 py-2 text-sm bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
-          >
-            <FaSortUp className="w-3 h-3 rotate-90" />
-            Previous
-          </button>
-          
-          <div className="flex items-center gap-1">
-            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-              const pageNum = i + 1;
-              if (totalPages <= 5) {
-                return (
-                  <button
-                    key={`page-${pageNum}`}
-                    onClick={() => setCurrentPage(pageNum)}
-                    className={`px-3 py-2 text-sm rounded-lg ${
-                      currentPage === pageNum
-                        ? 'bg-primary-600 text-white'
-                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                    }`}
-                  >
-                    {pageNum}
-                  </button>
-                );
-              }
-              
-              // Show first page, last page, current page, and pages around current
-              if (pageNum === 1 || pageNum === totalPages || 
-                  (pageNum >= currentPage - 1 && pageNum <= currentPage + 1)) {
-                return (
-                  <button
-                    key={`page-${pageNum}`}
-                    onClick={() => setCurrentPage(pageNum)}
-                    className={`px-3 py-2 text-sm rounded-lg ${
-                      currentPage === pageNum
-                        ? 'bg-primary-600 text-white'
-                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                    }`}
-                  >
-                    {pageNum}
-                  </button>
-                );
-              }
-              
-              // Show ellipsis
-              if (pageNum === currentPage - 2 || pageNum === currentPage + 2) {
-                return <span key={`ellipsis-${pageNum}`} className="px-2 text-gray-500">...</span>;
-              }
-              
-              return null;
-            }).filter(Boolean)}
-          </div>
-          
-          <button
-            onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-            disabled={currentPage === totalPages}
-            className="px-3 py-2 text-sm bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
-          >
-            Next
-            <FaSortUp className="w-3 h-3 -rotate-90" />
-          </button>
-        </div>
-      )}
-
-
-      {/* Assign Driver Modal */}
-      {showAssignDriver && selectedTruck && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center modal-overlay">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
-            <div className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3>Assign Driver to {selectedTruck.name}</h3>
-                <button
-                  onClick={() => {
-                    setShowAssignDriver(false);
-                    setSelectedTruck(null);
-                  }}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  <FaEdit className="w-5 h-5" />
-                </button>
-              </div>
-              
-              <div className="space-y-4">
-                <p className="text-sm text-gray-600">Select a driver to assign to this truck:</p>
-                
-                {availableDrivers.length === 0 ? (
-                  <div className="text-center py-4">
-                    <FaUser className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                    <p className="text-gray-500">No available drivers</p>
-                  </div>
-                ) : (
-                  <div className="space-y-2 max-h-60 overflow-y-auto">
-                    {availableDrivers.map((driver, index) => (
-                      <button
-                        key={driver.id || `available-driver-${index}`}
-                        onClick={() => handleAssignDriver(selectedTruck.id, driver.id)}
-                        className="w-full p-3 text-left border border-gray-200 rounded-lg hover:bg-gray-50 flex items-center gap-3"
-                      >
-                        <FaUser className="w-4 h-4 text-primary-600" />
-                        <div>
-                          <p className="font-medium text-gray-900">{driver.firstName ? `${driver.firstName} ${driver.lastName || ''}`.trim() : (driver.name || 'Unnamed')}</p>
-                          <p className="text-sm text-gray-500">{driver.licenseNumber} • {driver.experience} years experience</p>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Assign Route Modal */}
-      {showAssignRoute && selectedTruck && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center modal-overlay">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
-            <div className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3>Assign Route to {selectedTruck.name}</h3>
-                <button
-                  onClick={() => {
-                    setShowAssignRoute(false);
-                    setSelectedTruck(null);
-                  }}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  <FaEdit className="w-5 h-5" />
-                </button>
-              </div>
-              
-              <div className="space-y-4">
-                <p className="text-sm text-gray-600">Select a route to assign to this truck:</p>
-                
-                {/* Debug information */}
-                <div className="bg-gray-50 p-3 rounded-lg text-xs text-gray-600">
-                  <p><strong>Debug Info:</strong></p>
-                  <p>Total routes in system: {routes.length}</p>
-                  <p>Available routes for this truck: {getAvailableRoutes(selectedTruck.id).length}</p>
-                  <p>Truck ID: {selectedTruck.id}</p>
-                </div>
-                
-                {getAvailableRoutes(selectedTruck.id).length === 0 ? (
-                  <div className="text-center py-4">
-                    <FaRoute className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                    <p className="text-gray-500">No available routes</p>
-                    {routes.length === 0 && (
-                      <p className="text-xs text-gray-400 mt-2">No routes found in the system</p>
-                    )}
-                    {routes.length > 0 && (
-                      <p className="text-xs text-gray-400 mt-2">Routes exist but none are available for this truck</p>
-                    )}
-                  </div>
-                ) : (
-                  <div className="space-y-2 max-h-60 overflow-y-auto">
-                    {getAvailableRoutes(selectedTruck.id).map((route, index) => (
-                      <button
-                        key={route.id || `available-route-${index}`}
-                        onClick={() => handleAssignRoute(selectedTruck.id, route.id)}
-                        className="w-full p-3 text-left border border-gray-200 rounded-lg hover:bg-gray-50 flex items-center gap-3"
-                      >
-                        <FaRoute className="w-4 h-4 text-primary-600" />
-                        <div>
-                          <p className="font-medium text-gray-900">{route.name}</p>
-                          <p className="text-sm text-gray-500">{route.origin} to {route.destination}</p>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Truck Routes Drawer */}
-      {showTruckRoutes && selectedTruck && (
-        <div className="fixed inset-0 flex z-50">
-          <div className="flex-1 bg-black/40" onClick={() => { setShowTruckRoutes(false); setSelectedTruck(null); }} />
-          <div className="w-full max-w-md bg-white h-full shadow-xl overflow-y-auto">
-            <div className="p-6 border-b">
-              <div className="flex items-center justify-between">
-                <h3>Routes for {selectedTruck.name || selectedTruck.plateNumber}</h3>
-                <button className="text-gray-400 hover:text-gray-600" onClick={() => { setShowTruckRoutes(false); setSelectedTruck(null); }}>
-                  <FaTimesCircle className="w-5 h-5" />
-                </button>
-              </div>
-            </div>
-            <div className="p-6 space-y-3">
-              {Array.isArray(selectedTruck.assignedRouteDetails) && selectedTruck.assignedRouteDetails.length > 0 ? (
-                selectedTruck.assignedRouteDetails.map((r: any) => (
-                  <div key={r.id} className="border rounded-lg p-4 flex items-start justify-between">
-                    <div>
-                      <div className="font-medium text-gray-900">{r.name}</div>
-                      <div className="text-sm text-gray-600">{r.origin} → {r.destination}</div>
-                      <div className="text-xs text-gray-500 mt-1">{(r.distance ?? 0)} km • {(r.estimatedTime ?? r.estimatedDuration ?? 0)} h • {r.status || 'active'}</div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => handleUnassignRoute(selectedTruck.id, r.id)}
-                        className="text-red-600 hover:text-red-800 text-xs"
-                      >
-                        Unassign
-                      </button>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Capacity Volume:</span>
+                        <span className="font-medium">{selectedTruck.capacityVolume?.toLocaleString()} cu ft</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">VIN:</span>
+                        <span className="font-medium">{selectedTruck.vin || 'N/A'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Truck Type:</span>
+                        <span className="font-medium">{selectedTruck.truckType || 'N/A'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Trailer Type:</span>
+                        <span className="font-medium">{selectedTruck.trailerType || 'N/A'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Fuel Type:</span>
+                        <span className="font-medium">{selectedTruck.fuelType || 'N/A'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Color:</span>
+                        <span className="font-medium">{selectedTruck.color || 'N/A'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Mileage:</span>
+                        <span className="font-medium">{selectedTruck.mileage?.toLocaleString()} miles</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Fuel Efficiency:</span>
+                        <span className="font-medium">{selectedTruck.fuelEfficiency || 'N/A'} mpg</span>
+                      </div>
                     </div>
                   </div>
-                ))
-              ) : (
-                <div className="text-sm text-gray-500">No routes assigned</div>
-              )}
-            </div>
-            <div className="p-6 border-t">
-              <button
-                onClick={() => { setShowTruckRoutes(false); setShowAssignRoute(true); }}
-                className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
-              >
-                Assign Route
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
-      {/* Truck Details Modal */}
-      {showTruckDetails && selectedTruck && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-            <div className="p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h2>Truck Details</h2>
-                <button
-                  onClick={() => {
-                    setShowTruckDetails(false);
-                    setSelectedTruck(null);
-                  }}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  <FaTimesCircle className="w-6 h-6" />
-                </button>
-              </div>
-              
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Basic Information */}
-                <div className="space-y-4">
-                  <h4 className="border-b border-gray-200 pb-2">Basic Information</h4>
-                  <div className="space-y-3">
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Name:</span>
-                      <span className="font-medium">{selectedTruck.name || 'N/A'}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Plate Number:</span>
-                      <span className="font-medium">{selectedTruck.plateNumber || 'N/A'}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Make/Model:</span>
-                      <span className="font-medium">{selectedTruck.make} {selectedTruck.model}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Year:</span>
-                      <span className="font-medium">{selectedTruck.year}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Status:</span>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(selectedTruck.status)}`}>
-                        {getStatusText(selectedTruck.status)}
-                      </span>
+                  {/* Dimensions */}
+                  <div className="space-y-4">
+                    <h4 className="text-lg font-semibold text-gray-900 border-b border-gray-200 pb-2">Dimensions</h4>
+                    <div className="space-y-3">
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Max Length:</span>
+                        <span className="font-medium">{selectedTruck.maxLength ? `${selectedTruck.maxLength} m` : 'N/A'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Max Width:</span>
+                        <span className="font-medium">{selectedTruck.maxWidth ? `${selectedTruck.maxWidth} m` : 'N/A'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Max Height:</span>
+                        <span className="font-medium">{selectedTruck.maxHeight ? `${selectedTruck.maxHeight} m` : 'N/A'}</span>
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                {/* Specifications */}
-                <div className="space-y-4">
-                  <h4 className="text-lg font-semibold text-gray-900 border-b border-gray-200 pb-2">Specifications</h4>
-                  <div className="space-y-3">
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Capacity Weight:</span>
-                      <span className="font-medium">{selectedTruck.capacityWeight?.toLocaleString()} kg</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Capacity Volume:</span>
-                      <span className="font-medium">{selectedTruck.capacityVolume?.toLocaleString()} cu ft</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">VIN:</span>
-                      <span className="font-medium">{selectedTruck.vin || 'N/A'}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Truck Type:</span>
-                      <span className="font-medium">{selectedTruck.truckType || 'N/A'}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Trailer Type:</span>
-                      <span className="font-medium">{selectedTruck.trailerType || 'N/A'}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Fuel Type:</span>
-                      <span className="font-medium">{selectedTruck.fuelType || 'N/A'}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Color:</span>
-                      <span className="font-medium">{selectedTruck.color || 'N/A'}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Mileage:</span>
-                      <span className="font-medium">{selectedTruck.mileage?.toLocaleString()} miles</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Fuel Efficiency:</span>
-                      <span className="font-medium">{selectedTruck.fuelEfficiency || 'N/A'} mpg</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Dimensions */}
-                <div className="space-y-4">
-                  <h4 className="text-lg font-semibold text-gray-900 border-b border-gray-200 pb-2">Dimensions</h4>
-                  <div className="space-y-3">
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Max Length:</span>
-                      <span className="font-medium">{selectedTruck.maxLength ? `${selectedTruck.maxLength} m` : 'N/A'}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Max Width:</span>
-                      <span className="font-medium">{selectedTruck.maxWidth ? `${selectedTruck.maxWidth} m` : 'N/A'}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Max Height:</span>
-                      <span className="font-medium">{selectedTruck.maxHeight ? `${selectedTruck.maxHeight} m` : 'N/A'}</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Location */}
-                <div className="space-y-4">
-                  <h4 className="text-lg font-semibold text-gray-900 border-b border-gray-200 pb-2">Current Location</h4>
-                  <div className="space-y-3">
-                    {selectedTruck.currentLocation ? (
-                      <>
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Address:</span>
-                          <span className="font-medium">{selectedTruck.currentLocation.address}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">City:</span>
-                          <span className="font-medium">{selectedTruck.currentLocation.city}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">State:</span>
-                          <span className="font-medium">{selectedTruck.currentLocation.state}</span>
-                        </div>
-                      </>
-                    ) : (
-                      <span className="text-gray-500">No location data available</span>
-                    )}
-                  </div>
-                </div>
-
-                {/* Assignments */}
-                <div className="space-y-4">
-                  <h4 className="text-lg font-semibold text-gray-900 border-b border-gray-200 pb-2">Current Assignments</h4>
-                  <div className="space-y-3">
-                    <div>
-                      <h5 className="font-medium text-gray-900 mb-2">Drivers ({selectedTruck.assignedDrivers?.length || 0})</h5>
-                      {selectedTruck.assignedDrivers && selectedTruck.assignedDrivers.length > 0 ? (
-                        <div className="space-y-2">
-                          {selectedTruck.assignedDrivers.map((assignment: any, index: number) => (
-                            <div key={assignment.id || `driver-${index}`} className="flex items-center justify-between p-2 bg-green-50 rounded">
-                              <span className="text-sm font-medium">{assignment.driverName}</span>
-                              <span className="text-xs text-gray-500">{assignment.status}</span>
-                            </div>
-                          ))}
-                        </div>
+                  {/* Location */}
+                  <div className="space-y-4">
+                    <h4 className="text-lg font-semibold text-gray-900 border-b border-gray-200 pb-2">Current Location</h4>
+                    <div className="space-y-3">
+                      {selectedTruck.currentLocation ? (
+                        <>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Address:</span>
+                            <span className="font-medium">{selectedTruck.currentLocation.address}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">City:</span>
+                            <span className="font-medium">{selectedTruck.currentLocation.city}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">State:</span>
+                            <span className="font-medium">{selectedTruck.currentLocation.state}</span>
+                          </div>
+                        </>
                       ) : (
-                        <span className="text-gray-500">No drivers assigned</span>
-                      )}
-                    </div>
-                    
-                    <div>
-                      <h5 className="font-medium text-gray-900 mb-2">Routes ({selectedTruck.assignedRoutes?.length || 0})</h5>
-                      {selectedTruck.assignedRoutes && selectedTruck.assignedRoutes.length > 0 ? (
-                        <div className="space-y-2">
-                          {selectedTruck.assignedRoutes.map((assignment: any, index: number) => (
-                            <div key={assignment.id || `route-${index}`} className="flex items-center justify-between p-2 bg-blue-50 rounded">
-                              <span className="text-sm font-medium">{assignment.routeName}</span>
-                              <span className="text-xs text-gray-500">{assignment.status}</span>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <span className="text-gray-500">No routes assigned</span>
+                        <span className="text-gray-500">No location data available</span>
                       )}
                     </div>
                   </div>
-                </div>
 
-                {/* Compliance & Documents */}
-                <div className="space-y-4">
-                  <h4 className="text-lg font-semibold text-gray-900 border-b border-gray-200 pb-2">Compliance & Documents</h4>
-                  <div className="space-y-3">
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Registration Number:</span>
-                      <span className="font-medium">{selectedTruck.registrationNumber || 'N/A'}</span>
+                  {/* Assignments */}
+                  <div className="space-y-4">
+                    <h4 className="text-lg font-semibold text-gray-900 border-b border-gray-200 pb-2">Current Assignments</h4>
+                    <div className="space-y-3">
+                      <div>
+                        <h5 className="font-medium text-gray-900 mb-2">Drivers ({selectedTruck.assignedDrivers?.length || 0})</h5>
+                        {selectedTruck.assignedDrivers && selectedTruck.assignedDrivers.length > 0 ? (
+                          <div className="space-y-2">
+                            {selectedTruck.assignedDrivers.map((assignment: any, index: number) => (
+                              <div key={assignment.id || `driver-${index}`} className="flex items-center justify-between p-2 bg-green-50 rounded">
+                                <span className="text-sm font-medium">{assignment.driverName}</span>
+                                <span className="text-xs text-gray-500">{assignment.status}</span>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="text-gray-500">No drivers assigned</span>
+                        )}
+                      </div>
+
+                      <div>
+                        <h5 className="font-medium text-gray-900 mb-2">Routes ({selectedTruck.assignedRoutes?.length || 0})</h5>
+                        {selectedTruck.assignedRoutes && selectedTruck.assignedRoutes.length > 0 ? (
+                          <div className="space-y-2">
+                            {selectedTruck.assignedRoutes.map((assignment: any, index: number) => (
+                              <div key={assignment.id || `route-${index}`} className="flex items-center justify-between p-2 bg-blue-50 rounded">
+                                <span className="text-sm font-medium">{assignment.routeName}</span>
+                                <span className="text-xs text-gray-500">{assignment.status}</span>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="text-gray-500">No routes assigned</span>
+                        )}
+                      </div>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Registration Expiry:</span>
-                      <span className="font-medium">{selectedTruck.registrationExpiry ? new Date(selectedTruck.registrationExpiry).toLocaleDateString() : 'N/A'}</span>
+                  </div>
+
+                  {/* Compliance & Documents */}
+                  <div className="space-y-4">
+                    <h4 className="text-lg font-semibold text-gray-900 border-b border-gray-200 pb-2">Compliance & Documents</h4>
+                    <div className="space-y-3">
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Registration Number:</span>
+                        <span className="font-medium">{selectedTruck.registrationNumber || 'N/A'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Registration Expiry:</span>
+                        <span className="font-medium">{selectedTruck.registrationExpiry ? new Date(selectedTruck.registrationExpiry).toLocaleDateString() : 'N/A'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Insurance Policy:</span>
+                        <span className="font-medium">{selectedTruck.insurancePolicy || 'N/A'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Insurance Expiry:</span>
+                        <span className="font-medium">{selectedTruck.insuranceExpiry ? new Date(selectedTruck.insuranceExpiry).toLocaleDateString() : 'N/A'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Roadworthy Cert Expiry:</span>
+                        <span className="font-medium">{selectedTruck.roadworthyCertExpiry ? new Date(selectedTruck.roadworthyCertExpiry).toLocaleDateString() : 'N/A'}</span>
+                      </div>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Insurance Policy:</span>
-                      <span className="font-medium">{selectedTruck.insurancePolicy || 'N/A'}</span>
+                  </div>
+
+                  {/* Capabilities & Safety */}
+                  <div className="space-y-4">
+                    <h4 className="text-lg font-semibold text-gray-900 border-b border-gray-200 pb-2">Capabilities & Safety</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                      <div className="flex justify-between"><span className="text-gray-600">Refrigeration:</span><span className="font-medium">{selectedTruck.hasRefrigeration || selectedTruck.hasReefer ? 'Yes' : 'No'}</span></div>
+                      <div className="flex justify-between"><span className="text-gray-600">Lift Gate:</span><span className="font-medium">{selectedTruck.hasLiftGate ? 'Yes' : 'No'}</span></div>
+                      <div className="flex justify-between"><span className="text-gray-600">Hazmat Permit:</span><span className="font-medium">{selectedTruck.hasHazmatPermit ? 'Yes' : 'No'}</span></div>
+                      <div className="flex justify-between"><span className="text-gray-600">GPS:</span><span className="font-medium">{selectedTruck.hasGps || selectedTruck.hasGPS ? 'Yes' : 'No'}</span></div>
+                      <div className="flex justify-between"><span className="text-gray-600">Tracking:</span><span className="font-medium">{selectedTruck.hasTracking ? 'Yes' : 'No'}</span></div>
+                      <div className="flex justify-between"><span className="text-gray-600">Telematics:</span><span className="font-medium">{selectedTruck.hasTelematics ? 'Yes' : 'No'}</span></div>
+                      <div className="flex justify-between"><span className="text-gray-600">ELD:</span><span className="font-medium">{selectedTruck.hasELD ? 'Yes' : 'No'}</span></div>
+                      <div className="flex justify-between"><span className="text-gray-600">Dash Cam:</span><span className="font-medium">{selectedTruck.hasDashCam ? 'Yes' : 'No'}</span></div>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Insurance Expiry:</span>
-                      <span className="font-medium">{selectedTruck.insuranceExpiry ? new Date(selectedTruck.insuranceExpiry).toLocaleDateString() : 'N/A'}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Roadworthy Cert Expiry:</span>
-                      <span className="font-medium">{selectedTruck.roadworthyCertExpiry ? new Date(selectedTruck.roadworthyCertExpiry).toLocaleDateString() : 'N/A'}</span>
-                    </div>
+                    <div className="text-xs text-gray-500">Equipment items: {Array.isArray(selectedTruck.equipmentList) ? selectedTruck.equipmentList.length : 0}</div>
                   </div>
                 </div>
 
-                {/* Capabilities & Safety */}
-                <div className="space-y-4">
-                  <h4 className="text-lg font-semibold text-gray-900 border-b border-gray-200 pb-2">Capabilities & Safety</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                    <div className="flex justify-between"><span className="text-gray-600">Refrigeration:</span><span className="font-medium">{selectedTruck.hasRefrigeration || selectedTruck.hasReefer ? 'Yes' : 'No'}</span></div>
-                    <div className="flex justify-between"><span className="text-gray-600">Lift Gate:</span><span className="font-medium">{selectedTruck.hasLiftGate ? 'Yes' : 'No'}</span></div>
-                    <div className="flex justify-between"><span className="text-gray-600">Hazmat Permit:</span><span className="font-medium">{selectedTruck.hasHazmatPermit ? 'Yes' : 'No'}</span></div>
-                    <div className="flex justify-between"><span className="text-gray-600">GPS:</span><span className="font-medium">{selectedTruck.hasGps || selectedTruck.hasGPS ? 'Yes' : 'No'}</span></div>
-                    <div className="flex justify-between"><span className="text-gray-600">Tracking:</span><span className="font-medium">{selectedTruck.hasTracking ? 'Yes' : 'No'}</span></div>
-                    <div className="flex justify-between"><span className="text-gray-600">Telematics:</span><span className="font-medium">{selectedTruck.hasTelematics ? 'Yes' : 'No'}</span></div>
-                    <div className="flex justify-between"><span className="text-gray-600">ELD:</span><span className="font-medium">{selectedTruck.hasELD ? 'Yes' : 'No'}</span></div>
-                    <div className="flex justify-between"><span className="text-gray-600">Dash Cam:</span><span className="font-medium">{selectedTruck.hasDashCam ? 'Yes' : 'No'}</span></div>
-                  </div>
-                  <div className="text-xs text-gray-500">Equipment items: {Array.isArray(selectedTruck.equipmentList) ? selectedTruck.equipmentList.length : 0}</div>
+                {/* Actions */}
+                <div className="flex items-center justify-end gap-3 mt-6 pt-6 border-t border-gray-200">
+                  <button
+                    onClick={() => {
+                      setShowTruckDetails(false);
+                      setSelectedTruck(null);
+                    }}
+                    className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
+                  >
+                    Close
+                  </button>
+                  <button
+                    onClick={() => {
+                      setEditingTruck(selectedTruck);
+                      setShowTruckDetails(false);
+                      setShowEditTruck(true);
+                    }}
+                    className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 flex items-center gap-2"
+                  >
+                    <FaEdit className="w-4 h-4" />
+                    Edit Truck
+                  </button>
                 </div>
               </div>
+            </div>
+          </div>
+        )}
 
-              {/* Actions */}
-              <div className="flex items-center justify-end gap-3 mt-6 pt-6 border-t border-gray-200">
+        {/* Edit Truck Modal */}
+        {showEditTruck && editingTruck && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-2xl font-bold text-gray-900">Edit Truck</h3>
+                  <button
+                    onClick={() => {
+                      setShowEditTruck(false);
+                      setEditingTruck(null);
+                    }}
+                    className="text-gray-400 hover:text-gray-600"
+                  >
+                    <FaTimesCircle className="w-6 h-6" />
+                  </button>
+                </div>
+
+                <EditTruckForm
+                  truck={editingTruck}
+                  onSave={async (updatedData) => {
+                    try {
+                      // Clean the data: remove empty strings, convert dates, handle undefined values
+                      const cleanedData: any = {};
+
+                      // Copy all non-empty values
+                      Object.keys(updatedData).forEach(key => {
+                        const value = updatedData[key];
+
+                        // Handle date fields first - convert empty strings to undefined
+                        if (['registrationExpiry', 'insuranceExpiry', 'roadworthyCertExpiry'].includes(key)) {
+                          if (value === '' || !value) {
+                            return; // Don't send empty dates
+                          }
+                          cleanedData[key] = value; // Keep as ISO string
+                          return;
+                        }
+
+                        // Skip empty strings for optional fields
+                        if (value === '' && ['color', 'trailerType', 'registrationNumber', 'insurancePolicy'].includes(key)) {
+                          return; // Don't include empty optional fields
+                        }
+
+                        // Convert string numbers to actual numbers for numeric fields
+                        if (['maxLength', 'maxWidth', 'maxHeight', 'fuelEfficiency'].includes(key)) {
+                          if (value === '' || value === null || value === undefined) {
+                            return; // Don't send empty numeric optional fields
+                          }
+                          const numValue = Number(value);
+                          if (!isNaN(numValue)) {
+                            cleanedData[key] = numValue;
+                          }
+                          return;
+                        }
+
+                        // Handle mileage - default to 0 if empty
+                        if (key === 'mileage') {
+                          if (value === '' || value === null || value === undefined) {
+                            cleanedData[key] = 0;
+                          } else {
+                            cleanedData[key] = Number(value) || 0;
+                          }
+                          return;
+                        }
+
+                        // Don't send NaN values
+                        if (typeof value === 'number' && isNaN(value)) {
+                          return;
+                        }
+
+                        // Include all other valid values
+                        cleanedData[key] = value;
+                      });
+
+                      console.log('Sending cleaned truck update data:', cleanedData);
+                      await fleetApi.updateTruck(editingTruck.id, cleanedData);
+                      toast.success('Truck updated successfully');
+                      setShowEditTruck(false);
+                      setEditingTruck(null);
+                      loadData(); // Refresh the list
+                    } catch (error: any) {
+                      console.error('Error updating truck:', error);
+                      console.error('Error response:', error.response?.data);
+                      toast.error(error.response?.data?.message || error.message || 'Failed to update truck');
+                    }
+                  }}
+                  onCancel={() => {
+                    setShowEditTruck(false);
+                    setEditingTruck(null);
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Empty State */}
+        {paginatedTrucks().length === 0 && !loading && (
+          search || statusFilter ? (
+            <div className="text-center py-12">
+              <div className="max-w-md mx-auto">
+                <FaTruck className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-xl font-medium text-gray-900 mb-2">No trucks found</h3>
+                <p className="text-gray-500 mb-6">
+                  No trucks match your current filters. Try adjusting your search criteria.
+                </p>
                 <button
                   onClick={() => {
-                    setShowTruckDetails(false);
-                    setSelectedTruck(null);
+                    setSearch('');
+                    setStatusFilter('');
+                    setCurrentPage(1);
                   }}
                   className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
                 >
-                  Close
-                </button>
-                <button
-                  onClick={() => {
-                    setEditingTruck(selectedTruck);
-                    setShowTruckDetails(false);
-                    setShowEditTruck(true);
-                  }}
-                  className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 flex items-center gap-2"
-                >
-                  <FaEdit className="w-4 h-4" />
-                  Edit Truck
+                  Clear Filters
                 </button>
               </div>
             </div>
+          ) : (
+            <EmptyState
+              type="trucks"
+              onAction={onAddTruck}
+              actionLabel="Add Your First Truck"
+              title="No Trucks Yet"
+              description="Get started by adding your first truck to the fleet. You can add trucks, manage their details, track maintenance, and monitor their status all in one place."
+            />
+          )
+        )}
+
+        {/* Loading State */}
+        {loading && (
+          <div className="text-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
+            <p className="text-gray-500">Loading trucks...</p>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Edit Truck Modal */}
-      {showEditTruck && editingTruck && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-            <div className="p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-2xl font-bold text-gray-900">Edit Truck</h3>
-                <button
-                  onClick={() => {
-                    setShowEditTruck(false);
-                    setEditingTruck(null);
-                  }}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  <FaTimesCircle className="w-6 h-6" />
-                </button>
-              </div>
-
-              <EditTruckForm
-                truck={editingTruck}
-                onSave={async (updatedData) => {
-                  try {
-                    // Clean the data: remove empty strings, convert dates, handle undefined values
-                    const cleanedData: any = {};
-                    
-                    // Copy all non-empty values
-                    Object.keys(updatedData).forEach(key => {
-                      const value = updatedData[key];
-                      
-                      // Handle date fields first - convert empty strings to undefined
-                      if (['registrationExpiry', 'insuranceExpiry', 'roadworthyCertExpiry'].includes(key)) {
-                        if (value === '' || !value) {
-                          return; // Don't send empty dates
-                        }
-                        cleanedData[key] = value; // Keep as ISO string
-                        return;
-                      }
-                      
-                      // Skip empty strings for optional fields
-                      if (value === '' && ['color', 'trailerType', 'registrationNumber', 'insurancePolicy'].includes(key)) {
-                        return; // Don't include empty optional fields
-                      }
-                      
-                      // Convert string numbers to actual numbers for numeric fields
-                      if (['maxLength', 'maxWidth', 'maxHeight', 'fuelEfficiency'].includes(key)) {
-                        if (value === '' || value === null || value === undefined) {
-                          return; // Don't send empty numeric optional fields
-                        }
-                        const numValue = Number(value);
-                        if (!isNaN(numValue)) {
-                          cleanedData[key] = numValue;
-                        }
-                        return;
-                      }
-                      
-                      // Handle mileage - default to 0 if empty
-                      if (key === 'mileage') {
-                        if (value === '' || value === null || value === undefined) {
-                          cleanedData[key] = 0;
-                        } else {
-                          cleanedData[key] = Number(value) || 0;
-                        }
-                        return;
-                      }
-                      
-                      // Don't send NaN values
-                      if (typeof value === 'number' && isNaN(value)) {
-                        return;
-                      }
-                      
-                      // Include all other valid values
-                      cleanedData[key] = value;
-                    });
-                    
-                    console.log('Sending cleaned truck update data:', cleanedData);
-                    await fleetApi.updateTruck(editingTruck.id, cleanedData);
-                    toast.success('Truck updated successfully');
-                    setShowEditTruck(false);
-                    setEditingTruck(null);
-                    loadData(); // Refresh the list
-                  } catch (error: any) {
-                    console.error('Error updating truck:', error);
-                    console.error('Error response:', error.response?.data);
-                    toast.error(error.response?.data?.message || error.message || 'Failed to update truck');
-                  }
-                }}
-                onCancel={() => {
-                  setShowEditTruck(false);
-                  setEditingTruck(null);
-                }}
-              />
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Empty State */}
-      {paginatedTrucks().length === 0 && !loading && (
-        search || statusFilter ? (
+        {/* Error State */}
+        {error && !loading && (
           <div className="text-center py-12">
             <div className="max-w-md mx-auto">
-              <FaTruck className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-xl font-medium text-gray-900 mb-2">No trucks found</h3>
-              <p className="text-gray-500 mb-6">
-                No trucks match your current filters. Try adjusting your search criteria.
-              </p>
-              <button 
-                onClick={() => {
-                  setSearch('');
-                  setStatusFilter('');
-                  setCurrentPage(1);
-                }} 
-                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
-              >
-                Clear Filters
-              </button>
+              <FaExclamationTriangle className="w-16 h-16 text-red-400 mx-auto mb-4" />
+              <h3 className="text-xl font-medium text-gray-900 mb-2">Something went wrong</h3>
+              <p className="text-gray-500 mb-6">{error}</p>
+              <div className="flex items-center justify-center gap-3">
+                <button
+                  onClick={() => loadData()}
+                  className="px-4 py-2.5 bg-primary-600 text-white rounded-lg hover:bg-primary-700 active:bg-primary-800 transition-all duration-200 flex items-center gap-2 shadow-md hover:shadow-lg font-medium text-sm"
+                >
+                  <FaSync className="w-4 h-4" />
+                  Try Again
+                </button>
+                <button
+                  onClick={() => setError(null)}
+                  className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
+                >
+                  Dismiss
+                </button>
+              </div>
             </div>
           </div>
-        ) : (
-          <EmptyState
-            type="trucks"
-            onAction={onAddTruck}
-            actionLabel="Add Your First Truck"
-            title="No Trucks Yet"
-            description="Get started by adding your first truck to the fleet. You can add trucks, manage their details, track maintenance, and monitor their status all in one place."
-          />
-        )
-      )}
-      
-      {/* Loading State */}
-      {loading && (
-        <div className="text-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
-          <p className="text-gray-500">Loading trucks...</p>
-        </div>
-      )}
-
-      {/* Error State */}
-      {error && !loading && (
-        <div className="text-center py-12">
-          <div className="max-w-md mx-auto">
-            <FaExclamationTriangle className="w-16 h-16 text-red-400 mx-auto mb-4" />
-            <h3 className="text-xl font-medium text-gray-900 mb-2">Something went wrong</h3>
-            <p className="text-gray-500 mb-6">{error}</p>
-            <div className="flex items-center justify-center gap-3">
-              <button 
-                onClick={() => loadData()} 
-                className="px-4 py-2.5 bg-primary-600 text-white rounded-lg hover:bg-primary-700 active:bg-primary-800 transition-all duration-200 flex items-center gap-2 shadow-md hover:shadow-lg font-medium text-sm"
-              >
-                <FaSync className="w-4 h-4" />
-                Try Again
-              </button>
-              <button 
-                onClick={() => setError(null)} 
-                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
-              >
-                Dismiss
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+        )}
       </div>
     </div>
   );

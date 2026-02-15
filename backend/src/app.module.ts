@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { ConfigModule } from '@nestjs/config';
@@ -38,11 +38,14 @@ import { EventsModule } from './modules/events/events.module';
 import { OnboardingModule } from './modules/onboarding/onboarding.module';
 import { PermissionHelper } from './utils/permission-helper';
 import { ActivityLogInterceptor } from './interceptors/activity-log.interceptor';
+import { TenantSubdomainMiddleware } from './middleware/tenant-subdomain.middleware';
+import { Tenant } from './entities/tenant.entity';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     TypeOrmModule.forRoot(databaseConfig),
+    TypeOrmModule.forFeature([Tenant]), // For subdomain middleware
     EventEmitterModule.forRoot(),
     ThrottlerModule.forRoot([{ ttl: 60000, limit: 20 }]),
     EnhancedAuthModule,
@@ -86,4 +89,10 @@ import { ActivityLogInterceptor } from './interceptors/activity-log.interceptor'
   ],
   exports: [PermissionHelper],
 })
-export class AppModule { }
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer
+      .apply(TenantSubdomainMiddleware)
+      .forRoutes('*'); // Apply to all routes
+  }
+}

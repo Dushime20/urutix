@@ -1,21 +1,23 @@
 import React, { useState } from 'react';
-import { 
-  FaShieldAlt, 
-  FaLock, 
-  FaUnlock,
-  FaSearch, 
-  FaFilter, 
-  FaDownload,
-  FaEye,
-  FaClock,
-  FaCheckCircle,
-  FaTimesCircle,
-  FaExclamationTriangle,
-  FaMoneyBillWave,
-  FaTruck,
-  FaBox,
-  FaChartLine
-} from 'react-icons/fa';
+import {
+  Shield,
+  Lock,
+  Unlock,
+  Search,
+  Filter,
+  Download,
+  Eye,
+  Clock,
+  CheckCircle,
+  XCircle,
+  AlertTriangle,
+  Banknote,
+  Truck,
+  Package,
+  LineChart,
+  Calendar,
+  X
+} from 'lucide-react';
 import AdminPageLayout from '../components/Admin/AdminPageLayout';
 
 interface EscrowAccount {
@@ -98,46 +100,46 @@ const EscrowManagement: React.FC = () => {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'ACTIVE':
-        return 'bg-blue-100 text-blue-800 border-blue-200';
+        return 'bg-blue-100 text-blue-800';
       case 'RELEASED':
-        return 'bg-green-100 text-green-800 border-green-200';
+        return 'bg-green-100 text-green-800';
       case 'DISPUTED':
-        return 'bg-red-100 text-red-800 border-red-200';
+        return 'bg-red-100 text-red-800';
       case 'PENDING':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+        return 'bg-yellow-100 text-yellow-800';
       case 'CANCELLED':
-        return 'bg-gray-100 text-gray-800 border-gray-200';
+        return 'bg-gray-100 text-gray-800';
       default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
+        return 'bg-gray-100 text-gray-800';
     }
   };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'ACTIVE':
-        return <FaLock className="w-3 h-3" />;
+        return <Lock className="w-3 h-3" />;
       case 'RELEASED':
-        return <FaCheckCircle className="w-3 h-3" />;
+        return <CheckCircle className="w-3 h-3" />;
       case 'DISPUTED':
-        return <FaExclamationTriangle className="w-3 h-3" />;
+        return <AlertTriangle className="w-3 h-3" />;
       case 'PENDING':
-        return <FaClock className="w-3 h-3" />;
+        return <Clock className="w-3 h-3" />;
       case 'CANCELLED':
-        return <FaTimesCircle className="w-3 h-3" />;
+        return <XCircle className="w-3 h-3" />;
       default:
         return null;
     }
   };
 
   const filteredAccounts = escrowAccounts.filter(account => {
-    const matchesSearch = 
+    const matchesSearch =
       account.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
       account.tripId.toLowerCase().includes(searchTerm.toLowerCase()) ||
       account.cargoOwner.toLowerCase().includes(searchTerm.toLowerCase()) ||
       account.truckOwner.toLowerCase().includes(searchTerm.toLowerCase());
-    
+
     const matchesStatus = statusFilter === 'ALL' || account.status === statusFilter;
-    
+
     return matchesSearch && matchesStatus;
   });
 
@@ -168,94 +170,106 @@ const EscrowManagement: React.FC = () => {
       title="Escrow Management"
       description="Monitor and manage secure payment escrow accounts"
       actions={
-        <button className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:from-blue-600 hover:to-blue-700 transition-all duration-200 shadow-sm text-sm font-medium">
-          <FaDownload className="w-4 h-4" />
+        <button className="bg-white border border-gray-200 text-gray-700 px-4 py-2 rounded-xl flex items-center gap-2 hover:bg-gray-50 transition-all duration-200 text-sm font-bold">
+          <Download className="w-4 h-4" />
           Export Report
         </button>
       }
     >
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-5 text-white shadow-lg">
-          <div className="flex items-center justify-between mb-3">
-            <div className="bg-white/20 p-2.5 rounded-lg">
-              <FaMoneyBillWave className="w-5 h-5" />
+        <div className="bg-white rounded-[24px] p-6 shadow-sm border border-gray-100 relative overflow-hidden group">
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-50 to-transparent opacity-50"></div>
+          <div className="relative">
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-10 h-10 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center">
+                <Banknote className="w-5 h-5" />
+              </div>
+              <LineChart className="w-4 h-4 text-blue-400 opacity-50" />
             </div>
-            <FaChartLine className="w-4 h-4 opacity-70" />
+            <div className="text-2xl font-black text-gray-900 mb-1 tracking-tight">
+              {formatCurrency(stats.totalEscrow, 'USD')}
+            </div>
+            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Total in Escrow</div>
           </div>
-          <div className="text-2xl font-bold mb-1">
-            {formatCurrency(stats.totalEscrow, 'USD')}
-          </div>
-          <div className="text-blue-100 text-sm">Total in Escrow</div>
         </div>
 
-        <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-200">
-          <div className="flex items-center justify-between mb-3">
-            <div className="bg-blue-50 p-2.5 rounded-lg">
-              <FaLock className="w-5 h-5 text-blue-600" />
+        <div className="bg-white rounded-[24px] p-6 shadow-sm border border-gray-100 relative overflow-hidden group">
+          <div className="absolute inset-0 bg-gradient-to-br from-indigo-50 to-transparent opacity-50"></div>
+          <div className="relative">
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-10 h-10 bg-indigo-100 text-indigo-600 rounded-xl flex items-center justify-center">
+                <Lock className="w-5 h-5" />
+              </div>
+              <span className="text-[9px] font-black text-indigo-600 bg-indigo-50 px-2 py-1 rounded-lg uppercase tracking-wider">
+                Active
+              </span>
             </div>
-            <span className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded-full">
-              Active
-            </span>
+            <div className="text-2xl font-black text-gray-900 mb-1 tracking-tight">
+              {stats.activeAccounts}
+            </div>
+            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Active Accounts</div>
           </div>
-          <div className="text-2xl font-bold text-gray-900 mb-1">
-            {stats.activeAccounts}
-          </div>
-          <div className="text-gray-600 text-sm">Active Accounts</div>
         </div>
 
-        <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-200">
-          <div className="flex items-center justify-between mb-3">
-            <div className="bg-yellow-50 p-2.5 rounded-lg">
-              <FaClock className="w-5 h-5 text-yellow-600" />
+        <div className="bg-white rounded-[24px] p-6 shadow-sm border border-gray-100 relative overflow-hidden group">
+          <div className="absolute inset-0 bg-gradient-to-br from-yellow-50 to-transparent opacity-50"></div>
+          <div className="relative">
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-10 h-10 bg-yellow-100 text-yellow-600 rounded-xl flex items-center justify-center">
+                <Clock className="w-5 h-5" />
+              </div>
+              <span className="text-[9px] font-black text-yellow-600 bg-yellow-50 px-2 py-1 rounded-lg uppercase tracking-wider">
+                Pending
+              </span>
             </div>
-            <span className="text-xs font-medium text-yellow-600 bg-yellow-50 px-2 py-1 rounded-full">
-              Pending
-            </span>
+            <div className="text-2xl font-black text-gray-900 mb-1 tracking-tight">
+              {stats.pendingRelease}
+            </div>
+            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Pending Release</div>
           </div>
-          <div className="text-2xl font-bold text-gray-900 mb-1">
-            {stats.pendingRelease}
-          </div>
-          <div className="text-gray-600 text-sm">Pending Release</div>
         </div>
 
-        <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-200">
-          <div className="flex items-center justify-between mb-3">
-            <div className="bg-red-50 p-2.5 rounded-lg">
-              <FaExclamationTriangle className="w-5 h-5 text-red-600" />
+        <div className="bg-white rounded-[24px] p-6 shadow-sm border border-gray-100 relative overflow-hidden group">
+          <div className="absolute inset-0 bg-gradient-to-br from-red-50 to-transparent opacity-50"></div>
+          <div className="relative">
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-10 h-10 bg-red-100 text-red-600 rounded-xl flex items-center justify-center">
+                <AlertTriangle className="w-5 h-5" />
+              </div>
+              <span className="text-[9px] font-black text-red-600 bg-red-50 px-2 py-1 rounded-lg uppercase tracking-wider">
+                Alert
+              </span>
             </div>
-            <span className="text-xs font-medium text-red-600 bg-red-50 px-2 py-1 rounded-full">
-              Alert
-            </span>
+            <div className="text-2xl font-black text-gray-900 mb-1 tracking-tight">
+              {stats.disputes}
+            </div>
+            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Disputed Accounts</div>
           </div>
-          <div className="text-2xl font-bold text-gray-900 mb-1">
-            {stats.disputes}
-          </div>
-          <div className="text-gray-600 text-sm">Disputed Accounts</div>
         </div>
       </div>
 
       {/* Filters and Search */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6">
+      <div className="bg-white rounded-[24px] shadow-sm border border-gray-100 p-4 mb-6">
         <div className="flex flex-col md:flex-row gap-4">
           <div className="flex-1 relative">
-            <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
             <input
               type="text"
               placeholder="Search by ID, trip, cargo owner, or truck owner..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+              className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm font-medium"
             />
           </div>
-          
+
           <div className="flex gap-2">
             <div className="relative">
-              <FaFilter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="pl-10 pr-8 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm appearance-none bg-white cursor-pointer"
+                className="pl-10 pr-8 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm font-medium appearance-none cursor-pointer"
               >
                 <option value="ALL">All Status</option>
                 <option value="PENDING">Pending</option>
@@ -270,40 +284,42 @@ const EscrowManagement: React.FC = () => {
       </div>
 
       {/* Escrow Accounts Table */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+      <div className="bg-white rounded-[24px] shadow-sm border border-gray-100 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-200">
+            <thead className="bg-gray-50 border-b border-gray-100">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">
                   Escrow ID
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">
                   Trip ID
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">
                   Parties
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">
                   Amount
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">
                   Status
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">
                   Created
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">
                   Actions
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
+            <tbody className="divide-y divide-gray-100">
               {filteredAccounts.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="px-6 py-12 text-center">
-                    <FaShieldAlt className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                    <p className="text-gray-500 text-sm">No escrow accounts found</p>
+                    <div className="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                      <Shield className="w-8 h-8 text-gray-300" />
+                    </div>
+                    <p className="text-gray-500 text-sm font-medium">No escrow accounts found</p>
                   </td>
                 </tr>
               ) : (
@@ -311,49 +327,50 @@ const EscrowManagement: React.FC = () => {
                   <tr key={account.id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center gap-2">
-                        <FaShieldAlt className="w-4 h-4 text-blue-500" />
-                        <span className="text-sm font-medium text-gray-900">{account.id}</span>
+                        <div className="w-8 h-8 bg-blue-50 text-blue-600 rounded-lg flex items-center justify-center">
+                          <Shield className="w-4 h-4" />
+                        </div>
+                        <span className="text-sm font-bold text-gray-900">{account.id}</span>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center gap-2">
-                        <FaTruck className="w-3.5 h-3.5 text-gray-400" />
-                        <span className="text-sm text-gray-600">{account.tripId}</span>
+                        <Truck className="w-3.5 h-3.5 text-gray-400" />
+                        <span className="text-sm font-medium text-gray-600 font-mono">{account.tripId}</span>
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="text-sm">
-                        <div className="flex items-center gap-1.5 mb-1">
-                          <FaBox className="w-3 h-3 text-blue-500" />
-                          <span className="text-gray-900 font-medium">{account.cargoOwner}</span>
+                      <div className="text-sm space-y-1">
+                        <div className="flex items-center gap-1.5">
+                          <Package className="w-3 h-3 text-indigo-500" />
+                          <span className="text-gray-900 font-bold text-xs">{account.cargoOwner}</span>
                         </div>
                         <div className="flex items-center gap-1.5">
-                          <FaTruck className="w-3 h-3 text-green-500" />
-                          <span className="text-gray-600">{account.truckOwner}</span>
+                          <Truck className="w-3 h-3 text-emerald-500" />
+                          <span className="text-gray-600 font-medium text-xs">{account.truckOwner}</span>
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="text-sm font-semibold text-gray-900">
+                      <span className="text-sm font-black text-gray-900">
                         {formatCurrency(account.amount, account.currency)}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${getStatusColor(account.status)}`}>
+                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest ${getStatusColor(account.status)}`}>
                         {getStatusIcon(account.status)}
                         {account.status}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                    <td className="px-6 py-4 whitespace-nowrap text-xs font-medium text-gray-500">
                       {formatDate(account.createdAt)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <button
                         onClick={() => handleViewDetails(account)}
-                        className="text-blue-600 hover:text-blue-800 font-medium text-sm flex items-center gap-1.5 transition-colors"
+                        className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-indigo-50 text-indigo-600 transition-colors"
                       >
-                        <FaEye className="w-4 h-4" />
-                        View
+                        <Eye className="w-4 h-4" />
                       </button>
                     </td>
                   </tr>
@@ -366,87 +383,118 @@ const EscrowManagement: React.FC = () => {
 
       {/* Details Modal */}
       {showDetailsModal && selectedEscrow && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="sticky top-0 bg-gradient-to-r from-blue-500 to-blue-600 text-white p-6 rounded-t-xl">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="bg-white/20 p-3 rounded-lg">
-                    <FaShieldAlt className="w-6 h-6" />
-                  </div>
-                  <div>
-                    <h2 className="text-xl font-bold">Escrow Details</h2>
-                    <p className="text-blue-100 text-sm">{selectedEscrow.id}</p>
-                  </div>
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+          <div className="bg-white rounded-[24px] shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-gray-100 flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center">
+                  <Shield className="w-6 h-6" />
                 </div>
-                <button
-                  onClick={() => setShowDetailsModal(false)}
-                  className="text-white hover:bg-white/20 p-2 rounded-lg transition-colors"
-                >
-                  ✕
-                </button>
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900">Escrow Details</h2>
+                  <p className="text-xs text-gray-500 font-medium mt-0.5">{selectedEscrow.id}</p>
+                </div>
               </div>
+              <button
+                onClick={() => setShowDetailsModal(false)}
+                className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
             </div>
 
-            <div className="p-6 space-y-6">
+            <div className="p-8 space-y-8">
               {/* Status Banner */}
-              <div className={`p-4 rounded-lg border-2 ${getStatusColor(selectedEscrow.status)}`}>
-                <div className="flex items-center gap-2">
-                  {getStatusIcon(selectedEscrow.status)}
-                  <span className="font-semibold">Status: {selectedEscrow.status}</span>
+              <div className={`p-4 rounded-xl border ${selectedEscrow.status === 'DISPUTED' ? 'bg-red-50 border-red-100' : 'bg-gray-50 border-gray-100'}`}>
+                <div className="flex items-center gap-3">
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${selectedEscrow.status === 'DISPUTED' ? 'bg-red-100 text-red-600' : 'bg-white text-gray-600'}`}>
+                    {getStatusIcon(selectedEscrow.status)}
+                  </div>
+                  <div>
+                    <span className="text-xs font-black uppercase tracking-widest text-slate-500 block mb-0.5">Status</span>
+                    <span className="text-sm font-bold text-gray-900">{selectedEscrow.status}</span>
+                  </div>
                 </div>
                 {selectedEscrow.disputeReason && (
-                  <p className="mt-2 text-sm">{selectedEscrow.disputeReason}</p>
+                  <div className="mt-3 pt-3 border-t border-red-100 text-sm text-red-700">
+                    <span className="font-bold">Reason:</span> {selectedEscrow.disputeReason}
+                  </div>
                 )}
               </div>
 
               {/* Amount */}
-              <div className="bg-gray-50 rounded-lg p-4">
-                <div className="text-sm text-gray-600 mb-1">Escrow Amount</div>
-                <div className="text-3xl font-bold text-gray-900">
+              <div className="bg-gray-50 rounded-2xl p-6 border border-gray-100 text-center">
+                <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Escrow Amount</div>
+                <div className="text-4xl font-black text-gray-900">
                   {formatCurrency(selectedEscrow.amount, selectedEscrow.currency)}
                 </div>
               </div>
 
               {/* Details Grid */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-6">
                 <div>
-                  <div className="text-sm text-gray-600 mb-1">Trip ID</div>
-                  <div className="font-medium text-gray-900">{selectedEscrow.tripId}</div>
+                  <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 flex items-center gap-1.5">
+                    <Truck className="w-3 h-3" />
+                    Trip ID
+                  </div>
+                  <div className="font-bold text-gray-900 font-mono text-sm bg-gray-50 px-3 py-2 rounded-lg inline-block border border-gray-100">
+                    {selectedEscrow.tripId}
+                  </div>
                 </div>
                 <div>
-                  <div className="text-sm text-gray-600 mb-1">Created</div>
-                  <div className="font-medium text-gray-900">{formatDate(selectedEscrow.createdAt)}</div>
+                  <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 flex items-center gap-1.5">
+                    <Calendar className="w-3 h-3" />
+                    Created On
+                  </div>
+                  <div className="font-bold text-gray-900 text-sm">
+                    {formatDate(selectedEscrow.createdAt)}
+                  </div>
                 </div>
                 <div>
-                  <div className="text-sm text-gray-600 mb-1">Cargo Owner</div>
-                  <div className="font-medium text-gray-900">{selectedEscrow.cargoOwner}</div>
+                  <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 flex items-center gap-1.5">
+                    <Package className="w-3 h-3" />
+                    Cargo Owner
+                  </div>
+                  <div className="font-bold text-gray-900 text-sm">
+                    {selectedEscrow.cargoOwner}
+                  </div>
                 </div>
                 <div>
-                  <div className="text-sm text-gray-600 mb-1">Truck Owner</div>
-                  <div className="font-medium text-gray-900">{selectedEscrow.truckOwner}</div>
+                  <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 flex items-center gap-1.5">
+                    <Truck className="w-3 h-3" />
+                    Truck Owner
+                  </div>
+                  <div className="font-bold text-gray-900 text-sm">
+                    {selectedEscrow.truckOwner}
+                  </div>
                 </div>
                 <div className="col-span-2">
-                  <div className="text-sm text-gray-600 mb-1">Release Condition</div>
-                  <div className="font-medium text-gray-900">{selectedEscrow.releaseCondition}</div>
+                  <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Release Condition</div>
+                  <div className="font-medium text-gray-700 text-sm bg-gray-50 p-3 rounded-xl border border-gray-100">
+                    {selectedEscrow.releaseCondition}
+                  </div>
                 </div>
                 {selectedEscrow.releaseDate && (
                   <div className="col-span-2">
-                    <div className="text-sm text-gray-600 mb-1">Released On</div>
-                    <div className="font-medium text-green-600">{formatDate(selectedEscrow.releaseDate)}</div>
+                    <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Released On</div>
+                    <div className="font-bold text-green-600 text-sm flex items-center gap-2">
+                      <CheckCircle className="w-4 h-4" />
+                      {formatDate(selectedEscrow.releaseDate)}
+                    </div>
                   </div>
                 )}
               </div>
 
               {/* Actions */}
               {selectedEscrow.status === 'ACTIVE' && (
-                <div className="flex gap-3 pt-4 border-t">
-                  <button className="flex-1 bg-green-600 text-white py-2.5 rounded-lg hover:bg-green-700 transition-colors font-medium flex items-center justify-center gap-2">
-                    <FaUnlock className="w-4 h-4" />
+                <div className="flex gap-3 pt-6 border-t border-gray-100">
+                  <button className="flex-1 bg-emerald-600 text-white py-3 rounded-xl hover:bg-emerald-700 transition-all font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-emerald-200">
+                    <Unlock className="w-4 h-4" />
                     Release Funds
                   </button>
-                  <button className="flex-1 bg-red-600 text-white py-2.5 rounded-lg hover:bg-red-700 transition-colors font-medium flex items-center justify-center gap-2">
-                    <FaExclamationTriangle className="w-4 h-4" />
+                  <button className="flex-1 bg-white
+                   text-red-600 border border-red-100 py-3 rounded-xl hover:bg-red-50 transition-all font-bold text-sm flex items-center justify-center gap-2">
+                    <AlertTriangle className="w-4 h-4" />
                     Raise Dispute
                   </button>
                 </div>

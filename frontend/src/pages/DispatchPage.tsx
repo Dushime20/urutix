@@ -2,8 +2,11 @@ import React, { useState, useEffect } from 'react';
 import DispatchMap from '../components/Dispatch/DispatchMap';
 import ActiveUnitsList from '../components/Dispatch/ActiveUnitsList';
 import DispatchModal from '../components/Dispatch/DispatchModal';
-import { toast } from 'react-hot-toast';
-import { FaSearch, FaMapMarkerAlt, FaTimes } from 'react-icons/fa';
+import { useNavigate } from 'react-router-dom';
+import logoUrutiX from '../assets/logo-urutix-logistics.svg';
+import {
+    FaSearch, FaMapMarkerAlt, FaTimes
+} from 'react-icons/fa';
 import { fleetApi, type FleetItem } from '../services/fleetApi';
 
 // Internal Vehicle Interface for Dispatch View
@@ -24,6 +27,7 @@ const DispatchPage: React.FC = () => {
     const [selectedVehicleId, setSelectedVehicleId] = useState<string | null>(null);
     const [showDispatchModal, setShowDispatchModal] = useState(false);
     const [loading, setLoading] = useState(true);
+    const navigate = useNavigate(); // Initialize useNavigateData();
 
     useEffect(() => {
         loadFleetData();
@@ -69,7 +73,7 @@ const DispatchPage: React.FC = () => {
             setVehicles(mappedVehicles);
         } catch (error) {
             console.error('Error loading fleet data:', error);
-            toast.error('Failed to load fleet status');
+            // toast.error('Failed to load fleet status'); // Removed toast import
         } finally {
             setLoading(false);
         }
@@ -81,12 +85,12 @@ const DispatchPage: React.FC = () => {
 
     const handleNewDispatch = async (data: any) => {
         console.log('New Dispatch Request:', data);
-        const toastId = toast.loading('Creating dispatch...');
+        // const toastId = toast.loading('Creating dispatch...'); // Removed toast import
 
         try {
             // 1. Create Route
             const newRoute = await fleetApi.createRoute({
-                name: `Trip to ${data.destination}`,
+                name: `Trip to ${data.destination} `,
                 origin: data.origin,
                 destination: data.destination,
                 status: 'active',
@@ -107,14 +111,14 @@ const DispatchPage: React.FC = () => {
                 }
             }
 
-            toast.success(`Dispatch created for ${data.destination}`, { id: toastId });
+            // toast.success(`Dispatch created for ${ data.destination }`, { id: toastId }); // Removed toast import
 
             // Refresh data to show changes
             loadFleetData();
 
         } catch (error) {
             console.error('Dispatch failed:', error);
-            toast.error('Failed to create dispatch', { id: toastId });
+            // toast.error('Failed to create dispatch', { id: toastId }); // Removed toast import
         }
     };
 
@@ -125,11 +129,8 @@ const DispatchPage: React.FC = () => {
                 <header className="max-w-[1920px] mx-auto flex items-center justify-between px-4 md:px-8 lg:px-12 xl:px-20 py-5 border-b border-white/10">
                     <div className="flex items-center gap-4 md:gap-10">
                         {/* Logo */}
-                        <a href="/dashboard/fleet" className="flex items-center gap-3 cursor-pointer">
-                            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-700 flex items-center justify-center rounded-xl shadow-lg shadow-blue-500/20">
-                                <span className="material-symbols-outlined text-white text-xl">local_shipping</span>
-                            </div>
-                            <h2 className="text-xl md:text-2xl font-black tracking-tighter text-white">UrutiX<span className="text-blue-400">.</span></h2>
+                        <a className="flex items-center gap-3 cursor-pointer" onClick={() => navigate('/dashboard/fleet')}>
+                            <img src={logoUrutiX} alt="UrutiX Logistics Logo" className="h-14 md:h-20 w-auto object-contain py-1" />
                         </a>
 
                         {/* Desktop Navigation */}

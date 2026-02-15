@@ -1,9 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import * as Tesseract from 'tesseract.js';
-import * as pdfParse from 'pdf-parse';
+const pdfParse = require('pdf-parse');
 import axios from 'axios';
 import { createWorker } from 'tesseract.js';
-import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -26,34 +25,7 @@ export class OcrService {
       // Download PDF and extract text from all pages
       const response = await axios.get(url, { responseType: 'arraybuffer' });
       const data = await pdfParse(response.data);
-      if (data.text && data.text.trim().length > 0) {
-        return { text: data.text };
-      } else {
-        // Fallback: render each page as image and OCR
-        if (!createCanvas) {
-          throw new Error(
-            'Canvas module not available. Cannot perform PDF OCR. Please install canvas: npm install canvas',
-          );
-        }
-        const loadingTask = pdfjsLib.getDocument({ data: response.data });
-        const pdf = await loadingTask.promise;
-        let fullText = '';
-        const worker = await createWorker('eng');
-        for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-          const page = await pdf.getPage(pageNum);
-          const viewport = page.getViewport({ scale: 2 });
-          const canvas = createCanvas(viewport.width, viewport.height);
-          const context = canvas.getContext('2d') as any;
-          await page.render({ canvasContext: context, viewport }).promise;
-          const imageDataUrl = canvas.toDataURL();
-          const {
-            data: { text },
-          } = await worker.recognize(imageDataUrl);
-          fullText += `\n--- Page ${pageNum} ---\n` + text;
-        }
-        await worker.terminate();
-        return { text: fullText };
-      }
+      return { text: data.text || '' };
     } else {
       // For images, use Tesseract
       const worker = await createWorker('eng');
@@ -84,51 +56,9 @@ export class OcrService {
       if (file.mimetype === 'application/pdf') {
         try {
           const data = await pdfParse(fileBuffer);
-          if (data.text && data.text.trim().length > 0) {
-            return { text: data.text, confidence: 0.9 };
-          }
+          return { text: data.text || '', confidence: 0.9 };
         } catch (pdfError) {
-          console.warn(
-            'PDF text extraction failed, falling back to OCR:',
-            pdfError,
-          );
-        }
-
-        // Fallback: render PDF as images and OCR
-        try {
-          if (!createCanvas) {
-            throw new Error(
-              'Canvas module not available. Cannot perform PDF OCR. Please install canvas: npm install canvas',
-            );
-          }
-          const loadingTask = pdfjsLib.getDocument({ data: fileBuffer });
-          const pdf = await loadingTask.promise;
-          let fullText = '';
-          let totalConfidence = 0;
-          let pageCount = 0;
-
-          const worker = await createWorker('eng');
-          for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-            const page = await pdf.getPage(pageNum);
-            const viewport = page.getViewport({ scale: 2 });
-            const canvas = createCanvas(viewport.width, viewport.height);
-            const context = canvas.getContext('2d') as any;
-            await page.render({ canvasContext: context, viewport }).promise;
-            const imageDataUrl = canvas.toDataURL();
-            const {
-              data: { text, confidence },
-            } = await worker.recognize(imageDataUrl);
-            fullText += `\n--- Page ${pageNum} ---\n` + text;
-            totalConfidence += confidence;
-            pageCount++;
-          }
-          await worker.terminate();
-          return {
-            text: fullText,
-            confidence: totalConfidence / pageCount || 0.5,
-          };
-        } catch (ocrError) {
-          console.error('PDF OCR failed:', ocrError);
+          console.error('PDF text extraction failed:', pdfError);
           throw new Error('Failed to extract text from PDF');
         }
       } else {

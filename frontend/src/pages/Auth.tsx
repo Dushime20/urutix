@@ -60,7 +60,7 @@ const Auth = () => {
   const [selectedTenantId, setSelectedTenantId] = useState<string>('');
   const [loginEmailError, setLoginEmailError] = useState<string | null>(null);
   const [registerEmailError, setRegisterEmailError] = useState<string | null>(null);
-  
+
   // Password validation criteria
   const [passwordCriteria, setPasswordCriteria] = useState({
     minLength: false,
@@ -71,13 +71,13 @@ const Auth = () => {
   });
 
   // Fetch active tenants for dropdown (for both CARGO_OWNER and TRUCK_OWNER)
-  const { data: tenantsData, isLoading: isLoadingTenants, refetch: refetchTenants } = useQuery({
+  const { data: tenantsData, isLoading: isLoadingTenants } = useQuery({
     queryKey: ['active-tenants'],
     queryFn: async () => {
       const response = await tenantAPI.searchTenants({});
       // Extract tenants from response
       let allTenants: Tenant[] = [];
-      
+
       if (response.data?.success && response.data?.data?.results) {
         allTenants = response.data.data.results;
       } else if (response.data?.data?.results) {
@@ -87,17 +87,17 @@ const Auth = () => {
       } else if (response.data?.data && Array.isArray(response.data.data)) {
         allTenants = response.data.data;
       }
-      
+
       // Filter to only show ACTIVE tenants
       const activeTenants = allTenants.filter((tenant: Tenant) => {
         // Check for different status formats
         const status = tenant.status?.toUpperCase();
         return status === 'ACTIVE' || status === 'active';
       });
-      
+
       console.log('📋 Total tenants fetched:', allTenants.length);
       console.log('✅ Active tenants available for signup:', activeTenants.length);
-      
+
       return activeTenants;
     },
     enabled: true, // Always fetch tenants for both user types
@@ -214,7 +214,7 @@ const Auth = () => {
     try {
       setError(null);
       setIsLoading(true);
-      
+
       // Validate tenant selection for both CARGO_OWNER and TRUCK_OWNER
       // selectedTenant should be set when user selects from dropdown
       if (!selectedTenant || !values.companyName) {
@@ -223,10 +223,10 @@ const Auth = () => {
         setIsLoading(false);
         return;
       }
-      
+
       // Use the selected tenant (already set from dropdown selection)
       const tenant = selectedTenant;
-      
+
       const user = await authRegister({
         email: values.email,
         password: values.password,
@@ -236,7 +236,7 @@ const Auth = () => {
         userType: values.userType,
         tenantId: tenant.id, // Use tenant ID
       });
-      
+
       if (user) {
         // Redirect CARGO_OWNER to login page
         if (user.role === 'CARGO_OWNER') {
@@ -247,7 +247,7 @@ const Auth = () => {
           setSelectedTenantId(''); // Clear selected tenant ID
           return; // Exit early, don't navigate
         }
-        
+
         // Role-based redirects for other user types
         switch (user.role) {
           case 'TRUCK_OWNER':
@@ -315,13 +315,15 @@ const Auth = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 relative overflow-hidden">
       {/* Full Page Background Logo */}
-      <img src={logoUrutiX} alt="UrutiX Logo Background" className="pointer-events-none select-none fixed inset-0 w-full h-full object-cover opacity-10 z-0" style={{objectPosition: 'center'}} />
+      <img src={logoUrutiX} alt="UrutiX Logo Background" className="pointer-events-none select-none fixed inset-0 w-full h-full object-cover opacity-10 z-0" style={{ objectPosition: 'center' }} />
       {/* Centered Auth Form */}
       <div className="w-full max-w-2xl px-4 sm:px-6 lg:px-8 relative z-10">
-        {/* Logo removed as per request */}
+        <div className="flex justify-center mb-8">
+          <img src={logoUrutiX} alt="UrutiX Logistics Logo" className="h-24 md:h-32 w-auto object-contain drop-shadow-lg" />
+        </div>
 
         {/* Form Container */}
-        <div className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
+        <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
           {/* Form Header */}
           <div className="px-6 pt-6 pb-4">
             <h2 className="text-xl font-bold text-gray-900 mb-1">
@@ -343,9 +345,8 @@ const Auth = () => {
                   <input
                     {...loginForm.register('email')}
                     type="email"
-                    className={`w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 ${
-                      loginEmailError ? 'border-red-500' : 'border-gray-300'
-                    }`}
+                    className={`w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 ${loginEmailError ? 'border-red-500' : 'border-gray-300'
+                      }`}
                     placeholder="Enter your email"
                     required
                     onBlur={(e) => {
@@ -394,6 +395,16 @@ const Auth = () => {
                   {loginForm.formState.errors.password && (
                     <p className="mt-2 text-sm text-red-600">{loginForm.formState.errors.password.message}</p>
                   )}
+                </div>
+
+                <div className="flex items-center justify-end">
+                  <button
+                    type="button"
+                    onClick={() => navigate('/forgot-password')}
+                    className="text-xs text-primary-600 hover:text-primary-500 font-medium transition-colors"
+                  >
+                    <TranslatedText text="Forgot password?" />
+                  </button>
                 </div>
 
                 {error && (
@@ -450,11 +461,10 @@ const Auth = () => {
                           setSelectedTenantId('');
                           registerForm.setValue('companyName', '');
                         }}
-                        className={`p-3 rounded-lg border-2 transition-all duration-200 ${
-                          selectedUserType === type.id
-                            ? `${type.borderColor} ${type.bgColor} border-opacity-100`
-                            : 'border-gray-200 hover:border-gray-300 bg-white'
-                        }`}
+                        className={`p-3 rounded-lg border-2 transition-all duration-200 ${selectedUserType === type.id
+                          ? `${type.borderColor} ${type.bgColor} border-opacity-100`
+                          : 'border-gray-200 hover:border-gray-300 bg-white'
+                          }`}
                       >
                         <div className="flex flex-col items-center space-y-1">
                           <type.icon className={`h-5 w-5 ${selectedUserType === type.id ? type.textColor : type.textColor}`} />
@@ -537,27 +547,26 @@ const Auth = () => {
                                   registerForm.setValue('companyName', '', { shouldValidate: true });
                                 }
                               }}
-                              className={`w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white ${
-                                registerForm.formState.errors.companyName
-                                  ? 'border-red-500'
-                                  : 'border-gray-300'
-                              }`}
+                              className={`w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white ${registerForm.formState.errors.companyName
+                                ? 'border-red-500'
+                                : 'border-gray-300'
+                                }`}
                             >
-                            <option value="" disabled>
-                              {isLoadingTenants ? 'Loading companies...' : 'Select a company...'}
-                            </option>
-                            {tenants.map((tenant: Tenant) => (
-                              <option key={tenant.id} value={tenant.id}>
-                                {tenant.name}
-                                {tenant.city && tenant.country
-                                  ? ` - ${tenant.city}, ${tenant.country}`
-                                  : tenant.city
-                                    ? ` - ${tenant.city}`
-                                    : tenant.country
-                                      ? ` - ${tenant.country}`
-                                      : ''}
+                              <option value="" disabled>
+                                {isLoadingTenants ? 'Loading companies...' : 'Select a company...'}
                               </option>
-                            ))}
+                              {tenants.map((tenant: Tenant) => (
+                                <option key={tenant.id} value={tenant.id}>
+                                  {tenant.name}
+                                  {tenant.city && tenant.country
+                                    ? ` - ${tenant.city}, ${tenant.country}`
+                                    : tenant.city
+                                      ? ` - ${tenant.city}`
+                                      : tenant.country
+                                        ? ` - ${tenant.country}`
+                                        : ''}
+                                </option>
+                              ))}
                             </select>
                           </>
                         )}
@@ -585,7 +594,7 @@ const Auth = () => {
                         )}
                       </div>
                     )}
-                    
+
                     {/* Company Name - For TRUCK_OWNER (selectable dropdown) */}
                     {selectedUserType === 'TRUCK_OWNER' && (
                       <div>
@@ -631,27 +640,26 @@ const Auth = () => {
                                   registerForm.setValue('companyName', '', { shouldValidate: true });
                                 }
                               }}
-                              className={`w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white ${
-                                registerForm.formState.errors.companyName
-                                  ? 'border-red-500'
-                                  : 'border-gray-300'
-                              }`}
+                              className={`w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white ${registerForm.formState.errors.companyName
+                                ? 'border-red-500'
+                                : 'border-gray-300'
+                                }`}
                             >
-                            <option value="" disabled>
-                              {isLoadingTenants ? 'Loading companies...' : 'Select a company...'}
-                            </option>
-                            {tenants.map((tenant: Tenant) => (
-                              <option key={tenant.id} value={tenant.id}>
-                                {tenant.name}
-                                {tenant.city && tenant.country
-                                  ? ` - ${tenant.city}, ${tenant.country}`
-                                  : tenant.city
-                                    ? ` - ${tenant.city}`
-                                    : tenant.country
-                                      ? ` - ${tenant.country}`
-                                      : ''}
+                              <option value="" disabled>
+                                {isLoadingTenants ? 'Loading companies...' : 'Select a company...'}
                               </option>
-                            ))}
+                              {tenants.map((tenant: Tenant) => (
+                                <option key={tenant.id} value={tenant.id}>
+                                  {tenant.name}
+                                  {tenant.city && tenant.country
+                                    ? ` - ${tenant.city}, ${tenant.country}`
+                                    : tenant.city
+                                      ? ` - ${tenant.city}`
+                                      : tenant.country
+                                        ? ` - ${tenant.country}`
+                                        : ''}
+                                </option>
+                              ))}
                             </select>
                           </>
                         )}
@@ -785,9 +793,8 @@ const Auth = () => {
                       <input
                         {...registerForm.register('email')}
                         type="email"
-                        className={`w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 ${
-                          registerEmailError ? 'border-red-500' : 'border-gray-300'
-                        }`}
+                        className={`w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 ${registerEmailError ? 'border-red-500' : 'border-gray-300'
+                          }`}
                         placeholder="Enter your email"
                         onBlur={(e) => {
                           const emailValue = e.target.value.trim();
