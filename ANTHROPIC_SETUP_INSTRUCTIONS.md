@@ -18,8 +18,9 @@ Your AI Email Assistant has been migrated to Anthropic Claude, but needs credits
 
 Your API key is already configured in `backend/.env`:
 ```
-ANTHROPIC_API_KEY=[REDACTED]
+ANTHROPIC_API_KEY=your_api_key_here
 ```
+(The actual key is stored securely in your .env file)
 
 ### Step 3: Test the Integration
 

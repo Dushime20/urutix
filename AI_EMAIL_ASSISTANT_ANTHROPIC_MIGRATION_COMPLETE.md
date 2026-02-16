@@ -18,7 +18,7 @@ The AI Email Assistant has been successfully migrated from Google Gemini to Anth
 
 ### 2. Environment Configuration (`backend/.env`)
 - ✅ Replaced `GEMINI_API_KEY` with `ANTHROPIC_API_KEY`
-- ✅ API key configured: `[REDACTED]`
+- ✅ API key configured (stored securely in .env file)
 
 ### 3. Package Dependencies (`backend/package.json`)
 - ✅ Installed: `@anthropic-ai/sdk@^0.74.0`
