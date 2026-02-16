@@ -293,7 +293,7 @@ export class DocumentController {
     if (!tenantId) {
       throw new BadRequestException('Tenant ID is required');
     }
-    const result = await this.documentService.getDocuments(filterDto, tenantId);
+    const result = await this.documentService.getDocuments(filterDto, req.user);
 
     // Calculate pagination info for frontend compatibility
     const page = filterDto.page || 1;
@@ -416,8 +416,12 @@ export class DocumentController {
       },
     },
   })
-  async getDocumentStatistics(@Req() req: Request): Promise<any> {
-    return this.documentService.getDocumentStatistics(req.user.tenantId);
+  @ApiQuery({ name: 'entityType', required: false })
+  async getDocumentStatistics(
+    @Query('entityType') entityType: string,
+    @Req() req: Request
+  ): Promise<any> {
+    return this.documentService.getDocumentStatistics(req.user.tenantId, entityType);
   }
 
   @Get('entity/:entityType/:entityId')
@@ -603,7 +607,13 @@ export class DocumentController {
   }
 
   @Post(':id/archive')
-  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN, UserRole.TRUCK_OWNER)
+  @Roles(
+    UserRole.ADMIN,
+    UserRole.SUPER_ADMIN,
+    UserRole.TRUCK_OWNER,
+    UserRole.CARGO_OWNER,
+    UserRole.DRIVER,
+  )
   @ApiOperation({
     summary: 'Archive document',
     description: 'Archive a document (soft delete)',
@@ -626,7 +636,13 @@ export class DocumentController {
   }
 
   @Delete(':id')
-  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  @Roles(
+    UserRole.ADMIN,
+    UserRole.SUPER_ADMIN,
+    UserRole.CARGO_OWNER,
+    UserRole.TRUCK_OWNER,
+    UserRole.DRIVER,
+  )
   @ApiOperation({
     summary: 'Delete document',
     description:
@@ -683,6 +699,7 @@ export class DocumentController {
     UserRole.SUPER_ADMIN,
     UserRole.TRUCK_OWNER,
     UserRole.DRIVER,
+    UserRole.CARGO_OWNER,
   )
   @ApiOperation({
     summary: 'Download document',

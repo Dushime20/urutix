@@ -6,17 +6,13 @@ import {
   Truck, 
   DollarSign, 
   Shield, 
-  Navigation, 
   MessageSquare, 
   FileText,
-  TrendingUp,
-  AlertTriangle,
-  CheckCircle,
-  Calendar,
   Route,
   User,
   Settings,
-  Package
+  Package,
+  LogOut
 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../../contexts/AuthContext';
@@ -30,10 +26,12 @@ import { QuickActions } from './QuickActions';
 import { NotificationsPanel } from './NotificationsPanel';
 import { CargoManagement } from './CargoManagement';
 import DriverTrips from './DriverTrips';
+import { DriverProfile } from './DriverProfile';
+import { DriverSettings } from './DriverSettings';
 import { TranslatedText } from '../translated-text';
 
 const DriverDashboard: React.FC = () => {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const [activeTab, setActiveTab] = useState('overview');
   const [driverId, setDriverId] = useState<string>('');
   const location = useLocation();
@@ -82,6 +80,8 @@ const DriverDashboard: React.FC = () => {
       setActiveTab('messages');
     } else if (location.pathname.endsWith('/settings')) {
       setActiveTab('settings');
+    } else if (location.pathname.endsWith('/profile')) {
+      setActiveTab('profile');
     }
   }, [location.pathname]);
 
@@ -93,7 +93,7 @@ const DriverDashboard: React.FC = () => {
   });
 
   // Fetch current trip
-  const { data: currentTrip, isLoading: tripLoading } = useQuery({
+  const { data: currentTrip } = useQuery({
     queryKey: ['driver-current-trip', driverId],
     queryFn: () => driverApi.getCurrentTrip(driverId),
     enabled: !!driverId,
@@ -129,6 +129,7 @@ const DriverDashboard: React.FC = () => {
     { id: 'safety', label: 'Safety', icon: Shield },
     { id: 'documents', label: 'Documents', icon: FileText },
     { id: 'messages', label: 'Messages', icon: MessageSquare },
+    { id: 'profile', label: 'Profile', icon: User },
     { id: 'settings', label: 'Settings', icon: Settings },
   ];
 
@@ -171,6 +172,14 @@ const DriverDashboard: React.FC = () => {
                 <Clock className="w-4 h-4" />
                 <span>{new Date().toLocaleTimeString()}</span>
               </div>
+              <button
+                onClick={logout}
+                className="flex items-center space-x-2 px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                title="Logout"
+              >
+                <LogOut className="w-4 h-4" />
+                <span className="hidden sm:inline"><TranslatedText text="Logout" /></span>
+              </button>
             </div>
           </div>
         </div>
@@ -207,7 +216,7 @@ const DriverDashboard: React.FC = () => {
           <div className="space-y-6">
             {/* Current Trip Status */}
             {currentTrip && (
-              <CurrentTrip trip={currentTrip} />
+              <CurrentTrip trip={currentTrip as any} />
             )}
 
             {/* Quick Stats */}
@@ -217,7 +226,7 @@ const DriverDashboard: React.FC = () => {
             <QuickActions driverId={driverId} />
 
             {/* Upcoming Trips */}
-            <UpcomingTrips trips={upcomingTrips} loading={upcomingLoading} />
+            <UpcomingTrips trips={upcomingTrips as any} loading={upcomingLoading} />
 
             {/* Recent Notifications */}
             <NotificationsPanel notifications={notifications} loading={notificationsLoading} />
@@ -279,12 +288,15 @@ const DriverDashboard: React.FC = () => {
           </div>
         )}
 
+        {activeTab === 'profile' && (
+          <div className="space-y-6">
+            <DriverProfile driver={driver} loading={driverLoading} />
+          </div>
+        )}
+
         {activeTab === 'settings' && (
           <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-gray-900">Settings & Preferences</h2>
-            <div className="bg-white rounded-lg shadow p-6">
-              <p className="text-gray-500">Settings features coming soon...</p>
-            </div>
+            <DriverSettings />
           </div>
         )}
       </div>

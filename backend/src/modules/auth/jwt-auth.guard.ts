@@ -1,4 +1,4 @@
-import { ExecutionContext, Injectable } from '@nestjs/common';
+import { ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { AuthGuard } from '@nestjs/passport';
 import { IS_PUBLIC_KEY } from '../../common/decorators/public.decorator';
@@ -18,5 +18,18 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
       return true;
     }
     return super.canActivate(context);
+  }
+
+  handleRequest(err: any, user: any, info: any) {
+    if (err || !user) {
+      console.log('❌ JwtAuthGuard Authorization Failed:', {
+        error: err?.message,
+        info: info?.message || info,
+        userAttached: !!user
+      });
+      // You can throw a custom exception here to give the frontend more info
+      throw err || new UnauthorizedException();
+    }
+    return user;
   }
 }

@@ -44,7 +44,12 @@ const Payments = () => {
               </p>
             </div>
           </div>
-          <button className="bg-blue-600 text-white px-3 py-1.5 text-sm rounded-lg hover:bg-blue-700 flex items-center gap-1.5 transition-colors">
+          <button 
+            className="text-white px-3 py-1.5 text-sm rounded-lg flex items-center gap-1.5 transition-colors"
+            style={{ backgroundColor: '#345E85' }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#2A4D6E'}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#345E85'}
+          >
             <Plus className="w-3.5 h-3.5" />
             <TranslatedText text="New Payment" />
           </button>

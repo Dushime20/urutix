@@ -5,7 +5,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Lock, CheckCircle2, Circle, CheckCircle } from 'lucide-react';
 import { FaEye, FaEyeSlash, FaSpinner } from 'react-icons/fa';
-import logoUrutiX from '../assets/logo-urutix.svg';
+import logoUrutiXLegacy from '../assets/logo-urutix.svg';
+import logoUrutiXNew from '../assets/logo-urutix-logistics.svg';
 import { authAPI } from '../services/api';
 import toast from 'react-hot-toast';
 
@@ -106,7 +107,7 @@ const ResetPassword = () => {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 relative overflow-hidden">
       {/* Background Logo */}
       <img
-        src={logoUrutiX}
+        src={logoUrutiXLegacy}
         alt="UrutiX Logo Background"
         className="pointer-events-none select-none fixed inset-0 w-full h-full object-cover opacity-10 z-0"
         style={{ objectPosition: 'center' }}
@@ -115,7 +116,7 @@ const ResetPassword = () => {
       {/* Centered Form */}
       <div className="w-full max-w-md px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="flex justify-center mb-8">
-          <img src={logoUrutiX} alt="UrutiX Logistics Logo" className="h-24 w-auto object-contain drop-shadow-md" />
+          <img src={logoUrutiXNew} alt="UrutiX Logistics Logo" className="h-24 w-auto object-contain drop-shadow-md" />
         </div>
 
         <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">

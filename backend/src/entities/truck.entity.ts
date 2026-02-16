@@ -6,6 +6,7 @@ import {
   UpdateDateColumn,
   DeleteDateColumn,
   ManyToOne,
+  JoinColumn,
   Index,
 } from 'typeorm';
 import { User } from './user.entity';
@@ -658,6 +659,9 @@ export class Truck {
   })
   currentLocation?: object;
 
+  @Column({ name: 'current_address', nullable: true })
+  currentAddress?: string;
+
   @Column({ nullable: true })
   locationUpdatedAt?: Date;
 
@@ -759,5 +763,6 @@ export class Truck {
 
   // Relations
   @ManyToOne('User', 'trucks')
+  @JoinColumn({ name: 'ownerId' })
   owner: User;
 }

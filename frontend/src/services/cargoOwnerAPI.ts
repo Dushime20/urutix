@@ -54,6 +54,10 @@ export const cargoOwnerAPI = {
   // Scoring Factors
   getScoringFactors: () =>
     api.get('/matching/scoring-factors'),
+
+  // Dashboard Analytics
+  getDashboardAnalytics: (period: string = '30d') => 
+    api.get('/loads-v2/analytics/dashboard', { params: { period } }),
 };
 
 // Types for the API responses

@@ -105,6 +105,9 @@ const LocationItem: React.FC<LocationItemProps> = ({
   };
 
   const getButtonText = () => {
+    if (type === "pickup") {
+      return location ? "Change Pickup" : "Select Pickup Location";
+    }
     return location ? "Change Delivery" : "Select Delivery Location";
   };
 

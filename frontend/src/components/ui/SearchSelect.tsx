@@ -296,7 +296,7 @@ const SearchSelect: React.FC<SearchSelectProps> = ({
 
       {/* Dropdown */}
       {isOpen && (
-        <div className={`absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg ${dropdownClassName}`}>
+        <div className={`absolute z-[13000] w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg ${dropdownClassName}`}>
           {/* Search Input */}
           {showSearch && (
             <div className="p-3 border-b border-gray-200">

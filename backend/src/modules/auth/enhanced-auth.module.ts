@@ -52,7 +52,7 @@ import { SystemSettingsService } from '../../services/system-settings.service';
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
         secret: configService.get<string>('JWT_SECRET') || 'your-secret-key',
-        signOptions: { expiresIn: '15m' },
+        signOptions: { expiresIn: '24h' }, // 24 hours session duration
       }),
       inject: [ConfigService],
     }),

@@ -6,11 +6,16 @@ import BidHistory from './BidHistory';
 import CreateAuction from './CreateAuction';
 import BidAnalytics from './BidAnalytics';
 
+import { formatCurrency } from '../../utils/formatNumber';
+
+import { useLocation } from 'react-router-dom';
+
 interface BiddingDashboardProps {
   userRole: 'CARGO_OWNER' | 'TRUCK_OWNER';
 }
 
 const BiddingDashboard: React.FC<BiddingDashboardProps> = ({ userRole }) => {
+  const location = useLocation();
   const [activeTab, setActiveTab] = useState('auctions');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -20,6 +25,14 @@ const BiddingDashboard: React.FC<BiddingDashboardProps> = ({ userRole }) => {
     totalValue: 0,
     successRate: 0,
   });
+
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const viewParam = searchParams.get('view');
+    if (viewParam) {
+      setActiveTab(viewParam);
+    }
+  }, [location.search]);
 
   useEffect(() => {
     loadDashboardStats();

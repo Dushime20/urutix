@@ -6,11 +6,10 @@ import BrokerOnboardingTour from '../../components/Onboarding/BrokerOnboardingTo
 import { useBrokerOnboardingStore } from '../../stores/brokerOnboardingStore';
 import DashboardHeader from '../../components/Layout/DashboardHeader';
 import DashboardFooter from '../../components/Layout/DashboardFooter';
-import { 
-  Package, 
-  DollarSign, 
-  TrendingUp, 
-  AlertCircle, 
+import {
+  Package,
+  DollarSign,
+  TrendingUp,
   CheckCircle2,
   Clock,
   ArrowRight,
@@ -18,13 +17,11 @@ import {
   Zap,
   Target,
   Sparkles,
-  MessageSquare,
   Shield,
   FileText,
   BarChart3,
   MapPin,
-  Truck,
-  Users
+  Truck
 } from 'lucide-react';
 
 const BrokerDashboard: React.FC = () => {
@@ -52,13 +49,13 @@ const BrokerDashboard: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
-      
+
       // Load statistics and recent loads in parallel
       const [statsResponse, loadsResponse] = await Promise.all([
         brokerAPI.getBrokerStatistics(user!.id),
         brokerAPI.getBrokerLoads(user!.id, { limit: 5, status: 'ACTIVE' })
       ]);
-      
+
       setStatistics(statsResponse.data);
       setRecentLoads(loadsResponse.data || []);
     } catch (err: any) {
@@ -121,7 +118,7 @@ const BrokerDashboard: React.FC = () => {
           </div>
           <h2 className="text-xl font-bold text-gray-900">Smart Insights for Today</h2>
         </div>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* Hot Route Alert */}
           <div className="bg-white rounded-lg p-4 border border-orange-200 hover:shadow-md transition-shadow">
@@ -185,7 +182,7 @@ const BrokerDashboard: React.FC = () => {
             </div>
             <h2 className="text-xl font-bold text-gray-900">Priority Actions</h2>
           </div>
-          
+
           <div className="space-y-3">
             <div className="bg-white rounded-lg p-4 flex items-center justify-between hover:shadow-md transition-shadow">
               <div className="flex items-center gap-3">
@@ -208,7 +205,7 @@ const BrokerDashboard: React.FC = () => {
                   <p className="text-xs text-gray-500">1 contract waiting for your signature</p>
                 </div>
               </div>
-              <button 
+              <button
                 onClick={() => navigate('/dashboard/broker/contracts')}
                 className="px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-xs font-medium"
               >
@@ -291,8 +288,9 @@ const BrokerDashboard: React.FC = () => {
         <h2 className="text-xl font-bold text-gray-900 mb-4">Quick Actions</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Cargo Discovery */}
-          <div 
-            className="bg-gradient-to-br from-orange-500 to-rose-600 rounded-xl shadow-lg p-6 cursor-pointer hover:shadow-xl hover:scale-105 transition-all text-white"
+          <div
+            className="rounded-xl shadow-lg p-6 cursor-pointer hover:shadow-xl hover:scale-105 transition-all text-white"
+            style={{ background: '#345E85' }}
             onClick={() => navigate('/dashboard/broker/discovery')}
           >
             <div className="bg-white/20 rounded-lg p-3 w-fit mb-3">
@@ -308,7 +306,7 @@ const BrokerDashboard: React.FC = () => {
           </div>
 
           {/* Smart Matching */}
-          <div 
+          <div
             className="bg-gradient-to-br from-violet-500 to-purple-600 rounded-xl shadow-lg p-6 cursor-pointer hover:shadow-xl hover:scale-105 transition-all text-white"
             onClick={() => navigate('/dashboard/broker/smart-matching')}
           >
@@ -325,7 +323,7 @@ const BrokerDashboard: React.FC = () => {
           </div>
 
           {/* My Loads */}
-          <div 
+          <div
             className="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl shadow-lg p-6 cursor-pointer hover:shadow-xl hover:scale-105 transition-all text-white"
             onClick={() => navigate('/dashboard/broker/loads')}
           >
@@ -342,7 +340,7 @@ const BrokerDashboard: React.FC = () => {
           </div>
 
           {/* Commissions */}
-          <div 
+          <div
             className="bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl shadow-lg p-6 cursor-pointer hover:shadow-xl hover:scale-105 transition-all text-white"
             onClick={() => navigate('/dashboard/broker/commissions')}
           >
@@ -373,7 +371,7 @@ const BrokerDashboard: React.FC = () => {
               View All
             </button>
           </div>
-          
+
           {recentLoads.length > 0 ? (
             <div className="space-y-3">
               {recentLoads.slice(0, 3).map((load) => (
@@ -389,11 +387,10 @@ const BrokerDashboard: React.FC = () => {
                         {load.pickupLocation} → {load.deliveryLocation}
                       </p>
                     </div>
-                    <span className={`px-2 py-1 text-xs rounded-full ${
-                      load.status === 'ACTIVE' 
-                        ? 'bg-emerald-100 text-emerald-800'
-                        : 'bg-gray-100 text-gray-800'
-                    }`}>
+                    <span className={`px-2 py-1 text-xs rounded-full ${load.status === 'ACTIVE'
+                      ? 'bg-emerald-100 text-emerald-800'
+                      : 'bg-gray-100 text-gray-800'
+                      }`}>
                       {load.status}
                     </span>
                   </div>
@@ -426,7 +423,7 @@ const BrokerDashboard: React.FC = () => {
         <div className="bg-white rounded-xl shadow-sm p-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Professional Services</h2>
           <div className="space-y-3">
-            <div 
+            <div
               onClick={() => navigate('/dashboard/broker/contracts')}
               className="p-4 bg-gradient-to-r from-blue-50 to-white rounded-lg border border-blue-200 hover:border-blue-400 hover:shadow-md transition-all cursor-pointer"
             >
@@ -442,7 +439,7 @@ const BrokerDashboard: React.FC = () => {
               </div>
             </div>
 
-            <div 
+            <div
               onClick={() => navigate('/dashboard/broker/insurance')}
               className="p-4 bg-gradient-to-r from-emerald-50 to-white rounded-lg border border-emerald-200 hover:border-emerald-400 hover:shadow-md transition-all cursor-pointer"
             >
@@ -458,7 +455,7 @@ const BrokerDashboard: React.FC = () => {
               </div>
             </div>
 
-            <div 
+            <div
               onClick={() => navigate('/dashboard/broker/escrow')}
               className="p-4 bg-gradient-to-r from-violet-50 to-white rounded-lg border border-violet-200 hover:border-violet-400 hover:shadow-md transition-all cursor-pointer"
             >
@@ -474,7 +471,7 @@ const BrokerDashboard: React.FC = () => {
               </div>
             </div>
 
-            <div 
+            <div
               onClick={() => navigate('/dashboard/broker/market-intelligence')}
               className="p-4 bg-gradient-to-r from-amber-50 to-white rounded-lg border border-amber-200 hover:border-amber-400 hover:shadow-md transition-all cursor-pointer"
             >
@@ -508,7 +505,7 @@ const BrokerDashboard: React.FC = () => {
         {/* Decorative Background */}
         <div className="absolute top-0 right-0 w-64 sm:w-96 h-64 sm:h-96 bg-orange-500/10 rounded-full blur-3xl -mr-8 sm:-mr-16 -mt-8 sm:-mt-16 pointer-events-none"></div>
         <div className="absolute bottom-0 left-0 w-48 sm:w-64 h-48 sm:h-64 bg-rose-500/10 rounded-full blur-3xl -ml-8 sm:-ml-16 -mb-8 sm:-mb-16 pointer-events-none"></div>
-        
+
         <div className="relative z-10 max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 pt-8 sm:pt-12 pb-3 sm:pb-4">
           {/* Welcome Message */}
           <div className="mb-4 sm:mb-6">
@@ -516,7 +513,11 @@ const BrokerDashboard: React.FC = () => {
               {(() => {
                 const hour = new Date().getHours();
                 const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
-                return `${greeting}, ${user?.firstName || 'Broker'}!`;
+                // Get firstName from user object, fallback to profile.firstName, then to 'Broker'
+                const firstName = (user?.firstName && user.firstName.trim()) || 
+                                  ((user as any)?.profile?.firstName && (user as any).profile.firstName.trim()) || 
+                                  'Broker';
+                return `${greeting}, ${firstName}!`;
               })()}
             </h1>
             <p className="text-gray-300 text-sm sm:text-base">
@@ -541,9 +542,8 @@ const BrokerDashboard: React.FC = () => {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`pb-2.5 sm:pb-3 relative transition-colors whitespace-nowrap flex-shrink-0 px-2 sm:px-0 touch-manipulation min-h-[44px] sm:min-h-0 flex items-center ${
-                  activeTab === tab.id ? 'text-white' : 'text-gray-400 active:text-gray-300'
-                }`}
+                className={`pb-2.5 sm:pb-3 relative transition-colors whitespace-nowrap flex-shrink-0 px-2 sm:px-0 touch-manipulation min-h-[44px] sm:min-h-0 flex items-center ${activeTab === tab.id ? 'text-white' : 'text-gray-400 active:text-gray-300'
+                  }`}
               >
                 <span className="text-xs sm:text-sm">{tab.label}</span>
                 {activeTab === tab.id && (
@@ -558,7 +558,7 @@ const BrokerDashboard: React.FC = () => {
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 mt-0 sm:mt-2 relative z-20 min-h-[400px] sm:min-h-[500px] pb-6">
         {activeTab === 'Overview' && renderOverview()}
-        
+
         {activeTab === 'Loads' && (
           <div className="bg-white rounded-xl p-6 shadow-sm">
             <h2 className="text-xl font-bold mb-4">My Loads</h2>

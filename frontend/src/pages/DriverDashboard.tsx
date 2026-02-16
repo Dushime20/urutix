@@ -107,9 +107,73 @@ const DriverDashboard: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">Driver Dashboard</h1>
-        <p className="text-gray-600 mt-2">Welcome back, {user?.firstName}! Here's your driving overview.</p>
+      <div className="bg-white border-b border-gray-200 mb-6">
+        <div className="flex items-center justify-between px-6 py-4">
+          {/* Search Bar */}
+          <div className="flex items-center flex-1 max-w-md">
+            <div className="relative w-full">
+              <input
+                type="text"
+                placeholder="Search trips, routes..."
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-navy-500 focus:border-transparent"
+              />
+              <svg className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
+          </div>
+
+          {/* Right Side Icons */}
+          <div className="flex items-center gap-4">
+            <button className="p-2 hover:bg-gray-100 rounded-lg relative">
+              <Bell className="w-6 h-6 text-gray-600" />
+              <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+            </button>
+            <button className="flex items-center gap-2 p-2 hover:bg-gray-100 rounded-lg">
+              <div className="w-8 h-8 bg-navy-600 rounded-full flex items-center justify-center text-white font-semibold">
+                {user?.firstName?.charAt(0) || 'D'}
+              </div>
+            </button>
+          </div>
+        </div>
+
+        {/* Menu Tabs */}
+        <div className="flex items-center gap-8 px-6">
+          <button className="pb-3 border-b-2 border-navy-600 text-navy-600 font-medium">
+            Overview
+          </button>
+          <button className="pb-3 border-b-2 border-transparent text-gray-600 hover:text-gray-900">
+            Trips
+          </button>
+          <button className="pb-3 border-b-2 border-transparent text-gray-600 hover:text-gray-900">
+            Earnings
+          </button>
+          <button className="pb-3 border-b-2 border-transparent text-gray-600 hover:text-gray-900">
+            Documents
+          </button>
+          <button className="pb-3 border-b-2 border-transparent text-gray-600 hover:text-gray-900">
+            Safety
+          </button>
+          <button className="pb-3 border-b-2 border-transparent text-gray-600 hover:text-gray-900">
+            Help
+          </button>
+        </div>
+      </div>
+
+      {/* Greeting Section */}
+      <div className="px-6 pt-6">
+          <h1 className="text-2xl font-bold text-gray-900">
+            {(() => {
+              const hour = new Date().getHours();
+              const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
+              // Get firstName from user object, fallback to profile.firstName, then to 'Driver'
+              const firstName = (user?.firstName && user.firstName.trim()) || 
+                                ((user as any)?.profile?.firstName && (user as any).profile.firstName.trim()) || 
+                                'Driver';
+              return `${greeting}, ${firstName}`;
+            })()}
+          </h1>
+          <p className="text-gray-500">Here's your activity overview</p>
       </div>
 
       {/* Stats Cards */}

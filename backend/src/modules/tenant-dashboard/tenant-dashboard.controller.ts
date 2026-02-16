@@ -6,7 +6,7 @@ import {
   ApiParam,
   ApiQuery,
 } from '@nestjs/swagger';
-import { Response } from 'express';
+import * as express from 'express';
 import {
   TenantDashboardService,
   TenantMetrics,
@@ -147,7 +147,7 @@ export class TenantDashboardController {
     @Param('tenantId') tenantId: string,
     @Query('format') format: string = 'csv',
     @Query('timeRange') timeRange: string = '7d',
-    @Res() res: Response,
+    @Res() res: express.Response,
   ): Promise<void> {
     const options = { timeRange, dataType: 'dashboard' };
     const blob = await this.tenantDashboardService.exportTenantData(

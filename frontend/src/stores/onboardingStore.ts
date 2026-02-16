@@ -136,9 +136,9 @@ export const useShouldShowOnboarding = () => {
   
   // Show onboarding if:
   // 1. User hasn't completed it
-  // 2. It's their first 3 logins
+  // 2. It's their first login
   // 3. Manual trigger is enabled
-  return !hasCompletedOnboarding && loginCount < 3 && showOnboarding;
+  return !hasCompletedOnboarding && loginCount < 1 && showOnboarding;
 };
 
 export const useShouldShowFeatureTip = (tipId: string) => {

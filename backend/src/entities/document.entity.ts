@@ -91,6 +91,8 @@ export enum DocumentCategory {
   FINANCIAL = 'FINANCIAL',
   OPERATIONAL = 'OPERATIONAL',
   LEGAL = 'LEGAL',
+  CARGO = 'CARGO',
+  DRIVER = 'DRIVER',
   OTHER = 'OTHER',
 }
 

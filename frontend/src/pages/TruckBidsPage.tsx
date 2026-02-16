@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { biddingAPI, biddingHelpers } from '../services/biddingApi';
 import { fleetApi } from '../services/fleetApi';
 import { FaUserCircle, FaBars, FaTimes, FaTruck, FaPlus, FaStar, FaRegStar, FaBolt, FaUser, FaArrowRight, FaClock, FaGavel, FaMapMarkerAlt } from 'react-icons/fa';
@@ -17,6 +18,7 @@ const TruckBidsPage: React.FC = () => {
 	const [limit] = useState(10);
 	const [showBidModal, setShowBidModal] = useState(false);
 	const [showQuickBidModal, setShowQuickBidModal] = useState(false);
+	const [showDetailsModal, setShowDetailsModal] = useState(false);
 	const [selectedAuction, setSelectedAuction] = useState<any | null>(null);
 	const [bidAmount, setBidAmount] = useState<string>('');
 	const [quickBidAmount, setQuickBidAmount] = useState<string>('');
@@ -35,6 +37,12 @@ const TruckBidsPage: React.FC = () => {
 	const [watchedIds, setWatchedIds] = useState<Set<string>>(new Set());
 	const [showWatchedOnly, setShowWatchedOnly] = useState(false);
 	const [view, setView] = useState<'cards' | 'table'>('cards');
+	
+	// Track user's past bids to prevent re-bidding
+	const [myBids, setMyBids] = useState<any[]>([]);
+	const [myBidLoadIds, setMyBidLoadIds] = useState<Set<string>>(new Set());
+	const [loadingMyBids, setLoadingMyBids] = useState(false);
+	const [activeTab, setActiveTab] = useState<'auctions' | 'my-bids'>('auctions');
 
 	// Header/Navigation State
 	const navigate = useNavigate();
@@ -124,6 +132,39 @@ const TruckBidsPage: React.FC = () => {
 		return fullName;
 	};
 
+	// Load user's past bids to prevent re-bidding
+	const loadMyBids = useCallback(async () => {
+		setLoadingMyBids(true);
+		try {
+			const response = await biddingAPI.getMyBids();
+			let bidsList: any[] = [];
+			if (Array.isArray(response?.data)) {
+				bidsList = response.data;
+			} else if (Array.isArray(response?.data?.bids)) {
+				bidsList = response.data.bids;
+			} else if (Array.isArray(response?.data?.data)) {
+				bidsList = response.data.data;
+			}
+			
+			setMyBids(bidsList);
+			// Create a set of loadIds that user has already bid on
+			const loadIds = new Set(bidsList.map((bid: any) => bid.loadId || bid.load?.id));
+			setMyBidLoadIds(loadIds);
+			console.log('📋 My bids loaded:', bidsList.length, 'Load IDs:', Array.from(loadIds));
+		} catch (e: any) {
+			console.error('Error loading my bids:', e);
+			if (e?.response?.status === 401) {
+				toast.error('Session expired. Please login again.');
+				// Optional: Redirect to login or triggering a global auth event
+				// window.location.href = '/login'; 
+			}
+			setMyBids([]);
+			setMyBidLoadIds(new Set());
+		} finally {
+			setLoadingMyBids(false);
+		}
+	}, []);
+
 	const loadAuctions = useCallback(async () => {
 		setLoading(true);
 		try {
@@ -145,25 +186,7 @@ const TruckBidsPage: React.FC = () => {
 				auctionsList = response;
 			}
 
-			console.log('📦 Full API response:', JSON.stringify(response, null, 2));
 			console.log('📦 Auctions loaded:', auctionsList.length);
-			if (auctionsList.length > 0) {
-				const firstAuction = auctionsList[0];
-				console.log('📦 First auction sample:', JSON.stringify(firstAuction, null, 2));
-				if (firstAuction?.load) {
-					console.log('📦 Load data:', JSON.stringify(firstAuction.load, null, 2));
-					console.log('📦 Cargo owner:', JSON.stringify(firstAuction.load.cargoOwner, null, 2));
-					console.log('📦 Cargo owner profile:', JSON.stringify(firstAuction.load.cargoOwner?.profile, null, 2));
-					console.log('📦 Cargo owner keys:', firstAuction.load.cargoOwner ? Object.keys(firstAuction.load.cargoOwner) : 'no cargo owner');
-					if (firstAuction.load.cargoOwner?.profile) {
-						console.log('📦 Profile keys:', Object.keys(firstAuction.load.cargoOwner.profile));
-						console.log('📦 Profile firstName:', firstAuction.load.cargoOwner.profile.firstName);
-						console.log('📦 Profile lastName:', firstAuction.load.cargoOwner.profile.lastName);
-					}
-				} else {
-					console.warn('⚠️ First auction has no load data');
-				}
-			}
 			setAuctions(auctionsList);
 
 			// Record views for loaded auctions (best-effort)
@@ -183,7 +206,12 @@ const TruckBidsPage: React.FC = () => {
 			} catch { }
 		} catch (e: any) {
 			console.error('Error loading auctions:', e);
-			toast.error('Failed to load auctions. Please try again.');
+			if (e?.response?.status === 401) {
+				toast.error('Session expired. Please login again.');
+				// window.location.href = '/login';
+			} else {
+				toast.error('Failed to load auctions.');
+			}
 			setAuctions([]);
 		} finally {
 			setLoading(false);
@@ -277,7 +305,8 @@ const TruckBidsPage: React.FC = () => {
 
 	useEffect(() => {
 		loadAuctions();
-	}, [status, page, limit]);
+		loadMyBids(); // Load user's past bids
+	}, [status, page, limit, loadMyBids]);
 
 	// Auto-refresh auctions every 30 seconds to see new bids from cargo owners
 	useEffect(() => {
@@ -289,6 +318,11 @@ const TruckBidsPage: React.FC = () => {
 			return () => clearInterval(interval);
 		}
 	}, [status, loadAuctions]);
+
+	// Helper function to check if user has already bid on an auction
+	const hasUserBidOnAuction = useCallback((auction: any) => {
+		return myBidLoadIds.has(auction?.loadId) || myBidLoadIds.has(auction?.load?.id);
+	}, [myBidLoadIds]);
 
 	const filtered = useMemo(() => {
 		const q = search.trim().toLowerCase();
@@ -303,6 +337,28 @@ const TruckBidsPage: React.FC = () => {
 			(a?.load?.destination || '').toLowerCase().includes(q)
 		);
 	}, [auctions, search, showWatchedOnly, watchedIds]);
+
+	// Auctions user has NOT bid on yet (available for bidding)
+	const availableAuctions = useMemo(() => {
+		return filtered.filter((a) => {
+			// 1. User must not have already bid on it
+			if (hasUserBidOnAuction(a)) return false;
+
+			// 2. Auction must be in a "biddable" state (ACTIVE or SCHEDULED)
+			// CLOSED, CANCELLED, EXPIRED, etc. should not be shown in "Available"
+			const isAuctionOpen = ['ACTIVE', 'SCHEDULED'].includes(a.status);
+			if (!isAuctionOpen) return false;
+
+			// 3. Load must not be already assigned or in transit
+			// Even if auction is technically active, if load is assigned, you can't bid
+			const unavailableLoadStatuses = ['ASSIGNED', 'DISPATCHED', 'IN_TRANSIT', 'DELIVERED', 'COMPLETED', 'CANCELLED'];
+			if (a.load?.status && unavailableLoadStatuses.includes(a.load.status)) return false;
+
+			return true;
+		});
+	}, [filtered, hasUserBidOnAuction]);
+
+
 
 	const toggleWatch = async (auction: any) => {
 		const isWatched = watchedIds.has(auction.id);
@@ -323,6 +379,11 @@ const TruckBidsPage: React.FC = () => {
 		} catch (e: any) {
 			toast.error(e?.response?.data?.message || 'Failed to toggle watch');
 		}
+	};
+
+	const openDetailsModal = (auction: any) => {
+		setSelectedAuction(auction);
+		setShowDetailsModal(true);
 	};
 
 	const openQuickBidModal = (auction: any) => {
@@ -394,7 +455,7 @@ const TruckBidsPage: React.FC = () => {
 					truckSpecifications: {},
 				},
 			});
-			toast.success('Bid submitted successfully!');
+			toast.success('Bid submitted successfully! View it in My Bids tab.');
 			setShowQuickBidModal(false);
 			setSelectedAuction(null);
 			setQuickBidAmount('');
@@ -402,8 +463,9 @@ const TruckBidsPage: React.FC = () => {
 			setQuickRequireAdvancePayment(true);
 			setProposedPickupDate('');
 			setProposedDeliveryDate('');
-			// Refresh auctions to show updated bid information
-			await loadAuctions();
+			// Refresh auctions and myBids, then switch to My Bids tab
+			await Promise.all([loadAuctions(), loadMyBids()]);
+			setActiveTab('my-bids'); // Switch to My Bids tab to show the submitted bid
 		} catch (e: any) {
 			toast.error(e?.response?.data?.message || 'Failed to submit bid');
 		}
@@ -538,10 +600,11 @@ const TruckBidsPage: React.FC = () => {
 					driverInfo: selectedDriverId ? { driverId: selectedDriverId } : undefined,
 				},
 			});
-			toast.success('Bid submitted successfully!');
+			toast.success('Bid submitted successfully! View it in My Bids tab.');
 			setShowBidModal(false);
-			// Refresh auctions to show updated bid information
-			await loadAuctions();
+			// Refresh auctions and myBids, then switch to My Bids tab
+			await Promise.all([loadAuctions(), loadMyBids()]);
+			setActiveTab('my-bids'); // Switch to My Bids tab to show the submitted bid
 		} catch (e: any) {
 			toast.error(e?.response?.data?.message || 'Failed to submit bid');
 		}

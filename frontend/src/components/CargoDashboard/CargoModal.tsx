@@ -291,14 +291,14 @@ export const CargoModal: React.FC<CargoModalProps> = ({ cargo, onClose }) => {
             {cargo.contactInfo && (
               <InfoSection icon={User} title="Contact Information">
                 <dl className="space-y-0">
-                  {cargo.contactInfo.contactPerson && (
-                    <InfoRow label="Contact Person" value={cargo.contactInfo.contactPerson} icon={User} />
+                  {cargo.contactInfo?.contactPerson && (
+                    <InfoRow label="Contact Person" value={cargo.contactInfo?.contactPerson} icon={User} />
                   )}
-                  {cargo.contactInfo.contactPhone && (
-                    <InfoRow label="Phone" value={cargo.contactInfo.contactPhone} icon={Phone} />
+                  {cargo.contactInfo?.contactPhone && (
+                    <InfoRow label="Phone" value={cargo.contactInfo?.contactPhone} icon={Phone} />
                   )}
-                  {cargo.contactInfo.contactEmail && (
-                    <InfoRow label="Email" value={cargo.contactInfo.contactEmail} icon={Mail} />
+                  {cargo.contactInfo?.contactEmail && (
+                    <InfoRow label="Email" value={cargo.contactInfo?.contactEmail} icon={Mail} />
                   )}
                 </dl>
               </InfoSection>

@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import { Icon } from 'leaflet';
-import { FaTruck, FaMapMarkedAlt, FaClock, FaBox, FaUser, FaPhone, FaWifi, FaExclamationTriangle } from 'react-icons/fa';
+import { FaTruck, FaMapMarkedAlt, FaClock, FaUser, FaWifi, FaExclamationTriangle } from 'react-icons/fa';
 import 'leaflet/dist/leaflet.css';
 import { trackingWebSocket } from '../services/websocket';
 import type { ShipmentUpdate } from '../services/websocket';
 import { TranslatedText } from '../components/translated-text';
 import { useTranslation } from '../hooks/useTranslation';
+import { useAuth } from '../contexts/AuthContext';
+import receiverService from '../services/receiverService';
 
 interface Shipment {
   id: string;
@@ -56,6 +58,7 @@ interface Shipment {
 
 const Tracking: React.FC = () => {
   const { tSync } = useTranslation();
+  const { user } = useAuth();
   const [shipments, setShipments] = useState<Shipment[]>([]);
   const [selectedShipment, setSelectedShipment] = useState<Shipment | null>(null);
   const [loading, setLoading] = useState(true);
@@ -166,96 +169,147 @@ const Tracking: React.FC = () => {
   }, [wsConnected, shipments, handleShipmentUpdate]);
 
   useEffect(() => {
-    // Simulate loading shipments
-    setTimeout(() => {
-      setShipments([
-        {
-          id: '1',
-          cargoId: 'CARGO-001',
-          cargoTitle: 'Electronics Shipment',
-          status: 'IN_TRANSIT',
-          pickupLocation: {
-            name: 'Nairobi Warehouse',
-            address: '123 Industrial Area, Nairobi',
-            latitude: -1.2921,
-            longitude: 36.8219,
-          },
-          deliveryLocation: {
-            name: 'Mombasa Port',
-            address: '456 Port Road, Mombasa',
-            latitude: -4.0435,
-            longitude: 39.6682,
-          },
-          currentLocation: {
-            latitude: -2.5,
-            longitude: 38.0,
-            timestamp: new Date().toISOString(),
-          },
-          driver: {
-            name: 'John Kamau',
-            phone: '+254700123456',
-          },
-          vehicle: {
-            plateNumber: 'KCA 123A',
-            type: 'Flatbed Truck',
-          },
-          estimatedDelivery: '2024-01-20T14:00:00Z',
-          actualPickup: '2024-01-18T08:30:00Z',
-          progress: 65,
-          milestones: [
-            { type: 'PICKUP', location: 'Nairobi Warehouse', timestamp: '2024-01-18T08:30:00Z', status: 'COMPLETED' },
-            { type: 'CHECKPOINT', location: 'Machakos Junction', timestamp: '2024-01-18T11:00:00Z', status: 'COMPLETED' },
-            { type: 'CHECKPOINT', location: 'Voi Checkpoint', timestamp: undefined, status: 'CURRENT' },
-            { type: 'DELIVERY', location: 'Mombasa Port', timestamp: undefined, status: 'PENDING' },
-          ],
-          etaConfidence: 88,
-          distanceRemaining: 180,
-        },
-        {
-          id: '2',
-          cargoId: 'CARGO-002',
-          cargoTitle: 'Agricultural Products',
-          status: 'PICKED_UP',
-          pickupLocation: {
-            name: 'Kisumu Farm',
-            address: '789 Farm Road, Kisumu',
-            latitude: -0.0917,
-            longitude: 34.7680,
-          },
-          deliveryLocation: {
-            name: 'Nairobi Market',
-            address: '321 Market Street, Nairobi',
-            latitude: -1.2921,
-            longitude: 36.8219,
-          },
-          currentLocation: {
-            latitude: -0.5,
-            longitude: 36.0,
-            timestamp: new Date().toISOString(),
-          },
-          driver: {
-            name: 'Mary Wanjiku',
-            phone: '+254700654321',
-          },
-          vehicle: {
-            plateNumber: 'KCA 456B',
-            type: 'Refrigerated Truck',
-          },
-          estimatedDelivery: '2024-01-19T16:00:00Z',
-          actualPickup: '2024-01-18T10:15:00Z',
-          progress: 35,
-          milestones: [
-            { type: 'PICKUP', location: 'Kisumu Farm', timestamp: '2024-01-18T10:15:00Z', status: 'COMPLETED' },
-            { type: 'CHECKPOINT', location: 'Kericho Stop', timestamp: undefined, status: 'CURRENT' },
-            { type: 'DELIVERY', location: 'Nairobi Market', timestamp: undefined, status: 'PENDING' },
-          ],
-          etaConfidence: 92,
-          distanceRemaining: 245,
-        },
-      ]);
-      setLoading(false);
-    }, 1000);
-  }, []);
+    const loadData = async () => {
+      try {
+        setLoading(true);
+        if (user?.role === 'CARGO_RECEIVER') {
+            const myCargos = await receiverService.getMyCargos();
+            const activeCargos = myCargos.filter(c => c.status === 'IN_TRANSIT' || c.status === 'ASSIGNED' || c.status === 'PICKED_UP');
+            
+            const mappedShipments: Shipment[] = activeCargos.map(c => ({
+              id: c.id,
+              cargoId: c.id.substring(0, 8).toUpperCase(),
+              cargoTitle: c.cargoType || 'My Shipment',
+              status: (c.status === 'ASSIGNED' ? 'PICKED_UP' : c.status) as any,
+              pickupLocation: {
+                name: c.pickupLocation || 'Pickup Point',
+                address: c.pickupLocation || '',
+                latitude: -1.2921, // Mock lat/lng if not available
+                longitude: 36.8219, 
+              },
+              deliveryLocation: {
+                name: c.deliveryLocation || 'Delivery Point',
+                address: c.deliveryLocation || '',
+                latitude: -4.0435, // Mock lat/lng
+                longitude: 39.6682,
+              },
+              currentLocation: {
+                latitude: -2.5, // Mock current location
+                longitude: 38.0,
+                timestamp: new Date().toISOString(),
+              },
+              driver: {
+                name: c.assignedTruck?.driverName || 'Assigned Driver',
+                phone: c.assignedTruck?.driverPhone || '',
+              },
+              vehicle: {
+                plateNumber: c.assignedTruck?.plateNumber || 'Truck',
+                type: c.assignedTruck?.model || 'Truck',
+              },
+              estimatedDelivery: c.deliveryDate || new Date().toISOString(),
+              progress: 50, // Mock progress
+              etaConfidence: 85,
+              distanceRemaining: 120
+            }));
+            
+            setShipments(mappedShipments);
+        } else {
+            // Default dummy data for non-receivers
+            setShipments([
+              {
+                id: '1',
+                cargoId: 'CARGO-001',
+                cargoTitle: 'Electronics Shipment',
+                status: 'IN_TRANSIT',
+                pickupLocation: {
+                  name: 'Nairobi Warehouse',
+                  address: '123 Industrial Area, Nairobi',
+                  latitude: -1.2921,
+                  longitude: 36.8219,
+                },
+                deliveryLocation: {
+                  name: 'Mombasa Port',
+                  address: '456 Port Road, Mombasa',
+                  latitude: -4.0435,
+                  longitude: 39.6682,
+                },
+                currentLocation: {
+                  latitude: -2.5,
+                  longitude: 38.0,
+                  timestamp: new Date().toISOString(),
+                },
+                driver: {
+                  name: 'John Kamau',
+                  phone: '+254700123456',
+                },
+                vehicle: {
+                  plateNumber: 'KCA 123A',
+                  type: 'Flatbed Truck',
+                },
+                estimatedDelivery: '2024-01-20T14:00:00Z',
+                actualPickup: '2024-01-18T08:30:00Z',
+                progress: 65,
+                milestones: [
+                  { type: 'PICKUP', location: 'Nairobi Warehouse', timestamp: '2024-01-18T08:30:00Z', status: 'COMPLETED' },
+                  { type: 'CHECKPOINT', location: 'Machakos Junction', timestamp: '2024-01-18T11:00:00Z', status: 'COMPLETED' },
+                  { type: 'CHECKPOINT', location: 'Voi Checkpoint', timestamp: undefined, status: 'CURRENT' },
+                  { type: 'DELIVERY', location: 'Mombasa Port', timestamp: undefined, status: 'PENDING' },
+                ],
+                etaConfidence: 88,
+                distanceRemaining: 180,
+              },
+              {
+                id: '2',
+                cargoId: 'CARGO-002',
+                cargoTitle: 'Agricultural Products',
+                status: 'PICKED_UP',
+                pickupLocation: {
+                  name: 'Kisumu Farm',
+                  address: '789 Farm Road, Kisumu',
+                  latitude: -0.0917,
+                  longitude: 34.7680,
+                },
+                deliveryLocation: {
+                  name: 'Nairobi Market',
+                  address: '321 Market Street, Nairobi',
+                  latitude: -1.2921,
+                  longitude: 36.8219,
+                },
+                currentLocation: {
+                  latitude: -0.5,
+                  longitude: 36.0,
+                  timestamp: new Date().toISOString(),
+                },
+                driver: {
+                  name: 'Mary Wanjiku',
+                  phone: '+254700654321',
+                },
+                vehicle: {
+                  plateNumber: 'KCA 456B',
+                  type: 'Refrigerated Truck',
+                },
+                estimatedDelivery: '2024-01-19T16:00:00Z',
+                actualPickup: '2024-01-18T10:15:00Z',
+                progress: 35,
+                milestones: [
+                  { type: 'PICKUP', location: 'Kisumu Farm', timestamp: '2024-01-18T10:15:00Z', status: 'COMPLETED' },
+                  { type: 'CHECKPOINT', location: 'Kericho Stop', timestamp: undefined, status: 'CURRENT' },
+                  { type: 'DELIVERY', location: 'Nairobi Market', timestamp: undefined, status: 'PENDING' },
+                ],
+                etaConfidence: 92,
+                distanceRemaining: 245,
+              },
+            ]);
+        }
+      } catch (err) {
+        console.error("Error loading tracking data", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    loadData();
+  }, [user]);
 
   const getStatusColor = (status: string) => {
     switch (status) {

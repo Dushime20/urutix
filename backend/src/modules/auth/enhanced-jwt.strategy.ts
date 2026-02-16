@@ -76,6 +76,7 @@ export class EnhancedJwtStrategy extends PassportStrategy(Strategy) {
         userAgent,
         tokenIssuedAt: new Date(payload.iat * 1000),
         tokenExpiresAt: new Date(payload.exp * 1000),
+        id: payload.sub, // Compatibility with controllers expecting .id
       };
 
       this.logger.debug('✅ JWT Strategy Validation Successful');

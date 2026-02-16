@@ -77,4 +77,21 @@ export class LoginResponseDto {
     tenantId: string;
     tenantName?: string;
   };
+
+  @ApiProperty({
+    description: 'Flag indicating if role selection is required',
+    example: true,
+    required: false,
+  })
+  @IsOptional()
+  @IsBoolean()
+  requiresRoleSelection?: boolean;
+
+  @ApiProperty({
+    description: 'List of available roles for selection',
+    example: [{ role: 'CARGO_OWNER', tenantName: 'Acme Corp' }],
+    required: false,
+  })
+  @IsOptional()
+  availableRoles?: Array<{ role: string; tenantName?: string }>;
 }

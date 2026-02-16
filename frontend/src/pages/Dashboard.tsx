@@ -22,6 +22,21 @@ import DashboardHeader from '../components/Dashboard/Layout/DashboardHeader';
 import DashboardFooter from '../components/Dashboard/Layout/DashboardFooter';
 
 const Dashboard = () => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+
+  // If user is a truck owner (CARRIER), redirect to fleet dashboard
+  useEffect(() => {
+    if (user && user.role === 'CARRIER') {
+      navigate('/dashboard/fleet', { replace: true });
+    }
+  }, [user, navigate]);
+
+  // Otherwise show cargo owner dashboard (CARGO_RECEIVER sees simplified version)
+  return <CargoOwnerDashboard />;
+};
+
+const CargoOwnerDashboard = () => {
   const layoutContext = useCargoOwnerLayout();
   const { user } = useAuth();
   const { setHideHeader } = layoutContext || {};
@@ -52,12 +67,7 @@ const Dashboard = () => {
   };
 
   // Hide default header on mount, show on unmount
-  useEffect(() => {
-    if (setHideHeader) {
-      setHideHeader(true);
-      return () => setHideHeader(false);
-    }
-  }, [setHideHeader]);
+
 
   // Keep existing state logic for data fetching
   const [cargos, setCargos] = useState<any[]>([]);

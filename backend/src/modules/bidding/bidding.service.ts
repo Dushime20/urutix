@@ -5,7 +5,7 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, In } from 'typeorm';
 import { Bid, BidStatus } from '../../entities/bid.entity';
 import {
   Auction,
@@ -20,6 +20,9 @@ import { Driver } from '../../entities/driver.entity';
 import { Trip, TripStatus } from '../../entities/trip.entity';
 import { AuctionWatch } from '../../entities/auction-watch.entity';
 import { AuctionView } from '../../entities/auction-view.entity';
+import { LoadContract, ContractStatus } from '../../entities/load-contract.entity';
+import { NotificationService } from '../notifications/notification.service';
+import { NotificationType, EntityType, NotificationCategory, NotificationChannel } from '../../entities/notification.entity';
 
 export interface CreateBidDto {
   loadId: string;
@@ -114,7 +117,10 @@ export class BiddingService {
     private readonly watchRepository: Repository<AuctionWatch>,
     @InjectRepository(AuctionView)
     private readonly viewRepository: Repository<AuctionView>,
-  ) {}
+    @InjectRepository(LoadContract)
+    private readonly contractRepository: Repository<LoadContract>,
+    private readonly notificationService: NotificationService,
+  ) { }
 
   async createBid(
     createBidDto: CreateBidDto,
@@ -157,7 +163,7 @@ export class BiddingService {
     // Check if auction is active or if scheduled auction start time has passed
     const now = new Date();
     const auctionStart = auction.auctionStart ? new Date(auction.auctionStart) : null;
-    const isAuctionActive = auction.status === AuctionStatus.ACTIVE || 
+    const isAuctionActive = auction.status === AuctionStatus.ACTIVE ||
       (auction.status === AuctionStatus.SCHEDULED && auctionStart && auctionStart <= now);
 
     if (!isAuctionActive) {
@@ -204,7 +210,7 @@ export class BiddingService {
       if (
         currentHighestBid &&
         createBidDto.bidAmount <=
-          currentHighestBid + auction.minimumBidIncrement
+        currentHighestBid + auction.minimumBidIncrement
       ) {
         throw new BadRequestException(
           `Bid must be at least ${auction.minimumBidIncrement} more than current highest bid`,
@@ -222,10 +228,10 @@ export class BiddingService {
     }
 
     // If requireAdvancePayment is false, advancePaymentPercentage should be 0 or null
-    if (createBidDto.requireAdvancePayment === false && 
-        createBidDto.advancePaymentPercentage !== undefined && 
-        createBidDto.advancePaymentPercentage !== null &&
-        createBidDto.advancePaymentPercentage > 0) {
+    if (createBidDto.requireAdvancePayment === false &&
+      createBidDto.advancePaymentPercentage !== undefined &&
+      createBidDto.advancePaymentPercentage !== null &&
+      createBidDto.advancePaymentPercentage > 0) {
       throw new BadRequestException(
         'Cannot specify advance payment percentage when advance payment is not required',
       );
@@ -237,8 +243,8 @@ export class BiddingService {
       truckOwnerId,
       status: BidStatus.PENDING,
       bidCurrency: createBidDto.bidCurrency || 'USD',
-      requireAdvancePayment: createBidDto.requireAdvancePayment !== undefined 
-        ? createBidDto.requireAdvancePayment 
+      requireAdvancePayment: createBidDto.requireAdvancePayment !== undefined
+        ? createBidDto.requireAdvancePayment
         : true, // Default to true if not specified
     });
 
@@ -251,6 +257,33 @@ export class BiddingService {
 
     // Update auction analytics
     await this.updateAuctionAnalytics(createBidDto.loadId);
+
+    // Send Notification to Cargo Owner
+    try {
+      const userProfile = await this.userProfileRepository.findOne({
+        where: { userId: truckOwnerId },
+      });
+      const bidderName = userProfile && userProfile.firstName 
+        ? `${userProfile.firstName} ${userProfile.lastName || ''}`.trim() 
+        : 'A truck owner';
+
+      await this.notificationService.createNotification({
+        recipientId: load.cargoOwnerId,
+        tenantId,
+        title: 'New Bid Received',
+        message: `${bidderName} has bid on your cargo "${load.title}"`,
+        notificationType: NotificationType.GENERAL,
+        category: NotificationCategory.CARGO,
+        channels: [NotificationChannel.IN_APP],
+        entityType: EntityType.CARGO,
+        entityId: savedBid.id,
+        requiresAction: true,
+        actionUrl: `/dashboard/bidding?view=bids`,
+        actionText: 'View Bid',
+      });
+    } catch (error) {
+      console.error('Failed to send bid notification', error);
+    }
 
     return savedBid;
   }
@@ -330,6 +363,7 @@ export class BiddingService {
     bidId: string,
     cargoOwnerId: string,
     tenantId: string,
+    userRole?: UserRole,
   ): Promise<Bid> {
     const bid = await this.bidRepository.findOne({
       where: { id: bidId },
@@ -340,8 +374,35 @@ export class BiddingService {
       throw new NotFoundException('Bid not found');
     }
 
-    if (bid.load.cargoOwnerId !== cargoOwnerId) {
-      throw new ForbiddenException('Only the cargo owner can accept bids');
+    // Check if load has an active broker contract
+    const hasActiveContract = await this.hasActiveBrokerContract(bid.loadId, tenantId);
+
+    // If cargo owner is trying to accept bid, check if broker is assigned
+    if (userRole === UserRole.CARGO_OWNER || !userRole) {
+      if (bid.load.brokerId && hasActiveContract) {
+        throw new ForbiddenException(
+          'Cannot accept bid: Load is managed by a broker. The broker must accept bids.',
+        );
+      }
+
+      if (bid.load.cargoOwnerId !== cargoOwnerId) {
+        throw new ForbiddenException('Only the cargo owner can accept bids');
+      }
+    }
+
+    // If broker is accepting bid, verify they are assigned to the load
+    if (userRole === UserRole.BROKER) {
+      // cargoOwnerId in this context is the broker's userId when called by broker
+      if (!bid.load.brokerId || bid.load.brokerId !== cargoOwnerId) {
+        throw new ForbiddenException(
+          'Broker is not assigned to this load',
+        );
+      }
+      if (!hasActiveContract) {
+        throw new ForbiddenException(
+          'Broker must have an active contract to accept bids for this load',
+        );
+      }
     }
 
     if (bid.status !== BidStatus.PENDING) {
@@ -353,7 +414,7 @@ export class BiddingService {
 
     // Get truck ID from bid details
     const truckId = bid.bidDetails?.truckSpecifications?.truckId;
-    
+
     if (!truckId) {
       throw new BadRequestException('Bid must include a truck specification');
     }
@@ -451,10 +512,13 @@ export class BiddingService {
       where: { loadId: bid.loadId, tenantId },
     });
 
+    let tripId = existingTrip?.id;
+    let finalDriverId: string | null = existingTrip?.driverId || null;
+
     if (!existingTrip) {
       try {
         // Get driver ID - use from bid details or assign a default driver from the truck
-        let finalDriverId = driverId;
+        finalDriverId = driverId;
         if (!finalDriverId) {
           // Try to get the first assigned driver from the truck
           if (truck.assignedDrivers && Array.isArray(truck.assignedDrivers) && truck.assignedDrivers.length > 0) {
@@ -471,12 +535,12 @@ export class BiddingService {
 
         // Use load pickup/delivery dates for planned start/end times
         // If not available, use bid proposed dates or default to reasonable times
-        const plannedStartTime = bid.load.pickupDate || 
-          bid.proposedPickupDate || 
+        const plannedStartTime = bid.load.pickupDate ||
+          bid.proposedPickupDate ||
           new Date(Date.now() + 24 * 60 * 60 * 1000); // Default to tomorrow
-        
-        const plannedEndTime = bid.load.deliveryDate || 
-          bid.proposedDeliveryDate || 
+
+        const plannedEndTime = bid.load.deliveryDate ||
+          bid.proposedDeliveryDate ||
           new Date(plannedStartTime.getTime() + 7 * 24 * 60 * 60 * 1000); // Default to 7 days after start
 
         // Use bid amount as agreed price, fallback to load offered price
@@ -500,6 +564,7 @@ export class BiddingService {
         });
 
         const savedTrip = await this.tripRepository.save(newTrip);
+        tripId = savedTrip.id;
         console.log(`Trip ${savedTrip.id} created automatically for accepted bid ${bidId}`);
       } catch (tripError: any) {
         // Log error but don't fail bid acceptance
@@ -512,25 +577,137 @@ export class BiddingService {
       console.log(`Trip ${existingTrip.id} already exists for load ${bid.loadId}`);
     }
 
+    // Send notifications
+    try {
+      // 1. Notify Truck Owner
+      await this.notificationService.createNotification({
+        recipientId: bid.truckOwnerId,
+        tenantId,
+        title: 'Bid Accepted!',
+        message: `Your bid for cargo "${bid.load.title}" has been accepted. A trip has been created.`,
+        notificationType: NotificationType.GENERAL,
+        category: NotificationCategory.FINANCIAL,
+        channels: [NotificationChannel.IN_APP],
+        entityType: EntityType.TRIP,
+        entityId: tripId || bid.id,
+        requiresAction: true,
+        actionUrl: tripId ? `/dashboard/trips` : `/dashboard/bidding`,
+        actionText: 'View Trip',
+      });
+
+      // 2. Notify Driver
+      if (finalDriverId) {
+        const driverEntity = await this.driverRepository.findOne({ where: { id: finalDriverId } });
+        if (driverEntity && driverEntity.userId) {
+          await this.notificationService.createNotification({
+            recipientId: driverEntity.userId,
+            tenantId,
+            title: 'New Trip Assignment',
+            message: `Bid accepted! You have been assigned to load "${bid.load.title}".`,
+            notificationType: NotificationType.GENERAL,
+            category: NotificationCategory.TRIP,
+            channels: [NotificationChannel.IN_APP],
+            entityType: EntityType.TRIP,
+            entityId: tripId || bid.id,
+            requiresAction: true,
+            actionUrl: `/dashboard/driver/trips?tripId=${tripId}`,
+            actionText: 'View Trip',
+          });
+        }
+      }
+    } catch (notificationError) {
+      console.error('Failed to send bid acceptance notifications:', notificationError);
+    }
+
     return acceptedBid;
+  }
+
+  /**
+   * Check if load has an active broker contract that prevents cargo owner actions
+   */
+  private async hasActiveBrokerContract(loadId: string, tenantId: string): Promise<boolean> {
+    const contract = await this.contractRepository.findOne({
+      where: {
+        loadId,
+        tenantId,
+        status: ContractStatus.ACTIVE,
+      },
+    });
+    return !!contract;
   }
 
   async createAuction(
     createAuctionDto: CreateAuctionDto,
     cargoOwnerId: string,
     tenantId: string,
+    userRole?: UserRole,
   ): Promise<Auction> {
+    // 1. Fetch load without strict tenant filter first to check existence
     const load = await this.loadRepository.findOne({
-      where: { id: createAuctionDto.loadId, cargoOwnerId, tenantId },
+      where: { id: createAuctionDto.loadId },
+      relations: ['broker'],
     });
 
     if (!load) {
       throw new NotFoundException('Load not found');
     }
 
-    if (![LoadStatus.CREATED, LoadStatus.PUBLISHED].includes(load.status)) {
+    // 2. Validate permissions based on role
+
+    // CASE A: Cargo Owner (or unspecified role, assumed owner)
+    if (userRole === UserRole.CARGO_OWNER || !userRole) {
+      // Must belong to the same tenant
+      if (load.tenantId !== tenantId) {
+        throw new NotFoundException('Load not found'); // Hide existence across tenants
+      }
+
+      // Check if load has a broker assigned
+      if (load.brokerId) {
+        // Check if there's an active broker contract
+        const hasActiveContract = await this.hasActiveBrokerContract(
+          createAuctionDto.loadId,
+          tenantId,
+        );
+
+        if (hasActiveContract) {
+          throw new ForbiddenException(
+            'Cannot create auction: Load is managed by a broker. The broker must create the auction.',
+          );
+        }
+      }
+
+      // Verify cargo owner owns the load
+      if (load.cargoOwnerId !== cargoOwnerId) {
+        throw new ForbiddenException('You do not have permission to create an auction for this load');
+      }
+    }
+    // CASE B: Broker
+    else if (userRole === UserRole.BROKER) {
+      // cargoOwnerId in this context is the broker's userId when called by broker
+      if (!load.brokerId || load.brokerId !== cargoOwnerId) {
+        throw new ForbiddenException(
+          'Broker is not assigned to this load',
+        );
+      }
+
+      // Check if broker has an active contract - use load.tenantId for contract check
+      const hasActiveContract = await this.contractRepository.findOne({
+        where: {
+          loadId: createAuctionDto.loadId,
+          status: In([ContractStatus.ACTIVE, ContractStatus.SIGNED, ContractStatus.PENDING_SIGNATURE]),
+        },
+      });
+
+      if (!hasActiveContract) {
+        throw new ForbiddenException(
+          'Broker must have an active contract to create auctions for this load',
+        );
+      }
+    }
+
+    if (![LoadStatus.CREATED, LoadStatus.PUBLISHED, LoadStatus.ASSIGNED].includes(load.status)) {
       throw new BadRequestException(
-        'Load must be created or published to create an auction',
+        'Load must be created, published or assigned to create an auction',
       );
     }
 
@@ -545,11 +722,11 @@ export class BiddingService {
 
     // Determine auction status based on start time
     const now = new Date();
-    const auctionStart = createAuctionDto.auctionStart 
-      ? new Date(createAuctionDto.auctionStart) 
+    const auctionStart = createAuctionDto.auctionStart
+      ? new Date(createAuctionDto.auctionStart)
       : now;
-    const auctionStatus = auctionStart <= now 
-      ? AuctionStatus.ACTIVE 
+    const auctionStatus = auctionStart <= now
+      ? AuctionStatus.ACTIVE
       : AuctionStatus.SCHEDULED;
 
     const auction = this.auctionRepository.create({
@@ -571,24 +748,30 @@ export class BiddingService {
     });
   }
 
-  async getAuctions(tenantId: string, status?: string): Promise<Auction[]> {
+  async getAuctions(tenantId: string, status?: string, userId?: string, role?: string): Promise<Auction[]> {
     // Build query to filter by tenantId through load relationship and include cargo owner with profile
     // Note: Using relation name directly without alias to ensure proper mapping
     const queryBuilder = this.auctionRepository
       .createQueryBuilder('auction')
       .leftJoinAndSelect('auction.load', 'load')
       .leftJoinAndSelect('load.cargoOwner', 'cargoOwner')
-      .leftJoinAndSelect('cargoOwner.profile', 'profile')
-      .where('load.tenantId = :tenantId', { tenantId });
-    
+      .leftJoinAndSelect('cargoOwner.profile', 'profile');
+
+    if ((role === UserRole.BROKER || role === 'BROKER') && userId) {
+       // Brokers see auctions in their tenant OR auctions for loads they manage
+       queryBuilder.where('(load.tenantId = :tenantId OR load.brokerId = :userId)', { tenantId, userId });
+    } else {
+       queryBuilder.where('load.tenantId = :tenantId', { tenantId });
+    }
+
     if (status && status !== 'all') {
       queryBuilder.andWhere('auction.status = :status', { status });
     }
-    
+
     queryBuilder.orderBy('auction.createdAt', 'DESC');
-    
+
     const auctions = await queryBuilder.getMany();
-    
+
     // Log for debugging - check if profile data is loaded
     if (auctions.length > 0 && auctions[0].load) {
       const firstLoad = auctions[0].load;
@@ -646,7 +829,7 @@ export class BiddingService {
           });
         }
       }
-      
+
       // Enrich with viewer stats using watch count as unique viewers proxy
       try {
         const watchCount = await this.watchRepository.count({
@@ -660,7 +843,7 @@ export class BiddingService {
           uniqueViewers: viewCount,
           viewCount: Math.max(viewCount, (a.analytics as any)?.viewCount || 0),
         } as any;
-      } catch {}
+      } catch { }
     }
     return auctions;
   }
@@ -781,6 +964,81 @@ export class BiddingService {
       .andWhere('load.tenantId = :tenantId', { tenantId })
       .orderBy('bid.createdAt', 'DESC')
       .getMany();
+  }
+
+  async getDashboardStats(userId: string, tenantId: string, role?: string) {
+    if (role === UserRole.TRUCK_OWNER || role === 'TRUCK_OWNER') {
+       // Truck Owner Stats
+       const myBids = await this.bidRepository.find({
+         where: { truckOwnerId: userId },
+         relations: ['load'],
+       });
+
+       const totalBids = myBids.length;
+       const activeBids = myBids.filter(b => b.status === BidStatus.PENDING).length;
+       const wonBids = myBids.filter(b => b.status === BidStatus.ACCEPTED).length;
+       const totalValue = myBids
+         .filter(b => b.status === BidStatus.ACCEPTED || b.status === BidStatus.PENDING)
+         .reduce((sum, b) => sum + (b.bidAmount || 0), 0);
+       
+       const successRate = totalBids > 0 ? Math.round((wonBids / totalBids) * 100) : 0;
+       
+       // For truck owners, 'totalAuctions' implies auctions they participated in
+       const uniqueAuctions = new Set(myBids.map(b => b.loadId)).size;
+
+       return {
+         totalAuctions: uniqueAuctions,
+         activeBids,
+         totalValue,
+         successRate
+       };
+    } else {
+       // Broker / Cargo Owner Stats
+       // They manage auctions
+       // Find loads where they are owner (for Cargo Owner) or Broker
+       
+       const loads = await this.loadRepository.find({
+         where: role === UserRole.BROKER || role === 'BROKER' 
+           ? { brokerId: userId, tenantId }
+           : { cargoOwnerId: userId, tenantId }
+       });
+       
+       const loadIds = loads.map(l => l.id);
+       
+       if (loadIds.length === 0) {
+         return {
+           totalAuctions: 0,
+           activeBids: 0,
+           totalValue: 0,
+           successRate: 0
+         };
+       }
+
+       const auctions = await this.auctionRepository.find({
+         where: { loadId: In(loadIds) }
+       });
+
+       // Active bids on these auctions
+       const bids = await this.bidRepository.find({
+         where: { loadId: In(loadIds) }
+       });
+
+       const activeBids = bids.filter(b => b.status === BidStatus.PENDING).length;
+       const totalValue = loads.reduce((sum, l) => sum + (l.loadValue || 0), 0);
+       
+       // Success rate for owners: Auctions that resulted in a match (CLOSED with winningBidId)
+       const closedAndWon = auctions.filter(a => a.status === AuctionStatus.CLOSED && a.winningBidId).length;
+       const totalClosed = auctions.filter(a => a.status === AuctionStatus.CLOSED).length;
+       
+       const successRate = totalClosed > 0 ? Math.round((closedAndWon / totalClosed) * 100) : 0;
+
+       return {
+         totalAuctions: auctions.length,
+         activeBids,
+         totalValue,
+         successRate
+       };
+    }
   }
 
   private async getCurrentHighestBid(loadId: string): Promise<number | null> {

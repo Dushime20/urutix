@@ -130,17 +130,19 @@ export class TenantService {
           await this.userProfileRepository.save(userProfile);
         }
 
-        // Always send password setup email when creating a tenant
-        // This ensures the tenant admin is notified about their new role, even if they already exist
-        this.logger.log(`📧 Sending password setup email for tenant admin (existing user)...`);
-        this.logger.log(`📧 User status: ${tenantAdminUser.status}, Has password: ${!!tenantAdminUser.passwordHash}`);
-        await this.sendTenantPasswordSetupEmail(
-          normalizedEmail,
-          userProfile.firstName,
-          userProfile.lastName,
-          finalTenant.name,
-          finalTenant.id,
-        );
+        // Send password setup email ONLY if user does not have a password
+        if (!tenantAdminUser.passwordHash) {
+          this.logger.log(`📧 Sending password setup email for tenant admin (existing user, no password)...`);
+          await this.sendTenantPasswordSetupEmail(
+            normalizedEmail,
+            userProfile.firstName,
+            userProfile.lastName,
+            finalTenant.name,
+            finalTenant.id,
+          );
+        } else {
+             this.logger.log(`Existing user has password. Skipped password setup email for tenant admin.`);
+        }
       } else {
         // Create new user for tenant admin
         this.logger.log(`👤 Creating new tenant admin user account...`);

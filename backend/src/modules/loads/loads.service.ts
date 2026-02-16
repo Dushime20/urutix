@@ -61,7 +61,7 @@ import {
   PricingStatus,
 } from '../../entities/price-suggestion.entity';
 import { Location } from '../../entities/location.entity';
-import { User } from '../../entities/user.entity';
+import { User, UserRole } from '../../entities/user.entity';
 import { UserProfile } from '../../entities/user-profile.entity';
 import { Bid, BidStatus } from '../../entities/bid.entity';
 import { Payment, PaymentType, PaymentStatus } from '../../entities/payment.entity';
@@ -192,7 +192,7 @@ export class LoadsService {
     private readonly locationEnrichmentService: OSMLocationEnrichmentService,
     @Optional() private readonly matchingService?: MatchingService, // Optional - MatchingService from MatchingModule
     @Optional() private readonly brokersService?: BrokersService, // Optional - BrokersService from BrokersModule
-  ) {}
+  ) { }
 
   /**
    * Create a new load with comprehensive validation and error handling
@@ -276,7 +276,32 @@ export class LoadsService {
         'rating', 'viewCount', 'publishedAt', 'assignedCarrierId', 'assignedTruckId',
         'assignedDriverId', 'currentStatus', 'trackingNumber', 'referenceNumber'
       ];
-      
+
+      // Auto-populate origin/destination from locations if not provided
+      if (!createLoadDto.origin && pickupLocation?.locationData) {
+        createLoadDto.origin = {
+          address: pickupLocation.locationData.address || pickupLocation.locationData.name,
+          city: pickupLocation.locationData.city || '',
+          state: pickupLocation.locationData.state,
+          postalCode: pickupLocation.locationData.postalCode,
+          country: pickupLocation.locationData.country || '',
+          lat: pickupLocation.locationData.coordinates?.latitude,
+          lng: pickupLocation.locationData.coordinates?.longitude,
+        };
+      }
+
+      if (!createLoadDto.destination && deliveryLocation?.locationData) {
+        createLoadDto.destination = {
+          address: deliveryLocation.locationData.address || deliveryLocation.locationData.name,
+          city: deliveryLocation.locationData.city || '',
+          state: deliveryLocation.locationData.state,
+          postalCode: deliveryLocation.locationData.postalCode,
+          country: deliveryLocation.locationData.country || '',
+          lat: deliveryLocation.locationData.coordinates?.latitude,
+          lng: deliveryLocation.locationData.coordinates?.longitude,
+        };
+      }
+
       const cleanedCreateLoadDto = { ...createLoadDto };
       systemFieldsToExclude.forEach(field => {
         delete cleanedCreateLoadDto[field];
@@ -344,7 +369,7 @@ export class LoadsService {
       });
 
       this.logger.log('Load data prepared:', JSON.stringify(loadData, null, 2));
-      
+
       // Log critical required fields to help debug
       this.logger.log('Critical fields check:', {
         hasTenantId: !!loadData.tenantId,
@@ -358,9 +383,67 @@ export class LoadsService {
         locationsCount: loadData.locations?.length || 0,
       });
 
+
+      // Ensure locations have valid coordinates (Geocoding fallback for Quick Create)
+      if (
+        loadData.locations &&
+        Array.isArray(loadData.locations) &&
+        this.locationEnrichmentService
+      ) {
+        this.logger.log('Validating location coordinates before creation...');
+        for (const loc of loadData.locations) {
+          const data = loc.locationData;
+
+          // 1. If coordinates are missing/empty, try to geocode from address
+          if (data && (!data.coordinates || (Math.abs(Number(data.coordinates.latitude)) < 0.0001 && Math.abs(Number(data.coordinates.longitude)) < 0.0001))) {
+            const addressStr = data.address || data.name;
+            if (addressStr) {
+              this.logger.log(`Geocoding location "${addressStr}" due to missing coordinates`);
+              try {
+                const coords = await this.locationEnrichmentService.getCoordinates(addressStr);
+                if (coords) {
+                  data.coordinates = coords;
+                  this.logger.log(`Updated coordinates for ${addressStr}: ${coords.latitude}, ${coords.longitude}`);
+                } else {
+                  this.logger.warn(`Could not geocode address: ${addressStr}`);
+                }
+              } catch (err) {
+                this.logger.error(`Error geocoding address ${addressStr}:`, err);
+              }
+            }
+          }
+
+          // 2. If coordinates exist but City/Country is missing, try Reverse Geocoding
+          if (data && data.coordinates && (Math.abs(Number(data.coordinates.latitude)) > 0.0001)) {
+            if (!data.city || data.city === 'Unknown City' || !data.country || data.country === 'Unknown Country') {
+              this.logger.log(`Reverse geocoding coordinates ${data.coordinates.latitude}, ${data.coordinates.longitude}`);
+              try {
+                // We can use the enrichLocation method to get full details including city/country
+                // Construct a temporary location object because enrichLocation expects full structure
+                const tempLoc = { ...loc, locationData: { ...data } };
+                const enriched = await this.locationEnrichmentService.enrichLocation(tempLoc as any);
+
+                if (enriched && enriched.locationData) {
+                  data.city = enriched.locationData.city;
+                  data.country = enriched.locationData.country;
+                  data.state = enriched.locationData.state;
+                  // Only update address if it was empty/generic, otherwise keep user input
+                  if (!data.address || data.address.startsWith('Lat:')) {
+                    data.address = enriched.locationData.address;
+                  }
+                  this.logger.log(`Resolved location to: ${data.city}, ${data.country}`);
+                }
+              } catch (err) {
+                this.logger.error(`Error reverse geocoding:`, err);
+              }
+            }
+          }
+        }
+      }
+
       const load = this.loadRepository.create(loadData as any);
       this.logger.log('Load object created, saving...');
-      
+
       const savedLoad = (await this.loadRepository.save(
         load,
       )) as unknown as Load;
@@ -368,15 +451,15 @@ export class LoadsService {
 
       // Create audit event - don't fail the operation if audit event creation fails
       try {
-      await this.createAuditEvent({
-        loadId: savedLoad.id,
-        entityType: AuditEntityType.LOAD,
-        entityId: savedLoad.id,
-        action: AuditAction.CREATE,
-        actorId: userId,
-        description: 'Load created',
-        after: savedLoad,
-      });
+        await this.createAuditEvent({
+          loadId: savedLoad.id,
+          entityType: AuditEntityType.LOAD,
+          entityId: savedLoad.id,
+          action: AuditAction.CREATE,
+          actorId: userId,
+          description: 'Load created',
+          after: savedLoad,
+        });
       } catch (auditError) {
         // Log but don't fail - the load was created successfully
         this.logger.warn(
@@ -491,7 +574,7 @@ export class LoadsService {
       };
 
       this.logger.error('Full error details:', errorDetails);
-      
+
       throw new InternalServerErrorException(errorDetails);
     }
   }
@@ -748,6 +831,7 @@ export class LoadsService {
     tenantId: string,
     userId?: string,
     query: LoadsQueryDto = {},
+    role?: string,
   ): Promise<LoadsPaginatedResponse> {
     this.logger.log(`Finding loads for tenant ${tenantId}, user ${userId}`);
 
@@ -760,7 +844,12 @@ export class LoadsService {
         ...filters
       } = query;
 
-      const queryBuilder = this.buildLoadsQuery(tenantId, userId, filters);
+      const queryBuilder = this.buildLoadsQuery(tenantId, userId, filters, role);
+
+      // Join receiver data
+      queryBuilder
+        .leftJoinAndSelect('load.receiver', 'receiver')
+        .leftJoinAndSelect('receiver.profile', 'receiverProfile');
 
       // Apply sorting
       queryBuilder.orderBy(`load.${sortBy}`, sortOrder);
@@ -803,7 +892,7 @@ export class LoadsService {
         const profileMap = new Map(
           brokerProfiles.map((profile) => [profile.userId, profile]),
         );
-        
+
         const userMap = new Map(
           brokerUsers.map((user) => [user.id, user.email]),
         );
@@ -825,7 +914,7 @@ export class LoadsService {
                 load.broker.email = brokerEmail;
               }
             }
-            
+
             const profile = profileMap.get(load.brokerId);
             if (profile) {
               (load.broker as any).profile = profile;
@@ -876,7 +965,7 @@ export class LoadsService {
   /**
    * Find a single load by ID with proper error handling
    */
-  async findOne(id: string, tenantId: string, userId?: string): Promise<Load> {
+  async findOne(id: string, tenantId: string, user?: any): Promise<Load> {
     this.logger.log(`Finding load ${id} for tenant ${tenantId}`);
 
     try {
@@ -885,15 +974,43 @@ export class LoadsService {
         .leftJoinAndSelect('load.cargoOwner', 'cargoOwner')
         .leftJoinAndSelect('cargoOwner.profile', 'cargoOwnerProfile')
         .leftJoinAndSelect('load.broker', 'broker')
+        .leftJoinAndSelect('load.receiver', 'receiver')
+        .leftJoinAndSelect('receiver.profile', 'receiverProfile')
         .where('load.id = :id', { id })
         .andWhere('load.tenantId = :tenantId', { tenantId });
 
-      // If userId provided, ensure user can only see their own loads
-      if (userId) {
-        queryBuilder.andWhere('load.cargoOwnerId = :userId', { userId });
+      const load = await queryBuilder.getOne();
+
+      if (!load) {
+        throw new NotFoundException(`Load with ID ${id} not found`);
       }
 
-      const load = await queryBuilder.getOne();
+      // Permissions check
+      // If user info is provided, enforce ownership or role-based access
+      if (user && (user.userId || user.id)) {
+        const userId = user.userId || user.id;
+        const role = user.role;
+
+        // Allow viewing if:
+        // 1. User is the cargo owner
+        // 2. User is ADMIN, SUPER_ADMIN, or AGENT
+        // 3. User is a TRUCK_OWNER or DRIVER (within the same tenant)
+        const isOwner = load.cargoOwnerId === userId;
+        const isPrivileged = [
+          UserRole.ADMIN,
+          UserRole.SUPER_ADMIN,
+          UserRole.AGENT,
+        ].includes(role);
+        const isCarrierRelated = [
+          UserRole.TRUCK_OWNER,
+          UserRole.DRIVER,
+        ].includes(role);
+
+        if (!isOwner && !isPrivileged && !isCarrierRelated) {
+          this.logger.warn(`Access denied for user ${userId} with role ${role} to load ${id}`);
+          throw new ForbiddenException('You do not have permission to view this load');
+        }
+      }
 
       // Load broker profile separately if broker exists
       if (load?.broker && load.brokerId) {
@@ -905,12 +1022,11 @@ export class LoadsService {
         }
       }
 
-      if (!load) {
-        throw new NotFoundException(`Load with ID ${id} not found`);
-      }
-
       return load;
     } catch (error) {
+      if (error instanceof NotFoundException || error instanceof ForbiddenException) {
+        throw error;
+      }
       this.logger.error(
         `Failed to find load ${id}: ${error.message}`,
         error.stack,
@@ -987,6 +1103,14 @@ export class LoadsService {
 
       // Update load
       Object.assign(load, sanitizedUpdate);
+
+      // Auto-publish draft if it has complete information
+      if (load.status === LoadStatus.DRAFT && this.isDraftComplete(load)) {
+        load.status = LoadStatus.PUBLISHED;
+        load.publishedAt = new Date();
+        this.logger.log(`Auto-publishing draft ${id} as it now has complete information`);
+      }
+
       const updatedLoad = await this.loadRepository.save(load);
 
       // Recalculate broker commission if load value changed and broker is assigned
@@ -2108,7 +2232,7 @@ export class LoadsService {
     if (!allowed.includes(newStatus)) {
       throw new BadRequestException(
         `Invalid status transition from ${currentStatus} to ${newStatus}. ` +
-          `Allowed transitions: ${allowed.join(', ')}`,
+        `Allowed transitions: ${allowed.join(', ')}`,
       );
     }
   }
@@ -2221,6 +2345,7 @@ export class LoadsService {
     tenantId: string,
     userId?: string,
     filters: any = {},
+    role?: string,
   ) {
     const queryBuilder = this.loadRepository
       .createQueryBuilder('load')
@@ -2231,7 +2356,11 @@ export class LoadsService {
 
     // Apply user filter
     if (userId) {
-      queryBuilder.andWhere('load.cargoOwnerId = :userId', { userId });
+      if (role === 'BROKER' || role === UserRole.BROKER) {
+        queryBuilder.andWhere('load.brokerId = :userId', { userId });
+      } else {
+        queryBuilder.andWhere('load.cargoOwnerId = :userId', { userId });
+      }
     }
 
     // Apply filters
@@ -2381,12 +2510,12 @@ export class LoadsService {
   // Private helper method to map template cargo type to CargoType enum
   private mapCargoTypeFromTemplate(cargoType: any): CargoType {
     if (!cargoType) return CargoType.GENERAL;
-    
+
     // If it's already a valid enum value, return it
     if (Object.values(CargoType).includes(cargoType)) {
       return cargoType as CargoType;
     }
-    
+
     // Map string values to enum
     const mapping: Record<string, CargoType> = {
       GENERAL: CargoType.GENERAL,
@@ -2403,7 +2532,7 @@ export class LoadsService {
       AUTOMOTIVE: CargoType.GENERAL,
       TEXTILES: CargoType.GENERAL,
     };
-    
+
     return mapping[cargoType.toUpperCase()] || CargoType.GENERAL;
   }
 
@@ -2749,19 +2878,19 @@ export class LoadsService {
         'rating', 'viewCount', 'publishedAt', 'assignedCarrierId', 'assignedTruckId',
         'assignedDriverId', 'currentStatus', 'trackingNumber', 'referenceNumber'
       ];
-      
+
       // Clean template data
       const cleanedTemplateData = { ...template.data };
       systemFieldsToExclude.forEach(field => {
         delete cleanedTemplateData[field];
       });
-      
+
       // Clean override data
       const cleanedOverrideData = { ...overrideData };
       systemFieldsToExclude.forEach(field => {
         delete cleanedOverrideData[field];
       });
-      
+
       // Merge template data with override data and ensure all required fields
       const loadData: CreateLoadDto = {
         // Start with cleaned template defaults
@@ -2833,7 +2962,7 @@ export class LoadsService {
       // Validate that locations have required structure
       const hasPickup = loadData.locations.some((loc: any) => loc.type === 'PICKUP');
       const hasDelivery = loadData.locations.some((loc: any) => loc.type === 'DELIVERY');
-      
+
       if (!hasPickup || !hasDelivery) {
         console.error('❌ Template validation failed: missing pickup or delivery location');
         throw new BadRequestException(
@@ -2844,24 +2973,24 @@ export class LoadsService {
       // Ensure each location has required fields
       for (let i = 0; i < loadData.locations.length; i++) {
         const loc = loadData.locations[i];
-        
+
         // Generate ID if missing
         if (!loc.id) {
           loc.id = crypto.randomUUID();
         }
-        
+
         // Set sequence if missing
         if (loc.sequence === undefined || loc.sequence === null) {
           loc.sequence = i + 1;
         }
-        
+
         // Validate locationData
         if (!loc.locationData || !loc.locationData.coordinates) {
           throw new BadRequestException(
             `Location ${loc.type || 'unknown'} is missing required locationData with coordinates.`,
           );
         }
-        
+
         // Set scheduledDate if missing (use pickup/delivery date as fallback)
         if (!loc.scheduledDate) {
           if (loc.type === 'PICKUP') {
@@ -2874,12 +3003,12 @@ export class LoadsService {
         } else if (typeof loc.scheduledDate === 'string') {
           loc.scheduledDate = new Date(loc.scheduledDate);
         }
-        
+
         // Set estimatedTime if missing (default to 60 minutes)
         if (loc.estimatedTime === undefined || loc.estimatedTime === null) {
           loc.estimatedTime = 60; // Default to 60 minutes
         }
-        
+
         // Ensure locationData has required fields
         if (!loc.locationData.name) {
           loc.locationData.name = loc.locationData.address || `Location ${loc.type}`;
@@ -2892,15 +3021,15 @@ export class LoadsService {
       // Validate dates - ensure they are Date objects
       let pickupDate: Date;
       let deliveryDate: Date;
-      
+
       try {
-        pickupDate = loadData.pickupDate instanceof Date 
-          ? loadData.pickupDate 
+        pickupDate = loadData.pickupDate instanceof Date
+          ? loadData.pickupDate
           : new Date(loadData.pickupDate);
-        deliveryDate = loadData.deliveryDate instanceof Date 
-          ? loadData.deliveryDate 
+        deliveryDate = loadData.deliveryDate instanceof Date
+          ? loadData.deliveryDate
           : new Date(loadData.deliveryDate);
-        
+
         // Validate date objects are valid
         if (isNaN(pickupDate.getTime())) {
           throw new BadRequestException('Invalid pickup date format');
@@ -2908,14 +3037,14 @@ export class LoadsService {
         if (isNaN(deliveryDate.getTime())) {
           throw new BadRequestException('Invalid delivery date format');
         }
-        
+
         // Validate date order
         if (pickupDate > deliveryDate) {
           throw new BadRequestException(
             'Delivery date cannot be before pickup date',
           );
         }
-        
+
         // Update loadData with proper Date objects
         loadData.pickupDate = pickupDate;
         loadData.deliveryDate = deliveryDate;
@@ -2943,27 +3072,27 @@ export class LoadsService {
         equipmentType: loadData.equipmentType,
         visibility: loadData.visibility,
       });
-      
+
       // Validate all required fields before calling create
       const requiredFields = ['title', 'weight', 'cargoType', 'loadType', 'equipmentType', 'visibility', 'unitsRequired', 'pickupDate', 'deliveryDate', 'loadValue'];
       const missingFields = requiredFields.filter(field => {
         const value = loadData[field];
         return value === undefined || value === null || (typeof value === 'string' && value.trim() === '');
       });
-      
+
       if (missingFields.length > 0) {
         console.error('❌ Missing required fields:', missingFields);
         throw new BadRequestException(
           `Missing required fields: ${missingFields.join(', ')}. Please ensure all required fields are provided.`,
         );
       }
-      
+
       let load: Load;
       try {
         load = await this.create(loadData, userId, tenantId);
-      this.logger.log(
-        `Created load ${load.id} from template ${templateId} successfully`,
-      );
+        this.logger.log(
+          `Created load ${load.id} from template ${templateId} successfully`,
+        );
       } catch (createError) {
         this.logger.error(
           `Error in create() method when using template: ${createError.message}`,
@@ -2987,7 +3116,7 @@ export class LoadsService {
 
       // Verify locations were saved
       this.logger.log(`Reloaded load ${reloadedLoad.id} with ${reloadedLoad.locations?.length || 0} locations`);
-      
+
       if (!reloadedLoad.locations || reloadedLoad.locations.length === 0) {
         this.logger.warn(`⚠️ Load ${reloadedLoad.id} was created but has no locations saved`);
       }
@@ -3052,14 +3181,14 @@ export class LoadsService {
     cargoId: string,
   ): Promise<EnrichedCargoResponse> {
     try {
-    const cargo = await this.loadRepository.findOne({
-      where: { id: cargoId },
-      relations: ['cargoOwner'],
-    });
+      const cargo = await this.loadRepository.findOne({
+        where: { id: cargoId },
+        relations: ['cargoOwner'],
+      });
 
-    if (!cargo) {
-      throw new NotFoundException(`Cargo with ID ${cargoId} not found`);
-    }
+      if (!cargo) {
+        throw new NotFoundException(`Cargo with ID ${cargoId} not found`);
+      }
 
       // If no locations, return empty enriched locations
       if (!cargo.locations || cargo.locations.length === 0) {
@@ -3077,7 +3206,7 @@ export class LoadsService {
       let enrichedLocations = [];
       try {
         enrichedLocations =
-      await this.locationEnrichmentService.enrichCargoLocations(cargo);
+          await this.locationEnrichmentService.enrichCargoLocations(cargo);
       } catch (enrichError) {
         this.logger.warn(
           `Failed to enrich locations for cargo ${cargoId}: ${enrichError.message}`,
@@ -3086,15 +3215,15 @@ export class LoadsService {
         enrichedLocations = [];
       }
 
-    const cargoWithEnrichedLocations: EnrichedCargo = {
-      ...cargo,
-      enrichedLocations,
-    };
+      const cargoWithEnrichedLocations: EnrichedCargo = {
+        ...cargo,
+        enrichedLocations,
+      };
 
-    return {
-      cargo: cargoWithEnrichedLocations,
-      enrichedLocations,
-    };
+      return {
+        cargo: cargoWithEnrichedLocations,
+        enrichedLocations,
+      };
     } catch (error) {
       this.logger.error(
         `Error getting cargo with enriched locations: ${error.message}`,
@@ -3416,12 +3545,22 @@ export class LoadsService {
       }
       const tenantId = user.tenantId;
 
+      // Helper to safely parse dates
+      const parseDate = (date: any): Date => {
+        if (!date) return new Date();
+        const parsed = new Date(date);
+        return isNaN(parsed.getTime()) ? new Date() : parsed;
+      };
+
       // Create draft load with minimal validation
       const loadData = {
         ...createLoadDto,
         tenantId,
         cargoOwnerId: userId,
         status: LoadStatus.DRAFT,
+        // Ensure dates are valid
+        pickupDate: parseDate(createLoadDto.pickupDate),
+        deliveryDate: parseDate(createLoadDto.deliveryDate),
         // Set default values for required fields to allow partial saves
         urgencyLevel: createLoadDto.urgencyLevel || UrgencyLevel.NORMAL,
         cargoType: createLoadDto.cargoType || CargoType.GENERAL,
@@ -3478,13 +3617,17 @@ export class LoadsService {
       this.logger.log(`Draft load ${savedLoad.id} saved successfully`);
 
       // Create audit event
-      await this.createAuditEvent({
-        loadId: savedLoad.id,
-        entityType: AuditEntityType.LOAD,
-        action: AuditAction.CREATE,
-        actorId: userId,
-        description: 'Cargo saved as draft',
-      });
+      try {
+        await this.createAuditEvent({
+          loadId: savedLoad.id,
+          entityType: AuditEntityType.LOAD,
+          action: AuditAction.CREATE,
+          actorId: userId,
+          description: 'Cargo saved as draft',
+        });
+      } catch (error) {
+        this.logger.warn('Failed to create audit event:', error.message);
+      }
 
       return this.transformLoadToResponse(savedLoad);
     } catch (error) {
@@ -3810,10 +3953,10 @@ export class LoadsService {
       updatedAt: load.updatedAt,
       cargoOwner: load.cargoOwner
         ? {
-            id: load.cargoOwner.id,
-            email: load.cargoOwner.email,
-            profile: load.cargoOwner.profile,
-          }
+          id: load.cargoOwner.id,
+          email: load.cargoOwner.email,
+          profile: load.cargoOwner.profile,
+        }
         : undefined,
       broker: (() => {
         if (!load.broker && !load.brokerId) {
@@ -3830,10 +3973,10 @@ export class LoadsService {
             email: load.broker.email,
             profile: brokerProfile
               ? {
-                  firstName: brokerProfile.firstName,
-                  lastName: brokerProfile.lastName,
-                  companyName: brokerProfile.companyName,
-                }
+                firstName: brokerProfile.firstName,
+                lastName: brokerProfile.lastName,
+                companyName: brokerProfile.companyName,
+              }
               : undefined,
           };
         }
@@ -3848,6 +3991,19 @@ export class LoadsService {
       brokerId: load.brokerId,
       brokerCommissionRate: load.brokerCommissionRate,
       brokerCommissionAmount: load.brokerCommissionAmount,
+      receiverId: load.receiverId,
+      receiver: load.receiver
+        ? {
+          id: load.receiver.id,
+          email: load.receiver.email,
+          profile: load.receiver.profile
+            ? {
+              firstName: load.receiver.profile.firstName,
+              lastName: load.receiver.profile.lastName,
+            }
+            : undefined,
+        }
+        : undefined,
       pickupLocation: (() => {
         // Try new format: locations JSONB array
         if (load.locations && Array.isArray(load.locations)) {
@@ -3934,7 +4090,7 @@ export class LoadsService {
 
     try {
       this.logger.log(`Starting automatic matching for load ${load.id}`);
-      
+
       // Create match request
       const matchRequest: MatchRequestDto = {
         loadId: load.id,
@@ -3949,7 +4105,7 @@ export class LoadsService {
 
       // Find matches asynchronously
       const matches = await this.matchingService.findMatches(matchRequest, tenantId);
-      
+
       if (matches && matches.length > 0) {
         this.logger.log(
           `Found ${matches.length} matching trucks for load ${load.id}`,
@@ -3987,6 +4143,19 @@ export class LoadsService {
       this.logger.error('Error notifying truck owners:', error);
       // Don't fail the publish operation if notifications fail
     }
+  }
+
+  /**
+   * Check if a draft has complete information to be published
+   */
+  private isDraftComplete(load: Load): boolean {
+    return !!(
+      load.title?.trim() &&
+      load.pickupDate &&
+      load.deliveryDate &&
+      load.pickupLocation &&
+      load.deliveryLocation
+    );
   }
 
   /**

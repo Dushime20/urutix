@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
-  FaEdit, FaTrash, FaEye, FaRocket, FaSave, FaClock, FaMapMarkerAlt, 
-  FaBox, FaWeightHanging, FaDollarSign, FaCalendar, FaCheck, FaTimes, FaPlus 
+  FaEdit, FaTrash, FaRocket, FaSave, FaMapMarkerAlt, 
+  FaBox, FaWeightHanging, FaDollarSign, FaCalendar, FaTimes, FaPlus 
 } from 'react-icons/fa';
 import { draftCargoApi, type DraftCargoResponse } from '../services/draftCargoApi';
 import EnhancedCargoForm from './dashboard/cargos/create/components/form';
@@ -44,18 +44,20 @@ const DraftsManagementPage: React.FC = () => {
     setShowEditForm(true);
   };
 
-  const handleUpdateDraft = async (formData: any) => {
+  const handleUpdateDraft = async (formData: any): Promise<any> => {
     if (!selectedDraft) return;
 
     try {
       setActionLoading('updating');
-      await draftCargoApi.updateDraft(selectedDraft.id, formData);
+      const result = await draftCargoApi.updateDraft(selectedDraft.id, formData);
       setShowEditForm(false);
       setSelectedDraft(null);
-      loadDrafts(); // Refresh the list
+      loadDrafts();
       setError(null);
+      return result;
     } catch (error: any) {
       setError(`Failed to update draft: ${error.message}`);
+      throw error;
     } finally {
       setActionLoading(null);
     }

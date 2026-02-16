@@ -131,7 +131,7 @@ interface Cargo {
 interface CargoTableProps {
   cargos: Cargo[];
   lastCargoRef: (node: HTMLElement | null) => void;
-  view: 'grid' | 'list';
+  view?: 'grid' | 'list';
   onRowClick: (cargo: Cargo) => void;
   onEditCargo?: (cargo: Cargo) => void;
   onDeleteCargo?: (cargoId: string) => void;

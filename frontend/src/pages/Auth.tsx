@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import logoUrutiX from '../assets/logo-urutix.svg';
+import logoUrutiXLegacy from '../assets/logo-urutix.svg';
+import logoUrutiXNew from '../assets/logo-urutix-logistics.svg';
 import { Package, ArrowRight, CheckCircle, Truck } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -157,9 +158,24 @@ const Auth = () => {
       setError(null);
       setIsLoading(true);
       console.log('🔐 Attempting login for:', values.email);
-      const user = await login(values.email, values.password);
-      if (user) {
-        console.log("✅ Login successful, user:", user);
+      const response = await login(values.email, values.password);
+
+      if (response) {
+        console.log("✅ Login response:", response);
+
+        // Check for role selection requirement
+        if (response.requiresRoleSelection) {
+          navigate('/select-role', {
+            state: {
+              availableRoles: response.availableRoles,
+              preAuthToken: response.preAuthToken
+            }
+          });
+          return;
+        }
+
+        // Standard flow - response contains user or is user
+        const user = response.user || response;
 
         // Role-based redirects
         switch (user.role) {
@@ -315,11 +331,11 @@ const Auth = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 relative overflow-hidden">
       {/* Full Page Background Logo */}
-      <img src={logoUrutiX} alt="UrutiX Logo Background" className="pointer-events-none select-none fixed inset-0 w-full h-full object-cover opacity-10 z-0" style={{ objectPosition: 'center' }} />
+      <img src={logoUrutiXLegacy} alt="UrutiX Logo Background" className="pointer-events-none select-none fixed inset-0 w-full h-full object-cover opacity-10 z-0" style={{ objectPosition: 'center' }} />
       {/* Centered Auth Form */}
       <div className="w-full max-w-2xl px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="flex justify-center mb-8">
-          <img src={logoUrutiX} alt="UrutiX Logistics Logo" className="h-24 md:h-32 w-auto object-contain drop-shadow-lg" />
+          <img src={logoUrutiXNew} alt="UrutiX Logistics Logo" className="h-24 md:h-32 w-auto object-contain drop-shadow-lg" />
         </div>
 
         {/* Form Container */}

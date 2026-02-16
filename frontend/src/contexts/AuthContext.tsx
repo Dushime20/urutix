@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useRef } from 'react';
 import type { ReactNode } from 'react';
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
@@ -41,11 +41,12 @@ interface AuthContextType {
   user: User | null;
   accessToken: string | null;
   refreshToken: string | null;
-  login: (email: string, password: string, rememberMe?: boolean) => Promise<User | null>;
+  login: (email: string, password: string, rememberMe?: boolean) => Promise<any>;
   register: (userData: RegisterData) => Promise<User | null>;
   logout: () => void;
   refreshAccessToken: () => Promise<boolean>;
   updateProfile: (profileData: Partial<User>) => Promise<boolean>;
+  selectRole: (role: string, preAuthToken: string) => Promise<User | null>;
   isLoading: boolean;
 }
 
@@ -93,6 +94,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [isInitialized, setIsInitialized] = useState(false);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false); // Add flag to prevent infinite loop
+  const sessionExpiredToastShown = useRef(false); // Track if session expired toast has been shown
 
   const persistUser = (userData: User | null) => {
     if (userData) {
@@ -126,7 +128,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
     persistUser(null);
     setIsRefreshing(false);
     delete axios.defaults.headers.common['Authorization'];
-    toast.error('Session expired. Please login again.');
+    
+    // Only show the session expired toast once
+    if (!sessionExpiredToastShown.current) {
+      sessionExpiredToastShown.current = true;
+      toast.error('Session expired. Please login again.');
+    }
   };
 
   const refreshAccessToken = async (): Promise<boolean> => {
@@ -325,7 +332,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     checkAuth();
   }, [accessToken, isInitialized, isLoggingIn, isRefreshing]); // Removed function dependencies since they're now stable
 
-  const login = async (email: string, password: string, rememberMe: boolean = false): Promise<User | null> => {
+  const login = async (email: string, password: string, rememberMe: boolean = false): Promise<any> => {
     try {
       setIsLoading(true);
       setIsLoggingIn(true); // Set logging in flag
@@ -334,6 +341,18 @@ export function AuthProvider({ children }: AuthProviderProps) {
         password,
         rememberMe,
       });
+      
+      // Check if role selection is required
+      if (response.data.requiresRoleSelection) {
+         setIsLoading(false);
+         setIsLoggingIn(false);
+         return {
+             requiresRoleSelection: true,
+             availableRoles: response.data.availableRoles,
+             preAuthToken: response.data.accessToken // Using accessToken field as preAuthToken
+         };
+      }
+      
       const { accessToken: newAccessToken, refreshToken: newRefreshToken, user: userData } = response.data;
       
       console.log('🔐 Login Debug:');
@@ -348,6 +367,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
       localStorage.setItem('refreshToken', newRefreshToken);
       setAccessToken(newAccessToken);
       setRefreshToken(newRefreshToken);
+      
+      // Reset the session expired toast flag for new session
+      sessionExpiredToastShown.current = false;
       
       console.log('✅ Tokens saved to localStorage and state');
       
@@ -367,13 +389,51 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setIsLoading(false);
       setIsLoggingIn(false); // Reset logging in flag
       
-      toast.success('Login successful!');
-      return userData;
+      toast.success('Logged in successfully');
+      return { user: userData };
     } catch (error: any) {
       console.error('Login: Error occurred:', error);
       setIsLoading(false);
       setIsLoggingIn(false); // Reset logging in flag
       toast.error(error.response?.data?.message || 'Login failed');
+      return null;
+    }
+  };
+
+  const selectRole = async (role: string, preAuthToken: string): Promise<User | null> => {
+    try {
+      setIsLoading(true);
+      setIsLoggingIn(true);
+      
+      const response = await authAPI.selectRole({ role, preAuthToken });
+      const { accessToken: newAccessToken, refreshToken: newRefreshToken, user: userData } = response.data;
+      
+      debugUserData(userData, 'selectRole');
+      
+      localStorage.setItem('accessToken', newAccessToken);
+      localStorage.setItem('refreshToken', newRefreshToken);
+      setAccessToken(newAccessToken);
+      setRefreshToken(newRefreshToken);
+      
+      // Reset the session expired toast flag for new session
+      sessionExpiredToastShown.current = false;
+      
+      persistUser(userData);
+      identifyUser(userData);
+      captureEvent('user_role_selected', {
+          user_id: userData.id,
+          role: userData.role
+      });
+      
+      setIsLoading(false);
+      setIsLoggingIn(false);
+      toast.success('Logged in successfully');
+      return userData;
+    } catch (error: any) {
+      console.error('Select Role Error:', error);
+      setIsLoading(false);
+      setIsLoggingIn(false);
+      toast.error(error.response?.data?.message || 'Role selection failed');
       return null;
     }
   };
@@ -390,6 +450,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
       localStorage.setItem('refreshToken', newRefreshToken);
       setAccessToken(newAccessToken);
       setRefreshToken(newRefreshToken);
+      
+      // Reset the session expired toast flag for new session
+      sessionExpiredToastShown.current = false;
       
       // Set user data
       persistUser(registeredUser);
@@ -408,7 +471,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setIsLoading(false);
       setIsLoggingIn(false); // Reset logging in flag
       
-      toast.success('Registration successful! Please check your email to verify your account.');
+      const message = registeredUser.status === 'ACTIVE'
+        ? 'Registration successful!'
+        : 'Registration successful! Please check your email to verify your account.';
+
+      toast.success(message);
       return registeredUser;
     } catch (error: any) {
       console.error('Register: Error occurred:', error);
@@ -479,6 +546,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     logout,
     refreshAccessToken,
     updateProfile,
+    selectRole,
     isLoading,
   };
 

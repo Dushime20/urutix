@@ -494,6 +494,32 @@ export class FleetService {
     await this.truckRepository.remove(truck);
   }
 
+  async updateTruckLocation(
+    id: string,
+    latitude: number,
+    longitude: number,
+    address: string | undefined,
+    tenantId: string,
+    userId: string,
+  ): Promise<Truck> {
+    const truck = await this.findOneTruck(id, tenantId, userId);
+
+    // Update location
+    truck.currentLocation = {
+      type: 'Point',
+      coordinates: [longitude, latitude],
+    };
+    
+    // Update address if provided
+    if (address !== undefined) {
+      truck.currentAddress = address;
+    }
+    
+    truck.locationUpdatedAt = new Date();
+
+    return this.truckRepository.save(truck);
+  }
+
   // Driver operations
   async createDriver(
     createDriverDto: CreateFleetDriverDto,
@@ -544,26 +570,51 @@ export class FleetService {
         );
       }
 
-      // Step 1: Check if user already exists BEFORE creating driver (same as lender creation)
-      this.logger.log(`Checking if user with email ${createDriverDto.email} already exists...`);
+      // Step 1: Check if driver user already exists (role = DRIVER) in this tenant
+      this.logger.log(`Checking if driver user with email ${createDriverDto.email} already exists...`);
       const existingUser = await this.userRepository.findOne({
-        where: { email: createDriverDto.email.trim().toLowerCase(), tenantId },
+        where: { 
+          email: createDriverDto.email.trim().toLowerCase(), 
+          role: UserRole.DRIVER,
+          tenantId 
+        },
       });
 
       if (existingUser) {
         this.logger.error(
-          `User with email ${createDriverDto.email} already exists. Cannot create driver with existing user email.`,
+          `Driver user with email ${createDriverDto.email} already exists in this tenant.`,
         );
         throw new ConflictException(
-          `A user with the email "${createDriverDto.email}" already exists in the system. Please use a different email address for this driver.`,
+          `A driver with the email "${createDriverDto.email}" already exists in the system for this specific tenant.`,
         );
       }
 
-      // Step 2: Create the driver entity (only if user doesn't exist)
-      // But first, we need to create the user account
-      this.logger.log(`No existing user found. Proceeding with driver creation...`);
+      // Step 2: Create the user account (even if email exists for other roles)
+      // This will now pass database constraints because we are creating a new role entry
+      this.logger.log(`Proceeding with driver creation (multi-role compatible)...`);
       
-      // Create new user for driver (following lender creation pattern)
+      // Check for any existing user with this email to reuse password
+      const existingUserWithEmail = await this.userRepository.findOne({
+        where: { email: createDriverDto.email.trim().toLowerCase() }
+      });
+      
+      // Generate temporary password (default backup)
+      const tempPassword = crypto.randomBytes(32).toString('hex');
+      const tempPasswordHash = await bcrypt.hash(tempPassword, 12);
+      
+      let passwordHashToUse = tempPasswordHash;
+      let userStatus = UserStatus.PENDING_VERIFICATION;
+      let shouldSendSetupEmail = true;
+
+      // If user exists and has a password, reuse it and activate account immediately
+      if (existingUserWithEmail && existingUserWithEmail.passwordHash) {
+         this.logger.log(`Found existing user account for ${createDriverDto.email}. Reusing credentials.`);
+         passwordHashToUse = existingUserWithEmail.passwordHash;
+         userStatus = UserStatus.ACTIVE; // Auto-activate since they have a password
+         shouldSendSetupEmail = false;
+      }
+      
+      // Create new user for driver
       this.logger.log(`👤 Creating new driver user account...`);
       
       // Validate email is provided
@@ -581,16 +632,12 @@ export class FleetService {
         );
       }
       
-      // Generate temporary password (will be replaced when driver sets password)
-      const tempPassword = crypto.randomBytes(32).toString('hex');
-      const tempPasswordHash = await bcrypt.hash(tempPassword, 12);
-
       const driverUser = this.userRepository.create({
         email: createDriverDto.email.trim().toLowerCase(), // Normalize email
         phone: createDriverDto.phone,
-        passwordHash: tempPasswordHash,
+        passwordHash: passwordHashToUse,
         role: UserRole.DRIVER,
-        status: UserStatus.PENDING_VERIFICATION, // Will be activated after password setup
+        status: userStatus,
         tenantId,
       });
 
@@ -608,62 +655,68 @@ export class FleetService {
       await this.userProfileRepository.save(userProfile);
       this.logger.log(`✅ User profile created for driver user`);
 
-      // Generate password setup token
-      this.logger.log(`📧 Generating password setup token for: ${createDriverDto.email}`);
-      const token = crypto.randomBytes(32).toString('hex');
-      const expiresAt = new Date();
-      expiresAt.setDate(expiresAt.getDate() + 7); // Token expires in 7 days
+      // Handle password setup
+      if (shouldSendSetupEmail) {
+        // Generate password setup token
+        this.logger.log(`📧 Generating password setup token for: ${createDriverDto.email}`);
+        const token = crypto.randomBytes(32).toString('hex');
+        const expiresAt = new Date();
+        expiresAt.setDate(expiresAt.getDate() + 7); // Token expires in 7 days
 
-      // Invalidate any existing tokens for this email
-      await this.passwordResetTokenRepository.update(
-        { email: createDriverDto.email.trim().toLowerCase(), used: false },
-        { used: true },
-      );
+        // Invalidate any existing tokens for this email
+        await this.passwordResetTokenRepository.update(
+          { email: createDriverDto.email.trim().toLowerCase(), used: false },
+          { used: true },
+        );
 
-      const passwordSetupToken = this.passwordResetTokenRepository.create({
-        email: createDriverDto.email.trim().toLowerCase(),
-        token,
-        expiresAt,
-        used: false,
-      });
-      await this.passwordResetTokenRepository.save(passwordSetupToken);
-      this.logger.log(`✅ Password setup token generated and saved`);
-
-      // Send password setup email (always send for new users)
-      this.logger.log(`📧 ========== DRIVER EMAIL SENDING PROCESS START ==========`);
-      this.logger.log(`📧 Sending password setup email for new driver user...`);
-      this.logger.log(`📧 Email address: ${createDriverDto.email.trim().toLowerCase()}`);
-      this.logger.log(`📧 Driver name: ${createDriverDto.firstName} ${createDriverDto.lastName}`);
-      this.logger.log(`📧 EmailService instance: ${this.emailService ? 'EXISTS' : 'MISSING'}`);
-      
-      try {
-        if (!this.emailService) {
-          this.logger.error('❌ EmailService is not injected properly!');
-          this.logger.warn('⚠️ EmailService is not available, skipping email send');
-          throw new Error('EmailService is not available');
-        }
-        
-        this.logger.log('📧 Calling emailService.sendDriverPasswordSetupEmail...');
-        await this.emailService.sendDriverPasswordSetupEmail(
-          createDriverDto.email.trim().toLowerCase(),
-          createDriverDto.firstName,
-          createDriverDto.lastName,
+        const passwordSetupToken = this.passwordResetTokenRepository.create({
+          email: createDriverDto.email.trim().toLowerCase(),
           token,
-        );
-        this.logger.log(
-          `✅ Driver password setup email sent successfully to ${createDriverDto.email}`,
-        );
-        this.logger.log(`✅ Check the inbox (and spam folder) for: ${createDriverDto.email}`);
-      } catch (emailError: any) {
-        this.logger.error(
-          `❌ Failed to send driver password setup email: ${emailError.message}`,
-        );
-        this.logger.error(`❌ Error stack: ${emailError.stack}`);
-        this.logger.warn(
-          `⚠️ Driver and user account were created successfully, but email could not be sent. The driver will need to use password reset to set their password.`,
-        );
+          expiresAt,
+          used: false,
+        });
+        await this.passwordResetTokenRepository.save(passwordSetupToken);
+        this.logger.log(`✅ Password setup token generated and saved`);
+
+        // Send password setup email (only for new users)
+        this.logger.log(`📧 ========== DRIVER EMAIL SENDING PROCESS START ==========`);
+        this.logger.log(`📧 Sending password setup email for new driver user...`);
+        this.logger.log(`📧 Email address: ${createDriverDto.email.trim().toLowerCase()}`);
+        this.logger.log(`📧 Driver name: ${createDriverDto.firstName} ${createDriverDto.lastName}`);
+        this.logger.log(`📧 EmailService instance: ${this.emailService ? 'EXISTS' : 'MISSING'}`);
+        
+        try {
+          if (!this.emailService) {
+            this.logger.error('❌ EmailService is not injected properly!');
+            this.logger.warn('⚠️ EmailService is not available, skipping email send');
+            throw new Error('EmailService is not available');
+          }
+          
+          this.logger.log('📧 Calling emailService.sendDriverPasswordSetupEmail...');
+          await this.emailService.sendDriverPasswordSetupEmail(
+            createDriverDto.email.trim().toLowerCase(),
+            createDriverDto.firstName,
+            createDriverDto.lastName,
+            token,
+          );
+          this.logger.log(
+            `✅ Driver password setup email sent successfully to ${createDriverDto.email}`,
+          );
+          this.logger.log(`✅ Check the inbox (and spam folder) for: ${createDriverDto.email}`);
+        } catch (emailError: any) {
+          this.logger.error(
+            `❌ Failed to send driver password setup email: ${emailError.message}`,
+          );
+          this.logger.error(`❌ Error stack: ${emailError.stack}`);
+          this.logger.warn(
+            `⚠️ Driver and user account were created successfully, but email could not be sent. The driver will need to use password reset to set their password.`,
+          );
+        }
+        this.logger.log(`📧 ========== DRIVER EMAIL SENDING PROCESS END ==========`);
+      } else {
+        this.logger.log(`ℹ️ Existing user found with password. Skipped password setup email.`);
+        // Could send a "Role Added" notification email here if desired
       }
-      this.logger.log(`📧 ========== DRIVER EMAIL SENDING PROCESS END ==========`);
 
       // Create driver entity
       // Convert ISO date strings to Date objects for database

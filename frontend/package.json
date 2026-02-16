@@ -34,7 +34,7 @@
     "framer-motion": "^12.34.0",
     "globals": "^16.3.0",
     "html2canvas": "^1.4.1",
-    "jspdf": "^3.0.3",
+    "jspdf": "^3.0.4",
     "jspdf-autotable": "^5.0.2",
     "leaflet": "^1.9.4",
     "lucide-react": "^0.294.0",

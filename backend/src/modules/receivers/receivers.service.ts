@@ -63,18 +63,37 @@ export class ReceiversService {
       throw new BadRequestException('User is not a cargo owner');
     }
 
-    // Check if email already exists
+    // Check if receiver (User) already exists for this tenant
     const existingUser = await this.userRepository.findOne({
-      where: { email: createReceiverDto.email.toLowerCase().trim() },
+      where: { 
+          email: createReceiverDto.email.toLowerCase().trim(),
+          role: UserRole.CARGO_RECEIVER,
+          tenantId: cargoOwner.tenantId
+      },
     });
 
     if (existingUser) {
-      throw new ConflictException('A user with this email already exists');
+      throw new ConflictException('A receiver with this email already exists in this tenant');
     }
 
-    // Generate temporary password (will be changed on first login)
-    const tempPassword = crypto.randomBytes(16).toString('hex');
-    const passwordHash = await bcrypt.hash(tempPassword, 10);
+    // Check for existing user account to reuse credentials
+    const existingUserAccount = await this.userRepository.findOne({
+      where: { email: createReceiverDto.email.toLowerCase().trim() }
+    });
+
+    let passwordHash;
+    let userStatus = UserStatus.PENDING_VERIFICATION;
+    let shouldSendInvitation = true;
+
+    if (existingUserAccount && existingUserAccount.passwordHash) {
+       passwordHash = existingUserAccount.passwordHash;
+       userStatus = UserStatus.ACTIVE;
+       shouldSendInvitation = false;
+       this.logger.log(`Reusing existing credentials for receiver ${createReceiverDto.email}`);
+    } else {
+       const tempPassword = crypto.randomBytes(16).toString('hex');
+       passwordHash = await bcrypt.hash(tempPassword, 10);
+    }
 
     // Create receiver user
     const receiver = this.userRepository.create({
@@ -82,7 +101,7 @@ export class ReceiversService {
       phone: createReceiverDto.phone?.trim(),
       passwordHash,
       role: UserRole.CARGO_RECEIVER,
-      status: UserStatus.PENDING_VERIFICATION,
+      status: userStatus,
       tenantId: cargoOwner.tenantId,
       createdByCargoOwnerId: cargoOwnerId,
     });
@@ -99,41 +118,46 @@ export class ReceiversService {
 
     await this.userProfileRepository.save(profile);
 
-    // Generate password setup token
-    const token = crypto.randomBytes(32).toString('hex');
-    const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + 7); // Token expires in 7 days
+    // Only send invitation if needed
+    if (shouldSendInvitation) {
+        // Generate password setup token
+        const token = crypto.randomBytes(32).toString('hex');
+        const expiresAt = new Date();
+        expiresAt.setDate(expiresAt.getDate() + 7); // Token expires in 7 days
 
-    // Invalidate any existing tokens for this email
-    await this.passwordResetTokenRepository.update(
-      { email: receiver.email, used: false },
-      { used: true },
-    );
+        // Invalidate any existing tokens for this email
+        await this.passwordResetTokenRepository.update(
+          { email: receiver.email, used: false },
+          { used: true },
+        );
 
-    const passwordSetupToken = this.passwordResetTokenRepository.create({
-      email: receiver.email,
-      token,
-      expiresAt,
-      used: false,
-    });
+        const passwordSetupToken = this.passwordResetTokenRepository.create({
+          email: receiver.email,
+          token,
+          expiresAt,
+          used: false,
+        });
 
-    await this.passwordResetTokenRepository.save(passwordSetupToken);
+        await this.passwordResetTokenRepository.save(passwordSetupToken);
 
-    // Send invitation email
-    try {
-      await this.emailService.sendReceiverInvitationEmail(
-        receiver.email,
-        createReceiverDto.firstName,
-        createReceiverDto.lastName,
-        cargoOwner.email,
-        token,
-      );
-      this.logger.log(`✅ Invitation email sent to ${receiver.email}`);
-    } catch (error) {
-      this.logger.error(
-        `Failed to send invitation email: ${error.message}`,
-      );
-      // Don't fail the creation if email fails
+        // Send invitation email
+        try {
+          await this.emailService.sendReceiverInvitationEmail(
+            receiver.email,
+            createReceiverDto.firstName,
+            createReceiverDto.lastName,
+            cargoOwner.email,
+            token,
+          );
+          this.logger.log(`✅ Invitation email sent to ${receiver.email}`);
+        } catch (error) {
+          this.logger.error(
+            `Failed to send invitation email: ${error.message}`,
+          );
+          // Don't fail the creation if email fails
+        }
+    } else {
+       this.logger.log(`Existing credentials found for ${receiver.email}. Skipped invitation email.`);
     }
 
     return {
@@ -324,7 +348,7 @@ export class ReceiversService {
   /**
    * Get all cargos assigned to a receiver (for receiver users)
    */
-  async getCargosByReceiverId(receiverId: string): Promise<Load[]> {
+  async getCargosByReceiverId(receiverId: string): Promise<any[]> {
     // Verify receiver exists
     const receiver = await this.userRepository.findOne({
       where: { id: receiverId, role: UserRole.CARGO_RECEIVER },
@@ -340,7 +364,30 @@ export class ReceiversService {
       order: { createdAt: 'DESC' },
     });
 
-    return cargos;
+    // Fetch inspection status for each cargo
+    const cargosWithInspection = await Promise.all(
+      cargos.map(async (cargo) => {
+        const inspection = await this.cargoInspectionRepository.findOne({
+          where: { loadId: cargo.id, receiverId },
+        });
+        
+        return {
+          ...cargo,
+          inspectionStatus: inspection?.status || 'PENDING',
+          inspection: inspection ? {
+            id: inspection.id,
+            status: inspection.status,
+            completedAt: inspection.completedAt,
+            verifiedCount: inspection.verifiedCount,
+            totalItems: inspection.totalItems,
+            discrepancyCount: inspection.discrepancyCount,
+            allItemsVerified: inspection.allItemsVerified,
+          } : null,
+        };
+      })
+    );
+
+    return cargosWithInspection;
   }
 
   /**
@@ -584,6 +631,10 @@ export class ReceiversService {
       (item) => item.discrepancy === true,
     ).length;
     const allItemsVerified = verifiedCount === totalItems && discrepancyCount === 0;
+    
+    // Mark as COMPLETED when inspection is submitted (regardless of discrepancies)
+    // The inspection process is complete - discrepancies are just noted issues
+    const inspectionStatus = InspectionStatus.COMPLETED;
 
     if (inspection) {
       // Update existing inspection - map DTO to entity format
@@ -600,10 +651,8 @@ export class ReceiversService {
       inspection.totalItems = totalItems;
       inspection.discrepancyCount = discrepancyCount;
       inspection.allItemsVerified = allItemsVerified;
-      inspection.status = allItemsVerified
-        ? InspectionStatus.COMPLETED
-        : InspectionStatus.IN_PROGRESS;
-      inspection.completedAt = allItemsVerified ? new Date() : undefined;
+      inspection.status = inspectionStatus;
+      inspection.completedAt = new Date();
       inspection.discrepancies = inspectionData.checklist
         .filter((item) => item.discrepancy)
         .map((item) => ({
@@ -630,8 +679,8 @@ export class ReceiversService {
         totalItems,
         discrepancyCount,
         allItemsVerified,
-        status: allItemsVerified ? InspectionStatus.COMPLETED : InspectionStatus.IN_PROGRESS,
-        completedAt: allItemsVerified ? new Date() : undefined,
+        status: inspectionStatus,
+        completedAt: new Date(),
         discrepancies: inspectionData.checklist
           .filter((item) => item.discrepancy)
           .map((item) => ({

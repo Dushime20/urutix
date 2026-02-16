@@ -27,6 +27,7 @@ import {
   Filler
 } from 'chart.js';
 
+import { useAuth } from '../contexts/AuthContext';
 ChartJS.register(
   CategoryScale,
   LinearScale,

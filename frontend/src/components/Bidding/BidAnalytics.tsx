@@ -104,12 +104,7 @@ const BidAnalytics: React.FC<BidAnalyticsProps> = ({ userRole }) => {
     }
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(amount);
-  };
+
 
   const formatTime = (minutes: number) => {
     const hours = Math.floor(minutes / 60);

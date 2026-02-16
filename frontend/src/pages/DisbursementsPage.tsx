@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { lendingApi } from '../services/lending/lendingApi';
 import { 
@@ -7,20 +7,17 @@ import {
   FaCheckCircle, 
   FaExclamationTriangle,
   FaSearch,
-  FaFilter,
   FaDownload,
   FaEye,
   FaTimesCircle,
   FaFileInvoiceDollar,
   FaCalendarAlt,
   FaUser,
-  FaTruck,
   FaMapMarkerAlt,
   FaSortAmountDown,
   FaSortAmountUp,
   FaChartLine,
-  FaArrowUp,
-  FaArrowDown
+  FaArrowUp
 } from 'react-icons/fa';
 
 interface Disbursement {

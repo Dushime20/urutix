@@ -35,6 +35,7 @@ import DriverPasswordSetup from './pages/DriverPasswordSetup';
 import TenantPasswordSetup from './pages/TenantPasswordSetup';
 import LenderPasswordSetup from './pages/LenderPasswordSetup';
 import ReceiverPasswordSetup from './pages/ReceiverPasswordSetup';
+const RoleSelectionPage = lazy(() => import('./pages/RoleSelectionPage'));
 
 // Lazy load all page components to reduce initial bundle size
 const CargoList = lazy(() => import('./pages/dashboard/cargos/list'));

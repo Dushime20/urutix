@@ -180,11 +180,15 @@ const EnhancedCargoForm: React.FC<EnhancedCargoFormProps> = ({
   }>({ pickup: null, delivery: null });
   const [loadingIntelligence, setLoadingIntelligence] = useState(false);
 
-  // Apply template data when initialData changes (for editing)
+  // Apply template data when initialData changes (for editing or continuing drafts)
   useEffect(() => {
-    console.log("🔄 Form useEffect triggered:", { isOpen, mode, hasInitialData: !!initialData });
-    if (initialData && mode === "edit") {
-      console.log("📝 Applying edit data to form:", initialData);
+    console.log("🔄 Form useEffect triggered:", { isOpen, mode, hasInitialData: !!initialData, initialDataId: initialData?.id });
+    
+    // Full data population for: edit mode OR create mode with existing cargo/draft (has id)
+    const shouldFullyPopulate = initialData && (mode === "edit" || initialData.id);
+    
+    if (shouldFullyPopulate) {
+      console.log("📝 Applying full cargo/draft data to form:", initialData);
       // Transform and apply all cargo data to form
       const transformedData: any = {
         ...initialData,
@@ -243,26 +247,6 @@ const EnhancedCargoForm: React.FC<EnhancedCargoFormProps> = ({
           longitude: initialData.deliveryLocation.longitude || 0,
         });
       }
-
-      // Apply AI suggestions if available
-      if (aiSuggestions) {
-        setSuggestions(aiSuggestions);
-        applyAISuggestions(aiSuggestions);
-      }
-    } else if (initialData && mode === "create") {
-      // For create mode with template (like from loadItem)
-      setFormData((prev) => ({
-        ...prev,
-        ...initialData,
-        loadType: initialData.loadType || prev.loadType,
-        equipmentType: initialData.equipmentType || prev.equipmentType,
-        visibility: initialData.visibility || prev.visibility,
-        unitsRequired:
-          initialData.unitsRequired !== undefined
-            ? initialData.unitsRequired
-            : prev.unitsRequired,
-        paymentTerms: initialData.paymentTerms || prev.paymentTerms,
-      }));
 
       // Apply AI suggestions if available
       if (aiSuggestions) {
@@ -623,7 +607,6 @@ const EnhancedCargoForm: React.FC<EnhancedCargoFormProps> = ({
     { id: "security", label: "Security & Insurance", icon: FaShieldAlt },
     { id: "route", label: "Route & Access", icon: FaLocationArrow },
     { id: "urgency", label: "Urgency & Timing", icon: FaClock },
-    { id: "matching", label: "Matching Criteria", icon: FaCogs },
     { id: "quality", label: "Quality & Inspection", icon: FaCameraRetro },
   ];
 
@@ -715,7 +698,9 @@ const EnhancedCargoForm: React.FC<EnhancedCargoFormProps> = ({
     }
   }, [formData, pickupLocation, deliveryLocation, onSaveDraft, mode]);
 
-  // Debounced auto-save
+  // Auto-save disabled - drafts are only saved when user clicks "Save Draft" button
+  // To re-enable auto-save, uncomment the useEffect below:
+  /*
   useEffect(() => {
     if (autoSaveTimeoutRef.current) {
       clearTimeout(autoSaveTimeoutRef.current);
@@ -735,6 +720,7 @@ const EnhancedCargoForm: React.FC<EnhancedCargoFormProps> = ({
       }
     };
   }, [formData, pickupLocation, deliveryLocation, handleAutoSave, mode, onSaveDraft]);
+  */
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -764,19 +750,14 @@ const EnhancedCargoForm: React.FC<EnhancedCargoFormProps> = ({
                 />
               </div>
               <div className="flex items-center justify-between text-xs text-gray-500">
-                {isAutoSaving ? (
-                  <span className="flex items-center gap-1">
-                    <div className="animate-spin rounded-full h-2.5 w-2.5 border-b border-primary-600"></div>
-                    Auto-saving...
-                  </span>
-                ) : draftSaved ? (
+                {draftSaved ? (
                   <span className="text-green-600 flex items-center gap-1">
                     <FaCheck className="w-2.5 h-2.5" />
                     Draft saved
                   </span>
                 ) : lastSaved ? (
                   <span>Last saved: {lastSaved.toLocaleTimeString()}</span>
-                ) : null}
+                ) : <span></span>}
                 <span>{sections.filter(s => completedSections[s.id]).length} of {sections.length} sections complete</span>
               </div>
             </div>
@@ -792,7 +773,7 @@ const EnhancedCargoForm: React.FC<EnhancedCargoFormProps> = ({
           </button>
         </DialogHeader>
 
-        <div className="flex flex-col lg:flex-row h-[calc(90vh-120px)] min-h-0">
+        <div className="flex flex-col lg:flex-row h-[calc(90vh-180px)] min-h-0">
           {/* Sidebar Navigation */}
           <div className={`${sidebarOpen ? 'block' : 'hidden'} lg:block w-full lg:w-56 bg-gray-50 border-r border-gray-200 overflow-y-auto lg:sticky lg:top-0 flex-shrink-0`}>
             <nav className="p-2 sm:p-3 space-y-1.5">
@@ -841,6 +822,51 @@ const EnhancedCargoForm: React.FC<EnhancedCargoFormProps> = ({
               {error && (
                 <div className="bg-red-50 border border-red-200 rounded-lg p-3">
                   <p className="text-xs text-red-800">{error}</p>
+                </div>
+              )}
+
+              {/* Photos Display - Moved to Top */}
+              {photos.length > 0 && (
+                <div className="p-4 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border border-blue-200 shadow-sm">
+                  <h4 className="text-sm font-semibold text-gray-900 mb-3 flex items-center">
+                    <FaCameraRetro className="w-4 h-4 mr-2 text-blue-600" />
+                    Uploaded Photos ({photos.length})
+                  </h4>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    {photos.map((photo, index) => (
+                      <div key={index} className="relative group">
+                        <img
+                          src={photo}
+                          alt={`Cargo photo ${index + 1}`}
+                          className="w-full h-24 object-cover rounded-lg border-2 border-white shadow-md group-hover:shadow-lg transition-shadow"
+                        />
+                        <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 rounded-lg transition-all" />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* AI Suggestions Display - Moved to Top */}
+              {suggestions && (
+                <div className="p-4 bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl border border-green-200 shadow-sm">
+                  <h4 className="text-sm font-semibold text-gray-900 mb-3 flex items-center">
+                    <FaCheck className="w-4 h-4 mr-2 text-green-600" />
+                    Applied AI Suggestions
+                  </h4>
+                  <div className="space-y-2">
+                    {suggestions.suggestions?.map(
+                      (suggestion: any, index: number) => (
+                        <div
+                          key={index}
+                          className="flex items-start text-sm text-gray-700 bg-white rounded-lg p-2"
+                        >
+                          <FaCheck className="w-4 h-4 mr-2 text-green-600 flex-shrink-0 mt-0.5" />
+                          <span>{suggestion.title}</span>
+                        </div>
+                      )
+                    )}
+                  </div>
                 </div>
               )}
 
@@ -1344,48 +1370,6 @@ const EnhancedCargoForm: React.FC<EnhancedCargoFormProps> = ({
                   </div>
                 </div>
               </DialogFooter>
-
-              {/* Photos Display */}
-              {photos.length > 0 && (
-                <div className="mt-4 p-3 bg-gray-50 rounded-lg">
-                  <h4 className="text-xs font-medium text-gray-900 mb-2">
-                    Uploaded Photos
-                  </h4>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    {photos.map((photo, index) => (
-                      <div key={index} className="relative">
-                        <img
-                          src={photo}
-                          alt={`Cargo photo ${index + 1}`}
-                          className="w-full h-20 object-cover rounded-lg"
-                        />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* AI Suggestions Display */}
-              {suggestions && (
-                <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-                  <h4 className="text-xs font-medium text-blue-900 mb-2">
-                    Applied AI Suggestions
-                  </h4>
-                  <div className="space-y-1.5">
-                    {suggestions.suggestions?.map(
-                      (suggestion: any, index: number) => (
-                        <div
-                          key={index}
-                          className="flex items-center text-xs text-blue-800"
-                        >
-                          <FaCheck className="w-3.5 h-3.5 mr-1.5 text-blue-600" />
-                          {suggestion.title}
-                        </div>
-                      )
-                    )}
-                  </div>
-                </div>
-              )}
             </form>
           </div>
         </div>

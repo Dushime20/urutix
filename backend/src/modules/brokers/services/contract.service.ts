@@ -24,62 +24,82 @@ export class ContractService {
     private readonly loadRepository: Repository<Load>,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
-  ) {}
+  ) { }
 
   /**
-   * Create a new contract for a load
+   * Create a new contract for a load (by cargo owner)
    */
   async createContract(
-    brokerId: string,
+    cargoOwnerId: string,
     tenantId: string,
     createDto: CreateContractDto,
   ): Promise<LoadContract> {
-    // Verify broker exists and has access
+    // Verify cargo owner exists
+    const cargoOwner = await this.userRepository.findOne({
+      where: { id: cargoOwnerId, role: UserRole.CARGO_OWNER, tenantId },
+    });
+
+    if (!cargoOwner) {
+      throw new ForbiddenException('Cargo owner not found or access denied');
+    }
+
+    // Verify broker exists
     const broker = await this.userRepository.findOne({
-      where: { id: brokerId, role: UserRole.BROKER, tenantId },
+      where: { id: createDto.brokerId, role: UserRole.BROKER },
     });
 
     if (!broker) {
-      throw new ForbiddenException('Broker not found or access denied');
+      throw new NotFoundException('Broker not found');
     }
 
-    // Verify load exists and is assigned to broker
+    // Verify load exists and belongs to cargo owner
     const load = await this.loadRepository.findOne({
-      where: { id: createDto.loadId, brokerId, tenantId },
+      where: { id: createDto.loadId, cargoOwnerId, tenantId },
       relations: ['cargoOwner'],
     });
 
     if (!load) {
-      throw new NotFoundException('Load not found or not assigned to broker');
+      throw new NotFoundException('Load not found or access denied');
     }
 
-    // Verify transporter exists
-    const transporter = await this.userRepository.findOne({
-      where: { id: createDto.transporterId, role: UserRole.TRUCK_OWNER },
-    });
+    // Verify transporter exists (if provided)
+    if (createDto.transporterId) {
+      const transporter = await this.userRepository.findOne({
+        where: { id: createDto.transporterId, role: UserRole.TRUCK_OWNER },
+      });
 
-    if (!transporter) {
-      throw new NotFoundException('Transporter not found');
+      if (!transporter) {
+        throw new NotFoundException('Transporter not found');
+      }
     }
 
     // Calculate commission amount
     const commissionAmount = (createDto.agreedRate * createDto.commissionRate) / 100;
 
+    // Generate contract ID
+    // const contractCount = await this.contractRepository.count({ where: { tenantId } });
+    // const contractId = `contract-${String(contractCount + 1).padStart(6, '0')}`;
+
     // Generate contract content if not provided
+    const transporter = createDto.transporterId
+      ? await this.userRepository.findOne({ where: { id: createDto.transporterId } })
+      : null;
+
     const contractContent =
       createDto.contractContent ||
       this.generateDefaultContractContent(load, transporter, createDto);
 
     // Create contract
     const contract = this.contractRepository.create({
+      // id: contractId,
       tenantId,
-      brokerId,
+      brokerId: createDto.brokerId,
       loadId: createDto.loadId,
       tripId: createDto.tripId,
-      cargoOwnerId: load.cargoOwnerId,
-      transporterId: createDto.transporterId,
-      contractType: createDto.contractType || ContractType.LOAD_AGREEMENT,
-      status: ContractStatus.DRAFT,
+      cargoOwnerId,
+      transporterId: createDto.transporterId || null,
+      contractType: createDto.contractType || ContractType.BROKER_AGREEMENT,
+      status: ContractStatus.PENDING_SIGNATURE,
       agreedRate: createDto.agreedRate,
       currencyCode: createDto.currencyCode || 'KES',
       commissionRate: createDto.commissionRate,
@@ -99,20 +119,167 @@ export class ContractService {
       negotiationHistory: [
         {
           timestamp: new Date(),
-          changedBy: brokerId,
-          changes: { status: 'DRAFT', created: true },
-          notes: 'Contract created',
+          changedBy: cargoOwnerId,
+          changes: { status: 'PENDING_SIGNATURE', created: true },
+          notes: 'Contract created by cargo owner',
         },
       ],
     });
 
     const savedContract = await this.contractRepository.save(contract);
 
-    this.logger.log(`Contract created: ${savedContract.id} for load ${createDto.loadId}`);
+    this.logger.log(`Contract created: ${savedContract.id} for load ${createDto.loadId} by cargo owner`);
 
     return this.contractRepository.findOne({
       where: { id: savedContract.id },
       relations: ['broker', 'cargoOwner', 'transporter', 'load'],
+    });
+  }
+
+  /**
+   * Create contract for broker assignment (automatically called when broker is assigned)
+   */
+  async createContractForBrokerAssignment(
+    cargoOwnerId: string,
+    tenantId: string,
+    createDto: CreateContractDto,
+  ): Promise<LoadContract> {
+    // Verify cargo owner exists
+    const cargoOwner = await this.userRepository.findOne({
+      where: { id: cargoOwnerId },
+    });
+
+    if (!cargoOwner) {
+      throw new ForbiddenException('Cargo owner not found');
+    }
+
+    // Verify broker exists
+    const broker = await this.userRepository.findOne({
+      where: { id: createDto.brokerId },
+    });
+
+    if (!broker) {
+      throw new NotFoundException('Broker not found');
+    }
+
+    // Verify load exists and belongs to cargo owner
+    const load = await this.loadRepository.findOne({
+      where: { id: createDto.loadId, cargoOwnerId, tenantId },
+      relations: ['cargoOwner'],
+    });
+
+    if (!load) {
+      throw new NotFoundException('Load not found or access denied');
+    }
+
+    // Calculate commission amount
+    const commissionAmount = (createDto.agreedRate * createDto.commissionRate) / 100;
+
+    // Generate contract content
+    const contractContent = this.generateDefaultContractContent(load, null, createDto);
+
+    // Create contract with PENDING_BROKER_ACCEPTANCE status
+    const contract = this.contractRepository.create({
+      tenantId,
+      brokerId: createDto.brokerId,
+      loadId: createDto.loadId,
+      tripId: createDto.tripId,
+      cargoOwnerId,
+      transporterId: createDto.transporterId || null,
+      contractType: createDto.contractType || ContractType.BROKER_AGREEMENT,
+      status: ContractStatus.PENDING_BROKER_ACCEPTANCE,
+      agreedRate: createDto.agreedRate,
+      currencyCode: createDto.currencyCode || 'KES',
+      commissionRate: createDto.commissionRate,
+      commissionAmount,
+      paymentTerms: createDto.paymentTerms,
+      paymentDueDate: createDto.paymentDueDate
+        ? new Date(createDto.paymentDueDate)
+        : undefined,
+      pickupDate: createDto.pickupDate ? new Date(createDto.pickupDate) : undefined,
+      deliveryDate: createDto.deliveryDate ? new Date(createDto.deliveryDate) : undefined,
+      deliveryTerms: createDto.deliveryTerms,
+      specialInstructions: createDto.specialInstructions,
+      contractContent,
+      contractData: createDto.contractData || {},
+      templateId: createDto.templateId,
+      expiresAt: createDto.expiresAt ? new Date(createDto.expiresAt) : undefined,
+      negotiationHistory: [
+        {
+          timestamp: new Date(),
+          changedBy: cargoOwnerId,
+          changes: { status: 'PENDING_BROKER_ACCEPTANCE', created: true },
+          notes: 'Contract created automatically when broker was assigned',
+        },
+      ],
+    });
+
+    this.logger.debug(`Saving contract: ${JSON.stringify(contract)}`);
+    let savedContract;
+    try {
+      savedContract = await this.contractRepository.save(contract);
+    } catch (err) {
+      this.logger.error(`Error saving contract: ${err.message}`, err.stack);
+      throw err;
+    }
+
+    this.logger.log(
+      `Contract created for broker assignment: ${savedContract.id} for load ${createDto.loadId}`,
+    );
+
+    return this.contractRepository.findOne({
+      where: { id: savedContract.id },
+      relations: ['broker', 'broker.profile', 'cargoOwner', 'cargoOwner.profile', 'transporter', 'transporter.profile', 'load'],
+    });
+  }
+
+  /**
+   * Accept contract (by broker)
+   */
+  async acceptContract(
+    contractId: string,
+    brokerId: string,
+    tenantId: string,
+  ): Promise<LoadContract> {
+    const contract = await this.contractRepository.findOne({
+      where: { id: contractId, brokerId, tenantId },
+      relations: ['broker', 'broker.profile', 'cargoOwner', 'cargoOwner.profile', 'load'],
+    });
+
+    if (!contract) {
+      throw new NotFoundException('Contract not found');
+    }
+
+    if (
+      contract.status !== ContractStatus.PENDING_SIGNATURE &&
+      contract.status !== ContractStatus.PENDING_BROKER_ACCEPTANCE
+    ) {
+      throw new BadRequestException('Contract is not pending acceptance');
+    }
+
+    // Update contract status
+    contract.status = ContractStatus.ACTIVE;
+    contract.brokerSignature = {
+      signedAt: new Date(),
+      signatureMethod: 'DIGITAL',
+      signatureData: 'Broker acceptance',
+    };
+
+    // Add to negotiation history
+    contract.negotiationHistory.push({
+      timestamp: new Date(),
+      changedBy: brokerId,
+      changes: { status: 'ACTIVE', brokerAccepted: true },
+      notes: 'Contract accepted by broker',
+    });
+
+    const updatedContract = await this.contractRepository.save(contract);
+
+    this.logger.log(`Contract ${contractId} accepted by broker ${brokerId}`);
+
+    return this.contractRepository.findOne({
+      where: { id: contractId },
+      relations: ['broker', 'broker.profile', 'cargoOwner', 'cargoOwner.profile', 'transporter', 'transporter.profile', 'load'],
     });
   }
 
@@ -141,14 +308,21 @@ export class ContractService {
    */
   async getBrokerContracts(
     brokerId: string,
-    tenantId: string,
+    tenantId?: string,
     filters?: {
       status?: ContractStatus;
       loadId?: string;
       transporterId?: string;
     },
   ): Promise<LoadContract[]> {
-    const where: any = { brokerId, tenantId };
+    this.logger.debug(`getBrokerContracts called for brokerId: ${brokerId} tenantId: ${tenantId || 'ALL'}`);
+    const where: any = { brokerId };
+
+    // We do NOT filter by tenantId for brokers, because they may have contracts
+    // from Cargo Owners in different tenants. The brokerId filter is sufficient/secure.
+    // if (tenantId) {
+    //   where.tenantId = tenantId;
+    // }
 
     if (filters?.status) {
       where.status = filters.status;
@@ -160,9 +334,39 @@ export class ContractService {
       where.transporterId = filters.transporterId;
     }
 
+    const contracts = await this.contractRepository.find({
+      where,
+      relations: ['cargoOwner', 'cargoOwner.profile', 'transporter', 'transporter.profile', 'load', 'broker', 'broker.profile'],
+      order: { createdAt: 'DESC' },
+    });
+
+    this.logger.debug(`Found ${contracts.length} contracts for broker`);
+    return contracts;
+  }
+
+  /**
+   * Get contracts for a cargo owner
+   */
+  async getCargoOwnerContracts(
+    cargoOwnerId: string,
+    tenantId: string,
+    filters?: {
+      status?: ContractStatus;
+      loadId?: string;
+    },
+  ): Promise<LoadContract[]> {
+    const where: any = { cargoOwnerId, tenantId };
+
+    if (filters?.status) {
+      where.status = filters.status;
+    }
+    if (filters?.loadId) {
+      where.loadId = filters.loadId;
+    }
+
     return this.contractRepository.find({
       where,
-      relations: ['cargoOwner', 'transporter', 'load'],
+      relations: ['broker', 'broker.profile', 'transporter', 'load'],
       order: { createdAt: 'DESC' },
     });
   }
@@ -229,7 +433,7 @@ export class ContractService {
   ): Promise<LoadContract> {
     const contract = await this.contractRepository.findOne({
       where: { id: contractId, tenantId },
-      relations: ['cargoOwner', 'transporter', 'broker'],
+      relations: ['cargoOwner', 'cargoOwner.profile', 'transporter', 'transporter.profile', 'broker', 'broker.profile'],
     });
 
     if (!contract) {
@@ -268,10 +472,14 @@ export class ContractService {
     const transporterSigned = !!contract.transporterSignature;
     const brokerSigned = !!contract.brokerSignature;
 
-    if (cargoOwnerSigned && transporterSigned) {
+    // For broker agreements, broker signature is sufficient to mark as SIGNED
+    if (contract.contractType === ContractType.BROKER_AGREEMENT && brokerSigned) {
       contract.status = ContractStatus.SIGNED;
       contract.fullySignedAt = new Date();
-    } else if (cargoOwnerSigned || transporterSigned) {
+    } else if (cargoOwnerSigned && transporterSigned) {
+      contract.status = ContractStatus.SIGNED;
+      contract.fullySignedAt = new Date();
+    } else if (cargoOwnerSigned || transporterSigned || brokerSigned) {
       contract.status = ContractStatus.PARTIALLY_SIGNED;
     } else {
       contract.status = ContractStatus.PENDING_SIGNATURE;
@@ -290,15 +498,19 @@ export class ContractService {
    */
   private generateDefaultContractContent(
     load: Load,
-    transporter: User,
+    transporter: User | null,
     createDto: CreateContractDto,
   ): string {
+    const transporterName = transporter
+      ? `${transporter.profile?.firstName || 'N/A'} ${transporter.profile?.lastName || ''}`
+      : 'To be assigned';
+
     return `
 LOAD TRANSPORTATION AGREEMENT
 
 This agreement is entered into between:
 - Cargo Owner: ${load.cargoOwner?.profile?.firstName || 'N/A'} ${load.cargoOwner?.profile?.lastName || ''}
-- Transporter: ${transporter.profile?.firstName || 'N/A'} ${transporter.profile?.lastName || ''}
+- Transporter: ${transporterName}
 - Broker: [Broker Name]
 
 LOAD DETAILS:

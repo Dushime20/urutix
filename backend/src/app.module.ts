@@ -41,6 +41,7 @@ import { ActivityLogInterceptor } from './interceptors/activity-log.interceptor'
 import { TenantSubdomainMiddleware } from './middleware/tenant-subdomain.middleware';
 import { Tenant } from './entities/tenant.entity';
 
+
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),

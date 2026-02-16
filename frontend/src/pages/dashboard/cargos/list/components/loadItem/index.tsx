@@ -15,9 +15,10 @@ import {
   Weight,
   Box,
   User,
+  Users,
   UserX,
-  UserCheck,
   Briefcase,
+  ChevronLeft,
 } from "lucide-react";
 import {
   getCargoTypeDisplayName,
@@ -45,7 +46,6 @@ import { useCallback, useMemo, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import type { CargoFormSchemaType } from "../../../create/components/form/cargoFormSchema";
 import { encodeUrl } from "@/utils/url";
-import { ChevronLeft, ChevronRight } from "lucide-react";
 
 export default function LoadItem({
   load,
@@ -55,6 +55,7 @@ export default function LoadItem({
   handleEditCargo,
   handleAssignBroker,
   handleUnassignBroker,
+  handleAssignReceiver,
 }: {
   load: Cargo;
   handleViewClick: (load: Cargo) => void;
@@ -63,6 +64,7 @@ export default function LoadItem({
   handleEditCargo?: (load: Cargo) => void;
   handleAssignBroker?: (load: Cargo) => void;
   handleUnassignBroker?: (load: Cargo) => void;
+  handleAssignReceiver?: (load: Cargo) => void;
 }) {
   const navigate = useNavigate();
   const [showMobileDetails, setShowMobileDetails] = useState(false);
@@ -170,7 +172,7 @@ export default function LoadItem({
   }, [handleEditCargo, load, navigate]);
 
   return (
-    <div className="group p-4 sm:p-6 lg:p-8 transition-all duration-300 border-l-4 border-l-teal-500 shadow hover:shadow-md hover:-translate-y-1 rounded-lg bg-gray-100 hover:bg-white overflow-hidden w-full max-w-full">
+    <div className="group p-4 sm:p-6 lg:p-8 transition-all duration-300 border-l-4 border-l-primary-500 shadow hover:shadow-md hover:-translate-y-1 rounded-lg bg-gray-100 hover:bg-white overflow-hidden w-full max-w-full">
       {/* Mobile Simplified View */}
       <div className="sm:hidden">
         {!showMobileDetails ? (
@@ -278,7 +280,7 @@ export default function LoadItem({
                     const enrichedDetails = getEnrichedLocationDetails(load);
                     if (enrichedDetails?.pickup || enrichedDetails?.delivery) {
                       return (
-                        <span className="text-xs text-teal-600 flex items-center mt-1">
+                        <span className="text-xs text-primary-600 flex items-center mt-1">
                           <Globe className="w-3 h-3 mr-1" />
                           Enhanced location data
                         </span>
@@ -365,7 +367,7 @@ export default function LoadItem({
                         {/* Pickup Location Enhanced */}
                         <div className="space-y-3 sm:space-y-4 p-3 sm:p-4 bg-white rounded-lg shadow-sm">
                           <div className="flex items-center space-x-2 sm:space-x-3 flex-wrap">
-                            <div className="w-3 h-3 bg-teal-500 rounded-full flex-shrink-0"></div>
+                            <div className="w-3 h-3 bg-primary-500 rounded-full flex-shrink-0"></div>
                             <span className="text-xs sm:text-sm font-medium text-gray-700">
                               Pickup Location
                             </span>
@@ -520,15 +522,30 @@ export default function LoadItem({
                 </div>
               </div>
 
+              {/* Broker Management Notice */}
+              {load.broker && (
+                <div className="mb-4 p-3 bg-purple-50 border border-purple-200 rounded-lg">
+                  <div className="flex items-center gap-2 text-purple-800">
+                    <Briefcase className="w-4 h-4" />
+                    <span className="text-sm font-medium">Managed by Broker</span>
+                  </div>
+                  <p className="text-xs text-purple-600 mt-1">
+                    This load is being managed by a broker. Contact your broker for changes.
+                  </p>
+                </div>
+              )}
+
               {/* Action Buttons - Mobile */}
               <div className="flex flex-wrap gap-2 pt-3 border-t border-gray-200">
-                <button
-                  className="flex-1 min-w-[120px] px-4 py-2.5 bg-white text-gray-700 border border-gray-300 rounded-lg font-medium text-sm hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 touch-manipulation min-h-[44px]"
-                  onClick={() => handleEditClick()}
-                >
-                  <Edit className="w-4 h-4" />
-                  Edit
-                </button>
+                {!load.broker && (
+                  <button
+                    className="flex-1 min-w-[120px] px-4 py-2.5 bg-white text-gray-700 border border-gray-300 rounded-lg font-medium text-sm hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 touch-manipulation min-h-[44px]"
+                    onClick={() => handleEditClick()}
+                  >
+                    <Edit className="w-4 h-4" />
+                    Edit
+                  </button>
+                )}
                 {handleAssignBroker && !load.broker && (
                   <button
                     className="flex-1 min-w-[120px] px-4 py-2.5 bg-white text-purple-600 border border-purple-300 rounded-lg font-medium text-sm hover:bg-purple-50 transition-colors flex items-center justify-center gap-2 touch-manipulation min-h-[44px]"
@@ -539,6 +556,22 @@ export default function LoadItem({
                     <span className="xs:hidden">Assign</span>
                   </button>
                 )}
+                {handleAssignReceiver && (
+                   <button
+                     className={`flex-1 min-w-[120px] px-4 py-2.5 bg-white border rounded-lg font-medium text-sm flex items-center justify-center gap-2 touch-manipulation min-h-[44px] ${
+                       load.receiverId 
+                         ? 'text-gray-400 border-gray-200 cursor-not-allowed' 
+                         : 'text-teal-600 border-teal-300 hover:bg-teal-50 transition-colors'
+                     }`}
+                     onClick={() => !load.receiverId && handleAssignReceiver(load)}
+                     disabled={!!load.receiverId}
+                     title={load.receiverId ? "Receiver already assigned" : "Assign Receiver"}
+                   >
+                     <Users className="w-4 h-4" />
+                     <span className="hidden xs:inline">{load.receiverId ? "Receiver Assigned" : "Assign Receiver"}</span>
+                     <span className="xs:hidden">{load.receiverId ? "Assigned" : "Recv"}</span>
+                   </button>
+                 )}
                 {handleUnassignBroker && load.broker && (
                   <button
                     className="flex-1 min-w-[120px] px-4 py-2.5 bg-white text-orange-600 border border-orange-300 rounded-lg font-medium text-sm hover:bg-orange-50 transition-colors flex items-center justify-center gap-2 touch-manipulation min-h-[44px]"
@@ -549,13 +582,15 @@ export default function LoadItem({
                     <span className="xs:hidden">Unassign</span>
                   </button>
                 )}
-                <button
-                  className="flex-1 min-w-[120px] px-4 py-2.5 bg-white text-red-600 border border-red-300 rounded-lg font-medium text-sm hover:bg-red-50 transition-colors flex items-center justify-center gap-2 touch-manipulation min-h-[44px]"
-                  onClick={() => handleDeleteCargo(load)}
-                >
-                  <Trash2 className="w-4 h-4" />
-                  Delete
-                </button>
+                {!load.broker && (
+                  <button
+                    className="flex-1 min-w-[120px] px-4 py-2.5 bg-white text-red-600 border border-red-300 rounded-lg font-medium text-sm hover:bg-red-50 transition-colors flex items-center justify-center gap-2 touch-manipulation min-h-[44px]"
+                    onClick={() => handleDeleteCargo(load)}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    Delete
+                  </button>
+                )}
               </div>
             </div>
           </>
@@ -625,7 +660,7 @@ export default function LoadItem({
                 const enrichedDetails = getEnrichedLocationDetails(load);
                 if (enrichedDetails?.pickup || enrichedDetails?.delivery) {
                   return (
-                    <span className="text-xs text-gray-600 flex items-center mt-1">
+                    <span className="text-xs text-primary-600 flex items-center mt-1">
                       <Globe className="w-3 h-3 mr-1" />
                       Enhanced location data
                     </span>
@@ -712,7 +747,7 @@ export default function LoadItem({
                     {/* Pickup Location Enhanced */}
                     <div className="space-y-3 sm:space-y-4 p-3 sm:p-4 bg-white rounded-lg shadow-sm">
                       <div className="flex items-center space-x-2 sm:space-x-3 flex-wrap">
-                        <div className="w-3 h-3 bg-teal-500 rounded-full flex-shrink-0"></div>
+                        <div className="w-3 h-3 bg-primary-500 rounded-full flex-shrink-0"></div>
                         <span className="text-xs sm:text-sm font-medium text-gray-700">
                           Pickup Location
                         </span>
@@ -844,6 +879,19 @@ export default function LoadItem({
             </div>
           )}
 
+          {/* Broker Management Notice - Desktop */}
+          {load.broker && (
+            <div className="mb-4 sm:mb-6 p-4 bg-purple-50 border border-purple-200 rounded-lg">
+              <div className="flex items-center gap-2 text-purple-800 mb-2">
+                <Briefcase className="w-5 h-5" />
+                <span className="text-sm font-semibold">Managed by Broker</span>
+              </div>
+              <p className="text-sm text-purple-700">
+                This load is being managed by a broker. Editing and deletion are restricted. Contact your broker for any changes or unassign the broker to regain full control.
+              </p>
+            </div>
+          )}
+
           {/* Additional Info - Desktop */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between text-xs sm:text-sm text-gray-500 pt-3 sm:pt-4 border-t border-gray-200 gap-2 sm:gap-0">
             <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6">
@@ -872,7 +920,7 @@ export default function LoadItem({
         <div className="sm:ml-6 relative flex items-center sm:items-center lg:items-center lg:justify-center max-lg:w-full max-lg:justify-end flex-shrink-0">
           <div className="flex items-center lg:flex-col gap-2 lg:sticky lg:top-32">
             <button
-              className="p-3 bg-white text-gray-400 hover:text-teal-600 hover:bg-teal-50 rounded-xl transition-all duration-200 shadow-sm hover:shadow-md"
+              className="p-3 bg-white text-gray-400 hover:text-primary-600 hover:bg-primary-50 rounded-xl transition-all duration-200 shadow-sm hover:shadow-md"
               title="View Details"
               onClick={() => handleViewClick(load)}
             >
@@ -887,20 +935,24 @@ export default function LoadItem({
                 <CheckCircle className="w-4 h-4" />
               </button>
             )}
-            <button
-              className="p-3 bg-white text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-xl transition-all duration-200 shadow-sm hover:shadow-md"
-              title="Edit Cargo"
-              onClick={handleEditClick}
-            >
-              <Edit className="w-4 h-4" />
-            </button>
-            <button
-              className="p-3 bg-white text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all duration-200 shadow-sm hover:shadow-md"
-              title="Delete Cargo"
-              onClick={() => handleDeleteCargo(load)}
-            >
-              <Trash2 className="w-4 h-4" />
-            </button>
+            {!load.broker && (
+              <button
+                className="p-3 bg-white text-gray-400 hover:text-primary-600 hover:bg-primary-50 rounded-xl transition-all duration-200 shadow-sm hover:shadow-md"
+                title="Edit Cargo"
+                onClick={handleEditClick}
+              >
+                <Edit className="w-4 h-4" />
+              </button>
+            )}
+            {!load.broker && (
+              <button
+                className="p-3 bg-white text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all duration-200 shadow-sm hover:shadow-md"
+                title="Delete Cargo"
+                onClick={() => handleDeleteCargo(load)}
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            )}
             {handleAssignBroker && !load.broker && (
               <button
                 className="p-3 bg-white text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded-xl transition-all duration-200 shadow-sm hover:shadow-md"
@@ -908,6 +960,20 @@ export default function LoadItem({
                 onClick={() => handleAssignBroker(load)}
               >
                 <User className="w-4 h-4" />
+              </button>
+            )}
+            {handleAssignReceiver && (
+              <button
+                className={`p-3 bg-white rounded-xl transition-all duration-200 shadow-sm ${
+                  load.receiverId 
+                    ? 'text-gray-300 cursor-not-allowed hover:shadow-sm' 
+                    : 'text-gray-400 hover:text-teal-600 hover:bg-teal-50 hover:shadow-md'
+                }`}
+                title={load.receiverId ? "Receiver already assigned" : "Assign Receiver"}
+                onClick={() => !load.receiverId && handleAssignReceiver(load)}
+                disabled={!!load.receiverId}
+              >
+                <Users className="w-4 h-4" />
               </button>
             )}
             {handleUnassignBroker && load.broker && (

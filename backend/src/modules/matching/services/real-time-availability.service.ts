@@ -16,7 +16,7 @@ export interface AvailabilityUpdate {
     timestamp: Date;
   };
   estimatedAvailableTime?: Date;
-  currentLoadId?: string;
+  currentTripId?: string | null;
   tenantId: string;
 }
 
@@ -88,6 +88,7 @@ export class RealTimeAvailabilityService {
         {
           status: update.status,
           locationUpdatedAt: update.location?.timestamp || new Date(),
+          ...(update.currentTripId !== undefined ? { currentTripId: update.currentTripId } : {}),
         },
       );
 
@@ -120,6 +121,7 @@ export class RealTimeAvailabilityService {
     status: DriverStatus,
     tenantId: string,
     estimatedAvailableTime?: Date,
+    currentTripId?: string | null,
   ): Promise<void> {
     try {
       const startTime = Date.now();
@@ -129,6 +131,7 @@ export class RealTimeAvailabilityService {
         { id: driverId, tenantId },
         {
           status,
+          ...(currentTripId !== undefined ? { currentTripId } : {}),
         },
       );
 
@@ -199,6 +202,7 @@ export class RealTimeAvailabilityService {
         truckId: truck.id,
         driverId: truck.currentDriverId,
         status: truck.status,
+        currentTripId: truck.currentTripId,
         tenantId: truck.tenantId,
       };
 
@@ -274,6 +278,7 @@ export class RealTimeAvailabilityService {
         truckId: truck.id,
         driverId: truck.currentDriverId,
         status: truck.status,
+        currentTripId: truck.currentTripId,
         tenantId: truck.tenantId,
       }));
 
@@ -387,6 +392,7 @@ export class RealTimeAvailabilityService {
         status: VehicleStatus.AVAILABLE,
         tenantId,
         estimatedAvailableTime: new Date(),
+        currentTripId: null,
       });
 
       // Update driver availability
@@ -396,6 +402,7 @@ export class RealTimeAvailabilityService {
           DriverStatus.ACTIVE,
           tenantId,
           new Date(),
+          null, // Clear trip ID
         );
       }
 
@@ -426,7 +433,7 @@ export class RealTimeAvailabilityService {
         driverId: trip.driverId,
         status: VehicleStatus.IN_TRANSIT,
         tenantId,
-        currentLoadId: trip.loadId,
+        currentTripId: trip.id,
         estimatedAvailableTime: trip.estimatedEndTime,
       });
 
@@ -437,6 +444,7 @@ export class RealTimeAvailabilityService {
           DriverStatus.IN_TRANSIT,
           tenantId,
           trip.estimatedEndTime,
+          trip.id,
         );
       }
 

@@ -3,9 +3,10 @@ import {
   NotFoundException,
   BadRequestException,
   ForbiddenException,
+  Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, In, Like, Between, IsNull, Not } from 'typeorm';
+import { Repository, In, Like, Between, IsNull, Not, Brackets } from 'typeorm';
 import {
   Document,
   DocumentType,
@@ -32,13 +33,15 @@ import { UserService } from '../users/user.service';
 
 @Injectable()
 export class DocumentService {
+  private readonly logger = new Logger(DocumentService.name);
+
   constructor(
     @InjectRepository(Document)
     private documentRepository: Repository<Document>,
     private fileUploadService: FileUploadService,
     private notificationService: NotificationService,
     private userService: UserService,
-  ) {}
+  ) { }
 
   /**
    * Create a new document
@@ -127,11 +130,34 @@ export class DocumentService {
    */
   async getDocuments(
     filterDto: DocumentFilterDto,
-    tenantId: string,
+    user: any, // { userId: string; role: string; tenantId: string }
   ): Promise<{ documents: Document[]; total: number }> {
+    const { tenantId, userId, role } = user;
+    this.logger.log(`📄 getDocuments called for user:`, { userId, role, tenantId });
+
     const queryBuilder = this.documentRepository
       .createQueryBuilder('document')
-      .where('document.tenantId = :tenantId', { tenantId });
+      .where('document.tenantId = :tenantId', { tenantId })
+      .andWhere('document.deleted_at IS NULL'); // Use snake_case column name from DB
+
+    // Role-based filtering: Restrict non-admin users to their own documents
+    // Modified to allow Owners to see documents for their entities (Cargo, Truck) even if uploaded by others (e.g. System/Admin)
+    if (role === 'CARGO_OWNER') {
+      this.logger.log(`🔒 Applying extended visibility for CARGO_OWNER: uploadedBy=${userId} OR entityType=CARGO`);
+      queryBuilder.andWhere(new Brackets((qb) => {
+        qb.where('document.uploadedBy = :userId', { userId })
+          .orWhere('document.entityType = :cargoType', { cargoType: 'CARGO' });
+      }));
+    } else if (role === 'TRUCK_OWNER') {
+      this.logger.log(`🔒 Applying extended visibility for TRUCK_OWNER: uploadedBy=${userId} OR entityType=TRUCK/DRIVER`);
+      queryBuilder.andWhere(new Brackets((qb) => {
+        qb.where('document.uploadedBy = :userId', { userId })
+          .orWhere('document.entityType IN (:...truckTypes)', { truckTypes: ['TRUCK', 'DRIVER'] });
+      }));
+    } else if (role === 'DRIVER' || role === 'CARGO_RECEIVER') {
+      this.logger.log(`🔒 Applying strict ownership filter for role ${role}: uploadedBy = ${userId}`);
+      queryBuilder.andWhere('document.uploadedBy = :userId', { userId });
+    }
 
     // Apply filters
     if (filterDto.entityType) {
@@ -536,19 +562,18 @@ export class DocumentService {
       throw new BadRequestException('Verified documents cannot be deleted');
     }
 
-    // Soft delete
-    await this.documentRepository.softDelete(id);
-
-    // Update audit trail
+    // Update audit trail and timestamp first
     document.auditTrail.push({
       action: 'DELETED',
       performedBy: deletedBy,
       performedAt: new Date(),
       details: { method: 'soft_delete' },
     });
-
     document.updatedAt = new Date();
     await this.documentRepository.save(document);
+
+    // Perform soft delete LAST so it doesn't get overwritten by .save()
+    await this.documentRepository.softDelete(id);
   }
 
   /**
@@ -559,10 +584,19 @@ export class DocumentService {
     entityId: string,
     tenantId: string,
   ): Promise<Document[]> {
-    return this.documentRepository.find({
+    this.logger.log(`📄 getDocumentsByEntity called with:`, { entityType, entityId, tenantId });
+
+    const documents = await this.documentRepository.find({
       where: { entityType, entityId, tenantId },
       order: { createdAt: 'DESC' },
     });
+
+    this.logger.log(`📄 Found ${documents.length} documents for entity ${entityType}:${entityId}`);
+    if (documents.length > 0) {
+      this.logger.log(`📄 Sample document IDs:`, documents.slice(0, 3).map(d => ({ id: d.id, title: d.title, entityId: d.entityId })));
+    }
+
+    return documents;
   }
 
   /**
@@ -602,38 +636,123 @@ export class DocumentService {
   /**
    * Get document statistics
    */
-  async getDocumentStatistics(tenantId: string): Promise<any> {
-    const stats = await this.documentRepository
-      .createQueryBuilder('document')
-      .select([
-        'document.status as status',
-        'document.category as category',
-        'document.priority as priority',
-        'COUNT(*) as count',
-      ])
-      .where('document.tenantId = :tenantId', { tenantId })
-      .groupBy('document.status, document.category, document.priority')
-      .getRawMany();
+  async getDocumentStatistics(tenantId: string, entityType?: any): Promise<any> {
+    const activeWhere: any = { tenantId, deletedAt: IsNull() };
+
+    if (entityType) {
+      if (entityType === 'FINANCIAL') {
+        activeWhere.category = DocumentCategory.FINANCIAL;
+      } else {
+        activeWhere.entityType = entityType;
+      }
+    }
 
     const totalDocuments = await this.documentRepository.count({
-      where: { tenantId },
-    });
-    const verifiedDocuments = await this.documentRepository.count({
-      where: { tenantId, status: DocumentStatus.VERIFIED },
-    });
-    const expiredDocuments = await this.documentRepository.count({
-      where: { tenantId, status: DocumentStatus.EXPIRED },
-    });
-    const pendingDocuments = await this.documentRepository.count({
-      where: { tenantId, status: DocumentStatus.PENDING },
+      where: activeWhere,
     });
 
+    const verifiedDocuments = await this.documentRepository.count({
+      where: { ...activeWhere, status: DocumentStatus.VERIFIED },
+    });
+
+    const expiredDocuments = await this.documentRepository.count({
+      where: { ...activeWhere, status: DocumentStatus.EXPIRED },
+    });
+
+    const pendingDocuments = await this.documentRepository.count({
+      where: { ...activeWhere, status: DocumentStatus.PENDING },
+    });
+
+    const queryBuilder = this.documentRepository
+      .createQueryBuilder('document')
+      .select('document.status', 'status')
+      .addSelect('COUNT(*)', 'count')
+      .where('document.tenantId = :tenantId', { tenantId })
+      .andWhere('document.deleted_at IS NULL');
+
+    if (entityType) {
+      if (entityType === 'FINANCIAL') {
+        queryBuilder.andWhere('document.category = :category', { category: DocumentCategory.FINANCIAL });
+      } else {
+        queryBuilder.andWhere('document.entityType = :entityType', { entityType });
+      }
+    }
+
+    const statusBreakdown = await queryBuilder
+      .groupBy('document.status')
+      .getRawMany();
+
+    // Get category breakdown
+    const categoryQueryBuilder = this.documentRepository
+      .createQueryBuilder('document')
+      .select('document.category', 'category')
+      .addSelect('COUNT(*)', 'count')
+      .where('document.tenantId = :tenantId', { tenantId })
+      .andWhere('document.deleted_at IS NULL');
+
+    if (entityType) {
+      if (entityType === 'FINANCIAL') {
+        categoryQueryBuilder.andWhere('document.category = :category', { category: DocumentCategory.FINANCIAL });
+      } else {
+        categoryQueryBuilder.andWhere('document.entityType = :entityType', { entityType });
+      }
+    }
+
+    const categoryBreakdown = await categoryQueryBuilder
+      .groupBy('document.category')
+      .getRawMany();
+
+    // Get type breakdown
+    const typeQueryBuilder = this.documentRepository
+      .createQueryBuilder('document')
+      .select('document.documentType', 'type')
+      .addSelect('COUNT(*)', 'count')
+      .where('document.tenantId = :tenantId', { tenantId })
+      .andWhere('document.deleted_at IS NULL');
+
+    if (entityType) {
+      if (entityType === 'FINANCIAL') {
+        typeQueryBuilder.andWhere('document.category = :category', { category: DocumentCategory.FINANCIAL });
+      } else {
+        typeQueryBuilder.andWhere('document.entityType = :entityType', { entityType });
+      }
+    }
+
+    const typeBreakdown = await typeQueryBuilder
+      .groupBy('document.documentType')
+      .getRawMany();
+
+    // Format for frontend
+    const documentsByStatus = statusBreakdown.reduce((acc, curr) => {
+      acc[curr.status] = parseInt(curr.count);
+      return acc;
+    }, {});
+
+    const documentsByCategory = categoryBreakdown.reduce((acc, curr) => {
+      const cat = curr.category || 'OTHER';
+      acc[cat] = (acc[cat] || 0) + parseInt(curr.count);
+      return acc;
+    }, {});
+
+    const documentsByType = typeBreakdown.reduce((acc, curr) => {
+      const type = curr.type || 'OTHER';
+      acc[type] = (acc[type] || 0) + parseInt(curr.count);
+      return acc;
+    }, {});
+
     return {
+      totalDocuments,
+      verifiedDocuments,
+      expiredDocuments,
+      pendingDocuments,
+      documentsByStatus,
+      documentsByCategory,
+      documentsByType,
+      // Keep legacy keys for backward compatibility
       total: totalDocuments,
       verified: verifiedDocuments,
       expired: expiredDocuments,
       pending: pendingDocuments,
-      breakdown: stats,
     };
   }
 

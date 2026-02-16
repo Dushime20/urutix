@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { authAPI } from '../services/api';
 import { TranslatedText } from '../components/translated-text';
 
+
 interface UserProfile {
   id: string;
   userId: string;
@@ -27,6 +28,8 @@ interface UserProfile {
 
 const Profile: React.FC = () => {
   const { user, updateProfile } = useAuth();
+  // const { currency, setCurrency, availableCurrencies } = useCurrency(); // Removed
+
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
@@ -480,6 +483,9 @@ const Profile: React.FC = () => {
                   className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
                 />
               </div>
+
+              {/* Currency Preference Section */}
+
             </div>
           </div>
         </div>

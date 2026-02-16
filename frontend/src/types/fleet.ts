@@ -347,6 +347,30 @@ export interface FleetItem {
   hasLiftGate?: boolean;
   hasGps?: boolean;
   hasHazmatPermit?: boolean;
+
+  // Advanced capabilities
+  cargoCapabilities?: {
+    supportedCargoTypes?: string[];
+    temperatureRange?: {
+      min: number;
+      max: number;
+    };
+    maxFragileHandling?: boolean;
+    maxHazardousHandling?: boolean;
+    maxRefrigeratedHandling?: boolean;
+    maxLiquidHandling?: boolean;
+    maxOversizedHandling?: boolean;
+    maxValuableHandling?: boolean;
+    humidityControl?: boolean;
+    maxWeight?: number;
+    maxVolume?: number;
+    maxDimensions?: {
+      length: number;
+      width: number;
+      height: number;
+    };
+  };
+
   hasSideRails?: boolean;
   hasTarps?: boolean;
   hasStraps?: boolean;
@@ -501,6 +525,14 @@ export interface FleetItem {
     phone?: string;
     email?: string;
   };
+  dateOfBirth?: string | Date;
+  address?: string;
+  licenseIssueDate?: string | Date;
+  licenseExpiry?: string | Date;
+  licenseState?: string;
+  licenseCountry?: string;
+  employmentType?: string;
+  hireDate?: string | Date;
   trips?: TripRecord[];
 }
 

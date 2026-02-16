@@ -128,6 +128,15 @@ export interface Cargo {
   brokerId?: string;
   brokerCommissionRate?: number;
   brokerCommissionAmount?: number;
+  receiverId?: string;
+  receiver?: {
+    id: string;
+    email: string;
+    profile?: {
+      firstName?: string;
+      lastName?: string;
+    };
+  };
   pickupLocation?: {
     id: string;
     name: string;

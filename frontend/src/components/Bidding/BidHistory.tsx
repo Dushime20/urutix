@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { biddingAPI, biddingHelpers } from '../../services/biddingApi';
+import { createPortal } from 'react-dom';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import { calculateAdvancePayment, formatCurrency as formatCurrencyUtil, formatPercentage } from '../../utils/paymentCalculations';
 
@@ -33,9 +34,15 @@ interface Bid {
   requireAdvancePayment?: boolean;
   createdAt: string;
   load: {
+    id: string;
     title: string;
     weight: number;
     loadValue: number;
+    brokerId?: string;
+    broker?: {
+      id: string;
+      email: string;
+    };
   };
   auction?: {
     id: string;
@@ -205,12 +212,7 @@ const BidHistory: React.FC<BidHistoryProps> = ({ userRole }) => {
     );
   };
 
-  const formatCurrency = (amount: number, currency: string = 'USD') => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency,
-    }).format(amount);
-  };
+
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -617,6 +619,7 @@ const BidHistory: React.FC<BidHistoryProps> = ({ userRole }) => {
                         </div>
                       );
                     })()}
+                    </div>
                   </div>
                 )}
 
@@ -674,6 +677,7 @@ const BidHistory: React.FC<BidHistoryProps> = ({ userRole }) => {
                           </div>
                         </div>
                       )}
+
                       {(selectedBid.truckOwner.profile?.phone || selectedBid.truckOwner.phone) && (
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 bg-gray-50 rounded-lg flex items-center justify-center shrink-0">
@@ -689,6 +693,7 @@ const BidHistory: React.FC<BidHistoryProps> = ({ userRole }) => {
                   </div>
                 )}
               </div>
+            </div>
 
               <div className="mt-8 pt-6 border-t border-gray-100 flex justify-end">
                 <button
@@ -700,7 +705,8 @@ const BidHistory: React.FC<BidHistoryProps> = ({ userRole }) => {
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Styled Confirmation Dialog */}

@@ -6,6 +6,8 @@ module.exports = {
       cwd: '/root/project/urutix/backend',
       instances: 1,
       exec_mode: 'fork',
+      // Pre-start hook to check migrations
+      pre_start: 'npm run migration:check',
       env: {
         NODE_ENV: 'production',
         PORT: 3000,
@@ -23,6 +25,10 @@ module.exports = {
       watch: false,
       max_memory_restart: '1G',
       node_args: '--max-old-space-size=2048',
+      // Restart delay to allow database to be ready
+      restart_delay: 3000,
+      // Kill timeout
+      kill_timeout: 5000,
     },
     {
       name: 'urutix-frontend',

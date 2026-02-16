@@ -3,6 +3,10 @@ import { FaTruck, FaUser, FaMapMarkerAlt, FaPhone, FaEnvelope, FaEdit, FaTrash, 
 import type { FleetItem } from '../../types/fleet';
 import { TranslatedText } from '../translated-text';
 import { useTranslation } from '../../hooks/useTranslation';
+import { documentApi, type Document } from '../../services/documents/documentApi';
+import toast from 'react-hot-toast';
+import { createPortal } from 'react-dom';
+
 
 interface FleetTableProps {
   fleetItems: FleetItem[];
@@ -10,7 +14,6 @@ interface FleetTableProps {
   view: 'grid' | 'list';
   activeTab: 'trucks' | 'drivers' | 'analytics' | 'safety' | 'financial' | 'routes';
   onRowClick: (item: FleetItem) => void;
-  onBulkAction: (action: 'delete' | 'export' | 'update', selectedIds: string[]) => void;
   onEditFleetItem: (item: FleetItem) => void;
   onDeleteFleetItem: (itemId: string) => void;
 }
@@ -21,7 +24,6 @@ const FleetTableComp: React.FC<FleetTableProps> = ({
   view,
   activeTab,
   onRowClick,
-  onBulkAction,
   onEditFleetItem,
   onDeleteFleetItem
 }) => {
@@ -349,6 +351,7 @@ const FleetTableComp: React.FC<FleetTableProps> = ({
     );
   }
 
+  // Table view - responsive: hidden on mobile, shown on desktop
   return (
     <>
       <div className="bg-white rounded-lg shadow-sm border border-gray-200">

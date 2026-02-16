@@ -16,20 +16,40 @@ export class MatchResultDto {
   @IsNumber()
   overallScore: number; // 0-1 scale
 
-  @IsNumber()
-  capacityScore: number; // 0-1 scale
+  // =====================================================
+  // 5 CORE MATCHING CRITERIA SCORES
+  // =====================================================
 
   @IsNumber()
-  distanceScore: number; // 0-1 scale
+  capacityScore: number; // 0-1 scale - Weight & volume utilization
 
   @IsNumber()
-  equipmentScore: number; // 0-1 scale
+  equipmentScore: number; // 0-1 scale - Required equipment compatibility
 
   @IsNumber()
-  ratingScore: number; // 0-1 scale
+  distanceScore: number; // 0-1 scale - Proximity to pickup
 
   @IsNumber()
-  priceScore: number; // 0-1 scale
+  gpsTrackingScore: number; // 0-1 scale - GPS availability for monitoring
+
+  @IsNumber()
+  availabilityScore: number; // 0-1 scale - Truck availability status
+
+  // =====================================================
+  // LEGACY SCORES (Optional - kept for backward compatibility)
+  // =====================================================
+
+  @IsOptional()
+  @IsNumber()
+  ratingScore?: number; // 0-1 scale
+
+  @IsOptional()
+  @IsNumber()
+  priceScore?: number; // 0-1 scale
+
+  // =====================================================
+  // METRICS & ESTIMATES
+  // =====================================================
 
   @IsNumber()
   distanceKm: number;
@@ -69,6 +89,10 @@ export class MatchResultDto {
 
   @IsBoolean()
   hasHazmatPermit: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  hasGps?: boolean; // NEW: GPS availability
 
   @IsOptional()
   @IsUUID()
@@ -130,9 +154,7 @@ export class MatchResultDto {
   @IsNumber()
   experienceScore?: number; // 0-1 scale
 
-  @IsOptional()
-  @IsNumber()
-  availabilityScore?: number; // 0-1 scale
+  // NOTE: availabilityScore is now a core criteria, not optional
 
   @IsOptional()
   @IsNumber()

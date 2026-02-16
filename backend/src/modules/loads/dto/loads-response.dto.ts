@@ -290,6 +290,26 @@ export class LoadResponseDto {
   brokerCommissionAmount?: number;
 
   @ApiProperty({
+    description: 'Receiver ID',
+    required: false,
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
+  receiverId?: string;
+
+  @ApiProperty({
+    description: 'Receiver information',
+    required: false,
+  })
+  receiver?: {
+    id: string;
+    email: string;
+    profile?: {
+      firstName?: string;
+      lastName?: string;
+    };
+  };
+
+  @ApiProperty({
     description: 'Pickup location information',
     required: false,
   })

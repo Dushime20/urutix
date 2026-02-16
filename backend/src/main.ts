@@ -9,7 +9,7 @@ import { join } from 'path';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
-  const port = process.env.PORT || 3002;
+  const port = process.env.PORT || 3005;
 
   // Serve static files from uploads directory (must be before global prefix)
   const uploadsPath = join(process.cwd(), 'uploads');
@@ -23,14 +23,13 @@ async function bootstrap() {
   // For production with subdomains: ALLOWED_ORIGINS="https://*.urutix.com,https://urutix.com"
   const allowedOrigins = process.env.ALLOWED_ORIGINS
     ? process.env.ALLOWED_ORIGINS.split(',').map((o) => o.trim())
-    : [
-        'http://localhost:5173',
-        'http://127.0.0.1:5173', // Allow 127.0.0.1 (Vite default)
-        `http://localhost:${port}`,
-        `http://127.0.0.1:${port}`,
-        'http://localhost:5713',
-        'http://127.0.0.1:5713',
-      ];
+    : [];
+
+  if (allowedOrigins.length === 0) {
+    console.warn('⚠️  WARNING: No ALLOWED_ORIGINS defined in .env. CORS will block all requests.');
+  } else {
+    console.log('✅ CORS Allowed Origins:', allowedOrigins);
+  }
 
   // Enable CORS for HTTP requests with subdomain support
   app.enableCors({
@@ -111,7 +110,8 @@ async function bootstrap() {
 
   await app.listen(port);
 
-  console.log(`🚀 UrutiX API is running on: http://localhost:${port}`);
+  console.log(`Application is running on: ${await app.getUrl()}`);
+  console.log(`Deployed automatically: ${new Date().toISOString()}`);
   console.log(`🔧 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`📡 WebSocket server is available on: ws://localhost:${port}`);
   console.log(`📚 API Documentation: http://localhost:${port}/api/docs`);

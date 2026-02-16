@@ -147,16 +147,16 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
               <h3 className="text-xs font-bold text-gray-700 uppercase mb-3 tracking-wider">From</h3>
               <div className="border-l-4 border-gray-400 pl-4">
                 <p className="font-bold text-gray-900 text-lg mb-1">
-                  {receipt.truckOwner.company || receipt.truckOwner.name}
+                  {receipt.truckOwner?.company || receipt.truckOwner?.name}
                 </p>
-                {receipt.truckOwner.company && (
-                  <p className="text-sm text-gray-700 mb-1">{receipt.truckOwner.name}</p>
+                {receipt.truckOwner?.company && (
+                  <p className="text-sm text-gray-700 mb-1">{receipt.truckOwner?.name}</p>
                 )}
-                {receipt.truckOwner.email && (
-                  <p className="text-sm text-gray-600">{receipt.truckOwner.email}</p>
+                {receipt.truckOwner?.email && (
+                  <p className="text-sm text-gray-600">{receipt.truckOwner?.email}</p>
                 )}
-                {receipt.truckOwner.phone && (
-                  <p className="text-sm text-gray-600">{receipt.truckOwner.phone}</p>
+                {receipt.truckOwner?.phone && (
+                  <p className="text-sm text-gray-600">{receipt.truckOwner?.phone}</p>
                 )}
               </div>
             </div>
@@ -164,7 +164,7 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
               <h3 className="text-xs font-bold text-gray-700 uppercase mb-3 tracking-wider">To</h3>
               <div className="border-l-4 border-gray-400 pl-4">
                 <p className="font-bold text-gray-900 text-lg">
-                  {receipt.cargo.cargoOwner}
+                  {receipt.cargo?.cargoOwner}
                 </p>
               </div>
             </div>
@@ -184,20 +184,20 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
                 <div>
                   <p className="text-xs text-gray-500 uppercase mb-1">Driver</p>
                   <p className="text-base font-semibold text-gray-900">
-                    {receipt.driver.firstName} {receipt.driver.lastName}
+                    {receipt.driver?.firstName} {receipt.driver?.lastName}
                   </p>
-                  {receipt.driver.phone && (
-                    <p className="text-sm text-gray-600 mt-1">{receipt.driver.phone}</p>
+                  {receipt.driver?.phone && (
+                    <p className="text-sm text-gray-600 mt-1">{receipt.driver?.phone}</p>
                   )}
                 </div>
                 <div>
                   <p className="text-xs text-gray-500 uppercase mb-1">Cargo Description</p>
-                  <p className="text-base font-semibold text-gray-900">{receipt.cargo.title}</p>
+                  <p className="text-base font-semibold text-gray-900">{receipt.cargo?.title}</p>
                 </div>
                 <div>
                   <p className="text-xs text-gray-500 uppercase mb-1">Route</p>
                   <p className="text-base font-semibold text-gray-900">
-                    {receipt.cargo.origin} to {receipt.cargo.destination}
+                    {receipt.cargo?.origin} to {receipt.cargo?.destination}
                   </p>
                 </div>
                 <div>

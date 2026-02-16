@@ -12,6 +12,7 @@ import {
 import { biddingAPI } from '../../services/biddingApi';
 import toast from 'react-hot-toast';
 import BidForm from './BidForm';
+import { formatCurrency } from '../../utils/formatNumber';
 
 interface Auction {
   id: string;
@@ -221,12 +222,7 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
     );
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(amount);
-  };
+
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {

@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, Brackets } from 'typeorm';
 import { Trip, TripStatus } from '../../entities/trip.entity';
 import { CreateTripDto } from './dto/create-trip.dto';
 import { UpdateTripStatusDto } from './dto/update-trip-status.dto';
@@ -29,41 +29,67 @@ export class TripsService {
   async findAll(
     query: any,
     tenantId: string,
+    userId?: string,
   ): Promise<{ trips: Trip[]; pagination: any }> {
     const { page = 1, limit = 10, status, search } = query;
     const skip = (page - 1) * limit;
 
-    const queryBuilder = this.tripRepository
-      .createQueryBuilder('trip')
-      .where('trip.tenantId = :tenantId', { tenantId });
+    try {
+      const queryBuilder = this.tripRepository
+        .createQueryBuilder('trip')
+        .leftJoinAndSelect('trip.truck', 'truck')
+        .leftJoinAndSelect('trip.driver', 'driver')
+        .leftJoinAndSelect('trip.load', 'load')
+        .leftJoinAndSelect('trip.pickupLocation', 'pickupLocation')
+        .leftJoinAndSelect('trip.deliveryLocation', 'deliveryLocation');
 
-    if (status) {
-      queryBuilder.andWhere('trip.status = :status', { status });
-    }
+      // Filter by tenant and/or user
+      if (userId) {
+        // For specific user, show trips they own or are assigned to
+        queryBuilder.where('trip.tenantId = :tenantId', { tenantId })
+          .andWhere(
+            new Brackets((qb) => {
+              qb.where('truck.ownerId = :userId', { userId })
+                .orWhere('driver.userId = :userId', { userId });
+            })
+          );
+      } else {
+        // For no specific user, show all tenant trips
+        queryBuilder.where('trip.tenantId = :tenantId', { tenantId });
+      }
 
-    if (search) {
-      queryBuilder.andWhere(
-        '(trip.tripNumber ILIKE :search OR trip.notes ILIKE :search)',
-        {
-          search: `%${search}%`,
+      if (status) {
+        queryBuilder.andWhere('trip.status = :status', { status });
+      }
+
+      if (search) {
+        queryBuilder.andWhere(
+          '(trip.tripNumber ILIKE :search OR trip.notes ILIKE :search)',
+          {
+            search: `%${search}%`,
+          },
+        );
+      }
+
+      const [trips, total] = await queryBuilder
+        .orderBy('trip.createdAt', 'DESC')
+        .skip(skip)
+        .take(limit)
+        .getManyAndCount();
+
+      return {
+        trips,
+        pagination: {
+          page: parseInt(page),
+          limit: parseInt(limit),
+          total,
+          totalPages: Math.ceil(total / limit),
         },
-      );
+      };
+    } catch (error) {
+      console.error('Error fetching trips:', error);
+      throw error;
     }
-
-    const [trips, total] = await queryBuilder
-      .skip(skip)
-      .take(limit)
-      .getManyAndCount();
-
-    return {
-      trips,
-      pagination: {
-        page: parseInt(page),
-        limit: parseInt(limit),
-        total,
-        totalPages: Math.ceil(total / limit),
-      },
-    };
   }
 
   async findOne(id: string, tenantId: string): Promise<Trip> {
@@ -93,6 +119,7 @@ export class TripsService {
     tenantId: string,
   ): Promise<Trip> {
     const trip = await this.findOne(id, tenantId);
+    const oldStatus = trip.status;
 
     const previousStatus = trip.status;
     trip.status = updateTripStatusDto.status;
@@ -162,5 +189,109 @@ export class TripsService {
       plannedTrips,
       completionRate: totalTrips > 0 ? (completedTrips / totalTrips) * 100 : 0,
     };
+  }
+
+  private async sendLoadedNotification(tripId: string, tenantId: string): Promise<void> {
+    try {
+      const trip = await this.tripRepository.findOne({
+        where: { id: tripId },
+        relations: ['driver', 'truck', 'truck.owner', 'truck.owner.profile', 'load'],
+      });
+
+      if (!trip || !trip.load || !trip.truck || !trip.driver) return;
+
+      const driverName = `${trip.driver.firstName} ${trip.driver.lastName}`.trim();
+      
+      let truckOwnerName = 'Truck Owner';
+      if (trip.truck.owner?.profile) {
+        truckOwnerName = `${trip.truck.owner.profile.firstName} ${trip.truck.owner.profile.lastName}`.trim();
+      }
+
+      await this.notificationService.createNotification({
+        userId: trip.load.cargoOwnerId,
+        tenantId,
+        subject: 'Cargo Loaded & Ready',
+        content: `Driver ${driverName} from ${truckOwnerName} has loaded your cargo "${trip.load.title}", make advance payment to start your trip`,
+        type: NotificationType.GENERAL,
+        category: NotificationCategory.FINANCIAL,
+        channel: NotificationChannel.IN_APP,
+        actionUrl: '/dashboard/payments',
+        actionText: 'Make Payment',
+        metadata: {
+          entityType: EntityType.TRIP,
+          entityId: trip.id,
+        },
+      } as any);
+    } catch (error) {
+      console.error('Error in sendLoadedNotification:', error);
+    }
+  }
+
+  private async sendTripCompletedNotifications(tripId: string, tenantId: string): Promise<void> {
+    try {
+      const trip = await this.tripRepository.findOne({
+        where: { id: tripId },
+        relations: ['driver', 'truck', 'truck.owner', 'load'],
+      });
+
+      if (!trip || !trip.load) return;
+
+      const notifications = [];
+
+      // 1. Cargo Owner
+      if (trip.load.cargoOwnerId) {
+        notifications.push({
+          userId: trip.load.cargoOwnerId,
+          subject: 'Shipment Delivered',
+          content: `Your shipment "${trip.load.title || 'Shipment'}" has been delivered successfully.`,
+        });
+      }
+
+      // 2. Receiver (if exists)
+      if (trip.load.receiverId) {
+        notifications.push({
+          userId: trip.load.receiverId,
+          subject: 'Shipment Arrived',
+          content: `Shipment "${trip.load.title || 'Shipment'}" has arrived at your location.`,
+        });
+      }
+
+      // 3. Truck Owner (if exists)
+      if (trip.truck && trip.truck.ownerId) {
+        let driverName = 'Unknown Driver';
+        if (trip.driver) {
+          driverName = `${trip.driver.firstName} ${trip.driver.lastName}`.trim();
+        }
+        
+        notifications.push({
+          userId: trip.truck.ownerId,
+          subject: 'Trip Completed',
+          content: `Trip ${trip.tripNumber} has been completed by driver ${driverName}.`,
+        });
+      }
+
+      for (const notif of notifications) {
+        await this.notificationService.createNotification({
+          userId: notif.userId,
+          tenantId,
+          subject: notif.subject,
+          content: notif.content,
+          type: NotificationType.TRIP_COMPLETED,
+          category: NotificationCategory.TRIP,
+          channel: NotificationChannel.IN_APP,
+          actionUrl: `/dashboard/trips/${trip.id}`,
+          actionText: 'View Trip Details',
+          metadata: {
+            entityType: EntityType.TRIP,
+            entityId: trip.id,
+          },
+        } as any);
+      }
+      
+      console.log(`Sent completion notifications for trip ${tripId} to ${notifications.length} recipients`);
+      
+    } catch (error) {
+      console.error('Error sending completion notifications:', error);
+    }
   }
 }

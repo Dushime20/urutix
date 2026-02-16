@@ -5,6 +5,8 @@ import axios from 'axios';
 import { createWorker } from 'tesseract.js';
 import * as fs from 'fs';
 import * as path from 'path';
+const pdfParse = require('pdf-parse');
+
 
 // Optional canvas import - only needed for PDF OCR fallback
 let createCanvas: any = null;
@@ -34,6 +36,21 @@ export class OcrService {
       } = await worker.recognize(url);
       await worker.terminate();
       return { text };
+    }
+    } catch (error) {
+      console.error('OCR extraction error:', error);
+      
+      if (error.response) {
+        // The request was made and the server responded with a status code
+        // that falls out of the range of 2xx
+        throw new Error(`HTTP ${error.response.status}: ${error.response.statusText}`);
+      } else if (error.request) {
+        // The request was made but no response was received
+        throw new Error('Network error: Failed to fetch the file. Please check the URL and network connectivity.');
+      } else {
+        // Something happened in setting up the request that triggered an Error
+        throw new Error(`OCR extraction failed: ${error.message}`);
+      }
     }
   }
 

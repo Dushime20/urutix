@@ -16,13 +16,18 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { ContractType } from '../../../entities/load-contract.entity';
 
 export class CreateContractDto {
+  @ApiProperty({ description: 'Broker ID for this contract' })
+  @IsUUID()
+  brokerId: string;
+
   @ApiProperty({ description: 'Load ID for this contract' })
   @IsUUID()
   loadId: string;
 
   @ApiProperty({ description: 'Transporter ID (truck owner)' })
   @IsUUID()
-  transporterId: string;
+  @IsOptional()
+  transporterId?: string;
 
   @ApiPropertyOptional({ description: 'Trip ID if trip already exists' })
   @IsUUID()

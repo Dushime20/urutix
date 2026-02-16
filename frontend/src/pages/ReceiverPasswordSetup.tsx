@@ -7,7 +7,8 @@ import { FaEye, FaEyeSlash, FaSpinner, FaCheckCircle } from 'react-icons/fa';
 import { CheckCircle2, Circle, Package, ArrowRight } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { authAPI } from '../services/api';
-import logoUrutiX from '../assets/logo-urutix.svg';
+import logoUrutiXLegacy from '../assets/logo-urutix.svg';
+import logoUrutiXNew from '../assets/logo-urutix-logistics.svg';
 
 // Zod schema for password setup
 const passwordSetupSchema = z
@@ -125,12 +126,12 @@ const ReceiverPasswordSetup = () => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 relative overflow-hidden">
         {/* Full Page Background Logo */}
-        <img src={logoUrutiX} alt="UrutiX Logo Background" className="pointer-events-none select-none fixed inset-0 w-full h-full object-cover opacity-10 z-0" style={{ objectPosition: 'center' }} />
+        <img src={logoUrutiXLegacy} alt="UrutiX Logo Background" className="pointer-events-none select-none fixed inset-0 w-full h-full object-cover opacity-10 z-0" style={{ objectPosition: 'center' }} />
         <div className="w-full max-w-md px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
             <div className="px-6 pt-8 pb-4 text-center">
               <div className="flex justify-center mb-6">
-                <img src={logoUrutiX} alt="UrutiX Logistics" className="h-20 w-auto object-contain" />
+                <img src={logoUrutiXNew} alt="UrutiX Logistics" className="h-20 w-auto object-contain" />
               </div>
               <div className="flex justify-center mb-4">
                 <div className="bg-green-100 rounded-full p-3">
@@ -160,11 +161,11 @@ const ReceiverPasswordSetup = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 relative overflow-hidden">
       {/* Full Page Background Logo */}
-      <img src={logoUrutiX} alt="UrutiX Logo Background" className="pointer-events-none select-none fixed inset-0 w-full h-full object-contain opacity-5 z-0" style={{ objectPosition: 'center' }} />
+      <img src={logoUrutiXLegacy} alt="UrutiX Logo Background" className="pointer-events-none select-none fixed inset-0 w-full h-full object-cover opacity-10 z-0" style={{ objectPosition: 'center' }} />
       {/* Centered Form */}
       <div className="w-full max-w-md px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="flex justify-center mb-8">
-          <img src={logoUrutiX} alt="UrutiX Logistics Logo" className="h-24 w-auto object-contain drop-shadow-md" />
+          <img src={logoUrutiXNew} alt="UrutiX Logistics Logo" className="h-24 w-auto object-contain drop-shadow-md" />
         </div>
 
         {/* Form Container */}

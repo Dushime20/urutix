@@ -271,10 +271,25 @@ export class DocumentApiService {
     entityType: string,
     entityId: string
   ): Promise<Document[]> {
-    const response = await api.get(`${this.baseUrl}/entity/${entityType}/${entityId}`, {
-      headers: this.getHeaders(),
-    });
-    return response.data;
+    console.log('📄 getDocumentsByEntity called:', { entityType, entityId });
+    const url = `${this.baseUrl}/entity/${entityType}/${entityId}`;
+    console.log('📄 Request URL:', url);
+    
+    try {
+      const response = await api.get(url, {
+        headers: this.getHeaders(),
+      });
+      console.log('📄 Documents response:', response.data);
+      return response.data;
+    } catch (error: any) {
+      console.error('📄 Error fetching documents by entity:', error);
+      console.error('📄 Error details:', {
+        status: error.response?.status,
+        data: error.response?.data,
+        message: error.message,
+      });
+      throw error;
+    }
   }
 
   // Get documents expiring soon
@@ -294,9 +309,13 @@ export class DocumentApiService {
   }
 
   // Get document statistics
-  async getDocumentStatistics(): Promise<Record<string, any>> {
+  async getDocumentStatistics(entityType?: string): Promise<Record<string, any>> {
     try {
-      const response = await api.get(`${this.baseUrl}/statistics`, {
+      const url = entityType 
+        ? `${this.baseUrl}/statistics?entityType=${entityType}`
+        : `${this.baseUrl}/statistics`;
+        
+      const response = await api.get(url, {
         headers: this.getHeaders(),
       });
       return response.data;

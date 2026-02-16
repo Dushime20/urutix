@@ -29,6 +29,14 @@ import {
   DriverFilterDto,
 } from './dto/driver.dto';
 import { OcrService } from '../ocr/ocr.service';
+import { NotificationService } from '../notifications/notification.service';
+import {
+  NotificationType,
+  NotificationPriority,
+  NotificationCategory,
+  EntityType,
+  NotificationChannel,
+} from '../../entities/notification.entity';
 
 @Injectable()
 export class DriverService {
@@ -42,6 +50,7 @@ export class DriverService {
     @InjectRepository(Truck)
     private truckRepository: Repository<Truck>,
     private readonly ocrService: OcrService,
+    private readonly notificationService: NotificationService,
   ) {}
 
   async createDriver(createDto: CreateDriverDto): Promise<Driver> {
@@ -894,6 +903,28 @@ export class DriverService {
       this.logger.log(
         `Driver ${driver.id} (userId: ${driver.userId}) accepted and loaded cargo ${loadId}`,
       );
+
+      // Create notification for Cargo Owner
+      try {
+        await this.notificationService.createNotification({
+            recipientId: load.cargoOwnerId,
+            tenantId,
+            title: 'Cargo Loaded',
+            message: `Your cargo "${load.title || 'Shipment'}" has been loaded by driver ${driver.firstName} ${driver.lastName}.`,
+            notificationType: NotificationType.CARGO_DELIVERY_UPDATE,
+            category: NotificationCategory.CARGO,
+            priority: NotificationPriority.HIGH,
+            entityId: load.id,
+            entityType: EntityType.CARGO,
+            channels: [NotificationChannel.IN_APP, NotificationChannel.PUSH],
+            actionUrl: `/dashboard/cargos/${load.id}`,
+            actionText: 'View Shipment',
+          });
+        this.logger.log(`Notification sent to cargo owner ${load.cargoOwnerId}`);
+      } catch (notifError) {
+        this.logger.error(`Failed to send notification: ${notifError.message}`);
+        // Don't fail the main operation if notification fails
+      }
     } catch (error) {
       this.logger.error(
         `Failed to accept and load cargo for driver ${driverIdOrUserId}: ${error.message}`,

@@ -205,10 +205,10 @@ export class LendingService {
 
     if (existingUser) {
       this.logger.error(
-        `User with email ${createLenderDto.contact_email} already exists. Cannot create lender with existing user email.`,
+        `Lender user with email ${createLenderDto.contact_email} already exists. Cannot create lender with existing user email.`,
       );
       throw new ConflictException(
-        `A user with the email "${createLenderDto.contact_email}" already exists in the system. Please use a different email address for this lender.`,
+        `A lender with the email "${createLenderDto.contact_email}" already exists in the system.`,
       );
     }
 
@@ -243,9 +243,9 @@ export class LendingService {
 
       const lenderUser = this.userRepository.create({
         email: createLenderDto.contact_email.trim().toLowerCase(),
-        passwordHash: tempPasswordHash,
+        passwordHash: passwordHashToUse,
         role: UserRole.LENDER,
-        status: UserStatus.PENDING_VERIFICATION,
+        status: userStatus,
         tenantId: lenderTenantId,
       });
 
@@ -264,26 +264,27 @@ export class LendingService {
       await this.userProfileRepository.save(userProfile);
       this.logger.log(`✅ User profile created for lender user`);
 
-      // Generate password setup token
-      this.logger.log(`📧 Generating password setup token for: ${createLenderDto.contact_email}`);
-      const token = crypto.randomBytes(32).toString('hex');
-      const expiresAt = new Date();
-      expiresAt.setDate(expiresAt.getDate() + 7); // Token expires in 7 days
+      if (shouldSendSetupEmail) {
+          // Generate password setup token
+          this.logger.log(`📧 Generating password setup token for: ${createLenderDto.contact_email}`);
+          const token = crypto.randomBytes(32).toString('hex');
+          const expiresAt = new Date();
+          expiresAt.setDate(expiresAt.getDate() + 7); // Token expires in 7 days
 
-      // Invalidate any existing tokens for this email
-      await this.passwordResetTokenRepository.update(
-        { email: createLenderDto.contact_email.trim().toLowerCase(), used: false },
-        { used: true },
-      );
+          // Invalidate any existing tokens for this email
+          await this.passwordResetTokenRepository.update(
+            { email: createLenderDto.contact_email.trim().toLowerCase(), used: false },
+            { used: true },
+          );
 
-      const passwordSetupToken = this.passwordResetTokenRepository.create({
-        email: createLenderDto.contact_email.trim().toLowerCase(),
-        token,
-        expiresAt,
-        used: false,
-      });
-      await this.passwordResetTokenRepository.save(passwordSetupToken);
-      this.logger.log(`✅ Password setup token generated and saved`);
+          const passwordSetupToken = this.passwordResetTokenRepository.create({
+            email: createLenderDto.contact_email.trim().toLowerCase(),
+            token,
+            expiresAt,
+            used: false,
+          });
+          await this.passwordResetTokenRepository.save(passwordSetupToken);
+          this.logger.log(`✅ Password setup token generated and saved`);
 
       // Send password setup email (always send for new users)
       this.logger.log(`📧 ========== LENDER EMAIL SENDING PROCESS START ==========`);
@@ -331,7 +332,6 @@ export class LendingService {
           `⚠️ Lender and user account were created successfully, but email could not be sent. The lender will need to use password reset to set their password.`,
         );
       }
-      this.logger.log(`📧 ========== LENDER EMAIL SENDING PROCESS END ==========`);
     } catch (error) {
       this.logger.error(
         `❌ Error creating lender user account: ${error.message}`,

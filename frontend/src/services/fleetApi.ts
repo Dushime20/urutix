@@ -1914,4 +1914,23 @@ export const fleetApi = {
       throw error;
     }
   },
+
+  // ===== TRUCK LOCATION APIs =====
+
+  // Update truck current location
+  async updateTruckLocation(truckId: string, locationData: {
+    latitude: number;
+    longitude: number;
+    address?: string;
+  }): Promise<FleetItem> {
+    try {
+      console.log('📍 Updating truck location:', truckId, locationData);
+      const response = await api.patch(`/fleet/trucks/${truckId}/location`, locationData);
+      console.log('✅ Truck location updated successfully:', response.data);
+      return response.data.truck || response.data;
+    } catch (error: any) {
+      console.error('❌ Error updating truck location:', error);
+      throw error;
+    }
+  },
 }; 

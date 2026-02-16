@@ -65,6 +65,19 @@ const BidForm: React.FC<BidFormProps> = ({ auction, onSubmit, onCancel }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successProbability, setSuccessProbability] = useState<number>(0);
+  const [availableTrucks, setAvailableTrucks] = useState<FleetItem[]>([]);
+
+  useEffect(() => {
+    const fetchTrucks = async () => {
+      try {
+        const trucks = await fleetApi.getTrucks();
+        setAvailableTrucks(trucks);
+      } catch (err) {
+        console.error('Failed to fetch trucks', err);
+      }
+    };
+    fetchTrucks();
+  }, []);
 
   useEffect(() => {
     // Set default dates based on load requirements

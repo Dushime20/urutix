@@ -10,6 +10,7 @@ import { TranslatedText } from "@/components/translated-text";
 import { motion, AnimatePresence } from "framer-motion";
 
 const navigation = [
+  { name: "Dashboard", href: "/dashboard" },
   { name: "Solutions", href: "#solutions" },
   { name: "Service", href: "#features" },
   { name: "Coverage", href: "#coverage" },

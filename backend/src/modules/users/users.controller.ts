@@ -27,6 +27,35 @@ export class UsersController {
     return this.usersService.create(payload);
   }
 
+  @Get()
+  @ApiOperation({ summary: 'Get users by role' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Users retrieved successfully',
+  })
+  async getUsers(@Query('role') role?: string) {
+    if (role) {
+      const roleEnum = role.toUpperCase() as UserRole;
+      const users = await this.usersService.findUsersByRole(roleEnum);
+      return users.map((user) => ({
+        id: user.id,
+        email: user.email,
+        role: user.role,
+        status: user.status,
+        profile: user.profile,
+      }));
+    }
+    
+    const users = await this.usersService.findAll();
+    return users.map((user) => ({
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      status: user.status,
+      profile: user.profile,
+    }));
+  }
+
   @Get('check-tenant-role/:role')
   @ApiOperation({ summary: 'Check if tenant role exists' })
   @ApiResponse({

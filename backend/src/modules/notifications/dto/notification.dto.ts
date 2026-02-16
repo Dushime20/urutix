@@ -49,6 +49,10 @@ export class WorkflowCommentDto {
 
 export class CreateNotificationRequestDto {
   @IsUUID()
+  @IsOptional()
+  tenantId?: string;
+
+  @IsUUID()
   recipientId: string;
 
   @IsEnum(EntityType)

@@ -41,9 +41,9 @@ const FleetForm: React.FC<FleetFormProps> = ({
     if (initializedRef.current) {
       return; // Don't reset if already initialized
     }
-    
+
     console.log('🔄 useEffect triggered:', { hasInitialData: !!initialData, activeTab, isOpen });
-    
+
     if (initialData) {
       setFormData({
         // Truck fields
@@ -348,11 +348,11 @@ const FleetForm: React.FC<FleetFormProps> = ({
       return;
     }
     setLoading(true);
-    
+
     try {
       // Structure the form data to match backend DTO
       const structuredData: any = { ...formData };
-      
+
       // Build loadingCapabilities object
       if (activeTab === 'trucks') {
         console.log('🚛 Building loadingCapabilities from formData:', {
@@ -378,7 +378,7 @@ const FleetForm: React.FC<FleetFormProps> = ({
           maxLoadingTime: formData.maxLoadingTime || undefined,
           maxUnloadingTime: formData.maxUnloadingTime || undefined,
         };
-        
+
         // Build cargoCapabilities object
         structuredData.cargoCapabilities = {
           supportedCargoTypes: formData.supportedCargoTypes || [],
@@ -398,7 +398,7 @@ const FleetForm: React.FC<FleetFormProps> = ({
           maxWidthCapacity: formData.maxWidth || undefined,
           maxHeightCapacity: formData.maxHeight || undefined,
         };
-        
+
         // Build securityFeatures object
         structuredData.securityFeatures = {
           hasGps: formData.hasGPS || formData.hasGps || false,
@@ -433,7 +433,7 @@ const FleetForm: React.FC<FleetFormProps> = ({
           hasVolumeMonitoring: formData.hasVolumeMonitoring || false,
         };
       }
-      
+
       console.log('📤 Submitting structured data:', structuredData);
       console.log('📤 Loading capabilities:', structuredData.loadingCapabilities);
       await onSubmit(structuredData);
@@ -450,7 +450,7 @@ const FleetForm: React.FC<FleetFormProps> = ({
     console.log('🔄 handleInputChange:', field, value);
     if (field.includes('.')) {
       const [parent, child] = field.split('.');
-      setFormData(prev => {
+      setFormData((prev: any) => {
         const updated = {
           ...prev,
           [parent]: {
@@ -462,7 +462,7 @@ const FleetForm: React.FC<FleetFormProps> = ({
         return updated;
       });
     } else {
-      setFormData(prev => {
+      setFormData((prev: any) => {
         const updated = {
           ...prev,
           [field]: value
@@ -502,7 +502,7 @@ const FleetForm: React.FC<FleetFormProps> = ({
             {/* Basic Information */}
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-gray-900">Basic Information</h3>
-              
+
               {activeTab === 'trucks' ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
@@ -533,25 +533,23 @@ const FleetForm: React.FC<FleetFormProps> = ({
                           handleInputChange('vin', value);
                         }
                       }}
-                      className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
-                        formData.vin?.length === 17 
-                          ? 'border-green-500 bg-green-50' 
-                          : formData.vin?.length > 0 
-                          ? 'border-yellow-400' 
-                          : 'border-gray-300'
-                      }`}
+                      className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent ${formData.vin?.length === 17
+                          ? 'border-green-500 bg-green-50'
+                          : formData.vin?.length > 0
+                            ? 'border-yellow-400'
+                            : 'border-gray-300'
+                        }`}
                       required
                       maxLength={17}
                       placeholder="Enter 17-character VIN"
                     />
                     <div className="mt-1 flex items-center justify-between">
-                      <span className={`text-xs ${
-                        formData.vin?.length === 17 
-                          ? 'text-green-600' 
-                          : formData.vin?.length > 0 
-                          ? 'text-yellow-600' 
-                          : 'text-gray-500'
-                      }`}>
+                      <span className={`text-xs ${formData.vin?.length === 17
+                          ? 'text-green-600'
+                          : formData.vin?.length > 0
+                            ? 'text-yellow-600'
+                            : 'text-gray-500'
+                        }`}>
                         {formData.vin?.length || 0} / 17 characters
                       </span>
                       {formData.vin?.length === 17 && (
@@ -596,11 +594,10 @@ const FleetForm: React.FC<FleetFormProps> = ({
                         const value = e.target.value;
                         handleInputChange('year', value === '' ? '' : parseInt(value) || '');
                       }}
-                      className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
-                        formData.year && typeof formData.year === 'number' && formData.year > new Date().getFullYear()
+                      className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent ${formData.year && typeof formData.year === 'number' && formData.year > new Date().getFullYear()
                           ? 'border-red-500 bg-red-50'
                           : 'border-gray-300'
-                      }`}
+                        }`}
                       required
                       min={1900}
                       max={2030}
@@ -745,7 +742,7 @@ const FleetForm: React.FC<FleetFormProps> = ({
                       step={0.1}
                     />
                   </div>
-                  
+
                   {/* Truck Type and Cargo Capabilities */}
                   <div className="space-y-4">
                     <h3 className="text-lg font-semibold text-gray-900">Truck Type & Cargo Capabilities</h3>
@@ -812,7 +809,7 @@ const FleetForm: React.FC<FleetFormProps> = ({
                       </div>
                     </div>
                   </div>
-                  
+
                   {/* Essential Cargo Equipment */}
                   <div className="space-y-4">
                     <h3 className="text-lg font-semibold text-gray-900">Essential Cargo Equipment</h3>
@@ -927,7 +924,7 @@ const FleetForm: React.FC<FleetFormProps> = ({
                       </div>
                     </div>
                   </div>
-                  
+
                   {/* Loading Equipment */}
                   <div className="space-y-4">
                     <h3 className="text-lg font-semibold text-gray-900">Loading Equipment</h3>
@@ -1010,7 +1007,7 @@ const FleetForm: React.FC<FleetFormProps> = ({
                       </div>
                     </div>
                   </div>
-                  
+
                   {/* Cargo Type Capabilities */}
                   <div className="space-y-4">
                     <h3 className="text-lg font-semibold text-gray-900">Cargo Type Capabilities</h3>
@@ -1125,7 +1122,7 @@ const FleetForm: React.FC<FleetFormProps> = ({
                       </div>
                     </div>
                   </div>
-                  
+
                   {/* Technology & Safety Features */}
                   <div className="space-y-4">
                     <h3 className="text-lg font-semibold text-gray-900">Technology & Safety Features</h3>
@@ -1204,7 +1201,7 @@ const FleetForm: React.FC<FleetFormProps> = ({
                       </div>
                     </div>
                   </div>
-                  
+
                   {/* Equipment List */}
                   <div className="space-y-4">
                     <h3 className="text-lg font-semibold text-gray-900">Additional Equipment</h3>

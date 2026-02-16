@@ -229,14 +229,6 @@ export const DriverAssignments: React.FC = () => {
                     <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg text-center">
                       <FaUser className="w-8 h-8 text-gray-400 mx-auto mb-2" />
                       <p className="text-sm text-gray-600">No drivers assigned to this truck</p>
-                      {availableDrivers.length > 0 && (
-                        <button
-                          onClick={() => openAssignModal(truck)}
-                          className="mt-3 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors text-sm"
-                        >
-                          Assign Driver
-                        </button>
-                      )}
                     </div>
                   )}
                 </div>

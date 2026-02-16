@@ -110,4 +110,67 @@ export const enhancedMatchingApi = {
       throw error;
     }
   },
+
+  // Get matches for Truck Owner
+  getTruckOwnerMatches: async (): Promise<any> => {
+    try {
+      const response = await api.get('/matching/truck-owner/matches');
+      return response.data;
+    } catch (error) {
+      console.error('Error getting truck owner matches:', error);
+      throw error;
+    }
+  },
+
+  // Respond to a match
+  respondToMatch: async (matchId: string, status: 'ACCEPTED' | 'REJECTED'): Promise<any> => {
+    try {
+      const response = await api.patch(`/matching/${matchId}/respond`, { status });
+      return response.data;
+    } catch (error) {
+      console.error('Error responding to match:', error);
+      throw error;
+    }
+  },
+
+  // Request a match (Cargo Owner)
+  requestMatch: async (loadId: string, truckId: string): Promise<any> => {
+    try {
+      // Validate parameters before sending
+      if (!loadId || !truckId) {
+        console.error('❌ requestMatch called with missing parameters:', { loadId, truckId });
+        throw new Error(`Missing required parameters: ${!loadId ? 'loadId' : ''} ${!truckId ? 'truckId' : ''}`);
+      }
+
+      console.log('✅ Requesting match:', { loadId, truckId });
+      const response = await api.post('/matching/request', { loadId, truckId });
+      console.log('✅ Match request response:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('❌ Error requesting match:', error);
+      throw error;
+    }
+  },
+
+  // Create trips for already-accepted matches (migration)
+  createTripsForAcceptedMatches: async (): Promise<any> => {
+    try {
+      const response = await api.post('/matching/create-trips-for-accepted');
+      return response.data;
+    } catch (error) {
+      console.error('Error creating trips for accepted matches:', error);
+      throw error;
+    }
+  },
+
+  // Create trip for a specific match
+  createTripForMatch: async (matchId: string): Promise<any> => {
+    try {
+      const response = await api.post(`/matching/${matchId}/create-trip`);
+      return response.data;
+    } catch (error) {
+      console.error('Error creating trip for match:', error);
+      throw error;
+    }
+  }
 };

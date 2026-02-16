@@ -475,7 +475,12 @@ const FinancialReportsPage: React.FC = () => {
               <span className="hidden sm:inline">Custom Report</span>
               <span className="sm:hidden">Custom</span>
             </button>
-            <button className="flex-1 sm:flex-initial px-3 py-2 sm:py-1.5 text-xs sm:text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-1.5 touch-manipulation min-h-[44px] sm:min-h-0">
+            <button 
+              style={{ backgroundColor: '#345E85' }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#2A4D6E'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#345E85'}
+              className="flex-1 sm:flex-initial px-3 py-2 sm:py-1.5 text-xs sm:text-sm text-white rounded-lg transition-colors flex items-center justify-center gap-1.5 touch-manipulation min-h-[44px] sm:min-h-0"
+            >
               <FaCalendar className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">Schedule Manager</span>
               <span className="sm:hidden">Schedule</span>
@@ -675,7 +680,10 @@ const FinancialReportsPage: React.FC = () => {
                 <button
                   onClick={() => handleGenerateReport(template)}
                   disabled={isGenerating === template.id}
-                  className="flex-1 px-2 py-2 sm:py-1.5 text-xs bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation min-h-[44px] sm:min-h-0"
+                  style={{ backgroundColor: isGenerating === template.id ? '#345E85' : '#345E85' }}
+                  onMouseEnter={(e) => !isGenerating && (e.currentTarget.style.backgroundColor = '#2A4D6E')}
+                  onMouseLeave={(e) => !isGenerating && (e.currentTarget.style.backgroundColor = '#345E85')}
+                  className="flex-1 px-2 py-2 sm:py-1.5 text-xs text-white rounded-lg transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation min-h-[44px] sm:min-h-0"
                 >
                   {isGenerating === template.id ? (
                     <>
@@ -998,7 +1006,10 @@ const FinancialReportsPage: React.FC = () => {
                 </button>
                 <button
                   onClick={() => handleGenerateReport(selectedTemplate)}
-                  className="px-3 py-2.5 sm:py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors touch-manipulation min-h-[44px] sm:min-h-0"
+                  style={{ backgroundColor: '#345E85' }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#2A4D6E'}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#345E85'}
+                  className="px-3 py-2.5 sm:py-1.5 text-sm text-white rounded-lg transition-colors touch-manipulation min-h-[44px] sm:min-h-0"
                 >
                   Generate Now
                 </button>

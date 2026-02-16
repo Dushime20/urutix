@@ -1291,56 +1291,43 @@ export const CargoDashboard: React.FC = () => {
                   </h1>
                   <p className="text-xs sm:text-sm text-gray-500 mt-1">Manage and track all your cargo shipments</p>
                 </div>
-                <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center flex-wrap">
-                  <Button
-                    onClick={handleCreateNew}
-                    className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white touch-manipulation min-h-[44px] sm:min-h-0 order-1"
-                  >
-                    <FaPlus className="w-4 h-4" />
-                    <span className="hidden sm:inline"><TranslatedText text="Create New Cargo" /></span>
-                    <span className="sm:hidden"><TranslatedText text="Create" /></span>
-                  </Button>
-                  <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1 order-2">
-                    <Button
-                      variant={view === "list" ? "default" : "ghost"}
-                      size="sm"
-                      aria-label="List view"
-                      onClick={() => setView("list")}
-                      className="h-8 sm:h-8 touch-manipulation min-w-[44px] sm:min-w-0"
-                    >
-                      <FiList className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      variant={view === "grid" ? "default" : "ghost"}
-                      size="sm"
-                      aria-label="Grid view"
-                      onClick={() => setView("grid")}
-                      className="h-8 sm:h-8 touch-manipulation min-w-[44px] sm:min-w-0"
-                    >
-                      <FiGrid className="w-4 h-4" />
-                    </Button>
-                  </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    aria-label="Export"
-                    onClick={handleExport}
-                    className="h-9 sm:h-9 touch-manipulation min-h-[44px] sm:min-h-0 order-3 flex-1 sm:flex-initial"
-                  >
-                    <FaDownload className="w-4 h-4" />
-                    <span className="hidden sm:inline ml-2">Export</span>
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    aria-label="Refresh"
-                    onClick={() => loadCargos(true)}
-                    className="h-9 sm:h-9 touch-manipulation min-h-[44px] sm:min-h-0 order-4 flex-1 sm:flex-initial"
-                    disabled={loading}
-                  >
-                    <FaSync className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-                    <span className="hidden sm:inline ml-2">Refresh</span>
-                  </Button>
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Total Cargos</p>
+                  <p className="text-2xl font-bold text-navy-800">{stats.total}</p>
+                </div>
+              </div>
+              <div className="bg-gray-50 rounded-lg p-4 border border-gray-200 flex items-center gap-4">
+                <div className="w-12 h-12 bg-navy-100 rounded-lg flex items-center justify-center">
+                  <TrendingUp className="w-6 h-6 text-navy-700" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Published</p>
+                  <p className="text-2xl font-bold text-navy-800">{stats.published}</p>
+                </div>
+              </div>
+              <div className="bg-gray-50 rounded-lg p-4 border border-gray-200 flex items-center gap-4">
+                <div className="w-12 h-12 bg-navy-100 rounded-lg flex items-center justify-center">
+                  <MapPin className="w-6 h-6 text-navy-700" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-600">In Transit</p>
+                  <p className="text-2xl font-bold text-navy-800">{stats.inTransit}</p>
+                </div>
+              </div>
+              <div className="bg-gray-50 rounded-lg p-4 border border-gray-200 flex items-center gap-4">
+                <div className="w-12 h-12 bg-navy-100 rounded-lg flex items-center justify-center">
+                  <BarChart3 className="w-6 h-6 text-navy-700" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Total Value</p>
+                  <p className="text-xl font-bold text-navy-800">
+                    {(() => {
+                      const value = stats.totalValue;
+                      if (value >= 1000000) return `$${(value / 1000000).toFixed(1)}M`;
+                      if (value >= 1000) return `$${(value / 1000).toFixed(1)}K`;
+                      return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(value);
+                    })()}
+                  </p>
                 </div>
               </div>
             </div>

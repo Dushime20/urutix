@@ -14,29 +14,21 @@ import {
   FaRoute,
   FaUsers,
   FaFileAlt,
-  FaPlus,
   FaEye,
-  FaChartBar,
-  FaCog,
-  FaDownload,
-  FaUpload,
   FaSync,
-  FaSort,
   FaSortUp,
-  FaSortDown,
-  FaCalendarAlt,
-  FaClock,
-  FaGasPump,
-  FaTachometerAlt,
-  FaShieldAlt,
   FaExclamationTriangle,
   FaCheckCircle,
   FaTimesCircle,
+  FaTimes,
   FaInfoCircle,
-  FaQuestionCircle
+  FaClock,
+  FaUserPlus,
+  FaUserMinus
 } from 'react-icons/fa';
-import { FiGrid, FiList, FiMoreVertical } from 'react-icons/fi';
-import type { FleetItem, Route } from '../../types/fleet';
+import { FiGrid, FiList } from 'react-icons/fi';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../ui';
+import type { Route } from '../../types/fleet';
 import { fleetApi } from '../../services/fleetApi';
 import { fetchAdminRoutes } from '../../services/adminApi';
 import logoUrutiX from '../../assets/logo-urutix-logistics.svg';
@@ -48,7 +40,10 @@ console.log('🔍 TrucksList - fleetApi type:', typeof fleetApi);
 import toast from 'react-hot-toast';
 import { useAuth } from '../../contexts/AuthContext';
 import { EmptyState } from './EmptyState';
-import { HelpTooltip } from './HelpTooltip';
+import TruckLocationModal from './TruckLocationModal';
+import FleetFormStepper from './FleetFormStepper';
+import { ConfirmDialog } from '../ui/ConfirmDialog';
+
 
 interface TrucksListProps {
   onAddTruck?: () => void;
@@ -68,33 +63,33 @@ interface EditTruckFormProps {
 
 const EditTruckForm: React.FC<EditTruckFormProps> = ({ truck, onSave, onCancel }) => {
   const [formData, setFormData] = useState({
-    plateNumber: truck.plateNumber || '',
-    make: truck.make || '',
-    model: truck.model || '',
-    year: truck.year || new Date().getFullYear(),
-    color: truck.color || '',
-    vin: truck.vin || '',
-    capacityWeight: truck.capacityWeight || 0,
-    capacityVolume: truck.capacityVolume || 0,
-    maxLength: truck.maxLength ? String(truck.maxLength) : '',
-    maxWidth: truck.maxWidth ? String(truck.maxWidth) : '',
-    maxHeight: truck.maxHeight ? String(truck.maxHeight) : '',
-    truckType: truck.truckType || 'FLATBED',
-    trailerType: truck.trailerType || '',
-    fuelType: truck.fuelType || 'DIESEL',
-    status: truck.status || 'AVAILABLE',
-    mileage: truck.mileage || 0,
-    fuelEfficiency: truck.fuelEfficiency ? String(truck.fuelEfficiency) : '',
-    registrationNumber: truck.registrationNumber || '',
-    registrationExpiry: truck.registrationExpiry ? new Date(truck.registrationExpiry).toISOString().split('T')[0] : '',
-    insurancePolicy: truck.insurancePolicy || '',
-    insuranceExpiry: truck.insuranceExpiry ? new Date(truck.insuranceExpiry).toISOString().split('T')[0] : '',
-    roadworthyCertExpiry: truck.roadworthyCertExpiry ? new Date(truck.roadworthyCertExpiry).toISOString().split('T')[0] : '',
-    hasRefrigeration: truck.hasRefrigeration || false,
-    hasLiftGate: truck.hasLiftGate || false,
-    hasGps: truck.hasGps || truck.hasGPS || false,
-    hasHazmatPermit: truck.hasHazmatPermit || false,
-    isActive: truck.isActive !== undefined ? truck.isActive : true,
+    plateNumber: truck?.plateNumber || '',
+    make: truck?.make || '',
+    model: truck?.model || '',
+    year: truck?.year || new Date().getFullYear(),
+    color: truck?.color || '',
+    vin: truck?.vin || '',
+    capacityWeight: truck?.capacityWeight || 0,
+    capacityVolume: truck?.capacityVolume || 0,
+    maxLength: truck?.maxLength ? String(truck.maxLength) : '',
+    maxWidth: truck?.maxWidth ? String(truck.maxWidth) : '',
+    maxHeight: truck?.maxHeight ? String(truck.maxHeight) : '',
+    truckType: truck?.truckType || 'FLATBED',
+    trailerType: truck?.trailerType || '',
+    fuelType: truck?.fuelType || 'DIESEL',
+    status: truck?.status || 'AVAILABLE',
+    mileage: truck?.mileage || 0,
+    fuelEfficiency: truck?.fuelEfficiency ? String(truck.fuelEfficiency) : '',
+    registrationNumber: truck?.registrationNumber || '',
+    registrationExpiry: truck?.registrationExpiry ? new Date(truck.registrationExpiry).toISOString().split('T')[0] : '',
+    insurancePolicy: truck?.insurancePolicy || '',
+    insuranceExpiry: truck?.insuranceExpiry ? new Date(truck.insuranceExpiry).toISOString().split('T')[0] : '',
+    roadworthyCertExpiry: truck?.roadworthyCertExpiry ? new Date(truck.roadworthyCertExpiry).toISOString().split('T')[0] : '',
+    hasRefrigeration: truck?.hasRefrigeration || false,
+    hasLiftGate: truck?.hasLiftGate || false,
+    hasGps: truck?.hasGps || truck?.hasGPS || false,
+    hasHazmatPermit: truck?.hasHazmatPermit || false,
+    isActive: truck?.isActive !== undefined ? truck.isActive : true,
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -539,17 +534,21 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
-  const [view, setView] = useState<'grid' | 'list'>('list');
+  const [view, setView] = useState<'grid' | 'list'>('grid');
   const [selectedTruck, setSelectedTruck] = useState<any | null>(null);
   const [showAssignDriver, setShowAssignDriver] = useState(false);
   const [showAssignRoute, setShowAssignRoute] = useState(false);
   const [showTruckDetails, setShowTruckDetails] = useState(false);
   const [showTruckRoutes, setShowTruckRoutes] = useState(false);
   const [showEditTruck, setShowEditTruck] = useState(false);
+  const [showLocationModal, setShowLocationModal] = useState(false);
   const [editingTruck, setEditingTruck] = useState<any>(null);
   const [sortConfig, setSortConfig] = useState<SortConfig>({ key: 'name', direction: 'asc' });
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [truckToDelete, setTruckToDelete] = useState<any>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
 
   // Load initial data (trucks, drivers, routes) - only depends on auth
@@ -711,11 +710,11 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
         (trucksData || []).map(async (truck) => {
           try {
             const truckRouteObjs = await fleetApi.getTruckRoutes(truck.id);
-            const assignedRoutes = (truckRouteObjs || []).map((r: any) => ({
+            const assignedRoutes = (truckRouteObjs || []).filter((r: any) => r).map((r: any) => ({
               routeId: r.id,
-              routeName: r.name,
+              routeName: r?.name || 'Unknown Route',
               assignmentDate: new Date().toISOString(),
-              status: r.status || 'active',
+              status: r?.status || 'active',
             }));
             return { ...truck, assignedRoutes, assignedRouteDetails: truckRouteObjs };
           } catch (err) {
@@ -733,19 +732,23 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
       // Keep existing routes list; refresh fallback if we have none
       if (!routes || routes.length === 0) {
         try {
-          const adminRoutes = await fetchAdminRoutes({ tenantId: user.tenantId, status: 'active' });
-          const mapped = (adminRoutes || []).map((r: any) => ({
-            id: r.id,
-            name: r.name,
-            origin: r.origin,
-            destination: r.destination,
-            distance: Number(r.distance) || 0,
-            estimatedDuration: Number(r.estimatedDuration || r.estimatedTime) || 0,
-            status: r.status || 'active',
-            assignedDrivers: Array.isArray(r.assignedDrivers) ? r.assignedDrivers : [],
-            assignedTrucks: Array.isArray(r.assignedTrucks) ? r.assignedTrucks : [],
-          }));
-          setRoutes(mapped);
+          // Only attempt fallback to admin routes if user has admin privileges
+          const isAdmin = ['SUPER_ADMIN', 'ADMIN', 'TENANT_ADMIN'].includes(user.role);
+          if (isAdmin) {
+            const adminRoutes = await fetchAdminRoutes({ tenantId: user.tenantId, status: 'active' });
+            const mapped = (adminRoutes || []).map((r: any) => ({
+              id: r.id,
+              name: r.name,
+              origin: r.origin,
+              destination: r.destination,
+              distance: Number(r.distance) || 0,
+              estimatedDuration: Number(r.estimatedDuration || r.estimatedTime) || 0,
+              status: r.status || 'active',
+              assignedDrivers: Array.isArray(r.assignedDrivers) ? r.assignedDrivers : [],
+              assignedTrucks: Array.isArray(r.assignedTrucks) ? r.assignedTrucks : [],
+            }));
+            setRoutes(mapped);
+          }
         } catch (e) {
           console.warn('No fallback admin routes available');
         }
@@ -754,6 +757,30 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
       console.error('❌ Error loading filtered data:', e);
     }
   }, [user, accessToken, search, statusFilter]);
+
+  // Enrich trucks with route details from the routes list
+  const enrichedTrucks = React.useMemo(() => {
+    return (trucks || []).map(truck => {
+      if (!truck) return null;
+
+      const assignedRouteDetails = Array.isArray(truck.assignedRoutes)
+        ? truck.assignedRoutes.map((ar: any) => {
+          if (!ar) return null;
+          // ar might be just an ID string or an object with routeId
+          const routeId = typeof ar === 'string' ? ar : (ar.routeId || ar.id);
+          if (!routeId) return null;
+
+          const fullRoute = routes.find(r => r && r.id === routeId);
+          return fullRoute ? { ...fullRoute, ...ar } : null; // Merge assignment details with full route
+        }).filter(Boolean)
+        : [];
+
+      return {
+        ...truck,
+        assignedRouteDetails
+      };
+    }).filter(Boolean);
+  }, [trucks, routes]);
 
   // Debug useEffect - runs on every render
   useEffect(() => {
@@ -785,6 +812,7 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
 
     setLoading(true);
     setError(null);
+
     try {
       console.log('🚛 Fetching trucks...');
       const trucksData = await fleetApi.getTrucks({});
@@ -801,29 +829,39 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
       let routesData: Route[] = [];
       try {
         console.log('🛣️ EXECUTING fleetApi.fetchRoutes() NOW...');
-        routesData = await fleetApi.fetchRoutes();
+        const response = await fleetApi.fetchRoutes();
+        routesData = (response || []).map((r: any) => ({
+          ...r,
+          estimatedDuration: r.estimatedDuration || r.estimatedTime || 0
+        }));
         console.log('✅ Routes data received:', routesData);
         console.log('✅ Routes data type:', typeof routesData);
         console.log('✅ Routes data length:', Array.isArray(routesData) ? routesData.length : 'Not an array');
         console.log('✅ Routes data structure:', JSON.stringify(routesData, null, 2));
-        // Fallback to admin routes if empty
-        if (!routesData || routesData.length === 0) {
-          console.log('⚠️ No routes from /fleet/routes. Falling back to /admin/routes with tenant filter...');
-          const adminRoutes = await fetchAdminRoutes({ tenantId: user.tenantId, status: 'active' });
-          routesData = (adminRoutes || []).map((r: any) => ({
-            id: r.id,
-            name: r.name,
-            origin: r.origin,
-            destination: r.destination,
-            distance: Number(r.distance) || 0,
-            estimatedDuration: Number(r.estimatedDuration || r.estimatedTime) || 0,
-            status: r.status || 'active',
-            assignedDrivers: Array.isArray(r.assignedDrivers) ? r.assignedDrivers : [],
-            assignedTrucks: Array.isArray(r.assignedTrucks) ? r.assignedTrucks : [],
-          }));
-          console.log('✅ Fallback admin routes mapped:', routesData.length);
+        // Fallback to admin routes if empty AND user is admin
+        if ((!routesData || routesData.length === 0)) {
+          const isAdmin = ['SUPER_ADMIN', 'ADMIN', 'TENANT_ADMIN'].includes(user.role);
+
+          if (isAdmin) {
+            console.log('⚠️ No routes from /fleet/routes. Falling back to /admin/routes with tenant filter...');
+            const adminRoutes = await fetchAdminRoutes({ tenantId: user.tenantId, status: 'active' });
+            routesData = (adminRoutes || []).map((r: any) => ({
+              id: r.id,
+              name: r.name,
+              origin: r.origin,
+              destination: r.destination,
+              distance: Number(r.distance) || 0,
+              estimatedDuration: Number(r.estimatedDuration || r.estimatedTime) || 0,
+              status: r.status || 'active',
+              assignedDrivers: Array.isArray(r.assignedDrivers) ? r.assignedDrivers : [],
+              assignedTrucks: Array.isArray(r.assignedTrucks) ? r.assignedTrucks : [],
+            }));
+            console.log('✅ Fallback admin routes mapped:', routesData.length);
+          } else {
+            console.log('ℹ️ User is not admin, skipping admin routes fallback');
+          }
         }
-      } catch (routeError) {
+      } catch (routeError: any) {
         console.error('❌ Error fetching routes:', routeError);
         console.error('❌ Route error response:', routeError.response?.data);
         console.error('❌ Route error status:', routeError.response?.status);
@@ -861,6 +899,8 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
     } finally {
       setLoading(false);
     }
+
+    setLoading(false);
   }, [user, accessToken, authLoading]);
 
   // Load initial data when auth is ready or refreshTrigger changes
@@ -899,20 +939,27 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
       if (!showAssignRoute || !selectedTruck || !user) return;
       try {
         // Refresh tenant routes
-        let routesData: Route[] = await fleetApi.fetchRoutes();
+        const rawRoutes = await fleetApi.fetchRoutes();
+        let routesData: Route[] = (rawRoutes || []).map((r: any) => ({
+          ...r,
+          estimatedDuration: r.estimatedDuration || r.estimatedTime || 0
+        }));
         if (!routesData || routesData.length === 0) {
-          const adminRoutes = await fetchAdminRoutes({ tenantId: user.tenantId, status: 'active' });
-          routesData = (adminRoutes || []).map((r: any) => ({
-            id: r.id,
-            name: r.name,
-            origin: r.origin,
-            destination: r.destination,
-            distance: Number(r.distance) || 0,
-            estimatedDuration: Number(r.estimatedDuration || r.estimatedTime) || 0,
-            status: r.status || 'active',
-            assignedDrivers: Array.isArray(r.assignedDrivers) ? r.assignedDrivers : [],
-            assignedTrucks: Array.isArray(r.assignedTrucks) ? r.assignedTrucks : [],
-          }));
+          const isAdmin = ['SUPER_ADMIN', 'ADMIN', 'TENANT_ADMIN'].includes(user.role);
+          if (isAdmin) {
+            const adminRoutes = await fetchAdminRoutes({ tenantId: user.tenantId, status: 'active' });
+            routesData = (adminRoutes || []).map((r: any) => ({
+              id: r.id,
+              name: r.name,
+              origin: r.origin,
+              destination: r.destination,
+              distance: Number(r.distance) || 0,
+              estimatedDuration: Number(r.estimatedDuration || r.estimatedTime) || 0,
+              status: r.status || 'active',
+              assignedDrivers: Array.isArray(r.assignedDrivers) ? r.assignedDrivers : [],
+              assignedTrucks: Array.isArray(r.assignedTrucks) ? r.assignedTrucks : [],
+            }));
+          }
         }
         setRoutes(routesData || []);
 
@@ -1096,13 +1143,13 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
 
   // Pagination
   const paginatedTrucks = () => {
-    const filtered = filterTrucks(trucks);
+    const filtered = filterTrucks(enrichedTrucks);
     const sorted = sortTrucks(filtered);
     const startIndex = (currentPage - 1) * itemsPerPage;
     return sorted.slice(startIndex, startIndex + itemsPerPage);
   };
 
-  const totalPages = Math.ceil(filterTrucks(trucks).length / itemsPerPage);
+  const totalPages = Math.ceil(filterTrucks(enrichedTrucks).length / itemsPerPage);
 
 
   // Get available drivers (ACTIVE and not currently assigned to ANY truck)
@@ -1163,7 +1210,7 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
 
   // Get available routes (not already assigned to the given truck)
   const getAvailableRoutes = (truckId: string) => {
-    const truck = trucks.find(t => t.id === truckId);
+    const truck = enrichedTrucks.find(t => t.id === truckId);
     const alreadyAssignedIds = new Set(
       Array.isArray(truck?.assignedRoutes) ? truck!.assignedRoutes.map((r: any) => r.routeId) : []
     );
@@ -1428,6 +1475,30 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
       toast.error(errorMessage);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Handle truck deletion
+  const handleDeleteTruck = async () => {
+    if (!truckToDelete) return;
+
+    setIsDeleting(true);
+    try {
+      console.log('🗑️ Deleting truck:', truckToDelete.id);
+      await fleetApi.deleteTruck(truckToDelete.id);
+      
+      // Remove from local state
+      setTrucks(prev => prev.filter(t => t.id !== truckToDelete.id));
+      
+      toast.success(`Truck "${truckToDelete.plateNumber || truckToDelete.name}" deleted successfully`);
+      setShowDeleteConfirm(false);
+      setTruckToDelete(null);
+    } catch (error: any) {
+      console.error('❌ Error deleting truck:', error);
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to delete truck';
+      toast.error(errorMessage);
+    } finally {
+      setIsDeleting(false);
     }
   };
 

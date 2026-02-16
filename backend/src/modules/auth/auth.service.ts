@@ -96,11 +96,16 @@ export class AuthService {
     // Resolve tenant ID - implement proper tenant management
     const tenantId = await this.resolveTenantId(registerDto);
 
+    // Check if user should be auto-verified (Truck Owners and Cargo Owners)
+    const isAutoVerified = ['TRUCK_OWNER', 'CARGO_OWNER'].includes(userType);
+    const initialStatus = isAutoVerified ? UserStatus.ACTIVE : UserStatus.PENDING_VERIFICATION;
+
     // Create user
     const user = this.userRepository.create({
       email,
       passwordHash: hashedPassword,
-      status: UserStatus.PENDING_VERIFICATION,
+      status: initialStatus,
+      emailVerifiedAt: isAutoVerified ? new Date() : null,
       tenantId,
       role: userType,
     });
@@ -118,14 +123,16 @@ export class AuthService {
 
     await this.userProfileRepository.save(userProfile);
 
-    // Generate email verification token
-    const verificationToken = await this.generateEmailVerificationToken(
-      savedUser.email,
-    );
-    await this.emailService.sendVerificationEmail(
-      savedUser.email,
-      verificationToken,
-    );
+    // Generate email verification token only if user is not auto-verified
+    if (!isAutoVerified) {
+      const verificationToken = await this.generateEmailVerificationToken(
+        savedUser.email,
+      );
+      await this.emailService.sendVerificationEmail(
+        savedUser.email,
+        verificationToken,
+      );
+    }
 
     // Generate tokens
     const tokens = await this.generateTokens(savedUser, false);
@@ -532,7 +539,7 @@ export class AuthService {
       tenantId: user.tenantId,
     };
 
-    const accessTokenExpiry = '15m';
+    const accessTokenExpiry = '24h'; // 24 hours session duration
     const refreshTokenExpiry = rememberMe ? '30d' : '7d';
 
     const [accessToken, refreshToken] = await Promise.all([
@@ -561,7 +568,7 @@ export class AuthService {
     return {
       accessToken,
       refreshToken,
-      expiresIn: 15 * 60, // 15 minutes in seconds
+      expiresIn: 24 * 60 * 60, // 24 hours in seconds
     };
   }
 

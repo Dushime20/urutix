@@ -7,6 +7,7 @@ import { Truck } from '../../entities/truck.entity';
 import { Driver } from '../../entities/driver.entity';
 import { Location } from '../../entities/location.entity';
 import { Trip } from '../../entities/trip.entity';
+import { LoadMatch } from '../../entities/load-match.entity';
 import { RateLimit } from './entities/rate-limit.entity';
 import { MatchingService } from './matching.service';
 import { MatchingController } from './matching.controller';
@@ -21,12 +22,14 @@ import { RateLimiterService } from './services/rate-limiter.service';
 import { CacheService } from './services/cache.service';
 import { MarketIntelligenceService } from './services/market-intelligence.service';
 import { MLPredictionService } from './services/ml-prediction.service';
+import { NotificationModule } from '../notifications/notification.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Truck, Load, Driver, Location, Trip, RateLimit]),
+    TypeOrmModule.forFeature([Truck, Load, Driver, Location, Trip, RateLimit, LoadMatch]),
     EventEmitterModule.forRoot(),
     ConfigModule,
+    NotificationModule,
   ],
   providers: [
     MatchingService,

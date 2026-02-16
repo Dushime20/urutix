@@ -9,6 +9,10 @@ import { TripsController } from './trips.controller';
 import { SubscriptionModule } from '../subscription/subscription.module';
 import { CreditConsumptionListener } from '../../services/credit-consumption.listener';
 
+import { UserProfile } from '../../entities/user-profile.entity';
+import { NotificationsModule } from '../notifications/notifications.module';
+import { NotificationService } from '../notifications/notification.service';
+
 @Module({
   imports: [
     TypeOrmModule.forFeature([Trip, Load, Truck, Driver]),

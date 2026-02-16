@@ -28,6 +28,7 @@ import { Bid } from '../../entities/bid.entity';
 import { Auction } from '../../entities/auction.entity';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { errorMessage } from 'src/utils/error';
+import { UserRole } from '../../entities/user.entity';
 
 @ApiTags('Bidding & Auctions')
 @ApiBearerAuth('JWT-auth')
@@ -229,18 +230,15 @@ export class BiddingController {
   @ApiResponse({ status: 404, description: 'Load not found' })
   async createBid(
     @Body() createBidDto: CreateBidDto,
-    @Request()
-    req = {
-      user: {
-        userId: '701a9079-6100-4b47-a3b9-f9b070bfa7c6',
-        tenantId: '00000000-0000-0000-0000-000000000001',
-      },
-    },
+    @Request() req,
   ): Promise<Bid> {
+    if (!req.user) {
+      throw new Error('User not authenticated');
+    }
     return this.biddingService.createBid(
       createBidDto,
-      req.user?.userId || '701a9079-6100-4b47-a3b9-f9b070bfa7c6',
-      req.user?.tenantId || '00000000-0000-0000-0000-000000000001',
+      req.user.userId,
+      req.user.tenantId,
     );
   }
 
@@ -283,12 +281,14 @@ export class BiddingController {
   @ApiResponse({ status: 404, description: 'Load not found' })
   async getBidsForLoad(
     @Param('loadId') loadId: string,
-    @Request()
-    req = { user: { tenantId: '00000000-0000-0000-0000-000000000001' } },
+    @Request() req,
   ): Promise<Bid[]> {
+    if (!req.user) {
+      throw new Error('User not authenticated');
+    }
     return this.biddingService.getBidsForLoad(
       loadId,
-      req.user?.tenantId || '00000000-0000-0000-0000-000000000001',
+      req.user.tenantId,
     );
   }
 
@@ -308,19 +308,16 @@ export class BiddingController {
   async updateBid(
     @Param('bidId') bidId: string,
     @Body() updates: Partial<CreateBidDto>,
-    @Request()
-    req = {
-      user: {
-        userId: '701a9079-6100-4b47-a3b9-f9b070bfa7c6',
-        tenantId: '00000000-0000-0000-0000-000000000001',
-      },
-    },
+    @Request() req,
   ): Promise<Bid> {
+    if (!req.user) {
+      throw new Error('User not authenticated');
+    }
     return this.biddingService.updateBid(
       bidId,
       updates,
-      req.user?.userId || '701a9079-6100-4b47-a3b9-f9b070bfa7c6',
-      req.user?.tenantId || '00000000-0000-0000-0000-000000000001',
+      req.user.userId,
+      req.user.tenantId,
     );
   }
 
@@ -335,18 +332,15 @@ export class BiddingController {
   @ApiResponse({ status: 404, description: 'Bid not found' })
   async withdrawBid(
     @Param('bidId') bidId: string,
-    @Request()
-    req = {
-      user: {
-        userId: '701a9079-6100-4b47-a3b9-f9b070bfa7c6',
-        tenantId: '00000000-0000-0000-0000-000000000001',
-      },
-    },
+    @Request() req,
   ): Promise<void> {
+    if (!req.user) {
+      throw new Error('User not authenticated');
+    }
     return this.biddingService.withdrawBid(
       bidId,
-      req.user?.userId || '701a9079-6100-4b47-a3b9-f9b070bfa7c6',
-      req.user?.tenantId || '00000000-0000-0000-0000-000000000001',
+      req.user.userId,
+      req.user.tenantId,
     );
   }
 
@@ -363,18 +357,13 @@ export class BiddingController {
   @ApiResponse({ status: 404, description: 'Bid not found' })
   async acceptBid(
     @Param('bidId') bidId: string,
-    @Request()
-    req = {
-      user: {
-        userId: '701a9079-6100-4b47-a3b9-f9b070bfa7c6',
-        tenantId: '00000000-0000-0000-0000-000000000001',
-      },
-    },
+    @Request() req: any,
   ): Promise<Bid> {
     return this.biddingService.acceptBid(
       bidId,
       req.user?.userId || '701a9079-6100-4b47-a3b9-f9b070bfa7c6',
       req.user?.tenantId || '00000000-0000-0000-0000-000000000001',
+      req.user?.role as UserRole,
     );
   }
 
@@ -443,13 +432,17 @@ export class BiddingController {
     description: 'Number of items per page',
   })
   async getAuctions(
-    @Request()
-    req = { user: { tenantId: '00000000-0000-0000-0000-000000000001' } },
+    @Request() req,
     @Query('status') status?: string,
   ): Promise<Auction[]> {
+    if (!req.user) {
+      throw new Error('User not authenticated');
+    }
     return this.biddingService.getAuctions(
-      req.user?.tenantId || '00000000-0000-0000-0000-000000000001',
+      req.user.tenantId,
       status,
+      req.user.userId,
+      req.user.role,
     );
   }
 
@@ -543,20 +536,18 @@ export class BiddingController {
   @ApiResponse({ status: 404, description: 'Load not found' })
   async createAuction(
     @Body() createAuctionDto: CreateAuctionDto,
-    @Request()
-    req = {
-      user: {
-        userId: '83f1b7e4-8313-4ca5-959a-fbf98f68b548',
-        tenantId: '00000000-0000-0000-0000-000000000001',
-      },
-    },
+    @Request() req: any,
   ): Promise<Auction> {
     console.log('Creating auction with data:', createAuctionDto);
     console.log('User info:', req.user);
+    if (!req.user) {
+      throw new Error('User not authenticated');
+    }
     return this.biddingService.createAuction(
       createAuctionDto,
-      req.user?.userId || '83f1b7e4-8313-4ca5-959a-fbf98f68b548',
-      req.user?.tenantId || '00000000-0000-0000-0000-000000000001',
+      req.user.userId,
+      req.user.tenantId,
+      req.user.role as UserRole,
     );
   }
 
@@ -588,12 +579,14 @@ export class BiddingController {
   @ApiResponse({ status: 404, description: 'Load not found' })
   async getAuctionForLoad(
     @Param('loadId') loadId: string,
-    @Request()
-    req = { user: { tenantId: '00000000-0000-0000-0000-000000000001' } },
+    @Request() req,
   ): Promise<Auction | null> {
+    if (!req.user) {
+      throw new Error('User not authenticated');
+    }
     return this.biddingService.getAuctionForLoad(
       loadId,
-      req.user?.tenantId || '00000000-0000-0000-0000-000000000001',
+      req.user.tenantId,
     );
   }
 
@@ -601,18 +594,15 @@ export class BiddingController {
   @ApiOperation({ summary: 'Watch an auction' })
   async watchAuction(
     @Param('auctionId') auctionId: string,
-    @Request()
-    req = {
-      user: {
-        userId: '701a9079-6100-4b47-a3b9-f9b070bfa7c6',
-        tenantId: '00000000-0000-0000-0000-000000000001',
-      },
-    },
+    @Request() req,
   ): Promise<{ success: true }> {
+    if (!req.user) {
+      throw new Error('User not authenticated');
+    }
     await this.biddingService.watchAuction(
       auctionId,
-      req.user?.userId || '701a9079-6100-4b47-a3b9-f9b070bfa7c6',
-      req.user?.tenantId || '00000000-0000-0000-0000-000000000001',
+      req.user.userId,
+      req.user.tenantId,
     );
     return { success: true };
   }
@@ -621,18 +611,15 @@ export class BiddingController {
   @ApiOperation({ summary: 'Unwatch an auction' })
   async unwatchAuction(
     @Param('auctionId') auctionId: string,
-    @Request()
-    req = {
-      user: {
-        userId: '701a9079-6100-4b47-a3b9-f9b070bfa7c6',
-        tenantId: '00000000-0000-0000-0000-000000000001',
-      },
-    },
+    @Request() req,
   ): Promise<{ success: true }> {
+    if (!req.user) {
+      throw new Error('User not authenticated');
+    }
     await this.biddingService.unwatchAuction(
       auctionId,
-      req.user?.userId || '701a9079-6100-4b47-a3b9-f9b070bfa7c6',
-      req.user?.tenantId || '00000000-0000-0000-0000-000000000001',
+      req.user.userId,
+      req.user.tenantId,
     );
     return { success: true };
   }
@@ -640,36 +627,44 @@ export class BiddingController {
   @Get('auctions/watched')
   @ApiOperation({ summary: 'Get watched auctions' })
   async getWatched(
-    @Request()
-    req = {
-      user: {
-        userId: '701a9079-6100-4b47-a3b9-f9b070bfa7c6',
-        tenantId: '00000000-0000-0000-0000-000000000001',
-      },
-    },
+    @Request() req,
   ): Promise<Auction[]> {
+    if (!req.user) {
+      throw new Error('User not authenticated');
+    }
     return this.biddingService.getWatchedAuctions(
-      req.user?.userId || '701a9079-6100-4b47-a3b9-f9b070bfa7c6',
-      req.user?.tenantId || '00000000-0000-0000-0000-000000000001',
+      req.user.userId,
+      req.user.tenantId,
     );
   }
 
   @Get('bids')
   @ApiOperation({ summary: 'Get my bids' })
   async getMyBids(
-    @Request()
-    req = {
-      user: {
-        userId: '701a9079-6100-4b47-a3b9-f9b070bfa7c6',
-        tenantId: '00000000-0000-0000-0000-000000000001',
-        role: 'TRUCK_OWNER',
-      },
-    },
+    @Request() req,
   ): Promise<Bid[]> {
+    if (!req.user) {
+      throw new Error('User not authenticated');
+    }
     return this.biddingService.getMyBids(
-      req.user?.userId || '701a9079-6100-4b47-a3b9-f9b070bfa7c6',
-      req.user?.tenantId || '00000000-0000-0000-0000-000000000001',
-      req.user?.role,
+      req.user.userId,
+      req.user.tenantId,
+      req.user.role,
+    );
+  }
+
+  @Get('dashboard/stats')
+  @ApiOperation({ summary: 'Get dashboard statistics' })
+  async getDashboardStats(
+    @Request() req,
+  ): Promise<any> {
+    if (!req.user) {
+      throw new Error('User not authenticated');
+    }
+    return this.biddingService.getDashboardStats(
+      req.user.userId,
+      req.user.tenantId,
+      req.user.role,
     );
   }
 
@@ -679,19 +674,15 @@ export class BiddingController {
     description: 'Get bid history - for truck owners: their submitted bids, for cargo owners: bids on their auctions'
   })
   async getBidHistory(
-    @Request()
-    req = {
-      user: {
-        userId: '701a9079-6100-4b47-a3b9-f9b070bfa7c6',
-        tenantId: '00000000-0000-0000-0000-000000000001',
-        role: 'TRUCK_OWNER',
-      },
-    },
+    @Request() req,
   ): Promise<Bid[]> {
+    if (!req.user) {
+      throw new Error('User not authenticated');
+    }
     return this.biddingService.getBidHistory(
-      req.user?.userId || '701a9079-6100-4b47-a3b9-f9b070bfa7c6',
-      req.user?.tenantId || '00000000-0000-0000-0000-000000000001',
-      req.user?.role,
+      req.user.userId,
+      req.user.tenantId,
+      req.user.role,
     );
   }
 
@@ -699,18 +690,15 @@ export class BiddingController {
   @ApiOperation({ summary: 'Record an auction view' })
   async recordAuctionView(
     @Param('auctionId') auctionId: string,
-    @Request()
-    req = {
-      user: {
-        userId: '701a9079-6100-4b47-a3b9-f9b070bfa7c6',
-        tenantId: '00000000-0000-0000-000000000001',
-      },
-    },
+    @Request() req,
   ): Promise<{ success: true }> {
+    if (!req.user) {
+      throw new Error('User not authenticated');
+    }
     await this.biddingService.recordView(
       auctionId,
-      req.user?.userId || '701a9079-6100-4b47-a3b9-f9b070bfa7c6',
-      req.user?.tenantId || '00000000-0000-0000-0000-000000000001',
+      req.user.userId,
+      req.user.tenantId,
     );
     return { success: true };
   }

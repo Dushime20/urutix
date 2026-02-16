@@ -59,6 +59,12 @@ interface Lender {
   interestRate?: number;
   metadata?: {
     integrationType?: string;
+    isLoanOfficer?: boolean;
+    isExternalSystemLender?: boolean;
+    parentLenderId?: string;
+    loanOfficerId?: string;
+    parentLenderName?: string;
+    specialization?: string;
   };
 }
 
@@ -472,7 +478,7 @@ const CargoOwnerPayment: React.FC = () => {
         setLoanOfficers(officersData);
         if (officersData.length === 0) {
           console.warn(`[fetchLoanOfficers] No loan officers returned for lender ${lenderId}`);
-          toast.info('No loan officers available for this lender');
+          toast.success('No loan officers available for this lender');
         }
       } else {
         console.warn(`[fetchLoanOfficers] Invalid response format:`, officersData);
@@ -488,7 +494,7 @@ const CargoOwnerPayment: React.FC = () => {
       });
 
       if (error.response?.status === 404) {
-        toast.warning('Loan officers endpoint not implemented in external system yet');
+        toast.error('Loan officers endpoint not implemented in external system yet');
       } else {
         toast.error('Failed to load loan officers. Check console for details.');
       }
@@ -534,7 +540,7 @@ const CargoOwnerPayment: React.FC = () => {
         }
 
         // Use the tripId we already fetched (if available)
-        const tripIdToUse = tripId || undefined;
+
 
         // Use the entered receiver phone number (should be pre-filled with truck owner's phone if available)
         const finalReceiverPhone = receiverPhoneNumber.trim();
@@ -751,7 +757,10 @@ const CargoOwnerPayment: React.FC = () => {
 
               <button
                 onClick={() => handleInitiatePayment(load)}
-                className="w-full mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+                style={{ backgroundColor: '#345E85' }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#2A4D6E'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#345E85'}
+                className="w-full mt-4 px-4 py-2 text-white rounded-lg transition-colors flex items-center justify-center gap-2"
               >
                 <span>Make Payment</span>
                 <ArrowRight className="w-4 h-4" />

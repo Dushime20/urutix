@@ -135,7 +135,7 @@ export class NotificationsController {
     };
   }
 
-  @Put(':id/read')
+  @Post(':id/read')
   @ApiOperation({ summary: 'Mark notification as read' })
   @ApiParam({ name: 'id', description: 'Notification ID' })
   async markAsRead(
@@ -144,6 +144,49 @@ export class NotificationsController {
   ): Promise<{ message: string }> {
     await this.notificationService.markAsRead(id, req.user.userId);
     return { message: 'Notification marked as read' };
+  }
+
+  @Post('bulk/read')
+  @ApiOperation({ summary: 'Bulk mark notifications as read' })
+  async bulkMarkAsRead(
+    @Body() body: { notificationIds: string[] },
+    @Request() req,
+  ): Promise<{ message: string; count: number }> {
+    console.log('[Controller] bulkMarkAsRead called');
+    
+    try {
+      // Check if user exists
+      if (!req.user) {
+        console.error('[Controller] No user found in request!');
+        throw new Error('User not authenticated properly');
+      }
+
+      console.log(`[Controller] User: ${req.user.userId}, Tenant: ${req.user.tenantId}`);
+      console.log(`[Controller] IDs: ${body.notificationIds?.length}`);
+
+      if (!body.notificationIds || !Array.isArray(body.notificationIds)) {
+        console.log('[Controller] Invalid body format');
+        return { message: 'Invalid notification IDs', count: 0 };
+      }
+      
+      const result = await this.notificationService.bulkMarkAsRead(
+        body.notificationIds,
+        req.user.userId,
+        req.user.tenantId,
+      );
+      
+      return { 
+        message: `${result.count} notifications marked as read`,
+        count: result.count,
+      };
+    } catch (error: any) {
+      console.error('[Controller] Exception in bulkMarkAsRead:', error);
+      // Return a safe response instead of 500 to prevent frontend crash
+      return { 
+        message: `Error marking notifications: ${error.message}`,
+        count: 0 
+      };
+    }
   }
 
   @Put(':id/delivered')

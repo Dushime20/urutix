@@ -19,8 +19,10 @@ import { authAPI } from '../services/api';
 import { TranslatedText } from '../components/translated-text';
 import AdminPageLayout from '../components/Admin/AdminPageLayout';
 
+
 const Settings: React.FC = () => {
   const { user } = useAuth();
+  // const { setCurrency, availableCurrencies } = useCurrency(); // Removed
   const [activeTab, setActiveTab] = useState('general');
   const [userProfile, setUserProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
