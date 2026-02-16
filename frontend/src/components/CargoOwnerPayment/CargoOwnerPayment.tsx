@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
-DollarSign,
+import {
+  DollarSign,
   CreditCard,
   Smartphone,
   FileText,
@@ -11,7 +12,8 @@ DollarSign,
   Filter,
   ArrowRight,
   User,
-  Info
+  Info,
+  Package
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import api from '../../services/api';

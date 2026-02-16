@@ -1,8 +1,8 @@
 import React from 'react';
-import { LenderDashboard } from '../components/LenderDashboard';
+import LenderDashboardEnlite from '../components/LenderDashboard/LenderDashboard.enlite';
 
 const LenderDashboardPage: React.FC = () => {
-  return <LenderDashboard />;
+  return <LenderDashboardEnlite />;
 };
 
 export default LenderDashboardPage;

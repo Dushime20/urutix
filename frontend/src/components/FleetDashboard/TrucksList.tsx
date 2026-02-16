@@ -22,9 +22,7 @@ import {
   FaTimesCircle,
   FaTimes,
   FaInfoCircle,
-  FaClock,
-  FaUserPlus,
-  FaUserMinus
+  FaClock
 } from 'react-icons/fa';
 import { FiGrid, FiList } from 'react-icons/fi';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../ui';

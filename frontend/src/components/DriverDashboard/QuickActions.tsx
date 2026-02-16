@@ -1,4 +1,5 @@
 import React from 'react';
+import { motion } from 'framer-motion';
 import { 
   MapPin, 
   Clock, 
@@ -140,25 +141,35 @@ export const QuickActions: React.FC<QuickActionsProps> = ({ driverId }) => {
   ];
 
   return (
-    <div className="space-y-6">
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.4, delay: 0.3 }}
+      className="space-y-6"
+    >
       {/* Primary Actions */}
       <div>
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {quickActions.map((action) => {
+          {quickActions.map((action, index) => {
             const Icon = action.icon;
             return (
-              <button
+              <motion.button
                 key={action.id}
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: index * 0.05 }}
+                whileHover={{ scale: 1.05, y: -4 }}
+                whileTap={{ scale: 0.95 }}
                 onClick={action.action}
-                className={`${action.color} text-white p-4 rounded-lg transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-50 focus:ring-blue-500`}
+                className={`${action.color} text-white p-4 rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-50 focus:ring-blue-500 shadow-md hover:shadow-lg`}
               >
                 <div className="text-center">
                   <Icon className="w-8 h-8 mx-auto mb-2" />
                   <h4 className="font-medium text-sm mb-1">{action.title}</h4>
                   <p className="text-xs opacity-90">{action.description}</p>
                 </div>
-              </button>
+              </motion.button>
             );
           })}
         </div>
@@ -168,46 +179,68 @@ export const QuickActions: React.FC<QuickActionsProps> = ({ driverId }) => {
       <div>
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Access</h3>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-          {secondaryActions.map((action) => {
+          {secondaryActions.map((action, index) => {
             const Icon = action.icon;
             return (
-              <button
+              <motion.button
                 key={action.id}
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.4 + index * 0.05 }}
+                whileHover={{ scale: 1.05, y: -2 }}
+                whileTap={{ scale: 0.95 }}
                 onClick={action.action}
-                className={`${action.color} text-white p-3 rounded-lg transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-50 focus:ring-blue-500`}
+                className={`${action.color} text-white p-3 rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-50 focus:ring-blue-500 shadow-md hover:shadow-lg`}
               >
                 <div className="text-center">
                   <Icon className="w-6 h-6 mx-auto mb-2" />
                   <h4 className="font-medium text-xs mb-1">{action.title}</h4>
                   <p className="text-xs opacity-90 leading-tight">{action.description}</p>
                 </div>
-              </button>
+              </motion.button>
             );
           })}
         </div>
       </div>
 
       {/* Emergency Actions */}
-      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.8 }}
+        className="bg-red-50 border border-red-200 rounded-lg p-4"
+      >
         <h3 className="text-lg font-semibold text-red-900 mb-3 flex items-center">
           <AlertTriangle className="w-5 h-5 mr-2" />
           Emergency Actions
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          <button className="bg-red-600 hover:bg-red-700 text-white px-4 py-3 rounded-lg font-medium flex items-center justify-center space-x-2">
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            className="bg-red-600 hover:bg-red-700 text-white px-4 py-3 rounded-lg font-medium flex items-center justify-center space-x-2"
+          >
             <Phone className="w-5 h-5" />
             <span>Emergency Call</span>
-          </button>
-          <button className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-3 rounded-lg font-medium flex items-center justify-center space-x-2">
+          </motion.button>
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-3 rounded-lg font-medium flex items-center justify-center space-x-2"
+          >
             <AlertTriangle className="w-5 h-5" />
             <span>Report Accident</span>
-          </button>
-          <button className="bg-red-700 hover:bg-red-800 text-white px-4 py-3 rounded-lg font-medium flex items-center justify-center space-x-2">
+          </motion.button>
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            className="bg-red-700 hover:bg-red-800 text-white px-4 py-3 rounded-lg font-medium flex items-center justify-center space-x-2"
+          >
             <Shield className="w-5 h-5" />
             <span>Safety Alert</span>
-          </button>
+          </motion.button>
         </div>
-      </div>
+      </motion.div>
 
       {/* Status Updates */}
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
@@ -249,6 +282,6 @@ export const QuickActions: React.FC<QuickActionsProps> = ({ driverId }) => {
           </div>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 };

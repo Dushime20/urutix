@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Calendar, 
   Clock, 
@@ -265,7 +266,12 @@ export const UpcomingTrips: React.FC<UpcomingTripsProps> = ({ trips, loading }) 
   const displayedTrips = showAll ? currentTrips : currentTrips.slice(0, 2);
 
   return (
-    <div className="bg-white rounded-lg shadow">
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, delay: 0.2 }}
+      className="bg-white rounded-lg shadow"
+    >
       <div className="px-6 py-4 border-b border-gray-200">
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-semibold text-gray-900 flex items-center">
@@ -282,8 +288,17 @@ export const UpcomingTrips: React.FC<UpcomingTripsProps> = ({ trips, loading }) 
       </div>
 
       <div className="divide-y divide-gray-200">
-        {displayedTrips.map((trip) => (
-          <div key={trip.id} className="p-6 hover:bg-gray-50 transition-colors">
+        <AnimatePresence mode="popLayout">
+          {displayedTrips.map((trip, index) => (
+            <motion.div
+              key={trip.id}
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 20 }}
+              transition={{ delay: index * 0.1 }}
+              whileHover={{ backgroundColor: '#f9fafb' }}
+              className="p-6 transition-colors"
+            >
             <div className="flex items-start justify-between">
               <div className="flex-1">
                 {/* Trip Header */}
@@ -392,27 +407,40 @@ export const UpcomingTrips: React.FC<UpcomingTripsProps> = ({ trips, loading }) 
                   </div>
 
                   <div className="flex items-center space-x-2">
-                    <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium text-sm">
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium text-sm"
+                    >
                       View Details
-                    </button>
-                    <button className="bg-gray-100 hover:bg-gray-200 text-gray-700 p-2 rounded-lg">
+                    </motion.button>
+                    <motion.button
+                      whileHover={{ scale: 1.1, rotate: 90 }}
+                      whileTap={{ scale: 0.9 }}
+                      className="bg-gray-100 hover:bg-gray-200 text-gray-700 p-2 rounded-lg"
+                    >
                       <ChevronRight className="w-4 h-4" />
-                    </button>
+                    </motion.button>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
+          </motion.div>
         ))}
+        </AnimatePresence>
       </div>
 
       {currentTrips.length === 0 && (
-        <div className="p-6 text-center">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="p-6 text-center"
+        >
           <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-3" />
           <p className="text-gray-500">No upcoming trips scheduled</p>
           <p className="text-sm text-gray-400">Check back later for new assignments</p>
-        </div>
+        </motion.div>
       )}
-    </div>
+    </motion.div>
   );
 };

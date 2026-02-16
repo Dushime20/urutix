@@ -41,8 +41,8 @@ export function EnhancedTable<T = any>({
   hoverable = true,
 }: EnhancedTableProps<T>) {
   const getSortIcon = (columnKey: string) => {
-    if (sortKey !== columnKey) return <FaSort className="text-gray-400" />;
-    return sortDirection === 'asc' 
+    if (sortKey !== columnKey) return <FaSort className="text-slate-300" />;
+    return sortDirection === 'asc'
       ? <FaSortUp className="text-indigo-600" />
       : <FaSortDown className="text-indigo-600" />;
   };
@@ -71,16 +71,16 @@ export function EnhancedTable<T = any>({
       <div className="overflow-x-auto">
         <table className="w-full">
           {/* Header */}
-          <thead className={`bg-gradient-to-r from-indigo-600 to-purple-600 text-white ${stickyHeader ? 'sticky top-0 z-10' : ''}`}>
+          <thead className={`bg-[#fafafa] border-b border-gray-100 ${stickyHeader ? 'sticky top-0 z-10' : ''}`}>
             <tr>
               {columns.map((column) => (
                 <th
                   key={column.key}
                   style={{ width: column.width }}
                   className={`
-                    px-6 py-4 text-sm font-semibold uppercase tracking-wider
+                    px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest
                     ${getAlignClass(column.align)}
-                    ${column.sortable ? 'cursor-pointer hover:bg-indigo-700 transition-colors' : ''}
+                    ${column.sortable ? 'cursor-pointer hover:bg-gray-50 transition-colors' : ''}
                   `}
                   onClick={() => column.sortable && onSort?.(column.key)}
                 >

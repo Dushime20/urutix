@@ -293,23 +293,26 @@ export class EnhancedAuthService {
             );
           }
 
-        // Create security event for failed login
-        await this.createSecurityEvent({
-          userId: user.id,
-          tenantId: user.tenantId,
-          eventType: SecurityEventType.FAILED_LOGIN,
-          severity: user.loginAttempts >= 3 ? SecuritySeverity.HIGH : SecuritySeverity.MEDIUM,
-          ipAddress: clientIp,
-          details: {
-            email: user.email,
-            loginAttempts: user.loginAttempts,
-            reason: 'Invalid password',
-          },
-        });
+          // Password is valid and user is not pending verification, return the user
+          return user;
+        } else {
+          // Create security event for failed login
+          await this.createSecurityEvent({
+            userId: user.id,
+            tenantId: user.tenantId,
+            eventType: SecurityEventType.FAILED_LOGIN,
+            severity: user.loginAttempts >= 3 ? SecuritySeverity.HIGH : SecuritySeverity.MEDIUM,
+            ipAddress: clientIp,
+            details: {
+              email: user.email,
+              loginAttempts: user.loginAttempts,
+              reason: 'Invalid password',
+            },
+          });
 
-        this.logger.warn(`Failed login attempt: ${normalizedEmail} from IP: ${clientIp} (attempt ${user.loginAttempts})`);
-        this.logger.debug(`Password comparison failed for user ${normalizedEmail}. Password hash exists: ${!!user.passwordHash}`);
-        return null;
+          this.logger.warn(`Failed login attempt: ${normalizedEmail} from IP: ${clientIp} (attempt ${user.loginAttempts})`);
+          this.logger.debug(`Password comparison failed for user ${normalizedEmail}. Password hash exists: ${!!user.passwordHash}`);
+        }
       }
 
       // If we exit the loop, no password matched any non-locked account

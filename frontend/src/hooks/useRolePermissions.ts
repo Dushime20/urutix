@@ -49,8 +49,12 @@ export function useRolePermissions(roleName?: string) {
                     permissions: role.permissions,
                     permissionNames
                 };
-            } catch (error) {
-                console.error('Error fetching role permissions:', error);
+            } catch (error: any) {
+                // Silently handle 403 errors (user doesn't have admin access)
+                // This is expected for non-admin users
+                if (error?.response?.status !== 403) {
+                    console.error('Error fetching role permissions:', error);
+                }
                 return { permissions: [], permissionNames: [] };
             }
         },

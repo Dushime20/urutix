@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   MapPin, 
   Clock, 
@@ -132,9 +133,19 @@ export const CurrentTrip: React.FC<CurrentTripProps> = ({ trip }) => {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4 }}
+      className="bg-white rounded-lg shadow-lg overflow-hidden"
+    >
       {/* Header */}
-      <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4">
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.2 }}
+        className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4"
+      >
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <Truck className="w-6 h-6 text-white" />
@@ -152,22 +163,41 @@ export const CurrentTrip: React.FC<CurrentTripProps> = ({ trip }) => {
             </span>
           </div>
         </div>
-      </div>
+      </motion.div>
 
-      <div className="p-6">
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.3 }}
+        className="p-6"
+      >
         {/* Trip Progress */}
-        <div className="mb-6">
+        <motion.div
+          initial={{ scaleX: 0 }}
+          animate={{ scaleX: 1 }}
+          transition={{ delay: 0.4, duration: 0.6 }}
+          className="mb-6"
+        >
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm font-medium text-gray-700">Trip Progress</span>
-            <span className="text-sm text-gray-500">{trip.progress}%</span>
+            <motion.span
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.6 }}
+              className="text-sm text-gray-500"
+            >
+              {trip.progress}%
+            </motion.span>
           </div>
           <div className="w-full bg-gray-200 rounded-full h-3">
-            <div 
-              className="bg-blue-600 h-3 rounded-full transition-all duration-300" 
-              style={{ width: `${trip.progress}%` }}
-            ></div>
+            <motion.div
+              initial={{ width: 0 }}
+              animate={{ width: `${trip.progress}%` }}
+              transition={{ delay: 0.5, duration: 0.8, ease: "easeOut" }}
+              className="bg-blue-600 h-3 rounded-full"
+            ></motion.div>
           </div>
-        </div>
+        </motion.div>
 
         {/* Route Information */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
@@ -282,17 +312,26 @@ export const CurrentTrip: React.FC<CurrentTripProps> = ({ trip }) => {
         </div>
 
         {/* Action Buttons */}
-        <div className="flex flex-wrap items-center justify-between gap-4">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.7 }}
+          className="flex flex-wrap items-center justify-between gap-4"
+        >
           <div className="flex items-center space-x-3">
-            <button
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
               onClick={handleStartTrip}
               className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium flex items-center space-x-2"
             >
               <Play className="w-4 h-4" />
               <span>Start Trip</span>
-            </button>
+            </motion.button>
             
-            <button
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
               onClick={handlePauseTrip}
               className={`px-4 py-2 rounded-lg font-medium flex items-center space-x-2 ${
                 isPaused 
@@ -302,43 +341,65 @@ export const CurrentTrip: React.FC<CurrentTripProps> = ({ trip }) => {
             >
               {isPaused ? <Play className="w-4 h-4" /> : <Pause className="w-4 h-4" />}
               <span>{isPaused ? 'Resume' : 'Pause'}</span>
-            </button>
+            </motion.button>
             
-            <button
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
               onClick={handleCompleteTrip}
               className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-medium flex items-center space-x-2"
             >
               <CheckCircle className="w-4 h-4" />
               <span>Complete Trip</span>
-            </button>
+            </motion.button>
           </div>
 
           <div className="flex items-center space-x-3">
-            <button className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-medium flex items-center space-x-2">
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-medium flex items-center space-x-2"
+            >
               <Navigation className="w-4 h-4" />
               <span>Navigate</span>
-            </button>
+            </motion.button>
             
-            <button className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-medium flex items-center space-x-2">
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-medium flex items-center space-x-2"
+            >
               <MessageSquare className="w-4 h-4" />
               <span>Message</span>
-            </button>
+            </motion.button>
             
-            <button className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-medium flex items-center space-x-2">
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-medium flex items-center space-x-2"
+            >
               <Phone className="w-4 h-4" />
               <span>Call</span>
-            </button>
+            </motion.button>
           </div>
-        </div>
+        </motion.div>
 
         {/* Notes */}
-        {trip.notes && (
-          <div className="mt-6 p-4 bg-yellow-50 rounded-lg border-l-4 border-yellow-400">
-            <h4 className="font-medium text-yellow-800 mb-2">Trip Notes</h4>
-            <p className="text-yellow-700 text-sm">{trip.notes}</p>
-          </div>
-        )}
-      </div>
-    </div>
+        <AnimatePresence>
+          {trip.notes && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.3 }}
+              className="mt-6 p-4 bg-yellow-50 rounded-lg border-l-4 border-yellow-400"
+            >
+              <h4 className="font-medium text-yellow-800 mb-2">Trip Notes</h4>
+              <p className="text-yellow-700 text-sm">{trip.notes}</p>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </motion.div>
+    </motion.div>
   );
 };

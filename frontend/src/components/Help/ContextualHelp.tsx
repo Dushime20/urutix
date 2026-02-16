@@ -1,5 +1,23 @@
 import { useState } from 'react';
-import { HelpCircle, X, Search, Book, Video, MessageCircle, ExternalLink, ChevronRight } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  HelpCircle,
+  Search,
+  Book,
+  Video,
+  MessageCircle,
+  ExternalLink,
+  ChevronRight,
+  Zap,
+  ArrowRight,
+  ThumbsUp,
+  ThumbsDown,
+  Globe,
+  Settings,
+  ShieldCheck,
+  Award,
+  ChevronLeft
+} from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
 
 interface HelpTopic {
@@ -210,186 +228,253 @@ You'll be notified about:
 
   return (
     <>
-      {/* Help Button */}
+      {/* Enhanced Help Button - Enlite Prime Style */}
       <button
         onClick={() => setIsOpen(true)}
-        className="flex items-center gap-2 px-3 py-2 bg-gray-50 hover:bg-gray-100 text-gray-600 rounded-lg transition-colors font-medium relative group"
-        title="Help & Support"
+        className="flex items-center gap-2.5 px-4 py-2 bg-white hover:bg-[#345E85] text-slate-600 hover:text-white rounded-xl transition-all duration-300 shadow-sm border border-slate-100 group overflow-hidden relative"
+        title="Help & Support Hub"
       >
-        <HelpCircle className="w-5 h-5 group-hover:scale-110 transition-transform" />
-        <span className="text-sm font-semibold">Help</span>
+        <div className="absolute inset-0 bg-gradient-to-r from-blue-50/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+        <HelpCircle size={18} className="relative z-10 group-hover:rotate-12 transition-transform" />
+        <span className="text-xs font-black uppercase tracking-widest relative z-10">Help</span>
       </button>
 
-      {/* Help Modal */}
+      {/* Help Modal - Enlite Prime Aesthetic */}
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogContent className="w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
-          <DialogHeader className="pb-4 border-b border-gray-200">
-            <DialogTitle className="text-xl font-bold text-gray-900">Help & Support</DialogTitle>
+        <DialogContent className="w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col p-0 bg-[#F8FAFC] border-none rounded-[40px] shadow-2xl">
+          {/* Header - Enlite Style */}
+          <DialogHeader className="p-8 md:p-10 pb-8 bg-white border-b border-slate-50 relative overflow-hidden shrink-0">
+            <div className="absolute top-0 right-0 p-10 opacity-5 scale-[2] pointer-events-none">
+              <HelpCircle size={120} className="text-[#345E85]" />
+            </div>
+
+            <div className="relative z-10">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="h-10 w-10 bg-blue-50 rounded-xl flex items-center justify-center text-[#345E85] shadow-inner">
+                  <HelpCircle size={20} />
+                </div>
+                <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-[#345E85]">Knowledge Repository</h2>
+              </div>
+              <DialogTitle className="text-3xl md:text-3xl font-black text-slate-900 tracking-tight leading-[1.2] mb-1">
+                Help & <span className="text-[#345E85]">Support</span>
+              </DialogTitle>
+            </div>
           </DialogHeader>
 
-          <div className="flex-1 overflow-y-auto">
-            {!selectedTopic ? (
-              <>
-                {/* Search Bar */}
-                <div className="mb-6">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+          <div className="flex-1 overflow-y-auto p-8 md:p-10 pt-6">
+            <AnimatePresence mode="wait">
+              {!selectedTopic ? (
+                <motion.div
+                  key="list"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  {/* Search Bar */}
+                  <div className="mb-10 relative group">
+                    <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#345E85] transition-colors" />
                     <input
                       type="text"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      placeholder="Search help articles..."
-                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="Query the assistance database..."
+                      className="w-full bg-white border border-slate-100 rounded-3xl py-6 pl-16 pr-8 text-slate-900 font-bold placeholder:text-slate-300 focus:ring-4 focus:ring-blue-50 focus:border-[#345E85] outline-none transition-all shadow-sm"
                     />
                   </div>
-                </div>
 
-                {/* Quick Actions */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
-                  <button className="flex items-center gap-3 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-left">
-                    <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                      <Book className="w-5 h-5 text-blue-600" />
-                    </div>
-                    <div>
-                      <p className="font-semibold text-gray-900 text-sm">Documentation</p>
-                      <p className="text-xs text-gray-500">Detailed guides</p>
-                    </div>
-                  </button>
-                  <button className="flex items-center gap-3 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-left">
-                    <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-                      <Video className="w-5 h-5 text-green-600" />
-                    </div>
-                    <div>
-                      <p className="font-semibold text-gray-900 text-sm">Video Tutorials</p>
-                      <p className="text-xs text-gray-500">Watch & learn</p>
-                    </div>
-                  </button>
-                  <button className="flex items-center gap-3 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-left">
-                    <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-                      <MessageCircle className="w-5 h-5 text-purple-600" />
-                    </div>
-                    <div>
-                      <p className="font-semibold text-gray-900 text-sm">Live Chat</p>
-                      <p className="text-xs text-gray-500">24/7 support</p>
-                    </div>
-                  </button>
-                </div>
-
-                {/* Topics by Category */}
-                {categories.map(category => {
-                  const categoryTopics = filteredTopics.filter(t => t.category === category);
-                  if (categoryTopics.length === 0) return null;
-
-                  return (
-                    <div key={category} className="mb-6">
-                      <h3 className="text-sm font-semibold text-gray-900 mb-3">{category}</h3>
-                      <div className="space-y-2">
-                        {categoryTopics.map(topic => (
-                          <button
-                            key={topic.id}
-                            onClick={() => setSelectedTopic(topic)}
-                            className="w-full flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-left group"
-                          >
-                            <div>
-                              <p className="font-medium text-gray-900 group-hover:text-blue-600">
-                                {topic.title}
-                              </p>
-                              <p className="text-sm text-gray-500 mt-1">{topic.description}</p>
-                            </div>
-                            <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-blue-600" />
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  );
-                })}
-
-                {filteredTopics.length === 0 && (
-                  <div className="text-center py-12">
-                    <p className="text-gray-500">No articles found. Try a different search term.</p>
+                  {/* Core Action Vectors */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-10">
+                    {[
+                      { icon: Book, label: 'Archives', detail: 'Documentation', color: 'blue' },
+                      { icon: Video, label: 'Visuals', detail: 'Video Tutorials', color: 'emerald' },
+                      { icon: MessageCircle, label: 'Liaison', detail: 'Live Chat', color: 'purple' }
+                    ].map((vector, idx) => (
+                      <button
+                        key={idx}
+                        className="flex items-center gap-4 p-6 bg-white border border-slate-100 rounded-[32px] hover:shadow-lg hover:shadow-blue-50 transition-all text-left group"
+                      >
+                        <div className={`w-12 h-12 bg-${vector.color}-50 rounded-2xl flex items-center justify-center text-${vector.color}-600 group-hover:scale-110 transition-transform shadow-inner`}>
+                          <vector.icon size={22} />
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 group-hover:text-[#345E85] transition-colors">{vector.label}</p>
+                          <p className="font-black text-slate-900 leading-tight">{vector.detail}</p>
+                        </div>
+                      </button>
+                    ))}
                   </div>
-                )}
-              </>
-            ) : (
-              <>
-                {/* Article View */}
-                <button
-                  onClick={() => setSelectedTopic(null)}
-                  className="flex items-center gap-2 text-blue-600 hover:text-blue-700 mb-4 text-sm font-medium"
-                >
-                  ← Back to all topics
-                </button>
 
-                <article className="prose prose-sm max-w-none">
-                  <h1 className="text-2xl font-bold text-gray-900 mb-2">{selectedTopic.title}</h1>
-                  <p className="text-gray-600 mb-6">{selectedTopic.description}</p>
+                  {/* Operational Domains */}
+                  <div className="space-y-10">
+                    {categories.map(category => {
+                      const categoryTopics = filteredTopics.filter(t => t.category === category);
+                      if (categoryTopics.length === 0) return null;
 
-                  {selectedTopic.videoUrl && (
-                    <div className="bg-gray-100 rounded-lg p-4 mb-6 flex items-center gap-3">
-                      <Video className="w-6 h-6 text-blue-600" />
-                      <div className="flex-1">
-                        <p className="font-medium text-gray-900">Video Tutorial Available</p>
-                        <a
-                          href={selectedTopic.videoUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-sm text-blue-600 hover:underline flex items-center gap-1"
-                        >
-                          Watch now <ExternalLink className="w-3 h-3" />
-                        </a>
-                      </div>
+                      return (
+                        <div key={category} className="space-y-4">
+                          <div className="flex items-center justify-between mb-4">
+                            <h3 className="text-[11px] font-black uppercase tracking-widest text-[#345E85]">{category} Mapping</h3>
+                            <span className="h-[1px] flex-1 mx-6 bg-slate-100" />
+                          </div>
+
+                          <div className="grid grid-cols-1 gap-4">
+                            {categoryTopics.map(topic => (
+                              <button
+                                key={topic.id}
+                                onClick={() => setSelectedTopic(topic)}
+                                className="w-full flex items-center justify-between p-6 bg-white border border-slate-100 rounded-[32px] hover:border-[#345E85] hover:shadow-md transition-all text-left group"
+                              >
+                                <div className="flex-1 pr-6">
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <div className="h-2 w-2 rounded-full bg-blue-400 group-hover:scale-150 transition-transform" />
+                                    <p className="font-black text-slate-800 text-lg tracking-tight group-hover:text-[#345E85]">
+                                      {topic.title}
+                                    </p>
+                                  </div>
+                                  <p className="text-sm text-slate-500 font-medium pl-4">{topic.description}</p>
+                                </div>
+                                <div className="h-10 w-10 rounded-full bg-slate-50 flex items-center justify-center text-slate-300 group-hover:bg-[#345E85] group-hover:text-white transition-all shadow-inner">
+                                  <ChevronRight size={18} />
+                                </div>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {filteredTopics.length === 0 && (
+                    <div className="text-center py-20 bg-white rounded-[40px] border border-dashed border-slate-200">
+                      <Zap size={40} className="mx-auto text-slate-200 mb-4" />
+                      <p className="text-slate-400 font-black uppercase tracking-widest text-sm">No Match Found in Registry</p>
                     </div>
                   )}
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="article"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  {/* Article View - High Precision Layout */}
+                  <button
+                    onClick={() => setSelectedTopic(null)}
+                    className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-[#345E85] hover:translate-x-[-4px] transition-transform mb-8"
+                  >
+                    <ChevronLeft size={14} /> Back to Registry
+                  </button>
 
-                  <div className="whitespace-pre-wrap text-gray-700">{selectedTopic.content}</div>
+                  <article className="bg-white p-10 rounded-[40px] border border-slate-100 shadow-sm relative overflow-hidden">
+                    <div className="absolute top-0 right-0 p-10 opacity-[0.03] scale-[1.5] pointer-events-none rotate-12">
+                      <Book size={100} className="text-[#345E85]" />
+                    </div>
 
-                  {selectedTopic.relatedArticles && selectedTopic.relatedArticles.length > 0 && (
-                    <div className="mt-8 pt-8 border-t border-gray-200">
-                      <h3 className="text-lg font-semibold text-gray-900 mb-4">Related Articles</h3>
-                      <div className="space-y-2">
-                        {selectedTopic.relatedArticles.map(articleId => {
-                          const article = helpTopics.find(t => t.id === articleId);
-                          if (!article) return null;
-                          return (
-                            <button
-                              key={articleId}
-                              onClick={() => setSelectedTopic(article)}
-                              className="w-full flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-left"
-                            >
-                              <span className="text-sm text-gray-700">{article.title}</span>
-                              <ChevronRight className="w-4 h-4 text-gray-400" />
-                            </button>
-                          );
+                    <div className="relative z-10">
+                      <div className="flex items-center gap-2 mb-6">
+                        <span className="px-3 py-1 bg-blue-50 text-[#345E85] text-[9px] font-black uppercase tracking-widest rounded-full">{selectedTopic.category}</span>
+                      </div>
+
+                      <h1 className="text-4xl font-black text-slate-900 tracking-tight leading-tight mb-4">{selectedTopic.title}</h1>
+                      <p className="text-lg text-slate-500 font-medium leading-relaxed mb-10 pb-8 border-b border-slate-50">{selectedTopic.description}</p>
+
+                      {selectedTopic.videoUrl && (
+                        <div className="bg-[#345E85] rounded-[32px] p-8 mb-10 text-white shadow-xl shadow-blue-100 flex items-center justify-between group overflow-hidden relative">
+                          <div className="absolute -right-6 -top-6 opacity-10 group-hover:scale-125 transition-transform duration-700">
+                            <Video size={100} />
+                          </div>
+                          <div className="flex items-center gap-6 relative z-10">
+                            <div className="h-14 w-14 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/30 group-hover:scale-110 transition-transform">
+                              <Video size={24} className="text-white" />
+                            </div>
+                            <div>
+                              <p className="font-black uppercase tracking-widest text-[10px] opacity-70">Visual Synchronization</p>
+                              <p className="text-lg font-black tracking-tight">Watch Tutorial Interface</p>
+                            </div>
+                          </div>
+                          <a
+                            href={selectedTopic.videoUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="h-12 w-12 bg-white rounded-full flex items-center justify-center text-[#345E85] shadow-lg active:scale-95 transition-all relative z-10"
+                          >
+                            <ExternalLink size={20} />
+                          </a>
+                        </div>
+                      )}
+
+                      <div className="prose prose-slate max-w-none text-slate-600 font-medium leading-[1.8] space-y-4">
+                        {selectedTopic.content?.split('\n').map((line, i) => {
+                          if (line.startsWith('# ')) return <h1 key={i} className="text-2xl font-black text-slate-900 mt-8 mb-4 uppercase tracking-tight">{line.replace('# ', '')}</h1>;
+                          if (line.startsWith('## ')) return <h2 key={i} className="text-xl font-black text-slate-900 mt-8 mb-3 uppercase tracking-tight flex items-center gap-2"><div className="h-4 w-1 bg-[#345E85] rounded-full" /> {line.replace('## ', '')}</h2>;
+                          if (line.startsWith('- ')) return <div key={i} className="flex gap-3 mb-2 ps-4"><div className="h-1.5 w-1.5 rounded-full bg-[#345E85] mt-2.5 shrink-0" /><p>{line.replace('- ', '')}</p></div>;
+                          if (line.trim() === '') return <div key={i} className="h-4" />;
+                          return <p key={i}>{line}</p>;
                         })}
                       </div>
-                    </div>
-                  )}
-                </article>
 
-                {/* Feedback */}
-                <div className="mt-8 pt-8 border-t border-gray-200 text-center">
-                  <p className="text-sm text-gray-600 mb-3">Was this article helpful?</p>
-                  <div className="flex items-center justify-center gap-3">
-                    <button className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium">
-                      👍 Yes
-                    </button>
-                    <button className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium">
-                      👎 No
-                    </button>
+                      {selectedTopic.relatedArticles && selectedTopic.relatedArticles.length > 0 && (
+                        <div className="mt-16 pt-10 border-t border-slate-50">
+                          <h3 className="text-[11px] font-black uppercase tracking-widest text-slate-400 mb-6">Cross-Reference Registry</h3>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            {selectedTopic.relatedArticles.map(articleId => {
+                              const article = helpTopics.find(t => t.id === articleId);
+                              if (!article) return null;
+                              return (
+                                <button
+                                  key={articleId}
+                                  onClick={() => setSelectedTopic(article)}
+                                  className="w-full flex items-center justify-between p-4 bg-slate-50 border border-slate-100 rounded-2xl hover:bg-white hover:border-[#345E85] hover:shadow-sm transition-all text-left group"
+                                >
+                                  <span className="text-sm font-bold text-slate-700 group-hover:text-[#345E85]">{article.title}</span>
+                                  <ArrowRight size={14} className="text-slate-300 group-hover:translate-x-1 group-hover:text-[#345E85] transition-all" />
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </article>
+
+                  {/* Feedback Hub */}
+                  <div className="mt-8 p-10 bg-white rounded-[40px] border border-slate-100 shadow-sm text-center">
+                    <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 mb-6">Efficiency Assessment</p>
+                    <div className="flex items-center justify-center gap-6">
+                      <button className="flex items-center gap-3 px-8 py-3 bg-emerald-50 text-emerald-600 rounded-[24px] font-black uppercase tracking-widest text-[9px] hover:bg-emerald-100 active:scale-95 transition-all outline-none border border-emerald-100/50">
+                        Logic Validated <ThumbsUp size={16} />
+                      </button>
+                      <button className="flex items-center gap-3 px-8 py-3 bg-rose-50 text-rose-600 rounded-[24px] font-black uppercase tracking-widest text-[9px] hover:bg-rose-100 active:scale-95 transition-all outline-none border border-rose-100/50">
+                        Logic Inaccurate <ThumbsDown size={16} />
+                      </button>
+                    </div>
                   </div>
-                </div>
-              </>
-            )}
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
 
-          {/* Footer */}
-          <div className="pt-4 border-t border-gray-200 mt-4">
-            <p className="text-xs text-gray-500 text-center">
-              Still need help?{' '}
-              <button className="text-blue-600 hover:underline font-medium">
-                Contact Support
+          {/* Footer - Persist Action */}
+          <div className="p-8 bg-white border-t border-slate-50 flex items-center justify-center relative shrink-0">
+            <div className="flex items-center gap-2 group cursor-pointer hover:scale-105 transition-transform">
+              <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Still seeking synchronization?</span>
+              <button className="text-[10px] font-black uppercase tracking-[0.2em] text-[#345E85] underline decoration-blue-100 underline-offset-4 hover:decoration-[#345E85] transition-all">
+                Escalate to Support Vector
               </button>
-            </p>
+            </div>
+
+            {/* Glossy close helper */}
+            <div className="absolute right-8 hidden md:block">
+              <button
+                onClick={() => setIsOpen(false)}
+                className="text-[9px] font-black uppercase tracking-widest text-slate-300 hover:text-slate-900 transition-colors"
+              >
+                Terminate Session [Esc]
+              </button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
@@ -398,4 +483,3 @@ You'll be notified about:
 };
 
 export default ContextualHelp;
-

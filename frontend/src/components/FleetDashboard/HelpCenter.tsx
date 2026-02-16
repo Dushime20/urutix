@@ -1,5 +1,21 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { FaQuestionCircle, FaTimes, FaSearch, FaBook, FaVideo, FaComments, FaChevronRight } from 'react-icons/fa';
+import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  HelpCircle,
+  X,
+  Search,
+  Book,
+  Video,
+  MessageSquare,
+  ChevronRight,
+  Zap,
+  ArrowRight,
+  ShieldCheck,
+  Award,
+  Clock,
+  ChevronDown,
+  ChevronUp
+} from 'lucide-react';
 
 interface HelpCenterProps {
   onClose?: () => void;
@@ -13,47 +29,52 @@ export const HelpCenter: React.FC<HelpCenterProps> = ({ onClose, onRestartTour }
   const helpCategories = [
     {
       id: 'getting-started',
-      title: 'Getting Started',
-      icon: FaBook,
+      title: 'Foundation Ops',
+      label: 'Getting Started',
+      icon: Book,
       articles: [
-        { id: 'add-truck', title: 'How to Add Your First Truck', content: 'Step-by-step guide to registering a new truck in the system.' },
-        { id: 'add-driver', title: 'How to Add Drivers', content: 'Learn how to register drivers and assign them to trucks.' },
-        { id: 'upload-documents', title: 'Uploading Documents', content: 'Upload and manage truck documents like registration and insurance.' },
-        { id: 'schedule-maintenance', title: 'Schedule Maintenance', content: 'Set up maintenance schedules and track service history.' },
+        { id: 'add-truck', title: 'Asset Synchronization', content: 'Protocol for registering a new transport asset into the active fleet registry.' },
+        { id: 'add-driver', title: 'Personnel Integration', content: 'Assign qualified personnel to synchronized transport assets.' },
+        { id: 'upload-documents', title: 'Registry Upload', content: 'Digitalize and manage operational documentation (Insurance, Permits).' },
+        { id: 'schedule-maintenance', title: 'Health Cycles', content: 'Initialize proactive maintenance scheduling and lifespan tracking.' },
       ]
     },
     {
       id: 'trucks',
-      title: 'Truck Management',
-      icon: FaBook,
+      title: 'Asset Logistics',
+      label: 'Truck Management',
+      icon: ShieldCheck,
       articles: [
-        { id: 'edit-truck', title: 'Editing Truck Details', content: 'Update truck information, status, and specifications.' },
-        { id: 'truck-records', title: 'Viewing Truck Records', content: 'Access complete truck history, documents, and maintenance records.' },
-        { id: 'truck-status', title: 'Managing Truck Status', content: 'Change truck status (Available, In Transit, Maintenance, etc.).' },
+        { id: 'edit-truck', title: 'Asset Modification', content: 'Update technical specifications and operational status of fleet units.' },
+        { id: 'truck-records', title: 'Intelligence Archive', content: 'Access comprehensive asset lifespan history and maintenance logs.' },
+        { id: 'truck-status', title: 'Vector Status', content: 'Transition asset operational states (Available, Syncing, Stasis).' },
       ]
     },
     {
       id: 'notifications',
-      title: 'Notifications & Alerts',
-      icon: FaComments,
+      title: 'Alert Matrix',
+      label: 'Notifications',
+      icon: MessageSquare,
       articles: [
-        { id: 'view-notifications', title: 'Viewing Notifications', content: 'Check your notifications for maintenance reminders, inspections, and insurance alerts.' },
-        { id: 'notification-settings', title: 'Notification Settings', content: 'Configure how and when you receive notifications.' },
+        { id: 'view-notifications', title: 'Pulse Monitoring', content: 'Review system-generated alerts for maintenance and compliance thresholds.' },
+        { id: 'notification-settings', title: 'Alert Preferences', content: 'Configure synchronization triggers and communication channels.' },
       ]
     },
     {
       id: 'analytics',
-      title: 'Analytics & Reports',
-      icon: FaBook,
+      title: 'Data Intelligence',
+      label: 'Analytics',
+      icon: Award,
       articles: [
-        { id: 'view-analytics', title: 'Understanding Analytics', content: 'Learn how to read your fleet analytics and performance metrics.' },
-        { id: 'generate-reports', title: 'Generating PDF Reports', content: 'Export comprehensive reports for your records.' },
+        { id: 'view-analytics', title: 'Metric Analysis', content: 'Interpret operational performance data and efficiency scores.' },
+        { id: 'generate-reports', title: 'Intelligence Export', content: 'Compile and export comprehensive data reports for strategic review.' },
       ]
     }
   ];
 
   const filteredCategories = helpCategories.filter(category =>
     category.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    category.label.toLowerCase().includes(searchQuery.toLowerCase()) ||
     category.articles.some(article =>
       article.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       article.content.toLowerCase().includes(searchQuery.toLowerCase())
@@ -61,83 +82,120 @@ export const HelpCenter: React.FC<HelpCenterProps> = ({ onClose, onRestartTour }
   );
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[10001]">
-      <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] flex flex-col">
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-primary-50 to-blue-50">
-          <div className="flex items-center gap-3">
-            <div className="p-3 bg-primary-100 rounded-lg text-primary-600">
-              <FaQuestionCircle className="w-6 h-6" />
-            </div>
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900">Help Center</h2>
-              <p className="text-sm text-gray-500 mt-1">Find answers and learn how to use the platform</p>
-            </div>
+    <div className="fixed inset-0 bg-[#0F172A]/40 backdrop-blur-sm flex items-center justify-center z-[10001] animate-in fade-in duration-300 p-4">
+      <motion.div
+        initial={{ scale: 0.95, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        exit={{ scale: 0.95, opacity: 0 }}
+        className="bg-[#F8FAFC] rounded-[40px] shadow-2xl max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden border border-white/20"
+      >
+        {/* Intelligence Header */}
+        <div className="p-8 md:p-10 pb-10 bg-white border-b border-slate-50 relative overflow-hidden shrink-0">
+          <div className="absolute top-0 right-0 p-10 opacity-5 scale-[2] pointer-events-none">
+            <HelpCircle size={120} className="text-[#345E85]" />
           </div>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
-          >
-            <FaTimes className="w-6 h-6" />
-          </button>
+
+          <div className="relative z-10 flex items-center justify-between">
+            <div>
+              <div className="flex items-center gap-3 mb-6">
+                <div className="h-10 w-10 bg-blue-50 rounded-xl flex items-center justify-center text-[#345E85] shadow-inner">
+                  <HelpCircle size={20} />
+                </div>
+                <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-[#345E85]">Knowledge Repository</h2>
+              </div>
+              <h1 className="text-3xl md:text-3xl font-black text-slate-900 tracking-tight leading-[1.2] mb-2">
+                Help & <span className="text-[#345E85]">Support</span> Command
+              </h1>
+            </div>
+
+            <button
+              onClick={onClose}
+              className="h-12 w-12 rounded-full hover:bg-slate-50 flex items-center justify-center text-slate-400 hover:text-slate-900 transition-all border border-transparent hover:border-slate-100"
+            >
+              <X size={24} />
+            </button>
+          </div>
         </div>
 
-        {/* Search */}
-        <div className="p-6 border-b border-gray-200">
-          <div className="relative">
-            <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+        {/* Precision Search */}
+        <div className="px-8 md:px-10 py-6 bg-blue-50/30 border-b border-slate-100 shrink-0">
+          <div className="relative group">
+            <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#345E85] transition-colors" />
             <input
               type="text"
-              placeholder="Search for help articles..."
+              placeholder="Query the operational database..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              className="w-full pl-16 pr-8 py-5 bg-white border border-slate-100 rounded-[28px] focus:ring-4 focus:ring-blue-50 focus:border-[#345E85] outline-none transition-all shadow-sm font-bold text-slate-900 placeholder:text-slate-300"
             />
           </div>
         </div>
 
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6">
+        {/* Component Matrix */}
+        <div className="flex-1 overflow-y-auto p-8 md:p-10 pt-6 space-y-8">
           {filteredCategories.length === 0 ? (
-            <div className="text-center py-12">
-              <FaSearch className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-600">No help articles found for "{searchQuery}"</p>
+            <div className="text-center py-20 bg-white rounded-[40px] border border-dashed border-slate-200">
+              <Zap size={40} className="mx-auto text-slate-200 mb-4" />
+              <p className="text-slate-400 font-black uppercase tracking-widest text-sm">No Operational Match Found</p>
             </div>
           ) : (
-            <div className="space-y-6">
+            <div className="grid grid-cols-1 gap-4">
               {filteredCategories.map((category) => {
                 const IconComponent = category.icon;
+                const isExpanded = activeCategory === category.id;
+
                 return (
-                  <div key={category.id} className="border border-gray-200 rounded-lg overflow-hidden">
+                  <div
+                    key={category.id}
+                    className={`bg-white rounded-[32px] border transition-all duration-300 overflow-hidden ${isExpanded ? 'border-[#345E85] shadow-lg shadow-blue-50' : 'border-slate-100 hover:border-slate-300 hover:shadow-sm'
+                      }`}
+                  >
                     <button
-                      onClick={() => setActiveCategory(activeCategory === category.id ? null : category.id)}
-                      className="w-full flex items-center justify-between p-4 bg-gray-50 hover:bg-gray-100 transition-colors"
+                      onClick={() => setActiveCategory(isExpanded ? null : category.id)}
+                      className="w-full flex items-center justify-between p-6 text-left"
                     >
-                      <div className="flex items-center gap-3">
-                        <IconComponent className="text-primary-600" />
-                        <h3 className="text-lg font-semibold text-gray-900">{category.title}</h3>
-                        <span className="text-sm text-gray-500">({category.articles.length} articles)</span>
+                      <div className="flex items-center gap-5">
+                        <div className={`h-12 w-12 rounded-2xl flex items-center justify-center transition-all ${isExpanded ? 'bg-[#345E85] text-white' : 'bg-slate-50 text-slate-400'
+                          }`}>
+                          <IconComponent size={22} />
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 transition-colors group-hover:text-[#345E85]">Domain Mapping</p>
+                          <h3 className="text-lg font-black text-slate-900 tracking-tight">{category.title}</h3>
+                        </div>
                       </div>
-                      <FaChevronRight
-                        className={`text-gray-400 transition-transform ${
-                          activeCategory === category.id ? 'transform rotate-90' : ''
-                        }`}
-                      />
+                      <div className={`h-10 w-10 rounded-full flex items-center justify-center transition-all ${isExpanded ? 'bg-blue-50 text-[#345E85] rotate-180' : 'bg-slate-50 text-slate-300'
+                        }`}>
+                        <ChevronDown size={20} />
+                      </div>
                     </button>
 
-                    {activeCategory === category.id && (
-                      <div className="border-t border-gray-200 bg-white">
-                        {category.articles.map((article) => (
-                          <div
-                            key={article.id}
-                            className="p-4 border-b border-gray-100 last:border-b-0 hover:bg-gray-50 transition-colors cursor-pointer"
-                          >
-                            <h4 className="font-medium text-gray-900 mb-1">{article.title}</h4>
-                            <p className="text-sm text-gray-600">{article.content}</p>
+                    <AnimatePresence>
+                      {isExpanded && (
+                        <motion.div
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: 'auto', opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          transition={{ duration: 0.3 }}
+                          className="bg-blue-50/20 border-t border-slate-50"
+                        >
+                          <div className="p-4 space-y-2">
+                            {category.articles.map((article) => (
+                              <div
+                                key={article.id}
+                                className="p-6 bg-white rounded-2xl border border-slate-50 hover:border-[#345E85] hover:shadow-sm transition-all cursor-pointer group"
+                              >
+                                <div className="flex items-center justify-between mb-2">
+                                  <h4 className="font-black text-slate-800 tracking-tight leading-none group-hover:text-[#345E85]">{article.title}</h4>
+                                  <div className="h-2 w-2 rounded-full bg-blue-300 group-hover:scale-150 transition-transform" />
+                                </div>
+                                <p className="text-sm text-slate-500 font-medium leading-relaxed">{article.content}</p>
+                              </div>
+                            ))}
                           </div>
-                        ))}
-                      </div>
-                    )}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </div>
                 );
               })}
@@ -145,36 +203,40 @@ export const HelpCenter: React.FC<HelpCenterProps> = ({ onClose, onRestartTour }
           )}
         </div>
 
-        {/* Footer */}
-        <div className="p-6 border-t border-gray-200 bg-gray-50">
-          <div className="flex items-center justify-between">
-            <div className="text-sm text-gray-600">
-              Need more help? <a href="/dashboard/fleet/support" className="text-primary-600 hover:underline">Contact Support</a>
-            </div>
-            <div className="flex items-center gap-3">
-              {onRestartTour && (
-                <button
-                  onClick={() => {
-                    localStorage.removeItem('fleetOwnerOnboardingCompleted');
-                    onRestartTour();
-                    onClose?.();
-                  }}
-                  className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
-                >
-                  Restart Tour
-                </button>
-              )}
+        {/* Action Vectors Footer */}
+        <div className="p-8 md:p-10 bg-white border-t border-slate-100 flex flex-col md:flex-row items-center justify-between gap-6 shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">Seeking Synchronization?</div>
+            <a
+              href="/dashboard/fleet/support"
+              className="text-[10px] font-black uppercase tracking-widest text-[#345E85] bg-blue-50 px-4 py-2 rounded-lg hover:bg-[#345E85] hover:text-white transition-all"
+            >
+              Contact Support Vector
+            </a>
+          </div>
+
+          <div className="flex items-center gap-4">
+            {onRestartTour && (
               <button
-                onClick={onClose}
-                className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+                onClick={() => {
+                  localStorage.removeItem('fleetOwnerOnboardingCompleted');
+                  onRestartTour();
+                  onClose?.();
+                }}
+                className="px-6 py-3 bg-slate-50 text-slate-600 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-slate-100 active:scale-95 transition-all text-center"
               >
-                Close
+                Restart Onboarding
               </button>
-            </div>
+            )}
+            <button
+              onClick={onClose}
+              className="px-8 py-3 bg-[#345E85] text-white rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-lg shadow-blue-100 active:scale-95 transition-all"
+            >
+              Terminate Session
+            </button>
           </div>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 };
-

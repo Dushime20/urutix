@@ -5,6 +5,13 @@ import { Trip, TripStatus } from '../../entities/trip.entity';
 import { CreateTripDto } from './dto/create-trip.dto';
 import { UpdateTripStatusDto } from './dto/update-trip-status.dto';
 import { CreditConsumptionListener } from '../../services/credit-consumption.listener';
+import { NotificationService } from '../notifications/services/notification.service';
+import {
+  NotificationType,
+  NotificationCategory,
+  NotificationChannel,
+  EntityType,
+} from '../../entities/notification.entity';
 
 @Injectable()
 export class TripsService {
@@ -14,7 +21,8 @@ export class TripsService {
     @InjectRepository(Trip)
     private readonly tripRepository: Repository<Trip>,
     private readonly creditConsumptionListener: CreditConsumptionListener,
-  ) {}
+    private readonly notificationService: NotificationService,
+  ) { }
 
   async create(createTripDto: CreateTripDto, tenantId: string): Promise<Trip> {
     const trip = this.tripRepository.create({
@@ -123,7 +131,7 @@ export class TripsService {
 
     const previousStatus = trip.status;
     trip.status = updateTripStatusDto.status;
-    
+
     if (updateTripStatusDto.actualStartTime) {
       trip.actualStartTime = updateTripStatusDto.actualStartTime;
     }
@@ -139,7 +147,7 @@ export class TripsService {
       previousStatus !== TripStatus.COMPLETED
     ) {
       this.logger.log(`Trip ${id} completed. Processing credit deduction...`);
-      
+
       try {
         await this.creditConsumptionListener.processTripCompletion(id, tenantId);
         this.logger.log(`Credit deduction completed for trip ${id}`);
@@ -201,7 +209,7 @@ export class TripsService {
       if (!trip || !trip.load || !trip.truck || !trip.driver) return;
 
       const driverName = `${trip.driver.firstName} ${trip.driver.lastName}`.trim();
-      
+
       let truckOwnerName = 'Truck Owner';
       if (trip.truck.owner?.profile) {
         truckOwnerName = `${trip.truck.owner.profile.firstName} ${trip.truck.owner.profile.lastName}`.trim();
@@ -262,7 +270,7 @@ export class TripsService {
         if (trip.driver) {
           driverName = `${trip.driver.firstName} ${trip.driver.lastName}`.trim();
         }
-        
+
         notifications.push({
           userId: trip.truck.ownerId,
           subject: 'Trip Completed',
@@ -287,9 +295,9 @@ export class TripsService {
           },
         } as any);
       }
-      
+
       console.log(`Sent completion notifications for trip ${tripId} to ${notifications.length} recipients`);
-      
+
     } catch (error) {
       console.error('Error sending completion notifications:', error);
     }

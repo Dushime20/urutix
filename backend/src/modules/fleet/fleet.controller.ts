@@ -240,7 +240,7 @@ export class FleetController {
 
       const trucks = await this.fleetService.findAllTrucks(
         tenantId,
-        filterUserId,
+        req.user.userId,
         { search, status, location, page, limit },
       );
 
@@ -249,7 +249,7 @@ export class FleetController {
 
       return {
         message: 'Trucks retrieved successfully',
-        trucks: mappedTrucks || [],
+        trucks: trucks || [],
       };
     } catch (error) {
       console.error('❌ Fleet Controller - Error in findAllTrucks:', error);

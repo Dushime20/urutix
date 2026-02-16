@@ -49,18 +49,6 @@ const DriverTrips: React.FC<DriverTripsProps> = ({ driverId }) => {
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [searchParams] = useSearchParams();
 
-  // Auto-open trip details from URL param
-  useEffect(() => {
-    const tripId = searchParams.get('tripId');
-    if (tripId && allTrips.length > 0) {
-      const trip = allTrips.find((t) => t.id === tripId);
-      if (trip) {
-        setSelectedTrip(trip);
-        setShowDetailsModal(true);
-      }
-    }
-  }, [searchParams, allTrips]);
-
   // Fetch current trip
   const { data: currentTrip, isLoading: currentTripLoading } = useQuery({
     queryKey: ['driver-current-trip', driverId],
@@ -95,6 +83,18 @@ const DriverTrips: React.FC<DriverTripsProps> = ({ driverId }) => {
     );
     return uniqueTrips;
   }, [currentTrip, upcomingTrips, tripHistory]);
+
+  // Auto-open trip details from URL param
+  useEffect(() => {
+    const tripId = searchParams.get('tripId');
+    if (tripId && allTrips.length > 0) {
+      const trip = allTrips.find((t) => t.id === tripId);
+      if (trip) {
+        setSelectedTrip(trip);
+        setShowDetailsModal(true);
+      }
+    }
+  }, [searchParams, allTrips]);
 
   // Trip actions mutations
   const startTripMutation = useMutation({

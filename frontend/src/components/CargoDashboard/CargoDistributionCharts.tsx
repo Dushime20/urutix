@@ -37,12 +37,12 @@ export const CargoDistributionCharts: React.FC<CargoDistributionChartsProps> = (
     // Get status color
     const getStatusColor = (status: string) => {
         const colors: Record<string, string> = {
-            DRAFT: 'bg-gray-500',
-            PUBLISHED: 'bg-green-500',
-            IN_TRANSIT: 'bg-blue-500',
-            DELIVERED: 'bg-purple-500',
-            CANCELLED: 'bg-red-500',
-            ASSIGNED: 'bg-indigo-500',
+            DRAFT: 'bg-slate-500',
+            PUBLISHED: 'bg-emerald-500',
+            IN_TRANSIT: 'bg-[#345E85]',
+            DELIVERED: 'bg-emerald-600',
+            CANCELLED: 'bg-rose-500',
+            ASSIGNED: 'bg-blue-500',
             COMPLETED: 'bg-emerald-500',
         };
         return colors[status] || 'bg-gray-500';
@@ -51,10 +51,10 @@ export const CargoDistributionCharts: React.FC<CargoDistributionChartsProps> = (
     // Get urgency color
     const getUrgencyColor = (urgency: string) => {
         const colors: Record<string, string> = {
-            LOW: 'bg-yellow-500',
-            NORMAL: 'bg-blue-500',
-            HIGH: 'bg-orange-500',
-            CRITICAL: 'bg-red-500',
+            LOW: 'bg-emerald-400',
+            NORMAL: 'bg-blue-400',
+            HIGH: 'bg-amber-500',
+            CRITICAL: 'bg-rose-600',
         };
         return colors[urgency] || 'bg-gray-500';
     };

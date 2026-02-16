@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { 
-  MapPin, 
-  Clock, 
   Truck, 
   DollarSign, 
   Shield, 
@@ -14,10 +12,16 @@ import {
   Package,
   LogOut
 } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../../contexts/AuthContext';
 import { driverApi } from '../../services/driverApi';
-import { DriverStats } from './DriverStats';
+import { exportDriverData, type ExportData } from '../../utils/exportUtils';
+import { DriverHeader } from './DriverHeader';
+import { DriverQuickStats } from './DriverQuickStats';
+import { TimeRangeSelector } from './TimeRangeSelector';
+import { DriverSkeleton } from './DriverSkeleton';
+import { DriverEarningsChart } from './DriverEarningsChart';
+import { DriverPerformanceChart } from './DriverPerformanceChart';
 import { CurrentTrip } from './CurrentTrip';
 import { EarningsOverview } from './EarningsOverview';
 import { SafetyMetrics } from './SafetyMetrics';
@@ -32,8 +36,12 @@ import { TranslatedText } from '../translated-text';
 
 const DriverDashboard: React.FC = () => {
   const { user, logout } = useAuth();
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState('overview');
   const [driverId, setDriverId] = useState<string>('');
+  const [timeRange, setTimeRange] = useState('7d');
+  const [lastUpdated, setLastUpdated] = useState(new Date());
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const location = useLocation();
 
   // Find driver by userId when user is available
@@ -102,14 +110,14 @@ const DriverDashboard: React.FC = () => {
 
   // Fetch driver stats
   const { data: stats, isLoading: statsLoading } = useQuery({
-    queryKey: ['driver-stats', driverId],
+    queryKey: ['driver-stats', driverId, timeRange],
     queryFn: () => driverApi.getDriverStats(driverId),
     enabled: !!driverId,
   });
 
   // Fetch upcoming trips
   const { data: upcomingTrips, isLoading: upcomingLoading } = useQuery({
-    queryKey: ['driver-upcoming-trips', driverId],
+    queryKey: ['driver-upcoming-trips', driverId, timeRange],
     queryFn: () => driverApi.getUpcomingTrips(driverId),
     enabled: !!driverId,
   });
@@ -120,6 +128,67 @@ const DriverDashboard: React.FC = () => {
     queryFn: () => driverApi.getNotifications(driverId),
     enabled: !!driverId,
   });
+
+  // Refresh handler
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['driver'] }),
+        queryClient.invalidateQueries({ queryKey: ['driver-stats'] }),
+        queryClient.invalidateQueries({ queryKey: ['driver-trips'] }),
+        queryClient.invalidateQueries({ queryKey: ['driver-current-trip'] }),
+        queryClient.invalidateQueries({ queryKey: ['driver-upcoming-trips'] }),
+        queryClient.invalidateQueries({ queryKey: ['driver-notifications'] }),
+        new Promise(resolve => setTimeout(resolve, 800))
+      ]);
+      setLastUpdated(new Date());
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
+  // Export handler
+  const handleExport = async (format: 'csv' | 'excel' | 'pdf') => {
+    try {
+      // Prepare export data
+      const exportData: ExportData = {
+        driver: driver,
+        stats: stats,
+        trips: upcomingTrips,
+        performance: {
+          onTimeDelivery: stats?.onTimeDeliveryRate || 0,
+          safetyScore: stats?.safetyScore || 0,
+          customerRating: (stats?.rating || 0) * 20,
+          fuelEfficiency: 85,
+          loadUtilization: 90,
+          responseTime: 87
+        },
+        timeRange: timeRange,
+        exportDate: new Date().toISOString()
+      };
+
+      // Export with proper formatting
+      await exportDriverData(exportData, {
+        format,
+        filename: `driver-${driver?.firstName}-${driver?.lastName}`,
+        includeCharts: format === 'pdf'
+      });
+
+      // Show success message (you can add a toast notification here)
+      console.log(`Successfully exported as ${format.toUpperCase()}`);
+    } catch (error) {
+      console.error('Export failed:', error);
+      // Show error message (you can add a toast notification here)
+      alert(`Failed to export as ${format.toUpperCase()}. Please try again.`);
+    }
+  };
+
+  // Time range change handler
+  const handleTimeRangeChange = (range: string) => {
+    setTimeRange(range);
+    // Queries will automatically refetch due to queryKey dependency
+  };
 
   const tabs = [
     { id: 'overview', label: 'Overview', icon: Truck },
@@ -134,55 +203,30 @@ const DriverDashboard: React.FC = () => {
   ];
 
   if (driverLoading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-      </div>
-    );
+    return <DriverSkeleton />;
   }
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center">
-                  <User className="w-6 h-6 text-white" />
-                </div>
-                <div>
-                  <h1 className="text-xl font-semibold text-gray-900">
-                    {driver?.firstName} {driver?.lastName}
-                  </h1>
-                  <p className="text-sm text-gray-500">
-                    <TranslatedText text="Driver Dashboard" />
-                  </p>
-                </div>
-              </div>
-            </div>
-            
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2 text-sm text-gray-600">
-                <MapPin className="w-4 h-4" />
-                <span>{driver?.currentLocation || <TranslatedText text="Location unavailable" />}</span>
-              </div>
-              <div className="flex items-center space-x-2 text-sm text-gray-600">
-                <Clock className="w-4 h-4" />
-                <span>{new Date().toLocaleTimeString()}</span>
-              </div>
-              <button
-                onClick={logout}
-                className="flex items-center space-x-2 px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                title="Logout"
-              >
-                <LogOut className="w-4 h-4" />
-                <span className="hidden sm:inline"><TranslatedText text="Logout" /></span>
-              </button>
-            </div>
-          </div>
-        </div>
+      {/* Header with new DriverHeader component */}
+      <DriverHeader
+        driver={driver}
+        lastUpdated={lastUpdated}
+        isRefreshing={isRefreshing}
+        onRefresh={handleRefresh}
+        onExport={handleExport}
+      />
+
+      {/* Logout Button - positioned in top right */}
+      <div className="absolute top-4 right-4 z-50">
+        <button
+          onClick={logout}
+          className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors shadow-sm bg-white border border-gray-200"
+          title="Logout"
+        >
+          <LogOut className="w-4 h-4" />
+          <span className="hidden sm:inline"><TranslatedText text="Logout" /></span>
+        </button>
       </div>
 
       {/* Navigation Tabs */}
@@ -212,15 +256,55 @@ const DriverDashboard: React.FC = () => {
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        {/* Time Range Selector */}
+        <div className="mb-6">
+          <TimeRangeSelector
+            value={timeRange}
+            onChange={handleTimeRangeChange}
+          />
+        </div>
+
         {activeTab === 'overview' && (
           <div className="space-y-6">
+            {/* Quick Stats with new component */}
+            <DriverQuickStats 
+              stats={{
+                totalTrips: stats?.totalTrips,
+                totalEarnings: stats?.totalEarnings,
+                rating: stats?.rating,
+                completionRate: stats?.onTimeDeliveryRate,
+                activeTrips: currentTrip ? 1 : 0,
+                hoursWorked: stats?.hoursWorkedThisWeek
+              }}
+              isLoading={statsLoading}
+            />
+
             {/* Current Trip Status */}
             {currentTrip && (
               <CurrentTrip trip={currentTrip as any} />
             )}
 
-            {/* Quick Stats */}
-            <DriverStats stats={stats} loading={statsLoading} />
+            {/* Charts Row */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Earnings Chart */}
+              <DriverEarningsChart
+                isLoading={statsLoading}
+                timeRange={timeRange}
+              />
+
+              {/* Performance Chart */}
+              <DriverPerformanceChart
+                data={{
+                  onTimeDelivery: stats?.onTimeDeliveryRate || 0,
+                  safetyScore: stats?.safetyScore || 0,
+                  customerRating: (stats?.rating || 0) * 20, // Convert 5-star to percentage
+                  fuelEfficiency: 85, // Mock - would come from API
+                  loadUtilization: 90, // Mock - would come from API
+                  responseTime: 87 // Mock - would come from API
+                }}
+                isLoading={statsLoading}
+              />
+            </div>
 
             {/* Quick Actions */}
             <QuickActions driverId={driverId} />

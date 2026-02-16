@@ -119,6 +119,7 @@ const BidHistory: React.FC<BidHistoryProps> = ({ userRole }) => {
           successProbability: 85,
           createdAt: '2024-01-10T10:30:00Z',
           load: {
+            id: 'load-1',
             title: 'Electronics Shipment',
             weight: 500,
             loadValue: 5000,
@@ -142,6 +143,7 @@ const BidHistory: React.FC<BidHistoryProps> = ({ userRole }) => {
           successProbability: 100,
           createdAt: '2024-01-08T14:20:00Z',
           load: {
+            id: 'load-2',
             title: 'Furniture Delivery',
             weight: 1200,
             loadValue: 3000,
@@ -213,6 +215,13 @@ const BidHistory: React.FC<BidHistoryProps> = ({ userRole }) => {
   };
 
 
+
+  const formatCurrency = (amount: number, currency: string = 'USD') => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: currency,
+    }).format(amount);
+  };
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -528,7 +537,7 @@ const BidHistory: React.FC<BidHistoryProps> = ({ userRole }) => {
       )}
 
       {/* Bid Details Modal */}
-      {showDetailsModal && selectedBid && (
+      {showDetailsModal && selectedBid && createPortal(
         <div className="fixed inset-0 bg-gray-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl border border-gray-200 shadow-2xl w-full max-w-2xl overflow-hidden animate-in fade-in zoom-in duration-300">
             <div className="p-8">
@@ -619,7 +628,6 @@ const BidHistory: React.FC<BidHistoryProps> = ({ userRole }) => {
                         </div>
                       );
                     })()}
-                    </div>
                   </div>
                 )}
 
@@ -693,7 +701,6 @@ const BidHistory: React.FC<BidHistoryProps> = ({ userRole }) => {
                   </div>
                 )}
               </div>
-            </div>
 
               <div className="mt-8 pt-6 border-t border-gray-100 flex justify-end">
                 <button

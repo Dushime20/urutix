@@ -1,14 +1,14 @@
-import React from 'react';
+
 
 const statusColors: Record<string, string> = {
-  DRAFT: 'bg-gray-100 text-gray-800',
-  CREATED: 'bg-blue-100 text-blue-800',
-  PUBLISHED: 'bg-green-100 text-green-800',
-  IN_TRANSIT: 'bg-blue-100 text-blue-800',
-  delivered: 'bg-green-100 text-green-800',
-  delayed: 'bg-yellow-100 text-yellow-800',
-  cancelled: 'bg-red-100 text-red-800',
-  pending: 'bg-gray-100 text-gray-800',
+  DRAFT: 'bg-slate-100 text-slate-800',
+  CREATED: 'bg-blue-100 text-[#345E85]',
+  PUBLISHED: 'bg-emerald-100 text-emerald-800',
+  IN_TRANSIT: 'bg-blue-100 text-[#345E85]',
+  delivered: 'bg-emerald-100 text-emerald-800',
+  delayed: 'bg-amber-100 text-amber-800',
+  cancelled: 'bg-rose-100 text-rose-800',
+  pending: 'bg-amber-100 text-amber-800',
 };
 
 export const StatusBadge = ({ status }: { status: string }) => (

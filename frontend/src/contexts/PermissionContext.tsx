@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import { useAuth } from './AuthContext';
 import axios from 'axios';
 
@@ -52,7 +52,7 @@ export const PermissionProvider = ({ children }: PermissionProviderProps) => {
             setIsLoading(true);
             const token = localStorage.getItem('accessToken');
             const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3002/api';
-            
+
             // Fetch user-specific permissions
             const response = await axios.get(`${baseURL}/auth/permissions`, {
                 headers: {
@@ -66,8 +66,11 @@ export const PermissionProvider = ({ children }: PermissionProviderProps) => {
             }
 
             // Fetch role-based permissions from database if not cached
+            // Only fetch if user is an admin (others won't have access to this endpoint)
+            const isAdmin = ['ADMIN', 'SUPER_ADMIN'].includes(user.role);
             let rolePermissions: string[] = [];
-            if (user.role && !rolePermissionsCache[user.role]) {
+
+            if (user.role && isAdmin && !rolePermissionsCache[user.role]) {
                 try {
                     const rolesResponse = await axios.get(`${baseURL}/admin/permissions/roles`, {
                         headers: {
@@ -77,18 +80,22 @@ export const PermissionProvider = ({ children }: PermissionProviderProps) => {
 
                     const roles = rolesResponse.data?.data || [];
                     const role = roles.find((r: any) => r.name === user.role);
-                    
+
                     if (role) {
                         rolePermissions = role.permissions.map((p: any) => `${p.resource}:${p.action}`);
-                        
+
                         // Cache role permissions
                         setRolePermissionsCache(prev => ({
                             ...prev,
                             [user.role]: rolePermissions
                         }));
                     }
-                } catch (roleError) {
-                    console.warn('Could not fetch role permissions from database, using user permissions only:', roleError);
+                } catch (roleError: any) {
+                    // Silently handle 403 errors (user doesn't have admin access)
+                    // This is expected for non-admin users
+                    if (roleError?.response?.status !== 403) {
+                        console.warn('Could not fetch role permissions from database, using user permissions only:', roleError);
+                    }
                 }
             } else if (user.role && rolePermissionsCache[user.role]) {
                 rolePermissions = rolePermissionsCache[user.role];
@@ -100,13 +107,13 @@ export const PermissionProvider = ({ children }: PermissionProviderProps) => {
 
         } catch (error: any) {
             console.error('Error fetching permissions:', error);
-            
+
             // If it's a 500 error, the permissions system might not be set up yet
             // Set empty permissions array and continue (don't block the app)
             if (error?.response?.status === 500) {
                 console.warn('Permissions system not available (500 error). Using role-based access only.');
             }
-            
+
             setPermissions([]);
         } finally {
             setIsLoading(false);

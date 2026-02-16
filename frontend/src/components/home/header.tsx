@@ -39,7 +39,7 @@ export function Header() {
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            className="fixed top-0 left-0 right-0 z-[60] bg-gradient-to-r from-indigo-600 to-primary-600 text-white overflow-hidden"
+            className="fixed top-0 left-0 right-0 z-[60] bg-gradient-to-r from-[#345E85] to-primary-600 text-white overflow-hidden"
           >
             <div className="mx-auto max-w-7xl px-6 py-2 flex items-center justify-between text-xs sm:text-sm font-medium">
               <div className="flex items-center gap-2">

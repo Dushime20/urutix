@@ -243,9 +243,9 @@ export class LendingService {
 
       const lenderUser = this.userRepository.create({
         email: createLenderDto.contact_email.trim().toLowerCase(),
-        passwordHash: passwordHashToUse,
+        passwordHash: tempPasswordHash,
         role: UserRole.LENDER,
-        status: userStatus,
+        status: UserStatus.PENDING_VERIFICATION,
         tenantId: lenderTenantId,
       });
 
@@ -264,20 +264,19 @@ export class LendingService {
       await this.userProfileRepository.save(userProfile);
       this.logger.log(`✅ User profile created for lender user`);
 
-      if (shouldSendSetupEmail) {
-          // Generate password setup token
-          this.logger.log(`📧 Generating password setup token for: ${createLenderDto.contact_email}`);
-          const token = crypto.randomBytes(32).toString('hex');
-          const expiresAt = new Date();
-          expiresAt.setDate(expiresAt.getDate() + 7); // Token expires in 7 days
+      // Generate password setup token
+      this.logger.log(`📧 Generating password setup token for: ${createLenderDto.contact_email}`);
+      const token = crypto.randomBytes(32).toString('hex');
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + 7); // Token expires in 7 days
 
-          // Invalidate any existing tokens for this email
-          await this.passwordResetTokenRepository.update(
-            { email: createLenderDto.contact_email.trim().toLowerCase(), used: false },
-            { used: true },
-          );
+      // Invalidate any existing tokens for this email
+      await this.passwordResetTokenRepository.update(
+        { email: createLenderDto.contact_email.trim().toLowerCase(), used: false },
+        { used: true },
+      );
 
-          const passwordSetupToken = this.passwordResetTokenRepository.create({
+      const passwordSetupToken = this.passwordResetTokenRepository.create({
             email: createLenderDto.contact_email.trim().toLowerCase(),
             token,
             expiresAt,

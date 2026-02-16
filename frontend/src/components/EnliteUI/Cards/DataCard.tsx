@@ -13,13 +13,13 @@ export interface DataCardProps {
 }
 
 const headerColorClasses = {
-  primary: 'bg-gradient-to-r from-indigo-500 to-purple-600',
-  secondary: 'bg-gradient-to-r from-purple-500 to-pink-600',
-  success: 'bg-gradient-to-r from-green-500 to-emerald-600',
-  warning: 'bg-gradient-to-r from-amber-500 to-orange-600',
-  error: 'bg-gradient-to-r from-red-500 to-rose-600',
-  info: 'bg-gradient-to-r from-cyan-500 to-blue-600',
-  default: 'bg-gray-50 border-b border-gray-200',
+  primary: 'bg-[#345E85] text-white',
+  secondary: 'bg-slate-900 text-white',
+  success: 'bg-emerald-600 text-white',
+  warning: 'bg-amber-500 text-white',
+  error: 'bg-rose-600 text-white',
+  info: 'bg-sky-500 text-white',
+  default: 'bg-[#fafafa] border-b border-gray-100',
 };
 
 export const DataCard: React.FC<DataCardProps> = ({

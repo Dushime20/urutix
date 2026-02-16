@@ -5,7 +5,7 @@ import axios from 'axios';
 import { createWorker } from 'tesseract.js';
 import * as fs from 'fs';
 import * as path from 'path';
-const pdfParse = require('pdf-parse');
+
 
 
 // Optional canvas import - only needed for PDF OCR fallback
@@ -23,23 +23,24 @@ try {
 @Injectable()
 export class OcrService {
   async extractText(url: string): Promise<{ text: string }> {
-    if (url.endsWith('.pdf')) {
-      // Download PDF and extract text from all pages
-      const response = await axios.get(url, { responseType: 'arraybuffer' });
-      const data = await pdfParse(response.data);
-      return { text: data.text || '' };
-    } else {
-      // For images, use Tesseract
-      const worker = await createWorker('eng');
-      const {
-        data: { text },
-      } = await worker.recognize(url);
-      await worker.terminate();
-      return { text };
-    }
+    try {
+      if (url.endsWith('.pdf')) {
+        // Download PDF and extract text from all pages
+        const response = await axios.get(url, { responseType: 'arraybuffer' });
+        const data = await pdfParse(response.data);
+        return { text: data.text || '' };
+      } else {
+        // For images, use Tesseract
+        const worker = await createWorker('eng');
+        const {
+          data: { text },
+        } = await worker.recognize(url);
+        await worker.terminate();
+        return { text };
+      }
     } catch (error) {
       console.error('OCR extraction error:', error);
-      
+
       if (error.response) {
         // The request was made and the server responded with a status code
         // that falls out of the range of 2xx
