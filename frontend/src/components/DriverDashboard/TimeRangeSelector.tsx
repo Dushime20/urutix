@@ -23,22 +23,21 @@ export const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
 
   return (
     <div className={`flex items-center space-x-3 ${className}`}>
-      <div className="flex items-center space-x-2 text-gray-600">
-        <Calendar className="w-5 h-5" />
-        <span className="text-sm font-medium">Time Range:</span>
+      <div className="flex items-center space-x-2 text-slate-500">
+        <Calendar className="w-4 h-4 text-[#345E85]" />
+        <span className="text-xs font-black uppercase tracking-widest">Time Range:</span>
       </div>
-      <div className="flex items-center space-x-2 bg-white rounded-lg border border-gray-200 p-1 shadow-sm">
+      <div className="flex items-center space-x-1 bg-white rounded-xl border border-slate-100 p-1 shadow-sm">
         {ranges.map((range) => (
           <motion.button
             key={range.value}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
             onClick={() => onChange(range.value)}
-            className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
-              value === range.value
-                ? 'bg-blue-600 text-white shadow-md'
-                : 'text-gray-600 hover:bg-gray-100'
-            }`}
+            className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${value === range.value
+                ? 'bg-[#345E85] text-white shadow-md'
+                : 'text-slate-500 hover:text-[#345E85] hover:bg-slate-50'
+              }`}
           >
             {range.label}
           </motion.button>

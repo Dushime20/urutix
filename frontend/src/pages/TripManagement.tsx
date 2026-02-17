@@ -1,25 +1,28 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
-  FaTruck,
-  FaUser,
-  FaMapMarkerAlt,
-  FaClock,
-  FaCheckCircle,
-  FaExclamationTriangle,
-  FaEye,
-  FaSearch,
-  FaRoute,
-  FaCalendarAlt,
-  FaMoneyBillWave,
-  FaSortAmountDown,
-  FaTimes
-} from 'react-icons/fa';
-import { FiGrid, FiList } from 'react-icons/fi';
+  Truck,
+  User,
+  MapPin,
+  Clock,
+  CheckCircle,
+  AlertTriangle,
+  Eye,
+  Search,
+  Route,
+  Calendar,
+  DollarSign,
+  ArrowUpDown,
+  LayoutGrid,
+  List,
+  Filter,
+  X
+} from 'lucide-react';
 import { tripsAPI } from '../services/api';
-import logoUrutiX from '../assets/logo-urutix.svg';
 import toast from 'react-hot-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/Dialog';
+import StatCard from '../components/EnliteUI/Cards/StatCard';
+import { cn } from '../utils/cn';
 
 interface Trip {
   id: string;
@@ -62,17 +65,17 @@ const TripManagement: React.FC = () => {
           // 1. Check trip's pickupLocation relation
           if (trip.pickupLocation?.city) return trip.pickupLocation.city;
           if (trip.pickupLocation?.address) return trip.pickupLocation.address;
-          
+
           // 2. Check load's origin field (jsonb Address type)
           if (trip.load?.origin?.city) return trip.load.origin.city;
           if (trip.load?.origin?.address) return trip.load.origin.address;
-          
+
           // 3. Check load's locations array for PICKUP type
           const pickupLoc = trip.load?.locations?.find((loc: any) => loc.type === 'PICKUP');
           if (pickupLoc?.locationData?.city) return pickupLoc.locationData.city;
           if (pickupLoc?.locationData?.name) return pickupLoc.locationData.name;
           if (pickupLoc?.locationData?.address) return pickupLoc.locationData.address;
-          
+
           return 'Unknown Origin';
         };
 
@@ -81,17 +84,17 @@ const TripManagement: React.FC = () => {
           // 1. Check trip's deliveryLocation relation
           if (trip.deliveryLocation?.city) return trip.deliveryLocation.city;
           if (trip.deliveryLocation?.address) return trip.deliveryLocation.address;
-          
+
           // 2. Check load's destination field (jsonb Address type)
           if (trip.load?.destination?.city) return trip.load.destination.city;
           if (trip.load?.destination?.address) return trip.load.destination.address;
-          
+
           // 3. Check load's locations array for DELIVERY type
           const deliveryLoc = trip.load?.locations?.find((loc: any) => loc.type === 'DELIVERY');
           if (deliveryLoc?.locationData?.city) return deliveryLoc.locationData.city;
           if (deliveryLoc?.locationData?.name) return deliveryLoc.locationData.name;
           if (deliveryLoc?.locationData?.address) return deliveryLoc.locationData.address;
-          
+
           return 'Unknown Destination';
         };
 
@@ -160,23 +163,23 @@ const TripManagement: React.FC = () => {
   // Helper Functions
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'COMPLETED': return 'bg-green-100 text-green-800';
-      case 'IN_PROGRESS': return 'bg-blue-100 text-blue-800';
-      case 'PLANNED': return 'bg-yellow-100 text-yellow-800';
-      case 'CANCELLED': return 'bg-red-100 text-red-800';
-      case 'DELAYED': return 'bg-orange-100 text-orange-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'COMPLETED': return 'bg-emerald-100 text-emerald-700';
+      case 'IN_PROGRESS': return 'bg-blue-100 text-blue-700';
+      case 'PLANNED': return 'bg-amber-100 text-amber-700';
+      case 'CANCELLED': return 'bg-rose-100 text-rose-700';
+      case 'DELAYED': return 'bg-orange-100 text-orange-700';
+      default: return 'bg-slate-100 text-slate-600';
     }
   };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'COMPLETED': return <FaCheckCircle className="text-green-500" />;
-      case 'IN_PROGRESS': return <FaTruck className="text-blue-500" />;
-      case 'PLANNED': return <FaClock className="text-yellow-500" />;
-      case 'CANCELLED': return <FaExclamationTriangle className="text-red-500" />;
-      case 'DELAYED': return <FaExclamationTriangle className="text-orange-500" />;
-      default: return <FaClock className="text-gray-500" />;
+      case 'COMPLETED': return <CheckCircle className="text-emerald-500" size={16} />;
+      case 'IN_PROGRESS': return <Truck className="text-blue-500" size={16} />;
+      case 'PLANNED': return <Clock className="text-amber-500" size={16} />;
+      case 'CANCELLED': return <AlertTriangle className="text-rose-500" size={16} />;
+      case 'DELAYED': return <AlertTriangle className="text-orange-500" size={16} />;
+      default: return <Clock className="text-slate-400" size={16} />;
     }
   };
 
@@ -188,413 +191,433 @@ const TripManagement: React.FC = () => {
     });
   };
 
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0
+    }).format(amount);
+  };
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading trips...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#345E85] mx-auto"></div>
+          <p className="mt-4 text-slate-500 font-medium">Loading trips...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="relative min-h-screen bg-gray-50 p-6">
-      {/* Background Logo */}
-      <img
-        src={logoUrutiX}
-        alt="UrutiX Logo Background"
-        className="pointer-events-none select-none fixed inset-0 w-full h-full object-cover opacity-5 z-0"
-        style={{ objectPosition: 'center' }}
-      />
-
-      <div className="relative z-10 max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Trip Management</h1>
-          <p className="text-gray-600 mt-2">Monitor and manage your fleet trips</p>
+    <div className="min-h-screen bg-[#F8FAFC] p-6 md:p-8 space-y-8">
+      {/* Header */}
+      <div>
+        <div className="flex items-center gap-3 mb-2">
+          <div className="h-10 w-10 bg-blue-50 rounded-xl flex items-center justify-center text-[#345E85] shadow-inner">
+            <Route size={20} />
+          </div>
+          <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-[#345E85]">Logistics</h2>
         </div>
+        <h1 className="text-3xl font-black text-slate-900 tracking-tight">Trip Management</h1>
+        <p className="text-slate-500 font-medium mt-1">Monitor active trips, schedule shipments, and track fleet performance.</p>
+      </div>
 
-        {/* Stats Statistics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Total Trips</p>
-                <p className="text-2xl font-bold text-gray-900">{trips.length}</p>
-              </div>
-              <FaRoute className="w-8 h-8 text-[#345E85]" />
-            </div>
+      {/* Stats Matrix */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <StatCard
+          title="Total Trips"
+          value={trips.length}
+          icon={<Route />}
+          color="primary"
+          subtitle="All recorded movements"
+        />
+        <StatCard
+          title="In Progress"
+          value={trips.filter((t: Trip) => t.status === 'IN_PROGRESS').length}
+          icon={<Truck />}
+          color="info" // Blue
+          subtitle="Currently active"
+        />
+        <StatCard
+          title="Planned"
+          value={trips.filter((t: Trip) => t.status === 'PLANNED').length}
+          icon={<Clock />}
+          color="warning" // Amber/Yellow
+          subtitle="Upcoming schedule"
+        />
+        <StatCard
+          title="Completed"
+          value={trips.filter((t: Trip) => t.status === 'COMPLETED').length}
+          icon={<CheckCircle />}
+          color="success" // Emerald
+          subtitle="Successfully delivered"
+        />
+      </div>
+
+      {/* Filters and View Toggle */}
+      <div className="bg-white rounded-[24px] border border-slate-100 shadow-sm p-4">
+        <div className="flex flex-col lg:flex-row gap-4">
+          {/* Search */}
+          <div className="flex-1 relative">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
+            <input
+              type="text"
+              placeholder="Search by ID, driver, truck, or location..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-100 rounded-xl text-sm font-medium text-slate-900 focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-[#345E85] outline-none transition-all"
+            />
           </div>
 
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Completed</p>
-                <p className="text-2xl font-bold text-green-600">
-                  {trips.filter((t: Trip) => t.status === 'COMPLETED').length}
-                </p>
-              </div>
-              <FaCheckCircle className="w-8 h-8 text-green-600" />
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">In Progress</p>
-                <p className="text-2xl font-bold text-blue-600">
-                  {trips.filter((t: Trip) => t.status === 'IN_PROGRESS').length}
-                </p>
-              </div>
-              <FaTruck className="w-8 h-8 text-blue-600" />
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Planned</p>
-                <p className="text-2xl font-bold text-yellow-600">
-                  {trips.filter((t: Trip) => t.status === 'PLANNED').length}
-                </p>
-              </div>
-              <FaClock className="w-8 h-8 text-yellow-600" />
-            </div>
-          </div>
-        </div>
-
-        {/* Filters and View Toggle */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 mb-6">
-          <div className="flex flex-col lg:flex-row gap-3">
-            {/* Search */}
-            <div className="flex-1">
-              <div className="relative">
-                <FaSearch className="absolute left-2.5 top-1/2 transform -translate-y-1/2 text-gray-400 w-3.5 h-3.5" />
-                <input
-                  type="text"
-                  placeholder="Search trips by ID, driver, truck, or location..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="w-full pl-9 pr-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
-                />
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2 overflow-x-auto pb-1 lg:pb-0">
-              {/* Status Pills */}
-              <div className="flex items-center gap-1 border border-gray-200 rounded-md p-0.5 bg-gray-50">
-                {(['all', 'planned', 'in_progress', 'completed'] as const).map((statusOption) => (
-                  <button
-                    key={statusOption}
-                    onClick={() => setFilter(statusOption)}
-                    className={`px-3 py-1 text-xs font-medium rounded transition-all whitespace-nowrap ${filter === statusOption
-                        ? 'bg-white text-gray-900 shadow-sm'
-                        : 'text-gray-600 hover:text-gray-900'
-                      }`}
-                  >
-                    {statusOption === 'all'
-                      ? 'All'
-                      : statusOption.replace('_', ' ').replace(/\b\w/g, (l) => l.toUpperCase())}
-                  </button>
-                ))}
-              </div>
-
-              {/* View Toggle */}
-              <div className="flex items-center gap-1 border border-gray-200 rounded-md p-0.5 bg-gray-50">
+          <div className="flex items-center gap-3 overflow-x-auto pb-1 lg:pb-0">
+            {/* Status Filter */}
+            <div className="flex items-center gap-1 bg-slate-50 p-1 rounded-xl border border-slate-100">
+              {(['all', 'planned', 'in_progress', 'completed'] as const).map((statusOption) => (
                 <button
-                  onClick={() => setView('grid')}
-                  className={`px-2 py-1 rounded text-xs font-medium transition-all ${view === 'grid'
-                      ? 'bg-white text-gray-900 shadow-sm'
-                      : 'text-gray-600 hover:text-gray-900'
-                    }`}
-                  title="Grid View"
+                  key={statusOption}
+                  onClick={() => setFilter(statusOption)}
+                  className={cn(
+                    "px-4 py-2 text-[11px] font-black uppercase tracking-wider rounded-lg transition-all whitespace-nowrap",
+                    filter === statusOption
+                      ? "bg-white text-[#345E85] shadow-sm"
+                      : "text-slate-400 hover:text-slate-600 hover:bg-white/50"
+                  )}
                 >
-                  <FiGrid className="w-3.5 h-3.5" />
+                  {statusOption === 'all' ? 'All' : statusOption.replace('_', ' ')}
                 </button>
-                <button
-                  onClick={() => setView('list')}
-                  className={`px-2 py-1 rounded text-xs font-medium transition-all ${view === 'list'
-                      ? 'bg-white text-gray-900 shadow-sm'
-                      : 'text-gray-600 hover:text-gray-900'
-                    }`}
-                  title="List View"
-                >
-                  <FiList className="w-3.5 h-3.5" />
-                </button>
-              </div>
+              ))}
             </div>
-          </div>
-        </div>
 
-        {/* Results Summary */}
-        <div className="flex items-center justify-between mb-4">
-          <div className="text-sm text-gray-600">
-            Showing {sortedTrips.length} of {trips.length} trips
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-600 hidden sm:inline">Sort by:</span>
-            <select
-              value={sortConfig.key}
-              onChange={(e) => setSortConfig({ ...sortConfig, key: e.target.value as keyof Trip | 'date' })}
-              className="text-sm border border-gray-300 rounded px-2 py-1"
-            >
-              <option value="date">Date</option>
-              <option value="agreedPrice">Price</option>
-              <option value="status">Status</option>
-            </select>
+            {/* View Toggle */}
+            <div className="flex items-center gap-1 bg-slate-50 p-1 rounded-xl border border-slate-100">
+              <button
+                onClick={() => setView('list')}
+                className={cn(
+                  "p-2 rounded-lg transition-all",
+                  view === 'list' ? "bg-white text-[#345E85] shadow-sm" : "text-slate-400 hover:text-slate-600"
+                )}
+              >
+                <List size={18} />
+              </button>
+              <button
+                onClick={() => setView('grid')}
+                className={cn(
+                  "p-2 rounded-lg transition-all",
+                  view === 'grid' ? "bg-white text-[#345E85] shadow-sm" : "text-slate-400 hover:text-slate-600"
+                )}
+              >
+                <LayoutGrid size={18} />
+              </button>
+            </div>
+
+            {/* Sort Toggle */}
             <button
               onClick={() => setSortConfig({ ...sortConfig, direction: sortConfig.direction === 'asc' ? 'desc' : 'asc' })}
-              className="p-1 text-gray-500 hover:text-gray-700"
+              className="p-3 bg-white border border-slate-100 rounded-xl text-slate-400 hover:text-[#345E85] hover:border-[#345E85] transition-all"
               title={sortConfig.direction === 'asc' ? 'Ascending' : 'Descending'}
             >
-              <FaSortAmountDown className={`transform ${sortConfig.direction === 'asc' ? 'rotate-180' : ''}`} />
+              <ArrowUpDown size={18} className={sortConfig.direction === 'asc' ? 'rotate-180' : ''} />
             </button>
           </div>
         </div>
-
-        {/* CONTENT */}
-        {sortedTrips.length === 0 ? (
-          <div className="text-center py-12 bg-white rounded-lg border border-gray-200">
-            <FaRoute className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-            <h3 className="text-lg font-medium text-gray-900 mb-1">No trips found</h3>
-            <p className="text-gray-500">Try adjusting your filters or search terms</p>
-          </div>
-        ) : (
-          <>
-            {/* GRID VIEW */}
-            {view === 'grid' ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {sortedTrips.map((trip: Trip) => (
-                  <div key={trip.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center gap-2">
-                        <div className="p-2 bg-blue-50 rounded-lg">
-                          <FaRoute className="w-5 h-5 text-primary-600" />
-                        </div>
-                        <div>
-                          <h3 className="font-semibold text-gray-900">{trip.tripNumber}</h3>
-                          <p className="text-xs text-gray-500">Ref: {trip.loadId}</p>
-                        </div>
-                      </div>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(trip.status)}`}>
-                        {trip.status.replace('_', ' ')}
-                      </span>
-                    </div>
-
-                    <div className="space-y-3 mb-4">
-                      <div className="flex items-start gap-2 text-sm text-gray-600">
-                        <FaMapMarkerAlt className="w-4 h-4 mt-0.5 text-gray-400" />
-                        <div className="flex-1">
-                          <p><span className="font-medium text-gray-900">From:</span> {trip.pickupLocation}</p>
-                          <p><span className="font-medium text-gray-900">To:</span> {trip.deliveryLocation}</p>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-2 text-sm text-gray-600">
-                        <FaTruck className="w-4 h-4 text-gray-400" />
-                        <span>{trip.truckPlate}</span>
-                      </div>
-
-                      <div className="flex items-center gap-2 text-sm text-gray-600">
-                        <FaUser className="w-4 h-4 text-gray-400" />
-                        <span>{trip.driverName}</span>
-                      </div>
-
-                      <div className="flex items-center justify-between text-sm pt-2 border-t border-gray-100">
-                        <div className="flex items-center gap-2">
-                          <FaCalendarAlt className="w-4 h-4 text-gray-400" />
-                          <span>{formatDate(trip.plannedStartTime)}</span>
-                        </div>
-                        <div className="font-semibold text-gray-900">
-                          ${trip.agreedPrice.toLocaleString()}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="pt-2">
-                      <button
-                        onClick={() => setSelectedTrip(trip)}
-                        className="w-full py-2 bg-gray-50 text-gray-700 font-medium rounded-lg hover:bg-gray-100 flex items-center justify-center gap-2 transition-colors"
-                      >
-                        <FaEye className="w-4 h-4" />
-                        View Details
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              /* LIST VIEW (Table) */
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-                <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trip ID</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Route</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Vehicle / Driver</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Schedule</th>
-                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
-                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {sortedTrips.map((trip: Trip) => (
-                        <tr key={trip.id} className="hover:bg-gray-50 transition-colors">
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="flex items-center">
-                              <div className="p-2 bg-blue-50 rounded-lg mr-3">
-                                <FaRoute className="w-4 h-4 text-primary-600" />
-                              </div>
-                              <div>
-                                <div className="text-sm font-medium text-gray-900">{trip.tripNumber}</div>
-                                <div className="text-xs text-gray-500">Ref: {trip.loadId}</div>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(trip.status)}`}>
-                              {trip.status.replace('_', ' ')}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4">
-                            <div className="text-sm text-gray-900">
-                              <div className="flex items-center gap-1">
-                                <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span>
-                                {trip.pickupLocation}
-                              </div>
-                              <div className="border-l border-gray-300 h-3 ml-0.5 my-0.5"></div>
-                              <div className="flex items-center gap-1">
-                                <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>
-                                {trip.deliveryLocation}
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm text-gray-900 flex items-center gap-2">
-                              <FaTruck className="text-gray-400" /> {trip.truckPlate}
-                            </div>
-                            <div className="text-sm text-gray-500 flex items-center gap-2 mt-1">
-                              <FaUser className="text-gray-400" /> {trip.driverName}
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                            <div>{formatDate(trip.plannedStartTime)}</div>
-                            <div className="text-xs text-gray-500">to {formatDate(trip.plannedEndTime)}</div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium text-gray-900">
-                            ${trip.agreedPrice.toLocaleString()}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            <button
-                              onClick={() => setSelectedTrip(trip)}
-                              className="text-primary-600 hover:text-primary-900 p-2 hover:bg-primary-50 rounded-lg"
-                            >
-                              <FaEye className="w-5 h-5" />
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
-          </>
-        )}
       </div>
 
-      {/* Trip Details Modal */}
+      {/* Content Area */}
+      {sortedTrips.length === 0 ? (
+        <div className="text-center py-20 bg-white rounded-[32px] border border-slate-100 shadow-sm">
+          <div className="h-20 w-20 bg-slate-50 rounded-[28px] flex items-center justify-center mx-auto mb-6 text-slate-300">
+            <Route size={40} />
+          </div>
+          <h3 className="text-lg font-black text-slate-900 mb-2">No trips found</h3>
+          <p className="text-slate-500 font-medium max-w-xs mx-auto">
+            Try adjusting filters or search terms to find what you're looking for.
+          </p>
+        </div>
+      ) : (
+        <>
+          {view === 'grid' ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {sortedTrips.map((trip: Trip) => (
+                <div
+                  key={trip.id}
+                  className="bg-white rounded-[24px] border border-slate-100 p-6 hover:shadow-xl transition-all group relative overflow-hidden"
+                >
+                  <div className="flex items-start justify-between mb-6">
+                    <div className="flex items-center gap-3">
+                      <div className="h-12 w-12 bg-blue-50 rounded-2xl flex items-center justify-center text-[#345E85] group-hover:scale-110 transition-transform">
+                        <Route size={24} />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-black text-slate-900 tracking-tight">{trip.tripNumber}</h3>
+                        <p className="text-xs font-medium text-slate-400">Ref: {trip.loadId}</p>
+                      </div>
+                    </div>
+                    <span className={cn(
+                      "px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5",
+                      getStatusColor(trip.status)
+                    )}>
+                      {getStatusIcon(trip.status)}
+                      {trip.status.replace('_', ' ')}
+                    </span>
+                  </div>
+
+                  <div className="space-y-4 mb-6">
+                    <div className="relative pl-6 space-y-6 before:absolute before:left-[7px] before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-100">
+                      <div className="relative">
+                        <div className="absolute -left-6 top-1 h-3.5 w-3.5 bg-white border-2 border-emerald-500 rounded-full" />
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-0.5">Origin</p>
+                        <p className="text-sm font-bold text-slate-900 line-clamp-1" title={trip.pickupLocation}>
+                          {trip.pickupLocation}
+                        </p>
+                      </div>
+                      <div className="relative">
+                        <div className="absolute -left-6 top-1 h-3.5 w-3.5 bg-white border-2 border-rose-500 rounded-full" />
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-0.5">Destination</p>
+                        <p className="text-sm font-bold text-slate-900 line-clamp-1" title={trip.deliveryLocation}>
+                          {trip.deliveryLocation}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-50">
+                      <div className="flex items-center gap-2">
+                        <div className="h-8 w-8 rounded-lg bg-slate-50 flex items-center justify-center text-slate-400">
+                          <Truck size={14} />
+                        </div>
+                        <div className="overflow-hidden">
+                          <p className="text-[10px] text-slate-400 font-bold uppercase">Vehicle</p>
+                          <p className="text-xs font-bold text-slate-900 truncate">{trip.truckPlate}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="h-8 w-8 rounded-lg bg-slate-50 flex items-center justify-center text-slate-400">
+                          <User size={14} />
+                        </div>
+                        <div className="overflow-hidden">
+                          <p className="text-[10px] text-slate-400 font-bold uppercase">Driver</p>
+                          <p className="text-xs font-bold text-slate-900 truncate">{trip.driverName}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-4 border-t border-slate-50">
+                    <div className="flex items-center gap-2 text-slate-500">
+                      <Calendar size={14} />
+                      <span className="text-xs font-medium">{formatDate(trip.plannedStartTime)}</span>
+                    </div>
+                    <div className="text-sm font-black text-[#345E85]">
+                      {formatCurrency(trip.agreedPrice)}
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => setSelectedTrip(trip)}
+                    className="absolute inset-0 z-10 w-full h-full opacity-0 cursor-pointer"
+                    aria-label="View Details"
+                  />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="bg-white rounded-[24px] border border-slate-100 shadow-sm overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-slate-100">
+                  <thead className="bg-slate-50/50">
+                    <tr>
+                      <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-wider">Trip ID</th>
+                      <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-wider">Status</th>
+                      <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-wider">Route</th>
+                      <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-wider">Vehicle & Driver</th>
+                      <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-wider">Schedule</th>
+                      <th className="px-6 py-4 text-right text-[10px] font-black text-slate-400 uppercase tracking-wider">Price</th>
+                      <th className="px-6 py-4 text-right text-[10px] font-black text-slate-400 uppercase tracking-wider">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-slate-50">
+                    {sortedTrips.map((trip: Trip) => (
+                      <tr key={trip.id} className="hover:bg-blue-50/30 transition-colors group">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center gap-3">
+                            <div className="h-8 w-8 bg-blue-50 rounded-lg flex items-center justify-center text-[#345E85]">
+                              <Route size={14} />
+                            </div>
+                            <div>
+                              <div className="text-sm font-bold text-slate-900">{trip.tripNumber}</div>
+                              <div className="text-[10px] font-medium text-slate-400">Ref: {trip.loadId}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={cn(
+                            "px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider inline-flex items-center gap-1.5",
+                            getStatusColor(trip.status)
+                          )}>
+                            {getStatusIcon(trip.status)}
+                            {trip.status.replace('_', ' ')}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex flex-col gap-1 min-w-[180px]">
+                            <div className="flex items-center gap-2">
+                              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+                              <span className="text-xs font-medium text-slate-600 truncate max-w-[150px]" title={trip.pickupLocation}>
+                                {trip.pickupLocation}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <div className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0" />
+                              <span className="text-xs font-medium text-slate-600 truncate max-w-[150px]" title={trip.deliveryLocation}>
+                                {trip.deliveryLocation}
+                              </span>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2 text-xs font-medium text-slate-700">
+                              <Truck size={12} className="text-slate-400" />
+                              {trip.truckPlate}
+                            </div>
+                            <div className="flex items-center gap-2 text-xs font-medium text-slate-500">
+                              <User size={12} className="text-slate-400" />
+                              {trip.driverName}
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-xs font-medium text-slate-600">
+                            {formatDate(trip.plannedStartTime)}
+                          </div>
+                          <div className="text-[10px] text-slate-400">
+                            to {formatDate(trip.plannedEndTime)}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right">
+                          <div className="text-sm font-bold text-[#345E85]">{formatCurrency(trip.agreedPrice)}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right">
+                          <button
+                            onClick={() => setSelectedTrip(trip)}
+                            className="p-2 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-[#345E85] transition-colors"
+                          >
+                            <Eye size={18} />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </>
+      )}
+
+      {/* Trip Details Modal - Restyled */}
       <Dialog open={!!selectedTrip} onOpenChange={(open) => !open && setSelectedTrip(null)}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <FaRoute className="text-primary-600" />
-              Trip Details: {selectedTrip?.tripNumber}
+        <DialogContent className="max-w-2xl bg-white rounded-[32px] p-0 border-0 overflow-hidden shadow-2xl">
+          <DialogHeader className="p-8 pb-4 border-b border-slate-50">
+            <DialogTitle className="flex items-center gap-3">
+              <div className="h-10 w-10 bg-blue-50 rounded-xl flex items-center justify-center text-[#345E85]">
+                <Route size={20} />
+              </div>
+              <div>
+                <h2 className="text-xl font-black text-slate-900 tracking-tight">Trip Details</h2>
+                <p className="text-sm font-medium text-slate-400">{selectedTrip?.tripNumber}</p>
+              </div>
             </DialogTitle>
           </DialogHeader>
 
           {selectedTrip && (
-            <div className="space-y-6">
+            <div className="p-8 space-y-8">
               {/* Status Banner */}
-              <div className={`p-4 rounded-lg flex items-center justify-between ${getStatusColor(selectedTrip.status).replace('text-', 'bg-').replace('100', '50')}`}>
-                <div className="flex items-center gap-2">
-                  {getStatusIcon(selectedTrip.status)}
-                  <span className="font-semibold">{selectedTrip.status.replace('_', ' ')}</span>
+              <div className={cn(
+                "p-4 rounded-2xl flex items-center justify-between",
+                getStatusColor(selectedTrip.status).replace('text-', 'bg-').replace('100', '50/50')
+              )}>
+                <div className="flex items-center gap-3">
+                  <span className={cn(
+                    "h-8 w-8 rounded-full flex items-center justify-center bg-white shadow-sm",
+                    getStatusColor(selectedTrip.status).split(' ')[1] // Extract text color class for icon
+                  )}>
+                    {getStatusIcon(selectedTrip.status)}
+                  </span>
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-widest opacity-60">Status</p>
+                    <p className="font-bold text-sm tracking-tight">{selectedTrip.status.replace('_', ' ')}</p>
+                  </div>
                 </div>
-                <div className="text-sm font-medium">
-                  Load Ref: {selectedTrip.loadId}
+                <div className="text-right">
+                  <p className="text-[10px] font-black uppercase tracking-widest opacity-60">Load Ref</p>
+                  <p className="font-bold text-sm tracking-tight">{selectedTrip.loadId}</p>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 {/* Route Info */}
                 <div className="space-y-4">
-                  <h4 className="font-semibold text-gray-900 border-b pb-2">Route Information</h4>
-                  <div className="space-y-3">
-                    <div>
-                      <label className="text-xs text-gray-500 uppercase font-medium">From</label>
-                      <div className="flex items-center gap-2 text-gray-900">
-                        <FaMapMarkerAlt className="text-green-500" />
-                        {selectedTrip.pickupLocation}
-                      </div>
+                  <h4 className="text-[11px] font-black text-[#345E85] uppercase tracking-widest border-b border-slate-100 pb-2">Route Information</h4>
+                  <div className="space-y-6 relative pl-4 before:absolute before:left-[7px] before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-100">
+                    <div className="relative">
+                      <div className="absolute -left-4 top-1 h-3.5 w-3.5 bg-white border-2 border-emerald-500 rounded-full" />
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest opacity-70 mb-1">From</p>
+                      <p className="text-sm font-bold text-slate-900">{selectedTrip.pickupLocation}</p>
+                      <p className="text-xs font-medium text-slate-500 mt-0.5">{formatDate(selectedTrip.plannedStartTime)}</p>
                     </div>
-                    <div>
-                      <label className="text-xs text-gray-500 uppercase font-medium">To</label>
-                      <div className="flex items-center gap-2 text-gray-900">
-                        <FaMapMarkerAlt className="text-red-500" />
-                        {selectedTrip.deliveryLocation}
-                      </div>
-                    </div>
-                    <div>
-                      <label className="text-xs text-gray-500 uppercase font-medium">Schedule</label>
-                      <div className="text-sm text-gray-900 mt-1">
-                        <p>Start: {new Date(selectedTrip.plannedStartTime).toLocaleString()}</p>
-                        <p>End: {new Date(selectedTrip.plannedEndTime).toLocaleString()}</p>
-                      </div>
+                    <div className="relative">
+                      <div className="absolute -left-4 top-1 h-3.5 w-3.5 bg-white border-2 border-rose-500 rounded-full" />
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest opacity-70 mb-1">To</p>
+                      <p className="text-sm font-bold text-slate-900">{selectedTrip.deliveryLocation}</p>
+                      <p className="text-xs font-medium text-slate-500 mt-0.5">{formatDate(selectedTrip.plannedEndTime)}</p>
                     </div>
                   </div>
                 </div>
 
                 {/* Assignment Info */}
                 <div className="space-y-4">
-                  <h4 className="font-semibold text-gray-900 border-b pb-2">Assignment Details</h4>
+                  <h4 className="text-[11px] font-black text-[#345E85] uppercase tracking-widest border-b border-slate-100 pb-2">Assignment & Financials</h4>
                   <div className="space-y-3">
-                    <div>
-                      <label className="text-xs text-gray-500 uppercase font-medium">Truck</label>
-                      <div className="flex items-center gap-2 text-gray-900">
-                        <FaTruck className="text-gray-400" />
-                        {selectedTrip.truckPlate}
+                    <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100">
+                      <div className="h-10 w-10 bg-white rounded-lg flex items-center justify-center text-slate-400 shadow-sm">
+                        <Truck size={18} />
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Vehicle</p>
+                        <p className="text-sm font-bold text-slate-900">{selectedTrip.truckPlate}</p>
                       </div>
                     </div>
-                    <div>
-                      <label className="text-xs text-gray-500 uppercase font-medium">Driver</label>
-                      <div className="flex items-center gap-2 text-gray-900">
-                        <FaUser className="text-gray-400" />
-                        {selectedTrip.driverName}
+                    <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100">
+                      <div className="h-10 w-10 bg-white rounded-lg flex items-center justify-center text-slate-400 shadow-sm">
+                        <User size={18} />
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Driver</p>
+                        <p className="text-sm font-bold text-slate-900">{selectedTrip.driverName}</p>
                       </div>
                     </div>
-                    <div>
-                      <label className="text-xs text-gray-500 uppercase font-medium">Price</label>
-                      <div className="flex items-center gap-2 text-gray-900 font-bold text-lg">
-                        <FaMoneyBillWave className="text-green-600" />
-                        ${selectedTrip.agreedPrice.toLocaleString()}
+                    <div className="flex items-center gap-3 p-3 bg-emerald-50 rounded-xl border border-emerald-100">
+                      <div className="h-10 w-10 bg-white rounded-lg flex items-center justify-center text-emerald-500 shadow-sm">
+                        <DollarSign size={18} />
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-black uppercase tracking-widest text-emerald-600/70">Agreed Price</p>
+                        <p className="text-lg font-black text-emerald-700">{formatCurrency(selectedTrip.agreedPrice)}</p>
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* Action Buttons (Future Implementation) */}
-              <div className="flex justify-end gap-3 pt-4 border-t">
+              {/* Footer Actions */}
+              <div className="flex justify-end pt-6 border-t border-slate-50">
                 <button
                   onClick={() => setSelectedTrip(null)}
-                  className="px-4 py-2 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                  className="px-6 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold text-sm transition-colors"
                 >
-                  Close
+                  Close Details
                 </button>
               </div>
             </div>

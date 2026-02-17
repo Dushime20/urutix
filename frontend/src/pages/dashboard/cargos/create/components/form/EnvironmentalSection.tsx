@@ -20,26 +20,24 @@ export default function EnvironmentalSection({
 }: EnvironmentalSectionProps) {
   return (
     <div className="space-y-8">
-      {/* Header */}
-      <div className="flex items-center space-x-3 pb-4 border-b border-gray-200">
-        <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-teal-50 to-teal-100">
-          <FaThermometerHalf className="w-5 h-5 text-teal-600" />
+      <div className="flex items-center space-x-2 pb-2 border-b border-slate-100">
+        <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-blue-50">
+          <FaThermometerHalf className="w-4 h-4 text-[#345E85]" />
         </div>
         <div>
-          <h3 className="text-lg font-semibold text-gray-900">
+          <h3 className="text-base font-black text-[#0f172a] tracking-tight uppercase">
             Environmental Requirements
           </h3>
-          <p className="text-sm text-gray-600">
-            Configure temperature, humidity, and hazmat specifications
+          <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">
+            Temperature & Hazmat Configurations
           </p>
         </div>
       </div>
 
-      {/* Temperature Control Card */}
-      <div className="bg-gradient-to-br from-cyan-50 to-white rounded-xl border border-cyan-200 p-6 shadow-sm">
-        <div className="flex items-center space-x-2 mb-4">
-          <FaThermometerHalf className="w-4 h-4 text-cyan-600" />
-          <h4 className="font-medium text-gray-900">Temperature Control</h4>
+      <div className="bg-white rounded-xl border border-slate-100 p-4 shadow-none">
+        <div className="flex items-center space-x-2 mb-3">
+          <FaThermometerHalf className="w-3.5 h-3.5 text-[#345E85]" />
+          <h4 className="text-xs font-black text-[#345E85] uppercase tracking-widest">Temperature Regulation</h4>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -60,7 +58,7 @@ export default function EnvironmentalSection({
               }
               step="0.1"
               placeholder="Enter min temp"
-              className="transition-all focus:ring-2 focus:ring-cyan-500/20"
+              className="bg-slate-50 border-slate-200 transition-all focus:ring-2 focus:ring-blue-500/20 text-sm h-10"
             />
           </div>
 
@@ -81,17 +79,16 @@ export default function EnvironmentalSection({
               }
               step="0.1"
               placeholder="Enter max temp"
-              className="transition-all focus:ring-2 focus:ring-cyan-500/20"
+              className="bg-slate-50 border-slate-200 transition-all focus:ring-2 focus:ring-blue-500/20 text-sm h-10"
             />
           </div>
         </div>
       </div>
 
-      {/* Hazmat Information Card */}
-      <div className="bg-gradient-to-br from-red-50 to-white rounded-xl border border-red-200 p-6 shadow-sm">
-        <div className="flex items-center space-x-2 mb-4">
-          <FaExclamationTriangle className="w-4 h-4 text-red-600" />
-          <h4 className="font-medium text-gray-900">Hazardous Materials</h4>
+      <div className="bg-white rounded-xl border border-slate-100 p-4 shadow-none">
+        <div className="flex items-center space-x-2 mb-3">
+          <FaExclamationTriangle className="w-3.5 h-3.5 text-[#345E85]" />
+          <h4 className="text-xs font-black text-[#345E85] uppercase tracking-widest">Hazmat Compliance</h4>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -106,7 +103,7 @@ export default function EnvironmentalSection({
               value={formData.hazmatClass || ""}
               onChange={(e) => handleFieldChange("hazmatClass", e.target.value)}
               placeholder="e.g., UN 1.1"
-              className="transition-all focus:ring-2 focus:ring-red-500/20"
+              className="bg-slate-50 border-slate-200 transition-all focus:ring-2 focus:ring-blue-500/20 text-sm h-10"
             />
           </div>
 
@@ -123,20 +120,19 @@ export default function EnvironmentalSection({
                 handleFieldChange("hazmatNumber", e.target.value)
               }
               placeholder="e.g., UN1234"
-              className="transition-all focus:ring-2 focus:ring-red-500/20"
+              className="bg-slate-50 border-slate-200 transition-all focus:ring-2 focus:ring-blue-500/20 text-sm h-10"
             />
           </div>
         </div>
       </div>
 
-      {/* Humidity Control */}
-      <div className="bg-gradient-to-br from-blue-50 to-white rounded-xl border border-blue-200 p-6 shadow-sm">
-        <div className="flex items-center space-x-2 mb-4">
-          <FaTint className="w-4 h-4 text-blue-600" />
-          <h4 className="font-medium text-gray-900">Humidity Control</h4>
+      <div className="bg-white rounded-xl border border-slate-100 p-4 shadow-none">
+        <div className="flex items-center space-x-2 mb-3">
+          <FaTint className="w-3.5 h-3.5 text-[#345E85]" />
+          <h4 className="text-xs font-black text-[#345E85] uppercase tracking-widest">Relative Humidity</h4>
         </div>
 
-        <div className="flex items-center space-x-3 p-4 bg-white rounded-lg border border-blue-100 hover:bg-blue-50/50 transition-colors">
+        <div className="flex items-center space-x-3 p-4 bg-slate-50 rounded-xl border border-slate-100 hover:bg-slate-100 transition-colors">
           <input
             type="checkbox"
             id="requiresHumidityControl"
@@ -145,7 +141,7 @@ export default function EnvironmentalSection({
             onChange={(e) =>
               handleFieldChange("requiresHumidityControl", e.target.checked)
             }
-            className="h-4 w-4 rounded border-blue-300 text-blue-600 focus:ring-blue-500 focus:ring-offset-0"
+            className="h-4 w-4 rounded border-slate-300 text-[#345E85] focus:ring-[#345E85] focus:ring-offset-0"
           />
           <label
             htmlFor="requiresHumidityControl"

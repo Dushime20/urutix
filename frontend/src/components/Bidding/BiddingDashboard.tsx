@@ -1,18 +1,69 @@
 import React, { useState, useEffect } from 'react';
-import { Gavel, Users, TrendingUp, DollarSign, Heart, LayoutDashboard, PlusCircle, BarChart3, X, AlertCircle } from 'lucide-react';
+import {
+  Gavel,
+  Users,
+  TrendingUp,
+  DollarSign,
+  PlusCircle,
+  BarChart3,
+  X,
+  AlertCircle,
+  Shield,
+  Heart
+} from 'lucide-react';
 import { biddingAPI } from '../../services/biddingApi';
 import AuctionList from './AuctionList';
 import BidHistory from './BidHistory';
 import CreateAuction from './CreateAuction';
 import BidAnalytics from './BidAnalytics';
-
-import { formatCurrency } from '../../utils/formatNumber';
-
+import { cn } from '@/utils/cn';
 import { useLocation } from 'react-router-dom';
 
 interface BiddingDashboardProps {
   userRole: 'CARGO_OWNER' | 'TRUCK_OWNER';
 }
+
+const StatsCard = ({ title, value, icon: Icon, colorClass, secondaryColor }: any) => {
+  const displayValue = Array.isArray(value) ? value.length : value;
+
+  return (
+    <div className="flex flex-col items-center group">
+      <div className="relative w-44 h-44 rounded-full bg-white border-[10px] border-slate-50 flex flex-col items-center justify-center transition-all duration-500 hover:border-slate-100 hover:shadow-xl hover:shadow-slate-200/50">
+        <svg className="absolute inset-0 w-full h-full -rotate-90 scale-[1.05]">
+          <circle
+            cx="88"
+            cy="88"
+            r="80"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="3"
+            strokeDasharray="502"
+            strokeDashoffset="400"
+            className={cn("opacity-10 transition-all duration-1000 group-hover:stroke-dashoffset-[250]", secondaryColor)}
+          />
+        </svg>
+
+        <div className={cn("p-2.5 rounded-2xl mb-2 bg-slate-50 text-slate-400 group-hover:bg-white group-hover:text-inherit transition-all duration-500 shadow-sm", colorClass)}>
+          <Icon className="w-5 h-5" />
+        </div>
+
+        <div className="flex flex-col items-center px-4 w-full overflow-hidden">
+          <span className="text-2xl font-black text-[#0f172a] tracking-tight group-hover:scale-110 transition-transform duration-500 truncate w-full text-center">
+            {displayValue}
+          </span>
+        </div>
+
+        <div className="absolute inset-4 rounded-full border border-dashed border-slate-100 opacity-50 group-hover:rotate-90 transition-transform duration-1000" />
+      </div>
+
+      <div className="mt-5 text-center px-2">
+        <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] group-hover:text-[#345E85] transition-colors duration-300 line-clamp-1">
+          {title}
+        </p>
+      </div>
+    </div>
+  );
+};
 
 const BiddingDashboard: React.FC<BiddingDashboardProps> = ({ userRole }) => {
   const location = useLocation();
@@ -61,128 +112,120 @@ const BiddingDashboard: React.FC<BiddingDashboardProps> = ({ userRole }) => {
   };
 
   const renderStatsCards = () => (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-      <div className="bg-white rounded-xl border border-gray-200 p-6 hover:border-gray-300 transition-all duration-200 group relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-gray-50/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-        <div className="relative flex items-center justify-between">
-          <div>
-            <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">Total Auctions</p>
-            <h5 className="text-2xl font-black text-gray-900 leading-none">{stats.totalAuctions}</h5>
-          </div>
-          <div className="w-12 h-12 bg-gray-900 rounded-xl flex items-center justify-center group-hover:bg-black transition-colors shadow-lg shadow-gray-200">
-            <Gavel className="text-white" size={20} />
-          </div>
-        </div>
-      </div>
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 mb-12 place-items-center bg-white p-10 rounded-[3rem] border border-slate-100 shadow-sm">
+      <StatsCard
+        title="Active Offers"
+        value={stats.totalAuctions}
+        icon={Gavel}
+        colorClass="bg-blue-50 text-[#345E85]"
+        secondaryColor="text-[#345E85]"
+      />
+      <StatsCard
+        title="Live Bids"
+        value={Array.isArray(stats.activeBids) ? stats.activeBids.length : stats.activeBids}
+        icon={Users}
+        colorClass="bg-emerald-50 text-emerald-600"
+        secondaryColor="text-emerald-600"
+      />
+      <StatsCard
+        title="Total Volume"
+        value={(() => {
+          const rawValue = stats.totalValue;
+          let value = Array.isArray(rawValue) ? rawValue.reduce((a: any, b: any) => a + (parseFloat(b) || 0), 0) : rawValue;
+          if (typeof value !== 'number') value = parseFloat(value as string) || 0;
 
-      <div className="bg-white rounded-xl border border-gray-200 p-6 hover:border-gray-300 transition-all duration-200 group relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-gray-50/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-        <div className="relative flex items-center justify-between">
-          <div>
-            <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">Active Bids</p>
-            <h5 className="text-2xl font-black text-gray-900 leading-none">{stats.activeBids}</h5>
-          </div>
-          <div className="w-12 h-12 bg-gray-900 rounded-xl flex items-center justify-center group-hover:bg-black transition-colors shadow-lg shadow-gray-200">
-            <Users className="text-white" size={20} />
-          </div>
-        </div>
-      </div>
-
-      <div className="bg-white rounded-xl border border-gray-200 p-6 hover:border-gray-300 transition-all duration-200 group relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-gray-50/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-        <div className="relative flex items-center justify-between">
-          <div>
-            <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">Total Value</p>
-            <h5 className="text-2xl font-black text-gray-900 leading-none">
-              {(() => {
-                const value = stats.totalValue;
-                if (value >= 1000000) return `$${(value / 1000000).toFixed(1)}M`;
-                if (value >= 1000) return `$${(value / 1000).toFixed(1)}K`;
-                return `$${value.toLocaleString()}`;
-              })()}
-            </h5>
-          </div>
-          <div className="w-12 h-12 bg-gray-900 rounded-xl flex items-center justify-center group-hover:bg-black transition-colors shadow-lg shadow-gray-200">
-            <DollarSign className="text-white" size={20} />
-          </div>
-        </div>
-      </div>
-
-      <div className="bg-white rounded-xl border border-gray-200 p-6 hover:border-gray-300 transition-all duration-200 group relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-gray-50/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-        <div className="relative flex items-center justify-between">
-          <div>
-            <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">Success Rate</p>
-            <h5 className="text-2xl font-black text-gray-900 leading-none">{stats.successRate}%</h5>
-          </div>
-          <div className="w-12 h-12 bg-gray-900 rounded-xl flex items-center justify-center group-hover:bg-black transition-colors shadow-lg shadow-gray-200">
-            <TrendingUp className="text-white" size={20} />
-          </div>
-        </div>
-      </div>
+          if (value >= 1000000) return `${(value / 1000000).toFixed(1)}M`;
+          if (value >= 1000) return `${(value / 1000).toFixed(1)}K`;
+          return value.toLocaleString();
+        })()}
+        icon={DollarSign}
+        colorClass="bg-amber-50 text-amber-600"
+        secondaryColor="text-amber-600"
+      />
+      <StatsCard
+        title="Win Rate"
+        value={(() => {
+          const rate = Array.isArray(stats.successRate) ? stats.successRate[0] : stats.successRate;
+          return `${rate}%`;
+        })()}
+        icon={TrendingUp}
+        colorClass="bg-purple-50 text-purple-600"
+        secondaryColor="text-purple-600"
+      />
     </div>
   );
 
   const renderTabs = () => (
-    <div className="mb-6">
-      <div className="bg-gray-50/50 p-1 rounded-xl border border-gray-100 mb-6">
-        <nav className="flex gap-1 overflow-x-auto scrollbar-hide">
+    <div className="space-y-8">
+      <div className="flex flex-col md:flex-row gap-4 justify-between items-center bg-white p-2 rounded-[2rem] border border-slate-100 shadow-sm">
+        <nav className="flex gap-1 p-1">
           <button
             onClick={() => setActiveTab('auctions')}
-            className={`px-4 py-2 rounded-lg text-xs font-black flex items-center gap-2 transition-all whitespace-nowrap min-h-[40px] ${activeTab === 'auctions'
-              ? 'bg-white text-gray-900 shadow-sm ring-1 ring-black/5'
-              : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'
-              }`}
+            className={cn(
+              "px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 transition-all",
+              activeTab === 'auctions'
+                ? "bg-[#345E85] text-white shadow-lg shadow-blue-900/10"
+                : "text-slate-400 hover:text-slate-600 hover:bg-slate-50"
+            )}
           >
             <Gavel size={14} />
-            Active Auctions
+            Live Bidding
           </button>
           <button
             onClick={() => setActiveTab('bids')}
-            className={`px-4 py-2 rounded-lg text-xs font-black flex items-center gap-2 transition-all whitespace-nowrap min-h-[40px] ${activeTab === 'bids'
-              ? 'bg-white text-gray-900 shadow-sm ring-1 ring-black/5'
-              : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'
-              }`}
+            className={cn(
+              "px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 transition-all",
+              activeTab === 'bids'
+                ? "bg-[#345E85] text-white shadow-lg shadow-blue-900/10"
+                : "text-slate-400 hover:text-slate-600 hover:bg-slate-50"
+            )}
           >
             <Users size={14} />
-            My Bids
+            My Offers
           </button>
           <button
             onClick={() => setActiveTab('watched')}
-            className={`px-4 py-2 rounded-lg text-xs font-black flex items-center gap-2 transition-all whitespace-nowrap min-h-[40px] ${activeTab === 'watched'
-              ? 'bg-white text-gray-900 shadow-sm ring-1 ring-black/5'
-              : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'
-              }`}
+            className={cn(
+              "px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 transition-all",
+              activeTab === 'watched'
+                ? "bg-[#345E85] text-white shadow-lg shadow-blue-900/10"
+                : "text-slate-400 hover:text-slate-600 hover:bg-slate-50"
+            )}
           >
             <Heart size={14} />
-            Watched
+            Watchlist
           </button>
-          {userRole === 'CARGO_OWNER' && (
-            <button
-              onClick={() => setActiveTab('create')}
-              className={`px-4 py-2 rounded-lg text-xs font-black flex items-center gap-2 transition-all whitespace-nowrap min-h-[40px] ${activeTab === 'create'
-                ? 'bg-white text-gray-900 shadow-sm ring-1 ring-black/5'
-                : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'
-                }`}
-            >
-              <PlusCircle size={14} />
-              Create Auction
-            </button>
-          )}
           <button
             onClick={() => setActiveTab('analytics')}
-            className={`px-4 py-2 rounded-lg text-xs font-black flex items-center gap-2 transition-all whitespace-nowrap min-h-[40px] ${activeTab === 'analytics'
-              ? 'bg-white text-gray-900 shadow-sm ring-1 ring-black/5'
-              : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'
-              }`}
+            className={cn(
+              "px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 transition-all",
+              activeTab === 'analytics'
+                ? "bg-[#345E85] text-white shadow-lg shadow-blue-900/10"
+                : "text-slate-400 hover:text-slate-600 hover:bg-slate-50"
+            )}
           >
             <BarChart3 size={14} />
-            Analytics
+            Performance
           </button>
         </nav>
+
+        {userRole === 'CARGO_OWNER' && (
+          <div className="pr-2">
+            <button
+              onClick={() => setActiveTab('create')}
+              className={cn(
+                "px-8 py-3 bg-emerald-500 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-500/10 flex items-center gap-2",
+                activeTab === 'create' && "bg-slate-900 shadow-slate-900/10"
+              )}
+            >
+              <PlusCircle size={14} />
+              Start Auction
+            </button>
+          </div>
+        )}
       </div>
 
-      <div className="mt-3 sm:mt-4">
+      <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-sm min-h-[400px]">
         {activeTab === 'auctions' && <AuctionList userRole={userRole} />}
         {activeTab === 'bids' && <BidHistory userRole={userRole} />}
         {activeTab === 'watched' && <AuctionList userRole={userRole} showWatchedOnly={true} />}
@@ -200,36 +243,22 @@ const BiddingDashboard: React.FC<BiddingDashboardProps> = ({ userRole }) => {
       </div>
     );
   }
-
   return (
-    <div className="bidding-dashboard">
-      {/* Header */}
-      <div className="bg-white rounded-2xl border border-gray-200 p-6 mb-8 relative overflow-hidden group">
-        <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:scale-110 transition-transform">
-          <Gavel size={120} className="text-gray-900" />
-        </div>
-        <div className="relative flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 bg-gray-900 rounded-2xl flex items-center justify-center shrink-0 shadow-xl shadow-gray-200">
-              <LayoutDashboard className="text-white" size={28} />
+    <div className="space-y-12 max-w-[1600px] mx-auto">
+      {/* Header - Premium Enlite Prime Style */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+        <div className="space-y-2">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center">
+              <Shield className="w-6 h-6 text-[#345E85]" />
             </div>
-            <div>
-              <h2 className="text-2xl font-black text-gray-900 tracking-tight italic uppercase">
-                Bidding <span className="text-gray-400 font-light">Dashboard</span>
-              </h2>
-              <p className="text-xs text-gray-500 font-bold mt-0.5 uppercase tracking-wider">
-                {userRole === 'CARGO_OWNER'
-                  ? 'Manage your cargo auctions and review bids'
-                  : 'Find loads to bid on and track your activity'
-                }
-              </p>
-            </div>
+            <h1 className="text-4xl font-black text-[#0f172a] tracking-tight">Bidding & Negotiations</h1>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="px-4 py-1.5 bg-gray-100 text-gray-900 rounded-xl text-[10px] font-black uppercase tracking-widest ring-1 ring-gray-200">
-              {userRole === 'CARGO_OWNER' ? 'Cargo Owner' : 'Truck Owner'}
-            </span>
-          </div>
+          <p className="text-xs font-bold text-slate-400 uppercase tracking-widest max-w-xl">
+            {userRole === 'CARGO_OWNER'
+              ? 'Real-time auction management and offer evaluation'
+              : 'Strategic bid placement and opportunities discovery'}
+          </p>
         </div>
       </div>
 

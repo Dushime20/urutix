@@ -290,21 +290,21 @@ export const CargoTable: React.FC<CargoTableProps> = ({
     switch (status?.toLowerCase()) {
       case 'available':
       case 'published':
-        return `${base} bg - emerald - 50 text - emerald - 700 border - emerald - 200 / 60 shadow - sm shadow - emerald - 500 / 10`;
+        return `${base} bg-emerald-50 text-emerald-700 border-emerald-200/60 shadow-sm shadow-emerald-500/10`;
       case 'in_transit':
-        return `${base} bg - blue - 50 text - blue - 700 border - blue - 200 / 60 shadow - sm shadow - blue - 500 / 10 animate - pulse`;
+        return `${base} bg-blue-50 text-blue-700 border-blue-200/60 shadow-sm shadow-blue-500/10 animate-pulse`;
       case 'delivered':
       case 'completed':
-        return `${base} bg - slate - 100 text - slate - 600 border - slate - 200 shadow - sm`;
+        return `${base} bg-slate-100 text-slate-600 border-slate-200 shadow-sm`;
       case 'assigned':
-        return `${base} bg - purple - 50 text - purple - 700 border - purple - 200 / 60 shadow - sm shadow - purple - 500 / 10`;
+        return `${base} bg-purple-50 text-purple-700 border-purple-200/60 shadow-sm shadow-purple-500/10`;
       case 'cancelled':
-        return `${base} bg - red - 50 text - red - 700 border - red - 200 / 60 shadow - sm shadow - red - 500 / 10`;
+        return `${base} bg-red-50 text-red-700 border-red-200/60 shadow-sm shadow-red-500/10`;
       case 'draft':
-        return `${base} bg - gray - 50 text - gray - 600 border - gray - 200 border - dashed`;
+        return `${base} bg-gray-50 text-gray-600 border-gray-200 border-dashed`;
 
       default:
-        return `${base} bg - gray - 50 text - gray - 600 border - gray - 200`;
+        return `${base} bg-gray-50 text-gray-600 border-gray-200`;
     }
   };
 

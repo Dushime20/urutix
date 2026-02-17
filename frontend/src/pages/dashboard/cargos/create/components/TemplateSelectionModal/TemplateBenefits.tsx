@@ -26,13 +26,13 @@ const TemplateBenefits: React.FC = () => {
   ];
 
   return (
-    <div className="mt-4 bg-gradient-to-r from-teal-50 to-teal-100 rounded-xl p-4 border border-teal-100">
-      <div className="text-center mb-4">
-        <h4 className="text-sm font-semibold text-teal-900 mb-1">
-          Why Use Templates?
+    <div className="mt-8 bg-slate-50 rounded-[2rem] p-8 border border-slate-100">
+      <div className="text-center mb-8">
+        <h4 className="text-lg font-black text-[#0f172a] tracking-tight mb-2">
+          Engineered for Efficiency
         </h4>
-        <p className="text-teal-700 text-xs">
-          Streamline your shipping process with our pre-configured templates
+        <p className="text-slate-500 text-xs font-bold uppercase tracking-widest">
+          Why professional logistics teams use templates
         </p>
       </div>
 
@@ -42,29 +42,29 @@ const TemplateBenefits: React.FC = () => {
           return (
             <div
               key={index}
-              className="text-center group hover:transform hover:-translate-y-1 transition-all duration-300"
+              className="text-center group"
             >
-                                              <div className="bg-white rounded-lg p-3 shadow-sm hover:shadow-md transition-shadow duration-300 border border-teal-100">
-                  <div className="w-8 h-8 bg-gradient-to-br from-teal-500 to-teal-600 rounded-lg flex items-center justify-center mx-auto mb-2 group-hover:scale-110 transition-transform duration-300">
-                    <Icon className="text-white w-4 h-4" />
-                  </div>
-                  <h5 className="font-medium text-teal-900 mb-1 text-xs">
-                    {benefit.title}
-                  </h5>
-                  <p className="text-xs text-teal-700 leading-relaxed">
-                    {benefit.description}
-                  </p>
+              <div className="bg-white rounded-3xl p-6 shadow-sm hover:shadow-lg transition-all border border-slate-100 h-full">
+                <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:bg-[#345E85] transition-colors">
+                  <Icon className="text-[#345E85] group-hover:text-white w-5 h-5 transition-transform group-hover:scale-110" />
                 </div>
+                <h5 className="text-sm font-black text-[#0f172a] tracking-tight mb-2">
+                  {benefit.title}
+                </h5>
+                <p className="text-xs text-slate-500 font-medium leading-relaxed">
+                  {benefit.description}
+                </p>
+              </div>
             </div>
           );
         })}
       </div>
 
       {/* Additional Info */}
-      <div className="mt-4 text-center">
-        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-teal-100 rounded-full">
-          <span className="text-teal-600 text-xs font-medium">
-            💡 Pro Tip: Templates can be customized after selection
+      <div className="mt-8 text-center">
+        <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 rounded-2xl border border-blue-100">
+          <span className="text-[#345E85] text-[10px] font-black uppercase tracking-widest">
+            💡 Pro Tip: Customization available after profile selection
           </span>
         </div>
       </div>

@@ -2,7 +2,6 @@ import React from "react";
 import { FaCheck, FaWeight, FaDollarSign, FaClock } from "react-icons/fa";
 import type { CargoFormSchemaType } from "@/pages/dashboard/cargos/create/components/form/cargoFormSchema";
 import { cn } from "@/utils/cn";
-import SmartButton from "@/components/shared/button";
 
 type CargoTemplate = Partial<CargoFormSchemaType> & {
   id: string;
@@ -21,15 +20,15 @@ const TemplateCard: React.FC<TemplateCardProps> = ({ template, onSelect }) => {
   const getUrgencyColor = (urgency: string) => {
     switch (urgency) {
       case "CRITICAL":
-        return "text-red-600 bg-red-50 border-red-200";
+        return "text-red-700 bg-red-50 border-red-100";
       case "HIGH":
-        return "text-orange-600 bg-orange-50 border-orange-200";
+        return "text-orange-700 bg-orange-50 border-orange-100";
       case "NORMAL":
-        return "text-blue-600 bg-blue-50 border-blue-200";
+        return "text-[#345E85] bg-blue-50 border-blue-100";
       case "LOW":
-        return "text-green-600 bg-green-50 border-green-200";
+        return "text-emerald-700 bg-emerald-50 border-emerald-100";
       default:
-        return "text-gray-600 bg-gray-50 border-gray-200";
+        return "text-slate-600 bg-slate-50 border-slate-100";
     }
   };
 
@@ -51,21 +50,20 @@ const TemplateCard: React.FC<TemplateCardProps> = ({ template, onSelect }) => {
   return (
     <div
       className={cn(
-        "group relative bg-white border border-gray-200 rounded-xl p-3.5 hover:border-teal-400 hover:shadow-lg",
+        "group relative bg-white border border-slate-100 rounded-[2rem] p-5 hover:border-[#345E85]/20 hover:shadow-xl",
         "transition-all duration-300 cursor-pointer transform hover:-translate-y-1",
         "flex flex-col"
       )}
     >
-      {/* Header */}
-      <div className="flex flex-1 items-start mb-4">
-        <div className="bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg p-2.5 mr-2.5 group-hover:from-teal-500 group-hover:to-teal-600 transition-all duration-300">
-          <Icon className="text-gray-600 group-hover:text-white w-4 h-4" />
+      <div className="flex flex-1 items-start mb-6">
+        <div className="bg-blue-50 rounded-2xl p-3 mr-4 group-hover:bg-[#345E85] transition-all duration-300">
+          <Icon className="text-[#345E85] group-hover:text-white w-5 h-5" />
         </div>
         <div className="flex-1">
-          <h3 className="text-sm font-semibold text-gray-900 mb-1 group-hover:text-teal-600 transition-colors">
+          <h3 className="text-lg font-black text-[#0f172a] tracking-tight mb-1 group-hover:text-[#345E85] transition-colors">
             {template.title}
           </h3>
-          <p className="text-gray-500 text-xs leading-relaxed">
+          <p className="text-slate-500 text-xs font-medium uppercase tracking-wider leading-relaxed">
             {template.description}
           </p>
         </div>
@@ -138,13 +136,16 @@ const TemplateCard: React.FC<TemplateCardProps> = ({ template, onSelect }) => {
       </div>
 
       {/* Action Button */}
-      <SmartButton
-        className="flex gap-1.5 text-xs py-1.5 group-hover:from-teal-600 group-hover:to-teal-700 hover:!from-teal-700 hover:!to-teal-800"
-        onClick={() => onSelect(template)}
+      <button
+        className="w-full flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-[0.15em] py-3 rounded-2xl border border-slate-100 bg-slate-50 text-slate-400 transition-all group-hover:bg-[#345E85] group-hover:text-white group-hover:border-[#345E85] group-hover:shadow-lg group-hover:shadow-blue-900/20"
+        onClick={(e) => {
+          e.stopPropagation();
+          onSelect(template);
+        }}
       >
         <FaCheck className="w-3.5 h-3.5" />
-        Use This Template
-      </SmartButton>
+        USE TEMPLATE
+      </button>
       {/* <button className="w-full px-4 py-2.5 bg-gradient-to-r from-teal-600 to-teal-700 text-white rounded-lg hover:from-teal-700 hover:to-teal-800 transition-all duration-200 font-medium flex items-center justify-center gap-2 group-hover:shadow-md transform group-hover:scale-105 text-sm"></button> */}
 
       {/* Hover Effect Overlay */}

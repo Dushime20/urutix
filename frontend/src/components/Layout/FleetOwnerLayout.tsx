@@ -64,7 +64,8 @@ const FleetOwnerLayout: React.FC = () => {
     location.pathname === '/dashboard/fleet/' ||
     location.pathname === '/dashboard/fleet/bids' ||
     location.pathname === '/dashboard/fleet/smart-bookings' ||
-    location.pathname === '/dashboard/fleet/maintenance';
+    location.pathname === '/dashboard/fleet/maintenance' ||
+    location.pathname === '/dashboard/fleet/analytics';
 
   return (
     <>

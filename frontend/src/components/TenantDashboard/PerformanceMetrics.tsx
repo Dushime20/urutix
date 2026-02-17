@@ -1,7 +1,6 @@
-import React from 'react';
 import {
   ArrowUp, ArrowDown, Minus,
-  Trophy, Target, BarChart3,
+  Trophy, Target,
   ShieldCheck, Zap, Activity
 } from 'lucide-react';
 
@@ -135,18 +134,18 @@ const PerformanceMetrics: React.FC<PerformanceMetricsProps> = ({
   };
 
   const getCategoryIcon = (category: string) => {
-    const iconClass = "w-4 h-4";
+    const iconClass = "w-4 h-4 text-[#1e40af]";
     switch (category) {
       case 'revenue':
-        return <Trophy className={`${iconClass} text-amber-500`} />;
+        return <Trophy className={iconClass} />;
       case 'efficiency':
-        return <Zap className={`${iconClass} text-indigo-500`} />;
+        return <Zap className={iconClass} />;
       case 'quality':
-        return <Target className={`${iconClass} text-emerald-500`} />;
+        return <Target className={iconClass} />;
       case 'safety':
-        return <ShieldCheck className={`${iconClass} text-rose-500`} />;
+        return <ShieldCheck className={iconClass} />;
       default:
-        return <Activity className={`${iconClass} text-slate-500`} />;
+        return <Activity className={iconClass} />;
     }
   };
 
@@ -167,10 +166,10 @@ const PerformanceMetrics: React.FC<PerformanceMetricsProps> = ({
     <div className={`space-y-8 ${className}`}>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {metrics.map((metric) => (
-          <div key={metric.name} className="bg-white rounded-[24px] p-6 border border-gray-100 shadow-sm hover:shadow-md transition-shadow duration-300">
+          <div key={metric.name} className="bg-white rounded-[32px] p-6 border border-gray-100 shadow-sm hover:shadow-xl hover:shadow-indigo-500/5 transition-all duration-300">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center space-x-2">
-                <div className="p-2 bg-gray-50 rounded-xl">
+                <div className="p-2.5 bg-[#f0f7ff] rounded-xl">
                   {getCategoryIcon(metric.category)}
                 </div>
                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{metric.category}</span>
@@ -192,7 +191,7 @@ const PerformanceMetrics: React.FC<PerformanceMetricsProps> = ({
                 <div className="flex items-center space-x-1 mb-1 ml-1">
                   {getTrendIcon(metric.trend)}
                   <span className={`text-[10px] font-bold ${metric.trend === 'up' ? 'text-emerald-600' :
-                      metric.trend === 'down' ? 'text-rose-600' : 'text-slate-500'
+                    metric.trend === 'down' ? 'text-rose-600' : 'text-slate-500'
                     }`}>
                     {Math.abs(metric.value - metric.previous).toFixed(1)}
                   </span>

@@ -1,6 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { FaGift, FaCheckCircle, FaClock, FaTimesCircle, FaCoins, FaCreditCard, FaStar } from 'react-icons/fa';
+import {
+  Gift,
+  CheckCircle,
+  Clock,
+  XCircle,
+  Coins,
+  CreditCard,
+  Star,
+  TrendingUp,
+  Award,
+  Zap,
+  Ticket
+} from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import StatCard from '../components/EnliteUI/Cards/StatCard';
+import DataCard from '../components/EnliteUI/Cards/DataCard';
 
 interface Reward {
   id: string;
@@ -43,19 +57,17 @@ const UserRewards: React.FC = () => {
     try {
       const response = await fetch(`/api/rewards/user/${user?.id}`);
       if (!response.ok) {
-        console.error('Failed to load rewards:', response.status);
         setRewards([]);
         return;
       }
       const data = await response.json();
-      // Handle different response structures
-      const rewardsArray = Array.isArray(data) 
-        ? data 
-        : Array.isArray(data?.data) 
-        ? data.data 
-        : Array.isArray(data?.rewards)
-        ? data.rewards
-        : [];
+      const rewardsArray = Array.isArray(data)
+        ? data
+        : Array.isArray(data?.data)
+          ? data.data
+          : Array.isArray(data?.rewards)
+            ? data.rewards
+            : [];
       setRewards(rewardsArray);
     } catch (error) {
       console.error('Error loading rewards:', error);
@@ -67,7 +79,6 @@ const UserRewards: React.FC = () => {
     try {
       const response = await fetch(`/api/rewards/user/${user?.id}/stats`);
       if (!response.ok) {
-        console.error('Failed to load reward stats:', response.status);
         setStats({
           totalRewards: 0,
           activeRewards: 0,
@@ -79,7 +90,6 @@ const UserRewards: React.FC = () => {
         return;
       }
       const data = await response.json();
-      // Ensure all properties have default values
       setStats({
         totalRewards: data?.totalRewards || 0,
         activeRewards: data?.activeRewards || 0,
@@ -89,7 +99,6 @@ const UserRewards: React.FC = () => {
         activeValue: data?.activeValue || 0,
       });
     } catch (error) {
-      console.error('Error loading reward stats:', error);
       setStats({
         totalRewards: 0,
         activeRewards: 0,
@@ -142,197 +151,167 @@ const UserRewards: React.FC = () => {
   const getRewardIcon = (type: string) => {
     switch (type) {
       case 'transaction_bonus':
-        return <FaCreditCard className="text-blue-500" />;
+        return <CreditCard className="text-blue-500" size={20} />;
       case 'volume_bonus':
-        return <FaCoins className="text-yellow-500" />;
+        return <Coins className="text-amber-500" size={20} />;
       case 'loyalty_points':
-        return <FaStar className="text-purple-500" />;
+        return <Star className="text-purple-500" size={20} />;
       case 'cashback':
-        return <FaGift className="text-green-500" />;
+        return <Gift className="text-emerald-500" size={20} />;
       case 'discount':
-        return <FaCheckCircle className="text-orange-500" />;
+        return <Ticket className="text-orange-500" size={20} />;
       case 'premium_features':
-        return <FaStar className="text-indigo-500" />;
+        return <Zap className="text-indigo-500" size={20} />;
       default:
-        return <FaGift className="text-gray-500" />;
+        return <Award className="text-slate-500" size={20} />;
     }
   };
 
   const getRewardTypeLabel = (type: string) => {
-    switch (type) {
-      case 'transaction_bonus':
-        return 'Transaction Bonus';
-      case 'volume_bonus':
-        return 'Volume Bonus';
-      case 'loyalty_points':
-        return 'Loyalty Points';
-      case 'cashback':
-        return 'Cashback';
-      case 'discount':
-        return 'Discount';
-      case 'premium_features':
-        return 'Premium Features';
-      default:
-        return type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
-    }
+    return type.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
   };
 
-  const getStatusIcon = (status: string) => {
+  const getStatusColor = (status: string) => {
     switch (status) {
-      case 'pending':
-        return <FaClock className="text-yellow-500" />;
-      case 'active':
-        return <FaCheckCircle className="text-green-500" />;
-      case 'redeemed':
-        return <FaCheckCircle className="text-blue-500" />;
-      case 'expired':
-        return <FaTimesCircle className="text-red-500" />;
-      default:
-        return <FaClock className="text-gray-500" />;
-    }
-  };
-
-  const getStatusLabel = (status: string) => {
-    switch (status) {
-      case 'pending':
-        return 'Pending';
-      case 'active':
-        return 'Active';
-      case 'redeemed':
-        return 'Redeemed';
-      case 'expired':
-        return 'Expired';
-      default:
-        return status;
+      case 'pending': return 'bg-amber-50 text-amber-700 border border-amber-200';
+      case 'active': return 'bg-emerald-50 text-emerald-700 border border-emerald-200';
+      case 'redeemed': return 'bg-blue-50 text-blue-700 border border-blue-200';
+      case 'expired': return 'bg-rose-50 text-rose-700 border border-rose-200';
+      default: return 'bg-slate-50 text-slate-600 border border-slate-200';
     }
   };
 
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#345E85]"></div>
       </div>
     );
   }
 
   return (
-    <div className="p-6">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-4">Rewards & Benefits</h1>
-        <p className="text-gray-600">View and manage your platform rewards and benefits</p>
+    <div className="space-y-8">
+      {/* Header handled by parent or just internal spacing */}
+      <div>
+        <h1 className="text-3xl font-black text-slate-900 tracking-tight mb-2">Rewards & Benefits</h1>
+        <p className="text-slate-500 font-medium">Unlock exclusive perks, manage bonuses, and track your loyalty progress.</p>
       </div>
 
-      {/* Reward Statistics */}
+      {/* Stats Matrix */}
       {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center mb-4">
-              <FaGift className="text-blue-500 text-2xl mr-3" />
-              <h3 className="text-lg font-semibold">Total Rewards</h3>
-            </div>
-            <div className="text-3xl font-bold text-blue-600 mb-2">
-              {stats.totalRewards}
-            </div>
-            <p className="text-sm text-gray-600">Total value: {(stats.totalValue || 0).toLocaleString()} KES</p>
-          </div>
-
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center mb-4">
-              <FaCheckCircle className="text-green-500 text-2xl mr-3" />
-              <h3 className="text-lg font-semibold">Active Rewards</h3>
-            </div>
-            <div className="text-3xl font-bold text-green-600 mb-2">
-              {stats.activeRewards}
-            </div>
-            <p className="text-sm text-gray-600">Available value: {(stats.activeValue || 0).toLocaleString()} KES</p>
-          </div>
-
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center mb-4">
-              <FaCoins className="text-yellow-500 text-2xl mr-3" />
-              <h3 className="text-lg font-semibold">Redeemed</h3>
-            </div>
-            <div className="text-3xl font-bold text-yellow-600 mb-2">
-              {stats.redeemedRewards}
-            </div>
-            <p className="text-sm text-gray-600">Successfully redeemed rewards</p>
-          </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <StatCard
+            title="Total Rewards"
+            value={stats.totalRewards}
+            icon={<Award />}
+            color="primary"
+            subtitle={`Total Value: ${(stats.totalValue || 0).toLocaleString()} KES`}
+          />
+          <StatCard
+            title="Active Rewards"
+            value={stats.activeRewards}
+            icon={<CheckCircle />}
+            color="success"
+            subtitle={`Available: ${(stats.activeValue || 0).toLocaleString()} KES`}
+          />
+          <StatCard
+            title="Redeemed"
+            value={stats.redeemedRewards}
+            icon={<Coins />}
+            color="accent"
+            subtitle="Successfully Claimed"
+          />
         </div>
       )}
 
       {/* Rewards List */}
-      <div className="bg-white rounded-lg shadow">
-        <div className="p-6 border-b">
-          <h2 className="text-xl font-semibold">Your Rewards</h2>
-        </div>
+      <DataCard
+        title="Your Rewards"
+        icon={<Gift />}
+        headerColor="primary"
+        action={
+          <button className="text-[10px] font-black uppercase tracking-wider text-[#345E85] hover:underline">
+            View History
+          </button>
+        }
+      >
         <div className="p-6">
           {rewards.length === 0 ? (
-            <p className="text-gray-500 text-center py-8">No rewards available</p>
+            <div className="text-center py-12">
+              <div className="h-16 w-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Gift className="text-slate-300" size={32} />
+              </div>
+              <p className="text-slate-500 font-medium">No rewards available yet.</p>
+              <p className="text-xs text-slate-400 mt-1">Keep using the platform to earn more!</p>
+            </div>
           ) : (
             <div className="space-y-4">
               {rewards.map((reward) => (
-                <div key={reward.id} className="border border-gray-200 rounded-lg p-4">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center mb-2">
-                        {getRewardIcon(reward.type)}
-                        <span className="ml-2 font-medium text-gray-900">
-                          {getRewardTypeLabel(reward.type)}
-                        </span>
-                        <span className="ml-2 text-sm text-gray-500">
-                          {(reward.amount || 0).toLocaleString()} {reward.currency || 'KES'}
+                <div
+                  key={reward.id}
+                  className="group relative bg-white border border-slate-100 rounded-2xl p-5 hover:shadow-md transition-all flex flex-col md:flex-row md:items-center justify-between gap-4"
+                >
+                  <div className="flex items-start gap-4">
+                    <div className="h-12 w-12 rounded-xl bg-slate-50 flex items-center justify-center shrink-0 group-hover:bg-blue-50 transition-colors">
+                      {getRewardIcon(reward.type)}
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="font-bold text-slate-900">{getRewardTypeLabel(reward.type)}</span>
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${getStatusColor(reward.status)}`}>
+                          {reward.status}
                         </span>
                       </div>
-
-                      <p className="text-gray-700 mb-2">{reward.description}</p>
-
-                      <div className="flex items-center text-sm text-gray-600 mb-2">
-                        {getStatusIcon(reward.status)}
-                        <span className="ml-1">{getStatusLabel(reward.status)}</span>
-                        <span className="mx-2">•</span>
-                        <span>Created: {new Date(reward.createdAt).toLocaleDateString()}</span>
-                        {reward.redeemedAt && (
+                      <p className="text-sm text-slate-600 mb-1">{reward.description}</p>
+                      <div className="flex items-center gap-3 text-xs text-slate-400 font-medium">
+                        <span className="flex items-center gap-1">
+                          <TrendingUp size={12} />
+                          {(reward.amount || 0).toLocaleString()} {reward.currency || 'KES'}
+                        </span>
+                        <span>•</span>
+                        <span>{new Date(reward.createdAt).toLocaleDateString()}</span>
+                        {reward.validUntil && (
                           <>
-                            <span className="mx-2">•</span>
-                            <span>Redeemed: {new Date(reward.redeemedAt).toLocaleDateString()}</span>
+                            <span>•</span>
+                            <span className="text-amber-500">Exp: {new Date(reward.validUntil).toLocaleDateString()}</span>
                           </>
                         )}
                       </div>
-
-                      {reward.validUntil && (
-                        <div className="text-xs text-gray-500">
-                          Valid until: {new Date(reward.validUntil).toLocaleDateString()}
-                        </div>
-                      )}
                     </div>
+                  </div>
 
-                    <div className="ml-4">
-                      {reward.status === 'pending' && (
-                        <button
-                          onClick={() => activateReward(reward.id)}
-                          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                        >
-                          Activate
-                        </button>
-                      )}
-                      {reward.status === 'active' && (
-                        <button
-                          onClick={() => redeemReward(reward.id)}
-                          className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 text-sm"
-                        >
-                          Redeem
-                        </button>
-                      )}
-                    </div>
+                  <div className="flex items-center gap-3 self-end md:self-center">
+                    {reward.status === 'pending' && (
+                      <button
+                        onClick={() => activateReward(reward.id)}
+                        className="px-5 py-2 bg-[#345E85] text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-[#2a4d6d] transition-colors shadow-sm"
+                      >
+                        Activate
+                      </button>
+                    )}
+                    {reward.status === 'active' && (
+                      <button
+                        onClick={() => redeemReward(reward.id)}
+                        className="px-5 py-2 bg-emerald-500 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-600 transition-colors shadow-sm flex items-center gap-2"
+                      >
+                        <CheckCircle size={14} />
+                        Redeem
+                      </button>
+                    )}
+                    {reward.status === 'redeemed' && (
+                      <span className="flex items-center gap-1.5 text-xs font-bold text-slate-400 uppercase tracking-wider">
+                        <CheckCircle size={14} /> Claimed
+                      </span>
+                    )}
                   </div>
                 </div>
               ))}
             </div>
           )}
         </div>
-      </div>
+      </DataCard>
     </div>
   );
 };
 
-export default UserRewards; 
+export default UserRewards;

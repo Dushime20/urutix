@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Gavel, Loader2, AlertCircle, CheckCircle2, X, PlusCircle, Info, Calendar, DollarSign, Settings, Truck } from 'lucide-react';
+import { Gavel, Loader2, AlertCircle, CheckCircle2, X, PlusCircle, Info, Calendar, DollarSign, Settings, Truck, ArrowRight } from 'lucide-react';
 import { loadsAPI } from '../../services/load';
 import { biddingAPI } from '../../services/biddingApi';
 import { useAuth } from '../../contexts/AuthContext';
@@ -44,7 +44,7 @@ const CreateAuction: React.FC = () => {
     setLoadingCargos(true);
     try {
       const response = await loadsAPI.getAll();
-      
+
       // Fetch existing auctions to filter out cargos that are already being auctioned
       let activeAuctionLoadIds = new Set<string>();
       try {
@@ -84,16 +84,16 @@ const CreateAuction: React.FC = () => {
         if (activeAuctionLoadIds.has(cargo.id)) return false;
 
         const validStatus = cargo.status === 'CREATED' || cargo.status === 'PUBLISHED' || !cargo.status;
-        
+
         if (!validStatus) return false;
 
         // Check user role (assuming 'BROKER' is the value)
         if (user?.role === 'BROKER') {
-           // Broker sees loads where they are the assigned broker
-           return cargo.brokerId === user.id || cargo.broker?.id === user.id;
+          // Broker sees loads where they are the assigned broker
+          return cargo.brokerId === user.id || cargo.broker?.id === user.id;
         } else {
-           // Cargo Owner (or others) sees loads NOT assigned to a broker
-           return !cargo.brokerId && !cargo.broker;
+          // Cargo Owner (or others) sees loads NOT assigned to a broker
+          return !cargo.brokerId && !cargo.broker;
         }
       });
 
@@ -160,20 +160,17 @@ const CreateAuction: React.FC = () => {
   };
 
   return (
-    <div className="create-auction space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-      <div className="bg-white rounded-3xl border border-gray-200 p-8 relative overflow-hidden group">
-        <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:scale-110 transition-transform">
-          <Gavel size={160} className="text-gray-900" />
-        </div>
-        <div className="relative">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 bg-gray-900 rounded-xl flex items-center justify-center shadow-lg">
-              <PlusCircle className="text-white" size={20} />
+    <div className="space-y-12">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+        <div className="space-y-2">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center">
+              <PlusCircle className="w-6 h-6 text-[#345E85]" />
             </div>
-            <h1 className="text-2xl font-black text-gray-900 tracking-tight italic uppercase">Creation Nexus</h1>
+            <h1 className="text-4xl font-black text-[#0f172a] tracking-tight">Auction Setup</h1>
           </div>
-          <p className="text-xs font-bold text-gray-400 uppercase tracking-widest max-w-lg italic">
-            Initialize high-velocity auctions for your cargo ecosystem and attract elite transportation partners
+          <p className="text-xs font-bold text-slate-400 uppercase tracking-widest max-w-xl">
+            Configure high-velocity auctions and attract elite transportation partners
           </p>
         </div>
       </div>
@@ -207,14 +204,14 @@ const CreateAuction: React.FC = () => {
       )}
 
       <form onSubmit={handleSubmit}>
-        <div className="bg-white rounded-3xl border border-gray-200 p-8 shadow-sm">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="md:col-span-2">
-              <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 ml-1">Select Cargo Ecosystem *</label>
+        <div className="bg-white rounded-[2.5rem] p-10 border border-slate-100 shadow-sm">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+            <div className="md:col-span-2 space-y-3">
+              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Cargo Selection</label>
               {loadingCargos ? (
-                <div className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl flex items-center gap-3">
-                  <Loader2 className="animate-spin text-gray-400" size={16} />
-                  <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Accessing Cargo Manifest...</span>
+                <div className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl flex items-center gap-4">
+                  <Loader2 className="animate-spin text-[#345E85]" size={18} />
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Scanning manifests...</span>
                 </div>
               ) : (
                 <div className="relative group">
@@ -222,9 +219,9 @@ const CreateAuction: React.FC = () => {
                     value={formData.loadId}
                     onChange={(e) => handleInputChange('loadId', e.target.value)}
                     required
-                    className="w-full px-4 py-3 text-sm font-black bg-gray-50 border border-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900/5 focus:border-gray-900 transition-all appearance-none cursor-pointer uppercase italic h-[48px]"
+                    className="w-full px-6 py-4 text-sm font-black bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-blue-500/5 focus:border-[#345E85] transition-all appearance-none cursor-pointer uppercase italic h-[60px]"
                   >
-                    <option value="">-- Choose Cargo to Auction --</option>
+                    <option value="">-- Choose Cargo --</option>
                     {cargos.map((cargo) => (
                       <option key={cargo.id} value={cargo.id}>
                         {cargo.title || cargo.description || `CARGO - ${cargo.id.slice(0, 8)} `}
@@ -232,43 +229,43 @@ const CreateAuction: React.FC = () => {
                       </option>
                     ))}
                   </select>
-                  <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 group-hover:text-gray-900 transition-colors">
-                    <Truck size={16} />
+                  <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 group-hover:text-[#345E85] transition-colors">
+                    <Truck size={20} />
                   </div>
                 </div>
               )}
               {cargos.length === 0 && !loadingCargos && (
-                <div className="mt-2 flex items-center gap-2 px-1">
-                  <Info size={12} className="text-amber-500" />
-                  <p className="text-[10px] font-bold text-amber-600 uppercase tracking-widest italic">
-                    No eligible cargos found. Please register cargo before initialization.
+                <div className="flex items-center gap-2 px-2">
+                  <Info size={14} className="text-amber-500" />
+                  <p className="text-[10px] font-bold text-amber-600 uppercase tracking-widest">
+                    No eligible cargos found. Register cargo before setup.
                   </p>
                 </div>
               )}
             </div>
 
-            <div>
-              <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 ml-1">Auction Strategy *</label>
+            <div className="space-y-3">
+              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Auction Strategy</label>
               <div className="relative group">
                 <select
                   value={formData.auctionType}
                   onChange={(e) => handleInputChange('auctionType', e.target.value)}
                   required
-                  className="w-full px-4 py-3 text-sm font-black bg-gray-50 border border-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900/5 focus:border-gray-900 transition-all appearance-none cursor-pointer uppercase italic h-[48px]"
+                  className="w-full px-6 py-4 text-sm font-black bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-blue-500/5 focus:border-[#345E85] transition-all appearance-none cursor-pointer uppercase italic h-[60px]"
                 >
                   <option value="REVERSE">Reverse Auction (Descending)</option>
                   <option value="FORWARD">Forward Auction (Ascending)</option>
                   <option value="DUTCH">Dutch Auction (Fast-Drop)</option>
                   <option value="SEALED">Sealed Bid (Confidential)</option>
                 </select>
-                <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 group-hover:text-gray-900 transition-colors">
-                  <Settings size={16} />
+                <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 group-hover:text-[#345E85] transition-colors">
+                  <Settings size={20} />
                 </div>
               </div>
             </div>
 
-            <div>
-              <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 ml-1">Reserve Value Threshold</label>
+            <div className="space-y-3">
+              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Reserve Valuation</label>
               <div className="relative group">
                 <input
                   type="number"
@@ -276,48 +273,48 @@ const CreateAuction: React.FC = () => {
                   value={formData.reservePrice}
                   onChange={(e) => handleInputChange('reservePrice', e.target.value)}
                   placeholder="ENTER PRICE"
-                  className="w-full px-4 py-3 text-sm font-black bg-gray-50 border border-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900/5 focus:border-gray-900 transition-all uppercase italic h-[48px] pl-10"
+                  className="w-full px-6 py-4 text-sm font-black bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-blue-500/5 focus:border-[#345E85] transition-all uppercase italic h-[60px] pl-14"
                 />
-                <div className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
-                  <DollarSign size={16} />
+                <div className="absolute left-6 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                  <DollarSign size={20} />
                 </div>
               </div>
             </div>
 
-            <div>
-              <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 ml-1">Temporal Start Bound *</label>
+            <div className="space-y-3">
+              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Timing: Start Bound</label>
               <div className="relative group">
                 <input
                   type="datetime-local"
                   value={formData.auctionStart}
                   onChange={(e) => handleInputChange('auctionStart', e.target.value)}
                   required
-                  className="w-full px-4 py-3 text-sm font-black bg-gray-50 border border-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900/5 focus:border-gray-900 transition-all uppercase italic h-[48px] pl-10"
+                  className="w-full px-6 py-4 text-sm font-black bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-blue-500/5 focus:border-[#345E85] transition-all uppercase italic h-[60px] pl-14"
                 />
-                <div className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
-                  <Calendar size={16} />
+                <div className="absolute left-6 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                  <Calendar size={20} />
                 </div>
               </div>
             </div>
 
-            <div>
-              <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 ml-1">Temporal End Bound *</label>
+            <div className="space-y-3">
+              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Timing: End Bound</label>
               <div className="relative group">
                 <input
                   type="datetime-local"
                   value={formData.auctionEnd}
                   onChange={(e) => handleInputChange('auctionEnd', e.target.value)}
                   required
-                  className="w-full px-4 py-3 text-sm font-black bg-gray-50 border border-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900/5 focus:border-gray-900 transition-all uppercase italic h-[48px] pl-10"
+                  className="w-full px-6 py-4 text-sm font-black bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-blue-500/5 focus:border-[#345E85] transition-all uppercase italic h-[60px] pl-14"
                 />
-                <div className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
-                  <Calendar size={16} />
+                <div className="absolute left-6 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                  <Calendar size={20} />
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="mt-12 flex flex-col sm:flex-row justify-end gap-4">
+          <div className="mt-16 pt-10 border-t border-slate-50 flex flex-col sm:flex-row justify-between items-center gap-6">
             <button
               type="button"
               onClick={() => {
@@ -331,24 +328,26 @@ const CreateAuction: React.FC = () => {
                 setError(null);
                 setSuccess(null);
               }}
-              className="px-8 py-4 text-[10px] font-black text-gray-500 uppercase tracking-widest bg-gray-50 border border-gray-100 rounded-xl hover:bg-gray-100 transition-all"
+              className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] hover:text-[#0f172a] transition-colors"
             >
-              Reset Parameters
+              Reset parameters
             </button>
+
             <button
               type="submit"
               disabled={loading}
-              className="px-8 py-4 text-[10px] font-black text-white uppercase tracking-widest bg-gray-900 rounded-xl hover:bg-black transition-all shadow-xl shadow-gray-200 disabled:opacity-50 flex items-center justify-center gap-2"
+              className="px-12 py-5 bg-slate-900 text-white rounded-[1.5rem] text-[10px] font-black uppercase tracking-[0.2em] hover:bg-[#345E85] transition-all shadow-xl shadow-slate-900/10 disabled:opacity-50 flex items-center gap-3"
             >
               {loading ? (
                 <>
-                  <Loader2 className="animate-spin" size={14} />
+                  <Loader2 className="animate-spin" size={16} />
                   Initializing...
                 </>
               ) : (
                 <>
-                  <Gavel size={14} />
-                  Finalize & Create Auction
+                  <Gavel size={16} />
+                  Initialize Auction
+                  <ArrowRight size={14} />
                 </>
               )}
             </button>

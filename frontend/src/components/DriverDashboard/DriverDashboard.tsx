@@ -1,21 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import { 
-  Truck, 
-  DollarSign, 
-  Shield, 
-  MessageSquare, 
+import {
+  Truck,
+  DollarSign,
+  Shield,
   FileText,
   Route,
-  User,
-  Settings,
-  Package,
-  LogOut
+  Package
 } from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../../contexts/AuthContext';
 import { driverApi } from '../../services/driverApi';
-import { exportDriverData, type ExportData } from '../../utils/exportUtils';
+// removed unused imports
 import { DriverHeader } from './DriverHeader';
 import { DriverQuickStats } from './DriverQuickStats';
 import { TimeRangeSelector } from './TimeRangeSelector';
@@ -32,16 +28,17 @@ import { CargoManagement } from './CargoManagement';
 import DriverTrips from './DriverTrips';
 import { DriverProfile } from './DriverProfile';
 import { DriverSettings } from './DriverSettings';
-import { TranslatedText } from '../translated-text';
+import { DriverDocuments } from './DriverDocuments';
 
 const DriverDashboard: React.FC = () => {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState('overview');
   const [driverId, setDriverId] = useState<string>('');
   const [timeRange, setTimeRange] = useState('7d');
   const [lastUpdated, setLastUpdated] = useState(new Date());
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
   const location = useLocation();
 
   // Find driver by userId when user is available
@@ -84,8 +81,7 @@ const DriverDashboard: React.FC = () => {
       setActiveTab('safety');
     } else if (location.pathname.endsWith('/documents')) {
       setActiveTab('documents');
-    } else if (location.pathname.endsWith('/messages')) {
-      setActiveTab('messages');
+
     } else if (location.pathname.endsWith('/settings')) {
       setActiveTab('settings');
     } else if (location.pathname.endsWith('/profile')) {
@@ -148,42 +144,6 @@ const DriverDashboard: React.FC = () => {
     }
   };
 
-  // Export handler
-  const handleExport = async (format: 'csv' | 'excel' | 'pdf') => {
-    try {
-      // Prepare export data
-      const exportData: ExportData = {
-        driver: driver,
-        stats: stats,
-        trips: upcomingTrips,
-        performance: {
-          onTimeDelivery: stats?.onTimeDeliveryRate || 0,
-          safetyScore: stats?.safetyScore || 0,
-          customerRating: (stats?.rating || 0) * 20,
-          fuelEfficiency: 85,
-          loadUtilization: 90,
-          responseTime: 87
-        },
-        timeRange: timeRange,
-        exportDate: new Date().toISOString()
-      };
-
-      // Export with proper formatting
-      await exportDriverData(exportData, {
-        format,
-        filename: `driver-${driver?.firstName}-${driver?.lastName}`,
-        includeCharts: format === 'pdf'
-      });
-
-      // Show success message (you can add a toast notification here)
-      console.log(`Successfully exported as ${format.toUpperCase()}`);
-    } catch (error) {
-      console.error('Export failed:', error);
-      // Show error message (you can add a toast notification here)
-      alert(`Failed to export as ${format.toUpperCase()}. Please try again.`);
-    }
-  };
-
   // Time range change handler
   const handleTimeRangeChange = (range: string) => {
     setTimeRange(range);
@@ -197,9 +157,8 @@ const DriverDashboard: React.FC = () => {
     { id: 'earnings', label: 'Earnings', icon: DollarSign },
     { id: 'safety', label: 'Safety', icon: Shield },
     { id: 'documents', label: 'Documents', icon: FileText },
-    { id: 'messages', label: 'Messages', icon: MessageSquare },
-    { id: 'profile', label: 'Profile', icon: User },
-    { id: 'settings', label: 'Settings', icon: Settings },
+
+
   ];
 
   if (driverLoading) {
@@ -207,57 +166,23 @@ const DriverDashboard: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[#f8fafc]">
       {/* Header with new DriverHeader component */}
       <DriverHeader
         driver={driver}
         lastUpdated={lastUpdated}
         isRefreshing={isRefreshing}
         onRefresh={handleRefresh}
-        onExport={handleExport}
+        onToggleNotifications={() => setShowNotifications(true)}
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        tabs={tabs}
       />
-
-      {/* Logout Button - positioned in top right */}
-      <div className="absolute top-4 right-4 z-50">
-        <button
-          onClick={logout}
-          className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors shadow-sm bg-white border border-gray-200"
-          title="Logout"
-        >
-          <LogOut className="w-4 h-4" />
-          <span className="hidden sm:inline"><TranslatedText text="Logout" /></span>
-        </button>
-      </div>
-
-      {/* Navigation Tabs */}
-      <div className="bg-white border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <nav className="flex space-x-8">
-            {tabs.map((tab) => {
-              const Icon = tab.icon;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center space-x-2 ${
-                    activeTab === tab.id
-                      ? 'border-blue-500 text-blue-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                  }`}
-                >
-                  <Icon className="w-4 h-4" />
-                  <span><TranslatedText text={tab.label} /></span>
-                </button>
-              );
-            })}
-          </nav>
-        </div>
-      </div>
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {/* Time Range Selector */}
-        <div className="mb-6">
+        <div className="mb-6 flex justify-end">
           <TimeRangeSelector
             value={timeRange}
             onChange={handleTimeRangeChange}
@@ -267,7 +192,7 @@ const DriverDashboard: React.FC = () => {
         {activeTab === 'overview' && (
           <div className="space-y-6">
             {/* Quick Stats with new component */}
-            <DriverQuickStats 
+            <DriverQuickStats
               stats={{
                 totalTrips: stats?.totalTrips,
                 totalEarnings: stats?.totalEarnings,
@@ -312,8 +237,6 @@ const DriverDashboard: React.FC = () => {
             {/* Upcoming Trips */}
             <UpcomingTrips trips={upcomingTrips as any} loading={upcomingLoading} />
 
-            {/* Recent Notifications */}
-            <NotificationsPanel notifications={notifications} loading={notificationsLoading} />
           </div>
         )}
 
@@ -357,20 +280,11 @@ const DriverDashboard: React.FC = () => {
         {activeTab === 'documents' && (
           <div className="space-y-6">
             <h2 className="text-2xl font-bold text-gray-900">Documents & Certifications</h2>
-            <div className="bg-white rounded-lg shadow p-6">
-              <p className="text-gray-500">Document management features coming soon...</p>
-            </div>
+            <DriverDocuments driverId={driverId} />
           </div>
         )}
 
-        {activeTab === 'messages' && (
-          <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-gray-900">Messages & Communication</h2>
-            <div className="bg-white rounded-lg shadow p-6">
-              <p className="text-gray-500">Messaging features coming soon...</p>
-            </div>
-          </div>
-        )}
+
 
         {activeTab === 'profile' && (
           <div className="space-y-6">
@@ -384,6 +298,22 @@ const DriverDashboard: React.FC = () => {
           </div>
         )}
       </div>
+      {/* Notifications Modal */}
+      {showNotifications && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm transition-opacity"
+            onClick={() => setShowNotifications(false)}
+          />
+          <div className="relative z-10 w-full max-w-md animate-in zoom-in-95 duration-200">
+            <NotificationsPanel
+              notifications={notifications}
+              loading={notificationsLoading}
+              onClose={() => setShowNotifications(false)}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };

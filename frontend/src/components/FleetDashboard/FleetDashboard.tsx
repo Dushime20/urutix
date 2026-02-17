@@ -1,15 +1,30 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { motion } from 'framer-motion';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import { Icon } from 'leaflet';
-import { FaExclamationTriangle, FaTruck, FaUser, FaDollarSign, FaGasPump, FaBolt, FaMapMarkedAlt, FaStar } from 'react-icons/fa';
+import {
+  Truck,
+  User,
+  Zap,
+  Map as MapIcon,
+  Navigation,
+  Clock,
+  ShieldCheck,
+  Layers,
+  Plus,
+  Layout,
+  Activity,
+  Shield,
+  CreditCard,
+  Search,
+  Star,
+  AlertTriangle
+} from 'lucide-react';
 import { DetailedErrorBoundary } from '../DetailedErrorBoundary';
-import { FiLayers, FiZap, FiNavigation, FiTrendingUp } from 'react-icons/fi';
-import { CheckCircle } from 'lucide-react';
-import { FleetFilters } from './FleetFilters';
-import { FleetModal } from './FleetModal';
 import { FleetSkeleton } from './FleetSkeleton';
-import { FleetTable } from './FleetTable';
-
+import { FleetModal } from './FleetModal';
+import { DriversList } from './DriversList';
+import StatCard from '../EnliteUI/Cards/StatCard';
 import FleetFormStepper from './FleetFormStepper';
 import { SafetyManagement } from './SafetyManagement';
 import { FinancialManagement } from './FinancialManagement';
@@ -55,7 +70,7 @@ export const FleetDashboard: React.FC = () => {
   const { user, isLoading: authLoading, accessToken } = useAuth();
   const layoutContext = useCargoOwnerLayout();
   const { setHideHeader } = layoutContext || {};
-  const { confirm, DialogComponent } = useConfirmDialog();
+  const { DialogComponent } = useConfirmDialog();
   const [fleetItems, setFleetItems] = useState<LocalFleetItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -64,12 +79,11 @@ export const FleetDashboard: React.FC = () => {
   const [search, setSearch] = useState('');
 
   const [activeTab, setActiveTab] = useState<'overview' | 'trucks' | 'drivers' | 'analytics' | 'safety' | 'financial' | 'routes' | 'matches'>('overview');
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
 
-  const observer = useRef<IntersectionObserver | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [formMode, setFormMode] = useState<'create' | 'edit'>('create');
   const [editingFleetItem, setEditingFleetItem] = useState<LocalFleetItem | null>(null);
+  const [userProfileName, setUserProfileName] = useState<string | null>(null);
 
   const [analytics, setAnalytics] = useState<any>(null);
 
@@ -179,7 +193,7 @@ export const FleetDashboard: React.FC = () => {
         fleetApi.getDrivers({}),
         fleetApi.fetchAnalytics()
       ]);
-      
+
       const allData = [...truckData.map(normalizeTruck), ...driverData.map(normalizeDriver)];
       setFleetItems(allData);
       setAnalytics(analyticsData);
@@ -206,14 +220,22 @@ export const FleetDashboard: React.FC = () => {
     loadFleetItems();
   }, []);
 
-  const lastFleetItemRef = useCallback((node: HTMLElement | null) => {
-    if (loading) return;
-    if (observer.current) observer.current.disconnect();
-    observer.current = new IntersectionObserver(_entries => {
-      // Logic for infinite scroll can be re-enabled here if needed
-    });
-    if (node) observer.current.observe(node);
-  }, [loading]);
+  useEffect(() => {
+    const fetchProfileName = async () => {
+      if (user && !user.firstName && !userProfileName) {
+        try {
+          const res = await authAPI.getProfile();
+          if (res.data?.success && res.data?.data?.user?.firstName) {
+            const u = res.data.data.user;
+            setUserProfileName(`${u.firstName} ${u.lastName || ''}`.trim());
+          }
+        } catch (err) {
+          console.error("Failed to fetch fresh profile for name", err);
+        }
+      }
+    };
+    fetchProfileName();
+  }, [user, userProfileName]);
 
   const handleCreateFleetItem = useCallback(async (fleetData: any) => {
     try {
@@ -265,36 +287,6 @@ export const FleetDashboard: React.FC = () => {
     }
   }, [editingFleetItem, activeTab]);
 
-  const handleDeleteFleetItem = useCallback(async (fleetItemId: string) => {
-    const confirmed = await confirm({
-      title: 'Delete Fleet Item',
-      message: 'Are you sure you want to delete this fleet item? This action cannot be undone.',
-      confirmText: 'Delete',
-      cancelText: 'Cancel',
-      variant: 'danger',
-    });
-    if (!confirmed) return;
-
-    try {
-      const item = fleetItems.find(i => i.id === fleetItemId);
-      if (item?.type === 'truck') {
-        await fleetApi.deleteTruck(fleetItemId);
-      } else if (item?.type === 'driver') {
-        await fleetApi.deleteDriver(fleetItemId);
-      }
-
-      setFleetItems(prev => prev.filter(item => item.id !== fleetItemId));
-    } catch (error: any) {
-      console.error('Error deleting fleet item:', error);
-      setError('Failed to delete fleet item');
-    }
-  }, [fleetItems]);
-
-  const handleEditFleetItem = useCallback((fleetItem: LocalFleetItem) => {
-    setEditingFleetItem(fleetItem);
-    setFormMode('edit');
-    setShowForm(true);
-  }, []);
 
 
 
@@ -330,228 +322,168 @@ export const FleetDashboard: React.FC = () => {
 
   return (
     <DetailedErrorBoundary>
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-[#F8FAFC]">
         <DashboardHeader />
 
-        <div className="bg-gradient-to-br from-white via-gray-50 to-blue-50/30 shadow-sm border-b border-gray-100">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <div className="flex flex-col gap-6">
-              {/* Header Section */}
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                <div>
-                  <h1 className="text-3xl font-bold text-gray-900 mb-1">
-                    {(() => {
-                      const hour = new Date().getHours();
-                      const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
-                      // Get firstName from user object, fallback to profile.firstName, then to 'Fleet Manager'
-                      const firstName = (user?.firstName && user.firstName.trim()) || 
-                                        ((user as any)?.profile?.firstName && (user as any).profile.firstName.trim()) || 
-                                        'Fleet Manager';
-                      return `${greeting}, ${firstName}`;
-                    })()}
-                  </h1>
-                  <p className="text-sm text-gray-600">Manage your fleet operations efficiently</p>
+        {/* Intelligence Header Context */}
+        <div className="bg-white border-b border-slate-100 relative overflow-hidden">
+          <div className="absolute top-0 right-0 p-20 opacity-[0.03] scale-[2.5] pointer-events-none rotate-12">
+            <Layers size={140} className="text-[#345E85]" />
+          </div>
+
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 relative z-10">
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
+              <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 bg-blue-50 rounded-xl flex items-center justify-center text-[#345E85] shadow-inner">
+                    <Truck size={20} />
+                  </div>
+                  <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-[#345E85]">Fleet Dashboard</h2>
                 </div>
 
-                {/* Primary Actions */}
-                <div className="flex flex-wrap items-center gap-3">
-                  <button
-                    onClick={handleCreateTruck}
-                    className="inline-flex items-center gap-2 px-5 py-3 bg-[#345e85] hover:bg-[#2a4d6d] text-white rounded-xl transition-all font-semibold shadow-lg shadow-[#345e85]/30 hover:shadow-xl hover:shadow-[#345e85]/40 active:transform active:scale-95"
-                  >
-                    <FaTruck className="w-4 h-4" />
-                    <span>Add Truck</span>
-                  </button>
+                <h1 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tight leading-none mb-1">
+                  {(() => {
+                    const hour = new Date().getHours();
+                    const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
+                    const displayName = userProfileName || (user?.firstName
+                      ? `${user.firstName} ${user.lastName || ''}`.trim()
+                      : (user as any)?.profile?.firstName
+                        ? `${(user as any).profile.firstName} ${(user as any).profile.lastName || ''}`.trim()
+                        : user?.email?.split('@')[0] || 'Fleet Manager');
 
-                  <button
-                    onClick={() => setActiveTab('drivers')}
-                    className="inline-flex items-center gap-2 px-5 py-3 bg-[#345e85] hover:bg-[#2a4d6d] text-white rounded-xl transition-all font-semibold shadow-lg shadow-[#345e85]/30 hover:shadow-xl hover:shadow-[#345e85]/40 active:transform active:scale-95"
-                  >
-                    <FaUser className="w-4 h-4" />
-                    <span>Add Driver</span>
-                  </button>
-                </div>
+                    return <>{greeting}, <span className="text-[#345E85]">{displayName}</span></>;
+                  })()}
+                </h1>
+                <p className="text-lg text-slate-500 font-medium max-w-xl">
+                  Synchronizing asset logistics and operational intelligence across your global transportation network.
+                </p>
               </div>
 
-              {/* Quick Actions Bar */}
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider mr-2">Quick Actions:</span>
-
+              <div className="flex items-center gap-3">
                 <button
-                  onClick={() => setActiveTab('trucks')}
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-white hover:bg-gray-50 text-gray-700 hover:text-gray-900 rounded-lg transition-all font-medium shadow-sm border border-gray-200 hover:border-gray-300 hover:shadow"
+                  onClick={handleCreateTruck}
+                  className="flex items-center gap-2.5 px-6 py-4 bg-[#345E85] text-white rounded-2xl font-black uppercase tracking-widest text-[11px] shadow-xl shadow-blue-100 hover:bg-[#2a4d6d] active:scale-95 transition-all group"
                 >
-                  <FiLayers className="w-4 h-4" />
-                  <span>Fleet Assets</span>
+                  <Plus size={18} className="group-hover:rotate-90 transition-transform" />
+                  Add New Truck
                 </button>
-
                 <button
-                  onClick={() => setActiveTab('matches')}
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-white hover:bg-indigo-50 text-indigo-600 hover:text-indigo-700 rounded-lg transition-all font-medium shadow-sm border border-indigo-200 hover:border-indigo-300 hover:shadow"
+                  onClick={() => setActiveTab('drivers')}
+                  className="flex items-center gap-2.5 px-6 py-4 bg-white text-slate-700 border border-slate-100 rounded-2xl font-black uppercase tracking-widest text-[11px] hover:border-[#345E85] hover:text-[#345E85] active:scale-95 transition-all"
                 >
-                  <FiZap className="w-4 h-4" />
-                  <span>Smart Matches</span>
-                </button>
-
-                <button
-                  onClick={() => navigate('/dashboard/fleet/fuel')}
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-white hover:bg-orange-50 text-orange-600 hover:text-orange-700 rounded-lg transition-all font-medium shadow-sm border border-orange-200 hover:border-orange-300 hover:shadow"
-                >
-                  <FaGasPump className="w-4 h-4" />
-                  <span>Log Fuel</span>
-                </button>
-
-                <button
-                  onClick={() => setActiveTab('routes')}
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-white hover:bg-blue-50 text-blue-600 hover:text-blue-700 rounded-lg transition-all font-medium shadow-sm border border-blue-200 hover:border-blue-300 hover:shadow"
-                >
-                  <FiNavigation className="w-4 h-4" />
-                  <span>Dispatch</span>
+                  <User size={18} />
+                  Add New Driver
                 </button>
               </div>
+            </div>
+
+            {/* Sub-Navigation / Quick Vectors */}
+            <div className="flex flex-wrap items-center gap-4 mt-12 pb-2">
+              {[
+                { id: 'overview', icon: Layout, label: 'Overview' },
+                { id: 'trucks', icon: Truck, label: 'Trucks' },
+                { id: 'matches', icon: Zap, label: 'Matches' },
+                { id: 'financial', icon: CreditCard, label: 'Financials' },
+                { id: 'analytics', icon: Activity, label: 'Analytics' }
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id as any)}
+                  className={`flex items-center gap-2.5 px-5 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all ${activeTab === tab.id
+                    ? 'bg-blue-50 text-[#345E85] shadow-sm'
+                    : 'text-slate-400 hover:text-slate-600'
+                    }`}
+                >
+                  <tab.icon size={16} />
+                  {tab.label}
+                </button>
+              ))}
             </div>
           </div>
         </div>
 
-
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
           {activeTab === 'overview' ? (
-            <div className="space-y-8">
-              {/* Fleet Statistics - Larger cards with more detail */}
-              {/* Fleet Statistics Row - New Design */}
-              <section className="mt-8">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
-                  {/* Card 1: Fleet Live Status */}
-                  <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-100 flex flex-col justify-between h-40 relative overflow-hidden group hover:shadow-md transition-shadow">
-                    <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                      <FaTruck className="w-16 h-16 text-primary-600 transform -rotate-12" />
-                    </div>
-                    <div>
-                      <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">FLEET LIVE STATUS</h3>
-                      <div className="flex items-baseline gap-2">
-                        <span className="text-3xl font-bold text-gray-900">{trucks.length}</span>
-                        <div className="flex items-center gap-1 text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded text-xs font-medium">
-                          <CheckCircle className="w-3 h-3" />
-                          <span>All Systems</span>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between text-xs mt-4 pt-4 border-t border-gray-50">
-                      <div className="flex items-center gap-1.5">
-                        <div className="w-2 h-2 rounded-full bg-blue-500"></div>
-                        <span className="text-gray-600">In Transit ({inTransit})</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
-                        <span className="text-gray-600">Available ({availableTrucks})</span>
-                      </div>
-                    </div>
-                  </div>
+            <div className="space-y-10">
+              {/* Metrics Matrix */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
+                <StatCard
+                  title="Total Trucks"
+                  value={trucks.length}
+                  icon={<Truck />}
+                  subtitle={`${inTransit} In Transit • ${availableTrucks} Available`}
+                  color="primary"
+                  loading={loading}
+                />
 
-                  {/* Card 2: Fuel Costs (Placeholder as API doesn't provide this yet) */}
-                  <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-100 flex flex-col justify-between h-40 relative overflow-hidden group hover:shadow-md transition-shadow">
-                    <div className="absolute top-4 right-4 text-orange-500 bg-orange-50 p-2 rounded-lg">
-                      <FaGasPump className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">FUEL COSTS (MTD)</h3>
-                      <span className="text-3xl font-bold text-gray-900">$0</span>
-                    </div>
-                    <div className="mt-auto">
-                      <div className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 px-2 py-1 rounded text-xs font-medium">
-                        <FiZap className="w-3 h-3" />
-                        <span>-- MPG Avg</span>
-                      </div>
-                    </div>
-                  </div>
+                <StatCard
+                  title="Utilization"
+                  value={`${analytics?.utilizationRate !== undefined ? Math.round(analytics.utilizationRate) : utilization}%`}
+                  icon={<Zap />}
+                  trend="Optimal"
+                  trendDirection="up"
+                  color="info"
+                  subtitle="Network load factor"
+                  loading={loading}
+                />
 
-                  {/* Card 3: Fleet Reputation */}
-                  <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-100 flex flex-col justify-between h-40 relative overflow-hidden group hover:shadow-md transition-shadow">
-                    <div className="absolute top-4 right-4 text-amber-500">
-                      <FaStar className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">FLEET REPUTATION</h3>
-                      <div className="flex items-baseline gap-1">
-                        <span className="text-3xl font-bold text-gray-900">{analytics?.averageRating?.toFixed(1) || '0.0'}</span>
-                        <span className="text-sm text-gray-400 font-medium">/5</span>
-                      </div>
-                    </div>
-                    <div className="mt-auto">
-                      <div className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 px-2 py-1 rounded text-xs font-medium">
-                        <FiTrendingUp className="w-3 h-3" />
-                        <span>Based on recent trips</span>
-                      </div>
-                    </div>
-                  </div>
+                <StatCard
+                  title="Average Rating"
+                  value={analytics?.averageRating?.toFixed(1) || '0.0'}
+                  icon={<Star />}
+                  subtitle="Reputation Index"
+                  color="warning"
+                  loading={loading}
+                />
 
-                  {/* Card 4: Driver Utilization */}
-                  <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-100 flex flex-col justify-between h-40 relative overflow-hidden group hover:shadow-md transition-shadow">
-                    <div className="absolute top-4 right-4 text-emerald-500">
-                      <FaUser className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">DRIVER UTILIZATION</h3>
-                      <span className="text-3xl font-bold text-gray-900">{analytics?.utilizationRate !== undefined ? Math.round(analytics.utilizationRate) : utilization}%</span>
-                    </div>
-                    <div className="mt-auto">
-                      <div className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 px-2 py-1 rounded text-xs font-medium">
-                        <FiTrendingUp className="w-3 h-3" />
-                        <span>Active Drivers</span>
-                      </div>
-                    </div>
-                  </div>
+                <StatCard
+                  title="Total Revenue"
+                  value={analytics?.totalRevenue ? formatCurrency(analytics.totalRevenue) : 'KES 0'}
+                  icon={<CreditCard />}
+                  trend="+12.4%"
+                  trendDirection="up"
+                  color="success"
+                  subtitle="Gross Yield (MTD)"
+                  loading={loading}
+                />
 
-                  {/* Card 5: Revenue */}
-                  <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-100 flex flex-col justify-between h-40 relative overflow-hidden group hover:shadow-md transition-shadow">
-                    <div className="absolute top-4 right-4 text-amber-500">
-                      <FaDollarSign className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">REVENUE (MTD)</h3>
-                      <span className="text-3xl font-bold text-gray-900">
-                        {analytics?.totalRevenue ? formatCurrency(analytics.totalRevenue) : 'KES 0'}
-                      </span>
-                    </div>
-                    <div className="mt-auto">
-                      <div className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 px-2 py-1 rounded text-xs font-medium">
-                        <FiTrendingUp className="w-3 h-3" />
-                        <span>Total Revenue</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </section>
+                <StatCard
+                  title="Safety Alerts"
+                  value="0"
+                  icon={<AlertTriangle />}
+                  subtitle="All Good"
+                  color="accent"
+                  loading={loading}
+                />
+              </div>
 
-              {/* Recent Activities Card */}
-              <section className="mt-8">
-                <TruckOwnerRecentActivities />
-              </section>
-
-              {/* Fleet Status Breakdown */}
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8">
-                {/* Left Column: Interactive Dispatch Map */}
-                <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                  <div className="p-4 border-b border-gray-100 flex items-center justify-between">
+              {/* Operations Matrix */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                {/* Deployment Visualization */}
+                <div className="lg:col-span-2 bg-white rounded-[40px] border border-slate-100 shadow-sm overflow-hidden flex flex-col h-[560px]">
+                  <div className="px-8 py-6 border-b border-slate-50 flex items-center justify-between shrink-0">
                     <div>
-                      <div className="flex items-center gap-2">
-                        <div className="p-1.5 bg-blue-50 rounded-lg text-blue-600">
-                          <FaMapMarkedAlt className="w-4 h-4" />
-                        </div>
-                        <h3 className="font-bold text-gray-900">Interactive Dispatch Map</h3>
+                      <div className="flex items-center gap-2 mb-1">
+                        <MapIcon size={16} className="text-[#345E85]" />
+                        <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-[#345E85]">Live Tracking</h3>
                       </div>
+                      <h4 className="text-xl font-black text-slate-900 tracking-tight">Fleet Map</h4>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <span className="bg-orange-100 text-orange-700 text-xs px-2 py-1 rounded font-bold uppercase tracking-wide">
-                        3 Pending Requests
-                      </span>
-                      <button className="flex items-center gap-1 text-sm font-medium text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg transition-colors">
-                        <FaBolt className="w-3.5 h-3.5" />
-                        Quick Assign Nearest
+                    <div className="flex items-center gap-4">
+                      <div className="flex -space-x-2">
+                        {[1, 2, 3].map(i => (
+                          <div key={i} className="h-8 w-8 rounded-full border-2 border-white bg-slate-100 flex items-center justify-center text-[10px] font-black text-slate-500">
+                            TR
+                          </div>
+                        ))}
+                      </div>
+                      <button className="flex items-center gap-2 px-5 py-2.5 bg-blue-50 text-[#345E85] rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-[#345E85] hover:text-white transition-all">
+                        <Zap size={14} /> Global Sync
                       </button>
                     </div>
                   </div>
-                  <div className="h-[400px] relative">
+
+                  <div className="flex-1 relative bg-slate-50">
                     <MapContainer
                       center={[-1.2921, 36.8219]}
                       zoom={13}
@@ -579,113 +511,206 @@ export const FleetDashboard: React.FC = () => {
                             icon={fleetIcon}
                           >
                             <Popup>
-                              <div className="p-2">
-                                <p className="font-bold">{item.name}</p>
-                                <p className="text-xs text-gray-500">{item.status}</p>
+                              <div className="p-3">
+                                <p className="font-black text-[#345E85] uppercase text-[10px] mb-1">Truck ID: {item.plateNumber}</p>
+                                <p className="font-bold text-slate-900">{item.name}</p>
+                                <div className="flex items-center gap-2 mt-2">
+                                  <div className={`h-1.5 w-1.5 rounded-full ${item.status === 'AVAILABLE' ? 'bg-emerald-500' : 'bg-blue-500'}`} />
+                                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{item.status}</span>
+                                </div>
                               </div>
                             </Popup>
                           </Marker>
                         ))}
                     </MapContainer>
-                    {/* Floating Controls Placeholder */}
-                    <div className="absolute top-4 left-4 flex flex-col gap-2 z-[400]">
-                      <div className="bg-white p-1 rounded shadow-md border border-gray-200">
-                        <button className="w-8 h-8 flex items-center justify-center hover:bg-gray-50 font-bold text-gray-700">+</button>
-                        <div className="h-px bg-gray-200"></div>
-                        <button className="w-8 h-8 flex items-center justify-center hover:bg-gray-50 font-bold text-gray-700">-</button>
+
+                    {/* Layered Controls */}
+                    <div className="absolute bottom-8 left-8 z-[400] flex flex-col gap-2">
+                      <div className="bg-white/80 backdrop-blur-md p-2 rounded-2xl shadow-xl border border-white/50 space-y-2">
+                        <div className="flex items-center gap-3 px-3 py-2 bg-white rounded-xl shadow-inner border border-slate-100">
+                          <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                          <span className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-600">Live Updates</span>
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
 
-                {/* Right Column: Top Rated Driver */}
-                <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex flex-col">
-                  <div className="flex items-center gap-2 mb-6">
-                    <FaStar className="text-amber-400 w-5 h-5" />
-                    <h3 className="font-bold text-gray-500 uppercase text-xs tracking-wider">TOP RATED DRIVER</h3>
+                {/* Performance Hub */}
+                <div className="flex flex-col gap-8">
+                  {/* Elite Personnel Card */}
+                  <div className="bg-white rounded-[40px] border border-slate-100 shadow-sm p-8 flex flex-col relative overflow-hidden h-[300px]">
+                    <div className="absolute top-0 right-0 p-8 opacity-[0.03] scale-[1.5] pointer-events-none rotate-12">
+                      <Shield size={100} className="text-amber-400" />
+                    </div>
+
+                    <div className="flex items-center gap-3 mb-8">
+                      <div className="h-8 w-8 bg-amber-50 rounded-lg flex items-center justify-center text-amber-500">
+                        <Star size={16} fill="currentColor" />
+                      </div>
+                      <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-[#345E85]">Top Driver</h3>
+                    </div>
+
+                    <div className="flex items-center gap-6 mb-8">
+                      <div className="h-24 w-24 rounded-[32px] bg-slate-50 border-4 border-white shadow-lg overflow-hidden flex items-center justify-center">
+                        <User size={40} className="text-slate-300" />
+                      </div>
+                      <div>
+
+                        <h4 className="text-2xl font-black text-slate-900 tracking-tight">Samuel Karanja</h4>
+                        <div className="flex items-center gap-2 mt-1">
+                          <Star size={14} className="fill-amber-400 text-amber-400" />
+                          <span className="text-lg font-black text-slate-900">4.96</span>
+                          <span className="text-sm font-bold text-slate-400">Rating</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <button className="mt-auto w-full py-4 bg-slate-50 hover:bg-[#345E85] hover:text-white text-[#345E85] rounded-[24px] text-[10px] font-black uppercase tracking-widest transition-all">
+                      View Driver Profile
+                    </button>
                   </div>
 
-                  <div className="flex items-start gap-4 mb-6">
-                    <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center border-2 border-white shadow-sm">
-                      <FaUser className="w-8 h-8 text-gray-400" />
+                  {/* Operational Metrics Sub-Matrix */}
+                  <div className="bg-[#345E85] rounded-[40px] p-8 text-white relative overflow-hidden flex-1 shadow-xl shadow-blue-100">
+                    <div className="absolute -bottom-10 -right-10 opacity-10 group-hover:scale-110 transition-transform duration-700">
+                      <Activity size={180} />
                     </div>
-                    <div>
-                      <h4 className="text-lg font-bold text-gray-900">Samuel Karanja</h4>
-                      <div className="inline-block bg-amber-400 text-black text-[10px] font-bold px-2 py-0.5 rounded mb-1">
-                        GOLD STAR
-                      </div>
-                      <div className="flex items-center gap-1 text-sm text-gray-600">
-                        <FaStar className="w-3.5 h-3.5 text-amber-400" />
-                        <span className="font-bold text-gray-900">4.96</span>
-                        <span className="text-gray-400">/5.0</span>
-                        <span className="text-gray-400 text-xs ml-1">(242 Trips)</span>
-                      </div>
-                    </div>
-                  </div>
 
-                  <button className="w-full py-2.5 border border-gray-200 rounded-lg text-blue-600 font-medium hover:bg-blue-50 transition-colors mb-6 text-sm">
-                    View Performance Profile
-                  </button>
+                    <h3 className="text-[10px] font-black uppercase tracking-[0.2em] opacity-60 mb-8">Performance Metrics</h3>
 
-                  <div className="mt-auto pt-6 border-t border-gray-100">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-xs font-bold text-gray-400 uppercase">DRIVER PERFORMANCE</span>
-                      <button className="text-xs text-blue-600 hover:underline">View All</button>
-                    </div>
-                    {/* Placeholder for small stats */}
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-600">On-Time Delivery</span>
-                        <span className="font-medium text-emerald-600">98%</span>
+                    <div className="space-y-6 relative z-10">
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-[11px] font-black uppercase tracking-widest">
+                          <span>Dispatch Accuracy</span>
+                          <span className="text-emerald-400">98.4%</span>
+                        </div>
+                        <div className="h-1.5 w-full bg-white/10 rounded-full">
+                          <div className="h-full bg-emerald-400 rounded-full" style={{ width: '98.4%' }} />
+                        </div>
                       </div>
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-600">Safety Score</span>
-                        <span className="font-medium text-emerald-600">99/100</span>
+
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-[11px] font-black uppercase tracking-widest">
+                          <span>Safety Compliance</span>
+                          <span className="text-emerald-400">99.1%</span>
+                        </div>
+                        <div className="h-1.5 w-full bg-white/10 rounded-full">
+                          <div className="h-full bg-emerald-400 rounded-full" style={{ width: '99.1%' }} />
+                        </div>
+                      </div>
+
+                      <div className="mt-8 pt-6 border-t border-white/10 flex items-center justify-between">
+                        <div>
+                          <p className="text-[9px] font-black uppercase tracking-widest opacity-60">Verified</p>
+                          <p className="text-xs font-black tracking-tight mt-1">Enlite V4.2</p>
+                        </div>
+                        <ShieldCheck size={24} className="opacity-40" />
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
+
+              {/* Archive Logs Section */}
+              <div className="space-y-6 mt-12">
+                <div className="flex items-center justify-between px-2">
+                  <div className="flex items-center gap-3">
+                    <div className="h-8 w-8 bg-blue-50 rounded-lg flex items-center justify-center text-[#345E85]">
+                      <Clock size={16} />
+                    </div>
+                    <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-[#345E85]">Recent Activities</h3>
+                  </div>
+                  <button className="text-[10px] font-black uppercase tracking-widest text-[#345E85] hover:underline decoration-2 underline-offset-4">
+                    View All
+                  </button>
+                </div>
+                <TruckOwnerRecentActivities />
+              </div>
             </div>
           ) : (
-            <>
-              <FleetFilters search={search} setSearch={setSearch} activeTab={activeTab} viewMode={viewMode} setViewMode={setViewMode} />
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4 }}
+              className="space-y-8"
+            >
+              {/* Specialized View Header */}
+              <div className="bg-white p-8 rounded-[40px] border border-slate-100 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
+                <div className="flex items-center gap-6">
+                  <div className="h-16 w-16 bg-blue-50 rounded-[24px] flex items-center justify-center text-[#345E85] shadow-inner">
+                    {activeTab === 'trucks' ? <Truck size={28} /> :
+                      activeTab === 'analytics' ? <Activity size={28} /> :
+                        activeTab === 'safety' ? <Shield size={28} /> :
+                          activeTab === 'financial' ? <CreditCard size={28} /> :
+                            activeTab === 'routes' ? <Navigation size={28} /> :
+                              activeTab === 'matches' ? <Zap size={28} /> : <User size={28} />}
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-black text-slate-900 tracking-tight uppercase">
+                      {activeTab === 'trucks' ? 'Trucks' :
+                        activeTab === 'analytics' ? 'Analytics' :
+                          activeTab === 'safety' ? 'Safety' :
+                            activeTab === 'financial' ? 'Financials' :
+                              activeTab === 'routes' ? 'Routes' :
+                                activeTab === 'matches' ? 'Matches' : 'Drivers'}
+                    </h2>
+                    <p className="text-sm font-medium text-slate-500">Status: <span className="text-emerald-500 font-black">Active</span></p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <div className="relative group">
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 size={16} text-slate-400 group-focus-within:text-[#345E85] transition-colors" />
+                    <input
+                      type="text"
+                      placeholder="Search..."
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                      className="pl-12 pr-6 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-[11px] font-bold text-slate-900 focus:bg-white focus:ring-4 focus:ring-blue-50 focus:border-[#345E85] outline-none transition-all w-64"
+                    />
+                  </div>
+                </div>
+              </div>
 
               {error && (
-                <div className="bg-red-100 text-red-700 p-4 rounded flex items-center gap-2 mb-4" role="alert">
-                  <FaExclamationTriangle /> {error}
+                <div className="bg-rose-50 border border-rose-100 text-rose-600 p-6 rounded-[32px] flex items-center gap-3" role="alert">
+                  <AlertTriangle size={20} />
+                  <span className="text-sm font-black uppercase tracking-widest">{error}</span>
                 </div>
               )}
 
-              {activeTab === 'analytics' ? (
-                <TruckAnalytics trucks={trucks} />
-              ) : activeTab === 'safety' ? (
-                <SafetyManagement />
-              ) : activeTab === 'financial' ? (
-                <FinancialManagement />
-              ) : activeTab === 'routes' ? (
-                <RouteAssignmentManager />
-              ) : activeTab === 'trucks' ? (
-                <TrucksList onAddTruck={handleCreateTruck} />
-              ) : activeTab === 'matches' ? (
-                <TruckMatches />
-              ) : loading && fleetItems.length === 0 ? (
-                <FleetSkeleton />
-              ) : (
-                <FleetTable
-                  fleetItems={fleetItems.filter(item => item.type === 'driver')}
-                  lastFleetItemRef={lastFleetItemRef}
-                  view={viewMode}
-                  activeTab={activeTab === 'drivers' ? 'drivers' : 'trucks'}
-                  onRowClick={setSelectedFleetItem}
-                  onEditFleetItem={handleEditFleetItem}
-                  onDeleteFleetItem={handleDeleteFleetItem}
-                />
-              )}
-            </>
+              <div className="bg-white p-2 rounded-[40px] border border-slate-100 shadow-xl overflow-hidden min-h-[500px]">
+                {activeTab === 'analytics' ? (
+                  <TruckAnalytics trucks={trucks} />
+                ) : activeTab === 'safety' ? (
+                  <SafetyManagement />
+                ) : activeTab === 'financial' ? (
+                  <FinancialManagement />
+                ) : activeTab === 'routes' ? (
+                  <RouteAssignmentManager />
+                ) : activeTab === 'drivers' ? (
+                  <DriversList onAddDriver={() => { setFormMode('create'); setShowForm(true); }} />
+                ) : activeTab === 'trucks' ? (
+                  <TrucksList onAddTruck={handleCreateTruck} />
+                ) : activeTab === 'matches' ? (
+                  <TruckMatches />
+                ) : loading && fleetItems.length === 0 ? (
+                  <FleetSkeleton />
+                ) : (
+                  <div className="p-20 text-center">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Section Under Synchronization</p>
+                  </div>
+                )}
+              </div>
+            </motion.div>
           )}
 
-          <FleetModal fleetItem={selectedFleetItem} onClose={() => setSelectedFleetItem(null)} activeTab={activeTab === 'overview' ? 'trucks' : activeTab as any} />
+          <FleetModal
+            fleetItem={selectedFleetItem}
+            onClose={() => setSelectedFleetItem(null)}
+            activeTab={activeTab === 'overview' ? 'trucks' : activeTab as any}
+          />
 
           <FleetFormStepper
             isOpen={showForm}
@@ -698,8 +723,8 @@ export const FleetDashboard: React.FC = () => {
         </div>
 
         <DashboardFooter />
-      </div >
+      </div>
       {DialogComponent}
-    </DetailedErrorBoundary >
+    </DetailedErrorBoundary>
   );
 }; 

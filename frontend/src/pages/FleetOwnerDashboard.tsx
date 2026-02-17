@@ -18,7 +18,7 @@ import { fleetApi, type FleetItem } from '../services/fleetApi';
 import { tripsAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import logoUrutiX from '../assets/logo-urutix-logistics.svg';
+import logoUrutiX from '../assets/urutiX Logistics Logo (1).svg';
 import toast from 'react-hot-toast';
 import { FleetFormEnhanced as FleetForm } from '../components/FleetDashboard/FleetFormEnhanced';
 

@@ -16,26 +16,24 @@ export default function RouteSection({
 }: RouteSectionProps) {
   return (
     <div className="space-y-8">
-      {/* Header */}
-      <div className="flex items-center space-x-3 pb-4 border-b border-gray-200">
-        <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-50 to-indigo-100">
-          <FaMapMarkedAlt className="w-5 h-5 text-indigo-600" />
+      <div className="flex items-center space-x-2 pb-2 border-b border-slate-100">
+        <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-blue-50">
+          <FaMapMarkedAlt className="w-4 h-4 text-[#345E85]" />
         </div>
         <div>
-          <h3 className="text-lg font-semibold text-gray-900">
-            Route & Access Requirements
+          <h3 className="text-base font-black text-[#0f172a] tracking-tight uppercase">
+            Route & Access Protocols
           </h3>
-          <p className="text-sm text-gray-600">
-            Specify route restrictions and clearance requirements
+          <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">
+            Restrictions & Escort Settings
           </p>
         </div>
       </div>
 
-      {/* Clearance Requirements Card */}
-      <div className="bg-gradient-to-br from-indigo-50 to-white rounded-xl border border-indigo-200 p-6 shadow-sm">
-        <div className="flex items-center space-x-2 mb-4">
-          <FaRoute className="w-4 h-4 text-indigo-600" />
-          <h4 className="font-medium text-gray-900">Clearance Requirements</h4>
+      <div className="bg-white rounded-xl border border-slate-100 p-4 shadow-none">
+        <div className="flex items-center space-x-2 mb-3">
+          <FaRoute className="w-3.5 h-3.5 text-[#345E85]" />
+          <h4 className="text-xs font-black text-[#345E85] uppercase tracking-widest">Clearance Requirements</h4>
         </div>
 
         <div className="space-y-2">
@@ -56,20 +54,19 @@ export default function RouteSection({
             min="0"
             step="0.01"
             placeholder="0.00"
-            className="transition-all focus:ring-2 focus:ring-indigo-500/20"
+            className="bg-slate-50 border-slate-200 transition-all focus:ring-2 focus:ring-blue-500/20 text-sm h-10"
           />
         </div>
       </div>
 
-      {/* Route Restrictions Card */}
-      <div className="bg-gradient-to-br from-purple-50 to-white rounded-xl border border-purple-200 p-6 shadow-sm">
-        <div className="flex items-center space-x-2 mb-4">
-          <FaCar className="w-4 h-4 text-purple-600" />
-          <h4 className="font-medium text-gray-900">Route Restrictions</h4>
+      <div className="bg-white rounded-xl border border-slate-100 p-4 shadow-none">
+        <div className="flex items-center space-x-2 mb-3">
+          <FaCar className="w-3.5 h-3.5 text-[#345E85]" />
+          <h4 className="text-xs font-black text-[#345E85] uppercase tracking-widest">Escort & Restrictions</h4>
         </div>
 
         <div className="space-y-4">
-          <div className="flex items-center space-x-3 p-4 bg-white rounded-lg border border-purple-100 hover:bg-purple-50/50 transition-colors">
+          <div className="flex items-center space-x-3 p-4 bg-slate-50 rounded-xl border border-slate-100 hover:bg-slate-100 transition-colors">
             <input
               type="checkbox"
               id="requiresLowClearanceRoute"
@@ -78,7 +75,7 @@ export default function RouteSection({
               onChange={(e) =>
                 handleFieldChange("requiresLowClearanceRoute", e.target.checked)
               }
-              className="h-4 w-4 rounded border-purple-300 text-purple-600 focus:ring-purple-500 focus:ring-offset-0"
+              className="h-4 w-4 rounded border-slate-300 text-[#345E85] focus:ring-[#345E85] focus:ring-offset-0"
             />
             <label
               htmlFor="requiresLowClearanceRoute"
@@ -93,7 +90,7 @@ export default function RouteSection({
             </label>
           </div>
 
-          <div className="flex items-center space-x-3 p-4 bg-white rounded-lg border border-purple-100 hover:bg-purple-50/50 transition-colors">
+          <div className="flex items-center space-x-3 p-4 bg-slate-50 rounded-xl border border-slate-100 hover:bg-slate-100 transition-colors">
             <input
               type="checkbox"
               id="requiresEscortVehicle"
@@ -102,7 +99,7 @@ export default function RouteSection({
               onChange={(e) =>
                 handleFieldChange("requiresEscortVehicle", e.target.checked)
               }
-              className="h-4 w-4 rounded border-purple-300 text-purple-600 focus:ring-purple-500 focus:ring-offset-0"
+              className="h-4 w-4 rounded border-slate-300 text-[#345E85] focus:ring-[#345E85] focus:ring-offset-0"
             />
             <label
               htmlFor="requiresEscortVehicle"

@@ -1,11 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   Settings, Bell, Database, Shield,
-  Palette, Code, Users, Key, History,
+  Palette, Code, Users, History,
   Edit2, Save, RotateCcw, AlertTriangle,
-  Eye, EyeOff, Copy, RefreshCw, Upload,
-  Download, Trash2, Check, X,
-  MapPin, CreditCard, MessageSquare, Slack
+  Eye, EyeOff, Copy, RefreshCw,
+  Download, Trash2
 } from 'lucide-react';
 import { TranslatedText } from '../../components/translated-text';
 import AdminPageLayout from '../../components/Admin/AdminPageLayout';
@@ -78,7 +77,7 @@ const SystemSettings: React.FC = () => {
       primaryColor: '#3B82F6',
       secondaryColor: '#8B5CF6',
       theme: 'light',
-      logoUrl: '/assets/logo-urutix-logistics.svg',
+      logoUrl: '/assets/urutiX Logistics Logo (1).svg',
       faviconUrl: '/favicon.ico',
       customCSS: '',
       enableDarkMode: true,

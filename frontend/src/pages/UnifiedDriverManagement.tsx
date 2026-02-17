@@ -1,5 +1,14 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { FaUser, FaPlus, FaList, FaUserCheck, FaCheckCircle } from 'react-icons/fa';
+import {
+  Users,
+  UserCheck,
+  Star,
+  Award,
+  Target,
+  Plus,
+  User,
+  CheckCircle
+} from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { fleetApi } from '../services/fleetApi';
@@ -12,7 +21,6 @@ import UserRewards from './UserRewards';
 import UserScoring from './UserScoring';
 import type { Driver } from '../services/fleetApi';
 import toast from 'react-hot-toast';
-import { cn } from '../utils/cn';
 
 const UnifiedDriverManagement: React.FC = () => {
   const { user, isLoading: authLoading } = useAuth();
@@ -165,9 +173,9 @@ const UnifiedDriverManagement: React.FC = () => {
 
             <button
               onClick={handleCreateDriver}
-              className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors flex items-center gap-2 shadow-lg"
+              className="flex items-center gap-2.5 px-6 py-4 bg-[#345E85] text-white rounded-2xl font-black uppercase tracking-widest text-[11px] shadow-xl shadow-blue-100 hover:bg-[#2a4d6d] active:scale-95 transition-all group"
             >
-              <FaPlus className="w-4 h-4" />
+              <Plus size={18} className="group-hover:rotate-90 transition-transform" />
               Add New Driver
             </button>
           </div>
@@ -185,7 +193,7 @@ const UnifiedDriverManagement: React.FC = () => {
                   {loadingDrivers ? '...' : drivers.length}
                 </p>
               </div>
-              <FaUser className="w-6 h-6" style={{ color: '#345E85' }} />
+              <User className="w-6 h-6" style={{ color: '#345E85' }} />
             </div>
           </div>
           <div className="bg-white rounded-lg border border-gray-100 p-4">
@@ -196,113 +204,38 @@ const UnifiedDriverManagement: React.FC = () => {
                   {loadingDrivers ? '...' : drivers.filter(d => !d.currentTruckId).length}
                 </p>
               </div>
-              <FaCheckCircle className="w-6 h-6 text-green-500" />
+              <CheckCircle className="w-6 h-6 text-green-500" />
             </div>
           </div>
         </div>
       </div>
 
-      {/* Navigation Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3 mb-4">
-
-
-        <button
-          onClick={() => {
-            setActiveTab('my-drivers');
-            navigate('/dashboard/fleet/drivers');
-          }}
-          className={cn(
-            "relative bg-white rounded-lg border p-3.5 transition-all duration-200 hover:shadow-sm group text-left",
-            activeTab === 'my-drivers'
-              ? "border-gray-300 shadow-sm bg-gray-50"
-              : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
-          )}
-        >
-          <div className="flex items-center justify-between mb-2">
-            <div
-              className={cn(
-                "p-1.5 rounded-md transition-colors",
-                activeTab === 'my-drivers'
-                  ? "bg-gray-100 text-gray-700"
-                  : "bg-gray-50 text-gray-500 group-hover:bg-gray-100 group-hover:text-gray-700"
-              )}
-            >
-              <FaList className="w-4 h-4" />
-            </div>
-            <span
-              className={cn(
-                "px-2 py-0.5 text-xs font-semibold rounded-full",
-                activeTab === 'my-drivers'
-                  ? "bg-gray-200 text-gray-700"
-                  : "bg-gray-100 text-gray-600 group-hover:bg-gray-200"
-              )}
-            >
-              {drivers.length}
-            </span>
-          </div>
-          <h3
-            className={cn(
-              "text-sm font-semibold mb-1",
-              activeTab === 'my-drivers' ? "text-gray-900" : "text-gray-900"
-            )}
+      {/* Sub-Navigation / Quick Vectors */}
+      <div className="flex flex-wrap items-center gap-4 mb-6">
+        {[
+          { id: 'my-drivers', icon: Users, label: 'My Drivers' },
+          { id: 'assignments', icon: UserCheck, label: 'Assignments' },
+          { id: 'ratings', icon: Star, label: 'Ratings' },
+          { id: 'rewards', icon: Award, label: 'Rewards' },
+          { id: 'scoring', icon: Target, label: 'Scoring' }
+        ].map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => {
+              setActiveTab(tab.id as any);
+              if (tab.id === 'my-drivers') navigate('/dashboard/fleet/drivers');
+              else if (tab.id === 'assignments') navigate('/dashboard/fleet/assignments');
+              // Add other routes if strictly needed, but typically setting activeTab is enough if we are in the same parent or managing via state in this file
+            }}
+            className={`flex items-center gap-2.5 px-5 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all ${activeTab === tab.id
+              ? 'bg-blue-50 text-[#345E85] shadow-sm'
+              : 'text-slate-400 hover:text-slate-600'
+              }`}
           >
-            My Drivers
-          </h3>
-          <p className={cn(
-            "text-xs leading-tight",
-            activeTab === 'my-drivers' ? "text-gray-600" : "text-gray-500"
-          )}>
-            View, edit, and manage your driver roster and profiles
-          </p>
-          {activeTab === 'my-drivers' && (
-            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-400 rounded-b-lg" />
-          )}
-        </button>
-
-        <button
-          onClick={() => {
-            setActiveTab('assignments');
-            navigate('/dashboard/fleet/assignments');
-          }}
-          className={cn(
-            "relative bg-white rounded-lg border p-3.5 transition-all duration-200 hover:shadow-sm group text-left",
-            activeTab === 'assignments'
-              ? "border-gray-300 shadow-sm bg-gray-50"
-              : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
-          )}
-        >
-          <div className="flex items-center justify-between mb-2">
-            <div
-              className={cn(
-                "p-1.5 rounded-md transition-colors",
-                activeTab === 'assignments'
-                  ? "bg-gray-100 text-gray-700"
-                  : "bg-gray-50 text-gray-500 group-hover:bg-gray-100 group-hover:text-gray-700"
-              )}
-            >
-              <FaUserCheck className="w-4 h-4" />
-            </div>
-          </div>
-          <h3
-            className={cn(
-              "text-sm font-semibold mb-1",
-              activeTab === 'assignments' ? "text-gray-900" : "text-gray-900"
-            )}
-          >
-            Driver Assignments
-          </h3>
-          <p className={cn(
-            "text-xs leading-tight",
-            activeTab === 'assignments' ? "text-gray-600" : "text-gray-500"
-          )}>
-            Assign drivers to trucks and manage vehicle assignments
-          </p>
-          {activeTab === 'assignments' && (
-            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-400 rounded-b-lg" />
-          )}
-        </button>
-
-
+            <tab.icon size={16} />
+            {tab.label}
+          </button>
+        ))}
       </div>
 
       {/* Content Container */}
@@ -313,14 +246,14 @@ const UnifiedDriverManagement: React.FC = () => {
             <div>
               {!showDriverForm ? (
                 <div className="text-center py-12">
-                  <FaUser className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                  <User className="w-16 h-16 text-gray-400 mx-auto mb-4" />
                   <h3 className="mb-2">Add New Driver</h3>
                   <p className="text-gray-600 mb-6">Click the button below to start adding a new driver to your fleet</p>
                   <button
                     onClick={handleCreateDriver}
-                    className="px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors flex items-center gap-2 mx-auto"
+                    className="px-6 py-3 bg-[#345E85] text-white rounded-2xl font-black uppercase tracking-widest text-[11px] hover:bg-[#2a4d6d] transition-colors flex items-center gap-2 mx-auto"
                   >
-                    <FaPlus className="w-4 h-4" />
+                    <Plus className="w-4 h-4" />
                     Add Driver
                   </button>
                 </div>

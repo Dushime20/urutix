@@ -4,10 +4,14 @@ import {
   DollarSign,
   Clock,
   TrendingUp,
-  Award,
   Activity,
-  Truck
+  Truck,
+  Shield,
+  Zap,
+  Target,
+  BarChart3
 } from 'lucide-react';
+import { cn } from '@/utils/cn';
 
 interface LoadPerformance {
   title: string;
@@ -106,10 +110,60 @@ const BidAnalytics: React.FC<BidAnalyticsProps> = ({ userRole }) => {
 
 
 
+  const StatsCard = ({ title, value, icon: Icon, colorClass, secondaryColor }: any) => {
+    const displayValue = Array.isArray(value) ? value.length : value;
+
+    return (
+      <div className="flex flex-col items-center group">
+        <div className="relative w-40 h-40 rounded-full bg-white border-[8px] border-slate-50 flex flex-col items-center justify-center transition-all duration-500 hover:border-slate-100 hover:shadow-xl hover:shadow-slate-200/50">
+          <svg className="absolute inset-0 w-full h-full -rotate-90 scale-[1.05]">
+            <circle
+              cx="80"
+              cy="80"
+              r="72"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="3"
+              strokeDasharray="452"
+              strokeDashoffset="350"
+              className={cn("opacity-10 transition-all duration-1000 group-hover:stroke-dashoffset-[200]", secondaryColor)}
+            />
+          </svg>
+
+          <div className={cn("p-2 rounded-2xl mb-1 bg-slate-50 text-slate-400 group-hover:bg-white group-hover:text-inherit transition-all duration-500 shadow-sm", colorClass)}>
+            <Icon className="w-5 h-5" />
+          </div>
+
+          <div className="flex flex-col items-center px-4 w-full overflow-hidden">
+            <span className="text-xl font-black text-[#0f172a] tracking-tight group-hover:scale-110 transition-transform duration-500 truncate w-full text-center">
+              {displayValue}
+            </span>
+          </div>
+
+          <div className="absolute inset-4 rounded-full border border-dashed border-slate-100 opacity-50 group-hover:rotate-90 transition-transform duration-1000" />
+        </div>
+
+        <div className="mt-4 text-center">
+          <p className="text-[8px] font-black text-slate-400 uppercase tracking-[0.2em] group-hover:text-[#345E85] transition-colors duration-300">
+            {title}
+          </p>
+        </div>
+      </div>
+    );
+  };
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      maximumFractionDigits: 0
+    }).format(amount);
+  };
+
   const formatTime = (minutes: number) => {
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
-    return `${hours}h ${mins} m`;
+    return hours > 0 ? `${hours}H ${mins}M` : `${mins}M`;
   };
 
   if (loading) {
@@ -122,23 +176,19 @@ const BidAnalytics: React.FC<BidAnalyticsProps> = ({ userRole }) => {
   }
 
   return (
-    <div className="bid-analytics space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-      <div className="bg-white rounded-3xl border border-gray-200 p-8 relative overflow-hidden group">
-        <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:scale-110 transition-transform">
-          <TrendingUp size={160} className="text-gray-900" />
-        </div>
-        <div className="relative">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 bg-gray-900 rounded-xl flex items-center justify-center shadow-lg">
-              <BarChart2 className="text-white" size={20} />
+    <div className="space-y-12">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+        <div className="space-y-2">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center">
+              <BarChart3 className="w-6 h-6 text-[#345E85]" />
             </div>
-            <h1 className="text-2xl font-black text-gray-900 tracking-tight italic uppercase">Bidding Analytics</h1>
+            <h1 className="text-4xl font-black text-[#0f172a] tracking-tight">Performance Intelligence</h1>
           </div>
-          <p className="text-xs font-bold text-gray-400 uppercase tracking-widest max-w-lg">
+          <p className="text-xs font-bold text-slate-400 uppercase tracking-widest max-w-xl">
             {userRole === 'CARGO_OWNER'
-              ? 'Comprehensive performance tracking for your auction ecosystem and bidder dynamics'
-              : 'Quantum market insights and success intelligence for your strategic bidding operations'
-            }
+              ? 'Comprehensive tracking of auction ecosystem and bidder dynamics'
+              : 'Quantum market insights and success intelligence for your strategic bidding'}
           </p>
         </div>
       </div>
@@ -158,129 +208,141 @@ const BidAnalytics: React.FC<BidAnalyticsProps> = ({ userRole }) => {
         </div>
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        {[
-          { label: 'Total Bids', value: analytics.totalBids, icon: Activity, color: 'gray' },
-          { label: 'Success Rate', value: `${analytics.successRate}% `, icon: Award, color: 'indigo' },
-          { label: 'Avg Bid Amount', value: formatCurrency(analytics.averageBidAmount), icon: DollarSign, color: 'emerald' },
-          { label: 'Avg Response', value: formatTime(analytics.averageResponseTime), icon: Clock, color: 'amber' }
-        ].map((item, idx) => (
-          <div key={idx} className="bg-white rounded-2xl border border-gray-200 p-6 hover:border-gray-900 transition-all duration-300 group relative overflow-hidden shadow-sm">
-            <div className="relative flex items-center justify-between">
-              <div>
-                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 leading-none">{item.label}</p>
-                <h5 className="text-2xl font-black text-gray-900 leading-none tracking-tight">{item.value}</h5>
-              </div>
-              <div className="w-12 h-12 bg-gray-900 rounded-xl flex items-center justify-center group-hover:bg-black transition-colors shadow-lg shadow-gray-200">
-                <item.icon className="text-white" size={20} />
-              </div>
-            </div>
-            <div className="mt-4 pt-4 border-t border-gray-50 flex items-center gap-2">
-              <span className="flex h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Live Data Tracking</span>
-            </div>
-          </div>
-        ))}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 mb-12 place-items-center bg-white p-10 rounded-[3rem] border border-slate-100 shadow-sm">
+        <StatsCard
+          title="Total Engagement"
+          value={analytics.totalBids}
+          icon={Activity}
+          colorClass="bg-blue-50 text-[#345E85]"
+          secondaryColor="text-[#345E85]"
+        />
+        <StatsCard
+          title="Conversion Rate"
+          value={`${analytics.successRate}%`}
+          icon={Target}
+          colorClass="bg-emerald-50 text-emerald-600"
+          secondaryColor="text-emerald-600"
+        />
+        <StatsCard
+          title="Average Valuation"
+          value={formatCurrency(analytics.averageBidAmount)}
+          icon={DollarSign}
+          colorClass="bg-amber-50 text-amber-600"
+          secondaryColor="text-amber-600"
+        />
+        <StatsCard
+          title="Response Latency"
+          value={formatTime(analytics.averageResponseTime)}
+          icon={Clock}
+          colorClass="bg-purple-50 text-purple-600"
+          secondaryColor="text-purple-600"
+        />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-3xl border border-gray-200 p-8 shadow-sm group">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-8 h-8 bg-indigo-50 text-indigo-600 rounded-lg flex items-center justify-center">
-              <Award size={18} />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-sm relative overflow-hidden group">
+          <div className="absolute -right-8 -top-8 w-24 h-24 bg-slate-50 rounded-full opacity-50 group-hover:scale-150 transition-transform duration-700" />
+
+          <div className="relative">
+            <div className="flex items-center gap-3 mb-8">
+              <div className="w-10 h-10 bg-slate-50 text-[#345E85] rounded-xl flex items-center justify-center border border-slate-100 shadow-sm">
+                <Shield size={20} />
+              </div>
+              <h5 className="text-[10px] font-black text-[#0f172a] uppercase tracking-[0.2em]">Operational summary</h5>
             </div>
-            <h5 className="text-xs font-black text-gray-900 uppercase tracking-widest italic leading-none">Performance Summary</h5>
-          </div>
-          <div className="space-y-4">
-            {[
-              { label: 'Successful Bids', value: analytics.successfulBids, icon: Activity },
-              { label: 'Total Value', value: formatCurrency(analytics.totalValue), icon: DollarSign },
-              { label: 'Success Rate', value: `${analytics.successRate}% `, icon: Award }
-            ].map((row, idx) => (
-              <div key={idx} className="flex justify-between items-center p-3 bg-gray-50/50 rounded-xl border border-gray-100 hover:bg-white transition-colors">
-                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none shrink-0">{row.label}</span>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-black text-gray-900 italic">{row.value}</span>
-                  <div className="w-6 h-6 bg-white rounded-lg flex items-center justify-center border border-gray-100 shadow-sm">
-                    <row.icon size={12} className="text-gray-400" />
+            <div className="space-y-4">
+              {[
+                { label: 'Converted Opportunities', value: analytics.successfulBids, icon: Zap, color: 'text-blue-500' },
+                { label: 'Total Network Volume', value: formatCurrency(analytics.totalValue), icon: DollarSign, color: 'text-emerald-500' },
+                { label: 'Global Success Parity', value: `${analytics.successRate}%`, icon: Target, color: 'text-[#345E85]' }
+              ].map((row, idx) => (
+                <div key={idx} className="flex justify-between items-center p-4 bg-slate-50/50 rounded-2xl border border-slate-100 hover:bg-white hover:border-blue-100 transition-all group/row">
+                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{row.label}</span>
+                  <div className="flex items-center gap-3">
+                    <span className={cn("text-sm font-black italic", row.color)}>{row.value}</span>
+                    <div className="w-7 h-7 bg-white rounded-lg flex items-center justify-center shadow-sm border border-slate-100 group-hover/row:scale-110 transition-transform">
+                      <row.icon size={14} className="text-slate-400" />
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-3xl border border-gray-200 p-8 shadow-sm group">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-8 h-8 bg-amber-50 text-amber-600 rounded-lg flex items-center justify-center">
-              <TrendingUp size={18} />
+        <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-sm relative overflow-hidden group">
+          <div className="absolute -right-8 -top-8 w-24 h-24 bg-slate-50 rounded-full opacity-50 group-hover:scale-150 transition-transform duration-700" />
+
+          <div className="relative">
+            <div className="flex items-center gap-3 mb-8">
+              <div className="w-10 h-10 bg-slate-50 text-amber-500 rounded-xl flex items-center justify-center border border-slate-100 shadow-sm">
+                <TrendingUp size={20} />
+              </div>
+              <h5 className="text-[10px] font-black text-[#0f172a] uppercase tracking-[0.2em]">Strategic insights</h5>
             </div>
-            <h5 className="text-xs font-black text-gray-900 uppercase tracking-widest italic leading-none">Market Insights</h5>
-          </div>
-          <div className="space-y-4">
-            {[
-              { label: 'Avg Bid Amount', value: formatCurrency(analytics.averageBidAmount), icon: DollarSign },
-              { label: 'Response Time', value: formatTime(analytics.averageResponseTime), icon: Clock },
-              { label: 'Market Activity', value: 'High Intensity', icon: Activity, customColor: 'text-emerald-600' }
-            ].map((row, idx) => (
-              <div key={idx} className="flex justify-between items-center p-3 bg-gray-50/50 rounded-xl border border-gray-100 hover:bg-white transition-colors">
-                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none shrink-0">{row.label}</span>
-                <div className="flex items-center gap-2">
-                  <span className={`text - xs font - black italic ${row.customColor || 'text-gray-900'} `}>{row.value}</span>
-                  <div className="w-6 h-6 bg-white rounded-lg flex items-center justify-center border border-gray-100 shadow-sm">
-                    <row.icon size={12} className="text-gray-400" />
+            <div className="space-y-4">
+              {[
+                { label: 'Market Valuation Index', value: formatCurrency(analytics.averageBidAmount), icon: DollarSign, color: 'text-amber-500' },
+                { label: 'Mean Response Velocity', value: formatTime(analytics.averageResponseTime), icon: Clock, color: 'text-purple-500' },
+                { label: 'Market Intensity', value: 'OPTIMAL', icon: Activity, color: 'text-emerald-500' }
+              ].map((row, idx) => (
+                <div key={idx} className="flex justify-between items-center p-4 bg-slate-50/50 rounded-2xl border border-slate-100 hover:bg-white hover:border-blue-100 transition-all group/row">
+                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{row.label}</span>
+                  <div className="flex items-center gap-3">
+                    <span className={cn("text-sm font-black italic", row.color)}>{row.value}</span>
+                    <div className="w-7 h-7 bg-white rounded-lg flex items-center justify-center shadow-sm border border-slate-100 group-hover/row:scale-110 transition-transform">
+                      <row.icon size={14} className="text-slate-400" />
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
       </div>
 
       {analytics.topPerformingLoads && analytics.topPerformingLoads.length > 0 && (
-        <div className="bg-white rounded-3xl border border-gray-200 overflow-hidden shadow-sm">
-          <div className="p-8 border-b border-gray-100 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-emerald-50 text-emerald-600 rounded-lg flex items-center justify-center">
-                < Award size={18} />
-              </div>
-              <h5 className="text-xs font-black text-gray-900 uppercase tracking-widest italic leading-none">Top Performing Loads</h5>
+        <div className="w-full overflow-hidden">
+          <div className="flex items-center gap-3 mb-6 px-4">
+            <div className="w-10 h-10 bg-slate-900 text-white rounded-2xl flex items-center justify-center shadow-lg">
+              <Target size={20} />
             </div>
+            <h5 className="text-[10px] font-black text-[#0f172a] uppercase tracking-[0.2em]">High yield opportunities</h5>
           </div>
 
-          {/* Desktop Table */}
-          <div className="hidden md:block overflow-x-auto">
-            <table className="w-full text-left">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-separate border-spacing-y-3">
               <thead>
-                <tr className="bg-gray-50/50 border-b border-gray-100">
-                  <th className="px-8 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Load Details</th>
-                  <th className="px-8 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">Bids</th>
-                  <th className="px-8 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Final Price</th>
-                  <th className="px-8 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">Status</th>
+                <tr>
+                  <th className="px-8 py-2 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Entity Context</th>
+                  <th className="px-8 py-2 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-center">Engagement</th>
+                  <th className="px-8 py-2 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Final Valuation</th>
+                  <th className="px-8 py-2 text-right text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Status</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
                 {analytics.topPerformingLoads.map((load: any, index: number) => (
-                  <tr key={index} className="hover:bg-gray-50/50 transition-colors group">
-                    <td className="px-8 py-5">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-gray-900 rounded-lg flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
-                          <Truck size={14} className="text-white" />
+                  <tr key={index} className="group transition-all">
+                    <td className="px-8 py-5 bg-white border-y border-l border-slate-100 first:rounded-l-[2rem] group-hover:bg-slate-50/50">
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center text-[#345E85] group-hover:bg-white group-hover:scale-110 transition-all">
+                          <Truck size={18} />
                         </div>
-                        <span className="text-xs font-black text-gray-900 uppercase italic leading-none tracking-tight">{load.title}</span>
+                        <span className="text-sm font-black text-[#0f172a] uppercase italic leading-none">{load.title}</span>
                       </div>
                     </td>
-                    <td className="px-8 py-5 text-center">
-                      <span className="text-xs font-black text-gray-900">{load.totalBids}</span>
+                    <td className="px-8 py-5 bg-white border-y border-slate-100 group-hover:bg-slate-50/50 text-center">
+                      <span className="text-xs font-black text-slate-900">{load.totalBids} BIDS</span>
                     </td>
-                    <td className="px-8 py-5">
-                      <span className="text-xs font-black text-emerald-600 italic">{formatCurrency(load.finalPrice)}</span>
+                    <td className="px-8 py-5 bg-white border-y border-slate-100 group-hover:bg-slate-50/50">
+                      <span className="text-sm font-black text-emerald-600 italic tracking-tight">{formatCurrency(load.finalPrice)}</span>
                     </td>
-                    <td className="px-8 py-5 text-right">
-                      <span className={`px - 3 py - 1 text - [10px] font - black uppercase tracking - widest rounded - full italic ${load.status === 'COMPLETED'
-                          ? 'bg-emerald-50 text-emerald-600 border border-emerald-100'
-                          : 'bg-amber-50 text-amber-600 border border-amber-100'
-                        } `}>
+                    <td className="px-8 py-5 bg-white border-y border-r border-slate-100 last:rounded-r-[2rem] group-hover:bg-slate-50/50 text-right">
+                      <span className={cn(
+                        "px-4 py-1.5 text-[9px] font-black uppercase tracking-widest rounded-full border shadow-sm inline-flex items-center gap-1.5",
+                        load.status === 'COMPLETED' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-blue-50 text-blue-600 border-blue-100'
+                      )}>
+                        <span className="w-1 h-1 rounded-full bg-current" />
                         {load.status}
                       </span>
                     </td>
@@ -289,57 +351,29 @@ const BidAnalytics: React.FC<BidAnalyticsProps> = ({ userRole }) => {
               </tbody>
             </table>
           </div>
-
-          {/* Mobile Cards */}
-          <div className="md:hidden p-4 space-y-4">
-            {analytics.topPerformingLoads.map((load: any, index: number) => (
-              <div key={index} className="bg-gray-50/50 rounded-2xl border border-gray-100 p-4 space-y-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-gray-900 rounded-lg flex items-center justify-center shrink-0">
-                    <Truck size={14} className="text-white" />
-                  </div>
-                  <span className="text-xs font-black text-gray-900 uppercase italic tracking-tight">{load.title}</span>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Total Bids</p>
-                    <p className="text-xs font-black text-gray-900">{load.totalBids}</p>
-                  </div>
-                  <div>
-                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Final Price</p>
-                    <p className="text-xs font-black text-emerald-600">{formatCurrency(load.finalPrice)}</p>
-                  </div>
-                </div>
-                <div className="pt-4 border-t border-gray-100">
-                  <span className={`px - 3 py - 1 text - [10px] font - black uppercase tracking - widest rounded - full italic ${load.status === 'COMPLETED'
-                      ? 'bg-emerald-50 text-emerald-600 border border-emerald-100'
-                      : 'bg-amber-50 text-amber-600 border border-amber-100'
-                    } `}>
-                    {load.status}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
         </div>
       )}
 
-      {/* Bid Trends Chart Placeholder */}
-      <div className="bg-white rounded-3xl border border-gray-200 p-8 shadow-sm">
-        <div className="flex items-center gap-3 mb-8">
-          <div className="w-8 h-8 bg-indigo-50 text-indigo-600 rounded-lg flex items-center justify-center">
-            <Activity size={18} />
+      <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-sm relative overflow-hidden group">
+        <div className="absolute -right-8 -top-8 w-24 h-24 bg-slate-50 rounded-full opacity-50 group-hover:scale-150 transition-transform duration-700" />
+
+        <div className="relative">
+          <div className="flex items-center gap-3 mb-8">
+            <div className="w-10 h-10 bg-slate-50 text-indigo-500 rounded-xl flex items-center justify-center border border-slate-100 shadow-sm">
+              <Activity size={20} />
+            </div>
+            <h5 className="text-[10px] font-black text-[#0f172a] uppercase tracking-[0.2em]">Market volatility & trends</h5>
           </div>
-          <h5 className="text-xs font-black text-gray-900 uppercase tracking-widest italic leading-none">Market Volatility & Bid Trends</h5>
-        </div>
-        <div className="h-64 bg-gray-50/50 rounded-3xl border border-dashed border-gray-200 flex flex-col items-center justify-center relative overflow-hidden group">
-          <div className="absolute inset-0 bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:16px_16px] [mask-image:radial-gradient(ellipse_50%_50%_at_50%_50%,#000_70%,transparent_100%)] opacity-50"></div>
-          <BarChart2 className="h-12 w-12 text-gray-300 mb-4 group-hover:scale-110 group-hover:text-gray-400 transition-all duration-500" />
-          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest italic">Predictive Analytics Hub Coming Soon</p>
-          <div className="mt-4 flex gap-1">
-            {[1, 2, 3].map(i => (
-              <div key={i} className="w-1.5 h-1.5 rounded-full bg-gray-200"></div>
-            ))}
+
+          <div className="h-64 bg-slate-50/50 rounded-[2rem] border border-dashed border-slate-200 flex flex-col items-center justify-center relative overflow-hidden group">
+            <div className="absolute inset-0 bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:16px_16px] [mask-image:radial-gradient(ellipse_50%_50%_at_50%_50%,#000_70%,transparent_100%)] opacity-50"></div>
+            <BarChart2 className="h-12 w-12 text-slate-300 mb-4 group-hover:scale-110 group-hover:text-slate-400 transition-all duration-500" />
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic">Predictive Hub Coming Soon</p>
+            <div className="mt-4 flex gap-1">
+              {[1, 2, 3].map(i => (
+                <div key={i} className="w-1.5 h-1.5 rounded-full bg-slate-200"></div>
+              ))}
+            </div>
           </div>
         </div>
       </div>

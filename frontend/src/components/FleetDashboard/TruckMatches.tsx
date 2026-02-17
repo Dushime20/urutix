@@ -1,8 +1,23 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { enhancedMatchingApi } from '../../services/enhancedMatchingApi';
-import { FaTruck, FaBox, FaMapMarkerAlt, FaCheck, FaTimes, FaRoute, FaCalendar, FaDollarSign, FaCheckCircle } from 'react-icons/fa';
+import {
+    Check,
+    X,
+    Navigation,
+    CheckCircle2,
+    TrendingUp,
+    Zap,
+    Clock,
+    ArrowRight,
+    Package,
+    Truck,
+    MapPin,
+    Calendar,
+    DollarSign
+} from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export const TruckMatches: React.FC = () => {
     const navigate = useNavigate();
@@ -19,7 +34,7 @@ export const TruckMatches: React.FC = () => {
             const result = await enhancedMatchingApi.getTruckOwnerMatches();
             setMatches(result.data || []);
         } catch (err) {
-            setError('Failed to load matches');
+            setError('Failed to synchronize match matrix');
         } finally {
             setLoading(false);
         }
@@ -33,21 +48,15 @@ export const TruckMatches: React.FC = () => {
         setProcessingMatchId(matchId);
         try {
             const result = await enhancedMatchingApi.createTripForMatch(matchId);
-            toast.success('🎉 Trip created successfully!');
-
-            // Show success modal with correct details
+            toast.success('System Trip Activated');
             const match = matches.find(m => m.id === matchId);
             if (match) {
-                setAcceptedMatchDetails({
-                    match: { ...match, trip: result.data },
-                    response: result
-                });
+                setAcceptedMatchDetails({ match: { ...match, trip: result.data }, response: result });
                 setShowSuccessModal(true);
             }
-
             await loadMatches();
         } catch (err: any) {
-            toast.error('Failed to create trip: ' + (err.response?.data?.message || err.message));
+            toast.error('Trip activation failed');
         } finally {
             setProcessingMatchId(null);
         }
@@ -57,39 +66,33 @@ export const TruckMatches: React.FC = () => {
         setProcessingMatchId(matchId);
         try {
             const response = await enhancedMatchingApi.respondToMatch(matchId, status);
-
             if (status === 'ACCEPTED') {
-                // Show success modal with trip details
-                setAcceptedMatchDetails({
-                    match,
-                    response: response.data
-                });
+                setAcceptedMatchDetails({ match, response: response.data });
                 setShowSuccessModal(true);
-                toast.success('🎉 Match accepted! Trip created successfully!');
+                toast.success('Match Synchronized');
             } else {
-                toast.success('Match rejected');
+                toast.success('Match Pulse Terminated');
             }
-
-            // Refresh list
             await loadMatches();
         } catch (err: any) {
-            console.error('Failed to respond to match:', err);
-            toast.error(err.response?.data?.message || 'Failed to update status');
+            toast.error('Matrix update failed');
         } finally {
             setProcessingMatchId(null);
         }
     };
 
     const handleViewTrip = () => {
-        // Navigate to trips page or specific trip
         setShowSuccessModal(false);
         navigate('/dashboard/trips');
-        toast.success('Redirecting to your trips...');
     };
 
-    if (loading) return <div className="p-8 text-center text-gray-500">Loading matches...</div>;
+    if (loading) return (
+        <div className="py-20 flex flex-col items-center justify-center animate-pulse">
+            <div className="size-12 bg-slate-100 rounded-full mb-4" />
+            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Syncing Match Matrix...</p>
+        </div>
+    );
 
-    // Filter to show REQUESTED at top, then Accepted/Rejected
     const sortedMatches = [...matches].sort((a, b) => {
         if (a.status === 'REQUESTED' && b.status !== 'REQUESTED') return -1;
         if (a.status !== 'REQUESTED' && b.status === 'REQUESTED') return 1;
@@ -98,13 +101,13 @@ export const TruckMatches: React.FC = () => {
 
     if (matches.length === 0) {
         return (
-            <div className="bg-white p-12 rounded-xl shadow-sm border border-gray-100 text-center">
-                <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-50 rounded-full mb-4">
-                    <FaTruck className="w-8 h-8 text-gray-400" />
+            <div className="py-20 text-center flex flex-col items-center">
+                <div className="size-20 bg-slate-50 rounded-[32px] flex items-center justify-center text-slate-200 mb-6">
+                    <Zap size={40} />
                 </div>
-                <h3 className="text-lg font-bold text-gray-900 mb-2">No Match Requests</h3>
-                <p className="text-gray-500 max-w-sm mx-auto">
-                    When cargo owners find your trucks suitable for their loads, their requests will appear here.
+                <h3 className="text-xl font-black text-slate-900 tracking-tight">Zero Match Pulse</h3>
+                <p className="text-sm font-medium text-slate-400 mt-2 max-w-sm mx-auto">
+                    The synchronization engine has not detected any load requests for your fleet infrastructure yet.
                 </p>
             </div>
         )
@@ -112,230 +115,180 @@ export const TruckMatches: React.FC = () => {
 
     return (
         <>
-            <div className="space-y-6">
-                <div className="flex justify-between items-center">
-                    <h2 className="text-xl font-bold text-gray-900">Incoming Load Requests</h2>
+            <div className="space-y-8 p-2">
+                <div className="flex items-center gap-3 px-2">
+                    <div className="size-8 bg-indigo-50 rounded-lg flex items-center justify-center text-indigo-600 shadow-inner">
+                        <TrendingUp size={16} />
+                    </div>
+                    <h2 className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Load Synchronization Vector</h2>
                 </div>
 
-
                 {error && (
-                    <div className="bg-red-50 text-red-700 p-4 rounded-lg">
+                    <div className="bg-rose-50 border border-rose-100 text-rose-600 p-6 rounded-[32px] text-sm font-black uppercase tracking-widest">
                         {error}
                     </div>
                 )}
 
-                <div className="grid gap-4">
-                    {sortedMatches.map(match => (
-                        <div key={match.id} className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                                <div className="flex-1">
-                                    <div className="flex items-center gap-3 mb-2">
-                                        <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold border ${match.status === 'REQUESTED' ? 'bg-blue-50 text-blue-700 border-blue-100' :
-                                            match.status === 'ACCEPTED' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' :
-                                                'bg-gray-50 text-gray-700 border-gray-100'
-                                            }`}>
-                                            {match.status}
-                                        </span>
-                                        <span className="text-xs font-medium text-gray-500">
-                                            Match Score: <span className="text-primary-600">{(match.score * 100).toFixed(0)}%</span>
-                                        </span>
-                                        <span className="text-xs text-gray-400">
-                                            {new Date(match.createdAt).toLocaleDateString()}
-                                        </span>
-                                    </div>
+                <div className="grid gap-6">
+                    <AnimatePresence mode='popLayout'>
+                        {sortedMatches.map(match => (
+                            <motion.div
+                                layout
+                                key={match.id}
+                                initial={{ opacity: 0, scale: 0.98 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.98 }}
+                                className="bg-white p-8 rounded-[40px] border border-slate-100 shadow-sm hover:shadow-xl transition-all relative overflow-hidden group"
+                            >
+                                <div className="absolute top-0 right-0 p-10 opacity-[0.02] pointer-events-none group-hover:scale-110 transition-transform"><Zap size={120} /></div>
 
-                                    <h3 className="font-bold text-lg text-gray-900 mb-1">{match.load?.title || 'Untitled Load'}</h3>
-
-                                    <div className="flex flex-wrap gap-4 text-sm text-gray-600 mt-3">
-                                        <div className="flex items-center gap-1.5">
-                                            <FaBox className="text-gray-400" />
-                                            <span>{match.load?.weight} kg</span>
+                                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8 relative z-10">
+                                    <div className="flex-1">
+                                        <div className="flex flex-wrap items-center gap-3 mb-6">
+                                            <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border ${match.status === 'REQUESTED' ? 'bg-blue-50 text-blue-600 border-blue-100' :
+                                                    match.status === 'ACCEPTED' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
+                                                        'bg-slate-50 text-slate-500 border-slate-100'
+                                                }`}>
+                                                {match.status}
+                                            </span>
+                                            <div className="flex items-center gap-2 px-3 py-1 bg-indigo-50 text-indigo-600 rounded-full border border-indigo-100">
+                                                <Zap size={10} className="fill-current" />
+                                                <span className="text-[9px] font-black uppercase tracking-widest">Match {(match.score * 100).toFixed(0)}%</span>
+                                            </div>
+                                            <span className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">
+                                                {new Date(match.createdAt).toLocaleDateString()}
+                                            </span>
                                         </div>
-                                        <div className="flex items-center gap-1.5">
-                                            <FaTruck className="text-gray-400" />
-                                            <span>For Truck: {match.truck?.plateNumber || 'Unknown'}</span>
+
+                                        <h3 className="text-2xl font-black text-slate-900 tracking-tight mb-4">{match.load?.title || 'Untitled Load Intelligence'}</h3>
+
+                                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+                                            <div className="space-y-1">
+                                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Payload</p>
+                                                <div className="flex items-center gap-2 font-bold text-slate-700 text-sm"><Package size={14} className="text-indigo-400" /> {match.load?.weight?.toLocaleString()} kg</div>
+                                            </div>
+                                            <div className="space-y-1">
+                                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Asset Vector</p>
+                                                <div className="flex items-center gap-2 font-bold text-slate-700 text-sm"><Truck size={14} className="text-indigo-400" /> {match.truck?.plateNumber || 'Unknown'}</div>
+                                            </div>
+                                            <div className="col-span-2 space-y-1">
+                                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Route Traverse</p>
+                                                <div className="flex items-center gap-2 font-bold text-slate-700 text-sm">
+                                                    <MapPin size={14} className="text-indigo-400" />
+                                                    <span>{match.load?.origin?.city || 'Origin'}</span>
+                                                    <ArrowRight size={12} className="text-slate-300" />
+                                                    <span>{match.load?.destination?.city || 'Destination'}</span>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
 
-                                    <div className="mt-2 flex items-center gap-1.5 text-sm text-gray-600">
-                                        <FaMapMarkerAlt className="text-gray-400" />
-                                        <span>
-                                            {match.load?.origin?.city || 'Origin'}
-                                            <span className="mx-2 text-gray-300">→</span>
-                                            {match.load?.destination?.city || 'Destination'}
-                                        </span>
-                                    </div>
-                                </div>
+                                    <div className="flex flex-col sm:flex-row gap-3 pt-6 lg:pt-0 border-t lg:border-t-0 border-slate-50">
+                                        {match.status === 'REQUESTED' && (
+                                            <>
+                                                <button
+                                                    onClick={() => handleRespond(match.id, 'ACCEPTED', match)}
+                                                    disabled={processingMatchId === match.id}
+                                                    className="flex items-center justify-center gap-2 px-8 py-3 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-600 transition-all shadow-xl shadow-slate-900/10 disabled:opacity-50"
+                                                >
+                                                    {processingMatchId === match.id ? <Clock size={14} className="animate-spin" /> : <Check size={14} />}
+                                                    Authorize Match
+                                                </button>
+                                                <button
+                                                    onClick={() => handleRespond(match.id, 'REJECTED', match)}
+                                                    disabled={processingMatchId === match.id}
+                                                    className="flex items-center justify-center gap-2 px-8 py-3 bg-slate-50 text-slate-400 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-rose-50 hover:text-rose-500 transition-all border border-transparent hover:border-rose-100 disabled:opacity-50"
+                                                >
+                                                    <X size={14} /> Deny
+                                                </button>
+                                            </>
+                                        )}
 
-                                {match.status === 'REQUESTED' && (
-                                    <div className="flex gap-3 pt-4 md:pt-0 border-t md:border-t-0 border-gray-100">
-                                        <button
-                                            onClick={() => handleRespond(match.id, 'ACCEPTED', match)}
-                                            disabled={processingMatchId === match.id}
-                                            className="flex-1 md:flex-none flex items-center justify-center gap-2 text-white px-5 py-2.5 rounded-lg font-medium transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90"
-                                            style={{ backgroundColor: '#345E85' }}
-                                        >
-                                            {processingMatchId === match.id ? (
-                                                <>
-                                                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
-                                                    Processing...
-                                                </>
+                                        {match.status === 'ACCEPTED' && (
+                                            match.trip ? (
+                                                <button
+                                                    onClick={handleViewTrip}
+                                                    className="flex items-center justify-center gap-2 px-8 py-3 bg-indigo-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-100"
+                                                >
+                                                    <Navigation size={14} /> Analyze Trip
+                                                </button>
                                             ) : (
-                                                <>
-                                                    <FaCheck className="w-4 h-4" /> Accept
-                                                </>
-                                            )}
-                                        </button>
-                                        <button
-                                            onClick={() => handleRespond(match.id, 'REJECTED', match)}
-                                            disabled={processingMatchId === match.id}
-                                            className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-white text-gray-700 border border-gray-300 px-5 py-2.5 rounded-lg hover:bg-gray-50 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                                        >
-                                            <FaTimes className="w-4 h-4" /> Reject
-                                        </button>
-                                    </div>
-                                )}
+                                                <button
+                                                    onClick={() => handleCreateTrip(match.id)}
+                                                    disabled={processingMatchId === match.id}
+                                                    className="flex items-center justify-center gap-2 px-8 py-3 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-600 transition-all shadow-xl shadow-slate-900/10 disabled:opacity-50"
+                                                >
+                                                    {processingMatchId === match.id ? <Clock size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
+                                                    Activate Module
+                                                </button>
+                                            )
+                                        )}
 
-                                {match.status === 'ACCEPTED' && (
-                                    <div className="flex gap-3 pt-4 md:pt-0 border-t md:border-t-0 border-gray-100">
-                                        {match.trip ? (
-                                            <button
-                                                onClick={handleViewTrip}
-                                                className="flex-1 md:flex-none flex items-center justify-center gap-2 text-white px-5 py-2.5 rounded-lg font-medium transition-colors shadow-sm hover:opacity-90"
-                                                style={{ backgroundColor: '#345e85' }}
-                                            >
-                                                <FaRoute className="w-4 h-4" /> View Trip
-                                            </button>
-                                        ) : (
-                                            <button
-                                                onClick={() => handleCreateTrip(match.id)}
-                                                disabled={processingMatchId === match.id}
-                                                className="flex-1 md:flex-none flex items-center justify-center gap-2 text-white px-5 py-2.5 rounded-lg font-medium transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90"
-                                                style={{ backgroundColor: '#345e85' }}
-                                            >
-                                                {processingMatchId === match.id ? (
-                                                    <>
-                                                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
-                                                        Creating...
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        <FaCheckCircle className="w-4 h-4" /> Create Trip
-                                                    </>
-                                                )}
-                                            </button>
+                                        {match.status === 'REJECTED' && (
+                                            <div className="px-6 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-[9px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
+                                                <X size={12} /> Registry Terminated
+                                            </div>
                                         )}
                                     </div>
-                                )}
-                                {match.status === 'REJECTED' && (
-                                    <div className="text-gray-500 font-medium flex items-center gap-2 bg-gray-50 px-4 py-2 rounded-lg">
-                                        <FaTimes /> Rejected
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    ))}
+                                </div>
+                            </motion.div>
+                        ))}
+                    </AnimatePresence>
                 </div>
             </div >
 
-            {/* Success Modal */}
-            {
-                showSuccessModal && acceptedMatchDetails && (
-                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-                        <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden animate-scale-in">
-                            {/* Header */}
-                            <div className="p-6 text-white" style={{ background: 'linear-gradient(to right, #345E85, #4A7BA7)' }}>
-                                <div className="flex items-center justify-center mb-4">
-                                    <div className="bg-white bg-opacity-20 rounded-full p-4">
-                                        <FaCheckCircle className="w-12 h-12" />
-                                    </div>
+            {/* Success Portal Integration */}
+            <AnimatePresence>
+                {showSuccessModal && acceptedMatchDetails && (
+                    <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-[9999] p-4" onClick={() => setShowSuccessModal(false)}>
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                            className="bg-white rounded-[40px] shadow-2xl max-w-lg w-full overflow-hidden"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <div className="p-10 bg-indigo-600 text-white text-center relative overflow-hidden">
+                                <div className="absolute top-0 right-0 p-8 opacity-10"><Zap size={100} /></div>
+                                <div className="size-20 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-6">
+                                    <CheckCircle2 size={40} />
                                 </div>
-                                <h2 className="text-2xl font-bold text-center">Match Accepted!</h2>
-                                <p className="text-blue-100 text-center mt-2">Trip has been created successfully</p>
+                                <h2 className="text-3xl font-black tracking-tight mb-2">Protocol Active</h2>
+                                <p className="text-indigo-100 text-[10px] font-black uppercase tracking-[0.2em]">Match Synchronized & Active</p>
                             </div>
 
-                            {/* Content */}
-                            <div className="p-6 space-y-4">
-                                <div className="bg-gray-50 rounded-lg p-4 space-y-3">
-                                    <div className="flex items-center gap-3">
-                                        <FaRoute className="w-5 h-5" style={{ color: '#345E85' }} />
-                                        <div className="flex-1">
-                                            <p className="text-xs text-gray-500">Load</p>
-                                            <p className="font-semibold text-gray-900">{acceptedMatchDetails.match.load?.title}</p>
-                                        </div>
-                                    </div>
-
-                                    <div className="flex items-center gap-3">
-                                        <FaTruck className="w-5 h-5" style={{ color: '#345E85' }} />
-                                        <div className="flex-1">
-                                            <p className="text-xs text-gray-500">Truck</p>
-                                            <p className="font-semibold text-gray-900">{acceptedMatchDetails.match.truck?.plateNumber}</p>
-                                        </div>
-                                    </div>
-
-                                    <div className="flex items-center gap-3">
-                                        <FaMapMarkerAlt className="w-5 h-5" style={{ color: '#345E85' }} />
-                                        <div className="flex-1">
-                                            <p className="text-xs text-gray-500">Route</p>
-                                            <p className="font-semibold text-gray-900">
-                                                {acceptedMatchDetails.match.load?.origin?.city} → {acceptedMatchDetails.match.load?.destination?.city}
-                                            </p>
-                                        </div>
-                                    </div>
-
-                                    {acceptedMatchDetails.match.load?.pickupDate && (
-                                        <div className="flex items-center gap-3">
-                                            <FaCalendar className="w-5 h-5" style={{ color: '#345E85' }} />
-                                            <div className="flex-1">
-                                                <p className="text-xs text-gray-500">Pickup Date</p>
-                                                <p className="font-semibold text-gray-900">
-                                                    {new Date(acceptedMatchDetails.match.load.pickupDate).toLocaleDateString()}
-                                                </p>
+                            <div className="p-10 space-y-8">
+                                <div className="bg-slate-50 rounded-[32px] p-6 space-y-4">
+                                    {[
+                                        { l: 'Load Asset', v: acceptedMatchDetails.match.load?.title, i: Package },
+                                        { l: 'Fleet Unit', v: acceptedMatchDetails.match.truck?.plateNumber, i: Truck },
+                                        { l: 'Route Matrix', v: `${acceptedMatchDetails.match.load?.origin?.city} → ${acceptedMatchDetails.match.load?.destination?.city}`, i: MapPin }
+                                    ].map((item, i) => (
+                                        <div key={i} className="flex items-center gap-4">
+                                            <div className="size-8 bg-white rounded-lg flex items-center justify-center text-indigo-400 shadow-sm"><item.i size={14} /></div>
+                                            <div>
+                                                <p className="text-[8px] font-black uppercase tracking-widest text-slate-400">{item.l}</p>
+                                                <p className="text-xs font-bold text-slate-900">{item.v}</p>
                                             </div>
                                         </div>
-                                    )}
-
-                                    {acceptedMatchDetails.match.load?.offeredPrice && (
-                                        <div className="flex items-center gap-3">
-                                            <FaDollarSign className="w-5 h-5" style={{ color: '#345E85' }} />
-                                            <div className="flex-1">
-                                                <p className="text-xs text-gray-500">Agreed Price</p>
-                                                <p className="font-semibold text-gray-900">
-                                                    ${acceptedMatchDetails.match.load.offeredPrice.toLocaleString()}
-                                                </p>
-                                            </div>
-                                        </div>
-                                    )}
+                                    ))}
                                 </div>
 
-                                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                                    <p className="text-sm text-blue-800">
-                                        <strong>Next Steps:</strong> Your trip has been created and is ready to start.
-                                        You can view trip details, track progress, and manage documents in the Trips section.
+                                <div className="p-6 bg-blue-50/50 rounded-[28px] border border-blue-100/50">
+                                    <p className="text-[10px] font-bold text-blue-800 leading-relaxed uppercase tracking-wider">
+                                        <strong className="text-indigo-600">Next Vector:</strong> The trip has been initialized. Advance to the Trips Matrix to begin operational tracking and asset monitoring.
                                     </p>
                                 </div>
                             </div>
 
-                            {/* Actions */}
-                            <div className="p-6 bg-gray-50 flex gap-3">
-                                <button
-                                    onClick={() => setShowSuccessModal(false)}
-                                    className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 font-medium transition-colors"
-                                >
-                                    Close
-                                </button>
-                                <button
-                                    onClick={handleViewTrip}
-                                    className="flex-1 px-4 py-2.5 text-white rounded-lg font-medium transition-colors shadow-sm hover:opacity-90"
-                                    style={{ backgroundColor: '#345E85' }}
-                                >
-                                    View My Trips
-                                </button>
+                            <div className="p-10 bg-slate-50/50 flex gap-3">
+                                <button onClick={() => setShowSuccessModal(false)} className="flex-1 h-14 bg-white border border-slate-200 text-slate-500 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 transition-all">Close Portal</button>
+                                <button onClick={handleViewTrip} className="flex-1 h-14 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-600 transition-all shadow-xl shadow-slate-900/10">Trips Dashboard</button>
                             </div>
-                        </div>
+                        </motion.div>
                     </div>
-                )
-            }
+                )}
+            </AnimatePresence>
         </>
     );
 };

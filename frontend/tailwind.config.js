@@ -90,8 +90,10 @@ export default {
         },
       },
       fontFamily: {
-        sans: ['Mona Sans', 'system-ui', 'sans-serif'],
-        mono: ['Mona Sans', 'system-ui', 'sans-serif'],
+        sans: ['Inter', 'Mona Sans', 'system-ui', 'sans-serif'],
+        manrope: ['Manrope', 'sans-serif'],
+        inter: ['Inter', 'sans-serif'],
+        mono: ['Inter', 'Mona Sans', 'system-ui', 'sans-serif'],
       },
       animation: {
         'fade-in': 'fadeIn 0.5s ease-in-out',

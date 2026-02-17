@@ -1,4 +1,4 @@
-import logoUrutiX from '../../assets/logo-urutix-logistics.svg';
+import logoUrutiX from '../../assets/urutiX Logistics Logo (1).svg';
 
 const DashboardFooter = () => {
   return (

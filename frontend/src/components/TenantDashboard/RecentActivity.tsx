@@ -54,21 +54,22 @@ const RecentActivity: React.FC<RecentActivityProps> = ({
   };
 
   const getTypeIcon = (type: string) => {
+    const iconClass = "w-4 h-4 text-[#1e40af]";
     switch (type) {
       case 'shipment':
-        return <Package className="w-4 h-4 text-indigo-600" />;
+        return <Package className={iconClass} />;
       case 'maintenance':
-        return <Truck className="w-4 h-4 text-amber-600" />;
+        return <Truck className={iconClass} />;
       case 'payment':
-        return <CreditCard className="w-4 h-4 text-emerald-600" />;
+        return <CreditCard className={iconClass} />;
       case 'dispute':
-        return <Shield className="w-4 h-4 text-rose-600" />;
+        return <Shield className={iconClass} />;
       case 'driver':
-        return <User className="w-4 h-4 text-violet-600" />;
+        return <User className={iconClass} />;
       case 'fleet':
-        return <Truck className="w-4 h-4 text-sky-600" />;
+        return <Truck className={iconClass} />;
       default:
-        return <ClipboardList className="w-4 h-4 text-slate-400" />;
+        return <ClipboardList className={iconClass} />;
     }
   };
 
@@ -88,7 +89,7 @@ const RecentActivity: React.FC<RecentActivityProps> = ({
   };
 
   return (
-    <div className="bg-white rounded-[24px] border border-gray-100 shadow-sm overflow-hidden">
+    <div className="bg-white rounded-[32px] border border-gray-100 shadow-sm overflow-hidden">
       <div className="px-8 py-6 border-b border-gray-50 flex items-center justify-between">
         <div>
           <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">Audit Trail</h3>

@@ -3,13 +3,13 @@ import { useLocation, useNavigate } from "react-router-dom";
 import {
   MapPin,
   Route,
+  Navigation,
+  Loader2
 } from "lucide-react";
 // Dynamically import heavy page to reduce initial bundle size
 const Tracking = lazy(() => import("@/pages/Tracking"));
 import RoutesPage from "@/pages/Routes";
 import { cn } from "@/utils/cn";
-import logoUrutiX from "@/assets/logo-urutix.svg";
-import { TranslatedText } from "@/components/translated-text";
 
 type TabType = "tracking" | "routes";
 
@@ -61,28 +61,26 @@ const UnifiedTrackingManagement = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50 relative">
-      {/* Background Logo */}
-      <img
-        src={logoUrutiX}
-        alt="UrutiX Logo Background"
-        className="pointer-events-none select-none fixed inset-0 w-full h-full object-cover opacity-10 z-0"
-        style={{ objectPosition: 'center' }}
-      />
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 pt-16 sm:pt-24 relative z-10">
-        {/* Header */}
-        <div className="mb-4">
-          <h1 className="text-2xl font-bold text-gray-900">
-            <TranslatedText text="Maps & Tracking" />
-          </h1>
-          <p className="text-sm text-gray-600 mt-1">
-            <TranslatedText text="Track shipments in real-time and plan optimal routes" />
+    <div className="space-y-12 max-w-[1600px] mx-auto animate-in fade-in duration-700">
+      {/* Header - Premium Enlite Prime Style */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+        <div className="space-y-2">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center">
+              <Navigation className="w-6 h-6 text-[#345E85]" />
+            </div>
+            <h1 className="text-4xl font-black text-[#0f172a] tracking-tight">Logistics Intelligence</h1>
+          </div>
+          <p className="text-xs font-bold text-slate-400 uppercase tracking-widest max-w-xl">
+            Real-time geospatial tracking and strategic route optimization
           </p>
         </div>
+      </div>
 
-        {/* Navigation Tabs */}
-        <div className="bg-white rounded-lg border border-gray-200 mb-4 overflow-hidden">
-          <nav className="flex space-x-1 p-1 overflow-x-auto scrollbar-hide scroll-smooth">
+      {/* Navigation Tabs */}
+      <div className="space-y-8">
+        <div className="flex flex-col md:flex-row gap-4 justify-between items-center bg-white p-2 rounded-[2rem] border border-slate-100 shadow-sm">
+          <nav className="flex gap-1 p-1">
             {tabs.map((tab) => {
               const Icon = tab.icon;
               const isActive = activeTab === tab.id;
@@ -91,15 +89,14 @@ const UnifiedTrackingManagement = () => {
                   key={tab.id}
                   onClick={() => handleTabChange(tab.id)}
                   className={cn(
-                    "px-3 sm:px-4 py-2.5 rounded-md text-xs sm:text-sm font-medium flex items-center gap-1.5 sm:gap-2 transition-all whitespace-nowrap flex-shrink-0",
+                    "px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 transition-all",
                     isActive
-                      ? "bg-gray-100 text-gray-900 border border-gray-300"
-                      : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                      ? "bg-[#345E85] text-white shadow-lg shadow-blue-900/10"
+                      : "text-slate-400 hover:text-slate-600 hover:bg-slate-50"
                   )}
                 >
-                  <Icon className="w-4 h-4 flex-shrink-0" />
-                  <span className="hidden sm:inline"><TranslatedText text={tab.label} /></span>
-                  <span className="sm:hidden"><TranslatedText text={tab.label.split(' ')[0]} /></span>
+                  <Icon size={14} />
+                  {tab.label}
                 </button>
               );
             })}
@@ -107,15 +104,18 @@ const UnifiedTrackingManagement = () => {
         </div>
 
         {/* Tab Content */}
-        <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
-          <div className="p-4">
-            {activeTab === "tracking" && (
-              <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500"></div></div>}>
-                <Tracking />
-              </Suspense>
-            )}
-            {activeTab === "routes" && <RoutesPage />}
-          </div>
+        <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-sm min-h-[600px]">
+          {activeTab === "tracking" && (
+            <Suspense fallback={
+              <div className="flex flex-col items-center justify-center h-64 gap-4">
+                <Loader2 className="animate-spin text-[#345E85]" size={32} />
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Initializing Tracking Nexus...</p>
+              </div>
+            }>
+              <Tracking />
+            </Suspense>
+          )}
+          {activeTab === "routes" && <RoutesPage />}
         </div>
       </div>
     </div>

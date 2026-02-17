@@ -1,20 +1,21 @@
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  MapPin, 
-  Clock, 
-  Package, 
-  Truck, 
-  Navigation, 
-  Phone,
+import { motion } from 'framer-motion';
+import {
   MessageSquare,
   AlertTriangle,
-  CheckCircle,
   Play,
   Pause,
-  Square,
-  User
+  Zap,
+  Target,
+  Shield,
+  ArrowRight,
+  Activity,
+  Clock,
+  Package,
+  Navigation,
+  Phone
 } from 'lucide-react';
+import { cn } from '@/utils/cn';
 
 interface Trip {
   id: string;
@@ -66,37 +67,6 @@ interface CurrentTripProps {
 
 export const CurrentTrip: React.FC<CurrentTripProps> = ({ trip }) => {
   const [isPaused, setIsPaused] = useState(false);
-  const [showCustomerInfo, setShowCustomerInfo] = useState(false);
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'IN_PROGRESS':
-        return 'bg-blue-100 text-blue-800';
-      case 'COMPLETED':
-        return 'bg-green-100 text-green-800';
-      case 'CANCELLED':
-        return 'bg-red-100 text-red-800';
-      case 'ON_HOLD':
-        return 'bg-yellow-100 text-yellow-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'IN_PROGRESS':
-        return <Play className="w-4 h-4" />;
-      case 'COMPLETED':
-        return <CheckCircle className="w-4 h-4" />;
-      case 'CANCELLED':
-        return <AlertTriangle className="w-4 h-4" />;
-      case 'ON_HOLD':
-        return <Pause className="w-4 h-4" />;
-      default:
-        return <Clock className="w-4 h-4" />;
-    }
-  };
 
   const formatTime = (timeString: string) => {
     return new Date(timeString).toLocaleTimeString('en-US', {
@@ -109,297 +79,188 @@ export const CurrentTrip: React.FC<CurrentTripProps> = ({ trip }) => {
   const formatDuration = (minutes: number) => {
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
-    return `${hours}h ${mins}m`;
-  };
-
-  const handleStartTrip = () => {
-    // API call to start trip
-    console.log('Starting trip:', trip.id);
-  };
-
-  const handlePauseTrip = () => {
-    setIsPaused(!isPaused);
-    // API call to pause/resume trip
-    console.log('Trip paused/resumed:', trip.id);
-  };
-
-  const handleCompleteTrip = () => {
-    // API call to complete trip
-    console.log('Completing trip:', trip.id);
-  };
-
-  const handleContactCustomer = () => {
-    setShowCustomerInfo(!showCustomerInfo);
+    return `${hours}H ${mins}M`;
   };
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4 }}
-      className="bg-white rounded-lg shadow-lg overflow-hidden"
+      initial={{ opacity: 0, scale: 0.98 }}
+      animate={{ opacity: 1, scale: 1 }}
+      className="bg-white rounded-[3rem] shadow-2xl shadow-slate-200/50 border border-slate-100 overflow-hidden"
     >
-      {/* Header */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.2 }}
-        className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4"
-      >
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <Truck className="w-6 h-6 text-white" />
+      {/* Premium Header */}
+      <div className="bg-[#0f172a] px-10 py-8 relative overflow-hidden">
+        {/* Abstract pattern */}
+        <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl -mr-32 -mt-32" />
+
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
+          <div className="flex items-center gap-6">
+            <div className="w-14 h-14 bg-white/10 rounded-2xl backdrop-blur-md flex items-center justify-center border border-white/10 text-blue-400">
+              <Zap size={28} />
+            </div>
             <div>
-              <h2 className="text-xl font-bold text-white">Current Trip</h2>
-              <p className="text-blue-100 text-sm">#{trip.tripNumber}</p>
+              <div className="flex items-center gap-3 mb-1">
+                <span className="text-[10px] font-black text-blue-400 uppercase tracking-[0.3em]">Current Trip</span>
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              </div>
+              <h2 className="text-2xl font-black text-white uppercase tracking-tight">MN-ORD-{trip.tripNumber}</h2>
             </div>
           </div>
-          <div className="flex items-center space-x-2">
-            <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(trip.status)}`}>
-              <span className="flex items-center space-x-1">
-                {getStatusIcon(trip.status)}
-                <span>{trip.status.replace('_', ' ')}</span>
-              </span>
-            </span>
+
+          <div className="flex items-center gap-3">
+            <div className="px-5 py-2.5 bg-white/5 border border-white/10 rounded-xl">
+              <div className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Status</div>
+              <div className="text-sm font-black text-white uppercase tracking-tight flex items-center gap-2">
+                <Navigation size={12} className="text-blue-400" />
+                Live Tracking
+              </div>
+            </div>
+            <div className={cn(
+              "px-5 py-2.5 rounded-xl border font-black text-[10px] uppercase tracking-[0.2em]",
+              trip.status === 'IN_PROGRESS' ? "bg-blue-500/20 border-blue-500/30 text-blue-400" : "bg-emerald-500/20 border-emerald-500/30 text-emerald-400"
+            )}>
+              {trip.status.replace('_', ' ')}
+            </div>
           </div>
         </div>
-      </motion.div>
+      </div>
 
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.3 }}
-        className="p-6"
-      >
-        {/* Trip Progress */}
-        <motion.div
-          initial={{ scaleX: 0 }}
-          animate={{ scaleX: 1 }}
-          transition={{ delay: 0.4, duration: 0.6 }}
-          className="mb-6"
-        >
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-gray-700">Trip Progress</span>
-            <motion.span
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.6 }}
-              className="text-sm text-gray-500"
-            >
-              {trip.progress}%
-            </motion.span>
+      <div className="p-10">
+        {/* Mission Trajectory */}
+        <div className="mb-12">
+          <div className="flex items-center justify-between mb-4 px-2">
+            <div className="flex items-center gap-4">
+              <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-[#345E85] border border-blue-100">
+                <Target size={18} />
+              </div>
+              <div>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Trip Progress</p>
+                <p className="text-xl font-black text-[#0f172a] uppercase tracking-tight">{trip.progress}%</p>
+              </div>
+            </div>
+            <div className="text-right">
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">On Time</p>
+              <div className="flex items-center gap-2">
+                <span className="text-xl font-black text-[#345E85] uppercase tracking-tight">Yes</span>
+                <Activity size={18} className="text-[#345E85]" />
+              </div>
+            </div>
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-3">
+          <div className="w-full bg-slate-100 rounded-full h-4 relative group cursor-pointer overflow-hidden">
             <motion.div
               initial={{ width: 0 }}
               animate={{ width: `${trip.progress}%` }}
-              transition={{ delay: 0.5, duration: 0.8, ease: "easeOut" }}
-              className="bg-blue-600 h-3 rounded-full"
-            ></motion.div>
-          </div>
-        </motion.div>
-
-        {/* Route Information */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-          {/* Origin */}
-          <div className="bg-gray-50 rounded-lg p-4">
-            <div className="flex items-start space-x-3">
-              <div className="w-3 h-3 bg-green-500 rounded-full mt-2"></div>
-              <div className="flex-1">
-                <h3 className="font-semibold text-gray-900 mb-1">Origin</h3>
-                <p className="text-gray-700">{trip.origin.address}</p>
-                <p className="text-gray-500 text-sm">{trip.origin.city}, {trip.origin.state}</p>
-                <p className="text-gray-400 text-xs mt-1">
-                  Departure: {formatTime(trip.estimatedDeparture)}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Destination */}
-          <div className="bg-gray-50 rounded-lg p-4">
-            <div className="flex items-start space-x-3">
-              <div className="w-3 h-3 bg-red-500 rounded-full mt-2"></div>
-              <div className="flex-1">
-                <h3 className="font-semibold text-gray-900 mb-1">Destination</h3>
-                <p className="text-gray-700">{trip.destination.address}</p>
-                <p className="text-gray-500 text-sm">{trip.destination.city}, {trip.destination.state}</p>
-                <p className="text-gray-400 text-xs mt-1">
-                  ETA: {formatTime(trip.estimatedArrival)}
-                </p>
-              </div>
-            </div>
+              transition={{ duration: 1.5, ease: "circOut" }}
+              className="absolute top-0 left-0 h-full bg-gradient-to-r from-[#345E85] to-[#4a7aab] rounded-full shadow-[0_0_20px_rgba(52,94,133,0.3)]"
+            />
+            {/* Glossy Overlay */}
+            <div className="absolute inset-0 bg-gradient-to-b from-white/10 to-transparent pointer-events-none" />
           </div>
         </div>
 
-        {/* Trip Details */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <div className="text-center">
-            <div className="text-2xl font-bold text-blue-600">{trip.distance} km</div>
-            <div className="text-sm text-gray-500">Distance</div>
-          </div>
-          <div className="text-center">
-            <div className="text-2xl font-bold text-green-600">{formatDuration(trip.estimatedDuration)}</div>
-            <div className="text-sm text-gray-500">Duration</div>
-          </div>
-          <div className="text-center">
-            <div className="text-2xl font-bold text-yellow-600">${trip.earnings}</div>
-            <div className="text-sm text-gray-500">Earnings</div>
-          </div>
-        </div>
-
-        {/* Cargo Information */}
-        <div className="bg-blue-50 rounded-lg p-4 mb-6">
-          <div className="flex items-center space-x-3 mb-3">
-            <Package className="w-5 h-5 text-blue-600" />
-            <h3 className="font-semibold text-gray-900">Cargo Details</h3>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <p className="text-sm text-gray-600">Description</p>
-              <p className="font-medium text-gray-900">{trip.cargo.description}</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-600">Weight</p>
-              <p className="font-medium text-gray-900">{trip.cargo.weight} kg</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-600">Type</p>
-              <p className="font-medium text-gray-900">{trip.cargo.type}</p>
-            </div>
-            {trip.cargo.specialInstructions && (
+        {/* Nodes Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 mb-12">
+          {/* Departure Node */}
+          <div className="group relative">
+            <div className="absolute -left-4 top-0 bottom-0 w-[2px] bg-gradient-to-b from-[#345E85] to-transparent opacity-30" />
+            <div className="flex gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center text-[#345E85] border border-blue-100 transition-transform group-hover:scale-110">
+                <Shield size={20} />
+              </div>
               <div>
-                <p className="text-sm text-gray-600">Special Instructions</p>
-                <p className="font-medium text-gray-900">{trip.cargo.specialInstructions}</p>
+                <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Origin</h3>
+                <p className="text-sm font-black text-[#0f172a] uppercase tracking-tight">{trip.origin.address}</p>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-0.5">{trip.origin.city}, {trip.origin.state}</p>
+                <div className="mt-3 flex items-center gap-3">
+                  <div className="flex items-center gap-1 text-[9px] font-black text-[#345E85] uppercase tracking-widest bg-blue-50 px-2 py-0.5 rounded-md">
+                    <Clock size={10} />
+                    Departed: {formatTime(trip.estimatedDeparture)}
+                  </div>
+                </div>
               </div>
-            )}
+            </div>
+          </div>
+
+          {/* Arrival Node */}
+          <div className="group relative">
+            <div className="absolute -left-4 top-0 bottom-0 w-[2px] bg-gradient-to-b from-[#345E85] to-transparent opacity-30" />
+            <div className="flex gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center text-[#345E85] border border-blue-100 transition-transform group-hover:scale-110">
+                <Target size={20} />
+              </div>
+              <div>
+                <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Destination</h3>
+                <p className="text-sm font-black text-[#0f172a] uppercase tracking-tight">{trip.destination.address}</p>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-0.5">{trip.destination.city}, {trip.destination.state}</p>
+                <div className="mt-3 flex items-center gap-3">
+                  <div className="flex items-center gap-1 text-[9px] font-black text-[#345E85] uppercase tracking-widest bg-blue-50 px-2 py-0.5 rounded-md">
+                    <Clock size={10} />
+                    ETA: {formatTime(trip.estimatedArrival)}
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Customer Information */}
-        <div className="bg-gray-50 rounded-lg p-4 mb-6">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center space-x-3">
-              <User className="w-5 h-5 text-gray-600" />
-              <h3 className="font-semibold text-gray-900">Customer Information</h3>
+        {/* Load Intelligence Matrix */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
+          {[
+            { label: 'Distance', value: `${trip.distance} KM`, icon: Navigation },
+            { label: 'Duration', value: formatDuration(trip.estimatedDuration), icon: Clock },
+            { label: 'Weight', value: `${trip.cargo.weight} KG`, icon: Package },
+            { label: 'Earnings', value: `$${trip.earnings}`, icon: Zap },
+          ].map((stat) => (
+            <div key={stat.label} className="p-6 bg-slate-50 border border-slate-100 rounded-[2rem] hover:bg-white hover:shadow-xl hover:shadow-slate-200/50 transition-all duration-500 group">
+              <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center mb-4 transition-transform group-hover:rotate-12 text-[#345E85]">
+                <stat.icon size={18} />
+              </div>
+              <p className="text-[8px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">{stat.label}</p>
+              <p className="text-xl font-black text-[#0f172a] uppercase tracking-tight">{stat.value}</p>
             </div>
+          ))}
+        </div>
+
+        {/* Strategic Command Bar */}
+        <div className="flex flex-wrap items-center justify-between gap-6 pt-10 border-t border-slate-50">
+          <div className="flex items-center gap-4">
+            <button className="h-16 px-10 bg-[#345E85] text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-3 hover:bg-slate-900 transition-all shadow-lg active:scale-95 group">
+              <Play size={16} fill="white" />
+              Start Trip
+              <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
+            </button>
+
             <button
-              onClick={handleContactCustomer}
-              className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+              onClick={() => setIsPaused(!isPaused)}
+              className={cn(
+                "h-16 px-8 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-3 transition-all border active:scale-95",
+                isPaused ? "bg-blue-50 text-[#345E85] border-blue-100 hover:bg-blue-100" : "bg-slate-50 text-slate-600 border-slate-100 hover:bg-slate-100"
+              )}
             >
-              {showCustomerInfo ? 'Hide' : 'Show'} Contact Info
+              {isPaused ? <Play size={16} /> : <Pause size={16} />}
+              {isPaused ? 'Resume' : 'Pause'}
             </button>
           </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <p className="text-sm text-gray-600">Name</p>
-              <p className="font-medium text-gray-900">{trip.customer.name}</p>
-            </div>
-            {showCustomerInfo && (
-              <>
-                <div>
-                  <p className="text-sm text-gray-600">Phone</p>
-                  <p className="font-medium text-gray-900">{trip.customer.phone}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Email</p>
-                  <p className="font-medium text-gray-900">{trip.customer.email}</p>
-                </div>
-              </>
-            )}
+
+          <div className="flex items-center gap-2">
+            {[
+              { icon: Navigation, label: 'Navigate' },
+              { icon: MessageSquare, label: 'Message' },
+              { icon: Phone, label: 'Call' },
+              { icon: AlertTriangle, label: 'Report' }
+            ].map((btn) => (
+              <button
+                key={btn.label}
+                className="w-14 h-14 rounded-2xl flex flex-col items-center justify-center gap-1 transition-all hover:shadow-lg active:scale-90 border bg-blue-50 text-[#345E85] border-blue-100"
+                title={btn.label}
+              >
+                <btn.icon size={16} />
+                <span className="text-[7px] font-black uppercase tracking-widest">{btn.label}</span>
+              </button>
+            ))}
           </div>
         </div>
-
-        {/* Action Buttons */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.7 }}
-          className="flex flex-wrap items-center justify-between gap-4"
-        >
-          <div className="flex items-center space-x-3">
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={handleStartTrip}
-              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium flex items-center space-x-2"
-            >
-              <Play className="w-4 h-4" />
-              <span>Start Trip</span>
-            </motion.button>
-            
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={handlePauseTrip}
-              className={`px-4 py-2 rounded-lg font-medium flex items-center space-x-2 ${
-                isPaused 
-                  ? 'bg-blue-600 hover:bg-blue-700 text-white' 
-                  : 'bg-yellow-600 hover:bg-yellow-700 text-white'
-              }`}
-            >
-              {isPaused ? <Play className="w-4 h-4" /> : <Pause className="w-4 h-4" />}
-              <span>{isPaused ? 'Resume' : 'Pause'}</span>
-            </motion.button>
-            
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={handleCompleteTrip}
-              className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-medium flex items-center space-x-2"
-            >
-              <CheckCircle className="w-4 h-4" />
-              <span>Complete Trip</span>
-            </motion.button>
-          </div>
-
-          <div className="flex items-center space-x-3">
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-medium flex items-center space-x-2"
-            >
-              <Navigation className="w-4 h-4" />
-              <span>Navigate</span>
-            </motion.button>
-            
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-medium flex items-center space-x-2"
-            >
-              <MessageSquare className="w-4 h-4" />
-              <span>Message</span>
-            </motion.button>
-            
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-medium flex items-center space-x-2"
-            >
-              <Phone className="w-4 h-4" />
-              <span>Call</span>
-            </motion.button>
-          </div>
-        </motion.div>
-
-        {/* Notes */}
-        <AnimatePresence>
-          {trip.notes && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.3 }}
-              className="mt-6 p-4 bg-yellow-50 rounded-lg border-l-4 border-yellow-400"
-            >
-              <h4 className="font-medium text-yellow-800 mb-2">Trip Notes</h4>
-              <p className="text-yellow-700 text-sm">{trip.notes}</p>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </motion.div>
+      </div>
     </motion.div>
   );
 };

@@ -3,7 +3,7 @@ import DispatchMap from '../components/Dispatch/DispatchMap';
 import ActiveUnitsList from '../components/Dispatch/ActiveUnitsList';
 import DispatchModal from '../components/Dispatch/DispatchModal';
 import { useNavigate } from 'react-router-dom';
-import logoUrutiX from '../assets/logo-urutix-logistics.svg';
+import logoUrutiX from '../assets/urutiX Logistics Logo (1).svg';
 import {
     FaSearch, FaMapMarkerAlt, FaTimes
 } from 'react-icons/fa';

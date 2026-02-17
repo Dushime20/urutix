@@ -1,7 +1,7 @@
 import React from 'react';
-import { FaSearch } from 'react-icons/fa';
-import { LayoutGrid, List } from 'lucide-react';
+import { Search, LayoutGrid, List, X } from 'lucide-react';
 import { TranslatedText } from '../translated-text';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface FleetFiltersProps {
   search: string;
@@ -21,57 +21,50 @@ const FleetFiltersComp: React.FC<FleetFiltersProps> = ({
   const showViewToggle = (activeTab === 'trucks' || activeTab === 'drivers') && viewMode && setViewMode;
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-4">
-      <div className="flex flex-col lg:flex-row gap-4">
-        {/* Search */}
-        <div className="flex-1">
-          <div className="relative">
-            <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-            <input
-              type="text"
-              placeholder={activeTab === 'trucks' ? 'Search trucks...' : activeTab === 'drivers' ? 'Search drivers...' : `Search ${activeTab}...`}
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-            />
-          </div>
-        </div>
-
-        {/* View Toggle - Only show for trucks and drivers */}
-        {showViewToggle && (
-          <div className="flex items-center gap-2 bg-gray-100 rounded-lg p-1 shadow-sm border border-gray-200">
-            <button
-              onClick={() => setViewMode('grid')}
-              className={`px-3 py-2 rounded transition-all flex items-center gap-1.5 text-sm font-medium ${viewMode === 'grid' ? 'bg-white shadow text-[#345e85]' : 'text-gray-600 hover:text-gray-900'}`}
-              title="Card View"
-            >
-              <LayoutGrid className="w-4 h-4" />
-              <span className="hidden sm:inline">Cards</span>
-            </button>
-            <button
-              onClick={() => setViewMode('list')}
-              className={`px-3 py-2 rounded transition-all flex items-center gap-1.5 text-sm font-medium ${viewMode === 'list' ? 'bg-white shadow text-[#345e85]' : 'text-gray-600 hover:text-gray-900'}`}
-              title="Table View"
-            >
-              <List className="w-4 h-4" />
-              <span className="hidden sm:inline">Table</span>
-            </button>
-          </div>
+    <div className="bg-white rounded-[40px] border border-slate-100 p-2 shadow-sm mb-8 flex flex-col md:flex-row gap-2">
+      {/* Search Input Vector */}
+      <div className="flex-1 relative group">
+        <Search className="absolute left-6 top-1/2 -translate-y-1/2 size-4 text-slate-300 group-focus-within:text-indigo-600 transition-colors" />
+        <input
+          type="text"
+          placeholder={activeTab === 'trucks' ? 'Search assets...' : activeTab === 'drivers' ? 'Search personnel...' : `Search ${activeTab} records...`}
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="w-full pl-14 pr-6 py-4 bg-slate-50 border border-slate-50 rounded-[32px] text-[11px] font-black uppercase tracking-widest text-slate-900 focus:bg-white focus:ring-8 focus:ring-indigo-500/10 focus:border-indigo-600 outline-none transition-all"
+        />
+        {search && (
+          <button
+            onClick={() => setSearch('')}
+            className="absolute right-4 top-1/2 -translate-y-1/2 size-8 bg-slate-200 text-slate-500 rounded-full flex items-center justify-center hover:bg-slate-300 transition-colors"
+          >
+            <X size={14} />
+          </button>
         )}
       </div>
 
-      {/* Active Filters Display */}
-      {search && (
-        <div className="mt-4 flex flex-wrap gap-2">
-          <span className="px-3 py-1 bg-primary-100 text-primary-800 rounded-full text-sm flex items-center gap-1">
-            <TranslatedText text="Search" />: {search}
-            <button
-              onClick={() => setSearch('')}
-              className="ml-1 hover:text-primary-600"
-            >
-              ×
-            </button>
-          </span>
+      {/* View Matrix Toggle */}
+      {showViewToggle && (
+        <div className="flex items-center gap-1 p-1 bg-slate-50 rounded-[32px]">
+          <button
+            onClick={() => setViewMode('grid')}
+            className={`px-6 py-3 rounded-[28px] transition-all flex items-center gap-2 text-[10px] font-black uppercase tracking-widest ${viewMode === 'grid'
+                ? 'bg-white shadow-xl shadow-slate-200 text-indigo-600'
+                : 'text-slate-400 hover:text-slate-600'
+              }`}
+          >
+            <LayoutGrid size={14} />
+            <span>Grid</span>
+          </button>
+          <button
+            onClick={() => setViewMode('list')}
+            className={`px-6 py-3 rounded-[28px] transition-all flex items-center gap-2 text-[10px] font-black uppercase tracking-widest ${viewMode === 'list'
+                ? 'bg-white shadow-xl shadow-slate-200 text-indigo-600'
+                : 'text-slate-400 hover:text-slate-600'
+              }`}
+          >
+            <List size={14} />
+            <span>List</span>
+          </button>
         </div>
       )}
     </div>

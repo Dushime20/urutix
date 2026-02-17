@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import logoUrutiX from '../assets/logo-urutix-logistics.svg';
 import { fleetApi, type TCOAnalysis } from '../services/fleetApi';
 import TCOCharts from '../components/FleetDashboard/Analytics/TCOCharts';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Zap, TrendingUp, TrendingDown, Fuel, DollarSign, CheckCircle } from 'lucide-react';
+import { FleetHeader } from '../components/FleetDashboard/FleetHeader';
+import StatCard from '../components/EnliteUI/Cards/StatCard';
+
 
 const FleetAnalytics: React.FC = () => {
-  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('overview');
   const [tcoData, setTcoData] = useState<TCOAnalysis | null>(null);
   const [loading, setLoading] = useState(false);
@@ -32,44 +32,10 @@ const FleetAnalytics: React.FC = () => {
   return (
     <div className="flex flex-col min-h-screen w-full bg-[#f6f6f8] text-[#0d121b] font-sans">
       {/* Header Section */}
-      <div className="bg-[#0f172a] text-white">
-        <header className="max-w-[1920px] mx-auto flex items-center justify-between px-4 md:px-8 lg:px-12 xl:px-20 py-5 border-b border-white/10">
-          <div className="flex items-center gap-4 md:gap-10">
-            {/* Logo */}
-            <a className="flex items-center gap-3 cursor-pointer" onClick={() => navigate('/dashboard/fleet')}>
-              <img src={logoUrutiX} alt="UrutiX Logistics Logo" className="h-14 md:h-20 w-auto object-contain py-1" />
-            </a>
+      <FleetHeader />
 
-            {/* Desktop Navigation */}
-            <nav className="hidden lg:flex items-center gap-10">
-              <a className="text-white/60 hover:text-white text-sm font-semibold transition-all" href="/dashboard/fleet">Dashboard</a>
-              <a className="text-white/60 hover:text-white text-sm font-semibold transition-all" href="/fleet-manager">Fleet Assets</a>
-              <a className="text-white/60 hover:text-white text-sm font-semibold transition-all" href="/dashboard/fleet/dispatch">Dispatch</a>
-              <a className="text-white text-sm font-bold relative after:content-[''] after:absolute after:bottom-[-4px] after:left-0 after:w-full after:h-0.5 after:bg-blue-500" href="/dashboard/fleet/reports">Reports</a>
-            </nav>
-          </div>
-
-          <div className="flex items-center gap-4 md:gap-6">
-            <button className="flex min-w-[120px] items-center justify-center rounded-lg h-10 px-4 bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold shadow-sm transition-colors">
-              <span className="truncate">Generate PDF</span>
-            </button>
-
-            {/* User Profile */}
-            <div className="flex items-center gap-3 pl-4 md:pl-6 border-l border-white/10">
-              <div className="text-right hidden sm:block">
-                <p className="text-sm font-bold">Alex Morgan</p>
-                <p className="text-[9px] font-bold text-blue-400 uppercase tracking-widest">Ops Manager</p>
-              </div>
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-indigo-600 border-2 border-white/20 shadow-inner overflow-hidden">
-                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Fleet" alt="User" className="w-full h-full" />
-              </div>
-            </div>
-          </div>
-        </header>
-      </div>
-
-      <main className="flex flex-1 justify-center py-8">
-        <div className="flex flex-col max-w-[1440px] flex-1 px-6">
+      <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-10 space-y-8">
+        <div>
           {/* Page Heading */}
           <div className="flex flex-wrap justify-between items-end gap-3 mb-8">
             <div className="flex flex-col gap-1">
@@ -137,47 +103,49 @@ const FleetAnalytics: React.FC = () => {
           ) : (
             /* Stats Grid (Overview) */
             <>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-                <div className="flex flex-col gap-2 rounded-xl bg-white p-6 border border-[#cfd7e7] shadow-sm transform hover:scale-[1.02] transition-transform duration-200">
-                  <p className="text-[#4c669a] text-sm font-medium">Fleet Availability</p>
-                  <div className="flex items-baseline gap-2">
-                    <p className="text-[#0d121b] tracking-tight text-3xl font-bold">94.2%</p>
-                    <span className="text-[#07883b] text-sm font-bold flex items-center"><span className="material-symbols-outlined text-sm">arrow_upward</span> 1.2%</span>
-                  </div>
-                  <div className="w-full bg-gray-100 h-1.5 rounded-full mt-2 overflow-hidden">
-                    <div className="bg-[#135bec] h-1.5 rounded-full" style={{ width: '94.2%' }}></div>
-                  </div>
-                </div>
-                <div className="flex flex-col gap-2 rounded-xl bg-white p-6 border border-[#cfd7e7] shadow-sm transform hover:scale-[1.02] transition-transform duration-200">
-                  <p className="text-[#4c669a] text-sm font-medium">Fuel Efficiency</p>
-                  <div className="flex items-baseline gap-2">
-                    <p className="text-[#0d121b] tracking-tight text-3xl font-bold">18.5 MPG</p>
-                    <span className="text-[#e73908] text-sm font-bold flex items-center"><span className="material-symbols-outlined text-sm">arrow_downward</span> 0.5%</span>
-                  </div>
-                  <p className="text-xs text-[#4c669a]">Vs. Industry Avg: 16.2 MPG</p>
-                </div>
-                <div className="flex flex-col gap-2 rounded-xl bg-white p-6 border border-[#cfd7e7] shadow-sm transform hover:scale-[1.02] transition-transform duration-200">
-                  <p className="text-[#4c669a] text-sm font-medium">Monthly Fuel Spend</p>
-                  <div className="flex items-baseline gap-2">
-                    <p className="text-[#0d121b] tracking-tight text-3xl font-bold">$42,850</p>
-                    <span className="text-[#e73908] text-sm font-bold flex items-center"><span className="material-symbols-outlined text-sm">arrow_upward</span> 2.1%</span>
-                  </div>
-                  <p className="text-xs text-[#4c669a]">Projected: $45,000</p>
-                </div>
-                <div className="flex flex-col gap-2 rounded-xl bg-white p-6 border border-[#cfd7e7] shadow-sm transform hover:scale-[1.02] transition-transform duration-200">
-                  <p className="text-[#4c669a] text-sm font-medium">Maintenance Compliance</p>
-                  <div className="flex items-baseline gap-2">
-                    <p className="text-[#0d121b] tracking-tight text-3xl font-bold">98%</p>
-                    <span className="text-[#07883b] text-sm font-bold flex items-center"><span className="material-symbols-outlined text-sm">check_circle</span> +0.8%</span>
-                  </div>
-                  <p className="text-xs text-[#4c669a]">54 vehicles inspected this week</p>
-                </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <StatCard
+                  title="Fleet Availability"
+                  value="94.2%"
+                  icon={<Zap />}
+                  color="primary"
+                  trend="1.2%"
+                  trendDirection="up"
+                  subtitle="System Uptime"
+                />
+                <StatCard
+                  title="Fuel Efficiency"
+                  value="18.5 MPG"
+                  icon={<Fuel />}
+                  color="primary"
+                  trend="0.5%"
+                  trendDirection="down" // Down means worse efficiency usually, or less consumption? Context implies 18.5 is good if industry avg is 16.2. If arrow is downward relative to previous, let's keep it. Original had arrow_downward red.
+                  subtitle="Vs. Industry Avg: 16.2 MPG"
+                />
+                <StatCard
+                  title="Monthly Fuel Spend"
+                  value="$42,850"
+                  icon={<DollarSign />}
+                  color="primary" // Warning for spend often makes sense, or success if under budget.
+                  trend="2.1%"
+                  trendDirection="up" // Upward spend is usually bad (red in original)
+                  subtitle="Projected: $45,000"
+                />
+                <StatCard
+                  title="Maintenance Compliance"
+                  value="98%"
+                  icon={<CheckCircle />}
+                  color="primary"
+                  trend="+0.8%"
+                  trendDirection="up"
+                  subtitle="Scheduled tasks"
+                />
               </div>
 
               {/* Main Content Row: Charts & Calendar */}
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
                 {/* Fuel & TCO Trend */}
-                <div className="lg:col-span-2 flex flex-col gap-4 rounded-xl bg-white border border-[#cfd7e7] p-6 shadow-sm">
+                <div className="lg:col-span-2 flex flex-col gap-4 rounded-xl bg-white border border-[#cfd7e7] p-6 shadow-none">
                   <div className="flex justify-between items-start">
                     <div>
                       <h3 className="text-[#0d121b] text-lg font-bold">Fuel & TCO Trend</h3>
@@ -214,7 +182,7 @@ const FleetAnalytics: React.FC = () => {
                 </div>
 
                 {/* Maintenance Calendar Widget */}
-                <div className="flex flex-col gap-4 rounded-xl bg-white border border-[#cfd7e7] p-6 shadow-sm">
+                <div className="flex flex-col gap-4 rounded-xl bg-white border border-[#cfd7e7] p-6 shadow-none">
                   <div className="flex justify-between items-center mb-2">
                     <h3 className="text-[#0d121b] text-lg font-bold">Upcoming Service</h3>
                     <button className="text-[#135bec] text-sm font-bold hover:underline">View Full</button>
@@ -263,7 +231,7 @@ const FleetAnalytics: React.FC = () => {
               {/* Bottom Row: Repairs Feed & Donut */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pb-12">
                 {/* Breakdown & Repair Feed */}
-                <div className="flex flex-col gap-4 rounded-xl bg-white border border-[#cfd7e7] p-6 shadow-sm">
+                <div className="flex flex-col gap-4 rounded-xl bg-white border border-[#cfd7e7] p-6 shadow-none">
                   <div className="flex justify-between items-center">
                     <h3 className="text-[#0d121b] text-lg font-bold">Recent Breakdowns & Repairs</h3>
                     <button className="text-[#4c669a] text-sm font-medium hover:text-[#135bec] flex items-center gap-1 transition-colors">
@@ -326,7 +294,7 @@ const FleetAnalytics: React.FC = () => {
                 </div>
 
                 {/* Cost Distribution by Vehicle Type */}
-                <div className="flex flex-col gap-4 rounded-xl bg-white border border-[#cfd7e7] p-6 shadow-sm">
+                <div className="flex flex-col gap-4 rounded-xl bg-white border border-[#cfd7e7] p-6 shadow-none">
                   <div className="flex flex-col gap-1">
                     <h3 className="text-[#0d121b] text-lg font-bold">Cost Distribution</h3>
                     <p className="text-[#4c669a] text-sm font-normal">By Vehicle Category (Current Quarter)</p>
@@ -390,28 +358,7 @@ const FleetAnalytics: React.FC = () => {
         </div>
       </main>
 
-      {/* Footer - Consistent with template */}
-      <footer className="bg-gray-100 border-t border-gray-200 py-8 mt-12 w-full">
-        <div className="max-w-[1440px] mx-auto px-6 flex flex-wrap justify-between items-center gap-6">
-          <div className="flex flex-col gap-2">
-            <div className="flex items-center gap-2 text-[#0d121b] font-bold">
-              <span className="material-symbols-outlined text-[#135bec]">analytics</span>
-              UrutiX v4.2.0
-            </div>
-            <p className="text-xs text-[#4c669a]">© 2024 UrutiX Fleet Systems. All rights reserved.</p>
-          </div>
-          <div className="flex gap-8">
-            <a href="#" className="text-xs font-bold text-[#4c669a] hover:text-[#135bec]">Terms of Service</a>
-            <a href="#" className="text-xs font-bold text-[#4c669a] hover:text-[#135bec]">Privacy Policy</a>
-            <a href="#" className="text-xs font-bold text-[#4c669a] hover:text-[#135bec]">Support Desk</a>
-            <a href="#" className="text-xs font-bold text-[#4c669a] hover:text-[#135bec]">API Documentation</a>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
-            <span className="text-xs font-bold text-[#0d121b]">System Live</span>
-          </div>
-        </div>
-      </footer>
+
     </div>
   );
 };

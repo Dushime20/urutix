@@ -9,7 +9,7 @@ import {
   FaClock,
 } from "react-icons/fa";
 import { FiGrid, FiList } from "react-icons/fi";
-import { ChevronLeft, ChevronRight, Package, TrendingUp, MapPin, BarChart3, Home, ChevronRight as ChevronRightIcon, X, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { ChevronLeft, ChevronRight, Package, TrendingUp, MapPin, BarChart3, Home, ChevronRight as ChevronRightIcon, X, ArrowUpDown, ArrowUp, ArrowDown, Plus } from "lucide-react";
 
 import { CargoFilters } from "./CargoFilters";
 import { CargoModal } from "./CargoModal";
@@ -23,6 +23,7 @@ import { AssignReceiverModal } from "./AssignReceiverModal";
 import { RequestFinancingModal } from "./RequestFinancingModal";
 import { useCargoOwnerLayout } from "../../contexts/CargoOwnerLayoutContext";
 import DashboardHeader from "../Dashboard/Layout/DashboardHeader";
+import StatCard from "../EnliteUI/Cards/StatCard";
 
 
 
@@ -1201,134 +1202,71 @@ export const CargoDashboard: React.FC = () => {
 
           {/* Stats Cards */}
           {/* Stats Cards - Premium Command Center Style */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
-            <div className="relative overflow-hidden rounded-2xl bg-[#0f172a] p-5 shadow-lg shadow-slate-900/10 group cursor-pointer transition-all hover:-translate-y-1 hover:shadow-xl border border-slate-800">
-              <div className="absolute right-0 top-0 h-32 w-32 translate-x-10 translate-y-[-10px] bg-gradient-to-br from-indigo-500/10 to-transparent blur-2xl transition-all group-hover:from-indigo-500/20" />
-              <div className="relative flex items-start justify-between">
-                <div>
-                  <p className="text-sm font-medium text-slate-400">Total Cargos</p>
-                  <div className="mt-2 flex items-baseline gap-2">
-                    <span className="text-3xl font-bold text-white tracking-tight">{stats.total}</span>
-                    <span className="text-xs font-medium text-indigo-400 bg-indigo-500/10 px-1.5 py-0.5 rounded">+12%</span>
-                  </div>
-                </div>
-                <div className="rounded-xl bg-indigo-500/20 p-2.5 text-indigo-400 group-hover:bg-indigo-500 group-hover:text-white transition-colors">
-                  <Package className="h-5 w-5" />
-                </div>
-              </div>
-              <div className="mt-4 h-1.5 w-full rounded-full bg-slate-800/50">
-                <div className="h-full w-[70%] rounded-full bg-indigo-500" />
-              </div>
-            </div>
-
-            <div className="relative overflow-hidden rounded-2xl bg-white p-5 shadow-lg shadow-slate-200/50 group cursor-pointer transition-all hover:-translate-y-1 hover:shadow-xl border border-slate-100">
-              <div className="absolute right-0 top-0 h-32 w-32 translate-x-10 translate-y-[-10px] bg-gradient-to-br from-emerald-500/10 to-transparent blur-2xl transition-all group-hover:from-emerald-500/20" />
-              <div className="relative flex items-start justify-between">
-                <div>
-                  <p className="text-sm font-medium text-slate-500">Active / Published</p>
-                  <div className="mt-2 flex items-baseline gap-2">
-                    <span className="text-3xl font-bold text-slate-900 tracking-tight">{stats.published}</span>
-                    <span className="text-xs font-medium text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">Active</span>
-                  </div>
-                </div>
-                <div className="rounded-xl bg-emerald-50 p-2.5 text-emerald-600 group-hover:bg-emerald-500 group-hover:text-white transition-colors">
-                  <TrendingUp className="h-5 w-5" />
-                </div>
-              </div>
-              <div className="mt-4 h-1.5 w-full rounded-full bg-slate-100">
-                <div className="h-full w-[45%] rounded-full bg-emerald-500" />
-              </div>
-            </div>
-
-            <div className="relative overflow-hidden rounded-2xl bg-white p-5 shadow-lg shadow-slate-200/50 group cursor-pointer transition-all hover:-translate-y-1 hover:shadow-xl border border-slate-100">
-              <div className="absolute right-0 top-0 h-32 w-32 translate-x-10 translate-y-[-10px] bg-gradient-to-br from-blue-500/10 to-transparent blur-2xl transition-all group-hover:from-blue-500/20" />
-              <div className="relative flex items-start justify-between">
-                <div>
-                  <p className="text-sm font-medium text-slate-500">In Transit</p>
-                  <div className="mt-2 flex items-baseline gap-2">
-                    <span className="text-3xl font-bold text-slate-900 tracking-tight">{stats.inTransit}</span>
-                    <span className="text-xs font-medium text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">En Route</span>
-                  </div>
-                </div>
-                <div className="rounded-xl bg-blue-50 p-2.5 text-blue-600 group-hover:bg-blue-500 group-hover:text-white transition-colors">
-                  <MapPin className="h-5 w-5" />
-                </div>
-              </div>
-              <div className="mt-4 h-1.5 w-full rounded-full bg-slate-100">
-                <div className="h-full w-[20%] rounded-full bg-blue-500" />
-              </div>
-            </div>
-
-            <div className="relative overflow-hidden rounded-2xl bg-white p-5 shadow-lg shadow-slate-200/50 group cursor-pointer transition-all hover:-translate-y-1 hover:shadow-xl border border-slate-100">
-              <div className="absolute right-0 top-0 h-32 w-32 translate-x-10 translate-y-[-10px] bg-gradient-to-br from-orange-500/10 to-transparent blur-2xl transition-all group-hover:from-orange-500/20" />
-              <div className="relative flex items-start justify-between">
-                <div>
-                  <p className="text-sm font-medium text-slate-500">Total Value</p>
-                  <div className="mt-2 flex items-baseline gap-2">
-                    <span className="text-2xl font-bold text-slate-900 tracking-tight">
-                      ${stats.totalValue.toLocaleString('en-US', { notation: 'compact', maximumFractionDigits: 1 })}
-                    </span>
-                  </div>
-                </div>
-                <div className="rounded-xl bg-orange-50 p-2.5 text-orange-600 group-hover:bg-orange-500 group-hover:text-white transition-colors">
-                  <BarChart3 className="h-5 w-5" />
-                </div>
-              </div>
-              <div className="mt-4 h-1.5 w-full rounded-full bg-slate-100">
-                <div className="h-full w-[85%] rounded-full bg-orange-500" />
-              </div>
-            </div>
+          {/* Stats Cards - ENLITE STYLE */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <StatCard
+              title="Total Shipments"
+              value={stats.total}
+              icon={<Package />}
+              color="primary"
+              trend="+12%"
+              trendDirection="up"
+              subtitle="All Time"
+              variant="modern"
+            />
+            <StatCard
+              title="Active / Published"
+              value={stats.published}
+              icon={<TrendingUp />}
+              color="primary"
+              trend="Active"
+              trendDirection="neutral"
+              subtitle="Currently Live"
+              variant="modern"
+            />
+            <StatCard
+              title="In Transit"
+              value={stats.inTransit}
+              icon={<MapPin />}
+              color="primary"
+              trend="En Route"
+              trendDirection="neutral"
+              subtitle="Live Tracking"
+              variant="modern"
+            />
+            <StatCard
+              title="Total Value"
+              value={`$${stats.totalValue.toLocaleString('en-US', { notation: 'compact', maximumFractionDigits: 1 })}`}
+              icon={<BarChart3 />}
+              color="primary"
+              subtitle="Asset Valuation"
+              variant="modern"
+            />
           </div>
 
-          <div className="bg-white rounded-lg sm:rounded-xl md:rounded-2xl p-3 sm:p-4 md:p-6 shadow-sm">
+          <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-200">
             {/* Header Section */}
-            <div className="flex flex-col gap-3 sm:gap-4 mb-4 sm:mb-6 pb-3 sm:pb-4 border-b border-gray-200">
-              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-                <div className="min-w-0 flex-1">
-                  <h1 className="text-xl sm:text-2xl font-bold text-gray-900 flex items-center gap-2">
-                    <Package className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600 flex-shrink-0" />
-                    <span className="truncate"><TranslatedText text="Cargo Dashboard" /></span>
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8 pb-8 border-b border-slate-100">
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="bg-blue-50 p-2 rounded-xl">
+                    <Package className="w-5 h-5 text-[#345E85]" />
+                  </div>
+                  <h1 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">
+                    <TranslatedText text="Cargo Dashboard" />
                   </h1>
-                  <p className="text-xs sm:text-sm text-gray-500 mt-1">Manage and track all your cargo shipments</p>
                 </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Total Cargos</p>
-                  <p className="text-2xl font-bold text-navy-800">{stats.total}</p>
-                </div>
+                <p className="text-slate-500 font-medium">Manage and optimize your logistics pipeline with real-time data.</p>
               </div>
-              <div className="bg-gray-50 rounded-lg p-4 border border-gray-200 flex items-center gap-4">
-                <div className="w-12 h-12 bg-navy-100 rounded-lg flex items-center justify-center">
-                  <TrendingUp className="w-6 h-6 text-navy-700" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Published</p>
-                  <p className="text-2xl font-bold text-navy-800">{stats.published}</p>
-                </div>
-              </div>
-              <div className="bg-gray-50 rounded-lg p-4 border border-gray-200 flex items-center gap-4">
-                <div className="w-12 h-12 bg-navy-100 rounded-lg flex items-center justify-center">
-                  <MapPin className="w-6 h-6 text-navy-700" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-600">In Transit</p>
-                  <p className="text-2xl font-bold text-navy-800">{stats.inTransit}</p>
-                </div>
-              </div>
-              <div className="bg-gray-50 rounded-lg p-4 border border-gray-200 flex items-center gap-4">
-                <div className="w-12 h-12 bg-navy-100 rounded-lg flex items-center justify-center">
-                  <BarChart3 className="w-6 h-6 text-navy-700" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Total Value</p>
-                  <p className="text-xl font-bold text-navy-800">
-                    {(() => {
-                      const value = stats.totalValue;
-                      if (value >= 1000000) return `$${(value / 1000000).toFixed(1)}M`;
-                      if (value >= 1000) return `$${(value / 1000).toFixed(1)}K`;
-                      return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(value);
-                    })()}
-                  </p>
-                </div>
+
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={handleCreateNew}
+                  className="px-6 py-3 bg-[#345E85] text-white rounded-2xl font-bold text-sm shadow-md hover:bg-slate-800 transition-all flex items-center gap-2"
+                >
+                  <Plus className="w-4 h-4" />
+                  Create Cargo
+                </button>
               </div>
             </div>
 
@@ -1360,7 +1298,7 @@ export const CargoDashboard: React.FC = () => {
                     key={option.value}
                     onClick={() => handleSort(option.value as any)}
                     className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium border transition-all ${sortField === option.value
-                      ? 'bg-primary-600 text-white border-primary-600 shadow-md'
+                      ? 'bg-[#345E85] text-white border-[#345E85]'
                       : 'bg-white text-gray-700 border-gray-300 hover:border-gray-400'
                       }`}
                   >

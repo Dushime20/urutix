@@ -1,15 +1,17 @@
 import React, { useMemo } from 'react';
 import {
-  FaTruck,
-  FaCheckCircle,
-  FaExclamationTriangle,
-  FaDollarSign,
-  FaMapMarkerAlt,
-  FaGasPump,
-  FaUsers,
-  FaClock,
-} from 'react-icons/fa';
-import { Clock, ChevronRight } from 'lucide-react';
+  CheckCircle2,
+  Truck,
+  DollarSign,
+  AlertTriangle,
+  Users,
+  Fuel,
+  MapPin,
+  Clock,
+  ChevronRight,
+  Shield,
+  Activity
+} from 'lucide-react';
 
 interface Activity {
   id: string;
@@ -31,23 +33,23 @@ interface TruckOwnerRecentActivitiesProps {
 const getActivityIcon = (type: string): React.ReactNode => {
   switch (type) {
     case 'trip_completed':
-      return <FaCheckCircle className="w-5 h-5 text-green-600" />;
+      return <CheckCircle2 className="size-5" />;
     case 'trip_started':
-      return <FaTruck className="w-5 h-5 text-blue-600" />;
+      return <Truck className="size-5" />;
     case 'payment_received':
-      return <FaDollarSign className="w-5 h-5 text-emerald-600" />;
+      return <DollarSign className="size-5" />;
     case 'maintenance_due':
-      return <FaExclamationTriangle className="w-5 h-5 text-orange-600" />;
+      return <AlertTriangle className="size-5" />;
     case 'driver_assigned':
-      return <FaUsers className="w-5 h-5 text-purple-600" />;
+      return <Users className="size-5" />;
     case 'fuel_logged':
-      return <FaGasPump className="w-5 h-5 text-yellow-600" />;
+      return <Fuel className="size-5" />;
     case 'expense_recorded':
-      return <FaDollarSign className="w-5 h-5 text-red-600" />;
+      return <DollarSign className="size-5" />;
     case 'route_assigned':
-      return <FaMapMarkerAlt className="w-5 h-5 text-indigo-600" />;
+      return <MapPin className="size-5" />;
     default:
-      return <FaClock className="w-5 h-5 text-gray-600" />;
+      return <Activity className="size-5" />;
   }
 };
 
@@ -73,16 +75,16 @@ const mockActivities: Activity[] = [
   {
     id: '1',
     type: 'trip_completed',
-    title: 'Trip Completed',
-    description: 'Trip to Mombasa completed successfully',
+    title: 'Trip Vector Terminated',
+    description: 'Cargo delivery to Mombasa logistics terminal confirmed.',
     timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000),
     status: 'completed',
   },
   {
     id: '2',
     type: 'payment_received',
-    title: 'Payment Received',
-    description: 'Payment for Nairobi-Kisumu trip received',
+    title: 'Treasury Inbound Confirm',
+    description: 'Contract payment for Nairobi-Kisumu corridor processed.',
     timestamp: new Date(Date.now() - 5 * 60 * 60 * 1000),
     amount: 8500,
     status: 'completed',
@@ -90,24 +92,24 @@ const mockActivities: Activity[] = [
   {
     id: '3',
     type: 'fuel_logged',
-    title: 'Fuel Logged',
-    description: 'Fuel consumption recorded: 45 liters',
+    title: 'Energy Resource Sync',
+    description: 'Asset E-92 logged 45 liters of diesel consumed.',
     timestamp: new Date(Date.now() - 8 * 60 * 60 * 1000),
     status: 'completed',
   },
   {
     id: '4',
     type: 'trip_started',
-    title: 'Trip Started',
-    description: 'Started trip from Nairobi to Nakuru',
+    title: 'Trip Vector Initiated',
+    description: 'Asset deployment: Nairobi to Nakuru via Highway-A1',
     timestamp: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
     status: 'completed',
   },
   {
     id: '5',
     type: 'maintenance_due',
-    title: 'Maintenance Alert',
-    description: 'Truck maintenance due in 500km',
+    title: 'Mechanical Health Alert',
+    description: 'System diagnostic recommends service within 500km.',
     timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
     status: 'warning',
   },
@@ -122,34 +124,34 @@ export const TruckOwnerRecentActivities: React.FC<TruckOwnerRecentActivitiesProp
   }, [activities]);
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-      {/* Header */}
-      <div className="p-6 border-b border-gray-100 flex justify-between items-center">
+    <div className="bg-white rounded-[40px] border border-slate-100 shadow-sm overflow-hidden">
+      {/* List Header */}
+      <div className="px-8 py-6 border-b border-slate-50 flex justify-between items-center">
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-blue-50 rounded-lg">
-            <Clock className="w-5 h-5 text-blue-600" />
+          <div className="h-8 w-8 bg-blue-50 rounded-lg flex items-center justify-center text-[#345E85] shadow-inner">
+            <Clock size={16} />
           </div>
           <div>
-            <h3 className="font-bold text-gray-900 text-lg">Recent Activities</h3>
-            <p className="text-sm text-gray-500 mt-0.5">Latest updates from your fleet</p>
+            <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Chronology</h3>
+            <h4 className="text-lg font-black text-slate-900 tracking-tight">Recent Activity Vector</h4>
           </div>
         </div>
-        <button className="text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1 transition-colors">
-          View All <ChevronRight className="w-4 h-4" />
+        <button className="h-10 w-10 bg-slate-50 hover:bg-[#345E85] hover:text-white rounded-xl flex items-center justify-center transition-all group">
+          <ChevronRight size={18} className="group-hover:translate-x-0.5 transition-transform" />
         </button>
       </div>
 
-      {/* Activities List */}
-      <div className="divide-y divide-gray-100">
+      {/* Activities Grid */}
+      <div className="divide-y divide-slate-50">
         {isLoading ? (
           // Loading skeleton
-          <div className="p-6 space-y-4">
+          <div className="p-8 space-y-6">
             {[...Array(3)].map((_, i) => (
-              <div key={i} className="flex gap-4 animate-pulse">
-                <div className="w-10 h-10 bg-gray-200 rounded-lg flex-shrink-0" />
-                <div className="flex-1">
-                  <div className="h-4 bg-gray-200 rounded w-3/4 mb-2" />
-                  <div className="h-3 bg-gray-100 rounded w-1/2" />
+              <div key={i} className="flex gap-6 animate-pulse">
+                <div className="w-12 h-12 bg-slate-100 rounded-[18px] flex-shrink-0" />
+                <div className="flex-1 space-y-3">
+                  <div className="h-4 bg-slate-100 rounded-full w-1/3" />
+                  <div className="h-3 bg-slate-50 rounded-full w-2/3" />
                 </div>
               </div>
             ))}
@@ -158,74 +160,72 @@ export const TruckOwnerRecentActivities: React.FC<TruckOwnerRecentActivitiesProp
           displayedActivities.map((activity) => (
             <div
               key={activity.id}
-              className={`p-4 hover:bg-gray-50 transition-colors cursor-pointer border-l-4 ${
-                activity.type === 'maintenance_due'
-                  ? 'border-l-orange-500 bg-orange-50/30'
-                  : 'border-l-blue-500'
-              }`}
+              className={`p-6 px-8 hover:bg-slate-50/50 transition-all cursor-pointer group relative`}
             >
-              <div className="flex items-start gap-4">
-                {/* Icon */}
+              <div className="flex items-start gap-6">
+                {/* Visual Anchor */}
                 <div
-                  className={`p-2.5 rounded-lg flex-shrink-0 ${
-                    activity.type === 'payment_received'
-                      ? 'bg-emerald-100'
-                      : activity.type === 'trip_completed'
-                      ? 'bg-green-100'
-                      : activity.type === 'maintenance_due'
-                      ? 'bg-orange-100'
-                      : 'bg-blue-100'
-                  }`}
+                  className={`size-12 rounded-[18px] flex-shrink-0 flex items-center justify-center transition-all shadow-sm ${activity.type === 'maintenance_due'
+                      ? 'bg-rose-50 text-rose-500 group-hover:bg-rose-500 group-hover:text-white'
+                      : activity.type === 'payment_received'
+                        ? 'bg-emerald-50 text-emerald-600 group-hover:bg-emerald-600 group-hover:text-white'
+                        : 'bg-blue-50 text-[#345E85] group-hover:bg-[#345E85] group-hover:text-white'
+                    }`}
                 >
                   {getActivityIcon(activity.type)}
                 </div>
 
-                {/* Content */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-start justify-between gap-2">
+                {/* Content Matrix */}
+                <div className="flex-1 min-w-0 py-0.5">
+                  <div className="flex items-start justify-between gap-4">
                     <div className="flex-1">
-                      <p className="font-semibold text-gray-900 text-sm">{activity.title}</p>
-                      <p className="text-sm text-gray-600 mt-1">{activity.description}</p>
+                      <div className="flex items-center gap-2 mb-1">
+                        <p className="font-black text-slate-900 text-sm tracking-tight">{activity.title}</p>
+                        {activity.status === 'warning' && (
+                          <div className="h-1.5 w-1.5 rounded-full bg-rose-500 animate-pulse" />
+                        )}
+                      </div>
+                      <p className="text-sm font-medium text-slate-500 leading-relaxed truncate">{activity.description}</p>
                     </div>
                     {activity.amount && (
                       <div className="text-right flex-shrink-0">
-                        <p className="font-bold text-green-700 text-sm">
-                          +KES {activity.amount.toLocaleString()}
+                        <p className="font-black text-emerald-600 text-sm italic">
+                          + KES {activity.amount.toLocaleString()}
                         </p>
                       </div>
                     )}
                   </div>
 
-                  {/* Timestamp and Status */}
-                  <div className="flex items-center justify-between mt-2 text-xs text-gray-500">
-                    <span className="flex items-center gap-1">
-                      <FaClock className="w-3 h-3" />
+                  {/* Meta Vector */}
+                  <div className="flex items-center gap-4 mt-3">
+                    <span className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-slate-400">
+                      <Clock size={12} className="opacity-60" />
                       {formatDate(activity.timestamp)}
                     </span>
-                    {activity.status && (
-                      <span
-                        className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                          activity.status === 'completed'
-                            ? 'bg-green-100 text-green-700'
-                            : activity.status === 'pending'
-                            ? 'bg-blue-100 text-blue-700'
-                            : 'bg-orange-100 text-orange-700'
+                    <div className="h-1 w-1 rounded-full bg-slate-200" />
+                    <span
+                      className={`text-[9px] font-black uppercase tracking-[0.2em] ${activity.status === 'completed'
+                          ? 'text-emerald-500'
+                          : activity.status === 'warning'
+                            ? 'text-rose-500'
+                            : 'text-[#345E85]'
                         }`}
-                      >
-                        {activity.status.charAt(0).toUpperCase() + activity.status.slice(1)}
-                      </span>
-                    )}
+                    >
+                      {activity.status} PROTOCOL
+                    </span>
                   </div>
                 </div>
               </div>
             </div>
           ))
         ) : (
-          // Empty state
-          <div className="p-12 text-center">
-            <FaClock className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-            <p className="text-gray-500 font-medium">No recent activities</p>
-            <p className="text-sm text-gray-400 mt-1">Your activities will appear here</p>
+          // System Empty State
+          <div className="p-20 text-center flex flex-col items-center">
+            <div className="size-16 bg-slate-50 rounded-[28px] flex items-center justify-center text-slate-200 mb-6">
+              <Activity size={32} />
+            </div>
+            <p className="text-[11px] font-black uppercase tracking-[0.3em] text-slate-400">No Historical Data</p>
+            <p className="text-sm font-medium text-slate-400 mt-2">Operational chronology will populate upon asset deployment.</p>
           </div>
         )}
       </div>

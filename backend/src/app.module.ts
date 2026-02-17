@@ -39,14 +39,16 @@ import { OnboardingModule } from './modules/onboarding/onboarding.module';
 import { PermissionHelper } from './utils/permission-helper';
 import { ActivityLogInterceptor } from './interceptors/activity-log.interceptor';
 import { TenantSubdomainMiddleware } from './middleware/tenant-subdomain.middleware';
+import { TenantVerificationMiddleware } from './middleware/tenant-verification.middleware';
 import { Tenant } from './entities/tenant.entity';
+import { User } from './entities/user.entity';
 
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     TypeOrmModule.forRoot(databaseConfig),
-    TypeOrmModule.forFeature([Tenant]), // For subdomain middleware
+    TypeOrmModule.forFeature([Tenant, User]), // For subdomain and tenant verification middleware
     EventEmitterModule.forRoot(),
     ThrottlerModule.forRoot([{ ttl: 60000, limit: 20 }]),
     EnhancedAuthModule,
@@ -95,5 +97,10 @@ export class AppModule implements NestModule {
     consumer
       .apply(TenantSubdomainMiddleware)
       .forRoutes('*'); // Apply to all routes
+    
+    // Apply tenant verification middleware after authentication
+    consumer
+      .apply(TenantVerificationMiddleware)
+      .forRoutes('*'); // Apply to all routes (will skip public routes internally)
   }
 }

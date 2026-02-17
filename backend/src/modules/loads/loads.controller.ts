@@ -66,6 +66,7 @@ import { UserRole } from '../../entities/user.entity';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { TenantGuard } from '../auth/tenant.guard';
 import { GetTenant } from '../auth/decorators/tenant.decorator';
+import { CargoOwnerGuard } from '../../guards/cargo-owner.guard';
 
 @ApiTags('Enhanced Loads')
 @Controller('loads')
@@ -1091,6 +1092,7 @@ export class LoadsController {
   }
 
   @Patch(':id')
+  @UseGuards(CargoOwnerGuard) // Verify ownership before allowing update
   @ApiOperation({
     summary: 'Update Enhanced Cargo Load',
     description:
@@ -1145,6 +1147,7 @@ export class LoadsController {
   }
 
   @Delete(':id')
+  @UseGuards(CargoOwnerGuard) // Verify ownership before allowing delete
   @ApiOperation({
     summary: 'Delete Enhanced Cargo Load',
     description: 'Deletes a cargo load and all its enhanced field data',
@@ -1187,6 +1190,7 @@ export class LoadsController {
   // Workflow Endpoints
 
   @Post(':loadId/publish')
+  @UseGuards(CargoOwnerGuard) // Verify ownership before allowing publish
   @ApiOperation({
     summary: 'Publish load',
     description: 'Publishes a draft load, making it visible to carriers',
@@ -1308,6 +1312,7 @@ export class LoadsController {
   }
 
   @Post(':loadId/cancel')
+  @UseGuards(CargoOwnerGuard) // Verify ownership before allowing cancel
   @ApiOperation({
     summary: 'Cancel load',
     description: 'Cancels a load and records the reason',
@@ -2106,7 +2111,7 @@ export class LoadsController {
   }
 
   @Patch('draft/:id')
-  @UseGuards(ThrottlerGuard)
+  @UseGuards(ThrottlerGuard, CargoOwnerGuard) // Verify ownership before allowing draft update
   @Throttle({ default: { limit: 30, ttl: 60000 } }) // 30 requests per minute for draft updates
   @ApiOperation({
     summary: 'Update Cargo Draft',
@@ -2232,7 +2237,7 @@ export class LoadsController {
   }
 
   @Post('draft/:id/publish')
-  @UseGuards(ThrottlerGuard)
+  @UseGuards(ThrottlerGuard, CargoOwnerGuard) // Verify ownership before allowing publish
   @Throttle({ default: { limit: 10, ttl: 60000 } }) // 10 requests per minute for moving to created status
   @ApiOperation({
     summary: 'Move Cargo Draft to Created Status',
@@ -2297,6 +2302,7 @@ export class LoadsController {
   }
 
   @Delete('draft/:id')
+  @UseGuards(CargoOwnerGuard) // Verify ownership before allowing delete
   @ApiOperation({
     summary: 'Delete Cargo Draft',
     description: `

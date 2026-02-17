@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import logoUrutiXLegacy from '../assets/logo-urutix.svg';
-import logoUrutiXNew from '../assets/logo-urutix-logistics.svg';
+import logoUrutiXNew from '../assets/urutiX Logistics Logo (1).svg';
+import logoUrutiXBackground from '../assets/logo-urutix.svg';
 import { Package, ArrowRight, CheckCircle, Truck } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -329,9 +329,15 @@ const Auth = () => {
   }, [selectedUserType]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 relative overflow-hidden">
-      {/* Full Page Background Logo */}
-      <img src={logoUrutiXLegacy} alt="UrutiX Logo Background" className="pointer-events-none select-none fixed inset-0 w-full h-full object-cover opacity-10 z-0" style={{ objectPosition: 'center' }} />
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 relative overflow-hidden antialiased">
+      <div className="fixed inset-0 bg-slate-50 z-0" />
+      {/* Background Logo */}
+      <img
+        src={logoUrutiXBackground}
+        alt="UrutiX Logo Background"
+        className="pointer-events-none select-none fixed inset-0 w-full h-full object-cover opacity-10 z-0"
+        style={{ objectPosition: 'center' }}
+      />
       {/* Centered Auth Form */}
       <div className="w-full max-w-2xl px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="flex justify-center mb-8">
@@ -341,11 +347,11 @@ const Auth = () => {
         {/* Form Container */}
         <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
           {/* Form Header */}
-          <div className="px-6 pt-6 pb-4">
-            <h2 className="text-xl font-bold text-gray-900 mb-1">
+          <div className="px-8 pt-8 pb-4">
+            <h2 className="text-2xl font-black text-slate-900 mb-1 font-manrope tracking-tight">
               {isLogin ? <TranslatedText text="Welcome back" /> : <TranslatedText text="Create your account" />}
             </h2>
-            <p className="text-sm text-gray-600">
+            <p className="text-sm font-medium text-slate-500">
               {isLogin ? <TranslatedText text="Sign in to access your dashboard" /> : <TranslatedText text="Join thousands of users in the logistics industry" />}
             </p>
           </div>
@@ -355,13 +361,13 @@ const Auth = () => {
             {isLogin ? (
               <form onSubmit={loginForm.handleSubmit(onLoginSubmit)} className="space-y-4">
                 <div>
-                  <label htmlFor="email" className="block text-xs font-medium text-gray-700 mb-1.5">
+                  <label htmlFor="email" className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">
                     <TranslatedText text="Email address" />
                   </label>
                   <input
                     {...loginForm.register('email')}
                     type="email"
-                    className={`w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 ${loginEmailError ? 'border-red-500' : 'border-gray-300'
+                    className={`w-full px-4 py-2.5 text-sm font-medium text-slate-700 bg-slate-50 border rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 placeholder:text-slate-400 placeholder:font-normal ${loginEmailError ? 'border-red-500' : 'border-slate-200'
                       }`}
                     placeholder="Enter your email"
                     required
@@ -381,22 +387,22 @@ const Auth = () => {
                     }}
                   />
                   {loginEmailError && (
-                    <p className="mt-1 text-xs text-red-600">{loginEmailError}</p>
+                    <p className="mt-2 text-[10px] font-black text-red-600 uppercase tracking-wide px-1">{loginEmailError}</p>
                   )}
                   {loginForm.formState.errors.email && !loginEmailError && (
-                    <p className="mt-1 text-xs text-red-600">{loginForm.formState.errors.email.message}</p>
+                    <p className="mt-2 text-[10px] font-black text-red-600 uppercase tracking-wide px-1">{loginForm.formState.errors.email.message}</p>
                   )}
                 </div>
 
                 <div>
-                  <label htmlFor="password" className="block text-xs font-medium text-gray-700 mb-1.5">
+                  <label htmlFor="password" className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">
                     <TranslatedText text="Password" />
                   </label>
                   <div className="relative">
                     <input
                       {...loginForm.register('password')}
                       type={showPassword ? 'text' : 'password'}
-                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 pr-10"
+                      className="w-full px-4 py-2.5 text-sm font-medium text-slate-700 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 pr-10 placeholder:text-slate-400 placeholder:font-normal"
                       placeholder="Enter your password"
                       required
                     />
@@ -409,7 +415,7 @@ const Auth = () => {
                     </button>
                   </div>
                   {loginForm.formState.errors.password && (
-                    <p className="mt-2 text-sm text-red-600">{loginForm.formState.errors.password.message}</p>
+                    <p className="mt-2 text-[10px] font-black text-red-600 uppercase tracking-wide px-1">{loginForm.formState.errors.password.message}</p>
                   )}
                 </div>
 
@@ -417,7 +423,7 @@ const Auth = () => {
                   <button
                     type="button"
                     onClick={() => navigate('/forgot-password')}
-                    className="text-xs text-primary-600 hover:text-primary-500 font-medium transition-colors"
+                    className="text-[10px] text-primary-600 hover:text-primary-500 font-black uppercase tracking-widest transition-all duration-200"
                   >
                     <TranslatedText text="Forgot password?" />
                   </button>
@@ -431,7 +437,7 @@ const Auth = () => {
 
                 <button
                   type="submit"
-                  className="w-full bg-primary-600 text-white font-semibold py-2.5 px-4 rounded-lg hover:bg-primary-700 focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 text-sm"
+                  className="w-full bg-primary-600 text-white font-black uppercase tracking-widest py-3 px-4 rounded-xl hover:bg-primary-700 focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-all duration-200 shadow-lg shadow-primary-500/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 text-[11px]"
                   disabled={isLoading}
                 >
                   {isLoading ? (
@@ -439,18 +445,18 @@ const Auth = () => {
                   ) : (
                     <>
                       <span><TranslatedText text="Sign In" /></span>
-                      <ArrowRight className="h-3.5 w-3.5" />
+                      <ArrowRight className="h-4 w-4" />
                     </>
                   )}
                 </button>
 
                 <div className="text-center">
-                  <p className="text-sm text-gray-600">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">
                     <TranslatedText text="Don't have an account?" />{' '}
                     <button
                       type="button"
                       onClick={() => setIsLogin(false)}
-                      className="font-medium text-primary-600 hover:text-primary-500 transition-colors"
+                      className="text-primary-600 hover:text-primary-500 transition-colors"
                     >
                       <TranslatedText text="Sign up" />
                     </button>
@@ -461,7 +467,7 @@ const Auth = () => {
               <form onSubmit={registerForm.handleSubmit(onRegisterSubmit)} className="space-y-4">
                 {/* User Type Selection */}
                 <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-2">
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">
                     <TranslatedText text="I am a..." />
                   </label>
                   <div className="grid grid-cols-2 gap-2">
@@ -477,20 +483,20 @@ const Auth = () => {
                           setSelectedTenantId('');
                           registerForm.setValue('companyName', '');
                         }}
-                        className={`p-3 rounded-lg border-2 transition-all duration-200 ${selectedUserType === type.id
-                          ? `${type.borderColor} ${type.bgColor} border-opacity-100`
-                          : 'border-gray-200 hover:border-gray-300 bg-white'
+                        className={`p-4 rounded-xl border-2 transition-all duration-200 flex flex-col items-center text-center space-y-2 ${selectedUserType === type.id
+                          ? `${type.borderColor} ${type.bgColor} border-opacity-100 shadow-md`
+                          : 'border-slate-100 hover:border-slate-200 bg-slate-50'
                           }`}
                       >
-                        <div className="flex flex-col items-center space-y-1">
-                          <type.icon className={`h-5 w-5 ${selectedUserType === type.id ? type.textColor : type.textColor}`} />
-                          <div className="text-center">
-                            <div className={`font-medium text-xs ${selectedUserType === type.id ? type.textColor : 'text-gray-900'}`}>
-                              <TranslatedText text={type.title} />
-                            </div>
-                            <div className={`text-[10px] ${selectedUserType === type.id ? type.textColor : 'text-gray-500'}`}>
-                              <TranslatedText text={type.description} />
-                            </div>
+                        <div className={`p-2 rounded-lg ${selectedUserType === type.id ? 'bg-white' : 'bg-white shadow-sm'}`}>
+                          <type.icon className={`h-6 w-6 ${selectedUserType === type.id ? type.textColor : 'text-slate-400'}`} />
+                        </div>
+                        <div>
+                          <div className={`font-black text-[11px] uppercase tracking-wider font-manrope ${selectedUserType === type.id ? type.textColor : 'text-slate-600'}`}>
+                            <TranslatedText text={type.title} />
+                          </div>
+                          <div className={`text-[10px] font-medium leading-tight ${selectedUserType === type.id ? 'text-slate-600' : 'text-slate-400'}`}>
+                            <TranslatedText text={type.description} />
                           </div>
                         </div>
                       </button>
@@ -504,26 +510,26 @@ const Auth = () => {
                   <div className="space-y-4">
                     {/* First Name */}
                     <div>
-                      <label htmlFor="firstName" className="block text-xs font-medium text-gray-700 mb-1.5">
+                      <label htmlFor="firstName" className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">
                         <TranslatedText text="First name" />
                       </label>
                       <input
                         {...registerForm.register('firstName')}
                         type="text"
-                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200"
+                        className="w-full px-4 py-2.5 text-sm font-medium text-slate-700 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 placeholder:text-slate-400 placeholder:font-normal"
                         placeholder="First name"
                       />
                       {registerForm.formState.errors.firstName && (
-                        <p className="mt-2 text-sm text-red-600">{registerForm.formState.errors.firstName.message}</p>
+                        <p className="mt-2 text-[10px] font-black text-red-600 uppercase tracking-wide px-1">{registerForm.formState.errors.firstName.message}</p>
                       )}
                     </div>
 
                     {/* Company Name - Only show for CARGO_OWNER */}
                     {selectedUserType === 'CARGO_OWNER' && (
                       <div>
-                        <label htmlFor="companyName" className="block text-xs font-medium text-gray-700 mb-1.5">
+                        <label htmlFor="companyName" className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">
                           Select your company <span className="text-red-500">*</span>
-                          <span className="text-xs text-gray-500 font-normal ml-2">(Active companies only)</span>
+                          <span className="text-[10px] text-slate-400 font-bold ml-2">(Active companies only)</span>
                         </label>
                         {isLoadingTenants ? (
                           <div className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg bg-gray-50 flex items-center space-x-2">
@@ -563,13 +569,13 @@ const Auth = () => {
                                   registerForm.setValue('companyName', '', { shouldValidate: true });
                                 }
                               }}
-                              className={`w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white ${registerForm.formState.errors.companyName
+                              className={`w-full px-4 py-2.5 text-sm font-medium text-slate-700 bg-slate-50 border rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 ${registerForm.formState.errors.companyName
                                 ? 'border-red-500'
-                                : 'border-gray-300'
+                                : 'border-slate-200'
                                 }`}
                             >
                               <option value="" disabled>
-                                {isLoadingTenants ? 'Loading companies...' : 'Select a company...'}
+                                {isLoadingTenants ? 'loading companies...' : 'select a company...'}
                               </option>
                               {tenants.map((tenant: Tenant) => (
                                 <option key={tenant.id} value={tenant.id}>
@@ -587,7 +593,7 @@ const Auth = () => {
                           </>
                         )}
                         {registerForm.formState.errors.companyName && (
-                          <p className="mt-1 text-xs text-red-600">
+                          <p className="mt-2 text-[10px] font-black text-red-600 uppercase tracking-wide px-1">
                             {registerForm.formState.errors.companyName.message}
                           </p>
                         )}
@@ -614,9 +620,9 @@ const Auth = () => {
                     {/* Company Name - For TRUCK_OWNER (selectable dropdown) */}
                     {selectedUserType === 'TRUCK_OWNER' && (
                       <div>
-                        <label htmlFor="companyName" className="block text-xs font-medium text-gray-700 mb-1.5">
+                        <label htmlFor="companyName" className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">
                           Select your company <span className="text-red-500">*</span>
-                          <span className="text-xs text-gray-500 font-normal ml-2">(Active companies only)</span>
+                          <span className="text-[10px] text-slate-400 font-bold ml-2">(Active companies only)</span>
                         </label>
                         {isLoadingTenants ? (
                           <div className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg bg-gray-50 flex items-center space-x-2">
@@ -656,9 +662,9 @@ const Auth = () => {
                                   registerForm.setValue('companyName', '', { shouldValidate: true });
                                 }
                               }}
-                              className={`w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white ${registerForm.formState.errors.companyName
+                              className={`w-full px-4 py-2.5 text-sm font-medium text-slate-700 bg-slate-50 border rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 ${registerForm.formState.errors.companyName
                                 ? 'border-red-500'
-                                : 'border-gray-300'
+                                : 'border-slate-200'
                                 }`}
                             >
                               <option value="" disabled>
@@ -680,7 +686,7 @@ const Auth = () => {
                           </>
                         )}
                         {registerForm.formState.errors.companyName && (
-                          <p className="mt-1 text-xs text-red-600">
+                          <p className="mt-2 text-[10px] font-black text-red-600 uppercase tracking-wide px-1">
                             {registerForm.formState.errors.companyName.message}
                           </p>
                         )}
@@ -706,14 +712,14 @@ const Auth = () => {
 
                     {/* Password */}
                     <div>
-                      <label htmlFor="password" className="block text-xs font-medium text-gray-700 mb-1.5">
+                      <label htmlFor="password" className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">
                         <TranslatedText text="Password" />
                       </label>
                       <div className="relative">
                         <input
                           {...registerForm.register('password')}
                           type={showPassword ? 'text' : 'password'}
-                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 pr-10"
+                          className="w-full px-4 py-2.5 text-sm font-medium text-slate-700 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 pr-10 placeholder:text-slate-400 placeholder:font-normal"
                           placeholder="Create a password"
                         />
                         <button
@@ -732,8 +738,8 @@ const Auth = () => {
                           ) : (
                             <Circle className="h-3 w-3 text-gray-300" />
                           )}
-                          <span className={`text-xs ${passwordCriteria.minLength ? 'text-green-600' : 'text-gray-500'}`}>
-                            <TranslatedText text="at least 8 characters" />
+                          <span className={`text-[10px] font-black uppercase tracking-wide ${passwordCriteria.minLength ? 'text-green-600' : 'text-slate-400'}`}>
+                            <TranslatedText text="At least 8 characters" />
                           </span>
                         </div>
                         <div className="flex items-center gap-2">
@@ -742,8 +748,8 @@ const Auth = () => {
                           ) : (
                             <Circle className="h-3 w-3 text-gray-300" />
                           )}
-                          <span className={`text-xs ${passwordCriteria.hasUppercase ? 'text-green-600' : 'text-gray-500'}`}>
-                            <TranslatedText text="one uppercase letter" />
+                          <span className={`text-[10px] font-black uppercase tracking-wide ${passwordCriteria.hasUppercase ? 'text-green-600' : 'text-slate-400'}`}>
+                            <TranslatedText text="One uppercase letter" />
                           </span>
                         </div>
                         <div className="flex items-center gap-2">
@@ -752,8 +758,8 @@ const Auth = () => {
                           ) : (
                             <Circle className="h-3 w-3 text-gray-300" />
                           )}
-                          <span className={`text-xs ${passwordCriteria.hasLowercase ? 'text-green-600' : 'text-gray-500'}`}>
-                            <TranslatedText text="one lowercase letter" />
+                          <span className={`text-[10px] font-black uppercase tracking-wide ${passwordCriteria.hasLowercase ? 'text-green-600' : 'text-slate-400'}`}>
+                            <TranslatedText text="One lowercase letter" />
                           </span>
                         </div>
                         <div className="flex items-center gap-2">
@@ -762,8 +768,8 @@ const Auth = () => {
                           ) : (
                             <Circle className="h-3 w-3 text-gray-300" />
                           )}
-                          <span className={`text-xs ${passwordCriteria.hasNumber ? 'text-green-600' : 'text-gray-500'}`}>
-                            <TranslatedText text="one number" />
+                          <span className={`text-[10px] font-black uppercase tracking-wide ${passwordCriteria.hasNumber ? 'text-green-600' : 'text-slate-400'}`}>
+                            <TranslatedText text="One number" />
                           </span>
                         </div>
                         <div className="flex items-center gap-2">
@@ -772,13 +778,13 @@ const Auth = () => {
                           ) : (
                             <Circle className="h-3 w-3 text-gray-300" />
                           )}
-                          <span className={`text-xs ${passwordCriteria.hasSpecialChar ? 'text-green-600' : 'text-gray-500'}`}>
-                            <TranslatedText text="one special character" />
+                          <span className={`text-[10px] font-black uppercase tracking-wide ${passwordCriteria.hasSpecialChar ? 'text-green-600' : 'text-slate-400'}`}>
+                            <TranslatedText text="One special character" />
                           </span>
                         </div>
                       </div>
                       {registerForm.formState.errors.password && (
-                        <p className="mt-1 text-xs text-red-600">{registerForm.formState.errors.password.message}</p>
+                        <p className="mt-2 text-[10px] font-black text-red-600 uppercase tracking-wide px-1">{registerForm.formState.errors.password.message}</p>
                       )}
                     </div>
                   </div>
@@ -787,29 +793,29 @@ const Auth = () => {
                   <div className="space-y-4">
                     {/* Last Name */}
                     <div>
-                      <label htmlFor="lastName" className="block text-xs font-medium text-gray-700 mb-1.5">
+                      <label htmlFor="lastName" className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">
                         <TranslatedText text="Last name" />
                       </label>
                       <input
                         {...registerForm.register('lastName')}
                         type="text"
-                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200"
+                        className="w-full px-4 py-2.5 text-sm font-medium text-slate-700 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 placeholder:text-slate-400 placeholder:font-normal"
                         placeholder="Last name"
                       />
                       {registerForm.formState.errors.lastName && (
-                        <p className="mt-1 text-xs text-red-600">{registerForm.formState.errors.lastName.message}</p>
+                        <p className="mt-2 text-[10px] font-black text-red-600 uppercase tracking-wide px-1">{registerForm.formState.errors.lastName.message}</p>
                       )}
                     </div>
 
                     {/* Email */}
                     <div>
-                      <label htmlFor="email" className="block text-xs font-medium text-gray-700 mb-1.5">
+                      <label htmlFor="email" className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">
                         <TranslatedText text="Email address" />
                       </label>
                       <input
                         {...registerForm.register('email')}
                         type="email"
-                        className={`w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 ${registerEmailError ? 'border-red-500' : 'border-gray-300'
+                        className={`w-full px-4 py-2.5 text-sm font-medium text-slate-700 bg-slate-50 border rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 placeholder:text-slate-400 placeholder:font-normal ${registerEmailError ? 'border-red-500' : 'border-slate-200'
                           }`}
                         placeholder="Enter your email"
                         onBlur={(e) => {
@@ -828,23 +834,23 @@ const Auth = () => {
                         }}
                       />
                       {registerEmailError && (
-                        <p className="mt-1 text-xs text-red-600">{registerEmailError}</p>
+                        <p className="mt-2 text-[10px] font-black text-red-600 uppercase tracking-wide px-1">{registerEmailError}</p>
                       )}
                       {registerForm.formState.errors.email && !registerEmailError && (
-                        <p className="mt-1 text-xs text-red-600">{registerForm.formState.errors.email.message}</p>
+                        <p className="mt-2 text-[10px] font-black text-red-600 uppercase tracking-wide px-1">{registerForm.formState.errors.email.message}</p>
                       )}
                     </div>
 
                     {/* Confirm Password */}
                     <div>
-                      <label htmlFor="confirmPassword" className="block text-xs font-medium text-gray-700 mb-1.5">
+                      <label htmlFor="confirmPassword" className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">
                         <TranslatedText text="Confirm password" />
                       </label>
                       <div className="relative">
                         <input
                           {...registerForm.register('confirmPassword')}
                           type={showConfirmPassword ? 'text' : 'password'}
-                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 pr-10"
+                          className="w-full px-4 py-2.5 text-sm font-medium text-slate-700 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 pr-10 placeholder:text-slate-400 placeholder:font-normal"
                           placeholder="Confirm your password"
                         />
                         <button
@@ -856,7 +862,7 @@ const Auth = () => {
                         </button>
                       </div>
                       {registerForm.formState.errors.confirmPassword && (
-                        <p className="mt-1 text-xs text-red-600">{registerForm.formState.errors.confirmPassword.message}</p>
+                        <p className="mt-2 text-[10px] font-black text-red-600 uppercase tracking-wide px-1">{registerForm.formState.errors.confirmPassword.message}</p>
                       )}
                     </div>
                   </div>
@@ -872,7 +878,7 @@ const Auth = () => {
                 {/* Submit Button */}
                 <button
                   type="submit"
-                  className="w-full bg-primary-600 text-white font-semibold py-2.5 px-4 rounded-lg hover:bg-primary-700 focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 text-sm"
+                  className="w-full bg-primary-600 text-white font-black uppercase tracking-widest py-3 px-4 rounded-xl hover:bg-primary-700 focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-all duration-200 shadow-lg shadow-primary-500/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 text-[11px]"
                   disabled={isLoading}
                 >
                   {isLoading ? (
@@ -880,19 +886,19 @@ const Auth = () => {
                   ) : (
                     <>
                       <span><TranslatedText text="Create Account" /></span>
-                      <ArrowRight className="h-3.5 w-3.5" />
+                      <ArrowRight className="h-4 w-4" />
                     </>
                   )}
                 </button>
 
                 {/* Sign In Link */}
                 <div className="text-center">
-                  <p className="text-xs text-gray-600">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">
                     <TranslatedText text="Already have an account?" />{' '}
                     <button
                       type="button"
                       onClick={() => setIsLogin(true)}
-                      className="font-medium text-primary-600 hover:text-primary-500 transition-colors"
+                      className="text-primary-600 hover:text-primary-500 transition-colors"
                     >
                       <TranslatedText text="Sign in" />
                     </button>
@@ -903,7 +909,7 @@ const Auth = () => {
           </div>
         </div>
       </div>
-    </div>
+    </div >
   );
 };
 

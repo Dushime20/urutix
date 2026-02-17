@@ -1,12 +1,15 @@
 import { useState, useEffect } from 'react';
-import { X, Package, MapPin, Calendar, DollarSign, Zap, Copy, Map } from 'lucide-react';
+import { Package, MapPin, Calendar, DollarSign, Zap, Copy, Map, TrendingUp, Sparkles } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
-import { Input, Label, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui';
+import { Label, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui';
 import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
 import { Icon } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { loadsAPI } from '@/services/load';
 import toast from 'react-hot-toast';
+import EnliteInput from '../EnliteUI/Forms/Input';
+import EnliteSelect from '../EnliteUI/Forms/Select';
+import type { ICargoBody, ICargoResponse } from '@/pages/dashboard/cargos/create/types/cargo';
 
 interface QuickCreateModalProps {
   isOpen: boolean;
@@ -164,27 +167,32 @@ const QuickCreateModal: React.FC<QuickCreateModalProps> = ({ isOpen, onClose, on
 
     try {
       // Validate required fields
-      if (!formData.title || !formData.pickupLocation || !formData.deliveryLocation || 
-          !formData.pickupDate || !formData.deliveryDate || !formData.weight || !formData.loadValue) {
+      if (!formData.title || !formData.pickupLocation || !formData.deliveryLocation ||
+        !formData.pickupDate || !formData.deliveryDate || !formData.weight || !formData.loadValue) {
         toast.error('Please fill in all required fields');
         setLoading(false);
         return;
       }
 
-      // Create cargo with minimal data
-      const cargoData = {
+      // Create cargo with minimal data and defaults to satisfy ICargoBody
+      const cargoData: ICargoBody = {
         title: formData.title,
         description: `Quick create: ${formData.title}`,
         cargoType: formData.cargoType,
         weight: parseFloat(formData.weight),
+        volume: 0,
         loadType: 'FTL',
         equipmentType: 'DRY_VAN',
         visibility: 'PUBLIC',
         unitsRequired: 1,
         locations: [
           {
+            id: '',
             type: 'PICKUP',
-            sequence: 0,
+            sequence: 1,
+            status: 'PENDING',
+            scheduledDate: formData.pickupDate,
+            estimatedTime: 60,
             locationData: {
               name: formData.pickupLocation,
               address: formData.pickupLocation,
@@ -192,11 +200,26 @@ const QuickCreateModal: React.FC<QuickCreateModalProps> = ({ isOpen, onClose, on
                 latitude: pickupCoords?.lat || 0,
                 longitude: pickupCoords?.lng || 0,
               },
+              contactInfo: {},
+              operatingHours: {},
+              accessInstructions: ''
             },
+            requirements: {
+              requiresForklift: false,
+              requiresCrane: false,
+              requiresLoadingDock: false,
+              hazmatCertified: false,
+              temperatureControlled: false,
+              securityClearance: 'STANDARD'
+            }
           },
           {
+            id: '',
             type: 'DELIVERY',
-            sequence: 1,
+            sequence: 2,
+            status: 'PENDING',
+            scheduledDate: formData.deliveryDate,
+            estimatedTime: 60,
             locationData: {
               name: formData.deliveryLocation,
               address: formData.deliveryLocation,
@@ -204,7 +227,18 @@ const QuickCreateModal: React.FC<QuickCreateModalProps> = ({ isOpen, onClose, on
                 latitude: deliveryCoords?.lat || 0,
                 longitude: deliveryCoords?.lng || 0,
               },
+              contactInfo: {},
+              operatingHours: {},
+              accessInstructions: ''
             },
+            requirements: {
+              requiresForklift: false,
+              requiresCrane: false,
+              requiresLoadingDock: false,
+              hazmatCertified: false,
+              temperatureControlled: false,
+              securityClearance: 'STANDARD'
+            }
           },
         ],
         pickupDate: formData.pickupDate,
@@ -214,14 +248,53 @@ const QuickCreateModal: React.FC<QuickCreateModalProps> = ({ isOpen, onClose, on
         currencyCode: 'USD',
         paymentTerms: 'Net30',
         autoMatchEnabled: true,
+        isFragile: formData.cargoType === 'FRAGILE',
+        isHazardous: formData.cargoType === 'HAZARDOUS',
+        requiresRefrigeration: formData.cargoType === 'REFRIGERATED',
+        contactInfo: {},
+        matchingCriteria: {},
+        length: 0,
+        width: 0,
+        height: 0,
+        stackableHeight: 0,
+        isStackable: true,
+        temperatureMin: 0,
+        temperatureMax: 0,
+        requiresHumidityControl: false,
+        requiresForklift: false,
+        requiresCrane: false,
+        requiresLoadingDock: false,
+        loadingTimeEstimate: 60,
+        unloadingTimeEstimate: 60,
+        hazmatClass: '',
+        hazmatNumber: '',
+        urgencyLevel: 'NORMAL',
+        isTimeCritical: false,
+        maxTransitTime: 0,
+        packagingType: 'Palletized',
+        numberOfPieces: 1,
+        numberOfPallets: 1,
+        requiresGpsMonitoring: true,
+        requiresTemperatureMonitoring: false,
+        insuranceValue: parseFloat(formData.loadValue),
+        requiresLowClearanceRoute: false,
+        maxClearanceHeight: 0,
+        requiresEscortVehicle: false,
+        specialHandlingInstructions: '',
+        loadingInstructions: '',
+        unloadingInstructions: '',
+        emergencyContactInfo: '',
+        requiresPreShipmentInspection: false,
+        requiresDeliveryInspection: false,
+        requiresPhotographicDocumentation: false
       };
 
       // Create cargo and get the ID from response
-      const response = await loadsAPI.create(cargoData);
-      const cargoId = response.data?.id || response.data?.cargo?.id;
-      
+      const response: ICargoResponse = await loadsAPI.create(cargoData);
+      const cargoId = response.id;
+
       toast.success('Cargo created successfully!');
-      
+
       onClose();
       // Reset form
       setFormData({
@@ -294,10 +367,10 @@ const QuickCreateModal: React.FC<QuickCreateModalProps> = ({ isOpen, onClose, on
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="w-full max-w-md sm:max-w-lg max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="text-lg sm:text-xl font-bold text-gray-900 flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: '#E8EDF3' }}>
-              <Zap className="w-4 h-4" style={{ color: '#345E85' }} />
+        <DialogHeader className="border-b border-slate-100 pb-4">
+          <DialogTitle className="text-xl font-black text-[#0f172a] tracking-tight flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-blue-50 flex items-center justify-center">
+              <Zap className="w-5 h-5 text-[#345E85]" />
             </div>
             Quick Create Cargo
           </DialogTitle>
@@ -305,18 +378,18 @@ const QuickCreateModal: React.FC<QuickCreateModalProps> = ({ isOpen, onClose, on
 
         <form onSubmit={handleSubmit} className="space-y-4 mt-4">
           {recentCargos.length > 0 && (
-            <div className="rounded-lg p-3" style={{ backgroundColor: '#E8EDF3', borderColor: '#C5D3E0', borderWidth: '1px' }}>
-              <div className="flex items-center gap-2 mb-2">
-                <Copy className="w-4 h-4" style={{ color: '#345E85' }} />
-                <span className="text-sm font-medium" style={{ color: '#1E3A52' }}>Copy from recent</span>
+            <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 mb-6">
+              <div className="flex items-center gap-2 mb-3">
+                <Copy className="w-4 h-4 text-[#345E85]" />
+                <span className="text-xs font-black text-[#345E85] uppercase tracking-wider">Templates</span>
               </div>
               <Select onValueChange={handleDuplicate}>
-                <SelectTrigger className="w-full h-9 bg-white text-xs" style={{ borderColor: '#C5D3E0' }}>
-                  <SelectValue placeholder="Select a shipment to duplicate..." />
+                <SelectTrigger className="w-full bg-white border-slate-200 rounded-xl">
+                  <SelectValue placeholder="Copy details from recent shipment..." />
                 </SelectTrigger>
                 <SelectContent>
                   {recentCargos.map(cargo => (
-                    <SelectItem key={cargo.id} value={cargo.id} className="text-xs">
+                    <SelectItem key={cargo.id} value={cargo.id} className="text-sm">
                       {cargo.title}
                     </SelectItem>
                   ))}
@@ -325,128 +398,106 @@ const QuickCreateModal: React.FC<QuickCreateModalProps> = ({ isOpen, onClose, on
             </div>
           )}
 
-          {/* Title */}
-          <div>
-            <Label htmlFor="title" className="text-sm font-medium text-gray-700 mb-1.5 flex items-center gap-1.5">
-              <Package className="w-4 h-4 text-gray-500" />
-              Cargo Title *
-            </Label>
-            <Input
+          <div className="grid grid-cols-1 gap-4">
+            <EnliteInput
               id="title"
               name="title"
+              label="Cargo Title"
               value={formData.title}
               onChange={handleChange}
               required
-              placeholder="e.g., Electronics shipment to New York"
-              className="w-full min-h-[44px]"
+              placeholder="e.g. 500kW Industrial Generator for Mining Site"
+              icon={<Package className="w-5 h-5" />}
+              className="mb-2"
             />
           </div>
 
-          {/* Cargo Type & Weight */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="cargoType" className="text-sm font-medium text-gray-700 mb-1.5">
-                Cargo Type *
-              </Label>
-              <Select
-                name="cargoType"
-                value={formData.cargoType}
-                onValueChange={(value) => setFormData(prev => ({ ...prev, cargoType: value }))}
-              >
-                <SelectTrigger className="w-full min-h-[44px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="GENERAL">General</SelectItem>
-                  <SelectItem value="FRAGILE">Fragile</SelectItem>
-                  <SelectItem value="HAZARDOUS">Hazardous</SelectItem>
-                  <SelectItem value="REFRIGERATED">Refrigerated</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor="weight" className="text-sm font-medium text-gray-700 mb-1.5">
-                Weight (kg) *
-              </Label>
-              <Input
-                id="weight"
-                name="weight"
-                type="number"
-                value={formData.weight}
-                onChange={handleChange}
-                required
-                min="0"
-                step="0.01"
-                placeholder="1000"
-                className="w-full min-h-[44px]"
-              />
-            </div>
+            <EnliteSelect
+              label="Cargo Type"
+              name="cargoType"
+              value={formData.cargoType}
+              onChange={(e) => setFormData(prev => ({ ...prev, cargoType: e.target.value }))}
+              required
+              options={[
+                { value: 'GENERAL', label: 'General' },
+                { value: 'FRAGILE', label: 'Fragile' },
+                { value: 'HAZARDOUS', label: 'Hazardous' },
+                { value: 'REFRIGERATED', label: 'Refrigerated' },
+              ]}
+            />
+            <EnliteInput
+              id="weight"
+              name="weight"
+              label="Weight (kg)"
+              type="number"
+              value={formData.weight}
+              onChange={handleChange}
+              required
+              min="0"
+              step="0.01"
+              placeholder="1000"
+            />
           </div>
 
-          {/* Locations */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="pickupLocation" className="text-sm font-medium text-gray-700 mb-1.5 flex items-center gap-1.5">
-                <MapPin className="w-4 h-4" style={{ color: '#345E85' }} />
-                Pickup Location *
-              </Label>
-              <div className="flex gap-2">
-                <Input
-                  id="pickupLocation"
-                  name="pickupLocation"
-                  value={formData.pickupLocation}
-                  onChange={handleChange}
-                  required
-                  placeholder="City, State"
-                  className="flex-1 min-h-[44px]"
-                  list="recent-locations"
-                />
+              <div className="flex justify-between items-center mb-1">
+                <Label htmlFor="pickupLocation" className="text-xs font-black text-slate-500 uppercase tracking-widest">
+                  Pickup
+                </Label>
                 <button
                   type="button"
                   onClick={() => openMapPicker('pickup')}
-                  className="px-3 min-h-[44px] rounded-lg transition-colors flex items-center gap-1"
-                  style={{ backgroundColor: '#E8EDF3', color: '#345E85' }}
-                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#C5D3E0'}
-                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#E8EDF3'}
-                  title="Select on map"
+                  className="text-[10px] font-black text-[#345E85] flex items-center gap-1 hover:underline"
                 >
-                  <Map className="w-4 h-4" />
+                  <Map className="w-3 h-3" />
+                  MAP PICKER
                 </button>
               </div>
+              <EnliteInput
+                id="pickupLocation"
+                name="pickupLocation"
+                value={formData.pickupLocation}
+                onChange={handleChange}
+                required
+                placeholder="City, State"
+                icon={<MapPin className="w-4 h-4 text-[#345E85]" />}
+                list="recent-locations"
+              />
               {pickupCoords && (
-                <p className="text-xs text-green-600 mt-1">
-                  ✓ Coordinates: {pickupCoords.lat.toFixed(4)}, {pickupCoords.lng.toFixed(4)}
+                <p className="text-[10px] text-green-600 font-bold mt-1 uppercase tracking-tighter">
+                  ✓ Geocoded: {pickupCoords.lat.toFixed(4)}, {pickupCoords.lng.toFixed(4)}
                 </p>
               )}
             </div>
             <div>
-              <Label htmlFor="deliveryLocation" className="text-sm font-medium text-gray-700 mb-1.5 flex items-center gap-1.5">
-                <MapPin className="w-4 h-4 text-green-500" />
-                Delivery Location *
-              </Label>
-              <div className="flex gap-2">
-                <Input
-                  id="deliveryLocation"
-                  name="deliveryLocation"
-                  value={formData.deliveryLocation}
-                  onChange={handleChange}
-                  required
-                  placeholder="City, State"
-                  className="flex-1 min-h-[44px]"
-                  list="recent-locations"
-                />
+              <div className="flex justify-between items-center mb-1">
+                <Label htmlFor="deliveryLocation" className="text-xs font-black text-slate-500 uppercase tracking-widest">
+                  Delivery
+                </Label>
                 <button
                   type="button"
                   onClick={() => openMapPicker('delivery')}
-                  className="px-3 min-h-[44px] bg-green-100 hover:bg-green-200 text-green-700 rounded-lg transition-colors flex items-center gap-1"
-                  title="Select on map"
+                  className="text-[10px] font-black text-emerald-600 flex items-center gap-1 hover:underline"
                 >
-                  <Map className="w-4 h-4" />
+                  <Map className="w-3 h-3" />
+                  MAP PICKER
                 </button>
               </div>
+              <EnliteInput
+                id="deliveryLocation"
+                name="deliveryLocation"
+                value={formData.deliveryLocation}
+                onChange={handleChange}
+                required
+                placeholder="City, State"
+                icon={<MapPin className="w-4 h-4 text-emerald-500" />}
+                list="recent-locations"
+              />
               {deliveryCoords && (
-                <p className="text-xs text-green-600 mt-1">
-                  ✓ Coordinates: {deliveryCoords.lat.toFixed(4)}, {deliveryCoords.lng.toFixed(4)}
+                <p className="text-[10px] text-green-600 font-bold mt-1 uppercase tracking-tighter">
+                  ✓ Geocoded: {deliveryCoords.lat.toFixed(4)}, {deliveryCoords.lng.toFixed(4)}
                 </p>
               )}
             </div>
@@ -457,106 +508,81 @@ const QuickCreateModal: React.FC<QuickCreateModalProps> = ({ isOpen, onClose, on
             </datalist>
           </div>
 
-          {/* Dates */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="pickupDate" className="text-sm font-medium text-gray-700 mb-1.5 flex items-center gap-1.5">
-                <Calendar className="w-4 h-4 text-gray-500" />
-                Pickup Date *
-              </Label>
-              <Input
-                id="pickupDate"
-                name="pickupDate"
-                type="date"
-                value={formData.pickupDate}
-                onChange={handleChange}
-                required
-                min={new Date().toISOString().split('T')[0]}
-                className="w-full min-h-[44px]"
-              />
-            </div>
-            <div>
-              <Label htmlFor="deliveryDate" className="text-sm font-medium text-gray-700 mb-1.5 flex items-center gap-1.5">
-                <Calendar className="w-4 h-4 text-gray-500" />
-                Delivery Date *
-              </Label>
-              <Input
-                id="deliveryDate"
-                name="deliveryDate"
-                type="date"
-                value={formData.deliveryDate}
-                onChange={handleChange}
-                required
-                min={formData.pickupDate || new Date().toISOString().split('T')[0]}
-                className="w-full min-h-[44px]"
-              />
-            </div>
+            <EnliteInput
+              id="pickupDate"
+              name="pickupDate"
+              label="Pickup Date"
+              type="date"
+              value={formData.pickupDate}
+              onChange={handleChange}
+              required
+              min={new Date().toISOString().split('T')[0]}
+              icon={<Calendar className="w-4 h-4" />}
+            />
+            <EnliteInput
+              id="deliveryDate"
+              name="deliveryDate"
+              label="Delivery Date"
+              type="date"
+              value={formData.deliveryDate}
+              onChange={handleChange}
+              required
+              min={formData.pickupDate || new Date().toISOString().split('T')[0]}
+              icon={<Calendar className="w-4 h-4" />}
+            />
           </div>
 
-          {/* Value & Price */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="loadValue" className="text-sm font-medium text-gray-700 mb-1.5 flex items-center gap-1.5">
-                <DollarSign className="w-4 h-4 text-gray-500" />
-                Load Value ($) *
-              </Label>
-              <Input
-                id="loadValue"
-                name="loadValue"
-                type="number"
-                value={formData.loadValue}
-                onChange={handleChange}
-                required
-                min="0"
-                step="0.01"
-                placeholder="5000"
-                className="w-full min-h-[44px]"
-              />
-            </div>
-            <div>
-              <Label htmlFor="offeredPrice" className="text-sm font-medium text-gray-700 mb-1.5">
-                Offered Price ($)
-              </Label>
-              <Input
-                id="offeredPrice"
-                name="offeredPrice"
-                type="number"
-                value={formData.offeredPrice}
-                onChange={handleChange}
-                min="0"
-                step="0.01"
-                placeholder="Optional"
-                className="w-full min-h-[44px]"
-              />
-            </div>
+            <EnliteInput
+              id="loadValue"
+              name="loadValue"
+              label="Load Value ($)"
+              type="number"
+              value={formData.loadValue}
+              onChange={handleChange}
+              required
+              min="0"
+              step="0.01"
+              placeholder="5000"
+              icon={<DollarSign className="w-4 h-4" />}
+            />
+            <EnliteInput
+              id="offeredPrice"
+              name="offeredPrice"
+              label="Offered Price ($)"
+              type="number"
+              value={formData.offeredPrice}
+              onChange={handleChange}
+              min="0"
+              step="0.01"
+              placeholder="Optional"
+              icon={<TrendingUp className="w-4 h-4" />}
+            />
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-gray-200">
+          <div className="flex flex-col sm:flex-row gap-3 pt-6 border-t border-slate-100">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors font-medium min-h-[44px]"
+              className="flex-1 px-6 py-3 border border-slate-200 rounded-2xl text-slate-600 hover:bg-slate-50 transition-all font-bold text-sm"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 px-4 py-2.5 text-white rounded-lg transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px] flex items-center justify-center gap-2"
-              style={{ backgroundColor: loading ? '#345E85' : '#345E85' }}
-              onMouseEnter={(e) => !loading && (e.currentTarget.style.backgroundColor = '#2A4D6E')}
-              onMouseLeave={(e) => !loading && (e.currentTarget.style.backgroundColor = '#345E85')}
+              className="flex-1 px-6 py-3 bg-[#345E85] text-white rounded-2xl transition-all font-bold text-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg shadow-blue-900/10 hover:bg-slate-800"
             >
               {loading ? (
                 <>
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                  <span>Creating...</span>
+                  <span>CREATING...</span>
                 </>
               ) : (
                 <>
-                  <Zap className="w-4 h-4" />
-                  <span>Create Cargo</span>
+                  <Sparkles className="w-4 h-4" />
+                  <span>CREATE CARGO</span>
                 </>
               )}
             </button>

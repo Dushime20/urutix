@@ -1,18 +1,35 @@
 import React, { useState, useEffect } from 'react';
-import { FaTruck, FaUser, FaMapMarkerAlt, FaPhone, FaEnvelope, FaEdit, FaTrash, FaCheckSquare, FaSquare, FaMinusSquare, FaCog, FaFileExport } from 'react-icons/fa';
+import {
+  Truck,
+  User,
+  MapPin,
+  Phone,
+  Mail,
+  Edit3,
+  Trash2,
+  CheckSquare,
+  Square,
+  MinusSquare,
+  Settings,
+  Download,
+  Shield,
+  MoreVertical,
+  ChevronRight,
+  Zap,
+  Star,
+  Activity
+} from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import type { FleetItem } from '../../types/fleet';
 import { TranslatedText } from '../translated-text';
 import { useTranslation } from '../../hooks/useTranslation';
-import { documentApi, type Document } from '../../services/documents/documentApi';
-import toast from 'react-hot-toast';
-import { createPortal } from 'react-dom';
-
+import { toast } from 'react-hot-toast';
 
 interface FleetTableProps {
   fleetItems: FleetItem[];
   lastFleetItemRef: (node: HTMLElement | null) => void;
   view: 'grid' | 'list';
-  activeTab: 'trucks' | 'drivers' | 'analytics' | 'safety' | 'financial' | 'routes';
+  activeTab: 'trucks' | 'drivers' | 'analytics' | 'safety' | 'financial' | 'routes' | 'matches' | 'overview';
   onRowClick: (item: FleetItem) => void;
   onEditFleetItem: (item: FleetItem) => void;
   onDeleteFleetItem: (itemId: string) => void;
@@ -30,7 +47,6 @@ const FleetTableComp: React.FC<FleetTableProps> = ({
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const { tSync } = useTranslation();
 
-  // Reset selection when items or tab changes
   useEffect(() => {
     setSelectedIds([]);
   }, [activeTab]);
@@ -55,15 +71,15 @@ const FleetTableComp: React.FC<FleetTableProps> = ({
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'AVAILABLE':
-        return 'bg-success-100 text-success-800';
+        return 'bg-emerald-50 text-emerald-600 border-emerald-100';
       case 'IN_TRANSIT':
-        return 'bg-primary-100 text-primary-800';
+        return 'bg-blue-50 text-blue-600 border-blue-100';
       case 'MAINTENANCE':
-        return 'bg-warning-100 text-warning-800';
+        return 'bg-amber-50 text-amber-600 border-amber-100';
       case 'OUT_OF_SERVICE':
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-rose-50 text-rose-600 border-rose-100';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-slate-50 text-slate-600 border-slate-100';
     }
   };
 
@@ -83,449 +99,301 @@ const FleetTableComp: React.FC<FleetTableProps> = ({
   };
 
   const BulkActionsToolbar = () => (
-    <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-slate-900 text-white px-6 py-3 rounded-full shadow-2xl z-50 flex items-center gap-6 animate-in fade-in slide-in-from-bottom-4 duration-200 border border-slate-700">
-      <div className="flex items-center gap-3 border-r border-slate-700 pr-6">
-        <span className="bg-blue-600 text-white text-xs font-bold px-2 py-0.5 rounded-full">{selectedIds.length}</span>
-        <span className="text-sm font-medium">Selected</span>
+    <motion.div
+      initial={{ y: 100, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      exit={{ y: 100, opacity: 0 }}
+      className="fixed bottom-10 left-1/2 transform -translate-x-1/2 bg-[#1A1C1E] text-white px-8 py-4 rounded-[32px] shadow-2xl z-[60] flex items-center gap-8 border border-white/10 backdrop-blur-xl"
+    >
+      <div className="flex items-center gap-4 border-r border-white/10 pr-8">
+        <div className="size-8 bg-blue-500 rounded-full flex items-center justify-center text-[11px] font-black">
+          {selectedIds.length}
+        </div>
+        <div>
+          <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40">Selection</h4>
+          <p className="text-xs font-bold text-white">Assets Ready</p>
+        </div>
       </div>
+
       <div className="flex items-center gap-2">
-        <button
-          onClick={() => onBulkAction('update', selectedIds)}
-          className="flex items-center gap-2 px-3 py-1.5 hover:bg-slate-800 rounded-lg transition-colors text-sm font-medium"
-        >
-          <FaCog className="text-slate-400" /> Update Status
+        <button className="h-10 px-4 hover:bg-white/5 rounded-xl transition-all flex items-center gap-2 text-xs font-black uppercase tracking-wider">
+          <Settings size={14} className="text-blue-400" />
+          Batch Status
         </button>
-        <button
-          onClick={() => onBulkAction('export', selectedIds)}
-          className="flex items-center gap-2 px-3 py-1.5 hover:bg-slate-800 rounded-lg transition-colors text-sm font-medium"
-        >
-          <FaFileExport className="text-slate-400" /> Export
+        <button className="h-10 px-4 hover:bg-white/5 rounded-xl transition-all flex items-center gap-2 text-xs font-black uppercase tracking-wider">
+          <Download size={14} className="text-emerald-400" />
+          Export Data
         </button>
-        <div className="w-px h-4 bg-slate-700 mx-2"></div>
+        <div className="w-px h-6 bg-white/10 mx-2" />
         <button
-          onClick={() => onBulkAction('delete', selectedIds)}
-          className="flex items-center gap-2 px-3 py-1.5 hover:bg-red-500/20 text-red-400 hover:text-red-300 rounded-lg transition-colors text-sm font-medium"
+          onClick={() => onDeleteFleetItem(selectedIds[0])} // For now, just a placeholder for bulk delete
+          className="h-10 px-4 hover:bg-rose-500/10 text-rose-400 rounded-xl transition-all flex items-center gap-2 text-xs font-black uppercase tracking-wider"
         >
-          <FaTrash /> Delete
+          <Trash2 size={14} />
+          Purge Assets
         </button>
       </div>
+
       <button
         onClick={() => setSelectedIds([])}
-        className="ml-2 text-slate-500 hover:text-white transition-colors"
+        className="ml-4 h-10 w-10 flex items-center justify-center hover:bg-white/5 rounded-full transition-all text-white/40 hover:text-white"
       >
-        <FaCheckSquare />
+        <MinusSquare size={18} />
       </button>
-    </div>
+    </motion.div>
   );
 
   if (view === 'grid') {
     return (
-      <>
+      <div className="relative">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {fleetItems.map((item, index) => (
-            <div
+            <motion.div
+              layout
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.05 }}
               key={item.id}
               ref={index === fleetItems.length - 1 ? lastFleetItemRef : null}
-              className={`bg-white rounded-lg shadow-sm border p-6 hover:shadow-md transition-shadow cursor-pointer relative group ${selectedIds.includes(item.id) ? 'border-blue-500 ring-1 ring-blue-500' : 'border-gray-200'}`}
+              className={`group bg-white rounded-[32px] border transition-all duration-300 relative overflow-hidden flex flex-col ${selectedIds.includes(item.id)
+                  ? 'border-blue-500 shadow-xl ring-1 ring-blue-500/20'
+                  : 'border-slate-100 shadow-sm hover:shadow-xl hover:border-blue-200'
+                }`}
               onClick={() => onRowClick(item)}
             >
-              <div
-                className="absolute top-4 right-4 z-10"
-                onClick={(e) => handleSelectOne(item.id, e)}
-              >
-                {selectedIds.includes(item.id) ? (
-                  <FaCheckSquare className="text-blue-600 w-5 h-5" />
-                ) : (
-                  <FaSquare className="text-gray-300 w-5 h-5 hover:text-blue-400 transition-colors" />
-                )}
+              <div className="absolute top-0 right-0 p-12 opacity-[0.02] -mr-6 -mt-6 group-hover:scale-110 transition-transform duration-500">
+                {activeTab === 'trucks' ? <Truck size={100} /> : <User size={100} />}
               </div>
 
-              <div className="flex items-center justify-between mb-4 pr-8">
-                <div className="flex items-center gap-2">
-                  {activeTab === 'trucks' ? (
-                    <FaTruck className="w-5 h-5 text-primary-600" />
-                  ) : (
-                    <FaUser className="w-5 h-5 text-primary-600" />
-                  )}
-                  <h3 className="font-semibold text-gray-900 truncate max-w-[120px]">{item.name}</h3>
+              <div className="p-6 flex justify-between items-start relative z-10">
+                <div
+                  onClick={(e) => handleSelectOne(item.id, e)}
+                  className="size-6 cursor-pointer relative"
+                >
+                  <AnimatePresence mode="wait">
+                    {selectedIds.includes(item.id) ? (
+                      <motion.div
+                        initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}
+                        className="text-blue-600"
+                      >
+                        <CheckSquare size={24} />
+                      </motion.div>
+                    ) : (
+                      <motion.div
+                        initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                        className="text-slate-200 group-hover:text-blue-300 transition-colors"
+                      >
+                        <Square size={24} />
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
-                <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(item.status)}`}>
+
+                <div className={`px-3 py-1.5 rounded-full border text-[9px] font-black uppercase tracking-widest ${getStatusColor(item.status)}`}>
                   {getStatusText(item.status)}
-                </span>
+                </div>
               </div>
 
-              <div className="space-y-3">
-                {activeTab === 'trucks' ? (
-                  <>
-                    {item.plateNumber && (
-                      <div className="text-sm text-gray-600">
-                        <span className="font-medium">Plate:</span> {item.plateNumber}
+              <div className="px-6 pb-2 space-y-4 flex-1 relative z-10">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2 group/title">
+                    <span className="text-[10px] font-black text-blue-500/60 uppercase tracking-[0.2em]">Asset Matrix</span>
+                    <div className="h-px flex-1 bg-gradient-to-r from-blue-500/20 to-transparent" />
+                  </div>
+                  <h3 className="text-xl font-black text-slate-900 tracking-tight leading-tight truncate">
+                    {item.name}
+                  </h3>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
+                    <Activity size={10} className="text-slate-300" />
+                    ID: {item.id.substring(0, 8)}...
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  {activeTab === 'trucks' ? (
+                    <>
+                      <div className="bg-slate-50/50 p-3 rounded-2xl border border-slate-50">
+                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Plate</p>
+                        <p className="text-xs font-bold text-slate-700">{item.plateNumber || 'N/A'}</p>
                       </div>
-                    )}
-                    {item.vin && (
-                      <div className="text-sm text-gray-600">
-                        <span className="font-medium">VIN:</span> {item.vin}
+                      <div className="bg-slate-50/50 p-3 rounded-2xl border border-slate-50">
+                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Capacity</p>
+                        <p className="text-xs font-bold text-slate-700">{item.capacityWeight?.toLocaleString() || 0} kg</p>
                       </div>
-                    )}
-                    {item.make && item.model && (
-                      <div className="text-sm text-gray-600">
-                        <span className="font-medium">Vehicle:</span> {item.make} {item.model}
+                    </>
+                  ) : (
+                    <>
+                      <div className="bg-slate-50/50 p-3 rounded-2xl border border-slate-50">
+                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Experience</p>
+                        <p className="text-xs font-bold text-slate-700">{item.experience || 0} Years</p>
                       </div>
-                    )}
-                    {item.year && (
-                      <div className="text-sm text-gray-600">
-                        <span className="font-medium">Year:</span> {item.year}
+                      <div className="bg-slate-50/50 p-3 rounded-2xl border border-slate-50">
+                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Asset Link</p>
+                        <p className="text-xs font-bold text-slate-700 truncate">{item.currentTruck?.licensePlate || 'None'}</p>
                       </div>
-                    )}
-                    {item.capacityWeight && (
-                      <div className="text-sm text-gray-600">
-                        <span className="font-medium">Weight:</span> {item.capacityWeight.toLocaleString()} kg
-                      </div>
-                    )}
-                    {item.capacityVolume && (
-                      <div className="text-sm text-gray-600">
-                        <span className="font-medium">Volume:</span> {item.capacityVolume} m³
-                      </div>
-                    )}
-                    {item.fuelType && (
-                      <div className="text-sm text-gray-600">
-                        <span className="font-medium">Fuel:</span> {item.fuelType}
-                      </div>
-                    )}
-                    {/* Cargo Capabilities Display */}
-                    {item.cargoCapabilities && (
-                      <div className="text-sm text-gray-600">
-                        <span className="font-medium">Cargo Types:</span>
-                        <div className="flex flex-wrap gap-1 mt-1">
-                          {item.cargoCapabilities.supportedCargoTypes?.map((type, idx) => (
-                            <span key={idx} className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded">
-                              {type}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                    {/* Temperature Range Display */}
-                    {item.cargoCapabilities?.temperatureRange && (
-                      <div className="text-sm text-gray-600">
-                        <span className="font-medium">Temp Range:</span> {item.cargoCapabilities.temperatureRange.min}°C - {item.cargoCapabilities.temperatureRange.max}°C
-                      </div>
-                    )}
-                    {/* Special Capabilities */}
-                    {item.cargoCapabilities && (
-                      <div className="text-sm text-gray-600">
-                        <span className="font-medium">Special:</span>
-                        <div className="flex flex-wrap gap-1 mt-1">
-                          {item.cargoCapabilities.maxFragileHandling && (
-                            <span className="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded">Fragile</span>
-                          )}
-                          {item.cargoCapabilities.maxHazardousHandling && (
-                            <span className="px-2 py-1 bg-red-100 text-red-800 text-xs rounded">Hazmat</span>
-                          )}
-                          {item.cargoCapabilities.maxRefrigeratedHandling && (
-                            <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded">Refrigerated</span>
-                          )}
-                          {item.cargoCapabilities.maxLiquidHandling && (
-                            <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded">Liquid</span>
-                          )}
-                          {item.cargoCapabilities.maxOversizedHandling && (
-                            <span className="px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded">Oversized</span>
-                          )}
-                          {item.cargoCapabilities.maxValuableHandling && (
-                            <span className="px-2 py-1 bg-orange-100 text-orange-800 text-xs rounded">Valuable</span>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                    {/* Loading Capabilities */}
-                    {item.loadingCapabilities && (
-                      <div className="text-sm text-gray-600">
-                        <span className="font-medium">Loading:</span>
-                        <div className="flex flex-wrap gap-1 mt-1">
-                          {item.loadingCapabilities.hasForklift && (
-                            <span className="px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded">Forklift</span>
-                          )}
-                          {item.loadingCapabilities.hasCrane && (
-                            <span className="px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded">Crane</span>
-                          )}
-                          {item.loadingCapabilities.hasTailLift && (
-                            <span className="px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded">Tail Lift</span>
-                          )}
-                          {item.loadingCapabilities.hasSideLift && (
-                            <span className="px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded">Side Lift</span>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                    {/* Security Features */}
-                    {item.securityFeatures && (
-                      <div className="text-sm text-gray-600">
-                        <span className="font-medium">Security:</span>
-                        <div className="flex flex-wrap gap-1 mt-1">
-                          {item.securityFeatures.hasGps && (
-                            <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded">GPS</span>
-                          )}
-                          {item.securityFeatures.hasTracking && (
-                            <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded">Tracking</span>
-                          )}
-                          {item.securityFeatures.hasTemperatureAlerts && (
-                            <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded">Temp Monitor</span>
-                          )}
-                          {item.securityFeatures.hasCargoMonitoring && (
-                            <span className="px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded">Cargo Monitor</span>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                  </>
-                ) : (
-                  <>
-                    {item.licenseNumber && (
-                      <div className="text-sm text-gray-600">
-                        <span className="font-medium">License:</span> {item.licenseNumber}
-                      </div>
-                    )}
-                    {item.experience && (
-                      <div className="text-sm text-gray-600">
-                        <span className="font-medium">Experience:</span> {item.experience} years
-                      </div>
-                    )}
-                    {item.currentTruck && (
-                      <div className="text-sm text-gray-600">
-                        <span className="font-medium">Assigned Truck:</span> {item.currentTruck.licensePlate}
-                      </div>
-                    )}
-                  </>
-                )}
+                    </>
+                  )}
+                </div>
 
                 {item.currentLocation?.address && (
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <FaMapMarkerAlt className="w-4 h-4" />
-                    <span>{item.currentLocation.address}</span>
-                  </div>
-                )}
-
-                {item.contactInfo && (
-                  <div className="space-y-1">
-                    {item.contactInfo.phone && (
-                      <div className="flex items-center gap-2 text-sm text-gray-600">
-                        <FaPhone className="w-3 h-3" />
-                        <span>{item.contactInfo.phone}</span>
-                      </div>
-                    )}
-                    {item.contactInfo.email && (
-                      <div className="flex items-center gap-2 text-sm text-gray-600">
-                        <FaEnvelope className="w-3 h-3" />
-                        <span>{item.contactInfo.email}</span>
-                      </div>
-                    )}
+                  <div className="bg-blue-50/30 p-3 rounded-2xl border border-blue-50/50 flex items-start gap-3">
+                    <MapPin size={14} className="text-[#345E85] mt-0.5 flex-shrink-0" />
+                    <p className="text-[11px] font-medium text-slate-600 leading-snug line-clamp-1 italic">
+                      {item.currentLocation.address}
+                    </p>
                   </div>
                 )}
               </div>
 
-              <div className="flex items-center justify-end gap-2 mt-4 pt-4 border-t border-gray-100">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onEditFleetItem(item);
-                  }}
-                  className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-                >
-                  <FaEdit className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onDeleteFleetItem(item.id);
-                  }}
-                  className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                >
-                  <FaTrash className="w-4 h-4" />
-                </button>
+              <div className="p-3 bg-slate-50/50 group-hover:bg-blue-50/50 transition-colors border-t border-slate-50 flex items-center justify-between mt-auto">
+                <div className="flex -space-x-1 pl-3">
+                  <div className="size-6 rounded-full bg-slate-200 border-2 border-white flex items-center justify-center text-[8px] font-black text-slate-500">
+                    <Shield size={10} />
+                  </div>
+                  <div className="size-6 rounded-full bg-slate-200 border-2 border-white flex items-center justify-center text-[8px] font-black text-slate-500">
+                    <Zap size={10} />
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-1 pr-2">
+                  <button
+                    onClick={(e) => { e.stopPropagation(); onEditFleetItem(item); }}
+                    className="size-9 bg-white hover:bg-[#345E85] hover:text-white rounded-xl flex items-center justify-center text-slate-400 transition-all shadow-sm border border-slate-100"
+                  >
+                    <Edit3 size={16} />
+                  </button>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); onDeleteFleetItem(item.id); }}
+                    className="size-9 bg-white hover:bg-rose-500 hover:text-white rounded-xl flex items-center justify-center text-slate-400 transition-all shadow-sm border border-slate-100"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
               </div>
-            </div>
+            </motion.div>
           ))}
         </div>
-        {selectedIds.length > 0 && <BulkActionsToolbar />}
-      </>
+        <AnimatePresence>
+          {selectedIds.length > 0 && <BulkActionsToolbar />}
+        </AnimatePresence>
+      </div>
     );
   }
 
-  // Table view - responsive: hidden on mobile, shown on desktop
   return (
-    <>
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left w-10">
-                  <div onClick={handleSelectAll} className="cursor-pointer">
-                    {selectedIds.length === fleetItems.length && fleetItems.length > 0 ? (
-                      <FaCheckSquare className="text-blue-600 w-4 h-4" />
-                    ) : selectedIds.length > 0 ? (
-                      <FaMinusSquare className="text-blue-600 w-4 h-4" />
-                    ) : (
-                      <FaSquare className="text-gray-300 w-4 h-4 hover:text-gray-400" />
-                    )}
-                  </div>
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  {activeTab === 'trucks' ? <TranslatedText text="Truck" /> : <TranslatedText text="Driver" />}
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  <TranslatedText text="Status" />
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  <TranslatedText text="Location" />
-                </th>
-                {activeTab === 'trucks' ? (
-                  <>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      <TranslatedText text="License Plate" />
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      <TranslatedText text="Vehicle" />
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      <TranslatedText text="Driver" />
-                    </th>
-                  </>
-                ) : (
-                  <>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      <TranslatedText text="License Number" />
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      <TranslatedText text="Experience" />
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      <TranslatedText text="Assigned Truck" />
-                    </th>
-                  </>
-                )}
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  <TranslatedText text="Contact" />
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  <TranslatedText text="Actions" />
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {fleetItems.map((item, index) => (
-                <tr
-                  key={item.id}
-                  ref={index === fleetItems.length - 1 ? lastFleetItemRef : null}
-                  className={`hover:bg-gray-50 transition-colors cursor-pointer ${selectedIds.includes(item.id) ? 'bg-blue-50/50' : ''}`}
-                  onClick={() => onRowClick(item)}
-                >
-                  <td className="px-6 py-4 whitespace-nowrap" onClick={(e) => handleSelectOne(item.id, e)}>
-                    {selectedIds.includes(item.id) ? (
-                      <FaCheckSquare className="text-blue-600 w-4 h-4" />
-                    ) : (
-                      <FaSquare className="text-gray-300 w-4 h-4 hover:text-blue-400 group-hover:text-gray-400 transition-colors" />
-                    )}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      {activeTab === 'trucks' ? (
-                        <FaTruck className="w-5 h-5 text-primary-600 mr-3" />
-                      ) : (
-                        <FaUser className="w-5 h-5 text-primary-600 mr-3" />
-                      )}
-                      <div>
-                        <div className="text-sm font-medium text-gray-900">{item.name}</div>
-                        <div className="text-sm text-gray-500">ID: {item.id}</div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(item.status)}`}>
-                      {getStatusText(item.status)}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center text-sm text-gray-900">
-                      <FaMapMarkerAlt className="w-4 h-4 text-gray-400 mr-2" />
-                      {item.currentLocation?.address || 'Unknown location'}
-                    </div>
-                  </td>
-                  {activeTab === 'trucks' ? (
-                    <>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {item.licensePlate || '-'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {item.make && item.model ? `${item.make} ${item.model}` : '-'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {item.primaryDriver?.name || 'No driver assigned'}
-                      </td>
-                    </>
+    <div className="relative">
+      <div className="bg-white rounded-[40px] border border-slate-100 shadow-xl overflow-x-auto">
+        <table className="w-full border-collapse">
+          <thead>
+            <tr className="border-b border-slate-50">
+              <th className="px-8 py-6 text-left w-[60px]">
+                <div onClick={handleSelectAll} className="size-6 cursor-pointer relative">
+                  {selectedIds.length === fleetItems.length && fleetItems.length > 0 ? (
+                    <CheckSquare size={24} className="text-blue-600" />
+                  ) : selectedIds.length > 0 ? (
+                    <MinusSquare size={24} className="text-blue-600" />
                   ) : (
-                    <>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {item.licenseNumber || '-'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {item.experience ? `${item.experience} years` : '-'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {item.currentTruck?.licensePlate || 'No truck assigned'}
-                      </td>
-                    </>
+                    <Square size={24} className="text-slate-200 hover:text-blue-200 transition-colors" />
                   )}
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {item.contactInfo ? (
-                      <div className="space-y-1">
-                        {item.contactInfo.phone && (
-                          <div className="flex items-center gap-1">
-                            <FaPhone className="w-3 h-3 text-gray-400" />
-                            <span>{item.contactInfo.phone}</span>
-                          </div>
-                        )}
-                        {item.contactInfo.email && (
-                          <div className="flex items-center gap-1">
-                            <FaEnvelope className="w-3 h-3 text-gray-400" />
-                            <span>{item.contactInfo.email}</span>
-                          </div>
-                        )}
-                      </div>
-                    ) : (
-                      '-'
-                    )}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <div className="flex items-center justify-end gap-2">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onEditFleetItem(item);
-                        }}
-                        className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-                      >
-                        <FaEdit className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onDeleteFleetItem(item.id);
-                        }}
-                        className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                      >
-                        <FaTrash className="w-4 h-4" />
-                      </button>
+                </div>
+              </th>
+              <th className="px-6 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 text-left">
+                Identity Profile
+              </th>
+              <th className="px-6 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 text-left">
+                Operational Status
+              </th>
+              <th className="px-6 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 text-left">
+                Geospatial Vector
+              </th>
+              <th className="px-6 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 text-left">
+                Technical Matrix
+              </th>
+              <th className="px-6 py-6 text-right" />
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-50">
+            {fleetItems.map((item, index) => (
+              <motion.tr
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: index * 0.03 }}
+                key={item.id}
+                ref={index === fleetItems.length - 1 ? lastFleetItemRef : null}
+                className={`group hover:bg-slate-50/50 transition-all cursor-pointer ${selectedIds.includes(item.id) ? 'bg-blue-50/40' : ''}`}
+                onClick={() => onRowClick(item)}
+              >
+                <td className="px-8 py-6" onClick={(e) => handleSelectOne(item.id, e)}>
+                  {selectedIds.includes(item.id) ? (
+                    <CheckSquare size={22} className="text-blue-600" />
+                  ) : (
+                    <Square size={22} className="text-slate-100 group-hover:text-slate-200 transition-colors" />
+                  )}
+                </td>
+                <td className="px-6 py-6">
+                  <div className="flex items-center gap-4">
+                    <div className="size-12 rounded-[18px] bg-blue-50 flex items-center justify-center text-[#345E85] shadow-inner group-hover:bg-[#345E85] group-hover:text-white transition-all">
+                      {activeTab === 'trucks' ? <Truck size={20} /> : <User size={20} />}
                     </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                    <div>
+                      <h4 className="font-black text-slate-900 tracking-tight leading-none mb-1">{item.name}</h4>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{item.id.substring(0, 8)}</p>
+                    </div>
+                  </div>
+                </td>
+                <td className="px-6 py-6">
+                  <div className={`inline-flex px-3 py-1.5 rounded-full border text-[9px] font-black uppercase tracking-widest ${getStatusColor(item.status)}`}>
+                    {getStatusText(item.status)}
+                  </div>
+                </td>
+                <td className="px-6 py-6">
+                  <div className="flex items-center gap-2 max-w-[240px]">
+                    <MapPin size={14} className="text-slate-300 flex-shrink-0" />
+                    <span className="text-[11px] font-medium text-slate-500 italic truncate line-clamp-1">
+                      {item.currentLocation?.address || 'Awaiting Sync...'}
+                    </span>
+                  </div>
+                </td>
+                <td className="px-6 py-6">
+                  <div className="flex flex-col gap-1">
+                    <span className="text-[10px] font-bold text-slate-700 flex items-center gap-1.5">
+                      <Zap size={10} className="text-blue-500" />
+                      {activeTab === 'trucks' ? item.plateNumber : item.licenseNumber || 'PROTOTYPE'}
+                    </span>
+                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none">
+                      {activeTab === 'trucks' ? `${item.make} ${item.model}` : `${item.experience || 0} YR COMMAND`}
+                    </span>
+                  </div>
+                </td>
+                <td className="px-8 py-6 text-right">
+                  <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all translate-x-4 group-hover:translate-x-0">
+                    <button
+                      onClick={(e) => { e.stopPropagation(); onEditFleetItem(item); }}
+                      className="size-10 bg-white border border-slate-100 hover:bg-[#345E85] hover:text-white rounded-xl shadow-sm flex items-center justify-center transition-all"
+                    >
+                      <Edit3 size={18} />
+                    </button>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); onDeleteFleetItem(item.id); }}
+                      className="size-10 bg-white border border-slate-100 hover:bg-rose-500 hover:text-white rounded-xl shadow-sm flex items-center justify-center transition-all"
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                    <div className="w-px h-6 bg-slate-100 mx-1" />
+                    <div className="size-10 bg-slate-50 text-slate-400 rounded-xl flex items-center justify-center">
+                      <ChevronRight size={18} />
+                    </div>
+                  </div>
+                </td>
+              </motion.tr>
+            ))}
+          </tbody>
+        </table>
       </div>
-      {selectedIds.length > 0 && <BulkActionsToolbar />}
-    </>
+      <AnimatePresence>
+        {selectedIds.length > 0 && <BulkActionsToolbar />}
+      </AnimatePresence>
+    </div>
   );
 };
 

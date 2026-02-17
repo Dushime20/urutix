@@ -31,8 +31,6 @@ const CargoOwnerLayout: React.FC = () => {
     location.pathname === '/dashboard/' ||
     location.pathname === '/cargo-owner' ||
     location.pathname === '/cargo-owner/' ||
-    location.pathname.startsWith('/dashboard/cargos') ||
-    location.pathname.startsWith('/cargo-owner/cargos') ||
     location.pathname.startsWith('/dashboard/financing') ||
     location.pathname.startsWith('/cargo-owner/financing');
 

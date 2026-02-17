@@ -4,7 +4,7 @@ import { Bell, User, Menu, X, ChevronDown, Package, Gavel, MapPin, BarChart3, Cr
 import { useAuth } from '../../contexts/AuthContext';
 import CargoOwnerNotificationDropdown from '../notifications/CargoOwnerNotificationDropdown';
 import ContextualHelp from '../Help/ContextualHelp';
-import logoUrutiX from '../../assets/logo-urutix-logistics.svg';
+import logoUrutiX from '../../assets/urutiX Logistics Logo (1).svg';
 
 interface DashboardHeaderProps {
   children?: React.ReactNode;

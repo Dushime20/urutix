@@ -60,8 +60,8 @@ const QuickStats: React.FC<QuickStatsProps> = ({ metrics }) => {
       title: 'Total Revenue',
       value: formatCurrency(metrics?.totalRevenue),
       icon: DollarSign,
-      iconColor: 'text-emerald-600',
-      bgColor: 'bg-emerald-50',
+      iconColor: 'text-[#1e40af]',
+      bgColor: 'bg-[#f0f7ff]',
       trend: 'up' as const,
       change: '+12.5%',
       description: 'vs prev cycle'
@@ -70,8 +70,8 @@ const QuickStats: React.FC<QuickStatsProps> = ({ metrics }) => {
       title: 'Active Shipments',
       value: formatNumber(metrics?.totalShipments),
       icon: Box,
-      iconColor: 'text-indigo-600',
-      bgColor: 'bg-indigo-50',
+      iconColor: 'text-[#1e40af]',
+      bgColor: 'bg-[#f0f7ff]',
       trend: 'up' as const,
       change: '+8.3%',
       description: 'vs prev cycle'
@@ -80,8 +80,8 @@ const QuickStats: React.FC<QuickStatsProps> = ({ metrics }) => {
       title: 'Live Fleet',
       value: (metrics?.activeFleet || 0).toString(),
       icon: Truck,
-      iconColor: 'text-violet-600',
-      bgColor: 'bg-violet-50',
+      iconColor: 'text-[#1e40af]',
+      bgColor: 'bg-[#f0f7ff]',
       trend: 'stable' as const,
       change: '0%',
       description: 'vs prev cycle'
@@ -90,8 +90,8 @@ const QuickStats: React.FC<QuickStatsProps> = ({ metrics }) => {
       title: 'Reliability Rate',
       value: formatPercentage(metrics?.onTimeDelivery),
       icon: CheckCircle,
-      iconColor: 'text-emerald-600',
-      bgColor: 'bg-emerald-50',
+      iconColor: 'text-[#1e40af]',
+      bgColor: 'bg-[#f0f7ff]',
       trend: 'up' as const,
       change: '+2.1%',
       description: 'vs prev cycle'
@@ -100,8 +100,8 @@ const QuickStats: React.FC<QuickStatsProps> = ({ metrics }) => {
       title: 'Partner Trust',
       value: `${metrics?.customerSatisfaction || 0}/5`,
       icon: Star,
-      iconColor: 'text-amber-600',
-      bgColor: 'bg-amber-50',
+      iconColor: 'text-[#1e40af]',
+      bgColor: 'bg-[#f0f7ff]',
       trend: 'up' as const,
       change: '+0.2',
       description: 'vs prev cycle'
@@ -110,8 +110,8 @@ const QuickStats: React.FC<QuickStatsProps> = ({ metrics }) => {
       title: 'Fuel Optimization',
       value: `${metrics?.fuelEfficiency || 0} km/L`,
       icon: Route,
-      iconColor: 'text-sky-600',
-      bgColor: 'bg-sky-50',
+      iconColor: 'text-[#1e40af]',
+      bgColor: 'bg-[#f0f7ff]',
       trend: 'up' as const,
       change: '+0.3',
       description: 'vs prev cycle'
@@ -120,8 +120,8 @@ const QuickStats: React.FC<QuickStatsProps> = ({ metrics }) => {
       title: 'Asset Yield',
       value: formatPercentage(metrics?.averageLoadUtilization),
       icon: Box,
-      iconColor: 'text-orange-600',
-      bgColor: 'bg-orange-50',
+      iconColor: 'text-[#1e40af]',
+      bgColor: 'bg-[#f0f7ff]',
       trend: 'up' as const,
       change: '+3.7%',
       description: 'vs prev cycle'
@@ -130,8 +130,8 @@ const QuickStats: React.FC<QuickStatsProps> = ({ metrics }) => {
       title: 'Conflict Index',
       value: formatPercentage(metrics?.disputeRate),
       icon: AlertTriangle,
-      iconColor: 'text-rose-600',
-      bgColor: 'bg-rose-50',
+      iconColor: 'text-[#1e40af]',
+      bgColor: 'bg-[#f0f7ff]',
       trend: 'down' as const,
       change: '-0.5%',
       description: 'vs prev cycle'
@@ -165,7 +165,7 @@ const QuickStats: React.FC<QuickStatsProps> = ({ metrics }) => {
             key={index}
             variants={item}
             whileHover={{ y: -4, scale: 1.02 }}
-            className="bg-white rounded-[24px] border border-gray-100 shadow-sm p-5 hover:shadow-lg hover:shadow-indigo-500/5 transition-all duration-300 group cursor-default"
+            className="bg-white rounded-[32px] border border-gray-100 shadow-sm p-6 hover:shadow-xl hover:shadow-indigo-500/5 transition-all duration-300 group cursor-default"
           >
             <div className="flex items-center justify-between mb-4">
               <div className={`p-2.5 rounded-xl ${stat.bgColor} transition-transform duration-300 group-hover:scale-110`}>

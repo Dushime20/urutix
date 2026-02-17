@@ -12,7 +12,8 @@ const Dashboard = lazy(() => import('./pages/Dashboard'));
 const CargoDashboard = lazy(() => import('./pages/CargoDashboard'));
 const FleetDashboard = lazy(() => import('./pages/FleetDashboard'));
 const FleetSafety = lazy(() => import('./pages/FleetSafety'));
-const TruckBidsPage = lazy(() => import('./pages/TruckBidsPage'));
+const TruckBidsPage = lazy(() => import('./pages/TruckBidsPage')); // Keeping for reference/backup
+const FleetBidsPage = lazy(() => import('./pages/FleetBidsPage'));
 const MyBidsPage = lazy(() => import('./pages/MyBidsPage'));
 const DriverDashboard = lazy(() => import('./components/DriverDashboard/DriverDashboard'));
 const Analytics = lazy(() => import('./pages/Analytics'));
@@ -313,7 +314,7 @@ function App() {
                       <Route path="analytics" element={<FleetAnalytics />} />
                       <Route path="safety" element={<FleetSafety />} />
                       <Route path="financial" element={<FleetPaymentManagement />} />
-                      <Route path="bids" element={<TruckBidsPage />} />
+                      <Route path="bids" element={<FleetBidsPage />} />
                       <Route path="smart-bookings" element={<SmartBookingRequests />} />
                       <Route path="fuel" element={<FuelManagement />} />
                       <Route path="routes" element={<RoutesPage />} />

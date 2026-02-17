@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Menu, X, ChevronRight, Zap } from "lucide-react";
-import logoUrutiX from "../../assets/logo-urutix-logistics.svg";
+import logoUrutiX from "../../assets/urutiX Logistics Logo (1).svg";
 import { Button } from "@/components/ui/Button";
 import { Link } from "react-router-dom";
 import { LanguageSwitcher } from "@/components/language-switcher";

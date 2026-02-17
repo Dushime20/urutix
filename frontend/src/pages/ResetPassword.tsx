@@ -3,12 +3,14 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Lock, CheckCircle2, Circle, CheckCircle } from 'lucide-react';
+import { CheckCircle2, Circle, CheckCircle, ArrowRight } from 'lucide-react';
 import { FaEye, FaEyeSlash, FaSpinner } from 'react-icons/fa';
-import logoUrutiXLegacy from '../assets/logo-urutix.svg';
-import logoUrutiXNew from '../assets/logo-urutix-logistics.svg';
+
+import logoUrutiXNew from '../assets/urutiX Logistics Logo (1).svg';
+import logoUrutiXBackground from '../assets/logo-urutix.svg';
 import { authAPI } from '../services/api';
 import toast from 'react-hot-toast';
+import { TranslatedText } from '../components/translated-text';
 
 const resetPasswordSchema = z.object({
   password: z.string()
@@ -104,29 +106,34 @@ const ResetPassword = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 relative overflow-hidden">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 relative overflow-hidden antialiased">
+      <div className="fixed inset-0 bg-slate-50 z-0" />
       {/* Background Logo */}
       <img
-        src={logoUrutiXLegacy}
+        src={logoUrutiXBackground}
         alt="UrutiX Logo Background"
         className="pointer-events-none select-none fixed inset-0 w-full h-full object-cover opacity-10 z-0"
         style={{ objectPosition: 'center' }}
       />
 
-      {/* Centered Form */}
-      <div className="w-full max-w-md px-4 sm:px-6 lg:px-8 relative z-10">
+      {/* Centered Container */}
+      <div className="w-full max-w-2xl px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="flex justify-center mb-8">
-          <img src={logoUrutiXNew} alt="UrutiX Logistics Logo" className="h-24 w-auto object-contain drop-shadow-md" />
+          <img
+            src={logoUrutiXNew}
+            alt="UrutiX Logistics Logo"
+            className="h-24 md:h-32 w-auto object-contain drop-shadow-lg"
+          />
         </div>
 
         <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
           {/* Header */}
-          <div className="px-6 pt-6 pb-4">
-            <h2 className="text-xl font-bold text-gray-900 mb-1">
-              Create new password
+          <div className="px-8 pt-8 pb-4">
+            <h2 className="text-2xl font-black text-slate-900 mb-1 font-manrope tracking-tight">
+              <TranslatedText text="Create new password" />
             </h2>
-            <p className="text-sm text-gray-600">
-              Enter your new password below. Make sure it's strong and secure.
+            <p className="text-sm font-medium text-slate-500">
+              <TranslatedText text="Enter your new password below. Make sure it's strong and secure." />
             </p>
           </div>
 
@@ -136,18 +143,17 @@ const ResetPassword = () => {
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                 {/* New Password */}
                 <div>
-                  <label htmlFor="password" className="block text-xs font-medium text-gray-700 mb-1.5">
-                    New password
+                  <label htmlFor="password" className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">
+                    <TranslatedText text="New password" />
                   </label>
                   <div className="relative">
                     <input
                       {...form.register('password')}
                       type={showPassword ? 'text' : 'password'}
-                      className="w-full px-3 py-2 pl-10 pr-10 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200"
+                      className="w-full px-4 py-2.5 text-sm font-medium text-slate-700 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 pr-10 placeholder:text-slate-400 placeholder:font-normal"
                       placeholder="Enter new password"
                       disabled={isLoading}
                     />
-                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                     <button
                       type="button"
                       className="absolute inset-y-0 right-0 px-3 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
@@ -165,8 +171,8 @@ const ResetPassword = () => {
                       ) : (
                         <Circle className="h-3 w-3 text-gray-300" />
                       )}
-                      <span className={`text-xs ${passwordCriteria.minLength ? 'text-green-600' : 'text-gray-500'}`}>
-                        At least 8 characters
+                      <span className={`text-[10px] font-black uppercase tracking-wide ${passwordCriteria.minLength ? 'text-green-600' : 'text-slate-400'}`}>
+                        <TranslatedText text="At least 8 characters" />
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
@@ -175,8 +181,8 @@ const ResetPassword = () => {
                       ) : (
                         <Circle className="h-3 w-3 text-gray-300" />
                       )}
-                      <span className={`text-xs ${passwordCriteria.hasUppercase ? 'text-green-600' : 'text-gray-500'}`}>
-                        One uppercase letter
+                      <span className={`text-[10px] font-black uppercase tracking-wide ${passwordCriteria.hasUppercase ? 'text-green-600' : 'text-slate-400'}`}>
+                        <TranslatedText text="One uppercase letter" />
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
@@ -185,8 +191,8 @@ const ResetPassword = () => {
                       ) : (
                         <Circle className="h-3 w-3 text-gray-300" />
                       )}
-                      <span className={`text-xs ${passwordCriteria.hasLowercase ? 'text-green-600' : 'text-gray-500'}`}>
-                        One lowercase letter
+                      <span className={`text-[10px] font-black uppercase tracking-wide ${passwordCriteria.hasLowercase ? 'text-green-600' : 'text-slate-400'}`}>
+                        <TranslatedText text="One lowercase letter" />
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
@@ -195,8 +201,8 @@ const ResetPassword = () => {
                       ) : (
                         <Circle className="h-3 w-3 text-gray-300" />
                       )}
-                      <span className={`text-xs ${passwordCriteria.hasNumber ? 'text-green-600' : 'text-gray-500'}`}>
-                        One number
+                      <span className={`text-[10px] font-black uppercase tracking-wide ${passwordCriteria.hasNumber ? 'text-green-600' : 'text-slate-400'}`}>
+                        <TranslatedText text="One number" />
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
@@ -205,14 +211,14 @@ const ResetPassword = () => {
                       ) : (
                         <Circle className="h-3 w-3 text-gray-300" />
                       )}
-                      <span className={`text-xs ${passwordCriteria.hasSpecialChar ? 'text-green-600' : 'text-gray-500'}`}>
-                        One special character
+                      <span className={`text-[10px] font-black uppercase tracking-wide ${passwordCriteria.hasSpecialChar ? 'text-green-600' : 'text-slate-400'}`}>
+                        <TranslatedText text="One special character" />
                       </span>
                     </div>
                   </div>
 
                   {form.formState.errors.password && (
-                    <p className="mt-1 text-xs text-red-600">
+                    <p className="mt-2 text-[10px] font-black text-red-600 uppercase tracking-wide px-1">
                       {form.formState.errors.password.message}
                     </p>
                   )}
@@ -220,18 +226,17 @@ const ResetPassword = () => {
 
                 {/* Confirm Password */}
                 <div>
-                  <label htmlFor="confirmPassword" className="block text-xs font-medium text-gray-700 mb-1.5">
-                    Confirm new password
+                  <label htmlFor="confirmPassword" className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">
+                    <TranslatedText text="Confirm new password" />
                   </label>
                   <div className="relative">
                     <input
                       {...form.register('confirmPassword')}
                       type={showConfirmPassword ? 'text' : 'password'}
-                      className="w-full px-3 py-2 pl-10 pr-10 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200"
+                      className="w-full px-4 py-2.5 text-sm font-medium text-slate-700 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 pr-10 placeholder:text-slate-400 placeholder:font-normal"
                       placeholder="Confirm new password"
                       disabled={isLoading}
                     />
-                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                     <button
                       type="button"
                       className="absolute inset-y-0 right-0 px-3 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
@@ -241,7 +246,7 @@ const ResetPassword = () => {
                     </button>
                   </div>
                   {form.formState.errors.confirmPassword && (
-                    <p className="mt-1 text-xs text-red-600">
+                    <p className="mt-2 text-[10px] font-black text-red-600 uppercase tracking-wide px-1">
                       {form.formState.errors.confirmPassword.message}
                     </p>
                   )}
@@ -249,33 +254,34 @@ const ResetPassword = () => {
 
                 <button
                   type="submit"
-                  className="w-full bg-primary-600 text-white font-semibold py-2.5 px-4 rounded-lg hover:bg-primary-700 focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 text-sm"
+                  className="w-full bg-primary-600 text-white font-black uppercase tracking-widest py-3 px-4 rounded-xl hover:bg-primary-700 focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-all duration-200 shadow-lg shadow-primary-500/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 text-[11px]"
                   disabled={isLoading}
                 >
                   {isLoading ? (
                     <FaSpinner className="animate-spin h-4 w-4" />
                   ) : (
                     <>
-                      <Lock className="h-4 w-4" />
-                      <span>Reset password</span>
+                      <span><TranslatedText text="Reset Password" /></span>
+                      <ArrowRight className="h-4 w-4" />
                     </>
                   )}
                 </button>
               </form>
             ) : (
               <div className="text-center py-4">
-                <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-4">
-                  <CheckCircle className="h-8 w-8 text-green-600" />
+                <div className="inline-flex items-center justify-center w-16 h-16 bg-green-50 rounded-full mb-4">
+                  <CheckCircle className="h-8 w-8 text-green-500" />
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                  Password reset successful!
+                <h3 className="text-xl font-black text-slate-900 mb-2 font-manrope tracking-tight">
+                  <TranslatedText text="Password reset successful!" />
                 </h3>
-                <p className="text-sm text-gray-600 mb-6">
-                  Your password has been reset successfully. You can now log in with your new password.
+                <p className="text-sm font-medium text-slate-500 mb-6 px-4">
+                  <TranslatedText text="Your password has been reset successfully. You can now log in with your new password." />
                 </p>
-                <p className="text-xs text-gray-500">
-                  Redirecting to login page...
-                </p>
+                <div className="w-full bg-green-50 text-green-700 py-3 rounded-lg flex items-center justify-center gap-2 text-xs font-medium border border-green-100">
+                  <FaSpinner className="animate-spin h-3.5 w-3.5" />
+                  <TranslatedText text="Redirecting to login page..." />
+                </div>
               </div>
             )}
           </div>

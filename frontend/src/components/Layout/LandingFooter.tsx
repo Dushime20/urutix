@@ -1,6 +1,6 @@
 import React from 'react';
 import { Globe, Mail, MessageCircle } from 'lucide-react';
-import logoUrutiX from '../../assets/logo-urutix-logistics.svg';
+import logoUrutiX from '../../assets/urutiX Logistics Logo (1).svg';
 
 const LandingFooter: React.FC = () => {
   return (

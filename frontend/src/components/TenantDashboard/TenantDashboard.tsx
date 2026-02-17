@@ -1,12 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
-  Truck, Box, DollarSign,
-  Route, AlertTriangle as FaExclamationTriangle,
+  AlertTriangle as FaExclamationTriangle,
   Download,
-  LayoutDashboard,
-  Users,
-  Navigation
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Line, Bar } from 'react-chartjs-2';
@@ -65,7 +61,6 @@ const TenantDashboard: React.FC<TenantDashboardProps> = ({
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [timeRange, setTimeRange] = useState('7d');
-  const [lastUpdated, setLastUpdated] = useState(new Date());
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [selectedView, setSelectedView] = useState<'overview' | 'fleet' | 'cargo' | 'financial' | 'operations' | 'users' | 'trips' | 'settings' | 'bidding'>('overview');
 
@@ -131,7 +126,6 @@ const TenantDashboard: React.FC<TenantDashboardProps> = ({
         // Add a small delay to let the animation show for at least a moment feels better
         new Promise(resolve => setTimeout(resolve, 800))
       ]);
-      setLastUpdated(new Date());
     } finally {
       setIsRefreshing(false);
     }
@@ -308,45 +302,11 @@ const TenantDashboard: React.FC<TenantDashboardProps> = ({
         tenant={currentTenant}
         onRefresh={handleRefresh}
         isRefreshing={isRefreshing}
-        lastUpdated={lastUpdated}
-        onSettingsClick={() => setSelectedView('settings')}
+        selectedView={selectedView}
+        setSelectedView={setSelectedView}
       />
 
-      {/* Navigation Tabs - Glassmorphism */}
-      <div className="bg-white/80 backdrop-blur-md border-b border-gray-100 sticky top-0 z-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <nav className="flex space-x-8">
-            {[
-              { id: 'overview', label: 'Overview', icon: LayoutDashboard },
-              { id: 'trips', label: 'Trips', icon: Navigation },
-              { id: 'bidding', label: 'Bidding', icon: DollarSign }, // Reusing DollarSign for now or Gavel if imported
-              { id: 'fleet', label: 'Fleet', icon: Truck },
-              { id: 'cargo', label: 'Cargo', icon: Box },
-              { id: 'users', label: 'Partners', icon: Users },
-              { id: 'financial', label: 'Financial', icon: DollarSign },
-              { id: 'operations', label: 'Operations', icon: Route },
-            ].map((tab) => {
-              const Icon = tab.icon;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setSelectedView(tab.id as any)}
-                  className={`
-                    py-4 px-1 border-b-2 text-[10px] font-black uppercase tracking-[0.15em] transition-all duration-200
-                    ${selectedView === tab.id
-                      ? 'border-indigo-600 text-indigo-600'
-                      : 'border-transparent text-slate-400 hover:text-slate-600 hover:border-gray-200'
-                    }
-                  `}
-                >
-                  <Icon className="inline-block w-3 h-3 mr-2 -mt-0.5" />
-                  {tab.label}
-                </button>
-              );
-            })}
-          </nav>
-        </div>
-      </div>
+
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -386,7 +346,7 @@ const TenantDashboard: React.FC<TenantDashboardProps> = ({
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: 0.2 }}
-                  className="bg-white rounded-[24px] border border-gray-100 shadow-sm p-8"
+                  className="bg-white rounded-[32px] border border-gray-100 shadow-sm p-8"
                 >
                   <div className="flex items-center justify-between mb-8">
                     <div>
@@ -422,7 +382,7 @@ const TenantDashboard: React.FC<TenantDashboardProps> = ({
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: 0.3 }}
-                  className="bg-white rounded-[24px] border border-gray-100 shadow-sm p-8"
+                  className="bg-white rounded-[32px] border border-gray-100 shadow-sm p-8"
                 >
                   <div className="flex items-center justify-between mb-8">
                     <div>
@@ -444,7 +404,7 @@ const TenantDashboard: React.FC<TenantDashboardProps> = ({
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.4 }}
-                className="bg-white rounded-[24px] border border-gray-100 shadow-sm p-8"
+                className="bg-white rounded-[32px] border border-gray-100 shadow-sm p-8"
               >
                 <div className="mb-8">
                   <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">Operational Health</h3>

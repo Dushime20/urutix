@@ -3,7 +3,8 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Package, Truck, User, Building2, ShieldCheck, FileText, ArrowRight } from 'lucide-react';
 import { FaSpinner } from 'react-icons/fa';
-import logoUrutiX from '../assets/logo-urutix.svg';
+import logoUrutiXBackground from '../assets/logo-urutix.svg';
+
 import { TranslatedText } from '../components/translated-text';
 import toast from 'react-hot-toast';
 
@@ -111,7 +112,7 @@ const RoleSelectionPage = () => {
                     textColor: 'text-orange-700',
                     bgColor: 'bg-orange-50',
                 };
-             case 'TENANT_ADMIN':
+            case 'TENANT_ADMIN':
                 return {
                     title: 'Tenant Admin',
                     description: 'Manage company settings and users',
@@ -145,16 +146,21 @@ const RoleSelectionPage = () => {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-50 relative overflow-hidden">
-            <img src={logoUrutiX} alt="UrutiX Logo Background" className="pointer-events-none select-none fixed inset-0 w-full h-full object-cover opacity-10 z-0" style={{objectPosition: 'center'}} />
-            
-            <div className="w-full max-w-2xl px-4 sm:px-6 lg:px-8 relative z-10">
+        <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4 relative overflow-hidden antialiased">
+            {/* Background Logo */}
+            <img
+                src={logoUrutiXBackground}
+                alt="UrutiX Logo Background"
+                className="pointer-events-none select-none fixed inset-0 w-full h-full object-cover opacity-10 z-0"
+                style={{ objectPosition: 'center' }}
+            />
+            <div className="max-w-4xl w-full px-4 sm:px-6 lg:px-8 relative z-10">
                 <div className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
-                     <div className="px-6 pt-6 pb-4 text-center">
-                        <h2 className="text-xl font-bold text-gray-900 mb-1">
+                    <div className="px-8 pt-8 pb-4 text-center">
+                        <h2 className="text-2xl font-black text-slate-900 mb-1 font-manrope tracking-tight">
                             <TranslatedText text="Select Account" />
                         </h2>
-                        <p className="text-sm text-gray-600">
+                        <p className="text-sm font-medium text-slate-500">
                             <TranslatedText text="Please select the account you want to use for this session." />
                         </p>
                     </div>
@@ -164,17 +170,16 @@ const RoleSelectionPage = () => {
                             {availableRoles.map((roleObj: any) => {
                                 const details = getRoleDetails(roleObj.role);
                                 const isSelected = selectedRole === roleObj.role;
-                                
+
                                 return (
                                     <button
                                         key={roleObj.role}
                                         onClick={() => handleRoleSelect(roleObj.role)}
                                         disabled={isLoading}
-                                        className={`w-full flex items-center justify-between p-4 rounded-xl border-2 transition-all duration-200 group ${
-                                            isSelected 
-                                                ? `${details.borderColor} ${details.bgColor} ring-2 ring-offset-2 ring-primary-500`
-                                                : 'border-gray-100 hover:border-gray-300 hover:bg-gray-50'
-                                        }`}
+                                        className={`w-full flex items-center justify-between p-4 rounded-xl border-2 transition-all duration-200 group ${isSelected
+                                            ? `${details.borderColor} ${details.bgColor} ring-2 ring-offset-2 ring-primary-500`
+                                            : 'border-gray-100 hover:border-gray-300 hover:bg-gray-50'
+                                            }`}
                                     >
                                         <div className="flex items-center space-x-4">
                                             <div className={`p-3 rounded-lg ${details.bgColor}`}>
@@ -192,19 +197,19 @@ const RoleSelectionPage = () => {
                                                 </p>
                                             </div>
                                         </div>
-                                        
+
                                         <div className={`transform transition-transform duration-200 ${isSelected ? 'translate-x-1' : ''}`}>
-                                             {isLoading && isSelected ? (
-                                                 <FaSpinner className="animate-spin h-5 w-5 text-gray-400" />
-                                             ) : (
-                                                 <ArrowRight className="h-5 w-5 text-gray-300 group-hover:text-gray-500" />
-                                             )}
+                                            {isLoading && isSelected ? (
+                                                <FaSpinner className="animate-spin h-5 w-5 text-gray-400" />
+                                            ) : (
+                                                <ArrowRight className="h-5 w-5 text-gray-300 group-hover:text-gray-500" />
+                                            )}
                                         </div>
                                     </button>
                                 );
                             })}
                         </div>
-                        
+
                         <div className="mt-6 text-center">
                             <button
                                 onClick={() => navigate('/auth')}

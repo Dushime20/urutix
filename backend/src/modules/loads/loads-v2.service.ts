@@ -128,6 +128,7 @@ export class LoadsV2Service {
 
   /**
    * Find all loads with filtering and pagination
+   * OPTIMIZED: Added eager loading to prevent N+1 query problems
    */
   async findAll(
     queryDto: LoadQueryV2Dto,
@@ -142,12 +143,18 @@ export class LoadsV2Service {
         ...filters
       } = queryDto;
 
-      const pageNum = page;
-      const limitNum = limit;
-      const sortByStr = sortBy;
-      const sortOrderStr = sortOrder;
+      // Enforce maximum limit to prevent performance issues
+      const MAX_LIMIT = 100;
+      const safeLimit = Math.min(limit, MAX_LIMIT);
 
       const queryBuilder = this.loadRepository.createQueryBuilder('load');
+
+      // Add eager loading to prevent N+1 queries
+      queryBuilder
+        .leftJoinAndSelect('load.cargoOwner', 'cargoOwner')
+        .leftJoinAndSelect('cargoOwner.profile', 'cargoOwnerProfile')
+        .leftJoinAndSelect('load.broker', 'broker')
+        .leftJoinAndSelect('broker.profile', 'brokerProfile');
 
       // Apply tenant filtering
       this.applyTenantFilter(queryBuilder, user);
@@ -159,19 +166,19 @@ export class LoadsV2Service {
       queryBuilder.orderBy(`load.${sortBy}`, sortOrder);
 
       // Apply pagination
-      const skip = (page - 1) * limit;
-      queryBuilder.skip(skip).take(limit);
+      const skip = (page - 1) * safeLimit;
+      queryBuilder.skip(skip).take(safeLimit);
 
       const [loads, total] = await queryBuilder.getManyAndCount();
 
-      const totalPages = Math.ceil(total / limit);
+      const totalPages = Math.ceil(total / safeLimit);
 
       return {
         data: loads.map((load) => this.mapToResponseDto(load)),
         meta: {
           total,
           page,
-          limit,
+          limit: safeLimit,
           totalPages,
           hasNextPage: page < totalPages,
           hasPreviousPage: page > 1,
@@ -304,6 +311,7 @@ export class LoadsV2Service {
 
   /**
    * Search loads with advanced criteria
+   * OPTIMIZED: Added eager loading to prevent N+1 query problems
    */
   async searchLoads(
     searchParams: Record<string, unknown>,
@@ -326,12 +334,21 @@ export class LoadsV2Service {
         pickupDateTo,
       } = searchParams;
 
+      // Enforce maximum limit to prevent performance issues
+      const MAX_LIMIT = 100;
       const pageNum = page as number;
-      const limitNum = limit as number;
+      const limitNum = Math.min(limit as number, MAX_LIMIT);
       const sortByStr = sortBy as string;
       const sortOrderStr = sortOrder as 'ASC' | 'DESC';
 
       const queryBuilder = this.loadRepository.createQueryBuilder('load');
+
+      // Add eager loading to prevent N+1 queries
+      queryBuilder
+        .leftJoinAndSelect('load.cargoOwner', 'cargoOwner')
+        .leftJoinAndSelect('cargoOwner.profile', 'cargoOwnerProfile')
+        .leftJoinAndSelect('load.broker', 'broker')
+        .leftJoinAndSelect('broker.profile', 'brokerProfile');
 
       // Apply tenant filtering
       this.applyTenantFilter(queryBuilder, user);

@@ -154,15 +154,15 @@ const FleetOverview: React.FC<FleetOverviewProps> = ({ tenantId }) => {
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {[
-          { label: 'Total Trucks', value: fleetData.summary.totalTrucks, icon: Truck, color: 'indigo' },
-          { label: 'Active Trucks', value: fleetData.summary.activeTrucks, icon: CheckCircle, color: 'emerald' },
-          { label: 'Total Drivers', value: fleetData.summary.totalDrivers, icon: User, color: 'violet' },
-          { label: 'Utilization', value: `${fleetData.utilization.current}% `, icon: Route, color: 'amber' }
+          { label: 'Total Trucks', value: fleetData.summary.totalTrucks, icon: Truck },
+          { label: 'Active Trucks', value: fleetData.summary.activeTrucks, icon: CheckCircle },
+          { label: 'Total Drivers', value: fleetData.summary.totalDrivers, icon: User },
+          { label: 'Utilization', value: `${fleetData.utilization.current}% `, icon: Route }
         ].map((stat, i) => (
-          <div key={i} className="bg-white rounded-[24px] border border-gray-100 shadow-sm p-6">
+          <div key={i} className="bg-white rounded-[32px] border border-gray-100 shadow-sm p-6">
             <div className="flex items-center">
-              <div className={`p - 3 bg - ${stat.color} -50 rounded - xl`}>
-                <stat.icon className={`w - 6 h - 6 text - ${stat.color} -600`} />
+              <div className="p-3 bg-[#f0f7ff] rounded-xl">
+                <stat.icon className="w-6 h-6 text-[#1e40af]" />
               </div>
               <div className="ml-4">
                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{stat.label}</p>
@@ -176,7 +176,7 @@ const FleetOverview: React.FC<FleetOverviewProps> = ({ tenantId }) => {
       {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Utilization Trend */}
-        <div className="bg-white rounded-[24px] border border-gray-100 shadow-sm p-8">
+        <div className="bg-white rounded-[32px] border border-gray-100 shadow-sm p-8">
           <div className="mb-6">
             <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">Performance Trend</h3>
             <h4 className="text-xl font-black text-slate-800 tracking-tight">Weekly Utilization</h4>
@@ -187,7 +187,7 @@ const FleetOverview: React.FC<FleetOverviewProps> = ({ tenantId }) => {
         </div>
 
         {/* Status Distribution */}
-        <div className="bg-white rounded-[24px] border border-gray-100 shadow-sm p-8">
+        <div className="bg-white rounded-[32px] border border-gray-100 shadow-sm p-8">
           <div className="mb-6">
             <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">Inventory status</h3>
             <h4 className="text-xl font-black text-slate-800 tracking-tight">Truck Distribution</h4>
@@ -202,7 +202,7 @@ const FleetOverview: React.FC<FleetOverviewProps> = ({ tenantId }) => {
       </div>
 
       {/* Trucks Table */}
-      <div className="bg-white rounded-[24px] border border-gray-100 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-[32px] border border-gray-100 shadow-sm overflow-hidden">
         <div className="px-8 py-6 border-b border-gray-50 bg-gray-50/30">
           <div className="flex items-center justify-between">
             <div>

@@ -1,5 +1,6 @@
 import { DialogDescription, DialogHeader, DialogTitle } from "@/components/ui";
 import React from "react";
+import { FaBox } from "react-icons/fa";
 
 interface ModalHeaderProps {
   onClose: () => void;
@@ -7,15 +8,17 @@ interface ModalHeaderProps {
 
 const ModalHeader: React.FC<ModalHeaderProps> = () => {
   return (
-    <DialogHeader className="p-4 border-b border-gray-100 bg-gradient-to-r from-teal-50 to-teal-100">
-      <div className="flex items-center justify-between">
+    <DialogHeader className="p-6 border-b border-slate-100 bg-white">
+      <div className="flex items-center gap-4">
+        <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center">
+          <FaBox className="w-6 h-6 text-[#345E85]" />
+        </div>
         <div>
-          <DialogTitle className="text-lg font-semibold bg-gradient-to-r from-teal-600 to-teal-700 bg-clip-text text-transparent">
+          <DialogTitle className="text-2xl font-black text-[#0f172a] tracking-tight">
             Choose Cargo Template
           </DialogTitle>
-          <DialogDescription className="text-gray-500 text-xs mt-0.5">
-            Select a template to pre-fill cargo details and streamline your
-            shipping process
+          <DialogDescription className="text-xs text-slate-500 font-bold uppercase tracking-wider mt-1">
+            Accelerate your shipment with pre-configured logistics profiles
           </DialogDescription>
         </div>
       </div>

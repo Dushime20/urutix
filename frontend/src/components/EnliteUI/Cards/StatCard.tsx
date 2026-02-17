@@ -7,7 +7,7 @@ export interface StatCardProps {
   icon: React.ReactNode;
   trend?: string;
   trendDirection?: 'up' | 'down' | 'neutral';
-  color?: 'primary' | 'secondary' | 'success' | 'warning' | 'error' | 'info' | 'accent';
+  color?: 'primary' | 'secondary' | 'success' | 'warning' | 'error' | 'info' | 'accent' | 'purple' | 'pink' | 'emerald';
   subtitle?: string;
   loading?: boolean;
   onClick?: () => void;
@@ -16,11 +16,11 @@ export interface StatCardProps {
 
 const colorClasses = {
   primary: {
-    bg: 'bg-blue-50',
+    bg: 'bg-blue-50/30',
     icon: 'text-[#345E85]', // Primary Brand Blue
     border: 'border-[#345E85]',
-    accent: 'text-blue-900',
-    circle: 'border-blue-100',
+    accent: 'text-[#345E85]',
+    circle: 'border-[#345E85]',
   },
   secondary: {
     bg: 'bg-slate-50',
@@ -30,39 +30,60 @@ const colorClasses = {
     circle: 'border-slate-100',
   },
   success: {
-    bg: 'bg-blue-50',
-    icon: 'text-[#2D5173]', // Deeper Blue
-    border: 'border-[#2D5173]',
-    accent: 'text-blue-900',
-    circle: 'border-blue-100',
+    bg: 'bg-green-50',
+    icon: 'text-green-600',
+    border: 'border-green-600',
+    accent: 'text-green-900',
+    circle: 'border-green-100',
   },
   warning: {
-    bg: 'bg-blue-50',
-    icon: 'text-[#5F8FB3]', // Muted Blue
-    border: 'border-[#5F8FB3]',
-    accent: 'text-blue-900',
-    circle: 'border-blue-100',
+    bg: 'bg-orange-50',
+    icon: 'text-orange-500',
+    border: 'border-orange-500',
+    accent: 'text-orange-900',
+    circle: 'border-orange-100',
   },
   error: {
+    bg: 'bg-rose-50',
+    icon: 'text-rose-500',
+    border: 'border-rose-500',
+    accent: 'text-rose-900',
+    circle: 'border-rose-100',
+  },
+  info: {
     bg: 'bg-blue-50',
-    icon: 'text-[#87ABC6]', // Lighter Blue
-    border: 'border-[#87ABC6]',
+    icon: 'text-blue-500',
+    border: 'border-blue-500',
     accent: 'text-blue-900',
     circle: 'border-blue-100',
   },
-  info: {
+  accent: {
     bg: 'bg-indigo-50',
-    icon: 'text-[#2563eb]', // Vibrant Blue
-    border: 'border-[#2563eb]',
+    icon: 'text-indigo-600',
+    border: 'border-indigo-600',
     accent: 'text-indigo-900',
     circle: 'border-indigo-100',
   },
-  accent: {
-    bg: 'bg-blue-50',
-    icon: 'text-[#182A3D]', // Navy Blue
-    border: 'border-[#182A3D]',
-    accent: 'text-blue-900',
-    circle: 'border-blue-100',
+  purple: {
+    bg: 'bg-purple-50',
+    icon: 'text-purple-600',
+    border: 'border-purple-600',
+    accent: 'text-purple-900',
+    circle: 'border-purple-100',
+  },
+  pink: {
+    bg: 'bg-rose-50',
+    icon: 'text-rose-600',
+    border: 'border-rose-600',
+    accent: 'text-rose-900',
+    circle: 'border-rose-100',
+  },
+  emerald: {
+    bg: 'bg-emerald-50',
+    icon: 'text-emerald-600',
+    border: 'border-emerald-600',
+    accent: 'text-emerald-900',
+    circle: 'border-emerald-100',
   }
 };
 
@@ -101,18 +122,18 @@ export const StatCard: React.FC<StatCardProps> = ({
         whileHover={{ y: -2, transition: { duration: 0.2 } }}
         onClick={onClick}
         className={`
-          flex items-center gap-4 bg-white p-4 rounded-xl
-          ${onClick ? 'cursor-pointer hover:shadow-md' : ''}
+          flex items-center gap-4 bg-white p-4 rounded-xl border border-slate-100
+          ${onClick ? 'cursor-pointer' : ''}
           transition-all duration-300
         `}
       >
         {/* Circular Icon Container */}
         <div className={`
           relative flex items-center justify-center
-          w-16 h-16 rounded-full border-2 p-1
+          w-16 h-16 rounded-full border p-1
           ${colors.border}
         `}>
-          <div className="flex items-center justify-center w-full h-full rounded-full bg-white shadow-inner">
+          <div className="flex items-center justify-center w-full h-full rounded-full bg-white">
             <div className={`${colors.icon} text-2xl`}>
               {icon}
             </div>
