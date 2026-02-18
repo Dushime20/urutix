@@ -1,10 +1,11 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Bell, User, Menu, X, ChevronDown, Package, Gavel, MapPin, BarChart3, CreditCard, FileText, Settings, HelpCircle, Truck, Users, Route, Shield, DollarSign, Home, CheckCircle, Receipt, Activity, Navigation, Wallet, AlertCircle, ClipboardList } from 'lucide-react';
+import { LogOut, User, Menu, X, ChevronDown, Package, Gavel, MapPin, BarChart3, CreditCard, FileText, Settings, HelpCircle, Truck, Users, Route, Shield, DollarSign, Home, Navigation, Wallet, AlertCircle, ClipboardList, Activity } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import CargoOwnerNotificationDropdown from '../notifications/CargoOwnerNotificationDropdown';
 import ContextualHelp from '../Help/ContextualHelp';
 import logoUrutiX from '../../assets/urutiX Logistics Logo (1).svg';
+import { TranslatedText } from '../translated-text';
 
 interface DashboardHeaderProps {
   children?: React.ReactNode;
@@ -26,7 +27,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
   const dropdownRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
 
   // Role-based navigation items
-  const getNavItems = () => {
+  const navItems = useMemo(() => {
     const basePath = '/dashboard';
 
     if (user?.role === 'CARGO_RECEIVER') {
@@ -53,9 +54,19 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
             { label: 'Templates', path: `${basePath}/cargos/list?tab=template` },
           ]
         },
+        {
+          label: 'Operations',
+          path: `${basePath}/analytics`,
+          icon: Activity,
+          subItems: [
+            { label: 'Tracking', path: `${basePath}/tracking` },
+            { label: 'Financials', path: `${basePath}/financial` },
+            { label: 'Analytics', path: `${basePath}/analytics` },
+            { label: 'Bidding', path: `${basePath}/bidding` },
+            { label: 'Documents', path: `${basePath}/documents` },
+          ]
+        },
         { label: 'Receivers', path: `${basePath}/receivers`, icon: Users },
-        { label: 'Bidding', path: `${basePath}/bidding`, icon: Gavel },
-        { label: 'Tracking', path: `${basePath}/tracking`, icon: MapPin },
       ];
     }
 
@@ -209,9 +220,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
       { label: 'Transactions', path: '/dashboard/payments', icon: CreditCard },
       { label: 'Support', path: '/dashboard/support', icon: HelpCircle },
     ];
-  };
-
-  const navItems = getNavItems();
+  }, [user?.role]);
 
   const handleLogout = () => {
     setShowUserMenu(false);
@@ -273,7 +282,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
   }, [navItems]);
 
   return (
-    <div data-header="dashboard-header" className="bg-white border-b border-gray-200 text-gray-900 px-4 pt-6 pb-3 sm:px-6 sm:pt-8 sm:pb-4 relative overflow-visible z-50">
+    <div data-header="dashboard-header" className="bg-white/80 backdrop-blur-xl border-b border-gray-100 text-gray-900 px-4 pt-6 pb-3 sm:px-6 sm:pt-8 sm:pb-4 sticky top-0 z-[100]">
       <div className="max-w-7xl mx-auto px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8 relative z-50">
         <div className="flex justify-between items-center relative z-10 gap-2 sm:gap-3 md:gap-4">
           <div className="flex items-center gap-2 sm:gap-3 md:gap-4 min-w-0 flex-1">
@@ -308,13 +317,14 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
                             handleNavClick(item.path);
                           }
                         }}
-                        className={`px-4 py-2 rounded-full whitespace-nowrap transition-all touch-manipulation flex items-center gap-1.5 flex-shrink-0 ${isActive
-                          ? 'text-navy-600 bg-navy-50'
-                          : 'hover:text-gray-900 hover:bg-gray-100'
-                          }`}
+                        className={`flex items-center gap-2 px-5 py-2.5 text-sm font-bold rounded-full transition-all duration-300 whitespace-nowrap shrink-0 touch-manipulation
+                                            ${isActive
+                            ? 'bg-blue-50 text-[#345E85]'
+                            : 'text-slate-500 hover:text-[#345E85] hover:bg-slate-50'}
+                                        `}
                       >
-                        {item.icon && <item.icon className="w-4 h-4" />}
-                        <span>{item.label}</span>
+                        {item.icon && <item.icon className="w-4.5 h-4.5" size={18} />}
+                        <TranslatedText text={item.label} />
                         {hasSubItems && (
                           <ChevronDown className={`w-3 h-3 transition-transform ${openDropdown === item.label ? 'rotate-180' : ''}`} />
                         )}
@@ -331,7 +341,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
                                   ? 'bg-navy-50 text-navy-700 font-semibold'
                                   : 'text-gray-600 hover:bg-gray-50 hover:text-navy-600'}`}
                               >
-                                {subItem.label}
+                                <TranslatedText text={subItem.label} />
                               </button>
                             ))}
                           </div>
@@ -355,11 +365,9 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
             <div className="relative" ref={userMenuRef}>
               <button
                 onClick={() => setShowUserMenu(!showUserMenu)}
-                className="flex items-center gap-2 p-1 rounded-full border border-gray-200 hover:border-gray-300 transition-all touch-manipulation"
+                className="h-10 w-10 rounded-full bg-[#0f172a] text-white flex items-center justify-center hover:bg-slate-900 transition-all shadow-lg shadow-slate-200/50 relative overflow-hidden group border-2 border-white"
               >
-                <div className="w-8 h-8 rounded-full bg-navy-600 flex items-center justify-center text-white overflow-hidden">
-                  <User size={18} />
-                </div>
+                <User size={20} className="transition-transform group-hover:scale-110" />
               </button>
               {showUserMenu && (
                 <div className="absolute top-full right-0 mt-1 w-48 bg-white rounded-lg shadow-xl border border-gray-200 z-[100] p-2">
@@ -381,7 +389,9 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
                   >
                     Profile Settings
                   </button>
-                  <button onClick={handleLogout} className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-md">Logout</button>
+                  <button onClick={handleLogout} className="w-full text-left px-3 py-2.5 text-xs font-bold text-rose-500 uppercase tracking-widest hover:bg-rose-50 rounded-lg transition-colors flex items-center gap-2">
+                    <LogOut size={14} /> Sign Out
+                  </button>
                 </div>
               )}
             </div>

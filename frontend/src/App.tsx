@@ -12,9 +12,6 @@ const Dashboard = lazy(() => import('./pages/Dashboard'));
 const CargoDashboard = lazy(() => import('./pages/CargoDashboard'));
 const FleetDashboard = lazy(() => import('./pages/FleetDashboard'));
 const FleetSafety = lazy(() => import('./pages/FleetSafety'));
-const TruckBidsPage = lazy(() => import('./pages/TruckBidsPage')); // Keeping for reference/backup
-const FleetBidsPage = lazy(() => import('./pages/FleetBidsPage'));
-const MyBidsPage = lazy(() => import('./pages/MyBidsPage'));
 const DriverDashboard = lazy(() => import('./components/DriverDashboard/DriverDashboard'));
 const Analytics = lazy(() => import('./pages/Analytics'));
 const FleetAnalytics = lazy(() => import('./pages/FleetAnalytics'));
@@ -115,6 +112,7 @@ const UnifiedReputationManagement = lazy(() => import('./pages/dashboard/reputat
 const UnifiedAccountManagement = lazy(() => import('./pages/dashboard/account'));
 const UnifiedAnalyticsManagement = lazy(() => import('./pages/dashboard/analytics'));
 const UnifiedTrackingManagement = lazy(() => import('./pages/dashboard/tracking'));
+const UnifiedBiddingManagement = lazy(() => import('./pages/dashboard/bidding/UnifiedBiddingManagement'));
 const ReceiversPage = lazy(() => import('./pages/cargo-owner/ReceiversPage'));
 const ActiveLoansPage = lazy(() => import('./pages/ActiveLoansPage'));
 const DisbursementsPage = lazy(() => import('./pages/DisbursementsPage'));
@@ -208,8 +206,8 @@ function App() {
                       <Route path="cargos/:cargoId/inspect" element={<CargoInspectionPage />} />
                       <Route path="cargos/enhanced-demo" element={<EnhancedCargoDemo />} />
                       <Route path="cargos/enhanced-demo/:cargoId" element={<EnhancedCargoDemo />} />
-                      <Route path="bidding" element={<CargoList />} />
-                      <Route path="my-bids" element={<MyBidsPage />} />
+                      <Route path="bidding" element={<UnifiedBiddingManagement />} />
+                      <Route path="my-bids" element={<UnifiedBiddingManagement />} />
                       <Route path="contracts" element={<CargoOwnerContracts />} />
                       <Route path="journey" element={<EnhancedJourneyFlow />} />
                       <Route path="tenant-dashboard" element={<TenantDashboardPage />} />
@@ -258,8 +256,8 @@ function App() {
                       <Route path="cargos/:cargoId/inspect" element={<CargoInspectionPage />} />
                       <Route path="cargos/enhanced-demo" element={<EnhancedCargoDemo />} />
                       <Route path="cargos/enhanced-demo/:cargoId" element={<EnhancedCargoDemo />} />
-                      <Route path="bidding" element={<CargoList />} />
-                      <Route path="my-bids" element={<MyBidsPage />} />
+                      <Route path="bidding" element={<UnifiedBiddingManagement />} />
+                      <Route path="my-bids" element={<UnifiedBiddingManagement />} />
                       <Route path="contracts" element={<CargoOwnerContracts />} />
                       <Route path="journey" element={<EnhancedJourneyFlow />} />
                       <Route path="tenant-dashboard" element={<TenantDashboardPage />} />
@@ -312,9 +310,12 @@ function App() {
                       <Route path="trucks/:truckId/records" element={<TruckRecordsPage />} />
                       <Route path="drivers" element={<UnifiedDriverManagement />} />
                       <Route path="analytics" element={<FleetAnalytics />} />
+                      <Route path="reports" element={<FleetAnalytics />} />
                       <Route path="safety" element={<FleetSafety />} />
                       <Route path="financial" element={<FleetPaymentManagement />} />
-                      <Route path="bids" element={<FleetBidsPage />} />
+                      <Route path="bids" element={<UnifiedBiddingManagement />} />
+                      <Route path="my-bids" element={<UnifiedBiddingManagement />} />
+                      <Route path="bidding-analytics" element={<UnifiedBiddingManagement />} />
                       <Route path="smart-bookings" element={<SmartBookingRequests />} />
                       <Route path="fuel" element={<FuelManagement />} />
                       <Route path="routes" element={<RoutesPage />} />

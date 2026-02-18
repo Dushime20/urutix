@@ -8,7 +8,11 @@ import {
     ChevronRight,
     Download,
     Mail,
-    Activity // Added Activity as it's used but not imported
+    Activity,
+    AlertCircle,
+    Search,
+    Filter,
+    Play
 } from 'lucide-react';
 import StatCard from '../EnliteUI/Cards/StatCard';
 import DataCard from '../EnliteUI/Cards/DataCard';

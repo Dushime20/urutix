@@ -644,10 +644,10 @@ const UnifiedCargoManagement = () => {
               </div>
               <button
                 onClick={() => handleTabChange("create")}
-                className="px-6 py-2.5 bg-[#345E85] text-white rounded-2xl transition-all font-bold text-sm shadow-lg shadow-blue-900/10 hover:bg-slate-800 flex items-center gap-2"
+                className="px-6 py-2.5 bg-[#345E85] text-white rounded-2xl transition-all font-black text-sm shadow-lg shadow-blue-900/10 hover:bg-slate-800 flex items-center gap-2"
               >
                 <Plus className="w-4 h-4" />
-                <span>NEW CARGO</span>
+                <span>CREATE CARGO</span>
               </button>
             </div>
           </div>
@@ -811,13 +811,15 @@ const UnifiedCargoManagement = () => {
                             : "Create your first cargo shipment to get started."}
                       </p>
                       {(activeTab === "all" || activeTab === "drafts") && (
-                        <button
-                          onClick={() => setActiveTab("create")}
-                          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors touch-manipulation min-h-[44px] sm:min-h-0"
-                        >
-                          <Plus className="w-4 h-4" />
-                          Create Cargo
-                        </button>
+                        <div className="mt-8 flex justify-center">
+                          <button
+                            onClick={() => setActiveTab("create")}
+                            className="inline-flex items-center justify-center gap-3 px-8 py-3 bg-[#345E85] text-white rounded-2xl transition-all font-black text-sm shadow-lg shadow-blue-900/10 hover:bg-slate-800"
+                          >
+                            <Plus className="w-5 h-5" />
+                            CREATE CARGO
+                          </button>
+                        </div>
                       )}
                     </div>
                   ) : (

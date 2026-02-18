@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { loanRequestService } from '../services/loanRequestService';
 import type { LoanRequest } from '../types/loanRequest';
@@ -109,7 +109,7 @@ const CargoFinancingPage = () => {
                             <Download className="w-4 h-4" />
                             Export Report
                         </button>
-                        <button className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors font-medium text-sm shadow-sm shadow-emerald-600/20 whitespace-nowrap min-w-[140px]">
+                        <button className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-[#358c9c] text-white rounded-lg hover:bg-[#2c7380] transition-colors font-medium text-sm shadow-sm shadow-cyan-600/20 whitespace-nowrap min-w-[140px]">
                             <Plus className="w-4 h-4" />
                             Request Financing
                         </button>
@@ -375,7 +375,7 @@ const CargoFinancingPage = () => {
                             <h3 className="text-lg font-medium text-gray-900 mb-1">No loans found</h3>
                             <p className="text-gray-500 max-w-sm mx-auto mb-6">There are no loan requests matching the selected filter.</p>
                             {activeTab === 'all' && (
-                                <button className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors font-medium text-sm shadow-sm inline-flex items-center gap-2">
+                                <button className="px-4 py-2 bg-[#358c9c] text-white rounded-lg hover:bg-[#2c7380] transition-colors font-medium text-sm shadow-sm inline-flex items-center gap-2">
                                     <Plus className="w-4 h-4" />
                                     New Request
                                 </button>

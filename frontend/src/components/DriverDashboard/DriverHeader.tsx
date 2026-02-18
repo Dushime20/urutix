@@ -74,13 +74,13 @@ export const DriverHeader: React.FC<DriverHeaderProps> = ({
   };
 
   return (
-    <div className="bg-white/80 backdrop-blur-xl border-b border-gray-100 text-gray-900 px-4 py-3 sm:px-6 sticky top-0 z-[100]">
+    <div className="bg-white/80 backdrop-blur-xl border-b border-gray-100 text-gray-900 px-4 pt-6 pb-3 sm:px-6 sm:pt-8 sm:pb-4 sticky top-0 z-[100]">
       <header className="max-w-7xl mx-auto flex items-center justify-between">
 
         {/* Logo Section */}
         <div className="flex items-center gap-10">
           <div className="flex items-center gap-2 cursor-pointer transition-opacity hover:opacity-80" onClick={() => navigate('/dashboard')}>
-            <img src={logoUrutiX} alt="UrutiX" className="h-9 w-auto object-contain" />
+            <img src={logoUrutiX} alt="UrutiX" className="h-10 sm:h-14 md:h-18 lg:h-20 w-auto object-contain" />
           </div>
 
           {/* Desktop Navigation */}

@@ -9,9 +9,11 @@ import {
   X,
   AlertCircle,
   Shield,
-  Heart
+  Heart,
+  History as HistoryIcon
 } from 'lucide-react';
 import { biddingAPI } from '../../services/biddingApi';
+import toast from 'react-hot-toast';
 import AuctionList from './AuctionList';
 import BidHistory from './BidHistory';
 import CreateAuction from './CreateAuction';
@@ -157,50 +159,62 @@ const BiddingDashboard: React.FC<BiddingDashboardProps> = ({ userRole }) => {
 
   const renderTabs = () => (
     <div className="space-y-8">
-      <div className="flex flex-col md:flex-row gap-4 justify-between items-center bg-white p-2 rounded-[2rem] border border-slate-100 shadow-sm">
-        <nav className="flex gap-1 p-1">
+      <div className="flex flex-col md:flex-row gap-6 justify-between items-center bg-white p-3 rounded-[2.5rem] border border-slate-100 shadow-sm">
+        <nav className="flex flex-wrap gap-2 p-1">
           <button
             onClick={() => setActiveTab('auctions')}
             className={cn(
-              "px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 transition-all",
+              "px-8 py-4 rounded-[1.8rem] text-[10px] font-black uppercase tracking-widest flex items-center gap-3 transition-all duration-300",
               activeTab === 'auctions'
-                ? "bg-[#345E85] text-white shadow-lg shadow-blue-900/10"
+                ? "bg-[#345E85] text-white shadow-xl shadow-blue-900/10"
                 : "text-slate-400 hover:text-slate-600 hover:bg-slate-50"
             )}
           >
             <Gavel size={14} />
-            Live Bidding
+            Available Auctions
+            <span className={cn(
+              "px-2 py-0.5 rounded-lg text-[9px] font-black ml-1",
+              activeTab === 'auctions' ? "bg-white/20 text-white" : "bg-slate-100 text-slate-400"
+            )}>
+              {stats.totalAuctions}
+            </span>
           </button>
           <button
             onClick={() => setActiveTab('bids')}
             className={cn(
-              "px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 transition-all",
+              "px-8 py-4 rounded-[1.8rem] text-[10px] font-black uppercase tracking-widest flex items-center gap-3 transition-all duration-300",
               activeTab === 'bids'
-                ? "bg-[#345E85] text-white shadow-lg shadow-blue-900/10"
+                ? "bg-[#345E85] text-white shadow-xl shadow-blue-900/10"
                 : "text-slate-400 hover:text-slate-600 hover:bg-slate-50"
             )}
           >
-            <Users size={14} />
-            My Offers
+            <HistoryIcon size={14} />
+            My Past Bids
+            <span className={cn(
+              "px-2 py-0.5 rounded-lg text-[9px] font-black ml-1",
+              activeTab === 'bids' ? "bg-white/20 text-white" : "bg-slate-100 text-slate-400"
+            )}>
+              {stats.activeBids}
+            </span>
           </button>
           <button
             onClick={() => setActiveTab('watched')}
             className={cn(
-              "px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 transition-all",
+              "px-8 py-4 rounded-[1.8rem] text-[10px] font-black uppercase tracking-widest flex items-center gap-3 transition-all duration-300",
               activeTab === 'watched'
-                ? "bg-[#345E85] text-white shadow-lg shadow-blue-900/10"
+                ? "bg-rose-500 text-white shadow-xl shadow-rose-900/10"
                 : "text-slate-400 hover:text-slate-600 hover:bg-slate-50"
             )}
           >
-            <Heart size={14} />
+            <Heart size={14} className={activeTab === 'watched' ? 'fill-current' : ''} />
             Watchlist
           </button>
           <button
             onClick={() => setActiveTab('analytics')}
             className={cn(
-              "px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 transition-all",
+              "px-8 py-4 rounded-[1.8rem] text-[10px] font-black uppercase tracking-widest flex items-center gap-3 transition-all duration-300",
               activeTab === 'analytics'
-                ? "bg-[#345E85] text-white shadow-lg shadow-blue-900/10"
+                ? "bg-indigo-600 text-white shadow-xl shadow-indigo-900/10"
                 : "text-slate-400 hover:text-slate-600 hover:bg-slate-50"
             )}
           >
@@ -209,20 +223,30 @@ const BiddingDashboard: React.FC<BiddingDashboardProps> = ({ userRole }) => {
           </button>
         </nav>
 
-        {userRole === 'CARGO_OWNER' && (
-          <div className="pr-2">
+        <div className="flex items-center gap-3 pr-2">
+          {userRole === 'CARGO_OWNER' && (
             <button
               onClick={() => setActiveTab('create')}
               className={cn(
-                "px-8 py-3 bg-emerald-500 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-500/10 flex items-center gap-2",
-                activeTab === 'create' && "bg-slate-900 shadow-slate-900/10"
+                "px-8 py-4 bg-emerald-500 text-white rounded-[1.8rem] text-[10px] font-black uppercase tracking-widest hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-500/10 flex items-center gap-2",
+                activeTab === 'create' && "bg-slate-900 shadow-slate-900/10 text-white"
               )}
             >
               <PlusCircle size={14} />
               Start Auction
             </button>
-          </div>
-        )}
+          )}
+          <button
+            onClick={() => {
+              toast.success('Simulating intelligent seed data injection...');
+              loadDashboardStats();
+            }}
+            className="px-8 py-4 bg-amber-50 text-amber-600 border border-amber-100 rounded-[1.8rem] text-[10px] font-black uppercase tracking-widest hover:bg-amber-100 transition-all flex items-center gap-2"
+          >
+            <PlusCircle size={14} />
+            Seed Samples
+          </button>
+        </div>
       </div>
 
       <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-sm min-h-[400px]">

@@ -177,7 +177,7 @@ const CargoCreatePage: React.FC = () => {
         id: createdLoadId,
       });
       setShowEnhancedForm(false);
-      
+
       // Show broker assignment step before journey selection
       setShowBrokerAssignment(true);
 
@@ -221,9 +221,8 @@ const CargoCreatePage: React.FC = () => {
       state: {
         cargoData: cargoData,
         selectedJourney: journey,
-        message: `Cargo created! ${
-          journey === "smart-matching" ? "Smart matching" : "Bidding"
-        } initiated.`,
+        message: `Cargo created! ${journey === "smart-matching" ? "Smart matching" : "Bidding"
+          } initiated.`,
       },
     });
   };
@@ -318,9 +317,9 @@ const CargoCreatePage: React.FC = () => {
                   </div>
                   <button
                     onClick={() => handleContinueDraft(draft)}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                    className="px-4 py-2 bg-[#345E85] text-white rounded-xl hover:bg-slate-800 transition-all font-black text-xs"
                   >
-                    Continue
+                    CONTINUE
                   </button>
                 </div>
               ))}
@@ -456,9 +455,9 @@ const CargoCreatePage: React.FC = () => {
                 <div className="flex gap-3">
                   <button
                     onClick={handleCreateNew}
-                    className="flex-1 px-4 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+                    className="flex-1 px-4 py-3 bg-[#345E85] text-white rounded-2xl hover:bg-slate-800 transition-all font-black text-sm shadow-lg shadow-blue-900/10"
                   >
-                    Create New Cargo
+                    CREATE NEW CARGO
                   </button>
                   <button
                     onClick={() => setShowDraftModal(false)}

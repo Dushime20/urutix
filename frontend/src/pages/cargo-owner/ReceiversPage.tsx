@@ -19,6 +19,7 @@ import { toast } from 'react-hot-toast';
 import receiverService from '../../services/receiverService';
 import type { Receiver, CreateReceiverDto } from '../../types/receiver';
 import { cn } from '@/utils/cn';
+import { useCargoOwnerLayout } from '../../contexts/CargoOwnerLayoutContext';
 
 const StatsCard = ({ title, value, icon: Icon, colorClass, secondaryColor }: any) => (
   <div className="flex flex-col items-center group">
@@ -74,6 +75,20 @@ const ReceiversPage: React.FC = () => {
     email: '',
     phone: '',
   });
+
+  const layout = useCargoOwnerLayout();
+  const setHideHeader = layout?.setHideHeader;
+
+  // Sync hideHeader with modal state
+  useEffect(() => {
+    if (setHideHeader) {
+      setHideHeader(showCreateModal || showAssignModal);
+    }
+    // Cleanup on unmount
+    return () => {
+      if (setHideHeader) setHideHeader(false);
+    };
+  }, [showCreateModal, showAssignModal, setHideHeader]);
 
   useEffect(() => {
     loadReceivers();
@@ -375,7 +390,7 @@ const ReceiversPage: React.FC = () => {
         {/* Create Modal */}
         {showCreateModal && (
           <div className="fixed inset-0 flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setShowCreateModal(false)} />
+            <div className="absolute inset-0 bg-slate-900/80" onClick={() => setShowCreateModal(false)} />
             <div className="relative bg-white rounded-[2.5rem] w-full max-w-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300">
               <div className="p-10 space-y-8">
                 <div className="flex justify-between items-start">
@@ -467,7 +482,7 @@ const ReceiversPage: React.FC = () => {
         {/* Assign Modal */}
         {showAssignModal && selectedReceiver && (
           <div className="fixed inset-0 flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setShowAssignModal(false)} />
+            <div className="absolute inset-0 bg-slate-900/80" onClick={() => setShowAssignModal(false)} />
             <div className="relative bg-white rounded-[2.5rem] w-full max-w-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300">
               <div className="p-10 space-y-8 max-h-[90vh] overflow-y-auto">
                 <div className="flex justify-between items-start">

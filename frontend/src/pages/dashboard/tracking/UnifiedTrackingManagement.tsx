@@ -4,12 +4,15 @@ import {
   MapPin,
   Route,
   Navigation,
-  Loader2
+  Loader2,
+  Plus,
 } from "lucide-react";
 // Dynamically import heavy page to reduce initial bundle size
 const Tracking = lazy(() => import("@/pages/Tracking"));
 import RoutesPage from "@/pages/Routes";
 import { cn } from "@/utils/cn";
+import logoUrutiX from "@/assets/logo-urutix.svg";
+import { TranslatedText } from "@/components/translated-text";
 
 type TabType = "tracking" | "routes";
 
@@ -61,26 +64,39 @@ const UnifiedTrackingManagement = () => {
   ];
 
   return (
-    <div className="space-y-12 max-w-[1600px] mx-auto animate-in fade-in duration-700">
-      {/* Header - Premium Enlite Prime Style */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-        <div className="space-y-2">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center">
-              <Navigation className="w-6 h-6 text-[#345E85]" />
+    <div className="min-h-screen bg-gray-50 relative">
+      <img
+        src={logoUrutiX}
+        alt="UrutiX Logo Background"
+        className="pointer-events-none select-none fixed inset-0 w-full h-full object-cover opacity-10 z-0"
+        style={{ objectPosition: 'center' }}
+      />
+      <div className="max-w-[1600px] mx-auto p-8 md:p-12 relative z-10">
+        {/* Header Section */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-12">
+          <div className="space-y-3">
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 rounded-2xl bg-blue-50 text-[#345E85] flex items-center justify-center shadow-sm">
+                <Navigation className="w-7 h-7" />
+              </div>
+              <h1 className="text-4xl md:text-5xl font-black text-[#0f172a] tracking-tight">
+                Logistics <span className="text-[#345E85]">Nexus</span>
+              </h1>
             </div>
-            <h1 className="text-4xl font-black text-[#0f172a] tracking-tight">Logistics Intelligence</h1>
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-[0.2em] max-w-xl">
+              Real-time geospatial tracking & strategic route optimization
+            </p>
           </div>
-          <p className="text-xs font-bold text-slate-400 uppercase tracking-widest max-w-xl">
-            Real-time geospatial tracking and strategic route optimization
-          </p>
-        </div>
-      </div>
 
-      {/* Navigation Tabs */}
-      <div className="space-y-8">
-        <div className="flex flex-col md:flex-row gap-4 justify-between items-center bg-white p-2 rounded-[2rem] border border-slate-100 shadow-sm">
-          <nav className="flex gap-1 p-1">
+          <button className="flex items-center gap-2 px-8 py-4 bg-[#345E85] text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-blue-900/10 hover:bg-slate-800 transition-all">
+            <Plus className="w-4 h-4" />
+            New Map Instance
+          </button>
+        </div>
+
+        {/* Premium Navigation Tabs */}
+        <div className="bg-slate-50 border border-slate-100 rounded-[2rem] p-2 mb-10 shadow-inner max-w-fit mx-auto md:mx-0">
+          <nav className="flex items-center gap-1 overflow-x-auto scrollbar-hide">
             {tabs.map((tab) => {
               const Icon = tab.icon;
               const isActive = activeTab === tab.id;
@@ -89,33 +105,39 @@ const UnifiedTrackingManagement = () => {
                   key={tab.id}
                   onClick={() => handleTabChange(tab.id)}
                   className={cn(
-                    "px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 transition-all",
+                    "px-6 py-3 rounded-[1.5rem] text-[10px] font-black uppercase tracking-widest flex items-center gap-2.5 transition-all duration-300 whitespace-nowrap",
                     isActive
-                      ? "bg-[#345E85] text-white shadow-lg shadow-blue-900/10"
-                      : "text-slate-400 hover:text-slate-600 hover:bg-slate-50"
+                      ? "bg-white text-[#345E85] shadow-md border border-slate-200"
+                      : "text-slate-400 hover:text-slate-600 hover:bg-white/50"
                   )}
                 >
-                  <Icon size={14} />
-                  {tab.label}
+                  <Icon className="w-4 h-4 flex-shrink-0" />
+                  <TranslatedText text={tab.label} />
                 </button>
               );
             })}
           </nav>
         </div>
 
-        {/* Tab Content */}
-        <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-sm min-h-[600px]">
-          {activeTab === "tracking" && (
-            <Suspense fallback={
-              <div className="flex flex-col items-center justify-center h-64 gap-4">
-                <Loader2 className="animate-spin text-[#345E85]" size={32} />
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Initializing Tracking Nexus...</p>
-              </div>
-            }>
-              <Tracking />
-            </Suspense>
-          )}
-          {activeTab === "routes" && <RoutesPage />}
+        {/* Main Content Container */}
+        <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-xl overflow-hidden min-h-[600px] animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div className="p-8 md:p-12">
+            {activeTab === "tracking" && (
+              <Suspense fallback={
+                <div className="flex flex-col items-center justify-center h-64 gap-4">
+                  <Loader2 className="animate-spin text-[#345E85]" size={32} />
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Synchronizing Satellite Uplink...</p>
+                </div>
+              }>
+                <Tracking />
+              </Suspense>
+            )}
+            {activeTab === "routes" && (
+              <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-4 border-slate-200 border-t-[#345E85]"></div></div>}>
+                <RoutesPage />
+              </Suspense>
+            )}
+          </div>
         </div>
       </div>
     </div>
@@ -123,4 +145,3 @@ const UnifiedTrackingManagement = () => {
 };
 
 export default UnifiedTrackingManagement;
-

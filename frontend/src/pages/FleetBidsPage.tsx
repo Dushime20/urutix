@@ -35,6 +35,8 @@ import { cn } from '../utils/cn';
 
 import { FleetHeader } from '../components/FleetDashboard/FleetHeader';
 import { FleetFooter } from '../components/FleetDashboard/FleetFooter';
+import QuickBidModal from '../components/Fleet/QuickBidModal';
+import logoUrutiX from '../assets/logo-urutix.png';
 
 interface CargoBid extends Cargo {
   bidStatus?: 'pending' | 'accepted' | 'rejected';
@@ -56,6 +58,8 @@ const FleetBidsPage: React.FC = () => {
   const [selectedBid, setSelectedBid] = useState<CargoBid | null>(null);
   const [processingAction, setProcessingAction] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'card' | 'table'>('card');
+  const [showQuickBidModal, setShowQuickBidModal] = useState(false);
+  const [bidCargo, setBidCargo] = useState<CargoBid | null>(null);
   const { confirm, DialogComponent } = useConfirmDialog();
 
   // Generate dummy cargo bids based on the Cargo interface
@@ -288,6 +292,17 @@ const FleetBidsPage: React.FC = () => {
     }
   };
 
+  const handleQuickBid = (bid: CargoBid) => {
+    setBidCargo(bid);
+    setShowQuickBidModal(true);
+  };
+
+  const handleBidSubmitted = () => {
+    // Refresh bids after successful submission
+    loadBids();
+    toast.success('Your bid has been submitted and is now pending review');
+  };
+
   const filteredBids = bids.filter(bid => {
     const matchesSearch =
       !searchTerm ||
@@ -353,7 +368,14 @@ const FleetBidsPage: React.FC = () => {
     <div className="min-h-screen bg-gray-50 flex flex-col font-sans selection:bg-blue-500/30">
       <FleetHeader />
 
-      <main className="flex-1 max-w-[1920px] mx-auto w-full px-4 md:px-8 lg:px-12 xl:px-20 py-8 md:py-12 space-y-8">
+      <img
+        src={logoUrutiX}
+        alt="UrutiX Logo Background"
+        className="pointer-events-none select-none fixed inset-0 w-full h-full object-cover opacity-10 z-0"
+        style={{ objectPosition: 'center' }}
+      />
+
+      <main className="flex-1 max-w-[1920px] mx-auto w-full px-4 md:px-8 lg:px-12 xl:px-20 py-8 md:py-12 space-y-8 relative z-10">
         {/* Page Header */}
         <div>
           <div className="flex items-center gap-3 mb-2">
@@ -551,12 +573,21 @@ const FleetBidsPage: React.FC = () => {
                         <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Offered Price</span>
                         <span className="text-lg font-black text-[#345E85]">{formatCurrency(bid.offeredPrice || 0, bid.currencyCode)}</span>
                       </div>
-                      <button
-                        onClick={() => setSelectedBid(bid)}
-                        className="h-10 w-10 bg-slate-100 rounded-xl flex items-center justify-center text-slate-400 hover:text-[#345E85] hover:bg-blue-50 transition-colors"
-                      >
-                        <ArrowRight size={20} />
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => handleQuickBid(bid)}
+                          className="px-4 py-2 bg-[#345E85] text-white rounded-xl text-xs font-black uppercase tracking-wider hover:bg-[#2a4d6d] transition-colors flex items-center gap-2"
+                        >
+                          <Gavel size={14} />
+                          Quick Bid
+                        </button>
+                        <button
+                          onClick={() => setSelectedBid(bid)}
+                          className="h-10 w-10 bg-slate-100 rounded-xl flex items-center justify-center text-slate-400 hover:text-[#345E85] hover:bg-blue-50 transition-colors"
+                        >
+                          <ArrowRight size={20} />
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -622,11 +653,22 @@ const FleetBidsPage: React.FC = () => {
                             </span>
                           </td>
                           <td className="px-6 py-4 text-right">
-                            <button
-                              onClick={() => setSelectedBid(bid)}
-                              className="p-2 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-[#345E85] transition-colors"
-                            >
-                              <ArrowRight size={18} />
+                            <div className="flex items-center justify-end gap-2">
+                              <button
+                                onClick={() => handleQuickBid(bid)}
+                                className="px-3 py-2 bg-[#345E85] text-white rounded-lg text-xs font-black uppercase tracking-wider hover:bg-[#2a4d6d] transition-all flex items-center gap-1.5"
+                              >
+                                <Gavel size={14} />
+                                Quick Bid
+                              </button>
+                              <button
+                                onClick={() => setSelectedBid(bid)}
+                                className="p-2 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-[#345E85] transition-colors"
+                              >
+                                <ArrowRight size={18} />
+                              </button>
+                            </div>
+                          </td>
                             </button>
                           </td>
                         </tr>
@@ -831,6 +873,14 @@ const FleetBidsPage: React.FC = () => {
       </main>
       <FleetFooter />
       {DialogComponent}
+      
+      {/* Quick Bid Modal */}
+      <QuickBidModal
+        isOpen={showQuickBidModal}
+        onClose={() => setShowQuickBidModal(false)}
+        cargo={bidCargo}
+        onBidSubmitted={handleBidSubmitted}
+      />
     </div>
   );
 };

@@ -656,7 +656,7 @@ export const CargoTable: React.FC<CargoTableProps> = ({
                           console.log('Request Financing clicked for cargo:', cargo.id);
                           onRequestFinancing(cargo);
                         }}
-                        className="p-2 sm:p-1.5 min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 text-emerald-600 hover:text-emerald-800 hover:bg-emerald-50 active:bg-emerald-100 rounded transition-colors border border-emerald-200 flex items-center gap-1 touch-manipulation"
+                        className="p-2 sm:p-1.5 min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 text-[#358c9c] hover:text-[#2c7380] hover:bg-cyan-50 active:bg-cyan-100 rounded transition-colors border border-cyan-200 flex items-center gap-1 touch-manipulation"
                         title="Request Financing"
                         aria-label="Request Financing"
                       >

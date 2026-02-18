@@ -15,8 +15,7 @@ import {
   Bell as FaBell,
   Navigation,
   Box,
-  Users,
-  Search
+  Users
 } from 'lucide-react';
 import logoUrutiX from '../../assets/urutiX Logistics Logo (1).svg';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -96,7 +95,7 @@ const TenantHeader: React.FC<TenantHeaderProps> = ({
   };
 
   return (
-    <div className="bg-white border-b border-gray-100 py-3 px-4 md:px-8 lg:px-12 xl:px-20 z-50 sticky top-0">
+    <div className="bg-white border-b border-gray-100 pt-6 pb-3 sm:pt-8 sm:pb-4 px-4 md:px-8 lg:px-12 xl:px-20 z-50 sticky top-0">
       <div className="max-w-[1920px] mx-auto flex items-center justify-between">
         {/* Left side - Logo and Navigation */}
         <div className="flex items-center gap-10">
@@ -105,21 +104,10 @@ const TenantHeader: React.FC<TenantHeaderProps> = ({
             <img
               src={logoUrutiX}
               alt="urutiX Logistics Logo"
-              className="h-10 md:h-12 w-auto object-contain"
+              className="h-10 sm:h-14 md:h-18 lg:h-20 w-auto object-contain"
             />
           </div>
 
-          {/* Search Bar */}
-          <div className="flex-1 max-w-md mx-6 hidden xl:block">
-            <div className="relative group">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-[#1e40af] transition-colors" />
-              <input
-                type="text"
-                placeholder="Search assets, flows, users..."
-                className="w-full h-10 pl-11 pr-4 bg-slate-50 border border-slate-100 rounded-2xl text-[13px] font-medium focus:bg-white focus:border-[#1e40af] focus:ring-4 focus:ring-blue-50 transition-all outline-none"
-              />
-            </div>
-          </div>
 
           <nav className="hidden lg:flex items-center gap-1">
             {tabs.map((tab) => {

@@ -1008,9 +1008,9 @@ const CargoDetailsForm: React.FC<CargoDetailsFormProps> = ({ onSubmit, loading, 
                   <button
                     type="submit"
                     disabled={loading}
-                    className="flex items-center px-8 py-2.5 text-sm font-bold text-white bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl hover:from-blue-700 hover:to-blue-800 shadow-lg shadow-blue-500/30 transition-all transform hover:scale-[1.02] disabled:opacity-70 disabled:cursor-wait"
+                    className="flex items-center px-8 py-2.5 bg-[#345E85] text-white rounded-2xl transition-all font-black text-sm disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-blue-900/10 hover:bg-slate-800"
                   >
-                    {loading ? 'Processing...' : 'Post Cargo Now'}
+                    {loading ? 'PROCESSING...' : 'POST CARGO NOW'}
                     {!loading && <FaCheck className="ml-2 w-3 h-3" />}
                   </button>
                 ) : (
@@ -1023,9 +1023,9 @@ const CargoDetailsForm: React.FC<CargoDetailsFormProps> = ({ onSubmit, loading, 
                         setCurrentTab(tabs[currentIndex + 1] as any);
                       }
                     }}
-                    className="flex items-center px-6 py-2.5 text-sm font-bold text-white bg-blue-600 rounded-xl hover:bg-blue-700 shadow-md shadow-blue-500/20 transition-all transform hover:translate-x-1"
+                    className="flex items-center px-6 py-2.5 bg-[#345E85] text-white rounded-2xl transition-all font-black text-sm shadow-lg shadow-blue-900/10 hover:bg-slate-800"
                   >
-                    Next Step
+                    NEXT STEP
                     <FaArrowRight className="ml-2 w-3 h-3" />
                   </button>
                 )}

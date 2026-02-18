@@ -4,6 +4,8 @@ import {
   BarChart3,
   FileText,
   History,
+  Activity,
+  Plus,
 } from "lucide-react";
 import AdminPageLayout from "@/components/Admin/AdminPageLayout";
 // Dynamically import heavy pages to reduce initial bundle size
@@ -12,6 +14,7 @@ const FinancialReportsPage = lazy(() => import("@/pages/FinancialReportsPage"));
 const AdminHistory = lazy(() => import("@/pages/AdminHistory"));
 import { cn } from "@/utils/cn";
 import { TranslatedText } from "@/components/translated-text";
+import logoUrutiX from "@/assets/logo-urutix.svg";
 
 type TabType = "analytics" | "reports" | "history";
 
@@ -74,60 +77,86 @@ const UnifiedAnalyticsManagement = () => {
   // For history, we'll use the admin history component
   const renderHistoryContent = () => {
     return (
-      <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-12 w-12 border-b-4 border-blue-500"></div></div>}>
+      <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-4 border-slate-200 border-t-[#345E85]"></div></div>}>
         <AdminHistory />
       </Suspense>
     );
   };
 
   return (
-    <AdminPageLayout
-      title="Analytics & Reports"
-      description="Track performance, generate reports, and view history"
-    >
-      {/* Navigation Tabs */}
-      <div className="bg-white rounded-xl border border-gray-200 shadow-md mb-6 overflow-hidden">
-        <nav className="flex space-x-1 p-2 overflow-x-auto scrollbar-hide scroll-smooth">
-          {tabs.map((tab) => {
-            const Icon = tab.icon;
-            const isActive = activeTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => handleTabChange(tab.id)}
-                className={cn(
-                  "px-3 sm:px-4 md:px-5 py-3 sm:py-3.5 rounded-lg text-sm sm:text-base font-semibold flex items-center gap-2 sm:gap-2.5 md:gap-3 transition-all whitespace-nowrap flex-shrink-0 touch-manipulation min-h-[48px] sm:min-h-0",
-                  isActive
-                    ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg transform scale-105"
-                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
-                )}
-              >
-                <Icon className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
-                <span className="hidden sm:inline"><TranslatedText text={tab.label} /></span>
-                <span className="sm:hidden"><TranslatedText text={tab.label.split(' ')[0]} /></span>
-              </button>
-            );
-          })}
-        </nav>
-      </div>
+    <div className="min-h-screen bg-gray-50 relative">
+      {/* Background Logo */}
+      <img
+        src={logoUrutiX}
+        alt="UrutiX Logo Background"
+        className="pointer-events-none select-none fixed inset-0 w-full h-full object-cover opacity-10 z-0"
+        style={{ objectPosition: 'center' }}
+      />
+      <div className="max-w-[1600px] mx-auto p-8 md:p-12 relative z-10">
+        {/* Header Section */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-12">
+          <div className="space-y-3">
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 rounded-2xl bg-blue-50 text-[#345E85] flex items-center justify-center shadow-sm">
+                <Activity className="w-7 h-7" />
+              </div>
+              <h1 className="text-4xl md:text-5xl font-black text-[#0f172a] tracking-tight">
+                Operations <span className="text-[#345E85]">Analytics</span>
+              </h1>
+            </div>
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-[0.2em] max-w-xl">
+              Real-time performance metrics & historical audit logs
+            </p>
+          </div>
 
-      {/* Tab Content */}
-      <div className="bg-white rounded-xl border border-gray-200 shadow-lg p-4 sm:p-6">
-        {activeTab === "analytics" && (
-          <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-12 w-12 border-b-4 border-blue-500"></div></div>}>
-            <Analytics />
-          </Suspense>
-        )}
-        {activeTab === "reports" && (
-          <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-12 w-12 border-b-4 border-blue-500"></div></div>}>
-            <FinancialReportsPage />
-          </Suspense>
-        )}
-        {activeTab === "history" && renderHistoryContent()}
+          <button className="flex items-center gap-2 px-8 py-4 bg-[#345E85] text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-blue-900/10 hover:bg-slate-800 transition-all">
+            <Plus className="w-4 h-4" />
+            Generate Report
+          </button>
+        </div>
+
+        {/* Premium Navigation Tabs */}
+        <div className="bg-slate-50 border border-slate-100 rounded-[2rem] p-2 mb-10 shadow-inner max-w-fit mx-auto md:mx-0">
+          <nav className="flex items-center gap-1 overflow-x-auto scrollbar-hide">
+            {tabs.map((tab) => {
+              const Icon = tab.icon;
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => handleTabChange(tab.id)}
+                  className={cn(
+                    "px-6 py-3 rounded-[1.5rem] text-[10px] font-black uppercase tracking-widest flex items-center gap-2.5 transition-all duration-300 whitespace-nowrap",
+                    isActive
+                      ? "bg-white text-[#345E85] shadow-md border border-slate-200"
+                      : "text-slate-400 hover:text-slate-600 hover:bg-white/50"
+                  )}
+                >
+                  <Icon className="w-4 h-4 flex-shrink-0" />
+                  <TranslatedText text={tab.label} />
+                </button>
+              );
+            })}
+          </nav>
+        </div>
+
+        {/* Main Content Container */}
+        <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-xl overflow-hidden min-h-[600px] animate-in fade-in slide-in-from-bottom-4 duration-500 p-8 md:p-12">
+          {activeTab === "analytics" && (
+            <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-4 border-slate-200 border-t-[#345E85]"></div></div>}>
+              <Analytics />
+            </Suspense>
+          )}
+          {activeTab === "reports" && (
+            <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-4 border-slate-200 border-t-[#345E85]"></div></div>}>
+              <FinancialReportsPage />
+            </Suspense>
+          )}
+          {activeTab === "history" && renderHistoryContent()}
+        </div>
       </div>
-    </AdminPageLayout>
+    </div>
   );
 };
 
 export default UnifiedAnalyticsManagement;
-

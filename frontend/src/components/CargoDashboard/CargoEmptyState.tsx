@@ -62,10 +62,10 @@ export const CargoEmptyState: React.FC<EmptyStateProps> = ({ onCreateCargo }) =>
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8">
                     <button
                         onClick={onCreateCargo}
-                        className="inline-flex items-center gap-2 px-6 py-3 bg-primary-600 text-white rounded-lg font-semibold shadow-lg hover:bg-primary-700 hover:shadow-xl transition-all transform hover:scale-105"
+                        className="inline-flex items-center gap-2 px-6 py-3 bg-[#345E85] text-white rounded-2xl font-black text-sm shadow-lg shadow-blue-900/10 hover:bg-slate-800 transition-all transform hover:scale-105"
                     >
                         <Plus className="w-5 h-5" />
-                        Create Your First Cargo
+                        CREATE YOUR FIRST CARGO
                     </button>
                     <button
                         className="inline-flex items-center gap-2 px-6 py-3 bg-white text-gray-700 border border-gray-300 rounded-lg font-semibold hover:bg-gray-50 transition-all"
