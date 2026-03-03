@@ -33,7 +33,7 @@ import {
 import CargoFormSections from "./CargoFormSections";
 import TruckSelectionModal from "./TruckSelectionModal";
 import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
-import { Sparkles, FileText } from "lucide-react";
+import { FileText } from "lucide-react";
 import { Icon } from "leaflet";
 import HelpTooltip from "@/components/common/HelpTooltip";
 
@@ -49,7 +49,9 @@ import { RouteIntelligenceService, type RouteInsight } from "@/services/routeInt
 import RouteIntelligenceCard from "./RouteIntelligenceCard";
 import { getLocationSuggestions, type LocationIntelligence } from "@/services/enhancedCargoApi";
 import LocationIntelligenceCard from "./LocationIntelligenceCard";
-import DocumentUploadSection from "./DocumentUploadSection";
+import DocumentUploadSection, { type PendingDocument } from "./DocumentUploadSection";
+import { uploadCargoDocumentsWithRetry } from "@/services/documentUploadService";
+import toast from "react-hot-toast";
 
 interface Location {
   id?: string;
@@ -574,6 +576,36 @@ const EnhancedCargoForm: React.FC<EnhancedCargoFormProps> = ({
       };
 
       const result = await onSubmit(submissionData);
+
+      // Upload pending documents if any
+      const pendingDocs = (formData.documents || []).filter(
+        (doc: any) => 'isPending' in doc && doc.isPending
+      ) as PendingDocument[];
+
+      if (pendingDocs.length > 0 && result && result.id) {
+        try {
+          const uploadResult = await uploadCargoDocumentsWithRetry(
+            result.id,
+            pendingDocs,
+            2, // max retries
+            (current, total, status) => {
+              console.log(`Uploading documents: ${current}/${total} - ${status}`);
+            }
+          );
+
+          if (uploadResult.failed > 0) {
+            toast.error(
+              `${uploadResult.successful} of ${uploadResult.total} documents uploaded. ${uploadResult.failed} failed.`,
+              { duration: 5000 }
+            );
+          } else {
+            toast.success(`All ${uploadResult.successful} documents uploaded successfully!`);
+          }
+        } catch (uploadError) {
+          console.error('Failed to upload documents:', uploadError);
+          toast.error('Cargo created but some documents failed to upload');
+        }
+      }
 
       // If this is a create operation and truck selection is enabled, show truck selection modal
       if (mode === "create" && showTruckSelection && result && result.id) {
@@ -1246,17 +1278,7 @@ const EnhancedCargoForm: React.FC<EnhancedCargoFormProps> = ({
                       cargoId={createdCargoId || initialData?.id || null}
                       documents={formData.documents || []}
                       onDocumentsChange={(docs) => setFormData(prev => ({ ...prev, documents: docs }))}
-                      onRequireSave={async () => {
-                        if (onSaveDraft) {
-                          try {
-                            await onSaveDraft(formData);
-                            return createdCargoId;
-                          } catch (e) {
-                            return null;
-                          }
-                        }
-                        return null;
-                      }}
+                      allowPendingDocuments={true}
                     />
                   </div>
                 </div>
@@ -1348,7 +1370,6 @@ const EnhancedCargoForm: React.FC<EnhancedCargoFormProps> = ({
                       </>
                     ) : (
                       <>
-                        <Sparkles className="w-4 h-4 text-white" />
                         <span>{mode === "create" ? "CREATE CARGO" : "UPDATE CARGO"}</span>
                       </>
                     )}

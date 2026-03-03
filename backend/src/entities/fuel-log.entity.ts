@@ -40,6 +40,9 @@ export class FuelLog {
     @Column({ name: 'driver_id', type: 'uuid', nullable: true })
     driverId?: string;
 
+    @Column({ name: 'trip_id', type: 'uuid', nullable: true })
+    tripId?: string;
+
     @Column({ name: 'created_by', type: 'uuid' })
     createdBy: string;
 
@@ -83,6 +86,12 @@ export class FuelLog {
 
     @Column({ name: 'metadata', type: 'jsonb', default: {} })
     metadata?: Record<string, any>;
+
+    @Column({ name: 'odometer_image_url', type: 'varchar', length: 500, nullable: true })
+    odometerImageUrl?: string;
+
+    @Column({ name: 'receipt_url', type: 'varchar', length: 500, nullable: true })
+    receiptUrl?: string;
 
     @Column({ name: 'is_flagged', type: 'boolean', default: false })
     isFlagged: boolean;

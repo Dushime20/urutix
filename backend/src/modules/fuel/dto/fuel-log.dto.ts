@@ -20,6 +20,15 @@ export class CreateFuelLogDto {
     driverId?: string;
 
     @ApiProperty({
+        description: 'ID of the trip (optional)',
+        example: 'trip-uuid-789',
+        required: false,
+    })
+    @IsOptional()
+    @IsUUID()
+    tripId?: string;
+
+    @ApiProperty({
         description: 'Date and time of fueling',
         example: '2026-01-20T14:30:00Z',
     })

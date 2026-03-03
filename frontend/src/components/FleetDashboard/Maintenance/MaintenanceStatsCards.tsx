@@ -24,28 +24,28 @@ const MaintenanceStatsCards: React.FC<MaintenanceStatsCardsProps> = ({ stats, lo
 
     const cards = [
         {
-            title: 'Monthly Maintenance Cost',
-            value: `$${stats.totalCost.toLocaleString()}`,
+            title: 'Monthly Cost',
+            value: `$${Math.round(stats.totalCost).toLocaleString()}`,
             icon: FaMoneyBillWave,
             color: 'text-green-600',
             bg: 'bg-green-100'
         },
         {
-            title: 'Active Repairs',
+            title: 'Active',
             value: stats.activeRepairs,
             icon: FaTools,
             color: 'text-blue-600',
             bg: 'bg-blue-100'
         },
         {
-            title: 'Upcoming Services',
+            title: 'Upcoming',
             value: stats.upcomingServices,
             icon: FaExclamationTriangle,
             color: 'text-orange-600',
             bg: 'bg-orange-100'
         },
         {
-            title: 'Fleet Health Score',
+            title: 'Health',
             value: `${stats.healthScore}%`,
             icon: FaCheckCircle,
             color: stats.healthScore > 90 ? 'text-green-600' : (stats.healthScore > 70 ? 'text-yellow-600' : 'text-red-600'),

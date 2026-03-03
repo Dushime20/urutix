@@ -155,11 +155,11 @@ const DocumentAssignmentModal: React.FC<DocumentAssignmentModalProps> = ({ isOpe
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
             <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[85vh] overflow-hidden flex flex-col">
 
                 {/* Header */}
-                <div className="bg-slate-900 px-6 py-4 flex items-center justify-between">
+                <div className="bg-indigo-600 px-6 py-4 flex items-center justify-between">
                     <div className="flex items-center gap-3">
                         <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${entityType === 'truck' ? 'bg-indigo-600' : 'bg-emerald-600'}`}>
                             <FaFileAlt className="text-white text-lg" />

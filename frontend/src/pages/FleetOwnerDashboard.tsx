@@ -226,11 +226,11 @@ const FleetOwnerDashboard: React.FC = () => {
           <div className="flex gap-16 items-center text-[11px] font-bold tracking-widest uppercase opacity-80">
             {maintenanceAlerts.length > 0 ? (
               <span className="flex items-center gap-2 text-amber-400">
-                <AlertTriangle size={14} /> Maintenance Alert: {maintenanceAlerts.length} vehicles require attention
+                <AlertTriangle size={14} /> Attention: {maintenanceAlerts.length} vehicles need service
               </span>
             ) : (
               <span className="flex items-center gap-2 text-emerald-400">
-                <CheckCircle size={14} /> Fleet Health: All vehicles fully operational
+                <CheckCircle size={14} /> Health: All vehicles running
               </span>
             )}
 
@@ -272,12 +272,12 @@ const FleetOwnerDashboard: React.FC = () => {
             <nav className="hidden lg:flex items-center gap-10">
               <a className="text-white text-sm font-bold relative after:content-[''] after:absolute after:bottom-[-4px] after:left-0 after:w-full after:h-0.5 after:bg-blue-500" href="/dashboard/fleet">Dashboard</a>
               <a className="text-white/60 hover:text-white text-sm font-semibold transition-all" href="/dashboard/fleet/trucks">Fleet</a>
-              <a className="text-white/60 hover:text-white text-sm font-semibold transition-all" href="/fleet-manager">Fleet Manager</a>
+              <a className="text-white/60 hover:text-white text-sm font-semibold transition-all" href="/fleet-manager">Manage</a>
               <a className="text-white/60 hover:text-white text-sm font-semibold transition-all" href="/dashboard/fleet/drivers">Drivers</a>
               <a className="text-white/60 hover:text-white text-sm font-semibold transition-all" href="/dashboard/fleet/maintenance">Maintenance</a>
               <a className="text-white/60 hover:text-white text-sm font-semibold transition-all" href="/dashboard/fleet/fuel">Fuel</a>
               <a className="text-white/60 hover:text-white text-sm font-semibold transition-all" href="/dashboard/fleet/bids">Load Board</a>
-              <a className="text-white/60 hover:text-white text-sm font-semibold transition-all" href="/dashboard/fleet/smart-bookings">Smart Bookings</a>
+              <a className="text-white/60 hover:text-white text-sm font-semibold transition-all" href="/dashboard/fleet/smart-bookings">Bookings</a>
               <a className="text-white/60 hover:text-white text-sm font-semibold transition-all" href="/dashboard/fleet/reports">Reports</a>
             </nav>
 
@@ -297,7 +297,7 @@ const FleetOwnerDashboard: React.FC = () => {
             {/* Fleet Status Badge */}
             <div className="hidden 2xl:flex items-center gap-2 px-4 py-1.5 bg-white/5 border border-white/10 rounded-full">
               <span className="text-blue-400">🚛</span>
-              <span className="text-[10px] font-bold text-white/80 uppercase tracking-wider">Fleet Commander</span>
+              <span className="text-[10px] font-bold text-white/80 uppercase tracking-wider">Active</span>
             </div>
 
             {/* Quick Actions Button */}
@@ -360,7 +360,7 @@ const FleetOwnerDashboard: React.FC = () => {
                       className="w-full text-left px-3 py-2 text-sm text-white hover:bg-white/10 rounded-md transition-colors flex items-center gap-2"
                     >
                       <FaTruck size={16} />
-                      Manage Fleet
+                      Fleet
                     </button>
                     <div className="border-t border-white/10 my-1"></div>
                     <button
@@ -383,12 +383,12 @@ const FleetOwnerDashboard: React.FC = () => {
             <nav className="flex flex-col space-y-3 text-sm font-semibold text-gray-400">
               <a href="/dashboard/fleet" className="text-white px-3 py-2 bg-white/5 rounded-lg">Dashboard</a>
               <a href="/dashboard/fleet/trucks" className="hover:text-white px-3 py-2">Fleet</a>
-              <a href="/fleet-manager" className="hover:text-white px-3 py-2">Fleet Manager</a>
+              <a href="/fleet-manager" className="hover:text-white px-3 py-2">Manage</a>
               <a href="/dashboard/fleet/drivers" className="hover:text-white px-3 py-2">Drivers</a>
               <a href="/dashboard/fleet/maintenance" className="hover:text-white px-3 py-2">Maintenance</a>
               <a href="/dashboard/fleet/fuel" className="hover:text-white px-3 py-2">Fuel</a>
               <a href="/dashboard/fleet/bids" className="hover:text-white px-3 py-2">Load Board</a>
-              <a href="/dashboard/fleet/smart-bookings" className="hover:text-white px-3 py-2">Smart Bookings</a>
+              <a href="/dashboard/fleet/smart-bookings" className="hover:text-white px-3 py-2">Bookings</a>
               <a href="/dashboard/fleet/reports" className="hover:text-white px-3 py-2">Reports</a>
             </nav>
           </div>
@@ -411,7 +411,7 @@ const FleetOwnerDashboard: React.FC = () => {
               <h2 className="text-2xl font-black tracking-tighter text-white">UrutiX<span className="text-blue-400">.</span></h2>
             </div>
             <p className="text-slate-400 text-sm leading-relaxed mb-8 max-w-sm">
-              UrutiX Fleet Command is Africa's premier fleet management and logistics platform, empowering fleet owners to optimize operations and maximize profitability.
+              UrutiX Fleet is Africa's premier fleet management and logistics platform, empowering fleet owners to optimize operations and maximize profitability.
             </p>
             <div className="flex gap-4">
               <a className="size-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center hover:bg-blue-500 transition-all" href="#">𝕏</a>
@@ -424,7 +424,7 @@ const FleetOwnerDashboard: React.FC = () => {
           <div className="lg:col-span-2">
             <h4 className="text-sm font-black uppercase tracking-widest text-white mb-4 md:mb-6">Fleet</h4>
             <ul className="space-y-3 md:space-y-4">
-              <li><a className="text-slate-400 text-sm hover:text-blue-400 transition-colors" href="/dashboard/fleet/trucks">Manage Fleet</a></li>
+              <li><a className="text-slate-400 text-sm hover:text-blue-400 transition-colors" href="/dashboard/fleet/trucks">Fleet</a></li>
               <li><a className="text-slate-400 text-sm hover:text-blue-400 transition-colors" href="/dashboard/fleet/drivers">Drivers</a></li>
               <li><a className="text-slate-400 text-sm hover:text-blue-400 transition-colors" href="/dashboard/fleet/dispatch">Dispatch</a></li>
               <li><a className="text-slate-400 text-sm hover:text-blue-400 transition-colors" href="/dashboard/fleet/maintenance">Maintenance</a></li>
@@ -503,13 +503,13 @@ const FleetOwnerDashboard: React.FC = () => {
       <section className="bg-slate-900 text-white px-4 md:px-8 lg:px-12 xl:px-20 py-6">
         <div className="max-w-[1536px] mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-white tracking-tight mb-2">Welcome back, Fleet Manager</h1>
+            <h1 className="text-3xl font-bold text-white tracking-tight mb-2">Welcome back</h1>
             <div className="flex items-center gap-2 text-sm">
               <span className="relative flex h-2.5 w-2.5">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
               </span>
-              <span className="text-slate-400">System operational: <strong className="text-white">{stats.activeTrips} Active Dispatches</strong> | {stats.trucksAvailable} Awaiting Loading</span>
+              <span className="text-slate-400">Operational: <strong className="text-white">{stats.activeTrips} Active</strong> | {stats.trucksAvailable} Available</span>
             </div>
           </div>
           <div className="flex items-center gap-3">
@@ -523,25 +523,25 @@ const FleetOwnerDashboard: React.FC = () => {
               onClick={() => navigate('/dashboard/fleet/trucks')}
               className="px-4 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg text-sm font-semibold text-white transition-all flex items-center gap-2"
             >
-              <FaChartLine className="text-slate-400" /> Fleet Assets
+              <FaChartLine className="text-slate-400" /> Vehicles
             </button>
             <button
               onClick={() => navigate('/dashboard/fleet/smart-bookings')}
               className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-bold shadow-lg shadow-indigo-600/20 transition-all flex items-center gap-2"
             >
-              <Zap className="w-4 h-4" /> SMART MATCHES
+              <Zap className="w-4 h-4" /> Bookings
             </button>
             <button
               onClick={() => navigate('/dashboard/fleet/fuel')}
               className="px-4 py-2 bg-orange-600 hover:bg-orange-500 text-white rounded-lg text-sm font-bold shadow-lg shadow-orange-600/20 transition-all flex items-center gap-2"
             >
-              <Fuel className="w-4 h-4" /> Log Fuel
+              <Fuel className="w-4 h-4" /> Fuel
             </button>
             <button
               onClick={() => navigate('/dashboard/fleet/dispatch')}
               className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-bold shadow-lg shadow-blue-600/20 transition-all flex items-center gap-2"
             >
-              <Zap className="w-4 h-4" /> DISPATCH
+              <Zap className="w-4 h-4" /> Dispatch
             </button>
           </div>
         </div>
@@ -557,7 +557,7 @@ const FleetOwnerDashboard: React.FC = () => {
             <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
               <FaTruck className="w-16 h-16 text-blue-500" />
             </div>
-            <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Fleet Live Status</p>
+            <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Fleet Status</p>
             <div className="flex items-end gap-3 mb-2">
               <span className="text-4xl font-black text-gray-900">{stats.totalTrucks}</span>
               <span className="text-sm font-medium text-emerald-600 mb-1.5 flex items-center gap-1"><FaCheckCircle /> All Systems</span>
@@ -575,26 +575,26 @@ const FleetOwnerDashboard: React.FC = () => {
           {/* Fuel Costs */}
           <div className="bg-white border border-gray-200 rounded-2xl p-5 relative overflow-hidden group hover:border-orange-300 hover:shadow-lg transition-all shadow-sm">
             <div className="absolute top-4 right-4 text-orange-500"><Fuel className="w-6 h-6" /></div>
-            <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Fuel Costs (MTD)</p>
+            <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Fuel Costs</p>
             <div className="flex items-end gap-3 mb-4">
               <span className="text-3xl font-black text-gray-900">
                 ${fuelStats?.totalCost ? (fuelStats.totalCost / 1000).toFixed(1) + 'k' : '0'}
               </span>
             </div>
             <div className={`flex items-center gap-1 text-xs px-2 py-1 rounded border ${fuelStats?.avgMpg > 6 ? 'text-emerald-600 bg-emerald-50 border-emerald-200' : 'text-orange-600 bg-orange-50 border-orange-200'}`}>
-              <Zap className="w-3 h-3" /> <strong>{fuelStats?.avgMpg || 0}</strong> MPG Avg
+              <Zap className="w-3 h-3" /> <strong>{fuelStats?.avgMpg || 0}</strong> MPG
             </div>
           </div>
 
           {/* Reputation */}
           <div className="bg-white border border-gray-200 rounded-2xl p-5 relative overflow-hidden group hover:border-yellow-300 hover:shadow-lg transition-all shadow-sm">
             <div className="absolute top-4 right-4 text-yellow-500"><FaStar className="w-5 h-5" /></div>
-            <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Fleet Reputation</p>
+            <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Reputation</p>
             <div className="flex items-end gap-3 mb-4">
               <span className="text-4xl font-black text-gray-900">4.82<span className="text-lg text-gray-400">/5</span></span>
             </div>
             <div className="flex items-center gap-1 text-xs text-emerald-600 bg-emerald-50 w-fit px-2 py-1 rounded border border-emerald-200">
-              <FaChartLine /> <strong>+0.2</strong> avg driver rating
+              <FaChartLine /> <strong>+0.2</strong> Rating
             </div>
           </div>
 
@@ -632,7 +632,7 @@ const FleetOwnerDashboard: React.FC = () => {
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center text-blue-600"><FaRoute /></div>
                 <div>
-                  <h3 className="text-sm font-bold text-gray-900">Interactive Dispatch Map</h3>
+                  <h3 className="text-sm font-bold text-gray-900">Dispatch Map</h3>
                   <span className="text-xs text-orange-600 bg-orange-50 border border-orange-200 px-2 py-0.5 rounded ml-2">3 PENDING REQUESTS</span>
                 </div>
               </div>
@@ -684,7 +684,7 @@ const FleetOwnerDashboard: React.FC = () => {
               <div className="absolute top-0 right-0 w-32 h-32 bg-blue-200/30 rounded-full blur-3xl -mr-10 -mt-10"></div>
               <div className="flex items-center gap-2 mb-4">
                 <FaStar className="text-yellow-500" />
-                <span className="text-xs font-bold text-gray-700 uppercase tracking-wider">Top Rated Driver</span>
+                <span className="text-xs font-bold text-gray-700 uppercase tracking-wider">Top Driver</span>
               </div>
               <div className="flex items-center gap-4 relative z-10">
                 <div className="w-16 h-16 rounded-full border-2 border-yellow-500 p-0.5">
@@ -744,7 +744,7 @@ const FleetOwnerDashboard: React.FC = () => {
           <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm p-6 border border-gray-200">
             <div className="flex items-center gap-2 mb-6">
               <Clock className="w-5 h-5 text-gray-400" />
-              <h3 className="text-lg font-bold text-gray-900">Recent Trip History</h3>
+              <h3 className="text-lg font-bold text-gray-900">Recent Trips</h3>
             </div>
 
             <div className="overflow-x-auto">

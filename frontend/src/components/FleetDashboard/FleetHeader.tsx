@@ -75,11 +75,11 @@ export const FleetHeader: React.FC<FleetHeaderProps> = () => {
             <div className="relative group">
                 <button
                     className={`flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-full transition-all duration-200
-            ${active || isOpen ? 'text-[#345E85] bg-blue-50/50' : 'text-slate-600 hover:text-[#345E85] hover:bg-slate-50'}
+            ${active || isOpen ? 'text-primary-500 bg-primary-50/50' : 'text-slate-600 hover:text-primary-500 hover:bg-slate-50'}
           `}
                     onClick={() => setActiveDropdown(isOpen ? null : title)}
                 >
-                    <Icon size={18} className={active || isOpen ? 'text-[#345E85]' : 'text-slate-400 group-hover:text-[#345E85]'} />
+                    <Icon size={18} className={active || isOpen ? 'text-primary-500' : 'text-slate-400 group-hover:text-primary-500'} />
                     <span>{title}</span>
                     <ChevronDown size={14} className={`transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
                 </button>
@@ -100,7 +100,7 @@ export const FleetHeader: React.FC<FleetHeaderProps> = () => {
                 setActiveDropdown(null);
             }}
             className={`w-full text-left px-4 py-2.5 rounded-lg text-sm font-medium transition-colors
-        ${isActive(to) ? 'bg-blue-50 text-[#345E85]' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}
+        ${isActive(to) ? 'bg-primary-50 text-primary-500' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}
       `}
         >
             {label}
@@ -125,8 +125,8 @@ export const FleetHeader: React.FC<FleetHeaderProps> = () => {
                             onClick={() => navigate('/dashboard/fleet')}
                             className={`flex items-center gap-2 px-5 py-2.5 text-sm font-bold rounded-full transition-all duration-200
                 ${location.pathname === '/dashboard/fleet'
-                                    ? 'bg-blue-50 text-[#345E85] shadow-sm ring-1 ring-blue-100'
-                                    : 'text-slate-500 hover:text-[#345E85] hover:bg-slate-50'}
+                                    ? 'bg-primary-50 text-primary-500 shadow-sm ring-1 ring-primary-100'
+                                    : 'text-slate-500 hover:text-primary-500 hover:bg-slate-50'}
               `}
                         >
                             <LayoutDashboard size={18} />
@@ -135,14 +135,14 @@ export const FleetHeader: React.FC<FleetHeaderProps> = () => {
 
                         {/* Fleet Management Dropdown */}
                         <NavDropdown
-                            title="Fleet Management"
+                            title="Fleet"
                             icon={Truck}
                             paths={['/dashboard/fleet/trucks', '/dashboard/fleet/drivers', '/dashboard/fleet/maintenance', '/dashboard/fleet/fuel']}
                         >
-                            <DropdownItem to="/dashboard/fleet/trucks" label="Fleet Assets" />
+                            <DropdownItem to="/dashboard/fleet/trucks" label="Vehicles" />
                             <DropdownItem to="/dashboard/fleet/drivers" label="Drivers" />
                             <DropdownItem to="/dashboard/fleet/maintenance" label="Maintenance" />
-                            <DropdownItem to="/dashboard/fleet/fuel" label="Fuel Management" />
+                            <DropdownItem to="/dashboard/fleet/fuel" label="Fuel" />
                         </NavDropdown>
 
                         {/* Operations Dropdown */}
@@ -152,8 +152,8 @@ export const FleetHeader: React.FC<FleetHeaderProps> = () => {
                             paths={['/dashboard/fleet/bids', '/dashboard/fleet/smart-bookings', '/dashboard/fleet/dispatch', '/dashboard/fleet/routes']}
                         >
                             <DropdownItem to="/dashboard/fleet/bids" label="Load Board" />
-                            <DropdownItem to="/dashboard/fleet/smart-bookings" label="Smart Bookings" />
-                            <DropdownItem to="/dashboard/fleet/dispatch" label="Dispatch & Trips" />
+                            <DropdownItem to="/dashboard/fleet/smart-bookings" label="Bookings" />
+                            <DropdownItem to="/dashboard/fleet/dispatch" label="Dispatch" />
                             <DropdownItem to="/dashboard/fleet/routes" label="Route Planning" />
                         </NavDropdown>
 
@@ -163,8 +163,8 @@ export const FleetHeader: React.FC<FleetHeaderProps> = () => {
                             icon={DollarSign}
                             paths={['/dashboard/fleet/reports', '/dashboard/fleet/financial']}
                         >
-                            <DropdownItem to="/dashboard/fleet/reports" label="Financial Reports" />
-                            <DropdownItem to="/dashboard/fleet/financial" label="Payments & Invoices" />
+                            <DropdownItem to="/dashboard/fleet/reports" label="Reports" />
+                            <DropdownItem to="/dashboard/fleet/financial" label="Payments" />
                             <DropdownItem to="/dashboard/fleet/analytics" label="Analytics" />
                         </NavDropdown>
 
@@ -183,7 +183,7 @@ export const FleetHeader: React.FC<FleetHeaderProps> = () => {
                     {/* Help Button */}
                     <button
                         onClick={() => navigate('/dashboard/fleet/support')}
-                        className="hidden md:flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-full text-slate-600 text-xs font-black uppercase tracking-widest hover:border-[#345E85] hover:text-[#345E85] transition-all"
+                        className="hidden md:flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-full text-slate-600 text-xs font-black uppercase tracking-widest hover:border-primary-500 hover:text-primary-500 transition-all"
                     >
                         <HelpCircle size={16} />
                         <span>Help</span>
@@ -242,14 +242,14 @@ export const FleetHeader: React.FC<FleetHeaderProps> = () => {
                     <DropdownItem to="/dashboard/fleet" label="Dashboard" />
                     <div className="h-px bg-slate-100 my-1" />
                     <p className="text-xs font-bold text-slate-400 uppercase tracking-wider px-4 py-2">Fleet</p>
-                    <DropdownItem to="/dashboard/fleet/trucks" label="Fleet Assets" />
+                    <DropdownItem to="/dashboard/fleet/trucks" label="Vehicles" />
                     <DropdownItem to="/dashboard/fleet/drivers" label="Drivers" />
                     <DropdownItem to="/dashboard/fleet/maintenance" label="Maintenance" />
                     <div className="h-px bg-slate-100 my-1" />
                     <p className="text-xs font-bold text-slate-400 uppercase tracking-wider px-4 py-2">Operations</p>
                     <DropdownItem to="/dashboard/fleet/bids" label="Load Board" />
                     <DropdownItem to="/dashboard/fleet/dispatch" label="Dispatch" />
-                    <DropdownItem to="/dashboard/fleet/smart-bookings" label="Smart Bookings" />
+                    <DropdownItem to="/dashboard/fleet/smart-bookings" label="Bookings" />
                 </div>
             )}
         </div>

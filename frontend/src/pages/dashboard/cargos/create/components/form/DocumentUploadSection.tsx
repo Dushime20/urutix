@@ -5,23 +5,39 @@ import {
     FaFileImage,
     FaFileAlt,
     FaCheckCircle,
-    FaTrash
+    FaTrash,
+    FaEdit
 } from 'react-icons/fa';
 import { documentApi, type Document } from '@/services/documents/documentApi';
 import toast from 'react-hot-toast';
 
+// Pending document type for documents not yet uploaded
+export interface PendingDocument {
+    id: string;
+    file: File;
+    title: string;
+    description?: string;
+    documentType: string;
+    category: string;
+    priority?: string;
+    preview?: string;
+    isPending: true; // Flag to identify pending documents
+}
+
 interface DocumentUploadSectionProps {
     cargoId: string | null;
-    documents: Document[];
-    onDocumentsChange: (docs: Document[]) => void;
+    documents: (Document | PendingDocument)[];
+    onDocumentsChange: (docs: (Document | PendingDocument)[]) => void;
     onRequireSave?: () => Promise<string | null>; // Callback to trigger save if cargoId is missing
+    allowPendingDocuments?: boolean; // New prop to enable pending document mode
 }
 
 const DocumentUploadSection: React.FC<DocumentUploadSectionProps> = ({
     cargoId,
     documents,
     onDocumentsChange,
-    onRequireSave
+    onRequireSave,
+    allowPendingDocuments = true // Default to true for new behavior
 }) => {
     const [isDragging, setIsDragging] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
@@ -52,10 +68,59 @@ const DocumentUploadSection: React.FC<DocumentUploadSectionProps> = ({
         }
     };
 
+    const createFilePreview = (file: File): Promise<string | undefined> => {
+        return new Promise((resolve) => {
+            if (file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onloadend = () => resolve(reader.result as string);
+                reader.onerror = () => resolve(undefined);
+                reader.readAsDataURL(file);
+            } else {
+                resolve(undefined);
+            }
+        });
+    };
+
     const handleUpload = async (file: File) => {
+        // NEW BEHAVIOR: If allowPendingDocuments is true and no cargoId, store as pending
+        if (allowPendingDocuments && !cargoId) {
+            try {
+                setIsUploading(true);
+
+                // Validate file
+                if (file.size > 10 * 1024 * 1024) {
+                    toast.error('File size exceeds 10MB limit');
+                    return;
+                }
+
+                const preview = await createFilePreview(file);
+
+                const pendingDoc: PendingDocument = {
+                    id: `pending-${Date.now()}-${Math.random()}`,
+                    file,
+                    title: file.name.replace(/\.[^/.]+$/, ''),
+                    documentType: 'OTHER',
+                    category: 'CARGO',
+                    priority: 'MEDIUM',
+                    preview,
+                    isPending: true,
+                };
+
+                onDocumentsChange([...documents, pendingDoc]);
+                toast.success('Document added. It will be uploaded when cargo is saved.');
+            } catch (error) {
+                console.error('Error adding document:', error);
+                toast.error('Failed to add document');
+            } finally {
+                setIsUploading(false);
+                if (fileInputRef.current) fileInputRef.current.value = '';
+            }
+            return;
+        }
+
+        // OLD BEHAVIOR: Try to save cargo first if no cargoId
         let targetCargoId = cargoId;
 
-        // If no cargoId, try to save draft first
         if (!targetCargoId && onRequireSave) {
             try {
                 setIsUploading(true);
@@ -81,9 +146,9 @@ const DocumentUploadSection: React.FC<DocumentUploadSectionProps> = ({
             setIsUploading(true);
 
             const response = await documentApi.createDocument({
-                entityType: 'LOAD',
+                entityType: 'CARGO',
                 entityId: targetCargoId,
-                documentType: 'OTHER', // Default, could accept prop or prompt user
+                documentType: 'OTHER',
                 category: 'CARGO',
                 title: file.name,
             }, file);
@@ -95,25 +160,35 @@ const DocumentUploadSection: React.FC<DocumentUploadSectionProps> = ({
             toast.error("Failed to upload document");
         } finally {
             setIsUploading(false);
-            // Reset input
             if (fileInputRef.current) fileInputRef.current.value = '';
         }
     };
 
-    const handleRemove = async (docId: string) => {
+    const handleRemove = async (doc: Document | PendingDocument) => {
+        // Check if it's a pending document
+        if ('isPending' in doc && doc.isPending) {
+            // Just remove from list, no API call needed
+            onDocumentsChange(documents.filter(d => d.id !== doc.id));
+            toast.success("Document removed");
+            return;
+        }
+
+        // It's an uploaded document, delete from server
         try {
-            // Optimistic update? Or wait for API?
-            // Let's wait for API to ensure it's deleted
-            await documentApi.deleteDocument(docId);
-            onDocumentsChange(documents.filter(d => d.id !== docId));
+            await documentApi.deleteDocument(doc.id);
+            onDocumentsChange(documents.filter(d => d.id !== doc.id));
             toast.success("Document removed");
         } catch (error) {
             console.error("Delete error:", error);
-            toast.error("Failed to replace document");
+            toast.error("Failed to remove document");
         }
     };
 
-    const getFileIcon = (mimeType: string) => {
+    const getFileIcon = (doc: Document | PendingDocument) => {
+        const mimeType = 'isPending' in doc && doc.isPending
+            ? doc.file.type
+            : (doc as Document).mimeType;
+
         if (mimeType.includes('pdf')) return <FaFilePdf className="text-red-500 text-xl" />;
         if (mimeType.includes('image')) return <FaFileImage className="text-blue-500 text-xl" />;
         return <FaFileAlt className="text-gray-500 text-xl" />;
@@ -127,12 +202,49 @@ const DocumentUploadSection: React.FC<DocumentUploadSectionProps> = ({
         return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
     };
 
+    const getDocumentSize = (doc: Document | PendingDocument): number => {
+        return 'isPending' in doc && doc.isPending ? doc.file.size : (doc as Document).fileSize;
+    };
+
+    const getDocumentTitle = (doc: Document | PendingDocument): string => {
+        if ('isPending' in doc && doc.isPending) {
+            return doc.title;
+        }
+        return (doc as Document).title || (doc as Document).fileName;
+    };
+
+    const getDocumentDate = (doc: Document | PendingDocument): string => {
+        if ('isPending' in doc && doc.isPending) {
+            return 'Pending upload';
+        }
+        return new Date((doc as Document).createdAt).toLocaleDateString();
+    };
+
+    const isPendingDoc = (doc: Document | PendingDocument): doc is PendingDocument => {
+        return 'isPending' in doc && doc.isPending === true;
+    };
+
     return (
         <div className="space-y-4">
             <div className="flex items-center justify-between">
                 <h3 className="text-lg font-semibold text-gray-900">Documents</h3>
-                <span className="text-sm text-gray-500">{documents.length} files attached</span>
+                <span className="text-sm text-gray-500">
+                    {documents.length} file{documents.length !== 1 ? 's' : ''}
+                    {documents.filter(isPendingDoc).length > 0 &&
+                        ` (${documents.filter(isPendingDoc).length} pending)`
+                    }
+                </span>
             </div>
+
+            {/* Info message for pending documents */}
+            {allowPendingDocuments && !cargoId && (
+                <div className="flex items-start gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm">
+                    <FaCloudUploadAlt className="text-blue-600 mt-0.5 flex-shrink-0" />
+                    <p className="text-blue-900">
+                        Documents will be uploaded automatically when you save the cargo.
+                    </p>
+                </div>
+            )}
 
             {/* Upload Zone */}
             <div
@@ -161,7 +273,7 @@ const DocumentUploadSection: React.FC<DocumentUploadSectionProps> = ({
                         <FaCloudUploadAlt className="text-4xl text-gray-400" />
                     )}
                     <p className="text-sm font-medium text-gray-900">
-                        {isUploading ? 'Uploading...' : 'Click to upload or drag and drop'}
+                        {isUploading ? 'Processing...' : 'Click to upload or drag and drop'}
                     </p>
                     <p className="text-xs text-gray-500">
                         PDF, PNG, JPG up to 10MB
@@ -175,24 +287,33 @@ const DocumentUploadSection: React.FC<DocumentUploadSectionProps> = ({
                     {documents.map((doc) => (
                         <div
                             key={doc.id}
-                            className="flex items-center p-3 bg-white border border-gray-200 rounded-lg hover:shadow-sm transition-shadow"
+                            className={`flex items-center p-3 border rounded-lg hover:shadow-sm transition-shadow ${isPendingDoc(doc)
+                                    ? 'bg-amber-50 border-amber-200'
+                                    : 'bg-white border-gray-200'
+                                }`}
                         >
                             <div className="mr-3">
-                                {getFileIcon(doc.mimeType)}
+                                {getFileIcon(doc)}
                             </div>
 
                             <div className="flex-1 min-w-0">
                                 <p className="text-sm font-medium text-gray-900 truncate">
-                                    {doc.title || doc.fileName}
+                                    {getDocumentTitle(doc)}
                                 </p>
                                 <div className="flex items-center text-xs text-gray-500 space-x-2">
-                                    <span>{formatSize(doc.fileSize)}</span>
+                                    <span>{formatSize(getDocumentSize(doc))}</span>
                                     <span>•</span>
-                                    <span>{new Date(doc.createdAt).toLocaleDateString()}</span>
-                                    {doc.status === 'VERIFIED' && (
+                                    <span>{getDocumentDate(doc)}</span>
+                                    {!isPendingDoc(doc) && (doc as Document).status === 'VERIFIED' && (
                                         <span className="flex items-center text-green-600">
                                             <FaCheckCircle className="w-3 h-3 mr-1" />
                                             Verified
+                                        </span>
+                                    )}
+                                    {isPendingDoc(doc) && (
+                                        <span className="flex items-center text-amber-600">
+                                            <FaCloudUploadAlt className="w-3 h-3 mr-1" />
+                                            Pending
                                         </span>
                                     )}
                                 </div>
@@ -201,7 +322,7 @@ const DocumentUploadSection: React.FC<DocumentUploadSectionProps> = ({
                             <button
                                 onClick={(e) => {
                                     e.stopPropagation();
-                                    handleRemove(doc.id);
+                                    handleRemove(doc);
                                 }}
                                 className="p-2 text-gray-400 hover:text-red-500 transition-colors"
                                 title="Remove document"

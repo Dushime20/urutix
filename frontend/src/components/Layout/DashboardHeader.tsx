@@ -107,6 +107,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
           subItems: [
             { label: 'Drivers', path: '/dashboard/fleet/drivers' },
             { label: 'Trucks', path: '/dashboard/fleet/trucks' },
+            { label: 'Fuel Logs', path: '/dashboard/fleet/fuel' },
             { label: 'Safety Records', path: '/dashboard/fleet/safety' },
           ]
         },
@@ -319,8 +320,8 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
                         }}
                         className={`flex items-center gap-2 px-5 py-2.5 text-sm font-bold rounded-full transition-all duration-300 whitespace-nowrap shrink-0 touch-manipulation
                                             ${isActive
-                            ? 'bg-blue-50 text-[#345E85]'
-                            : 'text-slate-500 hover:text-[#345E85] hover:bg-slate-50'}
+                            ? 'bg-primary-50 text-primary-500'
+                            : 'text-slate-500 hover:text-primary-500 hover:bg-slate-50'}
                                         `}
                       >
                         {item.icon && <item.icon className="w-4.5 h-4.5" size={18} />}
@@ -338,8 +339,8 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
                                 key={subItem.path}
                                 onClick={() => handleNavClick(subItem.path)}
                                 className={`w-full text-left px-4 py-2.5 text-sm transition-all flex items-center gap-2 ${location.pathname === subItem.path
-                                  ? 'bg-navy-50 text-navy-700 font-semibold'
-                                  : 'text-gray-600 hover:bg-gray-50 hover:text-navy-600'}`}
+                                  ? 'bg-primary-50 text-primary-500 font-semibold'
+                                  : 'text-gray-600 hover:bg-white hover:text-primary-500 hover:shadow-sm'}`}
                               >
                                 <TranslatedText text={subItem.label} />
                               </button>
@@ -405,7 +406,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
                 <div key={item.label}>
                   <button
                     onClick={() => item.subItems ? setOpenDropdown(openDropdown === item.label ? null : item.label) : handleNavClick(item.path)}
-                    className={`w-full text-left px-4 py-3 rounded-lg flex items-center justify-between ${activeNavItem === item.label ? 'text-navy-700 bg-navy-50 font-bold' : 'text-gray-600'}`}
+                    className={`w-full text-left px-4 py-3 rounded-lg flex items-center justify-between ${activeNavItem === item.label ? 'text-primary-500 bg-primary-50 font-bold' : 'text-gray-600 font-medium'}`}
                   >
                     <div className="flex items-center gap-2">
                       {item.icon && <item.icon className="w-4 h-4" />}

@@ -6,7 +6,6 @@ import {
   ShieldCheck,
   Wrench,
   Navigation,
-  DollarSign,
   Thermometer,
   Zap,
   Activity,
@@ -175,21 +174,21 @@ export const TruckAnalytics: React.FC<TruckAnalyticsProps> = ({ trucks }) => {
             <BarChart3 size={28} />
           </div>
           <div>
-            <h2 className="text-[11px] font-black uppercase tracking-[0.3em] text-[#345E85] mb-1">Intelligence Layer</h2>
-            <h1 className="text-3xl font-black text-slate-900 tracking-tight">Fleet Capability Analytics</h1>
+            <h2 className="text-[11px] font-black uppercase tracking-[0.3em] text-[#345E85] mb-1">Fleet Overview</h2>
+            <h1 className="text-3xl font-black text-slate-900 tracking-tight">Fleet Capabilities</h1>
           </div>
         </div>
         <div className="flex items-center gap-3">
           <div className="px-4 py-2 bg-slate-50 rounded-xl border border-slate-100 flex flex-col">
-            <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Compute Status</span>
+            <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Status</span>
             <span className="text-xs font-black text-emerald-500 flex items-center gap-1.5 uppercase tracking-wider">
               <div className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              Live Sync Active
+              Live
             </span>
           </div>
           <button className="h-12 px-6 bg-[#1A1C1E] text-white rounded-[18px] text-[10px] font-black uppercase tracking-widest shadow-xl hover:bg-slate-800 transition-all flex items-center gap-2">
             <Cpu size={14} />
-            Re-Index Assets
+            Refresh Data
           </button>
         </div>
       </div>
@@ -197,27 +196,27 @@ export const TruckAnalytics: React.FC<TruckAnalyticsProps> = ({ trucks }) => {
       {/* Primary Stat Matrix */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
-          title="Unit Deployment"
+          title="Total Trucks"
           value={stats.totalTrucks}
           icon={Truck}
           color="bg-blue-50 text-blue-600"
-          trend="+12% Capacity"
+          trend="+12% Usage"
         />
         <StatCard
-          title="GPS Vector Lock"
+          title="GPS Enabled"
           value={stats.securityFeatures.gps}
           icon={ShieldCheck}
           color="bg-emerald-50 text-emerald-600"
           trend="92% Coverage"
         />
         <StatCard
-          title="Thermal Payload"
+          title="Refrigerated"
           value={stats.specialHandling.refrigerated}
           icon={Thermometer}
           color="bg-cyan-50 text-cyan-600"
         />
         <StatCard
-          title="Hazardous Units"
+          title="Hazardous Certs"
           value={stats.specialHandling.hazardous}
           icon={Box}
           color="bg-rose-50 text-rose-600"
@@ -238,19 +237,19 @@ export const TruckAnalytics: React.FC<TruckAnalyticsProps> = ({ trucks }) => {
                 <Layers size={20} />
               </div>
               <div>
-                <h3 className="text-lg font-black text-slate-900 tracking-tight">Cargo Type Matrix</h3>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mt-0.5">Asset Compatibility Across Types</p>
+                <h3 className="text-lg font-black text-slate-900 tracking-tight">Cargo Capabilities</h3>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mt-0.5">Distribution of cargo types</p>
               </div>
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
-            <ProgressBar label="General Matrix" value={stats.cargoTypeCoverage.GENERAL} total={stats.totalTrucks} color="bg-blue-500" icon={Box} />
-            <ProgressBar label="Fragile Protocol" value={stats.cargoTypeCoverage.FRAGILE} total={stats.totalTrucks} color="bg-amber-500" icon={Activity} />
-            <ProgressBar label="Hazardous Vector" value={stats.cargoTypeCoverage.HAZARDOUS} total={stats.totalTrucks} color="bg-rose-500" icon={AlertCircle} />
-            <ProgressBar label="Refrigerated Sync" value={stats.cargoTypeCoverage.REFRIGERATED} total={stats.totalTrucks} color="bg-cyan-500" icon={Thermometer} />
-            <ProgressBar label="Liquid Dynamics" value={stats.cargoTypeCoverage.LIQUID} total={stats.totalTrucks} color="bg-emerald-500" icon={Fuel} />
-            <ProgressBar label="Oversized Load" value={stats.cargoTypeCoverage.OVERSIZED} total={stats.totalTrucks} color="bg-purple-500" icon={TrendingUp} />
+            <ProgressBar label="General Cargo" value={stats.cargoTypeCoverage.GENERAL} total={stats.totalTrucks} color="bg-blue-500" icon={Box} />
+            <ProgressBar label="Fragile Goods" value={stats.cargoTypeCoverage.FRAGILE} total={stats.totalTrucks} color="bg-amber-500" icon={Activity} />
+            <ProgressBar label="Hazardous" value={stats.cargoTypeCoverage.HAZARDOUS} total={stats.totalTrucks} color="bg-rose-500" icon={AlertCircle} />
+            <ProgressBar label="Refrigerated" value={stats.cargoTypeCoverage.REFRIGERATED} total={stats.totalTrucks} color="bg-cyan-500" icon={Thermometer} />
+            <ProgressBar label="Liquid Loads" value={stats.cargoTypeCoverage.LIQUID} total={stats.totalTrucks} color="bg-emerald-500" icon={Fuel} />
+            <ProgressBar label="Oversized Cargo" value={stats.cargoTypeCoverage.OVERSIZED} total={stats.totalTrucks} color="bg-purple-500" icon={TrendingUp} />
           </div>
         </motion.div>
 
@@ -270,16 +269,16 @@ export const TruckAnalytics: React.FC<TruckAnalyticsProps> = ({ trucks }) => {
                 <ShieldCheck size={20} />
               </div>
               <div>
-                <h3 className="text-lg font-black tracking-tight">System Security</h3>
-                <p className="text-[10px] font-bold text-white/40 uppercase tracking-[0.2em] mt-0.5">Hardware & Tracking Sync</p>
+                <h3 className="text-lg font-black tracking-tight">Fleet Security</h3>
+                <p className="text-[10px] font-bold text-white/40 uppercase tracking-[0.2em] mt-0.5">Hardware & Tracking Status</p>
               </div>
             </div>
 
             <div className="space-y-8 mt-10">
-              <ProgressBar label="GPS Integrity" value={stats.securityFeatures.gps} total={stats.totalTrucks} color="bg-white" />
-              <ProgressBar label="Telemetry Feed" value={stats.securityFeatures.tracking} total={stats.totalTrucks} color="bg-blue-400" />
-              <ProgressBar label="Thermal Alerts" value={stats.securityFeatures.temperatureMonitoring} total={stats.totalTrucks} color="bg-rose-400" />
-              <ProgressBar label="Visual Monitoring" value={stats.securityFeatures.cargoMonitoring} total={stats.totalTrucks} color="bg-emerald-400" />
+              <ProgressBar label="GPS Tracking" value={stats.securityFeatures.gps} total={stats.totalTrucks} color="bg-white" />
+              <ProgressBar label="Data Feed" value={stats.securityFeatures.tracking} total={stats.totalTrucks} color="bg-blue-400" />
+              <ProgressBar label="Temperature Alerts" value={stats.securityFeatures.temperatureMonitoring} total={stats.totalTrucks} color="bg-rose-400" />
+              <ProgressBar label="Cargo Monitoring" value={stats.securityFeatures.cargoMonitoring} total={stats.totalTrucks} color="bg-emerald-400" />
             </div>
           </div>
         </motion.div>
@@ -294,15 +293,15 @@ export const TruckAnalytics: React.FC<TruckAnalyticsProps> = ({ trucks }) => {
               <Wrench size={20} />
             </div>
             <div>
-              <h3 className="text-lg font-black text-slate-900 tracking-tight">Operational Hardware</h3>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mt-0.5">Onboard Loading Equipment</p>
+              <h3 className="text-lg font-black text-slate-900 tracking-tight">Loading Equipment</h3>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mt-0.5">Onboard Tools & Hardware</p>
             </div>
           </div>
 
           <div className="space-y-6">
-            <ProgressBar label="Forklift Integration" value={stats.equipmentCoverage.forklift} total={stats.totalTrucks} color="bg-slate-700" />
-            <ProgressBar label="Crane Deployment" value={stats.equipmentCoverage.crane} total={stats.totalTrucks} color="bg-slate-700" />
-            <ProgressBar label="Tail Lift Protocol" value={stats.equipmentCoverage.tailLift} total={stats.totalTrucks} color="bg-slate-700" />
+            <ProgressBar label="Forklift Available" value={stats.equipmentCoverage.forklift} total={stats.totalTrucks} color="bg-slate-700" />
+            <ProgressBar label="Crane Available" value={stats.equipmentCoverage.crane} total={stats.totalTrucks} color="bg-slate-700" />
+            <ProgressBar label="Tail Lift Available" value={stats.equipmentCoverage.tailLift} total={stats.totalTrucks} color="bg-slate-700" />
           </div>
         </div>
 
@@ -313,8 +312,8 @@ export const TruckAnalytics: React.FC<TruckAnalyticsProps> = ({ trucks }) => {
               <Thermometer size={20} />
             </div>
             <div>
-              <h3 className="text-lg font-black text-slate-900 tracking-tight">Thermal Spectrogram</h3>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mt-0.5">Cold Chain Coverage</p>
+              <h3 className="text-lg font-black text-slate-900 tracking-tight">Temperature Zones</h3>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mt-0.5">Cold Chain Capabilities</p>
             </div>
           </div>
 
@@ -350,7 +349,7 @@ export const TruckAnalytics: React.FC<TruckAnalyticsProps> = ({ trucks }) => {
             <div className="size-10 bg-white/10 rounded-[14px] flex items-center justify-center text-white shadow-inner">
               <Cpu size={20} />
             </div>
-            <h3 className="text-lg font-black tracking-tight">Strategic Intelligence Summary</h3>
+            <h3 className="text-lg font-black tracking-tight">Fleet Suggestions</h3>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -358,8 +357,8 @@ export const TruckAnalytics: React.FC<TruckAnalyticsProps> = ({ trucks }) => {
               <div className="flex items-start gap-4 p-4 bg-white/5 rounded-2xl border border-white/5 hover:bg-white/10 transition-all group">
                 <AlertCircle className="text-rose-400 mt-1 flex-shrink-0 group-hover:scale-110 transition-transform" />
                 <div>
-                  <h4 className="text-[11px] font-black uppercase tracking-widest text-rose-400 mb-1">Alert: Vector Gaps</h4>
-                  <p className="text-xs font-medium text-white/60 leading-relaxed">Hazardous transport certification is below 30% of total units. Consider asset upgrading to tap into chem-logistics markets.</p>
+                  <h4 className="text-[11px] font-black uppercase tracking-widest text-rose-400 mb-1">Low Hazardous Capacity</h4>
+                  <p className="text-xs font-medium text-white/60 leading-relaxed">Hazardous transport certification is below 30% of total units. Consider asset upgrading for more markets.</p>
                 </div>
               </div>
             )}
@@ -367,8 +366,8 @@ export const TruckAnalytics: React.FC<TruckAnalyticsProps> = ({ trucks }) => {
               <div className="flex items-start gap-4 p-4 bg-white/5 rounded-2xl border border-white/5 hover:bg-white/10 transition-all group">
                 <Thermometer className="text-cyan-400 mt-1 flex-shrink-0 group-hover:scale-110 transition-transform" />
                 <div>
-                  <h4 className="text-[11px] font-black uppercase tracking-widest text-cyan-400 mb-1">Alert: Cold Chain Lag</h4>
-                  <p className="text-xs font-medium text-white/60 leading-relaxed">Thermal payload capacity is under-indexed. Increasing cold-chain units will improve contract acquisition for perishable high-value cargo.</p>
+                  <h4 className="text-[11px] font-black uppercase tracking-widest text-cyan-400 mb-1">Low Cold Capacity</h4>
+                  <p className="text-xs font-medium text-white/60 leading-relaxed">Refrigerated units are limited. Increasing cold-chain units will improve contract acquisition for perishable cargo.</p>
                 </div>
               </div>
             )}
@@ -376,16 +375,16 @@ export const TruckAnalytics: React.FC<TruckAnalyticsProps> = ({ trucks }) => {
               <div className="flex items-start gap-4 p-4 bg-white/5 rounded-2xl border border-white/5 hover:bg-white/10 transition-all group">
                 <Navigation className="text-blue-400 mt-1 flex-shrink-0 group-hover:scale-110 transition-transform" />
                 <div>
-                  <h4 className="text-[11px] font-black uppercase tracking-widest text-blue-400 mb-1">Alert: Geospatial Sync</h4>
-                  <p className="text-xs font-medium text-white/60 leading-relaxed">GPS telemetry is missing on several units. Full-fleet tracking is mandatory for Level-3 insurance compliance and premium contracts.</p>
+                  <h4 className="text-[11px] font-black uppercase tracking-widest text-blue-400 mb-1">Missing GPS Trackers</h4>
+                  <p className="text-xs font-medium text-white/60 leading-relaxed">GPS tracking is missing on several units. Full-fleet tracking is recommended for insurance compliance.</p>
                 </div>
               </div>
             )}
             <div className="flex items-start gap-4 p-4 bg-emerald-500/10 rounded-2xl border border-emerald-500/20 hover:bg-emerald-500/20 transition-all group">
               <Zap className="text-emerald-400 mt-1 flex-shrink-0 group-hover:scale-110 transition-transform" />
               <div>
-                <h4 className="text-[11px] font-black uppercase tracking-widest text-emerald-400 mb-1">Strategic Advantage</h4>
-                <p className="text-xs font-medium text-white/60 leading-relaxed">Current fleet configuration is optimal for General Matrix logistics. Recommend maintaining the active asset balance.</p>
+                <h4 className="text-[11px] font-black uppercase tracking-widest text-emerald-400 mb-1">Fleet Strength</h4>
+                <p className="text-xs font-medium text-white/60 leading-relaxed">Current fleet configuration is great for general cargo logistics. Keep maintaining this balance.</p>
               </div>
             </div>
           </div>

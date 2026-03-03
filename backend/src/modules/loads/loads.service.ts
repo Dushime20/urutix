@@ -1142,19 +1142,22 @@ export class LoadsService {
   /**
    * Delete a load with proper validation
    */
-  async remove(id: string, tenantId: string, userId: string): Promise<void> {
-    this.logger.log(`Deleting load ${id} for user ${userId}`);
+  async remove(id: string, tenantId: string, userId: string, userRole?: string): Promise<void> {
+    this.logger.log(`Deleting load ${id} for user ${userId} with role ${userRole}`);
 
     try {
-      const load = await this.findOne(id, tenantId, userId);
+      const load = await this.findOne(id, tenantId, { userId, role: userRole });
 
-      // Validate ownership
-      if (load.cargoOwnerId !== userId) {
+      // Allow admins and super admins to delete any load in their tenant
+      const isPrivileged = ['ADMIN', 'SUPER_ADMIN'].includes(userRole);
+
+      // Validate ownership (skip for admins)
+      if (!isPrivileged && load.cargoOwnerId !== userId) {
         throw new ForbiddenException('You can only delete your own loads');
       }
 
-      // Validate status
-      if (![LoadStatus.DRAFT, LoadStatus.CREATED].includes(load.status)) {
+      // Validate status (skip for admins)
+      if (!isPrivileged && ![LoadStatus.DRAFT, LoadStatus.CREATED].includes(load.status)) {
         throw new ForbiddenException(
           'Can only delete loads in DRAFT or CREATED status',
         );

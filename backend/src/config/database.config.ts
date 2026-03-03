@@ -52,8 +52,11 @@ import {
   BrokerMultiStopLoad,
   BrokerTransporterPerformance,
 } from '../entities/broker-intelligence.entity';
-// import { FuelLog } from '../entities/fuel-log.entity'; // Entity doesn't exist yet
-
+import { FuelLog } from '../entities/fuel-log.entity';
+import { FuelWallet } from '../entities/fuel-wallet.entity';
+import { FuelWalletTransaction } from '../entities/fuel-wallet-transaction.entity';
+import { FuelBudget } from '../entities/fuel-budget.entity';
+import { DriverFuelAdvance } from '../entities/driver-fuel-advance.entity';
 
 // Admin entities
 import { ActivityLog } from '../entities/activity-log.entity';
@@ -204,7 +207,11 @@ export const databaseConfig: TypeOrmModuleOptions = {
     // Matching entities
     // LoadMatch, // Entity doesn't exist yet
     // Fuel entities
-    // FuelLog, // Entity doesn't exist yet
+    FuelLog,
+    FuelWallet,
+    FuelWalletTransaction,
+    FuelBudget,
+    DriverFuelAdvance,
   ],
   synchronize: false, // Disabled to prevent schema conflicts - use migrations instead
   autoLoadEntities: false,
@@ -312,7 +319,11 @@ export const testDatabaseConfig: TypeOrmModuleOptions = {
     EmailTemplate,
     BulkEmailLog,
     // Fuel entities
-    // FuelLog, // Entity doesn't exist yet
+    FuelLog,
+    FuelWallet,
+    FuelWalletTransaction,
+    FuelBudget,
+    DriverFuelAdvance,
   ],
   synchronize: true,
   autoLoadEntities: false,

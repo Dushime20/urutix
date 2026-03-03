@@ -113,7 +113,7 @@ export interface SystemHealthSummary {
 export class SystemHealthService {
   private readonly logger = new Logger(SystemHealthService.name);
   private healthCache: Map<ServiceType, ServiceHealth> = new Map();
-  
+
   // Metrics tracking for API performance
   private apiRequestCount: number = 0;
   private apiResponseTimes: number[] = [];
@@ -128,13 +128,13 @@ export class SystemHealthService {
     { metricType: 'database', metricName: 'avg_query_time', warningThreshold: 500, criticalThreshold: 1000, operator: 'greater_than' },
     { metricType: 'database', metricName: 'slow_queries', warningThreshold: 5, criticalThreshold: 10, operator: 'greater_than' },
     { metricType: 'database', metricName: 'disk_usage', warningThreshold: 5000, criticalThreshold: 10000, operator: 'greater_than' },
-    
+
     // API thresholds
     { metricType: 'api', metricName: 'avg_response_time', warningThreshold: 500, criticalThreshold: 1000, operator: 'greater_than' },
     { metricType: 'api', metricName: 'error_rate', warningThreshold: 5, criticalThreshold: 10, operator: 'greater_than' },
     { metricType: 'api', metricName: 'p95_response_time', warningThreshold: 1000, criticalThreshold: 2000, operator: 'greater_than' },
     { metricType: 'api', metricName: 'p99_response_time', warningThreshold: 2000, criticalThreshold: 5000, operator: 'greater_than' },
-    
+
     // Server thresholds
     { metricType: 'server', metricName: 'cpu_usage', warningThreshold: 70, criticalThreshold: 90, operator: 'greater_than' },
     { metricType: 'server', metricName: 'memory_usage', warningThreshold: 75, criticalThreshold: 90, operator: 'greater_than' },
@@ -174,16 +174,16 @@ export class SystemHealthService {
     try {
       // Get connection pool stats
       const connectionCount = await this.getConnectionCount();
-      
+
       // Get active queries count
       const activeQueries = await this.getActiveQueriesCount();
-      
+
       // Get average query time from recent logs
       const avgQueryTime = await this.getAverageQueryTime();
-      
+
       // Get slow queries count (queries > 1000ms)
       const slowQueries = await this.getSlowQueriesCount();
-      
+
       // Get database disk usage (estimated)
       const diskUsage = await this.getDatabaseDiskUsage();
 
@@ -345,7 +345,7 @@ export class SystemHealthService {
   trackApiRequest(responseTime: number, isError: boolean = false): void {
     this.apiRequestCount++;
     this.apiResponseTimes.push(responseTime);
-    
+
     if (isError) {
       this.apiErrors++;
     }
@@ -450,7 +450,7 @@ export class SystemHealthService {
 
       logs.forEach(log => {
         const timeKey = log.timestamp.toISOString();
-        
+
         if (!metricsMap.has(timeKey)) {
           metricsMap.set(timeKey, {
             timestamp: log.timestamp,
@@ -459,12 +459,12 @@ export class SystemHealthService {
         }
 
         const entry = metricsMap.get(timeKey);
-        
+
         // Store metric by type and name
         if (!entry.metrics[log.service]) {
           entry.metrics[log.service] = {};
         }
-        
+
         // Store the metric data from metadata if available
         if (log.metadata) {
           entry.metrics[log.service] = {
@@ -505,21 +505,21 @@ export class SystemHealthService {
 
       // Flatten metrics into a map for easy lookup
       const metricValues = new Map<string, number>();
-      
+
       // Database metrics
       metricValues.set('database.connection_count', metrics.database.connectionCount);
       metricValues.set('database.active_queries', metrics.database.activeQueries);
       metricValues.set('database.avg_query_time', metrics.database.avgQueryTime);
       metricValues.set('database.slow_queries', metrics.database.slowQueries);
       metricValues.set('database.disk_usage', metrics.database.diskUsage);
-      
+
       // API metrics
       metricValues.set('api.requests_per_minute', metrics.api.requestsPerMinute);
       metricValues.set('api.avg_response_time', metrics.api.avgResponseTime);
       metricValues.set('api.error_rate', metrics.api.errorRate);
       metricValues.set('api.p95_response_time', metrics.api.p95ResponseTime);
       metricValues.set('api.p99_response_time', metrics.api.p99ResponseTime);
-      
+
       // Server metrics
       metricValues.set('server.cpu_usage', metrics.server.cpuUsage);
       metricValues.set('server.memory_usage', metrics.server.memoryUsage);
@@ -542,7 +542,7 @@ export class SystemHealthService {
 
         if (violation) {
           violations.push(violation);
-          
+
           // Log the violation to database (Requirement 1.4)
           await this.logThresholdViolation(violation);
         }
@@ -619,7 +619,7 @@ export class SystemHealthService {
   ): string {
     const metricLabel = metricName.replace(/_/g, ' ');
     const severityLabel = severity.toUpperCase();
-    
+
     return `[${severityLabel}] ${metricType} ${metricLabel} is ${currentValue.toFixed(2)}, exceeding threshold of ${thresholdValue}`;
   }
 
@@ -632,7 +632,6 @@ export class SystemHealthService {
       const log = this.healthLogRepository.create({
         service: violation.metricType as ServiceType,
         status: this.mapSeverityToHealthStatus(violation.severity),
-        responseTime: violation.currentValue,
         metricType: violation.metricType,
         metricName: violation.metricName,
         metricValue: violation.currentValue,
@@ -648,7 +647,7 @@ export class SystemHealthService {
       });
 
       await this.healthLogRepository.save(log);
-      
+
       this.logger.warn(`Threshold violation logged: ${violation.message}`);
     } catch (error) {
       this.logger.error(`Failed to log threshold violation: ${error.message}`);
@@ -742,7 +741,7 @@ export class SystemHealthService {
 
       const csv = csvLines.join('\n');
       this.logger.log(`Exported ${timeSeries.length} metric records to CSV`);
-      
+
       return csv;
     } catch (error) {
       this.logger.error(`Error exporting metrics: ${error.message}`);
@@ -821,7 +820,6 @@ export class SystemHealthService {
       const log = this.healthLogRepository.create({
         service: service as ServiceType,
         status: HealthStatus.HEALTHY,
-        responseTime: metricValue,
         metricType: service,
         metricName: metricName,
         metricValue: metricValue,
@@ -880,7 +878,7 @@ export class SystemHealthService {
    */
   private async checkDatabase(): Promise<ServiceHealth> {
     const startTime = Date.now();
-    
+
     try {
       // Simple query to check database connectivity
       await this.dataSource.query('SELECT 1');
@@ -918,7 +916,7 @@ export class SystemHealthService {
    */
   private async checkAPI(): Promise<ServiceHealth> {
     const startTime = Date.now();
-    
+
     try {
       // Check if API is responsive
       const responseTime = Date.now() - startTime;
@@ -1000,7 +998,7 @@ export class SystemHealthService {
   private async getActiveUsersCount(): Promise<number> {
     try {
       const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
-      
+
       const result = await this.dataSource.query(
         `SELECT COUNT(DISTINCT id) as count 
          FROM users 
@@ -1070,7 +1068,7 @@ export class SystemHealthService {
   @Cron(CronExpression.EVERY_5_MINUTES)
   async performHealthChecks(): Promise<void> {
     this.logger.debug('Performing scheduled health checks...');
-    
+
     try {
       await this.checkAllServices();
       this.logger.debug('Health checks completed successfully');
@@ -1085,7 +1083,7 @@ export class SystemHealthService {
   @Cron(CronExpression.EVERY_HOUR)
   async storeMetricsPeriodically(): Promise<void> {
     this.logger.debug('Storing metrics for historical tracking...');
-    
+
     try {
       await this.storeCurrentMetrics();
       this.logger.debug('Metrics stored successfully');
@@ -1101,10 +1099,10 @@ export class SystemHealthService {
   @Cron(CronExpression.EVERY_5_MINUTES)
   async checkThresholdsPeriodically(): Promise<void> {
     this.logger.debug('Checking metric thresholds...');
-    
+
     try {
       const violations = await this.checkThresholds();
-      
+
       if (violations.length > 0) {
         this.logger.warn(`Found ${violations.length} threshold violation(s)`);
         violations.forEach(v => {

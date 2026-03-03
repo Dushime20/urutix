@@ -36,6 +36,7 @@ const CargoCreatePage: React.FC = () => {
   const [showBrokerAssignment, setShowBrokerAssignment] = useState(false);
   const [assignedBrokerId, setAssignedBrokerId] = useState<string | null>(null);
   const [editMode, setEditMode] = useState(false);
+  const [currentDraftId, setCurrentDraftId] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -49,6 +50,9 @@ const CargoCreatePage: React.FC = () => {
       console.log("📝 Opening form with cargo data for editing:", editCargo);
       setSelectedTemplate(editCargo);
       setEditMode(editCargo.status !== 'DRAFT'); // Set edit mode for non-draft cargos
+      if (editCargo.status === 'DRAFT' && editCargo.id) {
+        setCurrentDraftId(editCargo.id); // Track draft ID for updates
+      }
       setShowEnhancedForm(true);
       // Clear the navigation state to prevent re-triggering on refresh
       window.history.replaceState({}, document.title);
@@ -81,11 +85,13 @@ const CargoCreatePage: React.FC = () => {
 
   const handleContinueDraft = (draft: any) => {
     setSelectedTemplate(draft);
+    setCurrentDraftId(draft.id); // Track which draft we're editing
     setShowDraftModal(false);
     setShowEnhancedForm(true);
   };
 
   const handleCreateNew = () => {
+    setCurrentDraftId(null); // New cargo, no existing draft
     setShowDraftModal(false);
     setShowEnhancedForm(true);
   };
@@ -118,12 +124,26 @@ const CargoCreatePage: React.FC = () => {
         })) || [],
       };
 
-      const response = await loadsAPI.saveDraft(sanitizedData);
+      let response;
+
+      if (currentDraftId) {
+        // Update existing draft instead of creating a new one
+        response = await loadsAPI.updateDraft(currentDraftId, sanitizedData);
+      } else {
+        // Create new draft
+        response = await loadsAPI.saveDraft(sanitizedData);
+        // Store the new draft ID so subsequent saves update instead of create
+        const newDraftId = response?.data?.load?.id || response?.data?.id || response?.data?.data?.id;
+        console.log("New draft saved with ID:", newDraftId);
+        if (newDraftId) {
+          setCurrentDraftId(newDraftId);
+        }
+      }
 
       if (response.status >= 200 && response.status < 300) {
         setDraftSaved(true);
         setTimeout(() => setDraftSaved(false), 3000);
-        toast.success("Draft saved successfully!");
+        toast.success(currentDraftId ? "Draft updated successfully!" : "Draft saved successfully!");
         fetchDrafts();
       }
     } catch (error) {
@@ -167,11 +187,36 @@ const CargoCreatePage: React.FC = () => {
       if (!token)
         throw new Error("No authentication token found. Please log in again.");
 
-      // Save cargo details to backend using axios
-      const response = await loadsAPI.create(submissionData);
+      let response;
+      let createdLoadId;
 
-      // console.log("Cargo saved successfully:", response);
-      const createdLoadId = response?.id || response?.data?.id || response?.load?.id;
+      if (currentDraftId) {
+        // Draft exists: update it with final data, then publish it
+        // This avoids creating a duplicate — the draft becomes the cargo
+        try {
+          await loadsAPI.updateDraft(currentDraftId, submissionData);
+          const publishResponse = await loadsAPI.publishDraft(currentDraftId);
+          response = publishResponse?.data;
+          createdLoadId = currentDraftId; // The draft IS the cargo now
+        } catch (publishError: any) {
+          console.error("Failed to publish draft, falling back to create:", publishError);
+          // Fallback: create new and delete draft
+          response = await loadsAPI.create(submissionData);
+          createdLoadId = response?.id || response?.data?.id || response?.load?.id;
+          try {
+            await loadsAPI.deleteDraft(currentDraftId);
+          } catch (e) {
+            console.error("Failed to delete draft:", e);
+          }
+        }
+        setCurrentDraftId(null);
+        fetchDrafts(); // Refresh drafts list
+      } else {
+        // No draft: create a brand new cargo
+        response = await loadsAPI.create(submissionData);
+        createdLoadId = response?.id || response?.data?.id || response?.load?.id;
+      }
+
       setCargoData({
         ...submissionData,
         id: createdLoadId,
@@ -342,6 +387,7 @@ const CargoCreatePage: React.FC = () => {
             setShowEnhancedForm(false);
             setSelectedTemplate(null);
             setEditMode(false);
+            setCurrentDraftId(null); // Reset draft tracking when closing
           }}
           onSubmit={handleCargoSubmit}
           mode={editMode ? "edit" : "create"}

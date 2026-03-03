@@ -49,6 +49,11 @@ export interface Driver {
   status: string;
   availabilityStatus: string;
   experience: number;
+  dateOfBirth?: string;
+  licenseType?: string;
+  licenseIssueDate?: string;
+  licenseExpiry?: string;
+  hireDate?: string;
   currentTruckId?: string;
   createdAt: string;
   updatedAt: string;
@@ -87,6 +92,7 @@ export interface FuelEntry {
   id: string;
   truckId: string;
   driverId: string;
+  tripId?: string; // Link to specific trip
   date: string;
   gallons: number;
   costPerGallon: number;
@@ -94,6 +100,12 @@ export interface FuelEntry {
   odometer: number;
   location: string;
   fuelCardId?: string;
+  fuelType: 'Diesel' | 'DEF' | 'Premium' | 'Regular';
+  isFullTank: boolean;
+  jurisdiction: string; // State/Province for IFTA
+  receiptUrl?: string;
+  odometerImageUrl?: string;
+  notes?: string;
   status: 'verified' | 'flagged' | 'pending';
 }
 
@@ -213,7 +225,7 @@ export const fleetApi = {
   },
 
   // Get trucks with optional filters
-  async getTrucks(filters?: { search?: string; status?: string }): Promise<FleetItem[]> {
+  async getTrucks(filters?: { search?: string; status?: string; limit?: number; page?: number }): Promise<FleetItem[]> {
     try {
       console.log('🔑 Fetching trucks with authenticated API');
       console.log('🔑 Filters:', filters);
@@ -221,6 +233,8 @@ export const fleetApi = {
       const params = new URLSearchParams();
       if (filters?.search) params.append('search', filters.search);
       if (filters?.status) params.append('status', filters.status);
+      if (filters?.limit) params.append('limit', filters.limit.toString());
+      if (filters?.page) params.append('page', filters.page.toString());
 
       const url = `/fleet/trucks${params.toString() ? `?${params.toString()}` : ''}`;
       console.log('🔑 Request URL:', url);
@@ -334,12 +348,14 @@ export const fleetApi = {
   // ===== DRIVER MANAGEMENT APIs =====
 
   // Get drivers with optional filters
-  async getDrivers(filters?: { search?: string; status?: string; availabilityStatus?: string }): Promise<Driver[]> {
+  async getDrivers(filters?: { search?: string; status?: string; availabilityStatus?: string; limit?: number; page?: number }): Promise<Driver[]> {
     try {
       const params = new URLSearchParams();
       if (filters?.search) params.append('search', filters.search);
       if (filters?.status) params.append('status', filters.status);
       if (filters?.availabilityStatus) params.append('availabilityStatus', filters.availabilityStatus);
+      if (filters?.limit) params.append('limit', filters.limit.toString());
+      if (filters?.page) params.append('page', filters.page.toString());
 
       const response = await api.get(`/fleet/drivers?${params.toString()}`);
       console.log('✅ Drivers fetch successful:', response.data);
@@ -803,12 +819,16 @@ export const fleetApi = {
           id: 'fuel-1',
           truckId: 'truck-123',
           driverId: 'driver-456',
+          tripId: 'trip-789',
           date: new Date(Date.now() - 86400000).toISOString(),
           gallons: 50,
           costPerGallon: 4.20,
           totalCost: 210.00,
           odometer: 15000,
           location: 'Shell #402, TX',
+          jurisdiction: 'TX',
+          fuelType: 'Diesel',
+          isFullTank: true,
           status: 'verified'
         },
         {
@@ -821,6 +841,9 @@ export const fleetApi = {
           totalCost: 498.00,
           odometer: 15600, // 600 miles / 120 gallons = 5 MPG (Normal)
           location: 'Love\'s Travel Stop, OK',
+          jurisdiction: 'OK',
+          fuelType: 'Diesel',
+          isFullTank: true,
           status: 'verified'
         },
         {
@@ -833,6 +856,10 @@ export const fleetApi = {
           totalCost: 900.00,
           odometer: 20010, // Suspiciously low mileage for high fuel? Fraud detection mock test.
           location: 'Unknown Station',
+          jurisdiction: 'Unknown',
+          fuelType: 'Diesel',
+          isFullTank: false,
+          notes: 'High volume relative to mileage delta.',
           status: 'flagged' // Mock flagged status
         }
       ];

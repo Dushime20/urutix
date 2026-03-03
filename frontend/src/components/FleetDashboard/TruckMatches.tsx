@@ -12,9 +12,7 @@ import {
     ArrowRight,
     Package,
     Truck,
-    MapPin,
-    Calendar,
-    DollarSign
+    MapPin
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -105,7 +103,7 @@ export const TruckMatches: React.FC = () => {
                 <div className="size-20 bg-slate-50 rounded-[32px] flex items-center justify-center text-slate-200 mb-6">
                     <Zap size={40} />
                 </div>
-                <h3 className="text-xl font-black text-slate-900 tracking-tight">Zero Match Pulse</h3>
+                <h3 className="text-xl font-black text-primary-500 tracking-tight">Zero Match Pulse</h3>
                 <p className="text-sm font-medium text-slate-400 mt-2 max-w-sm mx-auto">
                     The synchronization engine has not detected any load requests for your fleet infrastructure yet.
                 </p>
@@ -117,7 +115,7 @@ export const TruckMatches: React.FC = () => {
         <>
             <div className="space-y-8 p-2">
                 <div className="flex items-center gap-3 px-2">
-                    <div className="size-8 bg-indigo-50 rounded-lg flex items-center justify-center text-indigo-600 shadow-inner">
+                    <div className="size-8 bg-primary-50 rounded-lg flex items-center justify-center text-primary-500 shadow-inner">
                         <TrendingUp size={16} />
                     </div>
                     <h2 className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Load Synchronization Vector</h2>
@@ -145,13 +143,13 @@ export const TruckMatches: React.FC = () => {
                                 <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8 relative z-10">
                                     <div className="flex-1">
                                         <div className="flex flex-wrap items-center gap-3 mb-6">
-                                            <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border ${match.status === 'REQUESTED' ? 'bg-blue-50 text-blue-600 border-blue-100' :
-                                                    match.status === 'ACCEPTED' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
-                                                        'bg-slate-50 text-slate-500 border-slate-100'
+                                            <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border ${match.status === 'REQUESTED' ? 'bg-primary-50 text-primary-500 border-primary-100' :
+                                                match.status === 'ACCEPTED' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
+                                                    'bg-slate-50 text-slate-500 border-slate-100'
                                                 }`}>
                                                 {match.status}
                                             </span>
-                                            <div className="flex items-center gap-2 px-3 py-1 bg-indigo-50 text-indigo-600 rounded-full border border-indigo-100">
+                                            <div className="flex items-center gap-2 px-3 py-1 bg-primary-50 text-primary-500 rounded-full border border-primary-100">
                                                 <Zap size={10} className="fill-current" />
                                                 <span className="text-[9px] font-black uppercase tracking-widest">Match {(match.score * 100).toFixed(0)}%</span>
                                             </div>
@@ -160,21 +158,21 @@ export const TruckMatches: React.FC = () => {
                                             </span>
                                         </div>
 
-                                        <h3 className="text-2xl font-black text-slate-900 tracking-tight mb-4">{match.load?.title || 'Untitled Load Intelligence'}</h3>
+                                        <h3 className="text-2xl font-black text-primary-500 tracking-tight mb-4">{match.load?.title || 'Untitled Load Intelligence'}</h3>
 
                                         <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
                                             <div className="space-y-1">
                                                 <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Payload</p>
-                                                <div className="flex items-center gap-2 font-bold text-slate-700 text-sm"><Package size={14} className="text-indigo-400" /> {match.load?.weight?.toLocaleString()} kg</div>
+                                                <div className="flex items-center gap-2 font-bold text-slate-700 text-sm"><Package size={14} className="text-primary-400" /> {match.load?.weight?.toLocaleString()} kg</div>
                                             </div>
                                             <div className="space-y-1">
                                                 <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Asset Vector</p>
-                                                <div className="flex items-center gap-2 font-bold text-slate-700 text-sm"><Truck size={14} className="text-indigo-400" /> {match.truck?.plateNumber || 'Unknown'}</div>
+                                                <div className="flex items-center gap-2 font-bold text-slate-700 text-sm"><Truck size={14} className="text-primary-400" /> {match.truck?.plateNumber || 'Unknown'}</div>
                                             </div>
                                             <div className="col-span-2 space-y-1">
                                                 <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Route Traverse</p>
                                                 <div className="flex items-center gap-2 font-bold text-slate-700 text-sm">
-                                                    <MapPin size={14} className="text-indigo-400" />
+                                                    <MapPin size={14} className="text-primary-400" />
                                                     <span>{match.load?.origin?.city || 'Origin'}</span>
                                                     <ArrowRight size={12} className="text-slate-300" />
                                                     <span>{match.load?.destination?.city || 'Destination'}</span>
@@ -189,7 +187,7 @@ export const TruckMatches: React.FC = () => {
                                                 <button
                                                     onClick={() => handleRespond(match.id, 'ACCEPTED', match)}
                                                     disabled={processingMatchId === match.id}
-                                                    className="flex items-center justify-center gap-2 px-8 py-3 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-600 transition-all shadow-xl shadow-slate-900/10 disabled:opacity-50"
+                                                    className="flex items-center justify-center gap-2 px-8 py-3 bg-primary-500 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-primary-600 transition-all shadow-xl shadow-primary-500/20 disabled:opacity-50"
                                                 >
                                                     {processingMatchId === match.id ? <Clock size={14} className="animate-spin" /> : <Check size={14} />}
                                                     Authorize Match
@@ -208,7 +206,7 @@ export const TruckMatches: React.FC = () => {
                                             match.trip ? (
                                                 <button
                                                     onClick={handleViewTrip}
-                                                    className="flex items-center justify-center gap-2 px-8 py-3 bg-indigo-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-100"
+                                                    className="flex items-center justify-center gap-2 px-8 py-3 bg-primary-500 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-primary-600 transition-all shadow-xl shadow-primary-500/20"
                                                 >
                                                     <Navigation size={14} /> Analyze Trip
                                                 </button>
@@ -216,7 +214,7 @@ export const TruckMatches: React.FC = () => {
                                                 <button
                                                     onClick={() => handleCreateTrip(match.id)}
                                                     disabled={processingMatchId === match.id}
-                                                    className="flex items-center justify-center gap-2 px-8 py-3 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-600 transition-all shadow-xl shadow-slate-900/10 disabled:opacity-50"
+                                                    className="flex items-center justify-center gap-2 px-8 py-3 bg-primary-500 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-primary-600 transition-all shadow-xl shadow-primary-500/20 disabled:opacity-50"
                                                 >
                                                     {processingMatchId === match.id ? <Clock size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
                                                     Activate Module
@@ -240,7 +238,7 @@ export const TruckMatches: React.FC = () => {
             {/* Success Portal Integration */}
             <AnimatePresence>
                 {showSuccessModal && acceptedMatchDetails && (
-                    <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-[9999] p-4" onClick={() => setShowSuccessModal(false)}>
+                    <div className="fixed inset-0 bg-primary-950/40 backdrop-blur-sm flex items-center justify-center z-[9999] p-4" onClick={() => setShowSuccessModal(false)}>
                         <motion.div
                             initial={{ opacity: 0, scale: 0.9, y: 20 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -248,13 +246,13 @@ export const TruckMatches: React.FC = () => {
                             className="bg-white rounded-[40px] shadow-2xl max-w-lg w-full overflow-hidden"
                             onClick={(e) => e.stopPropagation()}
                         >
-                            <div className="p-10 bg-indigo-600 text-white text-center relative overflow-hidden">
+                            <div className="p-10 bg-primary-500 text-white text-center relative overflow-hidden">
                                 <div className="absolute top-0 right-0 p-8 opacity-10"><Zap size={100} /></div>
                                 <div className="size-20 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-6">
                                     <CheckCircle2 size={40} />
                                 </div>
                                 <h2 className="text-3xl font-black tracking-tight mb-2">Protocol Active</h2>
-                                <p className="text-indigo-100 text-[10px] font-black uppercase tracking-[0.2em]">Match Synchronized & Active</p>
+                                <p className="text-primary-100 text-[10px] font-black uppercase tracking-[0.2em]">Match Synchronized & Active</p>
                             </div>
 
                             <div className="p-10 space-y-8">
@@ -265,7 +263,7 @@ export const TruckMatches: React.FC = () => {
                                         { l: 'Route Matrix', v: `${acceptedMatchDetails.match.load?.origin?.city} → ${acceptedMatchDetails.match.load?.destination?.city}`, i: MapPin }
                                     ].map((item, i) => (
                                         <div key={i} className="flex items-center gap-4">
-                                            <div className="size-8 bg-white rounded-lg flex items-center justify-center text-indigo-400 shadow-sm"><item.i size={14} /></div>
+                                            <div className="size-8 bg-white rounded-lg flex items-center justify-center text-primary-400 shadow-sm"><item.i size={14} /></div>
                                             <div>
                                                 <p className="text-[8px] font-black uppercase tracking-widest text-slate-400">{item.l}</p>
                                                 <p className="text-xs font-bold text-slate-900">{item.v}</p>
@@ -274,16 +272,16 @@ export const TruckMatches: React.FC = () => {
                                     ))}
                                 </div>
 
-                                <div className="p-6 bg-blue-50/50 rounded-[28px] border border-blue-100/50">
-                                    <p className="text-[10px] font-bold text-blue-800 leading-relaxed uppercase tracking-wider">
-                                        <strong className="text-indigo-600">Next Vector:</strong> The trip has been initialized. Advance to the Trips Matrix to begin operational tracking and asset monitoring.
+                                <div className="p-6 bg-primary-50/50 rounded-[28px] border border-primary-100/50">
+                                    <p className="text-[10px] font-bold text-slate-800 leading-relaxed uppercase tracking-wider">
+                                        <strong className="text-primary-500">Next Vector:</strong> The trip has been initialized. Advance to the Trips Matrix to begin operational tracking and asset monitoring.
                                     </p>
                                 </div>
                             </div>
 
                             <div className="p-10 bg-slate-50/50 flex gap-3">
                                 <button onClick={() => setShowSuccessModal(false)} className="flex-1 h-14 bg-white border border-slate-200 text-slate-500 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 transition-all">Close Portal</button>
-                                <button onClick={handleViewTrip} className="flex-1 h-14 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-600 transition-all shadow-xl shadow-slate-900/10">Trips Dashboard</button>
+                                <button onClick={handleViewTrip} className="flex-1 h-14 bg-primary-500 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-primary-600 transition-all shadow-xl shadow-primary-500/20">Trips Dashboard</button>
                             </div>
                         </motion.div>
                     </div>

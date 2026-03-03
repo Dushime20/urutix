@@ -151,7 +151,7 @@ export class DocumentApiService {
         console.warn('Failed to parse user from localStorage:', e);
       }
     }
-    
+
     // Fallback to direct localStorage access
     return localStorage.getItem('tenantId');
   }
@@ -160,11 +160,11 @@ export class DocumentApiService {
   private getHeaders(): Record<string, string> {
     const headers: Record<string, string> = {};
     const tenantId = this.getTenantId();
-    
+
     if (tenantId) {
       headers['X-Tenant-ID'] = tenantId;
     }
-    
+
     return headers;
   }
 
@@ -174,10 +174,10 @@ export class DocumentApiService {
     file: File
   ): Promise<Document> {
     const formData = new FormData();
-    
+
     // Add file
     formData.append('file', file);
-    
+
     // Add document data
     Object.entries(createRequest).forEach(([key, value]) => {
       if (value !== undefined) {
@@ -191,7 +191,9 @@ export class DocumentApiService {
 
     const response = await api.post(this.baseUrl, formData, {
       headers: {
-        'Content-Type': 'multipart/form-data',
+        // Remove default Content-Type so axios auto-sets it with the correct
+        // multipart boundary when the body is a FormData instance.
+        'Content-Type': undefined as any,
         ...this.getHeaders(),
       },
     });
@@ -201,7 +203,7 @@ export class DocumentApiService {
   // Get documents with filtering and pagination
   async getDocuments(filter: DocumentFilterRequest = {}): Promise<DocumentResponse> {
     const params = new URLSearchParams();
-    
+
     // Clean up filter parameters - remove empty/undefined values
     Object.entries(filter).forEach(([key, value]) => {
       if (value !== undefined && value !== null && value !== '') {
@@ -216,7 +218,7 @@ export class DocumentApiService {
       return response.data;
     } catch (error: any) {
       console.error('Error fetching documents:', error);
-      
+
       // If it's a 500 error, return a safe empty response to avoid UI breakage
       if (error?.response?.status === 500) {
         console.warn('Documents endpoint returned 500. Returning empty list as fallback.');
@@ -228,7 +230,7 @@ export class DocumentApiService {
           totalPages: 0,
         } as DocumentResponse;
       }
-      
+
       // If unauthorized, return empty list to fail gracefully
       if (error?.response?.status === 401) {
         console.warn('Unauthorized when fetching documents. Returning empty list.');
@@ -240,7 +242,7 @@ export class DocumentApiService {
           totalPages: 0,
         } as DocumentResponse;
       }
-      
+
       // Re-throw other errors
       throw error;
     }
@@ -249,7 +251,7 @@ export class DocumentApiService {
   // Search documents
   async searchDocuments(searchRequest: DocumentSearchRequest): Promise<Document[]> {
     const params = new URLSearchParams();
-    
+
     Object.entries(searchRequest).forEach(([key, value]) => {
       if (value !== undefined) {
         if (Array.isArray(value)) {
@@ -274,7 +276,7 @@ export class DocumentApiService {
     console.log('📄 getDocumentsByEntity called:', { entityType, entityId });
     const url = `${this.baseUrl}/entity/${entityType}/${entityId}`;
     console.log('📄 Request URL:', url);
-    
+
     try {
       const response = await api.get(url, {
         headers: this.getHeaders(),
@@ -311,17 +313,17 @@ export class DocumentApiService {
   // Get document statistics
   async getDocumentStatistics(entityType?: string): Promise<Record<string, any>> {
     try {
-      const url = entityType 
+      const url = entityType
         ? `${this.baseUrl}/statistics?entityType=${entityType}`
         : `${this.baseUrl}/statistics`;
-        
+
       const response = await api.get(url, {
         headers: this.getHeaders(),
       });
       return response.data;
     } catch (error: any) {
       console.error('Error fetching document statistics:', error);
-      
+
       // If it's a 500 error, return empty statistics
       if (error?.response?.status === 500) {
         console.warn('Document statistics endpoint returned 500, returning empty stats');
@@ -333,7 +335,7 @@ export class DocumentApiService {
           recentUploads: [],
         };
       }
-      
+
       throw error;
     }
   }
@@ -353,12 +355,12 @@ export class DocumentApiService {
     file?: File
   ): Promise<Document> {
     const formData = new FormData();
-    
+
     // Add file if provided
     if (file) {
       formData.append('file', file);
     }
-    
+
     // Add update data
     Object.entries(updateRequest).forEach(([key, value]) => {
       if (value !== undefined) {
@@ -370,12 +372,12 @@ export class DocumentApiService {
       }
     });
 
-    const headers: Record<string, string> = {
+    const headers: Record<string, any> = {
+      // Remove default Content-Type so axios auto-sets it with the correct
+      // multipart boundary when the body is a FormData instance.
+      'Content-Type': undefined,
       ...this.getHeaders(),
     };
-    if (file) {
-      headers['Content-Type'] = 'multipart/form-data';
-    }
 
     const response = await api.put(`${this.baseUrl}/${id}`, formData, { headers });
     return response.data;
@@ -454,7 +456,7 @@ export class DocumentApiService {
     if (document.mimeType.startsWith('image/')) {
       return document.fileUrl;
     }
-    
+
     // For PDFs and other documents, return the file URL
     // In production, you might want to use a document preview service
     return document.fileUrl;
@@ -463,12 +465,12 @@ export class DocumentApiService {
   // Check if document is expiring soon
   isDocumentExpiringSoon(document: Document, days: number = 30): boolean {
     if (!document.expiryDate) return false;
-    
+
     const expiryDate = new Date(document.expiryDate);
     const today = new Date();
     const diffTime = expiryDate.getTime() - today.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
+
     return diffDays <= days && diffDays > 0;
   }
 
@@ -483,7 +485,7 @@ export class DocumentApiService {
       ARCHIVED: 'text-gray-600',
       DELETED: 'text-gray-400',
     };
-    
+
     return statusColors[status] || 'text-gray-500';
   }
 
@@ -496,18 +498,18 @@ export class DocumentApiService {
       URGENT: 'text-red-600',
       CRITICAL: 'text-red-800',
     };
-    
+
     return priorityColors[priority] || 'text-gray-500';
   }
 
   // Format file size
   formatFileSize(bytes: number): string {
     if (bytes === 0) return '0 Bytes';
-    
+
     const k = 1024;
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    
+
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   }
 
@@ -519,7 +521,7 @@ export class DocumentApiService {
     if (mimeType.includes('excel') || mimeType.includes('spreadsheet')) return '📊';
     if (mimeType.includes('zip') || mimeType.includes('archive')) return '📦';
     if (mimeType.startsWith('text/')) return '📄';
-    
+
     return '📎';
   }
 }

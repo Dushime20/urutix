@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { fleetApi, type TCOAnalysis } from '../services/fleetApi';
 import TCOCharts from '../components/FleetDashboard/Analytics/TCOCharts';
 import { Loader2, Zap, Fuel, DollarSign, CheckCircle, Filter, ArrowRight } from 'lucide-react';
-import StatCard from '../components/EnliteUI/Cards/StatCard';
+import { cn } from '../utils/cn';
 
 
 const FleetAnalytics: React.FC = () => {
@@ -28,6 +28,46 @@ const FleetAnalytics: React.FC = () => {
     }
   };
 
+  const CircularStatsCard = ({ title, value, icon: Icon, colorClass, secondaryColor }: any) => {
+    return (
+      <div className="flex flex-col items-center group">
+        <div className="relative w-40 h-40 rounded-full bg-white border-[8px] border-slate-50 flex flex-col items-center justify-center transition-all duration-500 hover:border-slate-100 hover:shadow-xl hover:shadow-slate-200/50">
+          <svg className="absolute inset-0 w-full h-full -rotate-90 scale-[1.05]">
+            <circle
+              cx="80"
+              cy="80"
+              r="72"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="3"
+              strokeDasharray="452"
+              strokeDashoffset="350"
+              className={cn("opacity-10 transition-all duration-1000 group-hover:stroke-dashoffset-[200]", secondaryColor)}
+            />
+          </svg>
+
+          <div className={cn("p-2 rounded-2xl mb-2 bg-slate-50 text-slate-400 group-hover:bg-white group-hover:text-inherit transition-all duration-500 shadow-sm", colorClass)}>
+            <Icon size={18} />
+          </div>
+
+          <div className="flex flex-col items-center px-4 w-full overflow-hidden">
+            <span className="text-xl font-black text-[#0f172a] tracking-tight group-hover:scale-110 transition-transform duration-500 truncate w-full text-center">
+              {value}
+            </span>
+          </div>
+
+          <div className="absolute inset-4 rounded-full border border-dashed border-slate-100 opacity-50 group-hover:rotate-90 transition-transform duration-1000" />
+        </div>
+
+        <div className="mt-4 text-center px-2">
+          <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] group-hover:text-blue-600 transition-colors duration-300 line-clamp-1">
+            {title}
+          </p>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="flex flex-col min-h-screen w-full bg-[#f8fafc] text-[#0f172a] font-sans">
       <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-10 space-y-8">
@@ -35,8 +75,8 @@ const FleetAnalytics: React.FC = () => {
           {/* Page Heading */}
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
             <div className="flex flex-col gap-1">
-              <h1 className="text-3xl sm:text-4xl font-black text-[#0f172a] uppercase tracking-tight">Fleet <span className="text-blue-600">Analytics</span></h1>
-              <p className="text-xs font-bold text-slate-400 uppercase tracking-[0.2em]">Real-time Performance & Cost Intelligence</p>
+              <h1 className="text-3xl sm:text-4xl font-black text-[#0f172a] uppercase tracking-tight">Analytics</h1>
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-[0.2em]">Overview</p>
             </div>
             <div className="flex gap-3">
               <button className="flex items-center justify-center rounded-xl h-10 px-6 bg-white border border-slate-100 text-slate-600 text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 hover:text-blue-600 transition-colors shadow-sm">
@@ -54,7 +94,7 @@ const FleetAnalytics: React.FC = () => {
                   onClick={() => setActiveTab(tab)}
                   className={`flex flex-col items-center justify-center border-b-[3px] pb-3 pt-4 px-2 transition-all whitespace-nowrap ${activeTab === tab ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-400 hover:text-slate-600 hover:bg-slate-50'}`}
                 >
-                  <p className="text-[10px] font-black uppercase tracking-widest">{tab === 'tco' ? 'TCO Breakdown' : `${tab.charAt(0).toUpperCase() + tab.slice(1)} ${tab === 'fuel' ? 'Analysis' : tab === 'maintenance' ? 'Logs' : ''}`}</p>
+                  <p className="text-[10px] font-black uppercase tracking-widest">{tab === 'tco' ? 'Costs' : `${tab.charAt(0).toUpperCase() + tab.slice(1)} ${tab === 'fuel' ? 'Stats' : tab === 'maintenance' ? 'Logs' : ''}`}</p>
                 </button>
               ))}
             </div>
@@ -69,8 +109,8 @@ const FleetAnalytics: React.FC = () => {
             ) : tcoData ? (
               <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
                 <div className="mb-6 flex flex-col gap-1">
-                  <h2 className="text-xl font-black text-[#0f172a] uppercase tracking-tight">Total Cost of Ownership</h2>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Cost per Mile Analysis & Expense Breakdown</p>
+                  <h2 className="text-xl font-black text-[#0f172a] uppercase tracking-tight">Costs</h2>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Expense summary</p>
                 </div>
                 <TCOCharts data={tcoData} />
               </div>
@@ -80,42 +120,34 @@ const FleetAnalytics: React.FC = () => {
           ) : (
             /* Stats Grid (Overview) */
             <>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                <StatCard
-                  title="Fleet Availability"
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 mb-12 place-items-center bg-white p-10 rounded-[3rem] border border-slate-100 shadow-sm">
+                <CircularStatsCard
+                  title="Available"
                   value="94.2%"
-                  icon={<Zap size={20} />}
-                  color="primary"
-                  trend="1.2%"
-                  trendDirection="up"
-                  subtitle="System Uptime"
+                  icon={Zap}
+                  colorClass="bg-blue-50 text-blue-600"
+                  secondaryColor="text-blue-600"
                 />
-                <StatCard
-                  title="Fuel Efficiency"
+                <CircularStatsCard
+                  title="Efficiency"
                   value="18.5 MPG"
-                  icon={<Fuel size={20} />}
-                  color="emerald"
-                  trend="0.5%"
-                  trendDirection="down"
-                  subtitle="Vs. Avg: 16.2"
+                  icon={Fuel}
+                  colorClass="bg-emerald-50 text-emerald-600"
+                  secondaryColor="text-emerald-600"
                 />
-                <StatCard
-                  title="Monthly Spend"
+                <CircularStatsCard
+                  title="Spend"
                   value="$42,850"
-                  icon={<DollarSign size={20} />}
-                  color="warning"
-                  trend="2.1%"
-                  trendDirection="up"
-                  subtitle="Proj: $45,000"
+                  icon={DollarSign}
+                  colorClass="bg-amber-50 text-amber-600"
+                  secondaryColor="text-amber-600"
                 />
-                <StatCard
+                <CircularStatsCard
                   title="Compliance"
                   value="98%"
-                  icon={<CheckCircle size={20} />}
-                  color="accent"
-                  trend="+0.8%"
-                  trendDirection="up"
-                  subtitle="Scheduled Tasks"
+                  icon={CheckCircle}
+                  colorClass="bg-primary-50 text-primary-500"
+                  secondaryColor="text-primary-500"
                 />
               </div>
 
@@ -125,8 +157,8 @@ const FleetAnalytics: React.FC = () => {
                 <div className="lg:col-span-2 flex flex-col gap-4 rounded-[2rem] bg-white border border-slate-100 p-8 shadow-sm">
                   <div className="flex justify-between items-start">
                     <div>
-                      <h3 className="text-lg font-black text-[#0f172a] uppercase tracking-tight">Fuel & TCO Trend</h3>
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Operational Expenses vs Fuel</p>
+                      <h3 className="text-lg font-black text-[#0f172a] uppercase tracking-tight">Fuel & Costs</h3>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Operational breakdown</p>
                     </div>
                     <div className="text-right">
                       <p className="text-2xl font-black text-[#0f172a] tracking-tight">$124,500</p>
@@ -158,7 +190,7 @@ const FleetAnalytics: React.FC = () => {
                 {/* Maintenance Calendar Widget */}
                 <div className="flex flex-col gap-4 rounded-[2rem] bg-white border border-slate-100 p-8 shadow-sm">
                   <div className="flex justify-between items-center mb-2">
-                    <h3 className="text-lg font-black text-[#0f172a] uppercase tracking-tight">Service Schedule</h3>
+                    <h3 className="text-lg font-black text-[#0f172a] uppercase tracking-tight">Schedule</h3>
                     <button className="text-blue-600 text-[10px] font-black uppercase tracking-widest hover:text-blue-700">View All</button>
                   </div>
                   <div className="grid grid-cols-7 gap-1 text-center text-[9px] font-black text-slate-300 uppercase mb-2">
@@ -205,7 +237,7 @@ const FleetAnalytics: React.FC = () => {
                 {/* Breakdown & Repair Feed */}
                 <div className="flex flex-col gap-4 rounded-[2rem] bg-white border border-slate-100 p-8 shadow-sm">
                   <div className="flex justify-between items-center mb-2">
-                    <h3 className="text-lg font-black text-[#0f172a] uppercase tracking-tight">Recent Issues</h3>
+                    <h3 className="text-lg font-black text-[#0f172a] uppercase tracking-tight">Issues</h3>
                     <button className="text-slate-400 hover:text-blue-600 flex items-center gap-2 transition-colors">
                       <Filter className="w-4 h-4" />
                     </button>
@@ -214,8 +246,8 @@ const FleetAnalytics: React.FC = () => {
                     <table className="w-full text-left">
                       <thead className="border-b border-slate-50">
                         <tr>
-                          <th className="pb-4 text-[9px] font-black text-slate-300 uppercase tracking-widest">Asset</th>
-                          <th className="pb-4 text-[9px] font-black text-slate-300 uppercase tracking-widest">Diagnostic</th>
+                          <th className="pb-4 text-[9px] font-black text-slate-300 uppercase tracking-widest">Vehicle</th>
+                          <th className="pb-4 text-[9px] font-black text-slate-300 uppercase tracking-widest">Description</th>
                           <th className="pb-4 text-[9px] font-black text-slate-300 uppercase tracking-widest text-center">Status</th>
                           <th className="pb-4 text-[9px] font-black text-slate-300 uppercase tracking-widest text-right">Cost</th>
                         </tr>
@@ -268,8 +300,8 @@ const FleetAnalytics: React.FC = () => {
                 {/* Cost Distribution by Vehicle Type */}
                 <div className="flex flex-col gap-4 rounded-[2rem] bg-white border border-slate-100 p-8 shadow-sm">
                   <div className="flex flex-col gap-1 mb-2">
-                    <h3 className="text-lg font-black text-[#0f172a] uppercase tracking-tight">Cost Distribution</h3>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Quarterly Spend Analysis</p>
+                    <h3 className="text-lg font-black text-[#0f172a] uppercase tracking-tight">Spending</h3>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Category analysis</p>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center flex-1">
                     <div className="flex flex-col gap-4">

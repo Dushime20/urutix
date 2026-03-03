@@ -146,7 +146,7 @@ const AdminDashboard: React.FC = () => {
 
   return (
     <AdminPageLayout
-      title="Platform Overview"
+      title="Admin Dashboard"
       description="Welcome back. Here's a summary of what's happening across your platform today."
       actions={
         <div className="flex items-center gap-4">
@@ -155,7 +155,7 @@ const AdminDashboard: React.FC = () => {
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
             </span>
-            System Healthy: 99.9% Uptime
+            System Status: 99.9% Uptime
           </div>
           <AdminQuickActions />
         </div>
@@ -166,7 +166,7 @@ const AdminDashboard: React.FC = () => {
         <div>
           <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
             <TrendingUp size={20} className="text-indigo-600" />
-            Performance Trends
+            Performance
           </h2>
           <p className="text-sm text-slate-500 font-medium">Insights based on latest data</p>
         </div>
@@ -244,8 +244,8 @@ const AdminDashboard: React.FC = () => {
         <div className="xl:col-span-2 space-y-8">
           {/* Revenue Performance */}
           <DataCard
-            title="Revenue Trajectory"
-            subtitle="Historical performance overview"
+            title="Revenue"
+            subtitle="Historical performance"
           >
             <div className="h-[320px]">
               <Line data={revenueData} options={chartOptions} />
@@ -254,8 +254,8 @@ const AdminDashboard: React.FC = () => {
 
           {/* Regional Activity Map */}
           <DataCard
-            title="Geographic Hub Distribution"
-            subtitle="Platform census across key hubs"
+            title="Activity Map"
+            subtitle="Platform census"
             actions={
               <button className="flex items-center gap-1.5 px-3 py-1.5 text-indigo-600 hover:bg-indigo-50 rounded-lg text-xs font-bold transition-all">
                 <MapIcon size={14} /> View Map

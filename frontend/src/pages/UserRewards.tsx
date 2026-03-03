@@ -2,8 +2,6 @@ import React, { useState, useEffect } from 'react';
 import {
   Gift,
   CheckCircle,
-  Clock,
-  XCircle,
   Coins,
   CreditCard,
   Star,
@@ -151,7 +149,7 @@ const UserRewards: React.FC = () => {
   const getRewardIcon = (type: string) => {
     switch (type) {
       case 'transaction_bonus':
-        return <CreditCard className="text-blue-500" size={20} />;
+        return <CreditCard className="text-primary-500" size={20} />;
       case 'volume_bonus':
         return <Coins className="text-amber-500" size={20} />;
       case 'loyalty_points':
@@ -161,7 +159,7 @@ const UserRewards: React.FC = () => {
       case 'discount':
         return <Ticket className="text-orange-500" size={20} />;
       case 'premium_features':
-        return <Zap className="text-indigo-500" size={20} />;
+        return <Zap className="text-primary-500" size={20} />;
       default:
         return <Award className="text-slate-500" size={20} />;
     }
@@ -175,7 +173,7 @@ const UserRewards: React.FC = () => {
     switch (status) {
       case 'pending': return 'bg-amber-50 text-amber-700 border border-amber-200';
       case 'active': return 'bg-emerald-50 text-emerald-700 border border-emerald-200';
-      case 'redeemed': return 'bg-blue-50 text-blue-700 border border-blue-200';
+      case 'redeemed': return 'bg-primary-50 text-blue-700 border border-primary-200';
       case 'expired': return 'bg-rose-50 text-rose-700 border border-rose-200';
       default: return 'bg-slate-50 text-slate-600 border border-slate-200';
     }
@@ -184,7 +182,7 @@ const UserRewards: React.FC = () => {
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#345E85]"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500"></div>
       </div>
     );
   }
@@ -229,8 +227,8 @@ const UserRewards: React.FC = () => {
         title="Your Rewards"
         icon={<Gift />}
         headerColor="primary"
-        action={
-          <button className="text-[10px] font-black uppercase tracking-wider text-[#345E85] hover:underline">
+        actions={
+          <button className="text-[10px] font-black uppercase tracking-wider text-primary-500 hover:underline">
             View History
           </button>
         }
@@ -252,7 +250,7 @@ const UserRewards: React.FC = () => {
                   className="group relative bg-white border border-slate-100 rounded-2xl p-5 hover:shadow-md transition-all flex flex-col md:flex-row md:items-center justify-between gap-4"
                 >
                   <div className="flex items-start gap-4">
-                    <div className="h-12 w-12 rounded-xl bg-slate-50 flex items-center justify-center shrink-0 group-hover:bg-blue-50 transition-colors">
+                    <div className="h-12 w-12 rounded-xl bg-slate-50 flex items-center justify-center shrink-0 group-hover:bg-primary-50 transition-colors">
                       {getRewardIcon(reward.type)}
                     </div>
                     <div>
@@ -284,7 +282,7 @@ const UserRewards: React.FC = () => {
                     {reward.status === 'pending' && (
                       <button
                         onClick={() => activateReward(reward.id)}
-                        className="px-5 py-2 bg-[#345E85] text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-[#2a4d6d] transition-colors shadow-sm"
+                        className="px-5 py-2 bg-primary-500 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-primary-600 transition-colors shadow-sm"
                       >
                         Activate
                       </button>

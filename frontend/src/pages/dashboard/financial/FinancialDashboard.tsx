@@ -1,42 +1,29 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import {
-  DollarSign,
-  TrendingUp,
-  TrendingDown,
-  CreditCard,
-  Receipt,
   Calendar,
   Download,
   Filter,
   ArrowUpRight,
-  ArrowDownRight,
-  Package,
-  Truck,
-  Clock,
-  AlertCircle,
-  CheckCircle,
   PieChart as PieChartIcon,
   BarChart3,
-  FileText,
-  Wallet
+  Wallet,
+  Clock,
+  AlertCircle,
+  Shield
 } from 'lucide-react';
 import {
-  LineChart,
-  Line,
-  BarChart,
-  Bar,
-  PieChart,
-  Pie,
-  Cell,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend,
   ResponsiveContainer,
   Area,
-  AreaChart
+  AreaChart,
+  PieChart,
+  Pie,
+  Cell
 } from 'recharts';
+import { cn } from '@/utils/cn';
 
 interface Transaction {
   id: string;
@@ -68,9 +55,8 @@ interface BudgetItem {
 
 export const FinancialDashboard: React.FC = () => {
   const [timeRange, setTimeRange] = useState<'week' | 'month' | 'quarter' | 'year'>('month');
-  const [filterStatus, setFilterStatus] = useState<string>('all');
 
-  // Mock data - Replace with actual API calls
+  // Mock data - Consistent with premium theme
   const financialStats = {
     totalSpent: 125430,
     thisMonth: 18750,
@@ -92,7 +78,7 @@ export const FinancialDashboard: React.FC = () => {
   ];
 
   const categoryBreakdown = [
-    { name: 'Transportation', value: 72, amount: 90360, color: '#8B5CF6' },
+    { name: 'Transportation', value: 72, amount: 90360, color: '#345E85' },
     { name: 'Insurance', value: 11, amount: 13797, color: '#EC4899' },
     { name: 'Platform Fees', value: 8, amount: 10034, color: '#F59E0B' },
     { name: 'Additional Services', value: 9, amount: 11288, color: '#10B981' }
@@ -134,288 +120,154 @@ export const FinancialDashboard: React.FC = () => {
       date: '2025-12-28',
       cargoId: 'CARGO-2398',
       paymentMethod: 'Bank Transfer'
-    },
-    {
-      id: '4',
-      type: 'fee',
-      description: 'Platform Service Fee',
-      amount: 145,
-      status: 'completed',
-      date: '2025-12-25',
-      paymentMethod: 'Auto-debit'
-    },
-    {
-      id: '5',
-      type: 'payment',
-      description: 'Shipment Payment - Boston to Miami',
-      amount: 4250,
-      status: 'scheduled',
-      date: '2026-01-10',
-      cargoId: 'CARGO-2405'
     }
   ];
 
-  const upcomingPayments = [
-    { id: '1', description: 'Insurance Premium', amount: 1200, dueDate: '2026-01-05', status: 'pending' },
-    { id: '2', description: 'Shipment to Seattle', amount: 3800, dueDate: '2026-01-10', status: 'scheduled' },
-    { id: '3', description: 'Monthly Platform Fee', amount: 299, dueDate: '2026-01-15', status: 'scheduled' }
-  ];
-
-  const getStatusColor = (status: string) => {
-    const colors = {
-      completed: 'text-emerald-600 bg-emerald-50',
-      pending: 'text-amber-600 bg-amber-50',
-      failed: 'text-rose-600 bg-rose-50',
-      scheduled: 'text-blue-600 bg-blue-50'
-    };
-    return colors[status as keyof typeof colors] || 'text-gray-600 bg-gray-50';
-  };
-
-  const getTypeIcon = (type: string) => {
-    const icons = {
-      payment: <DollarSign className="w-5 h-5" />,
-      invoice: <FileText className="w-5 h-5" />,
-      refund: <TrendingUp className="w-5 h-5" />,
-      fee: <Receipt className="w-5 h-5" />
-    };
-    return icons[type as keyof typeof icons] || <DollarSign className="w-5 h-5" />;
-  };
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
+      minimumFractionDigits: 0
     }).format(amount);
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-violet-50 p-6">
-      {/* Header */}
-      <div className="mb-8">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Financial Dashboard</h1>
-            <p className="text-gray-600">Track spending, manage payments, and optimize costs</p>
-          </div>
-          <div className="flex gap-3">
-            <button className="px-4 py-2 border-2 border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 font-semibold transition-all flex items-center gap-2">
-              <Filter className="w-5 h-5" />
-              Filter
-            </button>
-            <button className="px-4 py-2 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-xl hover:from-violet-700 hover:to-purple-700 font-semibold transition-all flex items-center gap-2 shadow-lg">
-              <Download className="w-5 h-5" />
-              Export Report
-            </button>
-          </div>
-        </div>
-
-        {/* Time Range Selector */}
-        <div className="flex gap-2 mt-4">
+    <div className="space-y-10 animate-in fade-in duration-500">
+      {/* Header Controls */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-slate-50 p-6 rounded-[2rem] border border-slate-100 shadow-sm">
+        <div className="flex gap-2 p-1 bg-white rounded-2xl border border-slate-100 shadow-inner">
           {['week', 'month', 'quarter', 'year'].map((range) => (
             <button
               key={range}
               onClick={() => setTimeRange(range as any)}
-              className={`px-4 py-2 rounded-lg font-medium transition-all ${
+              className={cn(
+                "px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
                 timeRange === range
-                  ? 'bg-violet-600 text-white shadow-md'
-                  : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'
-              }`}
+                  ? 'bg-slate-900 text-white shadow-lg'
+                  : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'
+              )}
             >
-              {range.charAt(0).toUpperCase() + range.slice(1)}
+              {range}
             </button>
           ))}
         </div>
-      </div>
-
-      {/* Key Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <div className="bg-gradient-to-br from-violet-500 to-purple-600 rounded-2xl p-6 text-white shadow-lg">
-          <div className="flex items-center justify-between mb-4">
-            <div className="bg-white/20 backdrop-blur-sm rounded-xl p-3">
-              <Wallet className="w-6 h-6" />
-            </div>
-            <div className="text-right">
-              <p className="text-violet-100 text-sm font-medium">Total Spent</p>
-              <p className="text-3xl font-bold mt-1">{formatCurrency(financialStats.totalSpent)}</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2 text-sm">
-            <div className="flex items-center gap-1 bg-white/20 px-2 py-1 rounded-lg">
-              <TrendingUp className="w-4 h-4" />
-              <span>{financialStats.monthlyChange}%</span>
-            </div>
-            <span className="text-violet-100">vs last month</span>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-2xl p-6 border-2 border-gray-100 shadow-sm hover:shadow-lg transition-shadow">
-          <div className="flex items-center justify-between mb-4">
-            <div className="bg-emerald-100 rounded-xl p-3">
-              <Calendar className="w-6 h-6 text-emerald-600" />
-            </div>
-            <div className="text-right">
-              <p className="text-gray-600 text-sm font-medium">This Month</p>
-              <p className="text-3xl font-bold text-gray-900 mt-1">{formatCurrency(financialStats.thisMonth)}</p>
-            </div>
-          </div>
-          <div className="text-sm text-gray-600">
-            {financialStats.totalShipments} shipments
-          </div>
-        </div>
-
-        <div className="bg-white rounded-2xl p-6 border-2 border-gray-100 shadow-sm hover:shadow-lg transition-shadow">
-          <div className="flex items-center justify-between mb-4">
-            <div className="bg-amber-100 rounded-xl p-3">
-              <Clock className="w-6 h-6 text-amber-600" />
-            </div>
-            <div className="text-right">
-              <p className="text-gray-600 text-sm font-medium">Pending</p>
-              <p className="text-3xl font-bold text-gray-900 mt-1">{formatCurrency(financialStats.pending)}</p>
-            </div>
-          </div>
-          <div className="text-sm text-gray-600">
-            3 payments scheduled
-          </div>
-        </div>
-
-        <div className="bg-white rounded-2xl p-6 border-2 border-gray-100 shadow-sm hover:shadow-lg transition-shadow">
-          <div className="flex items-center justify-between mb-4">
-            <div className="bg-rose-100 rounded-xl p-3">
-              <AlertCircle className="w-6 h-6 text-rose-600" />
-            </div>
-            <div className="text-right">
-              <p className="text-gray-600 text-sm font-medium">Overdue</p>
-              <p className="text-3xl font-bold text-gray-900 mt-1">{formatCurrency(financialStats.overdue)}</p>
-            </div>
-          </div>
-          <div className="text-sm text-rose-600 font-medium">
-            Action required
-          </div>
+        <div className="flex items-center gap-3">
+          <button className="h-12 px-6 bg-white border border-slate-200 text-slate-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 transition-all flex items-center gap-2">
+            <Filter size={14} /> Filter Node
+          </button>
+          <button className="h-12 px-6 bg-[#345E85] text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-800 transition-all flex items-center gap-2 shadow-lg shadow-blue-900/10">
+            <Download size={14} /> Export Audit
+          </button>
         </div>
       </div>
 
-      {/* Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-        {/* Spending Trend */}
-        <div className="bg-white rounded-2xl p-6 border-2 border-gray-100 shadow-sm">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h3 className="text-lg font-bold text-gray-900 mb-1">Spending Trend</h3>
-              <p className="text-sm text-gray-600">Monthly breakdown by category</p>
+      {/* Primary Metrics Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {[
+          { label: 'Total Expenditure', value: formatCurrency(financialStats.totalSpent), icon: Wallet, color: 'emerald', change: '+12.5%' },
+          { label: 'Current Period', value: formatCurrency(financialStats.thisMonth), icon: Calendar, color: 'blue', sub: '42 Active Assets' },
+          { label: 'Pending Liquidity', value: formatCurrency(financialStats.pending), icon: Clock, color: 'amber', sub: '3 Scheduled Syncs' },
+          { label: 'Risk Threshold', value: formatCurrency(financialStats.overdue), icon: AlertCircle, color: 'rose', sub: 'Immediate Audit Required' }
+        ].map((stat, i) => (
+          <div key={i} className="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-xl transition-all duration-300 group">
+            <div className={cn(
+              "w-12 h-12 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform",
+              stat.color === 'emerald' ? "bg-emerald-50 text-emerald-600" :
+                stat.color === 'blue' ? "bg-blue-50 text-blue-600" :
+                  stat.color === 'amber' ? "bg-amber-50 text-amber-600" : "bg-rose-50 text-rose-600"
+            )}>
+              <stat.icon size={24} />
             </div>
-            <BarChart3 className="w-6 h-6 text-violet-600" />
+            <div className="space-y-1">
+              <div className="text-3xl font-black text-slate-900 leading-none">
+                {stat.value}
+              </div>
+              <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center justify-between">
+                <span>{stat.label}</span>
+                {stat.change && <span className="text-emerald-500">{stat.change}</span>}
+              </div>
+              {stat.sub && (
+                <div className={cn(
+                  "text-[9px] font-bold uppercase tracking-widest mt-2",
+                  stat.color === 'rose' ? "text-rose-500 animate-pulse" : "text-slate-300"
+                )}>
+                  {stat.sub}
+                </div>
+              )}
+            </div>
           </div>
+        ))}
+      </div>
 
-          <ResponsiveContainer width="100%" height={300}>
-            <AreaChart data={spendingTrend}>
-              <defs>
-                <linearGradient id="colorTransport" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#8B5CF6" stopOpacity={0.3}/>
-                  <stop offset="95%" stopColor="#8B5CF6" stopOpacity={0}/>
-                </linearGradient>
-                <linearGradient id="colorInsurance" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#EC4899" stopOpacity={0.3}/>
-                  <stop offset="95%" stopColor="#EC4899" stopOpacity={0}/>
-                </linearGradient>
-                <linearGradient id="colorFees" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#F59E0B" stopOpacity={0.3}/>
-                  <stop offset="95%" stopColor="#F59E0B" stopOpacity={0}/>
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-              <XAxis dataKey="month" stroke="#6B7280" />
-              <YAxis stroke="#6B7280" />
-              <Tooltip 
-                contentStyle={{ 
-                  backgroundColor: 'white', 
-                  border: '2px solid #E5E7EB', 
-                  borderRadius: '12px',
-                  padding: '12px'
-                }}
-              />
-              <Legend />
-              <Area 
-                type="monotone" 
-                dataKey="transport" 
-                stroke="#8B5CF6" 
-                strokeWidth={2}
-                fillOpacity={1} 
-                fill="url(#colorTransport)" 
-                name="Transportation"
-              />
-              <Area 
-                type="monotone" 
-                dataKey="insurance" 
-                stroke="#EC4899" 
-                strokeWidth={2}
-                fillOpacity={1} 
-                fill="url(#colorInsurance)" 
-                name="Insurance"
-              />
-              <Area 
-                type="monotone" 
-                dataKey="fees" 
-                stroke="#F59E0B" 
-                strokeWidth={2}
-                fillOpacity={1} 
-                fill="url(#colorFees)" 
-                name="Fees"
-              />
-            </AreaChart>
-          </ResponsiveContainer>
+      {/* Analytics Architecture */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Expenditure Lifecycle Chart */}
+        <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-sm">
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <h3 className="text-sm font-black text-slate-900 uppercase tracking-tighter">Expenditure Lifecycle</h3>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Cross-category financial velocity</p>
+            </div>
+            <BarChart3 className="text-[#345E85] w-6 h-6 opacity-40" />
+          </div>
+          <div className="h-[300px] w-full mt-4">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={spendingTrend}>
+                <defs>
+                  <linearGradient id="colorPrimary" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#345E85" stopOpacity={0.1} />
+                    <stop offset="95%" stopColor="#345E85" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                <XAxis dataKey="month" stroke="#94a3b8" fontSize={10} fontWeight={900} axisLine={false} tickLine={false} />
+                <YAxis stroke="#94a3b8" fontSize={10} fontWeight={900} axisLine={false} tickLine={false} tickFormatter={(value) => `$${value / 1000}k`} />
+                <Tooltip
+                  contentStyle={{ borderRadius: '1rem', border: 'none', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)', fontWeight: 900, textTransform: 'uppercase', fontSize: '10px' }}
+                />
+                <Area type="monotone" dataKey="total" stroke="#345E85" strokeWidth={3} fillOpacity={1} fill="url(#colorPrimary)" />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
         </div>
 
-        {/* Category Breakdown */}
-        <div className="bg-white rounded-2xl p-6 border-2 border-gray-100 shadow-sm">
-          <div className="flex items-center justify-between mb-6">
+        {/* Capital OS Distribution */}
+        <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-sm">
+          <div className="flex items-center justify-between mb-8">
             <div>
-              <h3 className="text-lg font-bold text-gray-900 mb-1">Cost Breakdown</h3>
-              <p className="text-sm text-gray-600">Distribution by category</p>
+              <h3 className="text-sm font-black text-slate-900 uppercase tracking-tighter">Capital Distribution</h3>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Allocation across operational nodes</p>
             </div>
-            <PieChartIcon className="w-6 h-6 text-violet-600" />
+            <PieChartIcon className="text-[#345E85] w-6 h-6 opacity-40" />
           </div>
-
-          <div className="flex items-center gap-6">
-            <ResponsiveContainer width="50%" height={250}>
+          <div className="flex items-center h-[300px]">
+            <ResponsiveContainer width="60%" height="100%">
               <PieChart>
                 <Pie
                   data={categoryBreakdown}
                   cx="50%"
                   cy="50%"
                   innerRadius={60}
-                  outerRadius={100}
-                  paddingAngle={5}
+                  outerRadius={90}
+                  paddingAngle={8}
                   dataKey="value"
                 >
                   {categoryBreakdown.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
+                    <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
                   ))}
                 </Pie>
-                <Tooltip 
-                  formatter={(value: any, name: any, props: any) => [
-                    `${formatCurrency(props.payload.amount)} (${value}%)`,
-                    props.payload.name
-                  ]}
-                />
+                <Tooltip />
               </PieChart>
             </ResponsiveContainer>
-
-            <div className="flex-1 space-y-3">
+            <div className="flex-1 space-y-4">
               {categoryBreakdown.map((item, index) => (
-                <div key={index} className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div 
-                      className="w-3 h-3 rounded-full" 
-                      style={{ backgroundColor: item.color }}
-                    />
-                    <span className="text-sm font-medium text-gray-700">{item.name}</span>
+                <div key={index} className="flex items-center justify-between group cursor-default">
+                  <div className="flex items-center gap-3">
+                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: item.color }} />
+                    <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest group-hover:text-slate-900 transition-colors">{item.name}</span>
                   </div>
-                  <div className="text-right">
-                    <p className="text-sm font-bold text-gray-900">{formatCurrency(item.amount)}</p>
-                    <p className="text-xs text-gray-500">{item.value}%</p>
-                  </div>
+                  <span className="text-[10px] font-black text-slate-900">{item.value}%</span>
                 </div>
               ))}
             </div>
@@ -423,106 +275,88 @@ export const FinancialDashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Budget Analysis */}
-      <div className="bg-white rounded-2xl p-6 border-2 border-gray-100 shadow-sm mb-8">
-        <div className="flex items-center justify-between mb-6">
+      {/* Resource Allocation Registry */}
+      <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-sm">
+        <div className="flex items-center justify-between mb-10">
           <div>
-            <h3 className="text-lg font-bold text-gray-900 mb-1">Budget vs Actual</h3>
-            <p className="text-sm text-gray-600">Track spending against your budget</p>
+            <h3 className="text-sm font-black text-slate-900 uppercase tracking-tighter">Budget Allocation Registry</h3>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Real-time utilization vs benchmark</p>
           </div>
-          <div className="text-right">
-            <p className="text-sm text-gray-600">Overall Budget Utilization</p>
-            <p className="text-2xl font-bold text-gray-900">{financialStats.budgetUtilization}%</p>
+          <div className="bg-slate-50 px-6 py-3 rounded-2xl border border-slate-100">
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Global Pool Used:</span>
+            <span className="ml-3 text-lg font-black text-[#345E85]">{financialStats.budgetUtilization}%</span>
           </div>
         </div>
 
-        <div className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
           {budgetAnalysis.map((item, index) => (
-            <div key={index} className="space-y-2">
+            <div key={index} className="space-y-4">
               <div className="flex items-center justify-between">
-                <span className="font-semibold text-gray-900">{item.category}</span>
-                <div className="text-right">
-                  <span className="text-sm font-bold text-gray-900">
+                <div>
+                  <span className="text-[10px] font-black text-slate-900 uppercase tracking-widest">{item.category}</span>
+                  <div className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">
                     {formatCurrency(item.actual)} / {formatCurrency(item.budgeted)}
-                  </span>
-                  <span className={`ml-3 text-sm font-medium ${
-                    item.variance < 0 ? 'text-emerald-600' : 'text-rose-600'
-                  }`}>
-                    {item.variance < 0 ? '↓' : '↑'} {formatCurrency(Math.abs(item.variance))}
-                  </span>
+                  </div>
+                </div>
+                <div className={cn(
+                  "text-[10px] font-black px-3 py-1 rounded-full border",
+                  item.variance < 0 ? "bg-emerald-50 text-emerald-600 border-emerald-100" : "bg-rose-50 text-rose-600 border-rose-100"
+                )}>
+                  {item.variance < 0 ? "Under Budget" : "Over Budget"}
                 </div>
               </div>
-              <div className="relative h-3 bg-gray-100 rounded-full overflow-hidden">
+              <div className="relative h-2 bg-slate-50 rounded-full overflow-hidden border border-slate-100 shadow-inner">
                 <div
-                  className={`absolute top-0 left-0 h-full rounded-full transition-all ${
-                    item.percentage > 100 
-                      ? 'bg-gradient-to-r from-rose-500 to-red-600' 
-                      : item.percentage > 90
-                      ? 'bg-gradient-to-r from-amber-500 to-orange-600'
-                      : 'bg-gradient-to-r from-emerald-500 to-teal-600'
-                  }`}
+                  className={cn(
+                    "absolute top-0 left-0 h-full rounded-full transition-all duration-1000",
+                    item.percentage > 100 ? "bg-rose-500" : "bg-[#345E85]"
+                  )}
                   style={{ width: `${Math.min(item.percentage, 100)}%` }}
                 />
-              </div>
-              <div className="flex justify-between text-xs text-gray-500">
-                <span>{item.percentage.toFixed(1)}% utilized</span>
-                <span className={item.percentage > 100 ? 'text-rose-600 font-semibold' : ''}>
-                  {item.percentage > 100 ? 'Over budget!' : `${formatCurrency(item.budgeted - item.actual)} remaining`}
-                </span>
               </div>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Recent Transactions & Upcoming Payments */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Recent Transactions */}
-        <div className="lg:col-span-2 bg-white rounded-2xl p-6 border-2 border-gray-100 shadow-sm">
-          <div className="flex items-center justify-between mb-6">
+      {/* Historic Logs Preview */}
+      <div className="bg-slate-900 rounded-[2.5rem] p-10 text-white relative overflow-hidden shadow-2xl">
+        <div className="relative z-10">
+          <div className="flex items-center justify-between mb-10">
             <div>
-              <h3 className="text-lg font-bold text-gray-900 mb-1">Recent Transactions</h3>
-              <p className="text-sm text-gray-600">{recentTransactions.length} transactions</p>
+              <h3 className="text-lg font-black uppercase tracking-tighter">System Audit Logs</h3>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Most recent capital movements across network</p>
             </div>
-            <button className="text-violet-600 hover:text-violet-700 font-semibold text-sm flex items-center gap-1">
-              View All
-              <ArrowUpRight className="w-4 h-4" />
+            <button className="h-12 px-6 bg-white/10 hover:bg-white/20 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border border-white/10 flex items-center gap-2">
+              Access Full Log History <ArrowUpRight size={14} />
             </button>
           </div>
 
-          <div className="space-y-3">
+          <div className="space-y-4">
             {recentTransactions.map((transaction) => (
-              <div 
+              <div
                 key={transaction.id}
-                className="flex items-center justify-between p-4 rounded-xl border border-gray-100 hover:bg-gray-50 transition-colors"
+                className="flex items-center justify-between p-6 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 transition-all group"
               >
-                <div className="flex items-center gap-4">
-                  <div className={`p-3 rounded-xl ${
-                    transaction.type === 'payment' ? 'bg-violet-100 text-violet-600' :
-                    transaction.type === 'invoice' ? 'bg-blue-100 text-blue-600' :
-                    transaction.type === 'fee' ? 'bg-amber-100 text-amber-600' :
-                    'bg-emerald-100 text-emerald-600'
-                  }`}>
-                    {getTypeIcon(transaction.type)}
+                <div className="flex items-center gap-6">
+                  <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center text-white/50 group-hover:text-white transition-colors">
+                    <Shield size={20} />
                   </div>
                   <div>
-                    <p className="font-semibold text-gray-900">{transaction.description}</p>
-                    <div className="flex items-center gap-3 mt-1">
-                      <span className="text-xs text-gray-500">{transaction.date}</span>
-                      {transaction.paymentMethod && (
-                        <>
-                          <span className="text-gray-300">•</span>
-                          <span className="text-xs text-gray-500">{transaction.paymentMethod}</span>
-                        </>
-                      )}
+                    <p className="text-sm font-black uppercase tracking-tight">{transaction.description}</p>
+                    <div className="flex items-center gap-4 mt-1.5 opacity-40">
+                      <span className="text-[9px] font-black uppercase tracking-widest">{transaction.date}</span>
+                      <span className="w-1 h-1 bg-white rounded-full" />
+                      <span className="text-[9px] font-black uppercase tracking-widest">{transaction.paymentMethod || "Internal Sync"}</span>
                     </div>
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="text-lg font-bold text-gray-900">
-                    {formatCurrency(transaction.amount)}
-                  </p>
-                  <span className={`inline-block px-2 py-1 rounded-lg text-xs font-semibold mt-1 ${getStatusColor(transaction.status)}`}>
+                  <p className="text-xl font-black">{formatCurrency(transaction.amount)}</p>
+                  <span className={cn(
+                    "inline-flex items-center h-6 px-3 rounded-lg text-[9px] font-black uppercase tracking-widest mt-2 border",
+                    transaction.status === 'completed' ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30" : "bg-amber-500/20 text-amber-400 border-amber-500/30"
+                  )}>
                     {transaction.status}
                   </span>
                 </div>
@@ -530,40 +364,12 @@ export const FinancialDashboard: React.FC = () => {
             ))}
           </div>
         </div>
-
-        {/* Upcoming Payments */}
-        <div className="bg-gradient-to-br from-violet-600 to-purple-700 rounded-2xl p-6 text-white shadow-lg">
-          <div className="mb-6">
-            <h3 className="text-lg font-bold mb-1">Upcoming Payments</h3>
-            <p className="text-violet-100 text-sm">{upcomingPayments.length} scheduled</p>
-          </div>
-
-          <div className="space-y-3">
-            {upcomingPayments.map((payment) => (
-              <div key={payment.id} className="bg-white/10 backdrop-blur-sm rounded-xl p-4">
-                <div className="flex items-start justify-between mb-2">
-                  <p className="font-semibold text-sm">{payment.description}</p>
-                  <span className="text-lg font-bold">{formatCurrency(payment.amount)}</span>
-                </div>
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-violet-100">Due: {payment.dueDate}</span>
-                  <span className="px-2 py-1 bg-white/20 rounded-lg">
-                    {payment.status}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <button className="w-full mt-6 py-3 bg-white text-violet-600 rounded-xl font-bold hover:bg-violet-50 transition-colors flex items-center justify-center gap-2">
-            <CreditCard className="w-5 h-5" />
-            Make Payment
-          </button>
-        </div>
+        {/* Background Decorative Element */}
+        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-500/10 rounded-full -mr-64 -mt-64 blur-[120px] pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-emerald-500/10 rounded-full -ml-32 -mb-32 blur-[100px] pointer-events-none" />
       </div>
     </div>
   );
 };
 
 export default FinancialDashboard;
-

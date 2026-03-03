@@ -1,11 +1,11 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { 
-  createTenant, 
-  fetchTenants, 
+import {
+  createTenant,
+  fetchTenants,
   fetchEnrichedTenants,
-  getTenantById, 
+  getTenantById,
   getTenantDetailsEnriched,
   getTenantHealth,
   updateTenant,
@@ -181,23 +181,23 @@ const AdminTenants: React.FC = () => {
     const transformed = tenantsArray.map((tenant: any) => {
       // Check if this is enriched data (has subscription, credits, users objects)
       const isEnriched = tenant.subscription || tenant.credits || tenant.users;
-      
+
       const mapped: Tenant = {
         id: tenant.id,
         name: tenant.name,
         subdomain: tenant.subdomain || '',
         status: mapBackendStatus(tenant.status || 'PENDING_ACTIVATION'),
         createdAt: tenant.createdAt ? new Date(tenant.createdAt).toISOString() : new Date().toISOString(),
-        lastActivity: tenant.lastActivity ? new Date(tenant.lastActivity).toISOString() : 
-                      tenant.updatedAt ? new Date(tenant.updatedAt).toISOString() : 
-                      tenant.createdAt ? new Date(tenant.createdAt).toISOString() : 
-                      new Date().toISOString(),
+        lastActivity: tenant.lastActivity ? new Date(tenant.lastActivity).toISOString() :
+          tenant.updatedAt ? new Date(tenant.updatedAt).toISOString() :
+            tenant.createdAt ? new Date(tenant.createdAt).toISOString() :
+              new Date().toISOString(),
         userCount: isEnriched ? tenant.users?.total : 0,
         trucksCount: 0, // Will be populated from relations if available
         revenue: 0, // Will be calculated from billing data if available
-        plan: isEnriched && tenant.subscription?.planName ? 
-              mapBackendPlan(tenant.subscription.planName) : 
-              mapBackendPlan(tenant.subscriptionPlan),
+        plan: isEnriched && tenant.subscription?.planName ?
+          mapBackendPlan(tenant.subscription.planName) :
+          mapBackendPlan(tenant.subscriptionPlan),
         domain: tenant.domain || '',
         contactEmail: tenant.contactEmail || '',
         adminName: '', // Will be populated from admin user relation if available
@@ -525,16 +525,15 @@ const AdminTenants: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-3">
-          <button 
+          <button
             onClick={() => setUseEnrichedData(!useEnrichedData)}
-            className={`px-4 py-2.5 text-[10px] font-black uppercase tracking-widest border rounded-xl flex items-center gap-2 transition-all shadow-sm ${
-              useEnrichedData 
-                ? 'bg-indigo-600 text-white border-indigo-600 hover:bg-indigo-700' 
+            className={`px-4 py-2.5 text-[10px] font-black uppercase tracking-widest border rounded-xl flex items-center gap-2 transition-all shadow-sm ${useEnrichedData
+                ? 'bg-indigo-600 text-white border-indigo-600 hover:bg-indigo-700'
                 : 'bg-white text-slate-600 border-gray-200 hover:bg-gray-50'
-            }`}
+              }`}
             title={useEnrichedData ? 'Showing enriched data with health scores' : 'Showing basic data'}
           >
-            <Heart className="w-3 h-3" /> 
+            <Heart className="w-3 h-3" />
             {useEnrichedData ? 'Enhanced View' : 'Basic View'}
           </button>
           <button className="px-4 py-2.5 text-[10px] font-black uppercase tracking-widest border border-gray-200 rounded-xl flex items-center gap-2 hover:bg-gray-50 bg-white transition-all shadow-sm text-slate-600">

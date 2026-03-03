@@ -4,27 +4,20 @@ import {
   Truck,
   User,
   MapPin,
-  Phone,
-  Mail,
   Package,
   ShieldCheck,
-  Wrench,
   FileText,
   Download,
   ExternalLink,
   Shield,
   Zap,
-  Clock,
-  CheckCircle2,
-  Calendar,
-  Thermometer,
   Layers
 } from 'lucide-react';
 import type { FleetItem } from '../../types/fleet';
 import { documentApi, type Document } from '../../services/documents/documentApi';
 import toast from 'react-hot-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../ui';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 
 interface FleetModalProps {
   fleetItem: FleetItem | null;
@@ -120,7 +113,7 @@ const FleetModalComp: React.FC<FleetModalProps> = ({
                 {activeTab === 'trucks' ? <Truck size={32} /> : <User size={32} />}
               </div>
               <div>
-                <h2 className="text-2xl font-black text-slate-900 tracking-tight">{fleetItem.name}</h2>
+                <h2 className="text-2xl font-black text-indigo-600 tracking-tight">{fleetItem.name}</h2>
                 <div className="flex items-center gap-2 mt-1">
                   <span className={`px-2 py-0.5 rounded-full border text-[8px] font-black uppercase tracking-widest ${getStatusColor(fleetItem.status)}`}>
                     {fleetItem.status}
@@ -285,7 +278,7 @@ const FleetModalComp: React.FC<FleetModalProps> = ({
           </div>
 
           <div className="p-8 border-t border-slate-50 bg-slate-50/30 flex justify-end">
-            <button onClick={onClose} className="px-8 py-3 bg-slate-900 text-white font-black text-[10px] uppercase tracking-widest rounded-2xl hover:bg-indigo-600 transition-all">Close Matrix</button>
+            <button onClick={onClose} className="px-8 py-3 bg-indigo-600 text-white font-black text-[10px] uppercase tracking-widest rounded-2xl hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-200">Close Matrix</button>
           </div>
         </motion.div>
       </DialogContent>

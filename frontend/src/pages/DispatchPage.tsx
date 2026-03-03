@@ -136,10 +136,10 @@ const DispatchPage: React.FC = () => {
                         {/* Desktop Navigation */}
                         <nav className="hidden lg:flex items-center gap-10">
                             <a className="text-white/60 hover:text-white text-sm font-semibold transition-all" href="/dashboard/fleet">Dashboard</a>
-                            <a className="text-white/60 hover:text-white text-sm font-semibold transition-all" href="/fleet-manager">Fleet Assets</a>
+                            <a className="text-white/60 hover:text-white text-sm font-semibold transition-all" href="/fleet-manager">Vehicles</a>
                             <a className="text-white text-sm font-bold relative after:content-[''] after:absolute after:bottom-[-4px] after:left-0 after:w-full after:h-0.5 after:bg-blue-500" href="/dashboard/fleet/dispatch">Dispatch</a>
                             <a className="text-white/60 hover:text-white text-sm font-semibold transition-all" href="/dashboard/fleet/bids">Load Board</a>
-                            <a className="text-white/60 hover:text-white text-sm font-semibold transition-all" href="/dashboard/fleet/smart-bookings">Smart Bookings</a>
+                            <a className="text-white/60 hover:text-white text-sm font-semibold transition-all" href="/dashboard/fleet/smart-bookings">Bookings</a>
                             <a className="text-white/60 hover:text-white text-sm font-semibold transition-all" href="/dashboard/fleet/reports">Reports</a>
                         </nav>
                     </div>
@@ -147,8 +147,8 @@ const DispatchPage: React.FC = () => {
                     <div className="flex items-center gap-4 md:gap-6">
                         {/* Fleet Status Badge */}
                         <div className="hidden 2xl:flex items-center gap-2 px-4 py-1.5 bg-white/5 border border-white/10 rounded-full">
-                            <span className="text-blue-400">⚡</span>
-                            <span className="text-[10px] font-bold text-white/80 uppercase tracking-wider">Live Operations</span>
+                            <span className="text-blue-400">🚛</span>
+                            <span className="text-[10px] font-bold text-white/80 uppercase tracking-wider">Commander</span>
                         </div>
 
                         {/* Notification Bell */}
@@ -161,7 +161,7 @@ const DispatchPage: React.FC = () => {
                         <div className="flex items-center gap-3 pl-4 md:pl-6 border-l border-white/10">
                             <div className="text-right hidden sm:block">
                                 <p className="text-sm font-bold text-white">Alex Morgan</p>
-                                <p className="text-[9px] font-bold text-blue-400 uppercase tracking-widest">Ops Manager</p>
+                                <p className="text-[9px] font-bold text-blue-400 uppercase tracking-widest">Operations</p>
                             </div>
                             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-indigo-600 border-2 border-white/20 shadow-inner overflow-hidden">
                                 <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Fleet" alt="User" className="w-full h-full" />
@@ -178,7 +178,7 @@ const DispatchPage: React.FC = () => {
                     <div className="w-96 h-full bg-white flex items-center justify-center border-r border-slate-200 z-20">
                         <div className="flex flex-col items-center gap-3">
                             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                            <p className="text-sm text-slate-500 font-medium">Loading Fleet Status...</p>
+                            <p className="text-sm text-slate-500 font-medium">Loading...</p>
                         </div>
                     </div>
                 ) : (
@@ -226,8 +226,8 @@ const DispatchPage: React.FC = () => {
                                 <span className="material-symbols-outlined text-sm">history</span>
                             </button>
                             <div>
-                                <p className="text-xs font-bold text-slate-800">Route Replay</p>
-                                <p className="text-[10px] text-slate-500 uppercase tracking-wide">Active Vehicle: {selectedVehicleId ? vehicles.find(v => v.id === selectedVehicleId)?.name : 'Select Unit'}</p>
+                                <p className="text-xs font-bold text-slate-800">Replay</p>
+                                <p className="text-[10px] text-slate-500 uppercase tracking-wide">Vehicle: {selectedVehicleId ? vehicles.find(v => v.id === selectedVehicleId)?.name : 'Select Unit'}</p>
                             </div>
                         </div>
 
@@ -247,8 +247,8 @@ const DispatchPage: React.FC = () => {
                             <span className="material-symbols-outlined text-amber-600 text-lg">warning</span>
                         </div>
                         <div>
-                            <h4 className="font-bold text-slate-800 text-sm">Route Deviation Alert</h4>
-                            <p className="text-xs text-slate-500 mt-1">Vehicle VX-4412 left geofence G-12</p>
+                            <h4 className="font-bold text-slate-800 text-sm">Warning</h4>
+                            <p className="text-xs text-slate-500 mt-1">Vehicle left intended route</p>
                         </div>
                         <button className="text-slate-400 hover:text-slate-600">
                             <FaTimes />

@@ -4,8 +4,6 @@ import {
   CreditCard,
   FileText,
   DollarSign,
-  TrendingUp,
-  TrendingDown,
   Activity,
   Calculator,
   Plus,
@@ -15,8 +13,7 @@ import Payments from "@/pages/Payments";
 import EnhancedLoanRequestsPage from "@/pages/EnhancedLoanRequestsPage";
 // Dynamically import heavy page to reduce initial bundle size
 const FinancialReportsPage = lazy(() => import("@/pages/FinancialReportsPage"));
-// Truck owner specific financial dashboard
-const TruckOwnerFinancialDashboard = lazy(() => import("@/components/FleetDashboard/TruckOwnerFinancialDashboard"));
+// Truck owner specific financial management
 const TruckOwnerFinancialManagement = lazy(() => import("@/components/FleetDashboard/TruckOwnerFinancialManagement"));
 const TripCostAnalysis = lazy(() => import("@/components/FleetDashboard/TripCostAnalysis"));
 const CargoOwnerPayment = lazy(() => import("@/components/CargoOwnerPayment/CargoOwnerPayment"));
@@ -25,7 +22,9 @@ import { cn } from "@/utils/cn";
 import logoUrutiX from "@/assets/logo-urutix.svg";
 import { TranslatedText } from "@/components/translated-text";
 
-type TabType = "payments" | "payment" | "loans" | "reports" | "cost-analysis" | "financial-info";
+type TabType = "overview" | "payments" | "payment" | "loans" | "reports" | "cost-analysis" | "financial-info";
+
+const FinancialDashboard = lazy(() => import("@/pages/dashboard/financial/FinancialDashboard"));
 
 const UnifiedFinancialManagement = () => {
   const location = useLocation();
@@ -33,6 +32,7 @@ const UnifiedFinancialManagement = () => {
 
   // Determine initial tab based on route
   const getInitialTab = (): TabType => {
+    if (location.pathname.includes("/overview")) return "overview";
     if (location.pathname.includes("/loan-requests")) return "loans";
     if (location.pathname.includes("/payment")) return "payment";
     if (location.pathname.includes("/reports")) return "reports";
@@ -63,7 +63,9 @@ const UnifiedFinancialManagement = () => {
       basePath = `/${pathParts[0]}`;
     }
 
-    if (tab === "loans") {
+    if (tab === "overview") {
+      navigate(`${basePath}/overview`, { replace: true });
+    } else if (tab === "loans") {
       navigate(`${basePath}/loan-requests`, { replace: true });
     } else if (tab === "payment") {
       navigate(`${basePath}/payment`, { replace: true });
@@ -84,6 +86,12 @@ const UnifiedFinancialManagement = () => {
   };
 
   const tabs = [
+    {
+      id: "overview" as TabType,
+      label: "Overview",
+      icon: Activity,
+      description: "Financial analytics and performance metrics",
+    },
     {
       id: "payments" as TabType,
       label: "Payments",
@@ -189,6 +197,11 @@ const UnifiedFinancialManagement = () => {
         {/* Main Content Container */}
         <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-xl overflow-hidden min-h-[600px] animate-in fade-in slide-in-from-bottom-4 duration-500">
           <div className="p-8 md:p-12">
+            {activeTab === "overview" && (
+              <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-4 border-slate-200 border-t-[#345E85]"></div></div>}>
+                <FinancialDashboard />
+              </Suspense>
+            )}
             {activeTab === "payments" && (
               location.pathname.includes("/fleet") ? (
                 <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-4 border-slate-200 border-t-[#345E85]"></div></div>}>

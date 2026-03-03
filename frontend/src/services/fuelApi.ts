@@ -41,6 +41,7 @@ export interface FuelStatistics {
 export interface CreateFuelLogData {
     truckId: string;
     driverId?: string;
+    tripId?: string;
     fuelDate: string;
     gallons: number;
     pricePerGallon: number;
@@ -58,9 +59,13 @@ export const fuelApi = {
     createFuelLog: async (data: CreateFuelLogData): Promise<FuelLog> => {
         try {
             const response = await api.post('/fuel/logs', data);
+            console.log('📦 createFuelLog response:', JSON.stringify(response.data));
+            if (response.data.success === false) {
+                throw new Error(response.data.message || 'Failed to create fuel log');
+            }
             return response.data.data;
-        } catch (error) {
-            console.error('Error creating fuel log:', error);
+        } catch (error: any) {
+            console.error('Error creating fuel log:', error.response?.data || error.message);
             throw error;
         }
     },
@@ -148,5 +153,129 @@ export const fuelApi = {
             console.error('Error fetching fuel statistics:', error);
             throw error;
         }
+    },
+
+    // ===== WALLET =====
+
+    getWallet: async (id: string) => {
+        const response = await api.get(`/fuel/wallets/${id}`);
+        return response.data.data;
+    },
+
+    getMyWallet: async () => {
+        const response = await api.get('/fuel/wallets/my-wallet');
+        console.log('📦 getMyWallet full response:', JSON.stringify(response.data));
+        if (response.data.success === false) {
+            throw new Error(response.data.message || 'Failed to get wallet');
+        }
+        return response.data.data;
+    },
+
+    getDriverWallet: async (driverId: string) => {
+        const response = await api.get(`/fuel/wallets/driver/${driverId}`);
+        return response.data.data;
+    },
+
+    addWalletCredit: async (id: string, amount: number, description: string, metadata?: any) => {
+        const response = await api.post(`/fuel/wallets/${id}/credit`, {
+            amount,
+            description,
+            metadata
+        });
+        console.log('📦 addWalletCredit response:', JSON.stringify(response.data));
+        if (response.data.success === false) {
+            throw new Error(response.data.message || 'Failed to add credit');
+        }
+        return response.data.data;
+    },
+
+    getWalletTransactions: async (id: string, limit?: number, offset?: number) => {
+        const queryParams = new URLSearchParams();
+        if (limit) queryParams.append('limit', limit.toString());
+        if (offset) queryParams.append('offset', offset.toString());
+
+        const url = `/fuel/wallets/${id}/transactions${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+        const response = await api.get(url);
+        return { transactions: response.data.data, total: response.data.total };
+    },
+
+    getWalletStats: async () => {
+        const response = await api.get('/fuel/wallets/stats/overview');
+        return response.data.data;
+    },
+
+    // ===== BUDGET =====
+
+    createBudget: async (tripId: string, truckId: string, budgetedAmount: number, alertThreshold?: number) => {
+        const response = await api.post('/fuel/budgets', { tripId, truckId, budgetedAmount, alertThreshold });
+        return response.data.data;
+    },
+
+    getBudget: async (id: string) => {
+        const response = await api.get(`/fuel/budgets/${id}`);
+        return response.data.data;
+    },
+
+    recordFuelExpense: async (id: string, fuelCost: number) => {
+        const response = await api.post(`/fuel/budgets/${id}/record-expense`, { fuelCost });
+        return response.data.data;
+    },
+
+    getBudgetAnalysis: async (tripId: string) => {
+        const response = await api.get(`/fuel/budgets/analysis/${tripId}`);
+        return response.data.data;
+    },
+
+    getOverBudgetTrips: async () => {
+        const response = await api.get('/fuel/budgets/status/over-budget');
+        return response.data.data;
+    },
+
+    // ===== ADVANCES =====
+
+    requestAdvance: async (tripId: string, advanceAmount: number, notes?: string) => {
+        const response = await api.post('/fuel/advances/request', { tripId, advanceAmount, notes });
+        return response.data.data;
+    },
+
+    getAdvance: async (id: string) => {
+        const response = await api.get(`/fuel/advances/${id}`);
+        return response.data.data;
+    },
+
+    getDriverAdvances: async (driverId: string, status?: string) => {
+        const url = `/fuel/advances/driver/${driverId}${status ? `?status=${status}` : ''}`;
+        const response = await api.get(url);
+        return response.data.data;
+    },
+
+    approveAdvance: async (id: string) => {
+        const response = await api.put(`/fuel/advances/${id}/approve`);
+        return response.data.data;
+    },
+
+    rejectAdvance: async (id: string, rejectionReason: string) => {
+        const response = await api.put(`/fuel/advances/${id}/reject`, { rejectionReason });
+        return response.data.data;
+    },
+
+    reconcileAdvance: async (id: string, reconciliationAmount: number, reconciliationNotes?: string) => {
+        const response = await api.put(`/fuel/advances/${id}/reconcile`, { reconciliationAmount, reconciliationNotes });
+        return response.data.data;
+    },
+
+    getPendingAdvances: async () => {
+        const response = await api.get('/fuel/advances/pending/all');
+        return response.data.data;
+    },
+
+    getAdvanceStats: async () => {
+        const response = await api.get('/fuel/advances/stats/overview');
+        return response.data.data;
+    },
+
+    getDriverAdvanceBalance: async (driverId: string) => {
+        const response = await api.get(`/fuel/advances/driver/${driverId}/balance`);
+        return response.data.data.balance;
     },
 };

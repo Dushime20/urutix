@@ -69,11 +69,11 @@ const InspectionModal: React.FC<InspectionModalProps> = ({ isOpen, onClose, truc
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
             <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-200">
 
                 {/* Header */}
-                <div className="bg-slate-900 px-6 py-4 flex items-center justify-between">
+                <div className="bg-indigo-600 px-6 py-4 flex items-center justify-between">
                     <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-lg bg-orange-600 flex items-center justify-center">
                             <FaClipboardCheck className="text-white text-lg" />
@@ -156,7 +156,7 @@ const InspectionModal: React.FC<InspectionModalProps> = ({ isOpen, onClose, truc
                         <button
                             type="submit"
                             disabled={submitting}
-                            className="px-6 py-2 bg-orange-600 text-white rounded-lg font-medium hover:bg-orange-700 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed text-sm flex items-center gap-2"
+                            className="px-6 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed text-sm flex items-center gap-2"
                         >
                             {submitting ? 'Scheduling...' : 'Schedule Inspection'}
                         </button>

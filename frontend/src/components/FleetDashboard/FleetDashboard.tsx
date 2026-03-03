@@ -18,7 +18,8 @@ import {
   CreditCard,
   Search,
   Star,
-  AlertTriangle
+  AlertTriangle,
+  Fuel
 } from 'lucide-react';
 import { DetailedErrorBoundary } from '../DetailedErrorBoundary';
 import { FleetSkeleton } from './FleetSkeleton';
@@ -78,9 +79,10 @@ export const FleetDashboard: React.FC = () => {
 
   const [search, setSearch] = useState('');
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'trucks' | 'drivers' | 'analytics' | 'safety' | 'financial' | 'routes' | 'matches'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'trucks' | 'drivers' | 'analytics' | 'safety' | 'financial' | 'routes' | 'matches' | 'fuel'>('overview');
 
   const [showForm, setShowForm] = useState(false);
+  const [formType, setFormType] = useState<'trucks' | 'drivers'>('trucks');
   const [formMode, setFormMode] = useState<'create' | 'edit'>('create');
   const [editingFleetItem, setEditingFleetItem] = useState<LocalFleetItem | null>(null);
   const [userProfileName, setUserProfileName] = useState<string | null>(null);
@@ -104,6 +106,7 @@ export const FleetDashboard: React.FC = () => {
     else if (path.includes('/fleet/safety')) setActiveTab('safety');
     else if (path.includes('/fleet/financial')) setActiveTab('financial');
     else if (path.includes('/fleet/routes')) setActiveTab('routes');
+    else if (path.includes('/fleet/fuel')) setActiveTab('fuel');
     else if (path.includes('/dashboard/fleet')) setActiveTab('overview');
   }, [location.pathname, location.search]);
 
@@ -130,11 +133,13 @@ export const FleetDashboard: React.FC = () => {
   useEffect(() => {
     if (location.pathname === '/dashboard/fleet/trucks/create') {
       setActiveTab('trucks');
+      setFormType('trucks');
       setShowForm(true);
       setFormMode('create');
       setEditingFleetItem(null);
     } else if (location.pathname === '/dashboard/fleet/drivers/create') {
       setActiveTab('drivers');
+      setFormType('drivers');
       setShowForm(true);
       setFormMode('create');
       setEditingFleetItem(null);
@@ -189,8 +194,8 @@ export const FleetDashboard: React.FC = () => {
     setError(null);
     try {
       const [truckData, driverData, analyticsData] = await Promise.all([
-        fleetApi.getTrucks({}),
-        fleetApi.getDrivers({}),
+        fleetApi.getTrucks({ limit: 100 }),
+        fleetApi.getDrivers({ limit: 100 }),
         fleetApi.fetchAnalytics()
       ]);
 
@@ -240,10 +245,10 @@ export const FleetDashboard: React.FC = () => {
   const handleCreateFleetItem = useCallback(async (fleetData: any) => {
     try {
       let newFleetItem: LocalFleetItem;
-      if (activeTab === 'trucks') {
+      if (formType === 'trucks') {
         const created = await fleetApi.createTruck(fleetData as Partial<ServiceTruck>);
         newFleetItem = normalizeTruck(created);
-      } else if (activeTab === 'drivers') {
+      } else if (formType === 'drivers') {
         const created = await fleetApi.createDriver(fleetData);
         newFleetItem = normalizeDriver(created);
       } else {
@@ -259,17 +264,17 @@ export const FleetDashboard: React.FC = () => {
       console.error('Error creating fleet item:', error);
       throw error;
     }
-  }, [activeTab, location.pathname, navigate]);
+  }, [formType, location.pathname, navigate]);
 
   const handleUpdateFleetItem = useCallback(async (fleetData: any) => {
     if (!editingFleetItem) return;
 
     try {
       let updatedFleetItem: LocalFleetItem;
-      if (activeTab === 'trucks') {
+      if (formType === 'trucks') {
         const updated = await fleetApi.updateTruck(editingFleetItem.id, fleetData as Partial<ServiceTruck>);
         updatedFleetItem = normalizeTruck(updated);
-      } else if (activeTab === 'drivers') {
+      } else if (formType === 'drivers') {
         const updated = await fleetApi.updateDriver(editingFleetItem.id, fleetData);
         updatedFleetItem = normalizeDriver(updated);
       } else {
@@ -285,13 +290,22 @@ export const FleetDashboard: React.FC = () => {
       console.error('Error updating fleet item:', error);
       throw error;
     }
-  }, [editingFleetItem, activeTab]);
+  }, [editingFleetItem, formType]);
 
 
 
 
   const handleCreateTruck = useCallback(() => {
     setActiveTab('trucks');
+    setFormType('trucks');
+    setEditingFleetItem(null);
+    setFormMode('create');
+    setShowForm(true);
+  }, []);
+
+  const handleCreateDriver = useCallback(() => {
+    setActiveTab('drivers');
+    setFormType('drivers');
     setEditingFleetItem(null);
     setFormMode('create');
     setShowForm(true);
@@ -328,17 +342,17 @@ export const FleetDashboard: React.FC = () => {
         {/* Intelligence Header Context */}
         <div className="bg-white border-b border-slate-100 relative overflow-hidden">
           <div className="absolute top-0 right-0 p-20 opacity-[0.03] scale-[2.5] pointer-events-none rotate-12">
-            <Layers size={140} className="text-[#345E85]" />
+            <Layers size={140} className="text-primary-500" />
           </div>
 
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 relative z-10">
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
               <div className="space-y-4">
                 <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 bg-blue-50 rounded-xl flex items-center justify-center text-[#345E85] shadow-inner">
+                  <div className="h-10 w-10 bg-primary-50 rounded-xl flex items-center justify-center text-primary-500 shadow-inner">
                     <Truck size={20} />
                   </div>
-                  <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-[#345E85]">Fleet Dashboard</h2>
+                  <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-primary-500">Fleet Dashboard</h2>
                 </div>
 
                 <h1 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tight leading-none mb-1">
@@ -351,28 +365,35 @@ export const FleetDashboard: React.FC = () => {
                         ? `${(user as any).profile.firstName} ${(user as any).profile.lastName || ''}`.trim()
                         : user?.email?.split('@')[0] || 'Fleet Manager');
 
-                    return <>{greeting}, <span className="text-[#345E85]">{displayName}</span></>;
+                    return <>{greeting}, <span className="text-primary-500">{displayName}</span></>;
                   })()}
                 </h1>
                 <p className="text-lg text-slate-500 font-medium max-w-xl">
-                  Synchronizing asset logistics and operational intelligence across your global transportation network.
+                  Manage your trucks, drivers and fleet performance.
                 </p>
               </div>
 
               <div className="flex items-center gap-3">
                 <button
                   onClick={handleCreateTruck}
-                  className="flex items-center gap-2.5 px-6 py-4 bg-[#345E85] text-white rounded-2xl font-black uppercase tracking-widest text-[11px] shadow-xl shadow-blue-100 hover:bg-[#2a4d6d] active:scale-95 transition-all group"
+                  className="flex items-center gap-2.5 px-6 py-4 bg-primary-500 text-white rounded-2xl font-black uppercase tracking-widest text-[11px] shadow-xl shadow-primary-500/20 hover:bg-primary-600 active:scale-95 transition-all group"
                 >
                   <Plus size={18} className="group-hover:rotate-90 transition-transform" />
                   Add New Truck
                 </button>
                 <button
-                  onClick={() => setActiveTab('drivers')}
-                  className="flex items-center gap-2.5 px-6 py-4 bg-white text-slate-700 border border-slate-100 rounded-2xl font-black uppercase tracking-widest text-[11px] hover:border-[#345E85] hover:text-[#345E85] active:scale-95 transition-all"
+                  onClick={handleCreateDriver}
+                  className="flex items-center gap-2.5 px-6 py-4 bg-white text-slate-700 border border-slate-100 rounded-2xl font-black uppercase tracking-widest text-[11px] hover:border-primary-500 hover:text-primary-500 active:scale-95 transition-all"
                 >
                   <User size={18} />
                   Add New Driver
+                </button>
+                <button
+                  onClick={() => navigate('/dashboard/fleet/fuel')}
+                  className="flex items-center gap-2.5 px-6 py-4 bg-primary-50 text-primary-500 rounded-2xl font-black uppercase tracking-widest text-[11px] hover:bg-primary-100 active:scale-95 transition-all"
+                >
+                  <Fuel size={18} />
+                  Log Fuel
                 </button>
               </div>
             </div>
@@ -382,15 +403,25 @@ export const FleetDashboard: React.FC = () => {
               {[
                 { id: 'overview', icon: Layout, label: 'Overview' },
                 { id: 'trucks', icon: Truck, label: 'Trucks' },
+                { id: 'drivers', icon: User, label: 'Drivers' },
+                { id: 'fuel', icon: Fuel, label: 'Fuel' },
+                { id: 'routes', icon: Navigation, label: 'Routes' },
+                { id: 'safety', icon: Shield, label: 'Safety' },
                 { id: 'matches', icon: Zap, label: 'Matches' },
                 { id: 'financial', icon: CreditCard, label: 'Financials' },
                 { id: 'analytics', icon: Activity, label: 'Analytics' }
               ].map((tab) => (
                 <button
                   key={tab.id}
-                  onClick={() => setActiveTab(tab.id as any)}
+                  onClick={() => {
+                    if (tab.id === 'fuel') {
+                      navigate('/dashboard/fleet/fuel');
+                    } else {
+                      setActiveTab(tab.id as any);
+                    }
+                  }}
                   className={`flex items-center gap-2.5 px-5 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all ${activeTab === tab.id
-                    ? 'bg-blue-50 text-[#345E85] shadow-sm'
+                    ? 'bg-primary-50 text-primary-500 shadow-sm'
                     : 'text-slate-400 hover:text-slate-600'
                     }`}
                 >
@@ -420,10 +451,10 @@ export const FleetDashboard: React.FC = () => {
                   title="Utilization"
                   value={`${analytics?.utilizationRate !== undefined ? Math.round(analytics.utilizationRate) : utilization}%`}
                   icon={<Zap />}
-                  trend="Optimal"
+                  trend="Good"
                   trendDirection="up"
                   color="info"
-                  subtitle="Network load factor"
+                  subtitle="Fleet usage"
                   loading={loading}
                 />
 
@@ -431,7 +462,7 @@ export const FleetDashboard: React.FC = () => {
                   title="Average Rating"
                   value={analytics?.averageRating?.toFixed(1) || '0.0'}
                   icon={<Star />}
-                  subtitle="Reputation Index"
+                  subtitle="Driver Rating"
                   color="warning"
                   loading={loading}
                 />
@@ -443,7 +474,6 @@ export const FleetDashboard: React.FC = () => {
                   trend="+12.4%"
                   trendDirection="up"
                   color="success"
-                  subtitle="Gross Yield (MTD)"
                   loading={loading}
                 />
 
@@ -464,8 +494,8 @@ export const FleetDashboard: React.FC = () => {
                   <div className="px-8 py-6 border-b border-slate-50 flex items-center justify-between shrink-0">
                     <div>
                       <div className="flex items-center gap-2 mb-1">
-                        <MapIcon size={16} className="text-[#345E85]" />
-                        <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-[#345E85]">Live Tracking</h3>
+                        <MapIcon size={16} className="text-primary-500" />
+                        <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-primary-500">Live Tracking</h3>
                       </div>
                       <h4 className="text-xl font-black text-slate-900 tracking-tight">Fleet Map</h4>
                     </div>
@@ -477,8 +507,8 @@ export const FleetDashboard: React.FC = () => {
                           </div>
                         ))}
                       </div>
-                      <button className="flex items-center gap-2 px-5 py-2.5 bg-blue-50 text-[#345E85] rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-[#345E85] hover:text-white transition-all">
-                        <Zap size={14} /> Global Sync
+                      <button className="flex items-center gap-2 px-5 py-2.5 bg-primary-50 text-primary-500 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-primary-500 hover:text-white transition-all">
+                        <Zap size={14} /> Refresh Map
                       </button>
                     </div>
                   </div>
@@ -512,7 +542,7 @@ export const FleetDashboard: React.FC = () => {
                           >
                             <Popup>
                               <div className="p-3">
-                                <p className="font-black text-[#345E85] uppercase text-[10px] mb-1">Truck ID: {item.plateNumber}</p>
+                                <p className="font-black text-primary-500 uppercase text-[10px] mb-1">Truck ID: {item.plateNumber}</p>
                                 <p className="font-bold text-slate-900">{item.name}</p>
                                 <div className="flex items-center gap-2 mt-2">
                                   <div className={`h-1.5 w-1.5 rounded-full ${item.status === 'AVAILABLE' ? 'bg-emerald-500' : 'bg-blue-500'}`} />
@@ -548,7 +578,7 @@ export const FleetDashboard: React.FC = () => {
                       <div className="h-8 w-8 bg-amber-50 rounded-lg flex items-center justify-center text-amber-500">
                         <Star size={16} fill="currentColor" />
                       </div>
-                      <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-[#345E85]">Top Driver</h3>
+                      <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-primary-500">Top Driver</h3>
                     </div>
 
                     <div className="flex items-center gap-6 mb-8">
@@ -566,13 +596,13 @@ export const FleetDashboard: React.FC = () => {
                       </div>
                     </div>
 
-                    <button className="mt-auto w-full py-4 bg-slate-50 hover:bg-[#345E85] hover:text-white text-[#345E85] rounded-[24px] text-[10px] font-black uppercase tracking-widest transition-all">
+                    <button className="mt-auto w-full py-4 bg-slate-50 hover:bg-primary-500 hover:text-white text-primary-500 rounded-[24px] text-[10px] font-black uppercase tracking-widest transition-all">
                       View Driver Profile
                     </button>
                   </div>
 
                   {/* Operational Metrics Sub-Matrix */}
-                  <div className="bg-[#345E85] rounded-[40px] p-8 text-white relative overflow-hidden flex-1 shadow-xl shadow-blue-100">
+                  <div className="bg-primary-500 rounded-[40px] p-8 text-white relative overflow-hidden flex-1 shadow-xl shadow-primary-100">
                     <div className="absolute -bottom-10 -right-10 opacity-10 group-hover:scale-110 transition-transform duration-700">
                       <Activity size={180} />
                     </div>
@@ -616,12 +646,12 @@ export const FleetDashboard: React.FC = () => {
               <div className="space-y-6 mt-12">
                 <div className="flex items-center justify-between px-2">
                   <div className="flex items-center gap-3">
-                    <div className="h-8 w-8 bg-blue-50 rounded-lg flex items-center justify-center text-[#345E85]">
+                    <div className="h-8 w-8 bg-primary-50 rounded-lg flex items-center justify-center text-primary-500">
                       <Clock size={16} />
                     </div>
-                    <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-[#345E85]">Recent Activities</h3>
+                    <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-primary-500">Recent Activities</h3>
                   </div>
-                  <button className="text-[10px] font-black uppercase tracking-widest text-[#345E85] hover:underline decoration-2 underline-offset-4">
+                  <button className="text-[10px] font-black uppercase tracking-widest text-primary-500 hover:underline decoration-2 underline-offset-4">
                     View All
                   </button>
                 </div>
@@ -638,7 +668,7 @@ export const FleetDashboard: React.FC = () => {
               {/* Specialized View Header */}
               <div className="bg-white p-8 rounded-[40px] border border-slate-100 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div className="flex items-center gap-6">
-                  <div className="h-16 w-16 bg-blue-50 rounded-[24px] flex items-center justify-center text-[#345E85] shadow-inner">
+                  <div className="h-16 w-16 bg-primary-50 rounded-[24px] flex items-center justify-center text-primary-500 shadow-inner">
                     {activeTab === 'trucks' ? <Truck size={28} /> :
                       activeTab === 'analytics' ? <Activity size={28} /> :
                         activeTab === 'safety' ? <Shield size={28} /> :
@@ -661,26 +691,25 @@ export const FleetDashboard: React.FC = () => {
 
                 <div className="flex items-center gap-3">
                   <div className="relative group">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 size={16} text-slate-400 group-focus-within:text-[#345E85] transition-colors" />
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary-500 transition-colors" size={16} />
                     <input
                       type="text"
                       placeholder="Search..."
                       value={search}
                       onChange={(e) => setSearch(e.target.value)}
-                      className="pl-12 pr-6 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-[11px] font-bold text-slate-900 focus:bg-white focus:ring-4 focus:ring-blue-50 focus:border-[#345E85] outline-none transition-all w-64"
+                      className="pl-12 pr-6 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-[11px] font-bold text-slate-900 focus:bg-white focus:ring-4 focus:ring-primary-50 focus:border-primary-500 outline-none transition-all w-64"
                     />
                   </div>
                 </div>
               </div>
 
-              {error && (
-                <div className="bg-rose-50 border border-rose-100 text-rose-600 p-6 rounded-[32px] flex items-center gap-3" role="alert">
-                  <AlertTriangle size={20} />
-                  <span className="text-sm font-black uppercase tracking-widest">{error}</span>
-                </div>
-              )}
-
               <div className="bg-white p-2 rounded-[40px] border border-slate-100 shadow-xl overflow-hidden min-h-[500px]">
+                {error && (
+                  <div className="bg-rose-50 border border-rose-100 text-rose-600 p-6 rounded-[32px] flex items-center gap-3 m-4" role="alert">
+                    <AlertTriangle size={20} />
+                    <span className="text-sm font-black uppercase tracking-widest">{error}</span>
+                  </div>
+                )}
                 {activeTab === 'analytics' ? (
                   <TruckAnalytics trucks={trucks} />
                 ) : activeTab === 'safety' ? (
@@ -690,7 +719,7 @@ export const FleetDashboard: React.FC = () => {
                 ) : activeTab === 'routes' ? (
                   <RouteAssignmentManager />
                 ) : activeTab === 'drivers' ? (
-                  <DriversList onAddDriver={() => { setFormMode('create'); setShowForm(true); }} />
+                  <DriversList onAddDriver={handleCreateDriver} />
                 ) : activeTab === 'trucks' ? (
                   <TrucksList onAddTruck={handleCreateTruck} />
                 ) : activeTab === 'matches' ? (
@@ -699,7 +728,7 @@ export const FleetDashboard: React.FC = () => {
                   <FleetSkeleton />
                 ) : (
                   <div className="p-20 text-center">
-                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Section Under Synchronization</p>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Coming Soon</p>
                   </div>
                 )}
               </div>
@@ -718,7 +747,7 @@ export const FleetDashboard: React.FC = () => {
             onSubmit={formMode === 'create' ? handleCreateFleetItem : handleUpdateFleetItem}
             initialData={editingFleetItem}
             mode={formMode}
-            activeTab={activeTab === 'drivers' ? 'drivers' : 'trucks'}
+            activeTab={formType}
           />
         </div>
 

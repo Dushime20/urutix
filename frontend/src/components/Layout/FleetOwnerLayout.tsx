@@ -61,9 +61,9 @@ const FleetOwnerLayout: React.FC = () => {
   // Check if we're on a route that manages its own layout (like dashboard index or load board)
   const isSelfAndLayout = location.pathname === '/dashboard/fleet' ||
     location.pathname === '/dashboard/fleet/' ||
-    location.pathname === '/dashboard/fleet/' ||
     location.pathname === '/dashboard/fleet/smart-bookings' ||
-    location.pathname === '/dashboard/fleet/maintenance';
+    location.pathname === '/dashboard/fleet/maintenance' ||
+    location.pathname === '/dashboard/fleet/fuel';
 
   return (
     <>

@@ -29,12 +29,15 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
     const user = {
       id: payload.sub,
+      userId: payload.sub, // Add userId for compatibility with PermissionsGuard
       email: payload.email,
       role: payload.role,
       tenantId: payload.tenantId,
+      permissions: payload.permissions || [], // Include permissions from JWT
     };
 
     console.log('✅ Extracted user info:', user);
+    console.log('✅ User permissions:', user.permissions);
     return user;
   }
 }

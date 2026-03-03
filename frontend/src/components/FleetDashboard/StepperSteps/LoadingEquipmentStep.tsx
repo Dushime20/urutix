@@ -55,7 +55,7 @@ export const LoadingEquipmentStep: React.FC<LoadingEquipmentStepProps> = ({
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-3 flex items-center">
             Available Equipment
-            <span className="ml-2 text-xs text-blue-600 font-normal">(Some items used in matching)</span>
+            <span className="ml-2 text-xs text-primary-500 font-normal">(Some items used in matching)</span>
           </label>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {equipmentOptions.map(({ key, label, icon, description }) => (
@@ -65,7 +65,7 @@ export const LoadingEquipmentStep: React.FC<LoadingEquipmentStepProps> = ({
                     type="checkbox"
                     checked={formData.loadingCapabilities?.[key] || false}
                     onChange={() => handleEquipmentToggle(key)}
-                    className="mt-1 rounded border-gray-300 text-gray-600 focus:ring-gray-500"
+                    className="mt-1 rounded border-gray-300 text-gray-600 focus:ring-primary-500"
                   />
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
@@ -73,7 +73,7 @@ export const LoadingEquipmentStep: React.FC<LoadingEquipmentStepProps> = ({
                       <span className="font-medium text-gray-900 flex items-center">
                         {label}
                         {(key === 'hasTailLift' || key === 'hasLoadingDock') && (
-                          <span className="ml-2 text-xs text-blue-600 font-normal">(Used in matching)</span>
+                          <span className="ml-2 text-xs text-primary-500 font-normal">(Used in matching)</span>
                         )}
                       </span>
                     </div>
@@ -100,7 +100,7 @@ export const LoadingEquipmentStep: React.FC<LoadingEquipmentStepProps> = ({
                 type="number"
                 value={formData.loadingCapabilities?.maxLoadingTime || ''}
                 onChange={(e) => handleTimeChange('maxLoadingTime', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 placeholder="30"
               />
             </div>
@@ -110,7 +110,7 @@ export const LoadingEquipmentStep: React.FC<LoadingEquipmentStepProps> = ({
                 type="number"
                 value={formData.loadingCapabilities?.maxUnloadingTime || ''}
                 onChange={(e) => handleTimeChange('maxUnloadingTime', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 placeholder="30"
               />
             </div>
@@ -138,3 +138,4 @@ export const LoadingEquipmentStep: React.FC<LoadingEquipmentStepProps> = ({
     </div>
   );
 };
+

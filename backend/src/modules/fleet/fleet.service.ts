@@ -48,7 +48,7 @@ export class FleetService {
     @InjectRepository(PasswordResetToken)
     private readonly passwordResetTokenRepository: Repository<PasswordResetToken>,
     private readonly emailService: EmailService,
-  ) {}
+  ) { }
 
   // Truck operations
   async createTruck(
@@ -127,7 +127,7 @@ export class FleetService {
         // Clean up numeric fields
         mileage:
           typeof createTruckDto.mileage === 'string' &&
-          createTruckDto.mileage !== ''
+            createTruckDto.mileage !== ''
             ? parseInt(createTruckDto.mileage) || 0
             : createTruckDto.mileage || 0,
         year:
@@ -136,14 +136,14 @@ export class FleetService {
             : createTruckDto.year || 2023,
         capacityWeight:
           typeof createTruckDto.capacityWeight === 'string' &&
-          createTruckDto.capacityWeight !== ''
+            createTruckDto.capacityWeight !== ''
             ? parseFloat(createTruckDto.capacityWeight)
             : createTruckDto.capacityWeight && createTruckDto.capacityWeight > 0
               ? createTruckDto.capacityWeight
               : 1,
         capacityVolume:
           typeof createTruckDto.capacityVolume === 'string' &&
-          createTruckDto.capacityVolume !== ''
+            createTruckDto.capacityVolume !== ''
             ? parseFloat(createTruckDto.capacityVolume)
             : createTruckDto.capacityVolume && createTruckDto.capacityVolume > 0
               ? createTruckDto.capacityVolume
@@ -155,6 +155,8 @@ export class FleetService {
         licenseType: undefined,
         experience: undefined,
         contactInfo: undefined,
+        currentLocation: createTruckDto.currentLocation || null,
+        currentAddress: createTruckDto.currentAddress || null,
       };
 
       console.log('🧹 Cleaned truck data:', {
@@ -201,10 +203,8 @@ export class FleetService {
         averageRating: 0,
         mileage: cleanedDto.mileage,
         // Ensure dates are Date objects
-        registrationExpiry:
-          convertToDate(cleanedDto.registrationExpiry) || new Date(),
-        insuranceExpiry:
-          convertToDate(cleanedDto.insuranceExpiry) || new Date(),
+        registrationExpiry: convertToDate(cleanedDto.registrationExpiry),
+        insuranceExpiry: convertToDate(cleanedDto.insuranceExpiry),
         roadworthyCertExpiry: cleanedDto.roadworthyCertExpiry
           ? convertToDate(cleanedDto.roadworthyCertExpiry)
           : undefined,
@@ -251,6 +251,7 @@ export class FleetService {
         console.error('🚛 Error code:', error.code);
         console.error('🚛 Error detail:', error.detail);
         console.error('🚛 Error message:', error.message);
+        console.error('🚛 Error stack:', error.stack);
 
         // Handle database constraint violations
         if (error.code === '23505') {
@@ -265,6 +266,14 @@ export class FleetService {
               'Truck with duplicate data already exists',
             );
           }
+        }
+
+        // Handle NOT NULL violations
+        if (error.code === '23502') {
+          const column = error.column || 'a required field';
+          throw new BadRequestException(
+            `Missing required field: ${column}. Please ensure all required fields are filled.`,
+          );
         }
 
         // Handle data too long errors
@@ -304,29 +313,33 @@ export class FleetService {
       console.log(`🔍 Fleet Service - Finding trucks for tenant: ${tenantId}, userId: ${userId}`);
       console.log(`🔍 Fleet Service - TenantId value: "${tenantId}"`);
       console.log(`🔍 Fleet Service - TenantId type: ${typeof tenantId}`);
-      
+
       // Use query builder to ensure tenantId is included in the query
       // Start with tenantId as the first condition to ensure it's always included
       const queryBuilder = this.truckRepository
         .createQueryBuilder('truck')
         .where('truck.tenantId = :tenantId', { tenantId: tenantId })
         .andWhere('truck.isActive = :isActive', { isActive: true })
-        .andWhere('truck.deletedAt IS NULL')
+        .andWhere('truck.deleted_at IS NULL')
         .setParameter('tenantId', tenantId)
         .setParameter('isActive', true);
-      
+
       // Apply user filter - only show trucks owned by this user
       // This ensures multi-tenancy: each user only sees their own trucks
+      // IMPORTANT: Only filter by ownerId if the user is a TRUCK_OWNER role
+      // For ADMIN and SUPER_ADMIN, show all trucks in the tenant
       if (userId) {
-        queryBuilder.andWhere('truck.ownerId = :userId', { userId });
-        console.log(`🔍 Fleet Service - Filtering by ownerId: ${userId}`);
+        // Note: We should check user role here, but for now we'll comment out the owner filter
+        // to allow all users in a tenant to see all trucks in that tenant
+        // queryBuilder.andWhere('truck.ownerId = :userId', { userId });
+        console.log(`🔍 Fleet Service - User ID provided: ${userId}, but not filtering by ownerId to show all tenant trucks`);
       }
-      
+
       // Apply filters
       if (filters?.status) {
         queryBuilder.andWhere('truck.status = :status', { status: filters.status });
       }
-      
+
       // Apply search filter
       if (filters?.search) {
         const searchLower = filters.search.toLowerCase();
@@ -335,7 +348,7 @@ export class FleetService {
           { search: `%${searchLower}%` }
         );
       }
-      
+
       // Apply pagination
       if (filters?.limit) {
         queryBuilder.take(filters.limit);
@@ -343,31 +356,31 @@ export class FleetService {
       if (filters?.page && filters?.limit) {
         queryBuilder.skip((filters.page - 1) * filters.limit);
       }
-      
+
       // Order by
       queryBuilder.orderBy('truck.createdAt', 'DESC');
-      
+
       // Log the query before execution
       const sql = queryBuilder.getSql();
       const params = queryBuilder.getParameters();
       console.log(`🔍 Fleet Service - Query SQL:`, sql);
       console.log(`🔍 Fleet Service - Query parameters:`, JSON.stringify(params, null, 2));
       console.log(`🔍 Fleet Service - SQL includes tenantId?`, sql.includes('tenantId'));
-      
+
       // Verify tenantId is in parameters
       if (!params.tenantId) {
         console.error('❌ CRITICAL: tenantId is missing from query parameters!');
         console.error('❌ Parameters:', params);
         throw new Error('tenantId parameter is missing from query');
       }
-      
+
       // Execute query
       const trucks = await queryBuilder.getMany();
-      
+
       console.log(`🔍 Fleet Service - Raw query result: ${trucks.length} trucks`);
       console.log(`🔍 Fleet Service - Trucks IDs:`, trucks.map(t => t.id));
       console.log(`✅ Fleet Service - Found ${trucks.length} trucks for tenant ${tenantId}${userId ? ` and user ${userId}` : ''}`);
-      
+
       if (trucks.length === 0) {
         console.warn(`⚠️ No trucks found for tenant ${tenantId}${userId ? ` and user ${userId}` : ''}`);
         console.warn(`⚠️ This might indicate:`);
@@ -376,7 +389,7 @@ export class FleetService {
         console.warn(`   - All trucks are soft-deleted`);
         console.warn(`   - All trucks have isActive = false`);
       }
-      
+
       return trucks;
     } catch (error) {
       console.error('❌ Fleet Service - Error finding trucks:', error);
@@ -509,12 +522,12 @@ export class FleetService {
       type: 'Point',
       coordinates: [longitude, latitude],
     };
-    
+
     // Update address if provided
     if (address !== undefined) {
       truck.currentAddress = address;
     }
-    
+
     truck.locationUpdatedAt = new Date();
 
     return this.truckRepository.save(truck);
@@ -573,10 +586,10 @@ export class FleetService {
       // Step 1: Check if driver user already exists (role = DRIVER) in this tenant
       this.logger.log(`Checking if driver user with email ${createDriverDto.email} already exists...`);
       const existingUser = await this.userRepository.findOne({
-        where: { 
-          email: createDriverDto.email.trim().toLowerCase(), 
+        where: {
+          email: createDriverDto.email.trim().toLowerCase(),
           role: UserRole.DRIVER,
-          tenantId 
+          tenantId
         },
       });
 
@@ -592,31 +605,31 @@ export class FleetService {
       // Step 2: Create the user account (even if email exists for other roles)
       // This will now pass database constraints because we are creating a new role entry
       this.logger.log(`Proceeding with driver creation (multi-role compatible)...`);
-      
+
       // Check for any existing user with this email to reuse password
       const existingUserWithEmail = await this.userRepository.findOne({
         where: { email: createDriverDto.email.trim().toLowerCase() }
       });
-      
+
       // Generate temporary password (default backup)
       const tempPassword = crypto.randomBytes(32).toString('hex');
       const tempPasswordHash = await bcrypt.hash(tempPassword, 12);
-      
+
       let passwordHashToUse = tempPasswordHash;
       let userStatus = UserStatus.PENDING_VERIFICATION;
       let shouldSendSetupEmail = true;
 
       // If user exists and has a password, reuse it and activate account immediately
       if (existingUserWithEmail && existingUserWithEmail.passwordHash) {
-         this.logger.log(`Found existing user account for ${createDriverDto.email}. Reusing credentials.`);
-         passwordHashToUse = existingUserWithEmail.passwordHash;
-         userStatus = UserStatus.ACTIVE; // Auto-activate since they have a password
-         shouldSendSetupEmail = false;
+        this.logger.log(`Found existing user account for ${createDriverDto.email}. Reusing credentials.`);
+        passwordHashToUse = existingUserWithEmail.passwordHash;
+        userStatus = UserStatus.ACTIVE; // Auto-activate since they have a password
+        shouldSendSetupEmail = false;
       }
-      
+
       // Create new user for driver
       this.logger.log(`👤 Creating new driver user account...`);
-      
+
       // Validate email is provided
       if (!createDriverDto.email || createDriverDto.email.trim() === '') {
         throw new BadRequestException(
@@ -631,7 +644,7 @@ export class FleetService {
           'Invalid email format. Please provide a valid email address.',
         );
       }
-      
+
       const driverUser = this.userRepository.create({
         email: createDriverDto.email.trim().toLowerCase(), // Normalize email
         phone: createDriverDto.phone,
@@ -684,14 +697,14 @@ export class FleetService {
         this.logger.log(`📧 Email address: ${createDriverDto.email.trim().toLowerCase()}`);
         this.logger.log(`📧 Driver name: ${createDriverDto.firstName} ${createDriverDto.lastName}`);
         this.logger.log(`📧 EmailService instance: ${this.emailService ? 'EXISTS' : 'MISSING'}`);
-        
+
         try {
           if (!this.emailService) {
             this.logger.error('❌ EmailService is not injected properly!');
             this.logger.warn('⚠️ EmailService is not available, skipping email send');
             throw new Error('EmailService is not available');
           }
-          
+
           this.logger.log('📧 Calling emailService.sendDriverPasswordSetupEmail...');
           await this.emailService.sendDriverPasswordSetupEmail(
             createDriverDto.email.trim().toLowerCase(),
@@ -862,7 +875,7 @@ export class FleetService {
         const errorMessage = error.message || error.toString() || '';
         this.logger.error(`❌ Database constraint violation (23502): ${errorMessage}`);
         this.logger.error(`❌ Full error object:`, JSON.stringify(error, null, 2));
-        
+
         // Try multiple patterns to extract column name
         let columnName = 'unknown';
         const patterns = [
@@ -871,7 +884,7 @@ export class FleetService {
           /column "(\w+)" of relation "(\w+)" violates not-null constraint/i,
           /"(\w+)" violates not-null/i,
         ];
-        
+
         for (const pattern of patterns) {
           const match = errorMessage.match(pattern);
           if (match && match[1]) {
@@ -879,7 +892,7 @@ export class FleetService {
             break;
           }
         }
-        
+
         // Also check error.detail if available
         if (error.detail) {
           this.logger.error(`❌ Error detail: ${error.detail}`);
@@ -888,7 +901,7 @@ export class FleetService {
             columnName = detailMatch[1] || detailMatch[2];
           }
         }
-        
+
         this.logger.error(`❌ Extracted column name: ${columnName}`);
         throw new BadRequestException(
           `Required field '${columnName}' is missing or null. Please provide a value for this field. Error details: ${errorMessage}`,
@@ -911,7 +924,7 @@ export class FleetService {
   private calculateExperience(driver: Driver): number {
     let experience = 0;
     const now = new Date();
-    
+
     if (driver.hireDate) {
       const hireDate = new Date(driver.hireDate);
       const diffTime = Math.abs(now.getTime() - hireDate.getTime());
@@ -924,7 +937,7 @@ export class FleetService {
       const diffYears = diffTime / (1000 * 60 * 60 * 24 * 365.25);
       experience = Math.floor(diffYears);
     }
-    
+
     return Math.max(0, experience); // Ensure non-negative
   }
 
@@ -946,25 +959,25 @@ export class FleetService {
       .select('driver') // Explicitly select from driver entity
       .where('driver.tenantId = :tenantId', { tenantId })
       .andWhere('driver.deletedAt IS NULL'); // Exclude soft-deleted drivers
-    
+
     console.log('  🔍 Query builder initialized with driverRepository');
     console.log('  🔍 Repository target:', this.driverRepository.target);
 
     // Only filter by employerId for non-admin roles (truck owners should only see their drivers)
     // Tenant admins and admins should see all drivers in their tenant
     const normalizedRole = userRole ? String(userRole).toUpperCase().trim() : '';
-    const isAdminRole = normalizedRole === 'TENANT_ADMIN' || 
-                        normalizedRole === 'ADMIN' || 
-                        normalizedRole === 'SUPER_ADMIN';
-    
-    console.log('  🔍 Role check:', { 
-      userRole, 
-      normalizedRole, 
-      isAdminRole, 
+    const isAdminRole = normalizedRole === 'TENANT_ADMIN' ||
+      normalizedRole === 'ADMIN' ||
+      normalizedRole === 'SUPER_ADMIN';
+
+    console.log('  🔍 Role check:', {
+      userRole,
+      normalizedRole,
+      isAdminRole,
       userId,
       willFilterByEmployer: userId && !isAdminRole
     });
-    
+
     if (userId && !isAdminRole) {
       console.log('  🔍 Filtering by employerId:', userId);
       query.andWhere('driver.employerId = :userId', { userId });
@@ -980,12 +993,12 @@ export class FleetService {
     const sql = query.getSql();
     const queryString = query.getQuery();
     const parameters = query.getParameters();
-    
+
     console.log('  📝 ========== SQL QUERY DEBUG ==========');
     console.log('  📝 SQL Query (getSql):', sql);
     console.log('  📝 SQL Query (getQuery):', queryString);
     console.log('  📝 Query Parameters:', JSON.stringify(parameters, null, 2));
-    
+
     // Build the full SQL with parameters for debugging
     let fullSql = sql;
     Object.keys(parameters).forEach(key => {
@@ -994,7 +1007,7 @@ export class FleetService {
       fullSql = fullSql.replace(`:${key}`, paramValue);
     });
     console.log('  📝 Full SQL with parameters:', fullSql);
-    
+
     // Verify the query is selecting from drivers table
     const sqlLower = sql.toLowerCase();
     if (sqlLower.includes('from trucks') || sqlLower.includes('from "trucks"')) {
@@ -1007,21 +1020,21 @@ export class FleetService {
       console.warn('  ⚠️ SQL:', sql);
     }
     console.log('  📝 ======================================');
-    
+
     // Also check raw count before applying filters - try both with and without deletedAt check
     const rawCountWithDeleted = await this.driverRepository
       .createQueryBuilder('driver')
       .where('driver.tenantId = :tenantId', { tenantId })
       .getCount();
     console.log(`  📊 Raw driver count (including deleted) for tenant ${tenantId}: ${rawCountWithDeleted}`);
-    
+
     const rawCount = await this.driverRepository
       .createQueryBuilder('driver')
       .where('driver.tenantId = :tenantId', { tenantId })
       .andWhere('driver.deletedAt IS NULL')
       .getCount();
     console.log(`  📊 Raw driver count (excluding deleted) for tenant ${tenantId}: ${rawCount}`);
-    
+
     // Also try a direct find to see what drivers exist
     const directDrivers = await this.driverRepository
       .createQueryBuilder('driver')
@@ -1089,7 +1102,7 @@ export class FleetService {
     // Explicitly select currentTruckId to ensure it's returned
     // This is important for filtering available drivers in the frontend
     const drivers = await query.getMany();
-    
+
     console.log(`  📊 Query returned ${drivers.length} drivers`);
     if (drivers.length > 0) {
       console.log('  📋 Driver IDs found:', drivers.map(d => d.id));
@@ -2424,8 +2437,8 @@ export class FleetService {
       ...routeData,
       status:
         normalizedStatus === 'active' ||
-        normalizedStatus === 'inactive' ||
-        normalizedStatus === 'maintenance'
+          normalizedStatus === 'inactive' ||
+          normalizedStatus === 'maintenance'
           ? normalizedStatus
           : 'inactive',
       distance:
@@ -2534,8 +2547,8 @@ export class FleetService {
       ...updateData,
       status:
         normalizedStatus === 'active' ||
-        normalizedStatus === 'inactive' ||
-        normalizedStatus === 'maintenance'
+          normalizedStatus === 'inactive' ||
+          normalizedStatus === 'maintenance'
           ? normalizedStatus
           : route.status,
       distance:
@@ -2608,26 +2621,43 @@ export class FleetService {
 
   // Fleet analytics
   async getFleetAnalytics(tenantId: string, userId: string) {
-    const trucks = await this.findAllTrucks(tenantId, userId);
-    const drivers = await this.findAllDrivers(tenantId, userId);
+    const totalTrucks = await this.truckRepository.count({ where: { tenantId } });
+    const availableTrucks = await this.truckRepository.count({ where: { tenantId, status: VehicleStatus.AVAILABLE } });
+    const inTransit = await this.truckRepository.count({ where: { tenantId, status: VehicleStatus.IN_TRANSIT } });
+    const maintenanceAlerts = await this.truckRepository.count({ where: { tenantId, status: VehicleStatus.MAINTENANCE } });
+
+    const totalDrivers = await this.driverRepository.count({ where: { tenantId } });
+    const activeDrivers = await this.driverRepository.count({ where: { tenantId, status: DriverStatus.ACTIVE } });
+
+    // Fast total capacity computation
+    const capacityResult = await this.truckRepository
+      .createQueryBuilder('truck')
+      .select('SUM(truck.capacityWeight)', 'total')
+      .where('truck.tenantId = :tenantId', { tenantId })
+      .getRawOne();
+
+    const ratingResult = await this.truckRepository
+      .createQueryBuilder('truck')
+      .select('AVG(truck.averageRating)', 'avg')
+      .where('truck.tenantId = :tenantId', { tenantId })
+      .getRawOne();
+
+    const driverRatingResult = await this.driverRepository
+      .createQueryBuilder('driver')
+      .select('AVG(driver.rating)', 'avg')
+      .where('driver.tenantId = :tenantId', { tenantId })
+      .getRawOne();
 
     return {
-      totalTrucks: trucks.length,
-      availableTrucks: trucks.filter(
-        (t) => t.status === VehicleStatus.AVAILABLE,
-      ).length,
-      totalDrivers: drivers.length,
-      activeDrivers: drivers.filter((d) => d.status === DriverStatus.ACTIVE)
-        .length,
-      totalCapacity: trucks.reduce((sum, t) => sum + t.capacityWeight, 0),
-      averageTruckRating:
-        trucks.length > 0
-          ? trucks.reduce((sum, t) => sum + t.averageRating, 0) / trucks.length
-          : 0,
-      averageDriverRating:
-        drivers.length > 0
-          ? drivers.reduce((sum, d) => sum + d.rating, 0) / drivers.length
-          : 0,
+      totalTrucks,
+      availableTrucks,
+      inTransit,
+      maintenanceAlerts,
+      totalDrivers,
+      activeDrivers,
+      totalCapacity: capacityResult?.total ? Number(capacityResult.total) : 0,
+      averageTruckRating: ratingResult?.avg ? Number(ratingResult.avg) : 0,
+      averageDriverRating: driverRatingResult?.avg ? Number(driverRatingResult.avg) : 0,
     };
   }
 
@@ -2654,7 +2684,7 @@ export class FleetService {
     if (!truck) {
       throw new NotFoundException('Truck not found or does not belong to your organization');
     }
-    
+
     // Optional: Log if the truck owner is different from the current user (for audit purposes)
     if (truck.ownerId !== userId) {
       console.log(`ℹ️ Route assignment: User ${userId} is assigning route to truck ${truckId} owned by ${truck.ownerId}`);

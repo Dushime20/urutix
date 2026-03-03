@@ -12,30 +12,18 @@ import {
     FaTruck,
     FaBox,
     FaStar,
-    FaChartLine,
-    FaUserCircle,
-    FaBars,
-    FaTimes
+    FaChartLine
 } from 'react-icons/fa';
 import {
-    Calendar,
-    Clock,
-    MapPin,
     Search,
-    ChevronRight,
-    Play,
-    CheckCircle2,
-    XCircle,
     Bell,
     Settings,
     LogOut,
-    Menu as MenuIcon,
     Zap,
     X,
     CheckCircle,
     Droplets,
-    Fuel,
-    AlertTriangle
+    Fuel
 } from 'lucide-react';
 
 const SmartBookingsPage: React.FC = () => {
@@ -49,7 +37,7 @@ const SmartBookingsPage: React.FC = () => {
     // Header State
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [showUserMenu, setShowUserMenu] = useState(false);
-    const maintenanceAlerts: any[] = []; // Mock empty for now or fetch if needed
+    // const maintenanceAlerts: any[] = []; // Removed unused variable
 
     useEffect(() => {
         loadBookings();
@@ -161,7 +149,7 @@ const SmartBookingsPage: React.FC = () => {
                             <a className="text-white/60 hover:text-white text-sm font-semibold transition-all" href="/dashboard/fleet/drivers">Drivers</a>
                             <a className="text-white/60 hover:text-white text-sm font-semibold transition-all" href="/dashboard/fleet/maintenance">Maintenance</a>
                             <a className="text-white/60 hover:text-white text-sm font-semibold transition-all" href="/dashboard/fleet/bids">Load Board</a>
-                            <a className="text-white text-sm font-bold relative after:content-[''] after:absolute after:bottom-[-4px] after:left-0 after:w-full after:h-0.5 after:bg-blue-500" href="/dashboard/fleet/smart-bookings">Smart Bookings</a>
+                            <a className="text-white text-sm font-bold relative after:content-[''] after:absolute after:bottom-[-4px] after:left-0 after:w-full after:h-0.5 after:bg-blue-500" href="/dashboard/fleet/smart-bookings">Bookings</a>
                             <a className="text-white/60 hover:text-white text-sm font-semibold transition-all" href="/dashboard/fleet/reports">Reports</a>
                         </nav>
 
@@ -181,7 +169,7 @@ const SmartBookingsPage: React.FC = () => {
                         {/* Fleet Status Badge */}
                         <div className="hidden 2xl:flex items-center gap-2 px-4 py-1.5 bg-white/5 border border-white/10 rounded-full">
                             <span className="text-blue-400">🚛</span>
-                            <span className="text-[10px] font-bold text-white/80 uppercase tracking-wider">Fleet Commander</span>
+                            <span className="text-[10px] font-bold text-white/80 uppercase tracking-wider">Commander</span>
                         </div>
 
                         {/* Quick Actions Button */}
@@ -274,7 +262,7 @@ const SmartBookingsPage: React.FC = () => {
                                 <a href="/dashboard/fleet/drivers" className="hover:text-white px-3 py-2">Drivers</a>
                                 <a href="/dashboard/fleet/maintenance" className="hover:text-white px-3 py-2">Maintenance</a>
                                 <a href="/dashboard/fleet/bids" className="hover:text-white px-3 py-2">Load Board</a>
-                                <a href="/dashboard/fleet/smart-bookings" className="text-white px-3 py-2 bg-white/5 rounded-lg">Smart Bookings</a>
+                                <a href="/dashboard/fleet/smart-bookings" className="text-white px-3 py-2 bg-white/5 rounded-lg">Bookings</a>
                                 <a href="/dashboard/fleet/reports" className="hover:text-white px-3 py-2">Reports</a>
                             </nav>
                         </div>
@@ -318,8 +306,8 @@ const SmartBookingsPage: React.FC = () => {
                 {/* Page Header */}
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
                     <div>
-                        <h1 className="text-2xl font-black tracking-tight text-gray-900">Smart Booking Requests</h1>
-                        <p className="text-gray-500 text-sm mt-1">Manage inbound cargo requests matched by AI</p>
+                        <h1 className="text-2xl font-black tracking-tight text-gray-900">Requests</h1>
+                        <p className="text-gray-500 text-sm mt-1">Manage your booking requests</p>
                     </div>
                     <div className="flex gap-3">
                         <button
@@ -403,7 +391,7 @@ const SmartBookingsPage: React.FC = () => {
                                             </span>
                                         </div>
                                         <div className="text-right">
-                                            <div className="text-sm text-gray-500">Offered Price</div>
+                                            <div className="text-sm text-gray-500">Price</div>
                                             <div className="text-xl font-black text-gray-900">
                                                 ${booking.price?.toLocaleString()}
                                             </div>
@@ -462,7 +450,7 @@ const SmartBookingsPage: React.FC = () => {
                                             </div>
                                         </div>
                                         <div className="flex flex-col items-end">
-                                            <span className="text-xs font-semibold text-blue-600 opacity-70">Match Score</span>
+                                            <span className="text-xs font-semibold text-blue-600 opacity-70">Match</span>
                                             <span className="font-black text-blue-700 text-lg">{(booking.matchScore * 100).toFixed(0)}%</span>
                                         </div>
                                     </div>
@@ -480,7 +468,7 @@ const SmartBookingsPage: React.FC = () => {
                                                 onClick={() => handleAction(booking.id, 'accept')}
                                                 className="flex-1 py-2.5 bg-gray-900 text-white font-bold rounded-lg hover:bg-black transition-all flex items-center justify-center gap-2 shadow-lg hover:shadow-xl"
                                             >
-                                                <FaCheckCircle /> Accept Booking
+                                                <FaCheckCircle /> Accept
                                             </button>
                                         </div>
                                     ) : (

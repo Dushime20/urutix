@@ -1,21 +1,20 @@
 import React, { useState } from 'react';
 import {
   CreditCard,
-  Calendar,
-  CheckCircle,
+  CheckCircle2,
   Clock,
   AlertCircle,
-  Plus,
-  Filter,
   Download,
   Send,
   X,
-  Wallet,
   Building,
-  DollarSign,
   FileText,
-  Search
+  Search,
+  ArrowRight,
+  ShieldCheck,
+  Zap
 } from 'lucide-react';
+import { cn } from '@/utils/cn';
 
 interface PaymentMethod {
   id: string;
@@ -42,149 +41,24 @@ interface Invoice {
 }
 
 export const PaymentManagement: React.FC = () => {
-  const [showAddPaymentMethod, setShowAddPaymentMethod] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Mock data - Replace with actual API calls
+  // Mock data
   const paymentMethods: PaymentMethod[] = [
-    {
-      id: '1',
-      type: 'credit_card',
-      name: 'Visa',
-      last4: '4242',
-      expiry: '12/25',
-      isDefault: true
-    },
-    {
-      id: '2',
-      type: 'bank_account',
-      name: 'Chase Business Checking',
-      last4: '7890',
-      bankName: 'Chase Bank',
-      accountType: 'Checking',
-      isDefault: false
-    },
-    {
-      id: '3',
-      type: 'wallet',
-      name: 'Urutix Wallet',
-      last4: '5000',
-      isDefault: false
-    }
+    { id: '1', type: 'credit_card', name: 'Visa Gold', last4: '4242', expiry: '12/25', isDefault: true },
+    { id: '2', type: 'bank_account', name: 'Chase Business', last4: '7890', bankName: 'Chase Bank', accountType: 'Checking', isDefault: false },
+    { id: '3', type: 'wallet', name: 'System Liquidity', last4: '5000', isDefault: false }
   ];
 
   const invoices: Invoice[] = [
-    {
-      id: '1',
-      number: 'INV-2026-001',
-      description: 'Shipment Payment - NYC to LA',
-      amount: 3450,
-      dueDate: '2026-01-05',
-      issueDate: '2026-01-02',
-      status: 'pending',
-      cargoId: 'CARGO-2401'
-    },
-    {
-      id: '2',
-      number: 'INV-2025-348',
-      description: 'Insurance Premium - Q1 2026',
-      amount: 1200,
-      dueDate: '2026-01-05',
-      issueDate: '2025-12-28',
-      status: 'pending'
-    },
-    {
-      id: '3',
-      number: 'INV-2025-347',
-      description: 'Shipment Payment - Chicago to Houston',
-      amount: 2100,
-      dueDate: '2025-12-28',
-      issueDate: '2025-12-25',
-      status: 'paid',
-      cargoId: 'CARGO-2398',
-      paymentMethod: 'Visa ****4242',
-      paidDate: '2025-12-27'
-    },
-    {
-      id: '4',
-      number: 'INV-2025-346',
-      description: 'Monthly Platform Fee - December',
-      amount: 299,
-      dueDate: '2025-12-20',
-      issueDate: '2025-12-15',
-      status: 'paid',
-      paymentMethod: 'Auto-debit',
-      paidDate: '2025-12-20'
-    },
-    {
-      id: '5',
-      number: 'INV-2025-340',
-      description: 'Shipment Payment - Denver to Portland',
-      amount: 3850,
-      dueDate: '2025-12-15',
-      issueDate: '2025-12-10',
-      status: 'overdue',
-      cargoId: 'CARGO-2380'
-    },
-    {
-      id: '6',
-      number: 'INV-2026-005',
-      description: 'Shipment Payment - Boston to Miami',
-      amount: 4250,
-      dueDate: '2026-01-10',
-      issueDate: '2026-01-02',
-      status: 'scheduled',
-      cargoId: 'CARGO-2405',
-      paymentMethod: 'Scheduled: Visa ****4242'
-    }
+    { id: '1', number: 'INV-2026-001', description: 'Cargo Asset Payment - Node 2401', amount: 3450, dueDate: '2026-01-05', issueDate: '2026-01-02', status: 'pending', cargoId: 'CARGO-2401' },
+    { id: '2', number: 'INV-2025-348', description: 'Insurance Coverage - Q1 Protocol', amount: 1200, dueDate: '2026-01-05', issueDate: '2025-12-28', status: 'pending' },
+    { id: '3', number: 'INV-2025-347', description: 'Logistics Clearing - Chicago Houston', amount: 2100, dueDate: '2025-12-28', issueDate: '2025-12-25', status: 'paid', cargoId: 'CARGO-2398', paymentMethod: 'Visa ****4242', paidDate: '2025-12-27' },
+    { id: '4', number: 'INV-2025-346', description: 'System Service Fee - Dec Audit', amount: 299, dueDate: '2025-12-20', issueDate: '2025-12-15', status: 'paid', paymentMethod: 'Auto-debit', paidDate: '2025-12-20' }
   ];
-
-  const getStatusIcon = (status: string) => {
-    const icons = {
-      paid: <CheckCircle className="w-5 h-5 text-emerald-600" />,
-      pending: <Clock className="w-5 h-5 text-amber-600" />,
-      overdue: <AlertCircle className="w-5 h-5 text-rose-600" />,
-      scheduled: <Calendar className="w-5 h-5 text-blue-600" />
-    };
-    return icons[status as keyof typeof icons] || <Clock className="w-5 h-5 text-gray-600" />;
-  };
-
-  const getStatusColor = (status: string) => {
-    const colors = {
-      paid: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-      pending: 'bg-amber-50 text-amber-700 border-amber-200',
-      overdue: 'bg-rose-50 text-rose-700 border-rose-200',
-      scheduled: 'bg-blue-50 text-blue-700 border-blue-200'
-    };
-    return colors[status as keyof typeof colors] || 'bg-gray-50 text-gray-700 border-gray-200';
-  };
-
-  const getPaymentMethodIcon = (type: string) => {
-    const icons = {
-      credit_card: <CreditCard className="w-5 h-5" />,
-      bank_account: <Building className="w-5 h-5" />,
-      wallet: <Wallet className="w-5 h-5" />
-    };
-    return icons[type as keyof typeof icons] || <CreditCard className="w-5 h-5" />;
-  };
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0
-    }).format(amount);
-  };
-
-  const filteredInvoices = invoices.filter(invoice => {
-    const matchesStatus = filterStatus === 'all' || invoice.status === filterStatus;
-    const matchesSearch = invoice.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         invoice.number.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesStatus && matchesSearch;
-  });
 
   const stats = {
     total: invoices.reduce((sum, inv) => sum + inv.amount, 0),
@@ -193,75 +67,71 @@ export const PaymentManagement: React.FC = () => {
     overdue: invoices.filter(inv => inv.status === 'overdue').reduce((sum, inv) => sum + inv.amount, 0)
   };
 
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(amount);
+  };
+
+  const getStatusStyle = (status: string) => {
+    switch (status) {
+      case 'paid': return 'bg-emerald-50 text-emerald-600 border-emerald-100';
+      case 'pending': return 'bg-amber-50 text-amber-600 border-amber-100';
+      case 'overdue': return 'bg-rose-50 text-rose-600 border-rose-100';
+      case 'scheduled': return 'bg-blue-50 text-blue-600 border-blue-100';
+      default: return 'bg-slate-50 text-slate-600 border-slate-100';
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-violet-50 p-6">
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Payment Management</h1>
-        <p className="text-gray-600">Manage invoices, payments, and billing methods</p>
+    <div className="space-y-10 animate-in fade-in duration-500">
+      {/* Dynamic Inventory Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        {[
+          { label: 'Cumulative Debt', value: formatCurrency(stats.total), icon: FileText, color: 'slate' },
+          { label: 'Settled Assets', value: formatCurrency(stats.paid), icon: CheckCircle2, color: 'emerald' },
+          { label: 'Active Pipeline', value: formatCurrency(stats.pending), icon: Clock, color: 'amber' },
+          { label: 'Critical Variance', value: formatCurrency(stats.overdue), icon: AlertCircle, color: 'rose' }
+        ].map((stat, i) => (
+          <div key={i} className="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-xl transition-all duration-300">
+            <div className={cn(
+              "w-12 h-12 rounded-2xl flex items-center justify-center mb-6",
+              stat.color === 'slate' ? "bg-slate-900 text-white" :
+                stat.color === 'emerald' ? "bg-emerald-50 text-emerald-600" :
+                  stat.color === 'amber' ? "bg-amber-50 text-amber-600" : "bg-rose-50 text-rose-600"
+            )}>
+              <stat.icon size={22} />
+            </div>
+            <div className="space-y-1">
+              <div className="text-3xl font-black text-slate-900 leading-none">{stat.value}</div>
+              <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{stat.label}</div>
+            </div>
+          </div>
+        ))}
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <div className="bg-gradient-to-br from-gray-700 to-gray-900 rounded-2xl p-6 text-white shadow-lg">
-          <div className="flex items-center gap-3 mb-2">
-            <FileText className="w-5 h-5 text-gray-300" />
-            <span className="text-gray-300 text-sm font-medium">Total Amount</span>
-          </div>
-          <p className="text-3xl font-bold">{formatCurrency(stats.total)}</p>
-        </div>
-
-        <div className="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl p-6 text-white shadow-lg">
-          <div className="flex items-center gap-3 mb-2">
-            <CheckCircle className="w-5 h-5 text-emerald-100" />
-            <span className="text-emerald-100 text-sm font-medium">Paid</span>
-          </div>
-          <p className="text-3xl font-bold">{formatCurrency(stats.paid)}</p>
-        </div>
-
-        <div className="bg-gradient-to-br from-amber-500 to-orange-600 rounded-2xl p-6 text-white shadow-lg">
-          <div className="flex items-center gap-3 mb-2">
-            <Clock className="w-5 h-5 text-amber-100" />
-            <span className="text-amber-100 text-sm font-medium">Pending</span>
-          </div>
-          <p className="text-3xl font-bold">{formatCurrency(stats.pending)}</p>
-        </div>
-
-        <div className="bg-gradient-to-br from-rose-500 to-red-600 rounded-2xl p-6 text-white shadow-lg">
-          <div className="flex items-center gap-3 mb-2">
-            <AlertCircle className="w-5 h-5 text-rose-100" />
-            <span className="text-rose-100 text-sm font-medium">Overdue</span>
-          </div>
-          <p className="text-3xl font-bold">{formatCurrency(stats.overdue)}</p>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Invoices List */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Filters & Search */}
-          <div className="bg-white rounded-2xl p-6 border-2 border-gray-100 shadow-sm">
-            <div className="flex flex-col md:flex-row gap-4">
-              <div className="flex-1 relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+        {/* Settlement Center */}
+        <div className="lg:col-span-2 space-y-8">
+          <div className="bg-slate-50 p-6 rounded-[2rem] border border-slate-100 shadow-sm">
+            <div className="flex flex-col md:flex-row gap-6 items-center">
+              <div className="relative flex-1 w-full group">
+                <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-300 group-focus-within:text-[#345E85] transition-colors" />
                 <input
                   type="text"
-                  placeholder="Search invoices..."
+                  placeholder="SEARCH HUB: INVOICE, CATEGORY, REFERENCE..."
+                  className="w-full h-16 pl-14 pr-4 bg-white border border-slate-100 rounded-3xl text-[10px] font-black uppercase tracking-widest text-slate-600 focus:outline-none focus:ring-4 focus:ring-blue-500/5 transition-all"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-violet-500"
                 />
               </div>
-              <div className="flex gap-2">
-                {['all', 'pending', 'paid', 'overdue', 'scheduled'].map((status) => (
+              <div className="flex gap-2 p-1.5 bg-white border border-slate-100 rounded-[1.5rem]">
+                {['all', 'pending', 'paid'].map((status) => (
                   <button
                     key={status}
                     onClick={() => setFilterStatus(status)}
-                    className={`px-4 py-2 rounded-lg font-medium transition-all capitalize ${
-                      filterStatus === status
-                        ? 'bg-violet-600 text-white shadow-md'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
+                    className={cn(
+                      "px-6 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all",
+                      filterStatus === status ? "bg-slate-900 text-white shadow-lg" : "text-slate-400 hover:text-slate-900"
+                    )}
                   >
                     {status}
                   </button>
@@ -270,198 +140,172 @@ export const PaymentManagement: React.FC = () => {
             </div>
           </div>
 
-          {/* Invoices */}
-          <div className="space-y-4">
-            {filteredInvoices.map((invoice) => (
-              <div 
-                key={invoice.id}
-                className="bg-white rounded-2xl p-6 border-2 border-gray-100 shadow-sm hover:shadow-lg transition-all"
-              >
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-start gap-4">
-                    <div className={`p-3 rounded-xl ${
-                      invoice.status === 'paid' ? 'bg-emerald-100' :
-                      invoice.status === 'pending' ? 'bg-amber-100' :
-                      invoice.status === 'overdue' ? 'bg-rose-100' :
-                      'bg-blue-100'
-                    }`}>
-                      {getStatusIcon(invoice.status)}
+          <div className="space-y-6">
+            {invoices.map((invoice) => (
+              <div key={invoice.id} className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-sm hover:shadow-xl transition-all group relative overflow-hidden">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative z-10">
+                  <div className="flex items-center gap-6">
+                    <div className={cn(
+                      "w-16 h-16 rounded-[1.5rem] flex items-center justify-center border transition-all group-hover:scale-105",
+                      getStatusStyle(invoice.status)
+                    )}>
+                      {invoice.status === 'paid' ? <CheckCircle2 size={28} /> :
+                        invoice.status === 'pending' ? <Clock size={28} /> : <AlertCircle size={28} />}
                     </div>
                     <div>
                       <div className="flex items-center gap-3 mb-1">
-                        <h3 className="font-bold text-gray-900">{invoice.number}</h3>
-                        <span className={`px-3 py-1 rounded-lg text-xs font-semibold border ${getStatusColor(invoice.status)}`}>
-                          {invoice.status.toUpperCase()}
-                        </span>
+                        <span className="text-[10px] font-black text-[#345E85] bg-blue-50 px-3 py-1 rounded-full uppercase tracking-widest">{invoice.number}</span>
+                        <span className={cn(
+                          "px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border",
+                          getStatusStyle(invoice.status)
+                        )}>{invoice.status}</span>
                       </div>
-                      <p className="text-gray-700 mb-2">{invoice.description}</p>
-                      <div className="flex items-center gap-4 text-sm text-gray-600">
+                      <h4 className="text-lg font-black text-slate-900 uppercase tracking-tight">{invoice.description}</h4>
+                      <div className="flex items-center gap-4 mt-2 text-[9px] font-bold text-slate-400 uppercase tracking-[0.1em]">
                         <span>Issued: {invoice.issueDate}</span>
-                        <span>Due: {invoice.dueDate}</span>
+                        <span className="w-1 h-1 bg-slate-200 rounded-full" />
+                        <span>Deadline: {invoice.dueDate}</span>
                         {invoice.cargoId && (
-                          <span className="text-violet-600 font-medium">{invoice.cargoId}</span>
+                          <>
+                            <span className="w-1 h-1 bg-slate-200 rounded-full" />
+                            <span className="text-[#345E85] font-black">{invoice.cargoId}</span>
+                          </>
                         )}
                       </div>
-                      {invoice.paidDate && (
-                        <p className="text-sm text-emerald-600 mt-1">
-                          Paid on {invoice.paidDate} via {invoice.paymentMethod}
-                        </p>
-                      )}
                     </div>
                   </div>
-                  <div className="text-right">
-                    <p className="text-2xl font-bold text-gray-900 mb-3">{formatCurrency(invoice.amount)}</p>
-                    <div className="flex gap-2">
-                      <button className="px-4 py-2 border-2 border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 font-semibold transition-all text-sm flex items-center gap-2">
-                        <Download className="w-4 h-4" />
-                        PDF
+                  <div className="text-right w-full md:w-auto">
+                    <div className="text-3xl font-black text-slate-900 mb-4">{formatCurrency(invoice.amount)}</div>
+                    <div className="flex justify-end gap-3">
+                      <button className="h-12 w-12 bg-slate-50 text-slate-400 rounded-2xl flex items-center justify-center hover:bg-slate-100 hover:text-slate-900 transition-all border border-slate-100">
+                        <Download size={18} />
                       </button>
-                      {invoice.status === 'pending' && (
-                        <button 
-                          onClick={() => {
-                            setSelectedInvoice(invoice);
-                            setShowPaymentModal(true);
-                          }}
-                          className="px-4 py-2 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-xl hover:from-violet-700 hover:to-purple-700 font-semibold transition-all text-sm flex items-center gap-2"
+                      {invoice.status !== 'paid' && (
+                        <button
+                          onClick={() => { setSelectedInvoice(invoice); setShowPaymentModal(true); }}
+                          className="h-12 px-8 bg-[#345E85] text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-900 transition-all shadow-lg flex items-center gap-3"
                         >
-                          <Send className="w-4 h-4" />
-                          Pay Now
-                        </button>
-                      )}
-                      {invoice.status === 'overdue' && (
-                        <button 
-                          onClick={() => {
-                            setSelectedInvoice(invoice);
-                            setShowPaymentModal(true);
-                          }}
-                          className="px-4 py-2 bg-gradient-to-r from-rose-600 to-red-600 text-white rounded-xl hover:from-rose-700 hover:to-red-700 font-semibold transition-all text-sm flex items-center gap-2"
-                        >
-                          <AlertCircle className="w-4 h-4" />
-                          Pay Now
+                          Authorize Payment <ArrowRight size={14} />
                         </button>
                       )}
                     </div>
                   </div>
                 </div>
+                {invoice.status === 'paid' && (
+                  <div className="mt-8 pt-6 border-t border-slate-50 flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-[9px] font-black text-emerald-600 uppercase tracking-widest">
+                      <ShieldCheck size={14} /> Settlement Confirmed via {invoice.paymentMethod}
+                    </div>
+                    <span className="text-[9px] font-bold text-slate-300 uppercase italic">Timestamp: {invoice.paidDate}</span>
+                  </div>
+                )}
               </div>
             ))}
           </div>
         </div>
 
-        {/* Payment Methods */}
-        <div className="space-y-6">
-          <div className="bg-white rounded-2xl p-6 border-2 border-gray-100 shadow-sm">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-bold text-gray-900">Payment Methods</h3>
-              <button 
-                onClick={() => setShowAddPaymentMethod(true)}
-                className="text-violet-600 hover:text-violet-700 font-semibold text-sm flex items-center gap-1"
-              >
-                <Plus className="w-4 h-4" />
-                Add New
+        {/* Treasury Sidebar */}
+        <div className="space-y-8">
+          <div className="bg-slate-900 rounded-[2.5rem] p-10 text-white relative overflow-hidden shadow-2xl">
+            <div className="relative z-10">
+              <div className="flex items-center justify-between mb-8">
+                <h3 className="text-sm font-black uppercase tracking-widest">Treasury Nodes</h3>
+              </div>
+
+              <div className="space-y-4">
+                {paymentMethods.map((method) => (
+                  <div key={method.id} className={cn(
+                    "p-6 rounded-[1.5rem] border transition-all group relative overflow-hidden",
+                    method.isDefault ? "bg-white/10 border-white/20 shadow-xl" : "bg-white/5 border-white/5 hover:border-white/10"
+                  )}>
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center text-white/60">
+                          {method.type === 'credit_card' ? <CreditCard size={20} /> : <Building size={20} />}
+                        </div>
+                        <div>
+                          <p className="text-[11px] font-black uppercase tracking-tight">{method.name}</p>
+                          <p className="text-[9px] font-bold text-white/40 uppercase tracking-widest">
+                            •••• {method.last4}
+                          </p>
+                        </div>
+                      </div>
+                      {method.isDefault && <div className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_10px_#10b981]" />}
+                    </div>
+                    {method.isDefault && (
+                      <span className="text-[8px] font-black text-white/30 uppercase tracking-[0.3em]">Primary Authorization Source</span>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              <button className="w-full mt-10 py-5 bg-white text-slate-900 rounded-[1.5rem] text-[10px] font-black uppercase tracking-widest hover:bg-slate-100 transition-all shadow-xl flex items-center justify-center gap-3">
+                <Zap size={16} fill="currentColor" /> Set Auto-Draft Logic
               </button>
             </div>
-
-            <div className="space-y-3">
-              {paymentMethods.map((method) => (
-                <div 
-                  key={method.id}
-                  className={`p-4 rounded-xl border-2 transition-all ${
-                    method.isDefault 
-                      ? 'border-violet-400 bg-violet-50' 
-                      : 'border-gray-200 hover:border-gray-300'
-                  }`}
-                >
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-3">
-                      <div className={`p-2 rounded-lg ${
-                        method.type === 'credit_card' ? 'bg-violet-100 text-violet-600' :
-                        method.type === 'bank_account' ? 'bg-blue-100 text-blue-600' :
-                        'bg-amber-100 text-amber-600'
-                      }`}>
-                        {getPaymentMethodIcon(method.type)}
-                      </div>
-                      <div>
-                        <p className="font-semibold text-gray-900">{method.name}</p>
-                        <p className="text-sm text-gray-600">
-                          {method.type === 'credit_card' && `•••• ${method.last4}`}
-                          {method.type === 'bank_account' && `${method.bankName} •••• ${method.last4}`}
-                          {method.type === 'wallet' && `Balance: ${formatCurrency(parseInt(method.last4 || '0'))}`}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                  {method.isDefault && (
-                    <div className="bg-violet-600 text-white text-xs font-bold px-3 py-1 rounded-lg inline-block">
-                      DEFAULT
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
+            {/* Background Light */}
+            <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/10 rounded-full -mr-32 -mt-32 blur-[100px] pointer-events-none" />
           </div>
 
-          {/* Quick Actions */}
-          <div className="bg-gradient-to-br from-violet-600 to-purple-700 rounded-2xl p-6 text-white shadow-lg">
-            <h3 className="text-lg font-bold mb-4">Quick Actions</h3>
+          <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-sm relative overflow-hidden">
+            <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-6">Accounting Artifacts</h4>
             <div className="space-y-3">
-              <button className="w-full py-3 bg-white/20 backdrop-blur-sm hover:bg-white/30 rounded-xl font-semibold transition-all flex items-center justify-center gap-2">
-                <CreditCard className="w-5 h-5" />
-                Set Up Auto-Pay
-              </button>
-              <button className="w-full py-3 bg-white/20 backdrop-blur-sm hover:bg-white/30 rounded-xl font-semibold transition-all flex items-center justify-center gap-2">
-                <Calendar className="w-5 h-5" />
-                Schedule Payments
-              </button>
-              <button className="w-full py-3 bg-white/20 backdrop-blur-sm hover:bg-white/30 rounded-xl font-semibold transition-all flex items-center justify-center gap-2">
-                <FileText className="w-5 h-5" />
-                Payment History
-              </button>
+              {[
+                { label: 'Q3 Tax Portfolio', date: 'Aug 12', size: '4.2MB' },
+                { label: 'System Audit Log', date: 'Aug 10', size: '1.8MB' },
+                { label: 'Carrier Settlement', date: 'Aug 08', size: '6.5MB' }
+              ].map((doc, i) => (
+                <div key={i} className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 border border-slate-100 hover:border-[#345E85] transition-all cursor-pointer group">
+                  <div className="flex items-center gap-3">
+                    <FileText size={16} className="text-slate-300 group-hover:text-[#345E85]" />
+                    <span className="text-[10px] font-black text-slate-600 uppercase tracking-tight">{doc.label}</span>
+                  </div>
+                  <span className="text-[8px] font-bold text-slate-300 uppercase">{doc.date}</span>
+                </div>
+              ))}
             </div>
           </div>
         </div>
       </div>
 
-      {/* Payment Modal */}
+      {/* Authority Modal */}
       {showPaymentModal && selectedInvoice && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-2xl font-bold text-gray-900">Make Payment</h3>
-              <button 
-                onClick={() => {
-                  setShowPaymentModal(false);
-                  setSelectedInvoice(null);
-                }}
-                className="text-gray-400 hover:text-gray-600"
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-in fade-in duration-300">
+          <div className="bg-white rounded-[2.5rem] shadow-2xl max-w-md w-full p-10 border border-slate-100">
+            <div className="flex items-center justify-between mb-10">
+              <h3 className="text-2xl font-black text-slate-900 uppercase tracking-tighter italic">Authorize Fund Transfer</h3>
+              <button
+                onClick={() => { setShowPaymentModal(false); setSelectedInvoice(null); }}
+                className="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 hover:text-slate-900 transition-all"
               >
-                <X className="w-6 h-6" />
+                <X size={20} />
               </button>
             </div>
 
-            <div className="bg-violet-50 rounded-xl p-4 mb-6">
-              <p className="text-sm text-gray-600 mb-1">Invoice Amount</p>
-              <p className="text-3xl font-bold text-gray-900">{formatCurrency(selectedInvoice.amount)}</p>
-              <p className="text-sm text-gray-600 mt-2">{selectedInvoice.description}</p>
+            <div className="bg-slate-900 rounded-3xl p-8 mb-8 text-white relative overflow-hidden">
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Authorization Value</p>
+              <p className="text-4xl font-black">{formatCurrency(selectedInvoice.amount)}</p>
+              <div className="mt-6 flex items-center gap-3 text-[9px] font-black text-white/50 uppercase tracking-widest">
+                <ShieldCheck size={14} className="text-emerald-400" /> Secure Protocol v.4.0
+              </div>
+              <div className="absolute bottom-0 right-0 w-32 h-32 bg-blue-500/5 rounded-full -mr-16 -mb-16 blur-2xl" />
             </div>
 
-            <div className="space-y-4 mb-6">
-              <label className="block">
-                <span className="text-sm font-semibold text-gray-700 mb-2 block">Payment Method</span>
-                <select className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-violet-500">
+            <div className="space-y-6 mb-10">
+              <div className="space-y-3">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Treasury Destination</label>
+                <select className="w-full h-16 px-6 bg-slate-50 border border-slate-100 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-900 focus:outline-none focus:ring-4 focus:ring-blue-500/5 transition-all">
                   {paymentMethods.map((method) => (
                     <option key={method.id} value={method.id}>
-                      {method.name} {method.last4 && `•••• ${method.last4}`}
-                      {method.isDefault && ' (Default)'}
+                      {method.name} ({method.last4})
                     </option>
                   ))}
                 </select>
-              </label>
+              </div>
             </div>
 
-            <button className="w-full py-4 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-xl hover:from-violet-700 hover:to-purple-700 font-bold text-lg shadow-lg transition-all flex items-center justify-center gap-2">
-              <Send className="w-5 h-5" />
-              Confirm Payment
+            <button className="w-full py-6 bg-[#345E85] text-white rounded-3xl font-black text-[12px] uppercase tracking-[0.2em] shadow-2xl shadow-blue-900/40 hover:bg-slate-900 transition-all flex items-center justify-center gap-4 group">
+              Confirm Authorization <Send size={16} className="group-hover:translate-x-1 transition-transform" />
             </button>
           </div>
         </div>
@@ -471,4 +315,3 @@ export const PaymentManagement: React.FC = () => {
 };
 
 export default PaymentManagement;
-

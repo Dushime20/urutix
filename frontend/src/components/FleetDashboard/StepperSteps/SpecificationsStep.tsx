@@ -15,34 +15,41 @@ export const SpecificationsStep: React.FC<SpecificationsStepProps> = ({
     'GASOLINE',
     'ELECTRIC',
     'HYBRID',
-    'NATURAL_GAS',
-    'BIODIESEL',
+    'CNG',
+    'LNG',
   ];
 
   const truckTypes = [
     'FLATBED',
     'BOX_TRUCK',
-    'REEFER',
+    'REFRIGERATED',
     'TANKER',
     'CONTAINER',
-    'LOWBOY',
-    'STEP_DECK',
-    'POWER_ONLY',
-    'CAR_CARRIER',
-    'DUMP_TRUCK',
-  ];
-
-  const trailerTypes = [
-    'FLATBED',
-    'BOX',
-    'REEFER',
-    'TANKER',
-    'CONTAINER',
-    'LOWBOY',
+    'LOWBED',
     'STEP_DECK',
     'POWER_ONLY',
     'CAR_CARRIER',
     'DUMP',
+    'VAN',
+    'PLATFORM',
+    'BULK',
+    'SPECIALIZED'
+  ];
+
+  const trailerTypes = [
+    'FLATBED',
+    'DRY_VAN',
+    'REFRIGERATED',
+    'TANKER',
+    'BULK',
+    'CONTAINER',
+    'CAR_CARRIER',
+    'LOWBED',
+    'STEP_DECK',
+    'POWER_ONLY',
+    'PLATFORM',
+    'DUMP',
+    'SPECIALIZED'
   ];
 
   return (
@@ -67,7 +74,7 @@ export const SpecificationsStep: React.FC<SpecificationsStepProps> = ({
             <select
               value={formData.truckType || ''}
               onChange={(e) => handleInputChange('truckType', e.target.value)}
-              className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-500 focus:border-gray-500 min-w-0"
+              className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500 min-w-0"
             >
               <option value="">Select Truck Type</option>
               {truckTypes.map((type) => (
@@ -85,7 +92,7 @@ export const SpecificationsStep: React.FC<SpecificationsStepProps> = ({
             <select
               value={formData.trailerType || ''}
               onChange={(e) => handleInputChange('trailerType', e.target.value)}
-              className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-500 focus:border-gray-500 min-w-0"
+              className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500 min-w-0"
             >
               <option value="">Select Trailer Type</option>
               {trailerTypes.map((type) => (
@@ -104,33 +111,33 @@ export const SpecificationsStep: React.FC<SpecificationsStepProps> = ({
           <FaWeight className="w-3.5 h-3.5 mr-1.5 text-gray-600" />
           Capacity Specifications
         </h4>
-        
+
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label className="block text-xs font-medium text-gray-600 mb-1 flex items-center">
               Weight Capacity (kg)
-              <span className="ml-2 text-xs text-blue-600 font-normal">(Used in matching)</span>
+              <span className="ml-2 text-xs text-primary-500 font-normal">(Used in matching)</span>
             </label>
             <input
               type="number"
               value={formData.capacityWeight || ''}
               onChange={(e) => handleInputChange('capacityWeight', e.target.value)}
               placeholder="e.g., 20000"
-              className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-500 focus:border-gray-500 min-w-0"
+              className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500 min-w-0"
             />
           </div>
 
           <div>
             <label className="block text-xs font-medium text-gray-600 mb-1 flex items-center">
               Volume Capacity (m³)
-              <span className="ml-2 text-xs text-blue-600 font-normal">(Used in matching)</span>
+              <span className="ml-2 text-xs text-primary-500 font-normal">(Used in matching)</span>
             </label>
             <input
               type="number"
               value={formData.capacityVolume || ''}
               onChange={(e) => handleInputChange('capacityVolume', e.target.value)}
               placeholder="e.g., 100"
-              className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-500 focus:border-gray-500 min-w-0"
+              className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500 min-w-0"
             />
           </div>
         </div>
@@ -142,7 +149,7 @@ export const SpecificationsStep: React.FC<SpecificationsStepProps> = ({
           <FaRuler className="w-3.5 h-3.5 mr-1.5 text-gray-600" />
           Dimensional Specifications
         </h4>
-        
+
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           <div>
             <label className="block text-xs font-medium text-gray-600 mb-1">
@@ -154,7 +161,7 @@ export const SpecificationsStep: React.FC<SpecificationsStepProps> = ({
               value={formData.maxLength || ''}
               onChange={(e) => handleInputChange('maxLength', e.target.value)}
               placeholder="e.g., 16.5"
-              className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-500 focus:border-gray-500 min-w-0"
+              className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500 min-w-0"
             />
           </div>
 
@@ -168,7 +175,7 @@ export const SpecificationsStep: React.FC<SpecificationsStepProps> = ({
               value={formData.maxWidth || ''}
               onChange={(e) => handleInputChange('maxWidth', e.target.value)}
               placeholder="e.g., 2.6"
-              className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-500 focus:border-gray-500 min-w-0"
+              className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500 min-w-0"
             />
           </div>
 
@@ -182,7 +189,7 @@ export const SpecificationsStep: React.FC<SpecificationsStepProps> = ({
               value={formData.maxHeight || ''}
               onChange={(e) => handleInputChange('maxHeight', e.target.value)}
               placeholder="e.g., 4.1"
-              className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-500 focus:border-gray-500 min-w-0"
+              className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500 min-w-0"
             />
           </div>
         </div>
@@ -194,7 +201,7 @@ export const SpecificationsStep: React.FC<SpecificationsStepProps> = ({
           <FaGasPump className="w-3.5 h-3.5 mr-1.5 text-gray-600" />
           Additional Specifications
         </h4>
-        
+
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label className="block text-xs font-medium text-gray-600 mb-1">
@@ -203,7 +210,7 @@ export const SpecificationsStep: React.FC<SpecificationsStepProps> = ({
             <select
               value={formData.fuelType || ''}
               onChange={(e) => handleInputChange('fuelType', e.target.value)}
-              className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-500 focus:border-gray-500 min-w-0"
+              className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500 min-w-0"
               required
             >
               <option value="">Select fuel type</option>
@@ -224,7 +231,7 @@ export const SpecificationsStep: React.FC<SpecificationsStepProps> = ({
               value={formData.mileage || ''}
               onChange={(e) => handleInputChange('mileage', e.target.value)}
               placeholder="e.g., 150000"
-              className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-500 focus:border-gray-500 min-w-0"
+              className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500 min-w-0"
             />
           </div>
 
@@ -238,7 +245,7 @@ export const SpecificationsStep: React.FC<SpecificationsStepProps> = ({
               value={formData.fuelEfficiency || ''}
               onChange={(e) => handleInputChange('fuelEfficiency', e.target.value)}
               placeholder="e.g., 25.5"
-              className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-500 focus:border-gray-500 min-w-0"
+              className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500 min-w-0"
             />
           </div>
         </div>
@@ -246,3 +253,4 @@ export const SpecificationsStep: React.FC<SpecificationsStepProps> = ({
     </div>
   );
 };
+

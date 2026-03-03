@@ -77,7 +77,7 @@ export const CargoCapabilitiesStep: React.FC<CargoCapabilitiesStepProps> = ({
                   type="checkbox"
                   checked={formData.cargoCapabilities?.supportedCargoTypes?.includes(type) || false}
                   onChange={() => handleCargoTypeToggle(type)}
-                  className="rounded border-gray-300 text-gray-600 focus:ring-gray-500 w-3.5 h-3.5"
+                  className="rounded border-gray-300 text-gray-600 focus:ring-primary-500 w-3.5 h-3.5"
                 />
                 <span className="text-xs text-gray-600">
                   {type}
@@ -106,7 +106,7 @@ export const CargoCapabilitiesStep: React.FC<CargoCapabilitiesStepProps> = ({
                   type="checkbox"
                   checked={formData.cargoCapabilities?.[capability] || false}
                   onChange={() => handleCapabilityToggle(capability)}
-                  className="rounded border-gray-300 text-gray-600 focus:ring-gray-500 w-3.5 h-3.5"
+                  className="rounded border-gray-300 text-gray-600 focus:ring-primary-500 w-3.5 h-3.5"
                 />
                 <span className="text-xs text-gray-600">
                   {capability.replace('max', '').replace('Handling', '')}
@@ -131,7 +131,7 @@ export const CargoCapabilitiesStep: React.FC<CargoCapabilitiesStepProps> = ({
                 type="number"
                 value={formData.cargoCapabilities?.temperatureRange?.min || ''}
                 onChange={(e) => handleTemperatureChange('min', e.target.value)}
-                className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-500 focus:border-gray-500"
+                className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
                 placeholder="-40"
               />
           </div>
@@ -141,7 +141,7 @@ export const CargoCapabilitiesStep: React.FC<CargoCapabilitiesStepProps> = ({
                 type="number"
                 value={formData.cargoCapabilities?.temperatureRange?.max || ''}
                 onChange={(e) => handleTemperatureChange('max', e.target.value)}
-                className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-500 focus:border-gray-500"
+                className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
                 placeholder="40"
               />
           </div>
@@ -155,7 +155,7 @@ export const CargoCapabilitiesStep: React.FC<CargoCapabilitiesStepProps> = ({
               type="checkbox"
               checked={formData.cargoCapabilities?.humidityControl || false}
               onChange={() => handleCapabilityToggle('humidityControl')}
-              className="rounded border-gray-300 text-gray-600 focus:ring-gray-500 w-3.5 h-3.5"
+              className="rounded border-gray-300 text-gray-600 focus:ring-primary-500 w-3.5 h-3.5"
             />
             <span className="text-xs font-medium text-gray-600">Humidity Control</span>
             </label>
@@ -185,7 +185,7 @@ export const CargoCapabilitiesStep: React.FC<CargoCapabilitiesStepProps> = ({
                   step="0.01"
                   value={formData.cargoCapabilities?.[field] || ''}
                   onChange={(e) => handleDimensionChange(field, e.target.value)}
-                  className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-500 focus:border-gray-500"
+                  className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
                   placeholder="0.00"
                 />
           </div>
@@ -216,7 +216,7 @@ export const CargoCapabilitiesStep: React.FC<CargoCapabilitiesStepProps> = ({
                   step="0.01"
                   value={formData.cargoCapabilities?.[field] || ''}
                   onChange={(e) => handleDimensionChange(field, e.target.value)}
-                  className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-500 focus:border-gray-500"
+                  className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
                   placeholder="0.00"
                 />
           </div>
@@ -227,3 +227,4 @@ export const CargoCapabilitiesStep: React.FC<CargoCapabilitiesStepProps> = ({
     </div>
   );
 };
+

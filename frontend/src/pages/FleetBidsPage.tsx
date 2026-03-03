@@ -382,12 +382,12 @@ const FleetBidsPage: React.FC = () => {
             <div className="h-10 w-10 bg-blue-50 rounded-xl flex items-center justify-center text-[#345E85] shadow-inner">
               <Gavel size={20} />
             </div>
-            <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-[#345E85]">Marketplace</h2>
+            <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-[#345E85]">Bids</h2>
           </div>
           <div className="flex justify-between items-end">
             <div>
-              <h1 className="text-3xl font-black text-slate-900 tracking-tight">Cargo Bids</h1>
-              <p className="text-slate-500 font-medium mt-1">Review opportunities, place bids, and secure new shipments.</p>
+              <h1 className="text-3xl font-black text-slate-900 tracking-tight">Bids</h1>
+              <p className="text-slate-500 font-medium mt-1">Review and place bids.</p>
             </div>
             <button
               onClick={loadBids}
@@ -402,32 +402,32 @@ const FleetBidsPage: React.FC = () => {
         {/* Stats Matrix */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <StatCard
-            title="Active Bids"
+            title="Active"
             value={bids.filter(b => b.bidStatus === 'pending').length}
             icon={<Gavel />}
             color="primary"
-            subtitle="Opportunities awaiting action"
+            subtitle="Awaiting action"
           />
           <StatCard
             title="Accepted"
             value={bids.filter(b => b.bidStatus === 'accepted').length}
             icon={<CheckCircle />}
             color="success"
-            subtitle="Secured shipments"
+            subtitle="Secured"
           />
           <StatCard
             title="Rejected"
             value={bids.filter(b => b.bidStatus === 'rejected').length}
             icon={<XCircle />}
             color="error" // Will map to error/rose
-            subtitle="Passed opportunities"
+            subtitle="Passed"
           />
           <StatCard
-            title="Total Value"
+            title="Value"
             value={formatCurrency(bids.reduce((acc, curr) => acc + (curr.offeredPrice || 0), 0))}
             icon={<DollarSign />}
             color="info"
-            subtitle="Potential revenue pipeline"
+            subtitle="Potential"
           />
         </div>
 
@@ -570,7 +570,7 @@ const FleetBidsPage: React.FC = () => {
 
                     <div className="pt-4 mt-auto border-t border-slate-50 flex items-center justify-between">
                       <div className="flex flex-col">
-                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Offered Price</span>
+                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Price</span>
                         <span className="text-lg font-black text-[#345E85]">{formatCurrency(bid.offeredPrice || 0, bid.currencyCode)}</span>
                       </div>
                       <div className="flex items-center gap-2">
@@ -579,7 +579,7 @@ const FleetBidsPage: React.FC = () => {
                           className="px-4 py-2 bg-[#345E85] text-white rounded-xl text-xs font-black uppercase tracking-wider hover:bg-[#2a4d6d] transition-colors flex items-center gap-2"
                         >
                           <Gavel size={14} />
-                          Quick Bid
+                          Bid
                         </button>
                         <button
                           onClick={() => setSelectedBid(bid)}
@@ -659,7 +659,7 @@ const FleetBidsPage: React.FC = () => {
                                 className="px-3 py-2 bg-[#345E85] text-white rounded-lg text-xs font-black uppercase tracking-wider hover:bg-[#2a4d6d] transition-all flex items-center gap-1.5"
                               >
                                 <Gavel size={14} />
-                                Quick Bid
+                                Bid
                               </button>
                               <button
                                 onClick={() => setSelectedBid(bid)}
@@ -668,8 +668,6 @@ const FleetBidsPage: React.FC = () => {
                                 <ArrowRight size={18} />
                               </button>
                             </div>
-                          </td>
-                            </button>
                           </td>
                         </tr>
                       ))}
@@ -718,7 +716,7 @@ const FleetBidsPage: React.FC = () => {
                     </div>
                     <div className="flex items-center gap-8">
                       <div className="text-right">
-                        <p className="text-[10px] font-black uppercase tracking-widest opacity-60 mb-1">Offered Price</p>
+                        <p className="text-[10px] font-black uppercase tracking-widest opacity-60 mb-1">Price</p>
                         <p className="text-2xl font-black tracking-tight">{formatCurrency(selectedBid.offeredPrice || 0, selectedBid.currencyCode)}</p>
                       </div>
                       <div className="h-10 w-px bg-current opacity-20 hidden md:block" />
@@ -870,10 +868,10 @@ const FleetBidsPage: React.FC = () => {
             </div>
           </DialogContent>
         </Dialog>
-      </main>
+      </main >
       <FleetFooter />
       {DialogComponent}
-      
+
       {/* Quick Bid Modal */}
       <QuickBidModal
         isOpen={showQuickBidModal}
@@ -881,7 +879,7 @@ const FleetBidsPage: React.FC = () => {
         cargo={bidCargo}
         onBidSubmitted={handleBidSubmitted}
       />
-    </div>
+    </div >
   );
 };
 

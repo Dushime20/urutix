@@ -12,10 +12,61 @@ import { useNavigate } from 'react-router-dom';
 interface BookingConfirmationProps {
     bookingData?: any;
     onReset?: () => void;
+    cargoDetails?: any;
+    selectedTruck?: any;
+    bidData?: any;
+    onComplete?: (bookingResult: any) => void;
 }
 
-const BookingConfirmation: React.FC<BookingConfirmationProps> = ({ bookingData, onReset }) => {
+const BookingConfirmation: React.FC<BookingConfirmationProps> = ({ bookingData, onReset, cargoDetails, selectedTruck, bidData, onComplete }) => {
+    const [confirmedState, setConfirmedState] = React.useState<any>(null);
+    const finalData = bookingData || confirmedState;
     const navigate = useNavigate();
+
+    if (!finalData) {
+        return (
+            <div className="flex flex-col items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+                <div className="text-center max-w-lg w-full">
+                    <h2 className="text-3xl font-extrabold text-gray-900 mb-6">Confirm Your Booking</h2>
+                    <div className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden mb-8 text-left p-6">
+                        <p className="mb-4">You are about to book the cargo <strong>{cargoDetails?.title}</strong>.</p>
+                        {selectedTruck && (
+                            <div className="mb-4">
+                                <h4 className="font-semibold text-gray-800">Selected Carrier:</h4>
+                                <p>{selectedTruck.truckOwner?.name} - {selectedTruck.truck?.make}</p>
+                                <p className="text-gray-600 font-medium mt-1">Estimated Cost: ${selectedTruck.estimatedCost}</p>
+                            </div>
+                        )}
+                        {bidData && (
+                            <div className="mb-4">
+                                <h4 className="font-semibold text-gray-800">Selected Bid:</h4>
+                                <p>{bidData.truckOwner?.name}</p>
+                                <p className="text-gray-600 font-medium mt-1">Bid Amount: ${bidData.bidAmount}</p>
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="flex gap-4 justify-center">
+                        <button
+                            onClick={() => {
+                                const result = {
+                                    id: `BKG-${Math.floor(Math.random() * 10000)}`,
+                                    status: 'Confirmed',
+                                    type: selectedTruck ? 'Direct Booking' : 'Bid Awarded',
+                                    loadId: cargoDetails?.id,
+                                };
+                                setConfirmedState(result);
+                                if (onComplete) onComplete(result);
+                            }}
+                            className="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+                        >
+                            Confirm Booking
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="flex flex-col items-center justify-center py-12 px-4 sm:px-6 lg:px-8">

@@ -32,6 +32,7 @@ import { ReceiversModule } from './modules/receivers/receivers.module';
 import { BrokersModule } from './modules/brokers/brokers.module';
 import { MigrationsModule } from './modules/migrations/migrations.module';
 import { SubscriptionModule } from './modules/subscription/subscription.module';
+import { FuelModule } from './modules/fuel/fuel.module';
 import { databaseConfig } from './config/database.config';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { EventsModule } from './modules/events/events.module';
@@ -78,6 +79,7 @@ import { User } from './entities/user.entity';
     BrokersModule,
     MigrationsModule,
     SubscriptionModule,
+    FuelModule,
     EventsModule,
     OnboardingModule,
   ],
@@ -97,7 +99,7 @@ export class AppModule implements NestModule {
     consumer
       .apply(TenantSubdomainMiddleware)
       .forRoutes('*'); // Apply to all routes
-    
+
     // Apply tenant verification middleware after authentication
     consumer
       .apply(TenantVerificationMiddleware)

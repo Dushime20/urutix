@@ -101,7 +101,7 @@ export const CertificationsStep: React.FC<CertificationsStepProps> = ({
                       type="checkbox"
                       checked={formData.certifications?.[key] || false}
                       onChange={() => handleCertificationToggle(key)}
-                      className="mt-1 rounded border-gray-300 text-gray-600 focus:ring-gray-500"
+                      className="mt-1 rounded border-gray-300 text-gray-600 focus:ring-primary-500"
                     />
                     <div className="flex-1">
                       <div className="font-medium text-gray-900 text-sm">{label}</div>
@@ -130,7 +130,7 @@ export const CertificationsStep: React.FC<CertificationsStepProps> = ({
               type="number"
               value={formData.certifications?.maxInsuranceCoverage || ''}
               onChange={(e) => handleCertificationInputChange('maxInsuranceCoverage', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               placeholder="1000000"
             />
           </div>
@@ -140,7 +140,7 @@ export const CertificationsStep: React.FC<CertificationsStepProps> = ({
               type="number"
               value={formData.certifications?.maxDriverExperience || ''}
               onChange={(e) => handleCertificationInputChange('maxDriverExperience', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               placeholder="5"
             />
           </div>
@@ -156,7 +156,7 @@ export const CertificationsStep: React.FC<CertificationsStepProps> = ({
           <textarea
             value={formData.certifications?.requiredCertifications?.join(', ') || ''}
             onChange={(e) => handleArrayInputChange('requiredCertifications', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
             rows={3}
             placeholder="CDL, Hazmat Endorsement, DOT Certification"
           />
@@ -198,3 +198,4 @@ export const CertificationsStep: React.FC<CertificationsStepProps> = ({
     </div>
   );
 };
+

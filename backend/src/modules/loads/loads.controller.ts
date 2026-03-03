@@ -73,7 +73,7 @@ import { CargoOwnerGuard } from '../../guards/cargo-owner.guard';
 @UseGuards(JwtAuthGuard, TenantGuard)
 @ApiBearerAuth('JWT-auth')
 export class LoadsController {
-  constructor(private readonly loadsService: LoadsService) {}
+  constructor(private readonly loadsService: LoadsService) { }
 
   @Post()
   @UseGuards(ThrottlerGuard, RolesGuard)
@@ -212,8 +212,8 @@ export class LoadsController {
 
       try {
         const transformedLoad = this.transformLoadToResponse(load);
-      return {
-        message: 'Enhanced cargo load created successfully',
+        return {
+          message: 'Enhanced cargo load created successfully',
           load: {
             ...transformedLoad,
             enrichedLocations: enrichedLocations,
@@ -676,7 +676,7 @@ export class LoadsController {
         // Continue without enriched locations - not critical
         enrichedLocations = [];
       }
-      
+
       // Add enriched locations to the response for frontend compatibility
       return {
         message: 'Load created from template successfully',
@@ -1175,7 +1175,7 @@ export class LoadsController {
     @Req() req: Request,
   ): Promise<{ message: string }> {
     try {
-      await this.loadsService.remove(id, req.user.tenantId, req.user.userId);
+      await this.loadsService.remove(id, req.user.tenantId, req.user.userId, req.user.role);
       return {
         message: 'Load deleted successfully',
       };
@@ -1879,18 +1879,18 @@ export class LoadsController {
       equipmentType: 'Equipment Type',
       visibility: 'Visibility',
       unitsRequired: 'Units Required',
-      
+
       // Location fields
       locations: 'Locations',
       pickupDate: 'Pickup Date',
       deliveryDate: 'Delivery Date',
-      
+
       // Financial fields
       loadValue: 'Load Value',
       currencyCode: 'Currency Code',
       offeredPrice: 'Offered Price',
       paymentTerms: 'Payment Terms',
-      
+
       // Boolean fields
       isFragile: 'Is Fragile',
       isHazardous: 'Is Hazardous',
@@ -1900,13 +1900,13 @@ export class LoadsController {
       requiresCrane: 'Requires Crane',
       requiresLoadingDock: 'Requires Loading Dock',
       isTimeCritical: 'Is Time Critical',
-      
+
       // Contact fields
       contactInfo: 'Contact Information',
       contactPerson: 'Contact Person',
       contactPhone: 'Contact Phone',
       contactEmail: 'Contact Email',
-      
+
       // Other fields
       urgencyLevel: 'Urgency Level',
       packagingType: 'Packaging Type',
@@ -1914,7 +1914,7 @@ export class LoadsController {
       numberOfPallets: 'Number of Pallets',
       loadingInstructions: 'Loading Instructions',
       unloadingInstructions: 'Unloading Instructions',
-      
+
       // IDs
       tenantId: 'Tenant',
       cargoOwnerId: 'Cargo Owner',
@@ -1962,10 +1962,10 @@ export class LoadsController {
       updatedAt: load.updatedAt,
       cargoOwner: load.cargoOwner
         ? {
-            id: load.cargoOwner.id,
-            email: load.cargoOwner.email,
-            profile: load.cargoOwner.profile,
-          }
+          id: load.cargoOwner.id,
+          email: load.cargoOwner.email,
+          profile: load.cargoOwner.profile,
+        }
         : undefined,
       broker: (() => {
         if (!load.broker && !load.brokerId) {
@@ -1981,10 +1981,10 @@ export class LoadsController {
             email: load.broker.email,
             profile: brokerProfile
               ? {
-                  firstName: brokerProfile.firstName,
-                  lastName: brokerProfile.lastName,
-                  companyName: brokerProfile.companyName,
-                }
+                firstName: brokerProfile.firstName,
+                lastName: brokerProfile.lastName,
+                companyName: brokerProfile.companyName,
+              }
               : undefined,
           };
         }
@@ -2001,7 +2001,7 @@ export class LoadsController {
       brokerCommissionAmount: load.brokerCommissionAmount,
       pickupLocation: (() => {
         try {
-        const pickupLoc = load.locations?.find((loc) => loc.type === 'PICKUP');
+          const pickupLoc = load.locations?.find((loc) => loc.type === 'PICKUP');
           if (!pickupLoc || !pickupLoc.locationData) return undefined;
           return {
             id: pickupLoc.id || '',
@@ -2016,9 +2016,9 @@ export class LoadsController {
       })(),
       deliveryLocation: (() => {
         try {
-        const deliveryLoc = load.locations?.find(
-          (loc) => loc.type === 'DELIVERY',
-        );
+          const deliveryLoc = load.locations?.find(
+            (loc) => loc.type === 'DELIVERY',
+          );
           if (!deliveryLoc || !deliveryLoc.locationData) return undefined;
           return {
             id: deliveryLoc.id || '',

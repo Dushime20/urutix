@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FaPlus, FaFilter, FaSearch, FaTools, FaUserCircle, FaBars, FaTimes } from 'react-icons/fa';
+import { FaPlus, FaFilter, FaSearch, FaTools } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import MaintenanceSchedulerModal from '../components/FleetDashboard/Maintenance/MaintenanceSchedulerModal';
@@ -16,8 +16,7 @@ import {
     Settings,
     LogOut,
     CheckCircle,
-    Droplets,
-    Fuel
+    Droplets
 } from 'lucide-react';
 
 const MaintenancePage: React.FC = () => {
@@ -149,13 +148,13 @@ const MaintenancePage: React.FC = () => {
                 <div className="flex items-center animate-marquee whitespace-nowrap">
                     <div className="flex gap-16 items-center text-[11px] font-bold tracking-widest uppercase opacity-80">
                         <span className="flex items-center gap-2 text-emerald-400">
-                            <CheckCircle size={14} /> Fleet Health: {stats.healthScore}% Operational
+                            <CheckCircle size={14} /> Health: {stats.healthScore}%
                         </span>
                         <span className="flex items-center gap-2 text-amber-400">
-                            <FaTools size={14} /> Active Repairs: {stats.activeRepairs} vehicles
+                            <FaTools size={14} /> Active Repairs: {stats.activeRepairs}
                         </span>
                         <span className="flex items-center gap-2 text-blue-400">
-                            <Droplets size={14} /> Maintenance Due: {stats.upcomingServices} vehicles
+                            <Droplets size={14} /> Upcoming: {stats.upcomingServices} vehicles
                         </span>
                     </div>
                 </div>
@@ -184,12 +183,12 @@ const MaintenancePage: React.FC = () => {
                         {/* Desktop Navigation */}
                         <nav className="hidden lg:flex items-center gap-10">
                             <a className="text-white/60 hover:text-white text-sm font-semibold transition-all" href="/dashboard/fleet">Dashboard</a>
-                            <a className="text-white/60 hover:text-white text-sm font-semibold transition-all" href="/dashboard/fleet/trucks">Fleet</a>
+                            <a className="text-white/60 hover:text-white text-sm font-semibold transition-all" href="/dashboard/fleet/trucks">Vehicles</a>
                             <a className="text-white/60 hover:text-white text-sm font-semibold transition-all" href="/fleet-manager">Fleet Manager</a>
                             <a className="text-white/60 hover:text-white text-sm font-semibold transition-all" href="/dashboard/fleet/drivers">Drivers</a>
                             <a className="text-white text-sm font-bold relative after:content-[''] after:absolute after:bottom-[-4px] after:left-0 after:w-full after:h-0.5 after:bg-blue-500" href="/dashboard/fleet/maintenance">Maintenance</a>
                             <a className="text-white/60 hover:text-white text-sm font-semibold transition-all" href="/dashboard/fleet/bids">Load Board</a>
-                            <a className="text-white/60 hover:text-white text-sm font-semibold transition-all" href="/dashboard/fleet/smart-bookings">Smart Bookings</a>
+                            <a className="text-white/60 hover:text-white text-sm font-semibold transition-all" href="/dashboard/fleet/smart-bookings">Bookings</a>
                             <a className="text-white/60 hover:text-white text-sm font-semibold transition-all" href="/dashboard/fleet/reports">Reports</a>
                         </nav>
 
@@ -286,12 +285,12 @@ const MaintenancePage: React.FC = () => {
                     <div className="lg:hidden absolute top-[120px] left-0 right-0 bg-[#0f172a] border-b border-white/10 p-4 z-50 shadow-xl">
                         <nav className="flex flex-col space-y-3 text-sm font-semibold text-gray-400">
                             <a href="/dashboard/fleet" className="hover:text-white px-3 py-2">Dashboard</a>
-                            <a href="/dashboard/fleet/trucks" className="hover:text-white px-3 py-2">Fleet</a>
+                            <a href="/dashboard/fleet/trucks" className="hover:text-white px-3 py-2">Vehicles</a>
                             <a href="/fleet-manager" className="hover:text-white px-3 py-2">Fleet Manager</a>
                             <a href="/dashboard/fleet/drivers" className="hover:text-white px-3 py-2">Drivers</a>
                             <a href="/dashboard/fleet/maintenance" className="text-white px-3 py-2 bg-white/5 rounded-lg">Maintenance</a>
                             <a href="/dashboard/fleet/bids" className="hover:text-white px-3 py-2">Load Board</a>
-                            <a href="/dashboard/fleet/smart-bookings" className="hover:text-white px-3 py-2">Smart Bookings</a>
+                            <a href="/dashboard/fleet/smart-bookings" className="hover:text-white px-3 py-2">Bookings</a>
                             <a href="/dashboard/fleet/reports" className="hover:text-white px-3 py-2">Reports</a>
                         </nav>
                     </div>
@@ -333,8 +332,8 @@ const MaintenancePage: React.FC = () => {
                 {/* Header Actions Row */}
                 <div className="flex flex-col md:flex-row md:items-center justify-between mb-8">
                     <div>
-                        <h1 className="text-2xl font-black tracking-tight text-slate-900">Fleet Maintenance</h1>
-                        <p className="text-slate-500 mt-1 font-medium">Manage service schedules, repairs, and maintenance history</p>
+                        <h1 className="text-2xl font-black tracking-tight text-slate-900">Maintenance</h1>
+                        <p className="text-slate-500 mt-1 font-medium">Manage vehicle repairs and service history</p>
                     </div>
                     <div className="mt-4 md:mt-0 flex gap-3">
                         <button
@@ -342,7 +341,7 @@ const MaintenancePage: React.FC = () => {
                             className="inline-flex items-center px-4 py-2 bg-indigo-600 text-white text-sm font-bold rounded-lg hover:bg-indigo-700 shadow-lg shadow-indigo-600/20 transition-all"
                         >
                             <FaPlus className="mr-2" />
-                            Schedule Service
+                            Add
                         </button>
                     </div>
                 </div>

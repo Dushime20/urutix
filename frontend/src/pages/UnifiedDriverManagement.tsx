@@ -7,7 +7,13 @@ import {
   Target,
   Plus,
   User,
-  CheckCircle
+  CheckCircle2,
+  List,
+  ChevronRight,
+  TrendingUp,
+  ShieldCheck,
+  Layout,
+  UserPlus
 } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -16,6 +22,8 @@ import { documentApi } from '../services/documents/documentApi';
 import FleetFormStepper from '../components/FleetDashboard/FleetFormStepper';
 import { DriversList } from '../components/FleetDashboard/DriversList';
 import { DriverAssignments } from '../components/FleetDashboard/DriverAssignments';
+import { cn } from '../utils/cn';
+import { motion, AnimatePresence } from 'framer-motion';
 import UserRatings from './UserRatings';
 import UserRewards from './UserRewards';
 import UserScoring from './UserScoring';
@@ -40,7 +48,7 @@ const UnifiedDriverManagement: React.FC = () => {
   const [editingDriver, setEditingDriver] = useState<Driver | null>(null);
   const [drivers, setDrivers] = useState<Driver[]>([]);
   const [loadingDrivers, setLoadingDrivers] = useState(false);
-  const [driversListRefreshKey, setDriversListRefreshKey] = useState(0);
+  const [driversListRefreshKey] = useState(0);
 
   useEffect(() => {
     // Update tab based on URL changes
@@ -150,7 +158,7 @@ const UnifiedDriverManagement: React.FC = () => {
   if (authLoading) {
     return (
       <div className="text-center py-12">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto mb-4"></div>
         <p className="text-gray-500">Loading user data...</p>
       </div>
     );
@@ -160,64 +168,110 @@ const UnifiedDriverManagement: React.FC = () => {
     return <p className="text-center text-red-500 py-12">Authentication required.</p>;
   }
 
+  const CircularStatsCard = ({ title, value, icon: Icon, colorClass, secondaryColor }: any) => {
+    return (
+      <div className="flex flex-col items-center group">
+        <div className="relative w-40 h-40 rounded-full bg-white border-[8px] border-slate-50 flex flex-col items-center justify-center transition-all duration-500 hover:border-slate-100 hover:shadow-xl hover:shadow-slate-200/50">
+          <svg className="absolute inset-0 w-full h-full -rotate-90 scale-[1.05]">
+            <circle
+              cx="80"
+              cy="80"
+              r="72"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="3"
+              strokeDasharray="452"
+              strokeDashoffset="350"
+              className={cn("opacity-10 transition-all duration-1000 group-hover:stroke-dashoffset-[200]", secondaryColor)}
+            />
+          </svg>
+
+          <div className={cn("p-2 rounded-2xl mb-2 bg-slate-50 text-slate-400 group-hover:bg-white group-hover:text-inherit transition-all duration-500 shadow-sm", colorClass)}>
+            <Icon size={18} />
+          </div>
+
+          <div className="flex flex-col items-center px-4 w-full overflow-hidden">
+            <span className="text-xl font-black text-[#0f172a] tracking-tight group-hover:scale-110 transition-transform duration-500 truncate w-full text-center">
+              {value}
+            </span>
+          </div>
+
+          <div className="absolute inset-4 rounded-full border border-dashed border-slate-100 opacity-50 group-hover:rotate-90 transition-transform duration-1000" />
+        </div>
+
+        <div className="mt-4 text-center px-2">
+          <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] group-hover:text-primary-500 transition-colors duration-300 line-clamp-1">
+            {title}
+          </p>
+        </div>
+      </div>
+    );
+  };
+
   return (
-    <div className="space-y-4">
-      {/* Header */}
-      <div className="mb-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-bold text-gray-900 mb-1">Driver Management</h1>
-            <p className="text-xs text-gray-600">Manage your drivers, add new drivers, and assign them to trucks</p>
+    <div className="space-y-8 pb-12">
+      {/* Premium Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-black text-slate-900 tracking-tight mb-2">Driver Management</h1>
+          <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400">
+            <Layout size={12} className="text-primary-500" />
+            <span>Overview</span>
+            <ChevronRight size={10} />
+            <span className="text-primary-500">Control Center</span>
           </div>
-          <div className="flex items-center gap-2">
-
-            <button
-              onClick={handleCreateDriver}
-              className="flex items-center gap-2.5 px-6 py-4 bg-[#345E85] text-white rounded-2xl font-black uppercase tracking-widest text-[11px] shadow-xl shadow-blue-100 hover:bg-[#2a4d6d] active:scale-95 transition-all group"
-            >
-              <Plus size={18} className="group-hover:rotate-90 transition-transform" />
-              Add New Driver
-            </button>
-          </div>
+        </div>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={handleCreateDriver}
+            className="px-6 py-3 bg-primary-500 text-white rounded-[20px] text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-2 hover:bg-primary-600 transition-all shadow-xl shadow-primary-500/20 group"
+          >
+            <Plus size={14} className="group-hover:rotate-90 transition-transform" />
+            Add New Driver
+          </button>
         </div>
       </div>
 
-      {/* Statistics Cards */}
-      <div className="bg-gray-50 rounded-xl p-4 mb-4">
-        <div className="grid grid-cols-2 gap-4">
-          <div className="bg-white rounded-lg border border-gray-100 p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-gray-500 mb-1">Total Drivers</p>
-                <p className="text-xl font-bold text-gray-900">
-                  {loadingDrivers ? '...' : drivers.length}
-                </p>
-              </div>
-              <User className="w-6 h-6" style={{ color: '#345E85' }} />
-            </div>
-          </div>
-          <div className="bg-white rounded-lg border border-gray-100 p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-gray-500 mb-1">Available</p>
-                <p className="text-xl font-bold text-green-600">
-                  {loadingDrivers ? '...' : drivers.filter(d => !d.currentTruckId).length}
-                </p>
-              </div>
-              <CheckCircle className="w-6 h-6 text-green-500" />
-            </div>
-          </div>
-        </div>
+      {/* Stats Matrix */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 mb-12 place-items-center bg-white p-10 rounded-[3rem] border border-slate-100 shadow-sm">
+        <CircularStatsCard
+          title="Total Drivers"
+          value={loadingDrivers ? '...' : drivers.length}
+          icon={Users}
+          colorClass="bg-blue-50 text-blue-600"
+          secondaryColor="text-blue-600"
+        />
+        <CircularStatsCard
+          title="Available"
+          value={loadingDrivers ? '...' : drivers.filter(d => !d.currentTruckId).length}
+          icon={CheckCircle2}
+          colorClass="bg-emerald-50 text-emerald-600"
+          secondaryColor="text-emerald-600"
+        />
+        <CircularStatsCard
+          title="Average Rating"
+          value="94.2%"
+          icon={TrendingUp}
+          colorClass="bg-primary-50 text-primary-500"
+          secondaryColor="text-primary-500"
+        />
+        <CircularStatsCard
+          title="Documents"
+          value="100%"
+          icon={ShieldCheck}
+          colorClass="bg-purple-50 text-purple-600"
+          secondaryColor="text-purple-600"
+        />
       </div>
 
-      {/* Sub-Navigation / Quick Vectors */}
-      <div className="flex flex-wrap items-center gap-4 mb-6">
+      {/* Navigation Sub-Surface */}
+      <div className="bg-white rounded-[32px] border border-slate-100 p-2 flex flex-wrap items-center gap-1 shadow-sm">
         {[
-          { id: 'my-drivers', icon: Users, label: 'My Drivers' },
+          { id: 'my-drivers', icon: List, label: 'My Drivers' },
           { id: 'assignments', icon: UserCheck, label: 'Assignments' },
           { id: 'ratings', icon: Star, label: 'Ratings' },
           { id: 'rewards', icon: Award, label: 'Rewards' },
-          { id: 'scoring', icon: Target, label: 'Scoring' }
+          { id: 'scoring', icon: Target, label: 'Performance' }
         ].map((tab) => (
           <button
             key={tab.id}
@@ -225,77 +279,92 @@ const UnifiedDriverManagement: React.FC = () => {
               setActiveTab(tab.id as any);
               if (tab.id === 'my-drivers') navigate('/dashboard/fleet/drivers');
               else if (tab.id === 'assignments') navigate('/dashboard/fleet/assignments');
-              // Add other routes if strictly needed, but typically setting activeTab is enough if we are in the same parent or managing via state in this file
             }}
-            className={`flex items-center gap-2.5 px-5 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all ${activeTab === tab.id
-              ? 'bg-blue-50 text-[#345E85] shadow-sm'
-              : 'text-slate-400 hover:text-slate-600'
+            className={`px-6 py-3 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === tab.id
+              ? 'bg-primary-500 text-white shadow-xl shadow-primary-500/20'
+              : 'text-slate-400 hover:text-primary-500 hover:bg-white'
               }`}
           >
-            <tab.icon size={16} />
+            <tab.icon size={14} />
             {tab.label}
           </button>
         ))}
       </div>
 
-      {/* Content Container */}
-      <div className="bg-white rounded-lg border border-gray-200">
-        {/* Tab Content */}
-        <div className="p-6">
-          {activeTab === 'add-driver' && (
-            <div>
-              {!showDriverForm ? (
-                <div className="text-center py-12">
-                  <User className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                  <h3 className="mb-2">Add New Driver</h3>
-                  <p className="text-gray-600 mb-6">Click the button below to start adding a new driver to your fleet</p>
-                  <button
-                    onClick={handleCreateDriver}
-                    className="px-6 py-3 bg-[#345E85] text-white rounded-2xl font-black uppercase tracking-widest text-[11px] hover:bg-[#2a4d6d] transition-colors flex items-center gap-2 mx-auto"
-                  >
-                    <Plus className="w-4 h-4" />
-                    Add Driver
-                  </button>
+      {/* Content Canvas */}
+      <div className="min-h-[500px]">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={activeTab}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.2 }}
+          >
+            {activeTab === 'add-driver' && (
+              <div className="bg-slate-50/50 rounded-[32px] border-2 border-dashed border-slate-200 p-16 text-center flex flex-col items-center">
+                <div className="size-24 bg-white rounded-[32px] flex items-center justify-center text-slate-200 mb-8 border border-slate-100 shadow-sm">
+                  <User size={48} />
                 </div>
-              ) : null}
-              <FleetFormStepper
-                isOpen={showDriverForm}
-                onClose={handleDriverFormClose}
-                onSubmit={handleDriverFormSubmit}
-                initialData={editingDriver ? {
-                  ...editingDriver,
-                  type: 'driver',
-                  name: `${editingDriver.firstName} ${editingDriver.lastName}`.trim() || 'Unknown Driver',
-                  status: editingDriver.status || 'AVAILABLE',
-                  createdAt: new Date(), // Fallback
-                  updatedAt: new Date() // Fallback
-                } as any : undefined}
-                mode={editingDriver ? 'edit' : 'create'}
-                activeTab="drivers"
-              />
-            </div>
-          )}
+                <h3 className="text-2xl font-black text-slate-900 tracking-tight mb-2">No Drivers Added Yet</h3>
+                <p className="text-sm font-medium text-slate-400 mb-10 max-w-sm">Start by adding a new driver to your fleet to begin managing assignments and tracking performance.</p>
+                <button
+                  onClick={() => {
+                    setEditingDriver(null);
+                    setShowDriverForm(true);
+                  }}
+                  className="px-8 py-4 bg-primary-500 text-white rounded-[20px] text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-3 hover:bg-primary-600 transition-all shadow-2xl shadow-primary-500/20"
+                >
+                  <UserPlus size={18} /> Add New Driver
+                </button>
 
-          {activeTab === 'my-drivers' && (
-            <DriversList onAddDriver={handleCreateDriver} refreshTrigger={driversListRefreshKey} />
-          )}
+                <FleetFormStepper
+                  isOpen={showDriverForm}
+                  onClose={handleDriverFormClose}
+                  onSubmit={handleDriverFormSubmit}
+                  initialData={editingDriver ? {
+                    ...editingDriver,
+                    type: 'driver',
+                    name: `${editingDriver.firstName} ${editingDriver.lastName}`.trim() || 'Unknown Driver',
+                    status: editingDriver.status || 'AVAILABLE',
+                    createdAt: new Date(), // Fallback
+                    updatedAt: new Date() // Fallback
+                  } as any : undefined}
+                  mode={editingDriver ? 'edit' : 'create'}
+                  activeTab="drivers"
+                />
+              </div>
+            )}
 
-          {activeTab === 'assignments' && (
-            <DriverAssignments />
-          )}
+            {activeTab === 'my-drivers' && (
+              <DriversList onAddDriver={handleCreateDriver} refreshTrigger={driversListRefreshKey} />
+            )}
 
-          {activeTab === 'ratings' && (
-            <UserRatings />
-          )}
+            {activeTab === 'assignments' && (
+              <div className="bg-white rounded-[32px] border border-slate-100 p-6 shadow-sm">
+                <DriverAssignments />
+              </div>
+            )}
 
-          {activeTab === 'rewards' && (
-            <UserRewards />
-          )}
+            {activeTab === 'ratings' && (
+              <div className="bg-white rounded-[32px] border border-slate-100 p-8 shadow-sm">
+                <UserRatings />
+              </div>
+            )}
 
-          {activeTab === 'scoring' && (
-            <UserScoring />
-          )}
-        </div>
+            {activeTab === 'rewards' && (
+              <div className="bg-white rounded-[32px] border border-slate-100 p-8 shadow-sm">
+                <UserRewards />
+              </div>
+            )}
+
+            {activeTab === 'scoring' && (
+              <div className="bg-white rounded-[32px] border border-slate-100 p-8 shadow-sm">
+                <UserScoring />
+              </div>
+            )}
+          </motion.div>
+        </AnimatePresence>
       </div>
 
       {/* Driver Form Modal (when opened from My Drivers tab) */}
@@ -321,4 +390,5 @@ const UnifiedDriverManagement: React.FC = () => {
 };
 
 export default UnifiedDriverManagement;
+
 

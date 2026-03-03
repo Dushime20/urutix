@@ -139,6 +139,13 @@ export class CreateTruckDto {
   @Min(0)
   fuelEfficiency?: number;
 
+  @IsOptional()
+  currentLocation?: any;
+
+  @IsOptional()
+  @IsString()
+  currentAddress?: string;
+
   // Cargo-specific specifications
   @IsOptional()
   @IsEnum(TruckType)

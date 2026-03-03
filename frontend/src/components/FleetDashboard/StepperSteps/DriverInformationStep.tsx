@@ -102,7 +102,7 @@ const AddDriverDocumentModal: React.FC<AddDriverDocumentModalProps> = ({ onClose
       <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <div className="flex items-center gap-3">
-            <FaFileAlt className="w-6 h-6 text-primary-600" />
+            <FaFileAlt className="w-6 h-6 text-primary-500" />
             <h2 className="text-2xl font-bold text-gray-900">Add Document</h2>
           </div>
           <button onClick={onClose} className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
@@ -182,7 +182,7 @@ const AddDriverDocumentModal: React.FC<AddDriverDocumentModalProps> = ({ onClose
                     <button
                       type="button"
                       onClick={() => fileInputRef.current?.click()}
-                      className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
+                      className="px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600"
                     >
                       Choose File
                     </button>
@@ -208,7 +208,7 @@ const AddDriverDocumentModal: React.FC<AddDriverDocumentModalProps> = ({ onClose
 
             <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-200">
               <button type="button" onClick={onClose} className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">Cancel</button>
-              <button type="submit" className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 flex items-center gap-2">
+              <button type="submit" className="px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 flex items-center gap-2">
                 <FaPlus className="w-4 h-4" />
                 Add Document
               </button>
@@ -260,7 +260,7 @@ const DriverInformationStep: React.FC<DriverInformationStepProps> = ({
               type="text"
               value={formData.firstName || ''}
               onChange={(e) => handleInputChange('firstName', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               required
               placeholder="Enter first name"
             />
@@ -272,7 +272,7 @@ const DriverInformationStep: React.FC<DriverInformationStepProps> = ({
               type="text"
               value={formData.lastName || ''}
               onChange={(e) => handleInputChange('lastName', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               required
               placeholder="Enter last name"
             />
@@ -286,7 +286,7 @@ const DriverInformationStep: React.FC<DriverInformationStepProps> = ({
               type="date"
               value={formData.dateOfBirth || ''}
               onChange={(e) => handleInputChange('dateOfBirth', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               required
             />
           </div>
@@ -297,7 +297,7 @@ const DriverInformationStep: React.FC<DriverInformationStepProps> = ({
               type="text"
               value={formData.address || ''}
               onChange={(e) => handleInputChange('address', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               required
               placeholder="Street, City, Country"
             />
@@ -319,7 +319,7 @@ const DriverInformationStep: React.FC<DriverInformationStepProps> = ({
               type="text"
               value={formData.licenseNumber || ''}
               onChange={(e) => handleInputChange('licenseNumber', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               required
               placeholder="Enter license number"
             />
@@ -330,7 +330,7 @@ const DriverInformationStep: React.FC<DriverInformationStepProps> = ({
             <select
               value={formData.licenseType || ''}
               onChange={(e) => handleInputChange('licenseType', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               required
             >
               <option value="">Select license type</option>
@@ -353,7 +353,7 @@ const DriverInformationStep: React.FC<DriverInformationStepProps> = ({
               type="number"
               value={formData.experience || ''}
               onChange={(e) => handleInputChange('experience', parseInt(e.target.value) || '')}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               required
               min={0}
               max={50}
@@ -369,7 +369,7 @@ const DriverInformationStep: React.FC<DriverInformationStepProps> = ({
               type="date"
               value={formData.licenseIssueDate || ''}
               onChange={(e) => handleInputChange('licenseIssueDate', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               required
             />
           </div>
@@ -379,7 +379,7 @@ const DriverInformationStep: React.FC<DriverInformationStepProps> = ({
               type="date"
               value={formData.licenseExpiry || ''}
               onChange={(e) => handleInputChange('licenseExpiry', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               required
             />
           </div>
@@ -389,7 +389,7 @@ const DriverInformationStep: React.FC<DriverInformationStepProps> = ({
               type="text"
               value={formData.licenseState || ''}
               onChange={(e) => handleInputChange('licenseState', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               required
               placeholder="State/Province"
             />
@@ -400,7 +400,7 @@ const DriverInformationStep: React.FC<DriverInformationStepProps> = ({
               type="text"
               value={formData.licenseCountry || ''}
               onChange={(e) => handleInputChange('licenseCountry', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               required
               placeholder="Country"
             />
@@ -422,7 +422,7 @@ const DriverInformationStep: React.FC<DriverInformationStepProps> = ({
               type="tel"
               value={formData.contactInfo?.phone || ''}
               onChange={(e) => handleInputChange('contactInfo', { ...formData.contactInfo, phone: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               required
               placeholder="Enter phone number"
             />
@@ -434,7 +434,7 @@ const DriverInformationStep: React.FC<DriverInformationStepProps> = ({
               type="email"
               value={formData.contactInfo?.email || ''}
               onChange={(e) => handleInputChange('contactInfo', { ...formData.contactInfo, email: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               required
               placeholder="Enter email address"
             />
@@ -451,7 +451,7 @@ const DriverInformationStep: React.FC<DriverInformationStepProps> = ({
             <select
               value={formData.employmentType || ''}
               onChange={(e) => handleInputChange('employmentType', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               required
             >
               <option value="">Select employment type</option>
@@ -468,7 +468,7 @@ const DriverInformationStep: React.FC<DriverInformationStepProps> = ({
               type="date"
               value={formData.hireDate || ''}
               onChange={(e) => handleInputChange('hireDate', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               required
             />
           </div>
@@ -477,7 +477,7 @@ const DriverInformationStep: React.FC<DriverInformationStepProps> = ({
             <select
               value={formData.status || ''}
               onChange={(e) => handleInputChange('status', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               required
             >
               <option value="">Select status</option>
@@ -499,7 +499,7 @@ const DriverInformationStep: React.FC<DriverInformationStepProps> = ({
           <textarea
             value={formData.specialCertifications || ''}
             onChange={(e) => handleInputChange('specialCertifications', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
             rows={3}
             placeholder="Enter any special certifications (e.g., Hazmat, Tanker, etc.)"
           />
@@ -510,7 +510,7 @@ const DriverInformationStep: React.FC<DriverInformationStepProps> = ({
           <textarea
             value={formData.driverNotes || ''}
             onChange={(e) => handleInputChange('driverNotes', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
             rows={3}
             placeholder="Enter any additional notes about the driver"
           />
@@ -528,7 +528,7 @@ const DriverInformationStep: React.FC<DriverInformationStepProps> = ({
               type="text"
               value={formData.emergencyContact?.name || ''}
               onChange={(e) => handleInputChange('emergencyContact', { ...formData.emergencyContact, name: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               placeholder="Enter emergency contact name"
             />
           </div>
@@ -539,7 +539,7 @@ const DriverInformationStep: React.FC<DriverInformationStepProps> = ({
               type="tel"
               value={formData.emergencyContact?.phone || ''}
               onChange={(e) => handleInputChange('emergencyContact', { ...formData.emergencyContact, phone: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               placeholder="Enter emergency contact phone"
             />
           </div>
@@ -550,7 +550,7 @@ const DriverInformationStep: React.FC<DriverInformationStepProps> = ({
               type="text"
               value={formData.emergencyContact?.relationship || ''}
               onChange={(e) => handleInputChange('emergencyContact', { ...formData.emergencyContact, relationship: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               placeholder="e.g., Spouse, Parent, etc."
             />
           </div>
@@ -572,7 +572,7 @@ const DriverInformationStep: React.FC<DriverInformationStepProps> = ({
           <button
             type="button"
             onClick={() => setShowAddModal(true)}
-            className="px-3 py-2 bg-primary-600 text-white text-sm rounded-lg hover:bg-primary-700 flex items-center gap-2"
+            className="px-3 py-2 bg-primary-500 text-white text-sm rounded-lg hover:bg-primary-600 flex items-center gap-2"
           >
             <FaPlus className="w-4 h-4" />
             Add Document
@@ -591,7 +591,7 @@ const DriverInformationStep: React.FC<DriverInformationStepProps> = ({
               <div key={index} className="border border-gray-200 rounded-lg p-4 bg-white shadow-sm hover:shadow-md transition-shadow">
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
+                    <div className="p-2 bg-primary-50 text-primary-500 rounded-lg">
                       <FaFileAlt className="w-5 h-5" />
                     </div>
                     <div>
@@ -634,5 +634,6 @@ const DriverInformationStep: React.FC<DriverInformationStepProps> = ({
 };
 
 export default DriverInformationStep;
+
 
 

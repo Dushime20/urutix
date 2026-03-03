@@ -10,7 +10,7 @@ import {
   InternalServerErrorException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, ILike } from 'typeorm';
+import { Repository, ILike, DataSource } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { User, UserStatus, UserRole } from '../../entities/user.entity';
@@ -80,6 +80,7 @@ export class EnhancedAuthService {
     private rateLimitGuard: EnhancedRateLimitGuard,
     private tenantService: TenantService,
     private activityLogService: ActivityLogService,
+    private dataSource: DataSource,
   ) {}
 
   async register(
@@ -1527,11 +1528,29 @@ export class EnhancedAuthService {
 
   // Enhanced private helper methods
   private async generateTokens(user: User, rememberMe: boolean = false) {
+    // Load permissions for the user's role
+    let permissions: string[] = [];
+    try {
+      const rolePermissions = await this.dataSource.query(`
+        SELECT p.resource, p.action
+        FROM role_permissions rp
+        JOIN permissions p ON p.id = rp.permission_id
+        WHERE rp.role = $1
+      `, [user.role]);
+      
+      permissions = rolePermissions.map((rp: any) => `${rp.resource}:${rp.action}`);
+      this.logger.debug(`Loaded ${permissions.length} permissions for role ${user.role}`);
+    } catch (error) {
+      this.logger.error(`Failed to load permissions for role ${user.role}: ${error.message}`);
+      // Continue without permissions rather than failing login
+    }
+
     const payload = {
       sub: user.id,
       email: user.email,
       role: user.role,
       tenantId: user.tenantId,
+      permissions, // Add permissions array to JWT payload
     };
 
     const accessExpiryTime: number =

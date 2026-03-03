@@ -510,11 +510,11 @@ const NewFleetManager: React.FC = () => {
                         {/* Desktop Navigation */}
                         <nav className="hidden lg:flex items-center gap-10">
                             <a className="text-white/60 hover:text-white text-sm font-semibold transition-all" href="/dashboard/fleet">Dashboard</a>
-                            <a className="text-white text-sm font-bold relative after:content-[''] after:absolute after:bottom-[-4px] after:left-0 after:w-full after:h-0.5 after:bg-blue-500" href="/fleet-manager">Fleet Assets</a>
+                            <a className="text-white text-sm font-bold relative after:content-[''] after:absolute after:bottom-[-4px] after:left-0 after:w-full after:h-0.5 after:bg-blue-500" href="/fleet-manager">Fleet</a>
                             <a className="text-white/60 hover:text-white text-sm font-semibold transition-all" href="/dashboard/fleet/drivers">Drivers</a>
                             <a className="text-white/60 hover:text-white text-sm font-semibold transition-all" href="/dashboard/fleet/maintenance">Maintenance</a>
                             <a className="text-white/60 hover:text-white text-sm font-semibold transition-all" href="/dashboard/fleet/bids">Load Board</a>
-                            <a className="text-white/60 hover:text-white text-sm font-semibold transition-all" href="/dashboard/fleet/smart-bookings">Smart Bookings</a>
+                            <a className="text-white/60 hover:text-white text-sm font-semibold transition-all" href="/dashboard/fleet/smart-bookings">Bookings</a>
                             <a className="text-white/60 hover:text-white text-sm font-semibold transition-all" href="/dashboard/fleet/reports">Reports</a>
                         </nav>
 
@@ -536,7 +536,7 @@ const NewFleetManager: React.FC = () => {
                         {/* Fleet Status Badge */}
                         <div className="hidden 2xl:flex items-center gap-2 px-4 py-1.5 bg-white/5 border border-white/10 rounded-full">
                             <span className="text-blue-400">🚛</span>
-                            <span className="text-[10px] font-bold text-white/80 uppercase tracking-wider">Fleet Commander</span>
+                            <span className="text-[10px] font-bold text-white/80 uppercase tracking-wider">Commander</span>
                         </div>
 
                         {/* Quick Actions Button */}
@@ -573,7 +573,7 @@ const NewFleetManager: React.FC = () => {
                     {/* Total Assets */}
                     <div className="bg-[#161B22] p-6 rounded-xl border border-[#324467] shadow-sm">
                         <div className="flex justify-between items-start mb-4">
-                            <p className="text-[#92a4c9] text-sm font-medium uppercase tracking-wider">Total Assets</p>
+                            <p className="text-[#92a4c9] text-sm font-medium uppercase tracking-wider">Total Vehicles</p>
                             <span className="material-symbols-outlined text-[#135bec]">inventory_2</span>
                         </div>
                         <div className="flex items-baseline gap-2">
@@ -582,13 +582,13 @@ const NewFleetManager: React.FC = () => {
                                 <span className="material-symbols-outlined text-xs">{stats.totalAssetsUp ? 'trending_up' : 'trending_down'}</span> {stats.totalAssetsChange}%
                             </span>
                         </div>
-                        <p className="text-[#6b7c9e] text-xs mt-2">Active in corridors</p>
+                        <p className="text-[#6b7c9e] text-xs mt-2">Active</p>
                     </div>
 
                     {/* Driver Compliance */}
                     <div className="bg-[#161B22] p-6 rounded-xl border border-[#324467] shadow-sm">
                         <div className="flex justify-between items-start mb-4">
-                            <p className="text-[#92a4c9] text-sm font-medium uppercase tracking-wider">Driver Compliance</p>
+                            <p className="text-[#92a4c9] text-sm font-medium uppercase tracking-wider">Compliance</p>
                             <span className="material-symbols-outlined text-emerald-400">verified_user</span>
                         </div>
                         <div className="flex items-baseline gap-2">
@@ -597,13 +597,13 @@ const NewFleetManager: React.FC = () => {
                                 <span className="material-symbols-outlined text-xs">{stats.complianceUp ? 'trending_up' : 'trending_down'}</span> {stats.complianceChange}%
                             </span>
                         </div>
-                        <p className="text-[#6b7c9e] text-xs mt-2">Critical review required</p>
+                        <p className="text-[#6b7c9e] text-xs mt-2">Requires review</p>
                     </div>
 
                     {/* Available Vehicles */}
                     <div className="bg-[#161B22] p-6 rounded-xl border border-[#324467] shadow-sm">
                         <div className="flex justify-between items-start mb-4">
-                            <p className="text-[#92a4c9] text-sm font-medium uppercase tracking-wider">Available Vehicles</p>
+                            <p className="text-[#92a4c9] text-sm font-medium uppercase tracking-wider">Available</p>
                             <span className="material-symbols-outlined text-blue-400">event_available</span>
                         </div>
                         <div className="flex items-baseline gap-2">
@@ -643,7 +643,7 @@ const NewFleetManager: React.FC = () => {
                                         }`}
                                 >
                                     <span className="material-symbols-outlined text-lg">commute</span>
-                                    Vehicle Registry
+                                    Vehicles
                                 </button>
                                 <button
                                     onClick={() => setActiveTab('drivers')}
@@ -653,7 +653,7 @@ const NewFleetManager: React.FC = () => {
                                         }`}
                                 >
                                     <span className="material-symbols-outlined text-lg">badge</span>
-                                    Driver Profiles
+                                    Drivers
                                 </button>
                             </div>
                             <div className="flex items-center gap-3">
@@ -680,7 +680,7 @@ const NewFleetManager: React.FC = () => {
                                         className="bg-[#135bec] hover:bg-[#135bec]/90 text-white flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all shadow-lg"
                                     >
                                         <span className="material-symbols-outlined text-xl">add</span>
-                                        {activeTab === 'vehicles' ? 'Register New Vehicle' : 'Register New Driver'}
+                                        {activeTab === 'vehicles' ? 'Add Vehicle' : 'Add Driver'}
                                     </button>
                                 </ProtectedAction>
                             </div>

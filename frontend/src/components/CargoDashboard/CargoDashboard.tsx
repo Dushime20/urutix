@@ -654,7 +654,7 @@ export const CargoDashboard: React.FC = () => {
         // For this task, I will implement a client-side CSV export of selected items if API doesn't support it?
         // Let's just log for now as the main request was "Batch Enrichment" and "Export Enriched (single/general)".
         // I'll skip complex bulk export logic here and focus on the Enriched Export Dropdown for the main button.
-        toast.success(`Exporting ${ids.length} items (Standard CSV)`);
+        toast.success(`Exporting ${ids.length} items(Standard CSV)`);
         toast.dismiss(toastId);
       } catch (e) {
         toast.error("Export failed");
@@ -680,7 +680,7 @@ export const CargoDashboard: React.FC = () => {
             await deleteCargo(id);
             successCount++;
           } catch (error) {
-            console.error(`Failed to delete cargo ${id}:`, error);
+            console.error(`Failed to delete cargo ${id}: `, error);
             failCount++;
           }
         }
@@ -688,13 +688,13 @@ export const CargoDashboard: React.FC = () => {
         toast.dismiss(toastId);
 
         if (successCount > 0) {
-          toast.success(`Successfully deleted ${successCount} cargo item${successCount > 1 ? 's' : ''}`);
+          toast.success(`Successfully deleted ${successCount} cargo item${successCount > 1 ? 's' : ''} `);
           loadCargos(true);
           setSelectedIds([]);
         }
 
         if (failCount > 0) {
-          toast.error(`Failed to delete ${failCount} cargo item${failCount > 1 ? 's' : ''}`);
+          toast.error(`Failed to delete ${failCount} cargo item${failCount > 1 ? 's' : ''} `);
         }
       } catch (error) {
         console.error('Bulk delete error:', error);
@@ -715,7 +715,7 @@ export const CargoDashboard: React.FC = () => {
             await publishCargo(id);
             successCount++;
           } catch (error) {
-            console.error(`Failed to publish cargo ${id}:`, error);
+            console.error(`Failed to publish cargo ${id}: `, error);
             failCount++;
           }
         }
@@ -723,13 +723,13 @@ export const CargoDashboard: React.FC = () => {
         toast.dismiss(toastId);
 
         if (successCount > 0) {
-          toast.success(`Successfully published ${successCount} cargo item${successCount > 1 ? 's' : ''}`);
+          toast.success(`Successfully published ${successCount} cargo item${successCount > 1 ? 's' : ''} `);
           loadCargos(true);
           setSelectedIds([]);
         }
 
         if (failCount > 0) {
-          toast.error(`Failed to publish ${failCount} cargo item${failCount > 1 ? 's' : ''}`);
+          toast.error(`Failed to publish ${failCount} cargo item${failCount > 1 ? 's' : ''} `);
         }
       } catch (error) {
         console.error('Bulk publish error:', error);
@@ -750,7 +750,7 @@ export const CargoDashboard: React.FC = () => {
             await unpublishCargo(id);
             successCount++;
           } catch (error) {
-            console.error(`Failed to unpublish cargo ${id}:`, error);
+            console.error(`Failed to unpublish cargo ${id}: `, error);
             failCount++;
           }
         }
@@ -758,13 +758,13 @@ export const CargoDashboard: React.FC = () => {
         toast.dismiss(toastId);
 
         if (successCount > 0) {
-          toast.success(`Successfully unpublished ${successCount} cargo item${successCount > 1 ? 's' : ''}`);
+          toast.success(`Successfully unpublished ${successCount} cargo item${successCount > 1 ? 's' : ''} `);
           loadCargos(true);
           setSelectedIds([]);
         }
 
         if (failCount > 0) {
-          toast.error(`Failed to unpublish ${failCount} cargo item${failCount > 1 ? 's' : ''}`);
+          toast.error(`Failed to unpublish ${failCount} cargo item${failCount > 1 ? 's' : ''} `);
         }
       } catch (error) {
         console.error('Bulk unpublish error:', error);
@@ -848,7 +848,7 @@ export const CargoDashboard: React.FC = () => {
     setEditingCargo(formData as any);
     setFormMode('create');
     setShowForm(true);
-    toast.success(`Using template: ${template.name}`);
+    toast.success(`Using template: ${template.name} `);
   }, []);
 
   const handleDeleteTemplate = useCallback((templateId: string) => {
@@ -1083,7 +1083,7 @@ export const CargoDashboard: React.FC = () => {
       if (!cargo.pickupLocation || !cargo.deliveryLocation) {
         console.log("⚠️ Locations missing, fetching full cargo details...");
         try {
-          const response = await api.get(`/loads/${cargo.id}`);
+          const response = await api.get(`/ loads / ${cargo.id} `);
           if (response.data) {
             fullCargo = { ...cargo, ...response.data };
             console.log("✅ Fetched full cargo:", fullCargo);
@@ -1236,7 +1236,7 @@ export const CargoDashboard: React.FC = () => {
             />
             <StatCard
               title="Total Value"
-              value={`$${stats.totalValue.toLocaleString('en-US', { notation: 'compact', maximumFractionDigits: 1 })}`}
+              value={`$${stats.totalValue.toLocaleString('en-US', { notation: 'compact', maximumFractionDigits: 1 })} `}
               icon={<BarChart3 />}
               color="primary"
               subtitle="Asset Valuation"
@@ -1256,7 +1256,7 @@ export const CargoDashboard: React.FC = () => {
                     <TranslatedText text="Cargo Dashboard" />
                   </h1>
                 </div>
-                <p className="text-slate-500 font-medium">Manage and optimize your logistics pipeline with real-time data.</p>
+                <p className="text-slate-500 font-medium">Manage your cargo and shipments.</p>
               </div>
 
               <div className="flex items-center gap-4">
@@ -1297,10 +1297,10 @@ export const CargoDashboard: React.FC = () => {
                   <button
                     key={option.value}
                     onClick={() => handleSort(option.value as any)}
-                    className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium border transition-all ${sortField === option.value
+                    className={`inline - flex items - center gap - 2 px - 3 py - 1.5 rounded - lg text - sm font - medium border transition - all ${sortField === option.value
                       ? 'bg-[#345E85] text-white border-[#345E85]'
                       : 'bg-white text-gray-700 border-gray-300 hover:border-gray-400'
-                      }`}
+                      } `}
                   >
                     <span>{option.icon}</span>
                     <span>{option.label}</span>
@@ -1311,7 +1311,6 @@ export const CargoDashboard: React.FC = () => {
                 ))}
               </div>
             </div>
-
             {/* Quick Status Filter Chips */}
             <div className="mb-4">
               <div className="flex items-center gap-2 flex-wrap">
@@ -1342,13 +1341,13 @@ export const CargoDashboard: React.FC = () => {
                         setFilters({ ...filters, status: statusFilter.value || undefined });
                         setPage(1);
                       }}
-                      className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium border transition-all ${colorClasses[statusFilter.color as keyof typeof colorClasses]
-                        } ${isActive ? 'shadow-md scale-105' : 'hover:shadow-sm'}`}
+                      className={`inline - flex items - center gap - 2 px - 3 py - 1.5 rounded - full text - sm font - medium border transition - all ${colorClasses[statusFilter.color as keyof typeof colorClasses]
+                        } ${isActive ? 'shadow-md scale-105' : 'hover:shadow-sm'} `}
                     >
                       <span>{statusFilter.icon}</span>
                       <span>{statusFilter.label}</span>
-                      <span className={`px-1.5 py-0.5 rounded-full text-xs font-semibold ${isActive ? 'bg-white/20' : 'bg-gray-100'
-                        }`}>
+                      <span className={`px - 1.5 py - 0.5 rounded - full text - xs font - semibold ${isActive ? 'bg-white/20' : 'bg-gray-100'
+                        } `}>
                         {count}
                       </span>
                     </button>
@@ -1511,10 +1510,10 @@ export const CargoDashboard: React.FC = () => {
                                 size="sm"
                                 onClick={() => handlePageChange(pageNum)}
                                 disabled={loading}
-                                className={`min-w-[40px] sm:min-w-[40px] touch-manipulation min-h-[44px] sm:min-h-0 ${page === pageNum
+                                className={`min - w - [40px] sm: min - w - [40px] touch - manipulation min - h - [44px] sm: min - h - 0 ${page === pageNum
                                   ? "bg-blue-600 text-white hover:bg-blue-700"
                                   : "hover:bg-gray-50"
-                                  } disabled:opacity-50 disabled:cursor-not-allowed`}
+                                  } disabled: opacity - 50 disabled: cursor - not - allowed`}
                               >
                                 {pageNum}
                               </Button>
@@ -1630,7 +1629,7 @@ export const CargoDashboard: React.FC = () => {
             {DialogComponent}
           </div>
         </div>
-      </div>
-    </ErrorBoundary>
+      </div >
+    </ErrorBoundary >
   );
 };

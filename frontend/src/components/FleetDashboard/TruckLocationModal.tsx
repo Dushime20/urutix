@@ -95,7 +95,7 @@ const TruckLocationModal: React.FC<TruckLocationModalProps> = ({
     if (isOpen && truck) {
       const coords = getInitialCoords();
       setMapCenter(coords);
-      
+
       // If truck has existing location, pre-select it
       const loc = truck.currentLocation as any;
       let existingLat, existingLng;
@@ -127,7 +127,7 @@ const TruckLocationModal: React.FC<TruckLocationModalProps> = ({
       );
       const data = await response.json();
       const address = data.display_name || `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
-      
+
       setSelectedLocation({ lat, lng, address });
     } catch (error) {
       console.error('Geocoding error:', error);
@@ -188,19 +188,19 @@ const TruckLocationModal: React.FC<TruckLocationModalProps> = ({
   if (!isOpen) return null;
 
   return createPortal(
-    <div 
+    <div
       className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4"
       onClick={onClose}
     >
-      <div 
+      <div
         className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex-none flex items-center justify-between p-5 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50">
+        <div className="flex-none flex items-center justify-between p-5 border-b border-gray-200 bg-gradient-to-r from-primary-50 to-primary-100">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <MapPin className="w-5 h-5 text-blue-600" />
+            <div className="p-2 bg-primary-50 rounded-lg">
+              <MapPin className="w-5 h-5 text-primary-500" />
             </div>
             <div>
               <h2 className="text-xl font-bold text-gray-900">Set Truck Location</h2>
@@ -209,7 +209,7 @@ const TruckLocationModal: React.FC<TruckLocationModalProps> = ({
               </p>
             </div>
           </div>
-          <button 
+          <button
             type="button"
             onClick={(e) => {
               e.preventDefault();
@@ -228,13 +228,13 @@ const TruckLocationModal: React.FC<TruckLocationModalProps> = ({
           {/* Instructions & Current Location Button */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 bg-gray-50 rounded-lg">
             <p className="text-sm text-gray-600">
-              <span className="font-medium">Click on the map</span> to select the truck's current location <span className="text-blue-600 font-normal">(Used in matching)</span>, 
+              <span className="font-medium">Click on the map</span> to select the truck's current location <span className="text-primary-500 font-normal">(Used in matching)</span>,
               or use your device's GPS.
             </p>
             <button
               onClick={handleUseCurrentLocation}
               disabled={useCurrentLocation}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+              className="flex items-center gap-2 px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
             >
               {useCurrentLocation ? (
                 <>
@@ -264,9 +264,9 @@ const TruckLocationModal: React.FC<TruckLocationModalProps> = ({
               <MapClickHandler onMapClick={handleMapClick} />
               {selectedLocation && (
                 <>
-                  <Marker 
-                    position={[selectedLocation.lat, selectedLocation.lng]} 
-                    icon={createMarkerIcon('#2563EB')}
+                  <Marker
+                    position={[selectedLocation.lat, selectedLocation.lng]}
+                    icon={createMarkerIcon('#345E85')}
                   />
                   <MapRecenter lat={selectedLocation.lat} lng={selectedLocation.lng} />
                 </>
@@ -311,7 +311,7 @@ const TruckLocationModal: React.FC<TruckLocationModalProps> = ({
           <button
             onClick={handleSaveLocation}
             disabled={!selectedLocation || isLoading}
-            className="px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            className="px-5 py-2.5 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
           >
             {isLoading ? (
               <>
@@ -333,3 +333,4 @@ const TruckLocationModal: React.FC<TruckLocationModalProps> = ({
 };
 
 export default TruckLocationModal;
+

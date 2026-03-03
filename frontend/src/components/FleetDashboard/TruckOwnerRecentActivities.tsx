@@ -128,7 +128,7 @@ export const TruckOwnerRecentActivities: React.FC<TruckOwnerRecentActivitiesProp
       {/* List Header */}
       <div className="px-8 py-6 border-b border-slate-50 flex justify-between items-center">
         <div className="flex items-center gap-3">
-          <div className="h-8 w-8 bg-blue-50 rounded-lg flex items-center justify-center text-[#345E85] shadow-inner">
+          <div className="h-8 w-8 bg-primary-50 rounded-lg flex items-center justify-center text-primary-500 shadow-inner">
             <Clock size={16} />
           </div>
           <div>
@@ -136,7 +136,7 @@ export const TruckOwnerRecentActivities: React.FC<TruckOwnerRecentActivitiesProp
             <h4 className="text-lg font-black text-slate-900 tracking-tight">Recent Activity Vector</h4>
           </div>
         </div>
-        <button className="h-10 w-10 bg-slate-50 hover:bg-[#345E85] hover:text-white rounded-xl flex items-center justify-center transition-all group">
+        <button className="h-10 w-10 bg-slate-50 hover:bg-primary-500 hover:text-white rounded-xl flex items-center justify-center transition-all group">
           <ChevronRight size={18} className="group-hover:translate-x-0.5 transition-transform" />
         </button>
       </div>
@@ -166,10 +166,10 @@ export const TruckOwnerRecentActivities: React.FC<TruckOwnerRecentActivitiesProp
                 {/* Visual Anchor */}
                 <div
                   className={`size-12 rounded-[18px] flex-shrink-0 flex items-center justify-center transition-all shadow-sm ${activity.type === 'maintenance_due'
-                      ? 'bg-rose-50 text-rose-500 group-hover:bg-rose-500 group-hover:text-white'
-                      : activity.type === 'payment_received'
-                        ? 'bg-emerald-50 text-emerald-600 group-hover:bg-emerald-600 group-hover:text-white'
-                        : 'bg-blue-50 text-[#345E85] group-hover:bg-[#345E85] group-hover:text-white'
+                    ? 'bg-rose-50 text-rose-500 group-hover:bg-rose-500 group-hover:text-white'
+                    : activity.type === 'payment_received'
+                      ? 'bg-emerald-50 text-emerald-600 group-hover:bg-emerald-600 group-hover:text-white'
+                      : 'bg-primary-50 text-primary-500 group-hover:bg-primary-500 group-hover:text-white'
                     }`}
                 >
                   {getActivityIcon(activity.type)}
@@ -205,10 +205,10 @@ export const TruckOwnerRecentActivities: React.FC<TruckOwnerRecentActivitiesProp
                     <div className="h-1 w-1 rounded-full bg-slate-200" />
                     <span
                       className={`text-[9px] font-black uppercase tracking-[0.2em] ${activity.status === 'completed'
-                          ? 'text-emerald-500'
-                          : activity.status === 'warning'
-                            ? 'text-rose-500'
-                            : 'text-[#345E85]'
+                        ? 'text-emerald-500'
+                        : activity.status === 'warning'
+                          ? 'text-rose-500'
+                          : 'text-primary-500'
                         }`}
                     >
                       {activity.status} PROTOCOL

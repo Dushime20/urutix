@@ -16,6 +16,18 @@ interface DocumentUploadModalProps {
   lockEntity?: boolean;
 }
 
+// Map entity type to a valid DocumentCategory
+const getCategoryFromEntityType = (entityType: string): string => {
+  switch (entityType) {
+    case 'TRUCK': return 'OPERATIONAL';
+    case 'DRIVER': return 'DRIVER';
+    case 'CARGO': return 'CARGO';
+    case 'USER': return 'IDENTITY';
+    case 'TRIP': return 'OPERATIONAL';
+    default: return 'OTHER';
+  }
+};
+
 // Map document type to category for automatic categorization
 const getCategoryFromDocumentType = (docType: string): string => {
   if (docType.startsWith('DRIVER_')) return 'DRIVER';
@@ -45,7 +57,7 @@ const DocumentUploadModal: React.FC<DocumentUploadModalProps> = ({
   const [uploadForm, setUploadForm] = useState<Partial<CreateDocumentRequest>>({
     entityType: initialEntityType,
     entityId: initialEntityId || '',
-    category: initialEntityType,
+    category: getCategoryFromEntityType(initialEntityType),
     documentType: 'OTHER',
     priority: 'NORMAL',
   });
@@ -55,7 +67,7 @@ const DocumentUploadModal: React.FC<DocumentUploadModalProps> = ({
       setUploadForm({
         entityType: initialEntityType,
         entityId: initialEntityId || '',
-        category: initialEntityType,
+        category: getCategoryFromEntityType(initialEntityType),
         documentType: 'OTHER',
         priority: 'NORMAL',
       });
@@ -137,7 +149,7 @@ const DocumentUploadModal: React.FC<DocumentUploadModalProps> = ({
       entityType: uploadForm.entityType || 'CARGO',
       entityId: uploadForm.entityId.trim(),
       documentType: uploadForm.documentType || 'OTHER',
-      category: uploadForm.category || uploadForm.entityType || 'CARGO',
+      category: uploadForm.category || getCategoryFromEntityType(uploadForm.entityType || 'CARGO'),
       title: uploadForm.title || '',
       priority: uploadForm.priority || 'NORMAL',
       description: uploadForm.description,
@@ -182,7 +194,7 @@ const DocumentUploadModal: React.FC<DocumentUploadModalProps> = ({
   if (!isOpen) return null;
 
   return createPortal(
-    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[10000] p-4 animate-in fade-in duration-200">
+    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[100000] p-4 animate-in fade-in duration-200">
       <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-lg flex flex-col max-h-[90vh] border border-slate-100 animate-in zoom-in-95 duration-200">
         <div className="flex items-center justify-between p-6 border-b border-slate-50">
           <div>
@@ -285,7 +297,7 @@ const DocumentUploadModal: React.FC<DocumentUploadModalProps> = ({
                     disabled={lockEntity}
                   >
                     <option value="CARGO">Cargo</option>
-                    <option value="VEHICLE">Vehicle</option>
+                    <option value="TRUCK">Truck</option>
                     <option value="DRIVER">Driver</option>
                     <option value="TRIP">Trip</option>
                     <option value="USER">User</option>

@@ -77,7 +77,6 @@ const FleetPaymentManagement: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'paid' | 'unpaid'>('all');
 
-  const [receipts, setReceipts] = useState<Receipt[]>([]);
   const [selectedReceipt, setSelectedReceipt] = useState<Receipt | null>(null);
   const [showReceiptModal, setShowReceiptModal] = useState(false);
   const { user } = useAuth();
@@ -181,17 +180,8 @@ const FleetPaymentManagement: React.FC = () => {
 
 
   const handleViewReceipt = (truck: InTransitTruck) => {
-    if (!truck.receiptId) return;
-
-    // Find receipt
-    const receipt = receipts.find(r => r.id === truck.receiptId);
-    if (receipt) {
-      setSelectedReceipt(receipt);
-    } else {
-      // Fallback - generate one on the fly
-      const newReceipt = generateReceipt(truck);
-      setSelectedReceipt(newReceipt);
-    }
+    const newReceipt = generateReceipt(truck);
+    setSelectedReceipt(newReceipt);
     setShowReceiptModal(true);
   };
 
@@ -231,8 +221,8 @@ const FleetPaymentManagement: React.FC = () => {
         {/* Premium Header */}
         <div className="flex flex-wrap justify-between items-end gap-3">
           <div className="flex flex-col gap-1">
-            <h1 className="text-3xl sm:text-4xl font-black text-[#0f172a] uppercase tracking-tight">Payment <span className="text-blue-600">Command</span></h1>
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-[0.2em]">Financial Operations & Transaction History</p>
+            <h1 className="text-3xl sm:text-4xl font-black text-[#0f172a] uppercase tracking-tight">Payments</h1>
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-[0.2em]">Manage your payments</p>
           </div>
         </div>
 
@@ -243,7 +233,7 @@ const FleetPaymentManagement: React.FC = () => {
               <FaSearch className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-blue-600 transition-colors w-4 h-4" />
               <input
                 type="text"
-                placeholder="SEARCH TRANSACTIONS..."
+                placeholder="Search"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-14 pr-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:bg-white transition-all placeholder:text-slate-300"
@@ -291,13 +281,13 @@ const FleetPaymentManagement: React.FC = () => {
                 <table className="w-full text-left">
                   <thead className="bg-slate-50/50 border-b border-slate-100">
                     <tr>
-                      <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Asset Identity</th>
-                      <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Operator</th>
-                      <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Manifest</th>
-                      <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Vector</th>
-                      <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Yield</th>
+                      <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Vehicle</th>
+                      <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Driver</th>
+                      <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Cargo</th>
+                      <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Route</th>
+                      <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Price</th>
                       <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Status</th>
-                      <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Protocol</th>
+                      <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Action</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-50">
@@ -352,7 +342,7 @@ const FleetPaymentManagement: React.FC = () => {
                           <div className="flex items-center">
                             {truck.paymentStatus === 'paid' ? (
                               <span className="px-3 py-1.5 rounded-xl text-[10px] font-black bg-emerald-50 text-emerald-600 border border-emerald-100 flex items-center gap-1.5 uppercase tracking-wider">
-                                <FaCheckCircle className="w-3 h-3" /> Settled
+                                <FaCheckCircle className="w-3 h-3" /> Paid
                               </span>
                             ) : (
                               <span className="px-3 py-1.5 rounded-xl text-[10px] font-black bg-amber-50 text-amber-600 border border-amber-100 flex items-center gap-1.5 uppercase tracking-wider">
@@ -407,7 +397,7 @@ const FleetPaymentManagement: React.FC = () => {
                         {formatCurrency(truck.price, truck.currency)}
                       </p>
                       <span className={`text-[9px] font-black uppercase tracking-widest ${truck.paymentStatus === 'paid' ? 'text-emerald-600' : 'text-amber-600'}`}>
-                        {truck.paymentStatus === 'paid' ? 'SETTLED' : 'PENDING'}
+                        {truck.paymentStatus === 'paid' ? 'PAID' : 'PENDING'}
                       </span>
                     </div>
                   </div>

@@ -106,7 +106,7 @@ const FleetTableComp: React.FC<FleetTableProps> = ({
       className="fixed bottom-10 left-1/2 transform -translate-x-1/2 bg-[#1A1C1E] text-white px-8 py-4 rounded-[32px] shadow-2xl z-[60] flex items-center gap-8 border border-white/10 backdrop-blur-xl"
     >
       <div className="flex items-center gap-4 border-r border-white/10 pr-8">
-        <div className="size-8 bg-blue-500 rounded-full flex items-center justify-center text-[11px] font-black">
+        <div className="size-8 bg-primary-500 rounded-full flex items-center justify-center text-[11px] font-black">
           {selectedIds.length}
         </div>
         <div>
@@ -117,7 +117,7 @@ const FleetTableComp: React.FC<FleetTableProps> = ({
 
       <div className="flex items-center gap-2">
         <button className="h-10 px-4 hover:bg-white/5 rounded-xl transition-all flex items-center gap-2 text-xs font-black uppercase tracking-wider">
-          <Settings size={14} className="text-blue-400" />
+          <Settings size={14} className="text-primary-400" />
           Batch Status
         </button>
         <button className="h-10 px-4 hover:bg-white/5 rounded-xl transition-all flex items-center gap-2 text-xs font-black uppercase tracking-wider">
@@ -156,8 +156,8 @@ const FleetTableComp: React.FC<FleetTableProps> = ({
               key={item.id}
               ref={index === fleetItems.length - 1 ? lastFleetItemRef : null}
               className={`group bg-white rounded-[32px] border transition-all duration-300 relative overflow-hidden flex flex-col ${selectedIds.includes(item.id)
-                  ? 'border-blue-500 shadow-xl ring-1 ring-blue-500/20'
-                  : 'border-slate-100 shadow-sm hover:shadow-xl hover:border-blue-200'
+                ? 'border-primary-500 shadow-xl ring-1 ring-primary-500/20'
+                : 'border-slate-100 shadow-sm hover:shadow-xl hover:border-primary-200'
                 }`}
               onClick={() => onRowClick(item)}
             >
@@ -174,14 +174,14 @@ const FleetTableComp: React.FC<FleetTableProps> = ({
                     {selectedIds.includes(item.id) ? (
                       <motion.div
                         initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}
-                        className="text-blue-600"
+                        className="text-primary-600"
                       >
                         <CheckSquare size={24} />
                       </motion.div>
                     ) : (
                       <motion.div
                         initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                        className="text-slate-200 group-hover:text-blue-300 transition-colors"
+                        className="text-slate-200 group-hover:text-primary-300 transition-colors"
                       >
                         <Square size={24} />
                       </motion.div>
@@ -197,8 +197,8 @@ const FleetTableComp: React.FC<FleetTableProps> = ({
               <div className="px-6 pb-2 space-y-4 flex-1 relative z-10">
                 <div className="space-y-1">
                   <div className="flex items-center gap-2 group/title">
-                    <span className="text-[10px] font-black text-blue-500/60 uppercase tracking-[0.2em]">Asset Matrix</span>
-                    <div className="h-px flex-1 bg-gradient-to-r from-blue-500/20 to-transparent" />
+                    <span className="text-[10px] font-black text-primary-500/60 uppercase tracking-[0.2em]">Asset Matrix</span>
+                    <div className="h-px flex-1 bg-gradient-to-r from-primary-500/20 to-transparent" />
                   </div>
                   <h3 className="text-xl font-black text-slate-900 tracking-tight leading-tight truncate">
                     {item.name}
@@ -236,8 +236,8 @@ const FleetTableComp: React.FC<FleetTableProps> = ({
                 </div>
 
                 {item.currentLocation?.address && (
-                  <div className="bg-blue-50/30 p-3 rounded-2xl border border-blue-50/50 flex items-start gap-3">
-                    <MapPin size={14} className="text-[#345E85] mt-0.5 flex-shrink-0" />
+                  <div className="bg-primary-50/30 p-3 rounded-2xl border border-primary-50/50 flex items-start gap-3">
+                    <MapPin size={14} className="text-primary-500 mt-0.5 flex-shrink-0" />
                     <p className="text-[11px] font-medium text-slate-600 leading-snug line-clamp-1 italic">
                       {item.currentLocation.address}
                     </p>
@@ -245,7 +245,7 @@ const FleetTableComp: React.FC<FleetTableProps> = ({
                 )}
               </div>
 
-              <div className="p-3 bg-slate-50/50 group-hover:bg-blue-50/50 transition-colors border-t border-slate-50 flex items-center justify-between mt-auto">
+              <div className="p-3 bg-slate-50/50 group-hover:bg-primary-50/50 transition-colors border-t border-slate-50 flex items-center justify-between mt-auto">
                 <div className="flex -space-x-1 pl-3">
                   <div className="size-6 rounded-full bg-slate-200 border-2 border-white flex items-center justify-center text-[8px] font-black text-slate-500">
                     <Shield size={10} />
@@ -258,7 +258,7 @@ const FleetTableComp: React.FC<FleetTableProps> = ({
                 <div className="flex items-center gap-1 pr-2">
                   <button
                     onClick={(e) => { e.stopPropagation(); onEditFleetItem(item); }}
-                    className="size-9 bg-white hover:bg-[#345E85] hover:text-white rounded-xl flex items-center justify-center text-slate-400 transition-all shadow-sm border border-slate-100"
+                    className="size-9 bg-white hover:bg-primary-500 hover:text-white rounded-xl flex items-center justify-center text-slate-400 transition-all shadow-sm border border-slate-100"
                   >
                     <Edit3 size={16} />
                   </button>
@@ -289,11 +289,11 @@ const FleetTableComp: React.FC<FleetTableProps> = ({
               <th className="px-8 py-6 text-left w-[60px]">
                 <div onClick={handleSelectAll} className="size-6 cursor-pointer relative">
                   {selectedIds.length === fleetItems.length && fleetItems.length > 0 ? (
-                    <CheckSquare size={24} className="text-blue-600" />
+                    <CheckSquare size={24} className="text-primary-600" />
                   ) : selectedIds.length > 0 ? (
-                    <MinusSquare size={24} className="text-blue-600" />
+                    <MinusSquare size={24} className="text-primary-600" />
                   ) : (
-                    <Square size={24} className="text-slate-200 hover:text-blue-200 transition-colors" />
+                    <Square size={24} className="text-slate-200 hover:text-primary-200 transition-colors" />
                   )}
                 </div>
               </th>
@@ -320,19 +320,19 @@ const FleetTableComp: React.FC<FleetTableProps> = ({
                 transition={{ delay: index * 0.03 }}
                 key={item.id}
                 ref={index === fleetItems.length - 1 ? lastFleetItemRef : null}
-                className={`group hover:bg-slate-50/50 transition-all cursor-pointer ${selectedIds.includes(item.id) ? 'bg-blue-50/40' : ''}`}
+                className={`group hover:bg-slate-50/50 transition-all cursor-pointer ${selectedIds.includes(item.id) ? 'bg-primary-50/40' : ''}`}
                 onClick={() => onRowClick(item)}
               >
                 <td className="px-8 py-6" onClick={(e) => handleSelectOne(item.id, e)}>
                   {selectedIds.includes(item.id) ? (
-                    <CheckSquare size={22} className="text-blue-600" />
+                    <CheckSquare size={22} className="text-primary-600" />
                   ) : (
                     <Square size={22} className="text-slate-100 group-hover:text-slate-200 transition-colors" />
                   )}
                 </td>
                 <td className="px-6 py-6">
                   <div className="flex items-center gap-4">
-                    <div className="size-12 rounded-[18px] bg-blue-50 flex items-center justify-center text-[#345E85] shadow-inner group-hover:bg-[#345E85] group-hover:text-white transition-all">
+                    <div className="size-12 rounded-[18px] bg-primary-50 flex items-center justify-center text-primary-500 shadow-inner group-hover:bg-primary-500 group-hover:text-white transition-all">
                       {activeTab === 'trucks' ? <Truck size={20} /> : <User size={20} />}
                     </div>
                     <div>
@@ -357,7 +357,7 @@ const FleetTableComp: React.FC<FleetTableProps> = ({
                 <td className="px-6 py-6">
                   <div className="flex flex-col gap-1">
                     <span className="text-[10px] font-bold text-slate-700 flex items-center gap-1.5">
-                      <Zap size={10} className="text-blue-500" />
+                      <Zap size={10} className="text-primary-500" />
                       {activeTab === 'trucks' ? item.plateNumber : item.licenseNumber || 'PROTOTYPE'}
                     </span>
                     <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none">
@@ -369,7 +369,7 @@ const FleetTableComp: React.FC<FleetTableProps> = ({
                   <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all translate-x-4 group-hover:translate-x-0">
                     <button
                       onClick={(e) => { e.stopPropagation(); onEditFleetItem(item); }}
-                      className="size-10 bg-white border border-slate-100 hover:bg-[#345E85] hover:text-white rounded-xl shadow-sm flex items-center justify-center transition-all"
+                      className="size-10 bg-white border border-slate-100 hover:bg-primary-500 hover:text-white rounded-xl shadow-sm flex items-center justify-center transition-all"
                     >
                       <Edit3 size={18} />
                     </button>

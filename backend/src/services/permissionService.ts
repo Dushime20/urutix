@@ -11,6 +11,40 @@ export class PermissionService {
     constructor(private dataSource: DataSource) { }
 
     /**
+     * Convert permission name from resource:action format to permission ID
+     * Handles both formats: "resource:action" and "resource action"
+     */
+    private async getPermissionIdByName(permissionName: string): Promise<string> {
+        // Try to parse as resource:action format
+        const parts = permissionName.split(':');
+        
+        if (parts.length === 2) {
+            // Format: "resource:action"
+            const [resource, action] = parts;
+            const result = await this.dataSource.query(
+                'SELECT id FROM permissions WHERE resource = $1 AND action = $2',
+                [resource.trim(), action.trim()]
+            );
+            
+            if (result.length > 0) {
+                return result[0].id;
+            }
+        }
+        
+        // Fallback: try to find by name column
+        const result = await this.dataSource.query(
+            'SELECT id FROM permissions WHERE name = $1',
+            [permissionName]
+        );
+        
+        if (result.length > 0) {
+            return result[0].id;
+        }
+        
+        throw new Error(`Permission not found: ${permissionName}`);
+    }
+
+    /**
      * Get all permissions for a user (role-based + user-specific overrides)
      */
     async getUserPermissions(userId: string): Promise<string[]> {
@@ -29,9 +63,9 @@ export class PermissionService {
         // SUPER_ADMIN gets all permissions
         if (userRole === 'SUPER_ADMIN') {
             const allPermsResult = await this.dataSource.query(
-                'SELECT name FROM permissions ORDER BY name'
+                'SELECT resource, action FROM permissions ORDER BY resource, action'
             );
-            return allPermsResult.map((row: any) => row.name);
+            return allPermsResult.map((row: any) => `${row.resource}:${row.action}`);
         }
 
         // Get role-based permissions
@@ -49,14 +83,14 @@ export class PermissionService {
      */
     private async getRolePermissions(role: UserRole): Promise<string[]> {
         const result = await this.dataSource.query(
-            `SELECT p.name 
+            `SELECT p.resource, p.action
        FROM permissions p
        INNER JOIN role_permissions rp ON p.id = rp.permission_id
        WHERE rp.role = $1`,
             [role]
         );
 
-        return result.map((row: any) => row.name);
+        return result.map((row: any) => `${row.resource}:${row.action}`);
     }
 
     /**
@@ -127,16 +161,7 @@ export class PermissionService {
 
         try {
             // Get permission ID
-            const permResult = await queryRunner.query(
-                'SELECT id FROM permissions WHERE name = $1',
-                [permissionName]
-            );
-
-            if (permResult.length === 0) {
-                throw new Error(`Permission not found: ${permissionName}`);
-            }
-
-            const permissionId = permResult[0].id;
+            const permissionId = await this.getPermissionIdByName(permissionName);
 
             // Insert into role_permissions
             await queryRunner.query(
@@ -181,16 +206,7 @@ export class PermissionService {
 
         try {
             // Get permission ID
-            const permResult = await queryRunner.query(
-                'SELECT id FROM permissions WHERE name = $1',
-                [permissionName]
-            );
-
-            if (permResult.length === 0) {
-                throw new Error(`Permission not found: ${permissionName}`);
-            }
-
-            const permissionId = permResult[0].id;
+            const permissionId = await this.getPermissionIdByName(permissionName);
 
             // Delete from role_permissions
             await queryRunner.query(
@@ -225,7 +241,7 @@ export class PermissionService {
         userId: string
     ): Promise<{ granted: string[]; denied: string[] }> {
         const result = await this.dataSource.query(
-            `SELECT p.name, up.is_granted, up.expires_at
+            `SELECT p.resource, p.action, up.is_granted, up.expires_at
        FROM permissions p
        INNER JOIN user_permissions up ON p.id = up.permission_id
        WHERE up.user_id = $1 
@@ -237,10 +253,11 @@ export class PermissionService {
         const denied: string[] = [];
 
         result.forEach((row: any) => {
+            const permissionName = `${row.resource}:${row.action}`;
             if (row.is_granted) {
-                granted.push(row.name);
+                granted.push(permissionName);
             } else {
-                denied.push(row.name);
+                denied.push(permissionName);
             }
         });
 
@@ -308,16 +325,7 @@ export class PermissionService {
 
         try {
             // Get permission ID
-            const permResult = await queryRunner.query(
-                'SELECT id FROM permissions WHERE name = $1',
-                [permissionName]
-            );
-
-            if (permResult.length === 0) {
-                throw new Error(`Permission not found: ${permissionName}`);
-            }
-
-            const permissionId = permResult[0].id;
+            const permissionId = await this.getPermissionIdByName(permissionName);
 
             // Upsert user permission
             await queryRunner.query(
@@ -372,16 +380,7 @@ export class PermissionService {
 
         try {
             // Get permission ID
-            const permResult = await queryRunner.query(
-                'SELECT id FROM permissions WHERE name = $1',
-                [permissionName]
-            );
-
-            if (permResult.length === 0) {
-                throw new Error(`Permission not found: ${permissionName}`);
-            }
-
-            const permissionId = permResult[0].id;
+            const permissionId = await this.getPermissionIdByName(permissionName);
 
             // Delete user permission override
             await queryRunner.query(
@@ -425,16 +424,7 @@ export class PermissionService {
 
         try {
             // Get permission ID
-            const permResult = await queryRunner.query(
-                'SELECT id FROM permissions WHERE name = $1',
-                [permissionName]
-            );
-
-            if (permResult.length === 0) {
-                throw new Error(`Permission not found: ${permissionName}`);
-            }
-
-            const permissionId = permResult[0].id;
+            const permissionId = await this.getPermissionIdByName(permissionName);
 
             // Upsert user permission denial
             await queryRunner.query(

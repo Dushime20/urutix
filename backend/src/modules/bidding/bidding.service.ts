@@ -263,8 +263,8 @@ export class BiddingService {
       const userProfile = await this.userProfileRepository.findOne({
         where: { userId: truckOwnerId },
       });
-      const bidderName = userProfile && userProfile.firstName 
-        ? `${userProfile.firstName} ${userProfile.lastName || ''}`.trim() 
+      const bidderName = userProfile && userProfile.firstName
+        ? `${userProfile.firstName} ${userProfile.lastName || ''}`.trim()
         : 'A truck owner';
 
       await this.notificationService.createNotification({
@@ -758,10 +758,14 @@ export class BiddingService {
       .leftJoinAndSelect('cargoOwner.profile', 'profile');
 
     if ((role === UserRole.BROKER || role === 'BROKER') && userId) {
-       // Brokers see auctions in their tenant OR auctions for loads they manage
-       queryBuilder.where('(load.tenantId = :tenantId OR load.brokerId = :userId)', { tenantId, userId });
+      // Brokers see auctions in their tenant OR auctions for loads they manage
+      queryBuilder.where('(load.tenantId = :tenantId OR load.brokerId = :userId)', { tenantId, userId });
+    } else if ((role === UserRole.CARGO_OWNER || role === 'CARGO_OWNER') && userId) {
+      // Cargo owners see only their own auctions
+      queryBuilder.where('load.tenantId = :tenantId', { tenantId });
+      queryBuilder.andWhere('load.cargoOwnerId = :userId', { userId });
     } else {
-       queryBuilder.where('load.tenantId = :tenantId', { tenantId });
+      queryBuilder.where('load.tenantId = :tenantId', { tenantId });
     }
 
     if (status && status !== 'all') {
@@ -968,76 +972,76 @@ export class BiddingService {
 
   async getDashboardStats(userId: string, tenantId: string, role?: string) {
     if (role === UserRole.TRUCK_OWNER || role === 'TRUCK_OWNER') {
-       // Truck Owner Stats
-       const myBids = await this.bidRepository.find({
-         where: { truckOwnerId: userId },
-         relations: ['load'],
-       });
+      // Truck Owner Stats
+      const myBids = await this.bidRepository.find({
+        where: { truckOwnerId: userId },
+        relations: ['load'],
+      });
 
-       const totalBids = myBids.length;
-       const activeBids = myBids.filter(b => b.status === BidStatus.PENDING).length;
-       const wonBids = myBids.filter(b => b.status === BidStatus.ACCEPTED).length;
-       const totalValue = myBids
-         .filter(b => b.status === BidStatus.ACCEPTED || b.status === BidStatus.PENDING)
-         .reduce((sum, b) => sum + (b.bidAmount || 0), 0);
-       
-       const successRate = totalBids > 0 ? Math.round((wonBids / totalBids) * 100) : 0;
-       
-       // For truck owners, 'totalAuctions' implies auctions they participated in
-       const uniqueAuctions = new Set(myBids.map(b => b.loadId)).size;
+      const totalBids = myBids.length;
+      const activeBids = myBids.filter(b => b.status === BidStatus.PENDING).length;
+      const wonBids = myBids.filter(b => b.status === BidStatus.ACCEPTED).length;
+      const totalValue = myBids
+        .filter(b => b.status === BidStatus.ACCEPTED || b.status === BidStatus.PENDING)
+        .reduce((sum, b) => sum + (b.bidAmount || 0), 0);
 
-       return {
-         totalAuctions: uniqueAuctions,
-         activeBids,
-         totalValue,
-         successRate
-       };
+      const successRate = totalBids > 0 ? Math.round((wonBids / totalBids) * 100) : 0;
+
+      // For truck owners, 'totalAuctions' implies auctions they participated in
+      const uniqueAuctions = new Set(myBids.map(b => b.loadId)).size;
+
+      return {
+        totalAuctions: uniqueAuctions,
+        activeBids,
+        totalValue,
+        successRate
+      };
     } else {
-       // Broker / Cargo Owner Stats
-       // They manage auctions
-       // Find loads where they are owner (for Cargo Owner) or Broker
-       
-       const loads = await this.loadRepository.find({
-         where: role === UserRole.BROKER || role === 'BROKER' 
-           ? { brokerId: userId, tenantId }
-           : { cargoOwnerId: userId, tenantId }
-       });
-       
-       const loadIds = loads.map(l => l.id);
-       
-       if (loadIds.length === 0) {
-         return {
-           totalAuctions: 0,
-           activeBids: 0,
-           totalValue: 0,
-           successRate: 0
-         };
-       }
+      // Broker / Cargo Owner Stats
+      // They manage auctions
+      // Find loads where they are owner (for Cargo Owner) or Broker
 
-       const auctions = await this.auctionRepository.find({
-         where: { loadId: In(loadIds) }
-       });
+      const loads = await this.loadRepository.find({
+        where: role === UserRole.BROKER || role === 'BROKER'
+          ? { brokerId: userId, tenantId }
+          : { cargoOwnerId: userId, tenantId }
+      });
 
-       // Active bids on these auctions
-       const bids = await this.bidRepository.find({
-         where: { loadId: In(loadIds) }
-       });
+      const loadIds = loads.map(l => l.id);
 
-       const activeBids = bids.filter(b => b.status === BidStatus.PENDING).length;
-       const totalValue = loads.reduce((sum, l) => sum + (l.loadValue || 0), 0);
-       
-       // Success rate for owners: Auctions that resulted in a match (CLOSED with winningBidId)
-       const closedAndWon = auctions.filter(a => a.status === AuctionStatus.CLOSED && a.winningBidId).length;
-       const totalClosed = auctions.filter(a => a.status === AuctionStatus.CLOSED).length;
-       
-       const successRate = totalClosed > 0 ? Math.round((closedAndWon / totalClosed) * 100) : 0;
+      if (loadIds.length === 0) {
+        return {
+          totalAuctions: 0,
+          activeBids: 0,
+          totalValue: 0,
+          successRate: 0
+        };
+      }
 
-       return {
-         totalAuctions: auctions.length,
-         activeBids,
-         totalValue,
-         successRate
-       };
+      const auctions = await this.auctionRepository.find({
+        where: { loadId: In(loadIds) }
+      });
+
+      // Active bids on these auctions
+      const bids = await this.bidRepository.find({
+        where: { loadId: In(loadIds) }
+      });
+
+      const activeBids = bids.filter(b => b.status === BidStatus.PENDING).length;
+      const totalValue = loads.reduce((sum, l) => sum + (l.loadValue || 0), 0);
+
+      // Success rate for owners: Auctions that resulted in a match (CLOSED with winningBidId)
+      const closedAndWon = auctions.filter(a => a.status === AuctionStatus.CLOSED && a.winningBidId).length;
+      const totalClosed = auctions.filter(a => a.status === AuctionStatus.CLOSED).length;
+
+      const successRate = totalClosed > 0 ? Math.round((closedAndWon / totalClosed) * 100) : 0;
+
+      return {
+        totalAuctions: auctions.length,
+        activeBids,
+        totalValue,
+        successRate
+      };
     }
   }
 

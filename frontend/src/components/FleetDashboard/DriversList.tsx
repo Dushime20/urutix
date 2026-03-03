@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import {
 	Search,
-	User,
 	Mail,
 	Phone,
 	CreditCard,
@@ -16,7 +15,9 @@ import {
 	Users,
 	AlertTriangle,
 	CheckCircle2,
-	Clock
+	Clock,
+	Loader2,
+	Zap
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { fleetApi } from '../../services/fleetApi';
@@ -24,7 +25,7 @@ import { documentApi, type Document } from '../../services/documents/documentApi
 import type { Driver } from '../../services/fleetApi';
 import toast from 'react-hot-toast';
 import DocumentUploadModal from '../documents/DocumentUploadModal';
-import StatCard from '../EnliteUI/Cards/StatCard';
+import { cn } from '../../utils/cn';
 
 type StatusOption = 'ACTIVE' | 'INACTIVE' | 'SUSPENDED' | 'ON_LEAVE' | 'TERMINATED' | '';
 type AvailabilityOption = 'AVAILABLE' | 'UNAVAILABLE' | 'IN_TRANSIT' | '';
@@ -39,9 +40,9 @@ export const DriversList: React.FC<DriversListProps> = ({ onAddDriver, refreshTr
 	const [loading, setLoading] = useState(false);
 	const [search, setSearch] = useState('');
 	const [statusFilter, setStatusFilter] = useState<StatusOption>('');
-	const [availabilityFilter, setAvailabilityFilter] = useState<AvailabilityOption>('');
+	const [availabilityFilter] = useState<AvailabilityOption>('');
 	const [refreshKey, setRefreshKey] = useState(0);
-	const [currentPage, setCurrentPage] = useState(1);
+	const [currentPage] = useState(1);
 	const [itemsPerPage] = useState(12);
 	const [selectedDriver, setSelectedDriver] = useState<Driver | null>(null);
 	const [viewingDocsFor, setViewingDocsFor] = useState<Driver | null>(null);
@@ -93,9 +94,9 @@ export const DriversList: React.FC<DriversListProps> = ({ onAddDriver, refreshTr
 		try {
 			await fleetApi.deleteDriver(driverId);
 			setRefreshKey((k) => k + 1);
-			toast.success('Driver records purged');
+			toast.success('Driver deleted');
 		} catch (e) {
-			toast.error('Operation failed');
+			toast.error('Failed to delete driver');
 		}
 	};
 
@@ -107,7 +108,6 @@ export const DriversList: React.FC<DriversListProps> = ({ onAddDriver, refreshTr
 			default: return 'bg-slate-50 text-slate-600 border-slate-100';
 		}
 	};
-
 
 	const paginatedDrivers = useMemo(() => {
 		const start = (currentPage - 1) * itemsPerPage;
@@ -130,59 +130,97 @@ export const DriversList: React.FC<DriversListProps> = ({ onAddDriver, refreshTr
 		}
 	};
 
+	const CircularStatsCard = ({ title, value, icon: Icon, colorClass, secondaryColor }: any) => {
+		return (
+			<div className="flex flex-col items-center group">
+				<div className="relative w-40 h-40 rounded-full bg-white border-[8px] border-slate-50 flex flex-col items-center justify-center transition-all duration-500 hover:border-slate-100 hover:shadow-xl hover:shadow-slate-200/50">
+					<svg className="absolute inset-0 w-full h-full -rotate-90 scale-[1.05]">
+						<circle
+							cx="80"
+							cy="80"
+							r="72"
+							fill="none"
+							stroke="currentColor"
+							strokeWidth="3"
+							strokeDasharray="452"
+							strokeDashoffset="350"
+							className={cn("opacity-10 transition-all duration-1000 group-hover:stroke-dashoffset-[200]", secondaryColor)}
+						/>
+					</svg>
+
+					<div className={cn("p-2 rounded-2xl mb-2 bg-slate-50 text-slate-400 group-hover:bg-white group-hover:text-inherit transition-all duration-500 shadow-sm", colorClass)}>
+						<Icon size={18} />
+					</div>
+
+					<div className="flex flex-col items-center px-4 w-full overflow-hidden">
+						<span className="text-xl font-black text-[#0f172a] tracking-tight group-hover:scale-110 transition-transform duration-500 truncate w-full text-center">
+							{value}
+						</span>
+					</div>
+
+					<div className="absolute inset-4 rounded-full border border-dashed border-slate-100 opacity-50 group-hover:rotate-90 transition-transform duration-1000" />
+				</div>
+
+				<div className="mt-4 text-center px-2">
+					<p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] group-hover:text-[#345E85] transition-colors duration-300 line-clamp-1">
+						{title}
+					</p>
+				</div>
+			</div>
+		);
+	};
+
 	return (
 		<div className="space-y-8 pb-12">
 			{/* Stats Matrix */}
-			<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-				<StatCard
-					title="Fleet Personnel"
+			<div className="grid grid-cols-2 lg:grid-cols-4 gap-8 mb-12 place-items-center bg-white p-10 rounded-[3rem] border border-slate-100 shadow-sm">
+				<CircularStatsCard
+					title="Total Drivers"
 					value={drivers.length}
-					icon={<Users />}
-					color="info" // bg-indigo-50 text-indigo-600 map
-					subtitle="Total Drivers"
+					icon={Users}
+					colorClass="bg-blue-50 text-[#345E85]"
+					secondaryColor="text-[#345E85]"
 				/>
-				<StatCard
+				<CircularStatsCard
 					title="Active Duty"
 					value={drivers.filter(d => d.status === 'ACTIVE').length}
-					icon={<CheckCircle2 />}
-					color="success" // bg-emerald-50 text-emerald-600 map
-					subtitle="Operational"
+					icon={CheckCircle2}
+					colorClass="bg-emerald-50 text-emerald-600"
+					secondaryColor="text-emerald-600"
 				/>
-				<StatCard
-					title="Available"
+				<CircularStatsCard
+					title="Ready / Available"
 					value={drivers.filter(d => d.availabilityStatus === 'AVAILABLE').length}
-					icon={<Clock />}
-					color="primary" // bg-blue-50 text-blue-600 map roughly
-					subtitle="Ready to Dispatch"
+					icon={Clock}
+					colorClass="bg-primary-50 text-primary-500"
+					secondaryColor="text-primary-500"
 				/>
-				<StatCard
-					title="Compliance Risk"
+				<CircularStatsCard
+					title="Compliance Alerts"
 					value={drivers.filter(d => d.status === 'SUSPENDED').length}
-					icon={<AlertTriangle />}
-					color="error" // bg-rose-50 text-rose-600 map
-					subtitle="Suspended"
-					trend="Attention"
-					trendDirection={drivers.filter(d => d.status === 'SUSPENDED').length > 0 ? 'down' : 'neutral'}
+					icon={AlertTriangle}
+					colorClass="bg-rose-50 text-rose-600"
+					secondaryColor="text-rose-600"
 				/>
 			</div>
 
 			{/* Control Surface */}
 			<div className="bg-white rounded-[32px] border border-slate-100 p-4 flex flex-col md:flex-row gap-4">
 				<div className="flex-1 relative group">
-					<Search className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-slate-400 group-focus-within:text-indigo-600 transition-colors" />
+					<Search className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-slate-400 group-focus-within:text-primary-500 transition-colors" />
 					<input
 						type="text"
 						placeholder="Search driver..."
 						value={search}
 						onChange={(e) => setSearch(e.target.value)}
-						className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-50 rounded-[20px] text-[11px] font-bold text-slate-900 focus:bg-white focus:ring-4 focus:ring-indigo-50 focus:border-indigo-600 outline-none transition-all"
+						className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-50 rounded-[24px] text-[11px] font-bold text-slate-900 focus:bg-white focus:ring-4 focus:ring-primary-50 focus:border-primary-500 outline-none transition-all"
 					/>
 				</div>
 				<div className="flex items-center gap-3">
 					<select
 						value={statusFilter}
 						onChange={(e) => setStatusFilter(e.target.value as StatusOption)}
-						className="px-4 py-3 bg-slate-50 border border-slate-50 rounded-[20px] text-[10px] font-black uppercase tracking-widest text-slate-500 outline-none focus:bg-white focus:border-indigo-600 transition-all"
+						className="px-4 py-3 bg-slate-50 border border-slate-50 rounded-[20px] text-[10px] font-black uppercase tracking-widest text-slate-500 outline-none focus:bg-white focus:border-primary-500 transition-all"
 					>
 						<option value="">Status</option>
 						<option value="ACTIVE">Active</option>
@@ -191,9 +229,9 @@ export const DriversList: React.FC<DriversListProps> = ({ onAddDriver, refreshTr
 					</select>
 					<button
 						onClick={onAddDriver}
-						className="px-6 py-3 bg-slate-900 text-white rounded-[20px] text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-2 hover:bg-indigo-600 transition-all shadow-xl shadow-slate-900/10"
+						className="px-6 py-3 bg-primary-500 text-white rounded-[20px] text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-2 hover:bg-primary-600 transition-all shadow-xl shadow-primary-500/20"
 					>
-						<Plus size={14} /> Add New Driver
+						<Plus size={14} /> Add Driver
 					</button>
 				</div>
 			</div>
@@ -212,8 +250,8 @@ export const DriversList: React.FC<DriversListProps> = ({ onAddDriver, refreshTr
 							className="bg-white rounded-[32px] border border-slate-100 p-6 shadow-sm hover:shadow-xl transition-all relative overflow-hidden group"
 						>
 							<div className="flex items-start justify-between mb-6">
-								<div className="size-14 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-400 group-hover:text-indigo-600 transition-colors">
-									<User size={28} />
+								<div className="size-14 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-400 group-hover:bg-primary-50 group-hover:text-primary-500 transition-colors">
+									<Users size={28} />
 								</div>
 								<div className={`px-3 py-1 rounded-full border text-[9px] font-black uppercase tracking-widest ${getStatusColor(driver.status)}`}>
 									{driver.status}
@@ -221,19 +259,19 @@ export const DriversList: React.FC<DriversListProps> = ({ onAddDriver, refreshTr
 							</div>
 							<div className="mb-6">
 								<h3 className="text-lg font-black text-slate-900 tracking-tight mb-1">{driver.firstName} {driver.lastName}</h3>
-								<p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{driver.licenseNumber}</p>
+								<p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{driver.licenseNumber || 'License N/A'}</p>
 							</div>
 							<div className="space-y-3 mb-8">
 								<div className="flex items-center gap-3 text-slate-500">
-									<Mail size={14} className="text-indigo-400" />
+									<Mail size={14} className="text-primary-400" />
 									<span className="text-xs font-medium truncate">{driver.email}</span>
 								</div>
 								<div className="flex items-center gap-3 text-slate-500">
-									<Phone size={14} className="text-indigo-400" />
+									<Phone size={14} className="text-primary-400" />
 									<span className="text-xs font-medium">{driver.phone || 'No Phone Data'}</span>
 								</div>
 								<div className="flex items-center gap-3 text-slate-500">
-									<Truck size={14} className="text-indigo-400" />
+									<Truck size={14} className="text-primary-400" />
 									<span className="text-xs font-medium truncate">{driver.currentTruckId ? `Truck ID: ${driver.currentTruckId.slice(0, 8)}` : 'Unassigned'}</span>
 								</div>
 							</div>
@@ -247,7 +285,7 @@ export const DriversList: React.FC<DriversListProps> = ({ onAddDriver, refreshTr
 								<div className="flex gap-1">
 									<button
 										onClick={() => setViewingDocsFor(driver)}
-										className="size-10 bg-slate-50 text-slate-400 hover:text-indigo-600 rounded-xl flex items-center justify-center transition-all"
+										className="size-10 bg-slate-50 text-slate-400 hover:text-primary-500 rounded-xl flex items-center justify-center transition-all"
 									>
 										<FileText size={16} />
 									</button>
@@ -265,66 +303,75 @@ export const DriversList: React.FC<DriversListProps> = ({ onAddDriver, refreshTr
 			</div>
 
 			{loading && (
-				<div className="flex flex-col items-center justify-center py-20 animate-pulse">
-					<div className="size-12 bg-slate-100 rounded-full mb-4" />
-					<p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Syncing Personnel Grid...</p>
+				<div className="flex flex-col items-center justify-center py-20 text-slate-300">
+					<Loader2 className="size-8 animate-spin mb-4" />
+					<p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Loading Drivers...</p>
 				</div>
 			)}
 
 			{!loading && drivers.length === 0 && (
-				<div className="py-20 text-center flex flex-col items-center">
-					<div className="size-16 bg-slate-50 rounded-[28px] flex items-center justify-center text-slate-200 mb-6"><Users size={32} /></div>
-					<h3 className="text-lg font-black text-slate-900 tracking-tight">Zero Personnel Pulse</h3>
-					<p className="text-sm font-medium text-slate-400 mt-2">The registry is currently empty of matching personnel data.</p>
+				<div className="py-24 text-center flex flex-col items-center bg-slate-50/50 rounded-[40px] border-2 border-dashed border-slate-200">
+					<h3 className="text-xl font-black text-slate-900 tracking-tight">No Drivers Found</h3>
+					<p className="text-sm font-medium text-slate-400 mt-2 max-w-xs">Add your first driver to get started.</p>
 				</div>
 			)}
 
 			{/* Details Portal */}
 			{selectedDriver && createPortal(
-				<div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-[9999] p-4" onClick={() => setSelectedDriver(null)}>
+				<div className="fixed inset-0 bg-primary-950/40 backdrop-blur-sm flex items-center justify-center z-[9999] p-4" onClick={() => setSelectedDriver(null)}>
 					<motion.div
-						initial={{ opacity: 0, y: 20 }}
-						animate={{ opacity: 1, y: 0 }}
-						className="bg-white rounded-[40px] shadow-2xl max-w-2xl w-full p-8 relative overflow-hidden"
+						initial={{ opacity: 0, scale: 0.9, y: 20 }}
+						animate={{ opacity: 1, scale: 1, y: 0 }}
+						exit={{ opacity: 0, scale: 0.9, y: 20 }}
+						className="bg-white rounded-[40px] shadow-2xl max-w-2xl w-full overflow-hidden"
 						onClick={(e) => e.stopPropagation()}
 					>
-						<div className="flex items-center justify-between mb-8">
-							<div className="flex items-center gap-4">
-								<div className="size-16 bg-indigo-50 rounded-[24px] flex items-center justify-center text-indigo-600 shadow-inner">
-									<User size={32} />
-								</div>
-								<div>
-									<h2 className="text-2xl font-black text-slate-900 tracking-tight">{selectedDriver.firstName} {selectedDriver.lastName}</h2>
-									<p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Driver Profile Matrix</p>
-								</div>
+						<div className="p-10 bg-primary-500 text-white text-center relative overflow-hidden">
+							<div className="absolute top-0 right-0 p-8 opacity-10"><Zap size={100} /></div>
+							<div className="size-20 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-6">
+								<Users size={40} />
 							</div>
-							<button onClick={() => setSelectedDriver(null)} className="size-10 bg-slate-50 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-900 transition-colors">
+							<h2 className="text-3xl font-black tracking-tight mb-2">Driver Profile</h2>
+							<p className="text-primary-100 text-[10px] font-black uppercase tracking-[0.2em]">{selectedDriver.firstName} {selectedDriver.lastName}</p>
+							<button onClick={() => setSelectedDriver(null)} className="absolute top-6 right-6 size-10 bg-white/10 rounded-full flex items-center justify-center text-white hover:bg-white/20 transition-all">
 								<X size={20} />
 							</button>
 						</div>
 
-						<div className="grid grid-cols-2 gap-8 mb-8">
-							<div className="space-y-1">
-								<p className="text-[9px] font-black uppercase tracking-widest text-slate-400">License Vector</p>
-								<div className="flex items-center gap-2 font-bold text-slate-900"><CreditCard size={14} className="text-indigo-400" /> {selectedDriver.licenseNumber}</div>
-							</div>
-							<div className="space-y-1">
-								<p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Status Vector</p>
-								<div className={`inline-block px-3 py-1 rounded-full border text-[9px] font-black uppercase tracking-widest ${getStatusColor(selectedDriver.status)}`}>{selectedDriver.status}</div>
-							</div>
-							<div className="col-span-2 p-6 bg-slate-50 rounded-[24px] grid grid-cols-2 gap-6">
-								<div>
-									<p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2">Primary Email</p>
-									<p className="text-sm font-bold text-slate-900 flex items-center gap-2"><Mail size={14} /> {selectedDriver.email}</p>
+						<div className="p-10">
+							<div className="grid grid-cols-2 gap-8 mb-8">
+								<div className="space-y-1">
+									<p className="text-[9px] font-black uppercase tracking-widest text-slate-400">License Number</p>
+									<div className="flex items-center gap-2 font-bold text-slate-900">
+										<CreditCard size={14} className="text-primary-400" />
+										{selectedDriver.licenseNumber || 'N/A'}
+									</div>
 								</div>
-								<div>
-									<p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2">Mobile Terminal</p>
-									<p className="text-sm font-bold text-slate-900 flex items-center gap-2"><Phone size={14} /> {selectedDriver.phone || 'N/A'}</p>
+								<div className="space-y-1">
+									<p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Status</p>
+									<div className={`inline-block px-3 py-1 rounded-full border text-[9px] font-black uppercase tracking-widest ${getStatusColor(selectedDriver.status)}`}>
+										{selectedDriver.status}
+									</div>
+								</div>
+								<div className="col-span-2 p-6 bg-slate-50 rounded-[24px] grid grid-cols-2 gap-6">
+									<div>
+										<p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2">Primary Email</p>
+										<p className="text-sm font-bold text-slate-900 flex items-center gap-2 truncate"><Mail size={14} className="text-slate-400" /> {selectedDriver.email}</p>
+									</div>
+									<div>
+										<p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2">Phone</p>
+										<p className="text-sm font-bold text-slate-900 flex items-center gap-2"><Phone size={14} className="text-slate-400" /> {selectedDriver.phone || 'N/A'}</p>
+									</div>
 								</div>
 							</div>
-						</div>
 
-						<button onClick={() => setSelectedDriver(null)} className="w-full h-12 bg-slate-900 text-white font-black text-[10px] uppercase tracking-widest rounded-2xl hover:bg-indigo-600 transition-all shadow-xl shadow-slate-900/10">Close Profile</button>
+							<button
+								onClick={() => setSelectedDriver(null)}
+								className="w-full py-4 bg-primary-500 text-white font-black text-[10px] uppercase tracking-widest rounded-2xl hover:bg-primary-600 transition-all shadow-xl shadow-primary-500/20"
+							>
+								Close Profile
+							</button>
+						</div>
 					</motion.div>
 				</div>,
 				document.body
@@ -341,15 +388,15 @@ export const DriversList: React.FC<DriversListProps> = ({ onAddDriver, refreshTr
 					>
 						<div className="p-8 border-b border-slate-50 flex items-center justify-between">
 							<div>
-								<h2 className="text-2xl font-black text-slate-900 tracking-tight">Personnel Assets</h2>
+								<h2 className="text-2xl font-black text-primary-500 tracking-tight">Driver Documents</h2>
 								<p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mt-1">
-									Documentary Verification Index for {viewingDocsFor.firstName}
+									Documents for {viewingDocsFor.firstName} {viewingDocsFor.lastName}
 								</p>
 							</div>
 							<div className="flex gap-2">
 								<button
 									onClick={() => setUploadingDocFor(viewingDocsFor)}
-									className="px-4 py-2 bg-indigo-600 text-white rounded-xl text-[9px] font-black uppercase tracking-widest flex items-center gap-2 hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200"
+									className="px-4 py-2 bg-primary-500 text-white rounded-xl text-[9px] font-black uppercase tracking-widest flex items-center gap-2 hover:bg-primary-600 transition-all shadow-lg shadow-primary-500/20"
 								>
 									<Plus size={14} /> Add Document
 								</button>
@@ -362,24 +409,24 @@ export const DriversList: React.FC<DriversListProps> = ({ onAddDriver, refreshTr
 						<div className="flex-1 overflow-y-auto p-8">
 							{loadingDocs ? (
 								<div className="flex flex-col items-center justify-center py-20">
-									<div className="size-12 border-4 border-slate-100 border-t-indigo-600 rounded-full animate-spin mb-4" />
-									<p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Syncing Asset Index...</p>
+									<div className="size-12 border-4 border-slate-100 border-t-primary-500 rounded-full animate-spin mb-4" />
+									<p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Loading documents...</p>
 								</div>
 							) : driverDocuments.length === 0 ? (
 								<div className="py-20 text-center flex flex-col items-center">
 									<div className="size-16 bg-slate-50 rounded-[28px] flex items-center justify-center text-slate-200 mb-6"><FileText size={32} /></div>
-									<h3 className="text-lg font-black text-slate-900 tracking-tight">Zero Registry Pulse</h3>
-									<p className="text-sm font-medium text-slate-400 mt-2">No verification assets have been indexed for this personal.</p>
+									<h3 className="text-xl font-black text-primary-500 tracking-tight">No Documents</h3>
+									<p className="text-sm font-medium text-slate-400 mt-2">No documents found for this driver.</p>
 								</div>
 							) : (
 								<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 									{driverDocuments.map(doc => (
 										<div key={doc.id} className="p-5 rounded-[24px] bg-slate-50 border border-slate-50 hover:bg-white hover:border-slate-100 hover:shadow-lg transition-all group">
 											<div className="flex items-start justify-between mb-4">
-												<div className="size-10 bg-white rounded-xl flex items-center justify-center text-indigo-600 shadow-sm"><FileText size={20} /></div>
+												<div className="size-10 bg-white rounded-xl flex items-center justify-center text-primary-500 shadow-sm"><FileText size={20} /></div>
 												<div className="flex gap-1">
 													<button onClick={() => handleDownloadDocument(doc)} className="size-8 bg-white rounded-lg flex items-center justify-center text-slate-400 hover:text-emerald-500 transition-colors shadow-sm"><Download size={14} /></button>
-													<button onClick={() => window.open(documentApi.getDocumentViewUrl(doc.id), '_blank')} className="size-8 bg-white rounded-lg flex items-center justify-center text-slate-400 hover:text-indigo-600 transition-colors shadow-sm"><ExternalLink size={14} /></button>
+													<button onClick={() => window.open(documentApi.getDocumentViewUrl(doc.id), '_blank')} className="size-8 bg-white rounded-lg flex items-center justify-center text-slate-400 hover:text-primary-500 transition-colors shadow-sm"><ExternalLink size={14} /></button>
 												</div>
 											</div>
 											<h4 className="font-black text-slate-900 text-sm tracking-tight mb-1 truncate">{doc.title}</h4>

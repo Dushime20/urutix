@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Map as MapIcon, List, Clock, ChevronRight, Search } from 'lucide-react';
-import { fleetApi, type OptimizedRoute, type RouteLocation } from '../services/fleetApi';
+import { fleetApi, type OptimizedRoute } from '../services/fleetApi';
 import toast from 'react-hot-toast';
 import RouteBuilder from '../components/FleetDashboard/Routes/RouteBuilder';
 import OptimizedRouteMap from '../components/FleetDashboard/Routes/OptimizedRouteMap';
@@ -57,15 +57,15 @@ const FleetRoutesPage: React.FC = () => {
                 <div className="max-w-7xl mx-auto">
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                         <div>
-                            <h1 className="text-3xl font-black tracking-tight text-white mb-2">Route Planning</h1>
-                            <p className="text-slate-400">Optimize delivery paths and manage fleet logistics</p>
+                            <h1 className="text-3xl font-black tracking-tight text-white mb-2">Routes</h1>
+                            <p className="text-slate-400">Plan and manage routes</p>
                         </div>
                         <button
                             className="bg-blue-600 hover:bg-blue-500 text-white px-5 py-2.5 rounded-lg font-bold shadow-lg shadow-blue-600/20 transition-all flex items-center gap-2"
                             onClick={() => setShowBuilder(true)}
                         >
                             <Plus className="w-5 h-5" />
-                            Create New Route
+                            Add Route
                         </button>
                     </div>
 
@@ -75,7 +75,7 @@ const FleetRoutesPage: React.FC = () => {
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                             <input
                                 type="text"
-                                placeholder="Search routes..."
+                                placeholder="Search"
                                 className="w-full bg-slate-800/50 border border-slate-700 text-white rounded-lg pl-10 pr-4 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -141,9 +141,9 @@ const FleetRoutesPage: React.FC = () => {
                                     <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
                                         <MapIcon className="w-8 h-8 text-slate-400" />
                                     </div>
-                                    <h3 className="text-lg font-bold text-slate-900 mb-2">No Routes Found</h3>
+                                    <h3 className="text-lg font-bold text-slate-900 mb-2">No Routes</h3>
                                     <p className="text-slate-600 mb-6">Start by creating your first optimized route.</p>
-                                    <button className="text-blue-600 font-bold hover:underline">Create Route</button>
+                                    <button className="text-blue-600 font-bold hover:underline">Add Route</button>
                                 </div>
                             ) : (
                                 routes.map(route => (
@@ -168,7 +168,7 @@ const FleetRoutesPage: React.FC = () => {
                                                     <p className="font-bold text-slate-900">{route.totalDistance} km</p>
                                                 </div>
                                                 <div className="text-right">
-                                                    <p className="text-slate-500 text-xs uppercase font-bold tracking-wider mb-0.5">Est. Time</p>
+                                                    <p className="text-slate-500 text-xs uppercase font-bold tracking-wider mb-0.5">Time</p>
                                                     <p className="font-bold text-slate-900">{Math.round(route.totalDuration / 60)} hrs</p>
                                                 </div>
                                                 <div className="flex gap-2">

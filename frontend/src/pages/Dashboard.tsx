@@ -31,14 +31,11 @@ import {
   Line,
   ResponsiveContainer
 } from 'recharts';
-import { useCargoOwnerLayout } from '../contexts/CargoOwnerLayoutContext';
 import { useAuth } from '../contexts/AuthContext';
 import { fetchCargos } from '../services/cargoApi';
 import { cargoOwnerAPI } from '../services/cargoOwnerAPI';
 import api from '../services/api';
-import { loadsAPI } from '@/services/load';
 import receiverService from '../services/receiverService';
-import toast from 'react-hot-toast';
 import { useConfirmDialog } from '@/hooks/useConfirmDialog';
 
 // Feature Components
@@ -79,11 +76,9 @@ const Dashboard = () => {
 };
 
 const CargoOwnerDashboard = () => {
-  const layoutContext = useCargoOwnerLayout();
   const { user } = useAuth();
-  const { setHideHeader } = layoutContext || {};
   const navigate = useNavigate();
-  const { confirm: confirmDelete, DialogComponent } = useConfirmDialog();
+  const { DialogComponent } = useConfirmDialog();
 
   // Onboarding state
   const shouldShowOnboarding = useShouldShowOnboarding();
@@ -105,8 +100,7 @@ const CargoOwnerDashboard = () => {
   const [activeTab, setActiveTab] = useState('Overview');
   const [cargos, setCargos] = useState<any[]>([]);
   const [dashboardAnalytics, setDashboardAnalytics] = useState<any>(null);
-  const [requestFinancingLoading, setRequestFinancingLoading] = useState(true);
-  const [loading, setLoading] = useState(true);
+  const [, setLoading] = useState(true);
   const [showQuickCreate, setShowQuickCreate] = useState(false);
   const [showQuickActionPanel, setShowQuickActionPanel] = useState(false);
   const [showQuickActionFlow, setShowQuickActionFlow] = useState(false);
@@ -129,33 +123,6 @@ const CargoOwnerDashboard = () => {
     } else if (cargo.status === 'CREATED') {
       // Navigate to view the cargo
       navigate(`/dashboard/cargos/list?view=${cargo.id}`);
-    }
-  };
-
-  // Handle cargo deletion
-  const handleDeleteCargo = async (e: React.MouseEvent, cargoId: string) => {
-    e.stopPropagation(); // Prevent row click
-
-    // Use custom confirm dialog
-    const shouldDelete = await confirmDelete({
-      title: 'Delete Draft',
-      message: 'Are you sure you want to delete this draft? This action cannot be undone.',
-      confirmText: 'Delete',
-      cancelText: 'Cancel',
-      variant: 'danger'
-    });
-
-    if (!shouldDelete) return;
-
-    try {
-      await loadsAPI.delete(cargoId);
-      toast.success('Cargo deleted successfully');
-
-      // Update state to remove deleted cargo
-      setCargos(prev => prev.filter(c => c.id !== cargoId));
-    } catch (error) {
-      console.error('Error deleting cargo:', error);
-      toast.error('Failed to delete cargo');
     }
   };
 
@@ -184,7 +151,7 @@ const CargoOwnerDashboard = () => {
   });
 
   // Receiver-specific stats (for CARGO_RECEIVER role)
-  const [receiverStats, setReceiverStats] = useState({
+  const [, setReceiverStats] = useState({
     totalReceived: 0,    // Cargos with completed inspection
     activeCargos: 0,     // Cargos pending inspection
     loading: true,
@@ -629,10 +596,10 @@ const CargoOwnerDashboard = () => {
                 <div className="bg-blue-100 text-blue-600 p-2 rounded-lg">
                   <Activity className="w-5 h-5" />
                 </div>
-                <h2 className="text-sm font-black uppercase tracking-[0.2em] text-blue-600">Intelligence Briefing</h2>
+                <h2 className="text-sm font-black uppercase tracking-[0.2em] text-blue-600">Dashboard Summary</h2>
               </div>
               <h1 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tight leading-[1.1] mb-6">
-                Operations <span className="text-[#345E85]">Command Center</span>
+                Operations <span className="text-[#345E85]">Overview</span>
               </h1>
               <p className="text-lg text-slate-500 font-medium mb-8 leading-relaxed">
                 Real-time visibility across your logistics network. Optimizing {stats.activeCargos} active shipments with AI-powered matching and automated documentation.
@@ -644,7 +611,7 @@ const CargoOwnerDashboard = () => {
                   className="px-8 py-4 bg-[#345E85] text-white rounded-2xl font-black uppercase tracking-widest text-xs shadow-md hover:bg-slate-800 transition-all active:scale-95 flex items-center gap-3"
                 >
                   <Plus className="w-4 h-4" />
-                  Initiate Shipment
+                  Add Cargo
                 </button>
                 <button
                   onClick={() => navigate('/dashboard/analytics')}
@@ -665,7 +632,7 @@ const CargoOwnerDashboard = () => {
                   </div>
                   <div>
                     <div className="text-xl font-black text-slate-900">{formatNumber(stats.efficiencyScore)}%</div>
-                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Efficiency Score</div>
+                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Efficiency</div>
                   </div>
                 </div>
                 <div className="h-2 w-48 bg-white rounded-full overflow-hidden shadow-sm">
@@ -683,7 +650,7 @@ const CargoOwnerDashboard = () => {
                   </div>
                   <div>
                     <div className="text-xl font-black">{formatCurrency(stats.totalValue)}</div>
-                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest text-white/50">Total Asset Value</div>
+                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest text-white/50">Total Value</div>
                   </div>
                 </div>
               </div>
@@ -706,7 +673,7 @@ const CargoOwnerDashboard = () => {
           onClick={() => setActiveTab('All Cargos')}
         />
         <StatCard
-          title="Active Operations"
+          title="Active Shipments"
           value={stats.activeCargos}
           icon={<Truck />}
           color="primary"
@@ -717,7 +684,7 @@ const CargoOwnerDashboard = () => {
           onClick={() => setActiveTab('Tracking')}
         />
         <StatCard
-          title="Service Compliance"
+          title="Delivery Rate"
           value={`${formatNumber(stats.onTimeDeliveryRate)}%`}
           icon={<CheckCircle />}
           color="primary"
@@ -727,13 +694,13 @@ const CargoOwnerDashboard = () => {
           variant="modern"
         />
         <StatCard
-          title="Pending Actions"
+          title="Drafts"
           value={stats.incompleteCargos}
           icon={<Clock />}
           color="primary"
           trend={stats.incompleteCargos > 0 ? "Attention" : "Clear"}
           trendDirection={stats.incompleteCargos > 0 ? "down" : "up"}
-          subtitle="Drafts / Pending Info"
+          subtitle="Pending Information"
           variant="modern"
           onClick={() => navigate('/dashboard/cargos/list?status=DRAFT')}
         />
@@ -793,9 +760,9 @@ const CargoOwnerDashboard = () => {
         user?.role !== 'CARGO_RECEIVER' && (
           <>
             {/* 3. Advanced Features Section - Premium Styling */}
-            <section aria-label="Advanced Features">
+            <section aria-label="Quick Tools">
               <div className="flex items-center gap-3 mb-6">
-                <h2 className="text-xl md:text-2xl font-black text-[#0f172a] tracking-tight">Advanced Features</h2>
+                <h2 className="text-xl md:text-2xl font-black text-[#0f172a] tracking-tight">Quick Tools</h2>
                 <span className="text-[10px] bg-[#345E85] text-white px-3 py-1.5 rounded-full font-black uppercase tracking-widest shadow-sm">NEW</span>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">

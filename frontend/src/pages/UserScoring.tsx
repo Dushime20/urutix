@@ -32,21 +32,21 @@ const UserScoring: React.FC = () => {
     try {
       const response = await api.get(`/scoring/user/${user?.id}/scores/active`);
       // Handle different response structures
-      const scoresArray = Array.isArray(response.data) 
-        ? response.data 
-        : Array.isArray(response.data?.data) 
-        ? response.data.data 
-        : Array.isArray(response.data?.scores)
-        ? response.data.scores
-        : [];
-      
+      const scoresArray = Array.isArray(response.data)
+        ? response.data
+        : Array.isArray(response.data?.data)
+          ? response.data.data
+          : Array.isArray(response.data?.scores)
+            ? response.data.scores
+            : [];
+
       // Normalize numeric fields (convert strings to numbers for decimal types from database)
       const normalizedScores = scoresArray.map((score: any) => ({
         ...score,
         score: typeof score.score === 'string' ? parseFloat(score.score) : Number(score.score) || 0,
         normalizedScore: typeof score.normalizedScore === 'string' ? parseFloat(score.normalizedScore) : Number(score.normalizedScore) || 0,
       }));
-      
+
       setScores(normalizedScores);
     } catch (error: any) {
       console.error('Error loading scores:', error);
@@ -84,13 +84,13 @@ const UserScoring: React.FC = () => {
       case 'financial_health':
         return <FaCreditCard className="text-green-500" />;
       case 'transaction_history':
-        return <FaChartLine className="text-blue-500" />;
+        return <FaChartLine className="text-primary-500" />;
       case 'payment_behavior':
         return <FaHandshake className="text-purple-500" />;
       case 'cargo_quality':
         return <FaTruck className="text-orange-500" />;
       case 'communication_score':
-        return <FaComments className="text-indigo-500" />;
+        return <FaComments className="text-primary-500" />;
       case 'reliability_score':
         return <FaShieldAlt className="text-red-500" />;
       case 'overall_credit_score':
@@ -161,7 +161,7 @@ const UserScoring: React.FC = () => {
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500"></div>
       </div>
     );
   }
@@ -177,7 +177,7 @@ const UserScoring: React.FC = () => {
           <button
             onClick={calculateAllScores}
             disabled={calculating}
-            className="px-6 py-3 bg-[#345E85] text-white rounded-md hover:bg-[#2a4d6d] focus:outline-none focus:ring-2 focus:ring-[#345E85] disabled:opacity-50"
+            className="px-6 py-3 bg-primary-500 text-white rounded-md hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:opacity-50"
           >
             {calculating ? 'Calculating...' : 'Recalculate Scores'}
           </button>
@@ -192,7 +192,7 @@ const UserScoring: React.FC = () => {
               {getScoreIcon(score.category)}
               <h3 className="ml-2 text-lg font-semibold">{getScoreLabel(score.category)}</h3>
             </div>
-            
+
             <div className="text-center mb-4">
               <div className={`text-4xl font-bold ${getScoreColor(score.normalizedScore)} mb-2`}>
                 {Number(score.normalizedScore || 0).toFixed(0)}

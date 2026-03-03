@@ -665,17 +665,17 @@ export class Truck {
   @Column({ nullable: true })
   locationUpdatedAt?: Date;
 
-  @Column({ length: 50 })
-  registrationNumber: string;
+  @Column({ length: 50, nullable: true })
+  registrationNumber?: string;
 
-  @Column('date')
-  registrationExpiry: Date;
+  @Column('date', { nullable: true })
+  registrationExpiry?: Date;
 
-  @Column({ length: 50 })
-  insurancePolicy: string;
+  @Column({ length: 50, nullable: true })
+  insurancePolicy?: string;
 
-  @Column('date')
-  insuranceExpiry: Date;
+  @Column('date', { nullable: true })
+  insuranceExpiry?: Date;
 
   @Column('date', { nullable: true })
   roadworthyCertExpiry?: Date;

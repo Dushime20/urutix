@@ -111,7 +111,7 @@ export const CostStructureStep: React.FC<CostStructureStepProps> = ({
                     step="0.01"
                     value={formData.costStructure?.[key] || ''}
                     onChange={(e) => handleCostInputChange(key, e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                     placeholder={placeholder}
                   />
                   <p className="text-xs text-gray-500 mt-1">{description}</p>
@@ -163,7 +163,7 @@ export const CostStructureStep: React.FC<CostStructureStepProps> = ({
       </div>
 
       {/* Pricing Notes */}
-      <div className="bg-blue-50 rounded-lg p-4">
+      <div className="bg-primary-50 rounded-lg p-4">
         <h4 className="text-sm font-medium text-blue-900 mb-2">Pricing Notes</h4>
         <div className="space-y-2 text-sm text-blue-800">
           <p>• Base rates are applied to all trips</p>
@@ -176,3 +176,4 @@ export const CostStructureStep: React.FC<CostStructureStepProps> = ({
     </div>
   );
 };
+

@@ -111,20 +111,20 @@ const FinancialReportsPage: React.FC = () => {
         {/* Header Section */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 tracking-tight uppercase">Audit & Intelligence</h1>
+            <h1 className="text-3xl font-bold text-gray-900 tracking-tight uppercase">Financial Reports</h1>
             <p className="text-gray-500 mt-1 uppercase text-xs font-bold tracking-widest opacity-70">
-              Global reporting hub for portfolio performance and compliance
+              Manage and view all your financial reports
             </p>
           </div>
           <div className="flex items-center gap-3">
             <button className="px-4 py-2 bg-[#345E85] text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-opacity-90 transition-all flex items-center gap-2 shadow-lg shadow-blue-100">
-              <FilePlus size={14} /> Custom Builder
+              <FilePlus size={14} /> Create Custom
             </button>
             <button
               onClick={() => window.location.reload()}
               className="px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 transition-all flex items-center gap-2"
             >
-              <RotateCcw size={14} /> Refresh Node
+              <RotateCcw size={14} /> Refresh
             </button>
           </div>
         </div>

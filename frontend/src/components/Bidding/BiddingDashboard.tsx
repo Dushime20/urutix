@@ -15,6 +15,7 @@ import {
 import { biddingAPI } from '../../services/biddingApi';
 import toast from 'react-hot-toast';
 import AuctionList from './AuctionList';
+import MyAuctions from './MyAuctions';
 import BidHistory from './BidHistory';
 import CreateAuction from './CreateAuction';
 import BidAnalytics from './BidAnalytics';
@@ -69,7 +70,7 @@ const StatsCard = ({ title, value, icon: Icon, colorClass, secondaryColor }: any
 
 const BiddingDashboard: React.FC<BiddingDashboardProps> = ({ userRole }) => {
   const location = useLocation();
-  const [activeTab, setActiveTab] = useState('auctions');
+  const [activeTab, setActiveTab] = useState(userRole === 'CARGO_OWNER' ? 'my-auctions' : 'auctions');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [stats, setStats] = useState({
@@ -94,14 +95,11 @@ const BiddingDashboard: React.FC<BiddingDashboardProps> = ({ userRole }) => {
   const loadDashboardStats = async () => {
     setLoading(true);
     try {
-      // Load dashboard statistics
       const response = await biddingAPI.getDashboardStats();
       setStats(response.data);
     } catch (error) {
       setError('Failed to load dashboard statistics - using demo data');
       console.error('Dashboard stats error:', error);
-
-      // Set demo stats when API fails
       setStats({
         totalAuctions: 12,
         activeBids: 8,
@@ -113,7 +111,48 @@ const BiddingDashboard: React.FC<BiddingDashboardProps> = ({ userRole }) => {
     }
   };
 
-  const renderStatsCards = () => (
+  const renderCargoOwnerStats = () => (
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 mb-12 place-items-center bg-white p-10 rounded-[3rem] border border-slate-100 shadow-sm">
+      <StatsCard
+        title="My Auctions"
+        value={stats.totalAuctions}
+        icon={Gavel}
+        colorClass="bg-blue-50 text-[#345E85]"
+        secondaryColor="text-[#345E85]"
+      />
+      <StatsCard
+        title="Active Auctions"
+        value={Array.isArray(stats.activeBids) ? stats.activeBids.length : stats.activeBids}
+        icon={TrendingUp}
+        colorClass="bg-emerald-50 text-emerald-600"
+        secondaryColor="text-emerald-600"
+      />
+      <StatsCard
+        title="Bids Received"
+        value={(() => {
+          const rawValue = stats.totalValue;
+          let value = Array.isArray(rawValue) ? rawValue.reduce((a: any, b: any) => a + (parseFloat(b) || 0), 0) : rawValue;
+          if (typeof value !== 'number') value = parseFloat(value as string) || 0;
+          return value.toLocaleString();
+        })()}
+        icon={Users}
+        colorClass="bg-amber-50 text-amber-600"
+        secondaryColor="text-amber-600"
+      />
+      <StatsCard
+        title="Success Rate"
+        value={(() => {
+          const rate = Array.isArray(stats.successRate) ? stats.successRate[0] : stats.successRate;
+          return `${rate}%`;
+        })()}
+        icon={DollarSign}
+        colorClass="bg-purple-50 text-purple-600"
+        secondaryColor="text-purple-600"
+      />
+    </div>
+  );
+
+  const renderTruckOwnerStats = () => (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 mb-12 place-items-center bg-white p-10 rounded-[3rem] border border-slate-100 shadow-sm">
       <StatsCard
         title="Active Offers"
@@ -135,7 +174,6 @@ const BiddingDashboard: React.FC<BiddingDashboardProps> = ({ userRole }) => {
           const rawValue = stats.totalValue;
           let value = Array.isArray(rawValue) ? rawValue.reduce((a: any, b: any) => a + (parseFloat(b) || 0), 0) : rawValue;
           if (typeof value !== 'number') value = parseFloat(value as string) || 0;
-
           if (value >= 1000000) return `${(value / 1000000).toFixed(1)}M`;
           if (value >= 1000) return `${(value / 1000).toFixed(1)}K`;
           return value.toLocaleString();
@@ -157,7 +195,64 @@ const BiddingDashboard: React.FC<BiddingDashboardProps> = ({ userRole }) => {
     </div>
   );
 
-  const renderTabs = () => (
+  const renderCargoOwnerTabs = () => (
+    <div className="space-y-8">
+      <div className="flex flex-col md:flex-row gap-6 justify-between items-center bg-white p-3 rounded-[2.5rem] border border-slate-100 shadow-sm">
+        <nav className="flex flex-wrap gap-2 p-1">
+          <button
+            onClick={() => setActiveTab('my-auctions')}
+            className={cn(
+              "px-8 py-4 rounded-[1.8rem] text-[10px] font-black uppercase tracking-widest flex items-center gap-3 transition-all duration-300",
+              activeTab === 'my-auctions'
+                ? "bg-[#345E85] text-white shadow-xl shadow-blue-900/10"
+                : "text-slate-400 hover:text-slate-600 hover:bg-slate-50"
+            )}
+          >
+            <Gavel size={14} />
+            My Auctions
+            <span className={cn(
+              "px-2 py-0.5 rounded-lg text-[9px] font-black ml-1",
+              activeTab === 'my-auctions' ? "bg-white/20 text-white" : "bg-slate-100 text-slate-400"
+            )}>
+              {stats.totalAuctions}
+            </span>
+          </button>
+          <button
+            onClick={() => setActiveTab('create')}
+            className={cn(
+              "px-8 py-4 rounded-[1.8rem] text-[10px] font-black uppercase tracking-widest flex items-center gap-3 transition-all duration-300",
+              activeTab === 'create'
+                ? "bg-emerald-500 text-white shadow-xl shadow-emerald-900/10"
+                : "text-slate-400 hover:text-slate-600 hover:bg-slate-50"
+            )}
+          >
+            <PlusCircle size={14} />
+            Create Auction
+          </button>
+          <button
+            onClick={() => setActiveTab('analytics')}
+            className={cn(
+              "px-8 py-4 rounded-[1.8rem] text-[10px] font-black uppercase tracking-widest flex items-center gap-3 transition-all duration-300",
+              activeTab === 'analytics'
+                ? "bg-indigo-600 text-white shadow-xl shadow-indigo-900/10"
+                : "text-slate-400 hover:text-slate-600 hover:bg-slate-50"
+            )}
+          >
+            <BarChart3 size={14} />
+            Analytics
+          </button>
+        </nav>
+      </div>
+
+      <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-sm min-h-[400px]">
+        {activeTab === 'my-auctions' && <MyAuctions />}
+        {activeTab === 'create' && <CreateAuction />}
+        {activeTab === 'analytics' && <BidAnalytics userRole={userRole} />}
+      </div>
+    </div>
+  );
+
+  const renderTruckOwnerTabs = () => (
     <div className="space-y-8">
       <div className="flex flex-col md:flex-row gap-6 justify-between items-center bg-white p-3 rounded-[2.5rem] border border-slate-100 shadow-sm">
         <nav className="flex flex-wrap gap-2 p-1">
@@ -222,38 +317,12 @@ const BiddingDashboard: React.FC<BiddingDashboardProps> = ({ userRole }) => {
             Performance
           </button>
         </nav>
-
-        <div className="flex items-center gap-3 pr-2">
-          {userRole === 'CARGO_OWNER' && (
-            <button
-              onClick={() => setActiveTab('create')}
-              className={cn(
-                "px-8 py-4 bg-emerald-500 text-white rounded-[1.8rem] text-[10px] font-black uppercase tracking-widest hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-500/10 flex items-center gap-2",
-                activeTab === 'create' && "bg-slate-900 shadow-slate-900/10 text-white"
-              )}
-            >
-              <PlusCircle size={14} />
-              Start Auction
-            </button>
-          )}
-          <button
-            onClick={() => {
-              toast.success('Simulating intelligent seed data injection...');
-              loadDashboardStats();
-            }}
-            className="px-8 py-4 bg-amber-50 text-amber-600 border border-amber-100 rounded-[1.8rem] text-[10px] font-black uppercase tracking-widest hover:bg-amber-100 transition-all flex items-center gap-2"
-          >
-            <PlusCircle size={14} />
-            Seed Samples
-          </button>
-        </div>
       </div>
 
       <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-sm min-h-[400px]">
         {activeTab === 'auctions' && <AuctionList userRole={userRole} />}
         {activeTab === 'bids' && <BidHistory userRole={userRole} />}
         {activeTab === 'watched' && <AuctionList userRole={userRole} showWatchedOnly={true} />}
-        {activeTab === 'create' && userRole === 'CARGO_OWNER' && <CreateAuction />}
         {activeTab === 'analytics' && <BidAnalytics userRole={userRole} />}
       </div>
     </div>
@@ -269,18 +338,20 @@ const BiddingDashboard: React.FC<BiddingDashboardProps> = ({ userRole }) => {
   }
   return (
     <div className="space-y-12 max-w-[1600px] mx-auto">
-      {/* Header - Premium Enlite Prime Style */}
+      {/* Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div className="space-y-2">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center">
               <Shield className="w-6 h-6 text-[#345E85]" />
             </div>
-            <h1 className="text-4xl font-black text-[#0f172a] tracking-tight">Bidding & Negotiations</h1>
+            <h1 className="text-4xl font-black text-[#0f172a] tracking-tight">
+              {userRole === 'CARGO_OWNER' ? 'Auction Management' : 'Bidding & Negotiations'}
+            </h1>
           </div>
           <p className="text-xs font-bold text-slate-400 uppercase tracking-widest max-w-xl">
             {userRole === 'CARGO_OWNER'
-              ? 'Real-time auction management and offer evaluation'
+              ? 'Create and manage auctions for your cargo loads'
               : 'Strategic bid placement and opportunities discovery'}
           </p>
         </div>
@@ -303,10 +374,10 @@ const BiddingDashboard: React.FC<BiddingDashboardProps> = ({ userRole }) => {
         </div>
       )}
 
-      {renderStatsCards()}
-      {renderTabs()}
+      {userRole === 'CARGO_OWNER' ? renderCargoOwnerStats() : renderTruckOwnerStats()}
+      {userRole === 'CARGO_OWNER' ? renderCargoOwnerTabs() : renderTruckOwnerTabs()}
     </div>
   );
 };
 
-export default BiddingDashboard; 
+export default BiddingDashboard;

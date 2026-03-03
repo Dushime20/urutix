@@ -135,11 +135,11 @@ export const FinancialManagement: React.FC<FinancialManagementProps> = ({ fleetI
       {/* Header Matrix */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-white p-8 rounded-[40px] border border-slate-100 shadow-sm">
         <div className="flex items-center gap-5">
-          <div className="size-14 bg-emerald-50 rounded-[20px] flex items-center justify-center text-emerald-600 shadow-inner">
+          <div className="size-10 bg-primary-50 rounded-[14px] flex items-center justify-center text-primary-500 shadow-inner">
             <DollarSign size={28} />
           </div>
           <div>
-            <h2 className="text-[11px] font-black uppercase tracking-[0.3em] text-emerald-600 mb-1">Fiscal Command</h2>
+            <h2 className="text-[11px] font-black uppercase tracking-[0.3em] text-primary-500 mb-1">Intelligence Layer</h2>
             <h1 className="text-3xl font-black text-slate-900 tracking-tight">Treasury Management</h1>
           </div>
         </div>
@@ -159,7 +159,7 @@ export const FinancialManagement: React.FC<FinancialManagementProps> = ({ fleetI
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard title="Total Revenue (MTD)" value={formatCurrency(125000)} icon={TrendingUp} trend={12.4} color="bg-emerald-50 text-emerald-600" />
         <StatCard title="Operational Margin" value="18.5%" icon={Target} trend={-2.1} color="bg-blue-50 text-blue-600" />
-        <StatCard title="Treasury Inflow" value="KES 2.4M" icon={Activity} trend={5.8} color="bg-indigo-50 text-indigo-600" />
+        <StatCard title="Treasury Inflow" value="KES 2.4M" icon={Activity} trend={5.8} color="bg-primary-50 text-primary-500" />
         <StatCard title="Pending Receivables" value="KES 840K" icon={Clock} color="bg-amber-50 text-amber-600" />
       </div>
 
@@ -176,10 +176,9 @@ export const FinancialManagement: React.FC<FinancialManagementProps> = ({ fleetI
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
             className={`h-11 px-6 rounded-[18px] text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === tab.id
-                ? 'bg-[#1A1C1E] text-white shadow-lg'
-                : 'text-slate-400 hover:bg-slate-50 hover:text-slate-600'
-              }`}
-          >
+              ? 'bg-[#1A1C1E] text-white shadow-lg shadow-slate-900/20'
+              : 'text-slate-400 hover:text-primary-500 hover:bg-white/50'
+              }`}>
             <tab.icon size={14} />
             {tab.label}
           </button>
@@ -213,9 +212,9 @@ export const FinancialManagement: React.FC<FinancialManagementProps> = ({ fleetI
                 <div className="lg:col-span-2 space-y-4">
                   <h4 className="text-[11px] font-black uppercase tracking-widest text-slate-400 mb-4">Critical Performance Indicators</h4>
                   {mockFinancialData.performanceMetrics.map(metric => (
-                    <div key={metric.id} className="p-5 bg-slate-50/50 rounded-[28px] border border-slate-50 hover:border-blue-100 hover:bg-blue-50/20 transition-all flex items-center justify-between group">
+                    <div key={metric.id} className="p-5 bg-slate-50/50 rounded-[28px] border border-slate-50 hover:border-primary-100 hover:bg-primary-50/20 transition-all flex items-center justify-between group">
                       <div className="flex items-center gap-4">
-                        <div className="size-10 bg-white rounded-2xl flex items-center justify-center text-slate-400 group-hover:text-blue-500 shadow-sm transition-colors">
+                        <div className="size-12 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-400 group-hover:bg-primary-50 group-hover:text-primary-500 transition-colors">
                           <Zap size={18} />
                         </div>
                         <div>
