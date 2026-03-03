@@ -1,56 +1,24 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { 
-  FaReceipt, 
-  FaDownload, 
-  FaPrint, 
-  FaCheckCircle,
-  FaCalendarAlt,
-  FaDollarSign,
-  FaBox,
-  FaUser,
-  FaPhone,
-  FaEnvelope,
-  FaTimesCircle
-} from 'react-icons/fa';
+import {
+  Receipt,
+  Download,
+  Printer,
+  XCircle,
+  ShieldCheck,
+} from 'lucide-react';
 import api from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 import toast from 'react-hot-toast';
-
-interface Receipt {
-  id: string;
-  receiptNumber: string;
-  lenderId: string;
-  paymentId: string;
-  tripId: string;
-  cargoOwnerId: string;
-  cargoOwnerName: string;
-  cargoOwnerEmail?: string;
-  cargoOwnerPhone?: string;
-  cargoName: string;
-  amount: number;
-  currency: string;
-  status: 'draft' | 'issued' | 'paid' | 'cancelled';
-  paymentMethod?: string;
-  transactionId?: string;
-  referenceNumber?: string;
-  paymentDate: string;
-  notes?: string;
-  metadata?: {
-    tripNumber?: string;
-    cargoId?: string;
-    paymentType?: string;
-  };
-}
+import ReceiptsEnlite, { type ReceiptData } from '../LenderDashboard/Receipts.enlite';
 
 const ReceiptViewer: React.FC = () => {
   const { user } = useAuth();
-  const [selectedReceipt, setSelectedReceipt] = useState<Receipt | null>(null);
+  const [selectedReceipt, setSelectedReceipt] = useState<ReceiptData | null>(null);
 
-  const { data: receipts, isLoading, refetch } = useQuery({
+  const { data: receipts, isLoading } = useQuery({
     queryKey: ['lender-receipts', user?.id],
     queryFn: async () => {
-      // TODO: Update endpoint when backend is ready
       const response = await api.get('/payments/receipts', {
         params: {
           lenderId: user?.id,
@@ -61,290 +29,148 @@ const ReceiptViewer: React.FC = () => {
     enabled: !!user?.id,
   });
 
-  const handleDownload = async (receipt: Receipt) => {
+  const handleDownload = async (receipt: ReceiptData) => {
     try {
-      toast.success('Downloading receipt...');
+      toast.success('Initiating secure ledger download...');
       // TODO: Implement PDF download
-      console.log('Download receipt:', receipt);
+      console.log('Download receipt:', receipt.id);
     } catch (error) {
-      toast.error('Failed to download receipt');
+      toast.error('Secure download failed');
     }
   };
 
-  const handlePrint = (receipt: Receipt) => {
+  const handlePrint = (receipt: ReceiptData) => {
     window.print();
   };
 
-  const getStatusBadge = (status: string) => {
-    const statusConfig = {
-      issued: { color: 'bg-blue-100 text-blue-800', icon: FaCheckCircle },
-      paid: { color: 'bg-green-100 text-green-800', icon: FaCheckCircle },
-      draft: { color: 'bg-gray-100 text-gray-800', icon: FaCheckCircle },
-      cancelled: { color: 'bg-red-100 text-red-800', icon: FaTimesCircle },
-    };
-
-    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.issued;
-    const Icon = config.icon;
-
-    return (
-      <span className={`px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-2 ${config.color}`}>
-        <Icon className="w-3 h-3" />
-        {status.toUpperCase()}
-      </span>
-    );
-  };
-
-  const formatCurrency = (amount: number, currency: string = 'USD') => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: currency,
-    }).format(amount);
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    });
-  };
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
-      </div>
-    );
-  }
-
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200/60 p-6">
-        <div className="flex items-center justify-between">
+    <div className="min-h-screen bg-gray-50/50 p-6 md:p-8">
+      <div className="max-w-[1536px] mx-auto space-y-8">
+        {/* Header Section */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
-              <FaReceipt className="w-8 h-8 text-primary-600" />
-              Payment Receipts
-            </h2>
-            <p className="text-sm text-gray-600 mt-1">
-              View and manage your payment receipts
+            <h1 className="text-3xl font-bold text-gray-900 tracking-tight uppercase flex items-center gap-3">
+              <div className="p-2 bg-slate-900 text-white rounded-xl shadow-lg shadow-slate-200">
+                <Receipt size={24} />
+              </div>
+              Settlement Receipts
+            </h1>
+            <p className="text-gray-500 mt-2 uppercase text-[10px] font-black tracking-[0.2em] opacity-70">
+              Validated certificates of institutional capital settlement
             </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="flex bg-white p-1 rounded-xl border border-slate-200 shadow-sm">
+              <button className="px-4 py-2 bg-slate-900 text-white rounded-lg text-[10px] font-black uppercase tracking-widest shadow-lg shadow-slate-200">Current Cycle</button>
+              <button className="px-4 py-2 text-slate-400 hover:text-slate-600 rounded-lg text-[10px] font-black uppercase tracking-widest">Historical</button>
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Receipts List */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200/60 overflow-hidden">
-        {!receipts || receipts.length === 0 ? (
-          <div className="p-12 text-center">
-            <FaReceipt className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">No Receipts Found</h3>
-            <p className="text-sm text-gray-600">
-              You don't have any receipts yet. Receipts will appear here after you make payments for cargo transportation.
-            </p>
-          </div>
-        ) : (
-          <div className="divide-y divide-gray-200">
-            {receipts.map((receipt: Receipt) => (
-              <div
-                key={receipt.id}
-                className="p-6 hover:bg-gray-50 transition-colors cursor-pointer"
-                onClick={() => setSelectedReceipt(receipt)}
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-4 mb-2">
-                      <h3 className="text-lg font-bold text-gray-900">
-                        {receipt.receiptNumber}
-                      </h3>
-                      {getStatusBadge(receipt.status)}
-                    </div>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                      <div className="flex items-center gap-2 text-gray-600">
-                        <FaBox className="w-4 h-4" />
-                        <span className="font-medium">{receipt.cargoName}</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-gray-600">
-                        <FaDollarSign className="w-4 h-4" />
-                        <span className="font-semibold text-gray-900">
-                          {formatCurrency(receipt.amount, receipt.currency)}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2 text-gray-600">
-                        <FaUser className="w-4 h-4" />
-                        <span>{receipt.cargoOwnerName}</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-gray-600">
-                        <FaCalendarAlt className="w-4 h-4" />
-                        <span>{formatDate(receipt.paymentDate)}</span>
-                      </div>
-                    </div>
+        <ReceiptsEnlite
+          loading={isLoading}
+          receipts={receipts || []}
+          onViewDetails={(r) => setSelectedReceipt(r)}
+          onDownload={handleDownload}
+          onPrint={handlePrint}
+        />
+
+        {/* Receipt Detail Modal */}
+        {selectedReceipt && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
+            <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-2xl overflow-hidden border border-slate-100">
+              <div className="p-8 border-b border-slate-50 flex justify-between items-start">
+                <div className="flex gap-4">
+                  <div className={`p-4 rounded-2xl ${selectedReceipt.status === 'paid' ? 'bg-emerald-50 text-emerald-600' : 'bg-blue-50 text-blue-600'}`}>
+                    <Receipt size={32} />
                   </div>
-                  <div className="flex items-center gap-2 ml-4">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDownload(receipt);
-                      }}
-                      className="p-2 text-gray-600 hover:text-primary-600 hover:bg-gray-100 rounded-lg transition-colors"
-                      title="Download"
-                    >
-                      <FaDownload className="w-5 h-5" />
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handlePrint(receipt);
-                      }}
-                      className="p-2 text-gray-600 hover:text-primary-600 hover:bg-gray-100 rounded-lg transition-colors"
-                      title="Print"
-                    >
-                      <FaPrint className="w-5 h-5" />
-                    </button>
+                  <div>
+                    <h2 className="text-xl font-black text-slate-900 uppercase">Settlement Certificate</h2>
+                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Instrument No: {selectedReceipt.receiptNumber}</p>
                   </div>
                 </div>
+                <button
+                  onClick={() => setSelectedReceipt(null)}
+                  className="p-2 hover:bg-slate-50 rounded-xl text-slate-400 hover:text-slate-900 transition-all"
+                >
+                  <XCircle size={24} />
+                </button>
               </div>
-            ))}
+
+              <div className="p-8 space-y-8">
+                <div className="grid grid-cols-2 gap-8">
+                  <div className="space-y-1">
+                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em]">Document Status</p>
+                    <div className="flex items-center gap-2">
+                      <div className={`w-2 h-2 rounded-full ${selectedReceipt.status === 'paid' ? 'bg-emerald-500' : 'bg-blue-500'}`} />
+                      <p className="text-sm font-black text-slate-900 uppercase">{selectedReceipt.status}</p>
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em]">Issuance Date</p>
+                    <p className="text-sm font-black text-slate-900 uppercase">{new Date(selectedReceipt.paymentDate).toLocaleDateString()}</p>
+                  </div>
+                </div>
+
+                <div className="p-6 bg-slate-50 rounded-3xl space-y-4 font-mono">
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-slate-400 uppercase">Principal Party</span>
+                    <span className="font-black text-slate-900 uppercase text-right">{selectedReceipt.cargoOwnerName}</span>
+                  </div>
+                  {selectedReceipt.cargoOwnerEmail && (
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="text-slate-400 uppercase">Identity Hash</span>
+                      <span className="text-slate-600 truncate max-w-[200px]">{selectedReceipt.cargoOwnerEmail}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between items-center text-xs border-t border-slate-200 pt-4">
+                    <span className="text-slate-400 uppercase">Asset Manifest</span>
+                    <span className="font-black text-slate-900 uppercase text-right leading-tight">{selectedReceipt.cargoName}</span>
+                  </div>
+                  <div className="flex justify-between items-center text-xs border-t border-slate-200 pt-4">
+                    <span className="text-slate-400 uppercase font-black text-[10px]">Net Settlement</span>
+                    <span className="text-lg font-black text-slate-900">
+                      {selectedReceipt.currency} {selectedReceipt.amount.toLocaleString()}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <button
+                    onClick={() => handleDownload(selectedReceipt)}
+                    className="flex flex-col items-center gap-2 p-4 bg-white border border-slate-100 rounded-2xl hover:border-indigo-200 hover:bg-indigo-50/50 transition-all group"
+                  >
+                    <Download className="text-slate-400 group-hover:text-indigo-600" size={20} />
+                    <span className="text-[9px] font-black text-slate-400 uppercase group-hover:text-indigo-600">Download Cryptographic PDF</span>
+                  </button>
+                  <button
+                    onClick={() => handlePrint(selectedReceipt)}
+                    className="flex flex-col items-center gap-2 p-4 bg-white border border-slate-100 rounded-2xl hover:border-indigo-200 hover:bg-indigo-50/50 transition-all group"
+                  >
+                    <Printer className="text-slate-400 group-hover:text-indigo-600" size={20} />
+                    <span className="text-[9px] font-black text-slate-400 uppercase group-hover:text-indigo-600">Print Physical Copy</span>
+                  </button>
+                </div>
+              </div>
+
+              <div className="p-6 bg-slate-900 text-white flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <ShieldCheck size={20} className="text-indigo-400" />
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-white/70">Authenticated via Secure Ledger</p>
+                </div>
+                <button
+                  onClick={() => setSelectedReceipt(null)}
+                  className="px-6 py-2 bg-white/10 hover:bg-white/20 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all"
+                >
+                  Close Certificate
+                </button>
+              </div>
+            </div>
           </div>
         )}
       </div>
-
-      {/* Receipt Detail Modal */}
-      {selectedReceipt && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b border-gray-200">
-              <div className="flex items-center justify-between">
-                <h3 className="text-2xl font-bold text-gray-900">
-                  Receipt {selectedReceipt.receiptNumber}
-                </h3>
-                <button
-                  onClick={() => setSelectedReceipt(null)}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  <FaTimesCircle className="w-6 h-6" />
-                </button>
-              </div>
-            </div>
-
-            <div className="p-6 space-y-6">
-              {/* Receipt Details */}
-              <div className="grid grid-cols-2 gap-6">
-                <div>
-                  <h4 className="text-sm font-semibold text-gray-500 uppercase mb-2">Payment To</h4>
-                  <div className="space-y-1">
-                    <p className="text-gray-900 font-medium">{selectedReceipt.cargoOwnerName}</p>
-                    {selectedReceipt.cargoOwnerEmail && (
-                      <p className="text-sm text-gray-600 flex items-center gap-2">
-                        <FaEnvelope className="w-3 h-3" />
-                        {selectedReceipt.cargoOwnerEmail}
-                      </p>
-                    )}
-                    {selectedReceipt.cargoOwnerPhone && (
-                      <p className="text-sm text-gray-600 flex items-center gap-2">
-                        <FaPhone className="w-3 h-3" />
-                        {selectedReceipt.cargoOwnerPhone}
-                      </p>
-                    )}
-                  </div>
-                </div>
-                <div className="text-right">
-                  <div className="mb-2">{getStatusBadge(selectedReceipt.status)}</div>
-                  <div className="text-sm text-gray-600">
-                    <p>Payment Date: {formatDate(selectedReceipt.paymentDate)}</p>
-                    {selectedReceipt.metadata?.tripNumber && (
-                      <p>Trip: {selectedReceipt.metadata.tripNumber}</p>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Cargo Information */}
-              <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                <h4 className="text-sm font-semibold text-gray-500 uppercase mb-3">Cargo Information</h4>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-xs text-gray-500 mb-1">Cargo Name</p>
-                    <p className="text-gray-900 font-medium flex items-center gap-2">
-                      <FaBox className="w-4 h-4" />
-                      {selectedReceipt.cargoName}
-                    </p>
-                  </div>
-                  {selectedReceipt.metadata?.tripNumber && (
-                    <div>
-                      <p className="text-xs text-gray-500 mb-1">Trip Number</p>
-                      <p className="text-gray-900 font-medium flex items-center gap-2">
-                        <FaTruck className="w-4 h-4" />
-                        {selectedReceipt.metadata.tripNumber}
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Payment Details */}
-              <div className="border-t border-gray-200 pt-4">
-                <h4 className="text-sm font-semibold text-gray-500 uppercase mb-4">Payment Details</h4>
-                <div className="space-y-3">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Amount Paid:</span>
-                    <span className="text-xl font-bold text-gray-900">
-                      {formatCurrency(selectedReceipt.amount, selectedReceipt.currency)}
-                    </span>
-                  </div>
-                  {selectedReceipt.paymentMethod && (
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Payment Method:</span>
-                      <span className="text-gray-900 font-medium">{selectedReceipt.paymentMethod}</span>
-                    </div>
-                  )}
-                  {selectedReceipt.transactionId && (
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Transaction ID:</span>
-                      <span className="text-gray-900 font-mono text-sm">{selectedReceipt.transactionId}</span>
-                    </div>
-                  )}
-                  {selectedReceipt.referenceNumber && (
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Reference Number:</span>
-                      <span className="text-gray-900 font-mono text-sm">{selectedReceipt.referenceNumber}</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {selectedReceipt.notes && (
-                <div className="border-t border-gray-200 pt-4">
-                  <h4 className="text-sm font-semibold text-gray-500 uppercase mb-2">Notes</h4>
-                  <p className="text-gray-700">{selectedReceipt.notes}</p>
-                </div>
-              )}
-
-              {/* Actions */}
-              <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
-                <button
-                  onClick={() => handleDownload(selectedReceipt)}
-                  className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 flex items-center gap-2"
-                >
-                  <FaDownload className="w-4 h-4" />
-                  Download
-                </button>
-                <button
-                  onClick={() => handlePrint(selectedReceipt)}
-                  className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 flex items-center gap-2"
-                >
-                  <FaPrint className="w-4 h-4" />
-                  Print
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
 
 export default ReceiptViewer;
-

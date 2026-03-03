@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   FaSave,
   FaMapMarkerAlt,
@@ -33,6 +33,7 @@ import {
 import CargoFormSections from "./CargoFormSections";
 import TruckSelectionModal from "./TruckSelectionModal";
 import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
+import { FileText } from "lucide-react";
 import { Icon } from "leaflet";
 import HelpTooltip from "@/components/common/HelpTooltip";
 
@@ -44,6 +45,13 @@ import type {
 } from "../../types/cargo";
 import { CARGO_TYPES } from "@/constants/cargo";
 import LocationItem from "../LocationItem";
+import { RouteIntelligenceService, type RouteInsight } from "@/services/routeIntelligence";
+import RouteIntelligenceCard from "./RouteIntelligenceCard";
+import { getLocationSuggestions, type LocationIntelligence } from "@/services/enhancedCargoApi";
+import LocationIntelligenceCard from "./LocationIntelligenceCard";
+import DocumentUploadSection, { type PendingDocument } from "./DocumentUploadSection";
+import { uploadCargoDocumentsWithRetry } from "@/services/documentUploadService";
+import toast from "react-hot-toast";
 
 interface Location {
   id?: string;
@@ -135,6 +143,7 @@ const EnhancedCargoForm: React.FC<EnhancedCargoFormProps> = ({
     truckRequirements: {},
     carrierPreferences: {},
     costPreferences: {},
+    documents: [],
   });
 
   const [loading, setLoading] = useState(false);
@@ -163,17 +172,22 @@ const EnhancedCargoForm: React.FC<EnhancedCargoFormProps> = ({
   const [draftSaved, setDraftSaved] = useState(false);
   const [photos, setPhotos] = useState<string[]>(uploadedPhotos);
   const [suggestions, setSuggestions] = useState<any>(aiSuggestions);
-  const [isAutoSaving, setIsAutoSaving] = useState(false);
-  const [lastSaved, setLastSaved] = useState<Date | null>(null);
-  const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [lastSaved] = useState<Date | null>(null);
+  const [routeInsight, setRouteInsight] = useState<RouteInsight | null>(null);
+  const [isRouteLoading, setIsRouteLoading] = useState(false);
+  const [locationIntelligence, setLocationIntelligence] = useState<{
+    pickup: LocationIntelligence | null;
+    delivery: LocationIntelligence | null;
+  }>({ pickup: null, delivery: null });
+  const [loadingIntelligence, setLoadingIntelligence] = useState(false);
 
   // Apply template data when initialData changes (for editing or continuing drafts)
   useEffect(() => {
     console.log("🔄 Form useEffect triggered:", { isOpen, mode, hasInitialData: !!initialData, initialDataId: initialData?.id });
-    
+
     // Full data population for: edit mode OR create mode with existing cargo/draft (has id)
     const shouldFullyPopulate = initialData && (mode === "edit" || initialData.id);
-    
+
     if (shouldFullyPopulate) {
       console.log("📝 Applying full cargo/draft data to form:", initialData);
       // Transform and apply all cargo data to form
@@ -376,7 +390,7 @@ const EnhancedCargoForm: React.FC<EnhancedCargoFormProps> = ({
   };
 
   // Handle map click
-  const handleMapClick = (lat: number, lng: number) => {
+  const handleMapClick = async (lat: number, lng: number) => {
     if (!activeLocation) return;
 
     const newLocation: Location = {
@@ -401,6 +415,36 @@ const EnhancedCargoForm: React.FC<EnhancedCargoFormProps> = ({
     }
 
     setActiveLocation(null);
+
+    // Fetch location intelligence
+    setLoadingIntelligence(true);
+    try {
+      // In a real app, this would use the coordinates to find nearby facilities
+      // For demo purposes, we'll try to find suggestions based on coordinates
+      const suggestions = await getLocationSuggestions({ latitude: lat, longitude: lng });
+
+      if (suggestions && suggestions.length > 0) {
+        // Use the first suggestion as the facility match
+        const match = suggestions[0];
+        setLocationIntelligence(prev => ({
+          ...prev,
+          [activeLocation === 'pickup' ? 'pickup' : 'delivery']: match
+        }));
+
+        // Optionally update the location name if it's a known facility
+        if (match.name) {
+          if (activeLocation === 'pickup') {
+            setPickupLocation(prev => prev ? { ...prev, name: match.name } : null);
+          } else {
+            setDeliveryLocation(prev => prev ? { ...prev, name: match.name } : null);
+          }
+        }
+      }
+    } catch (err) {
+      console.error("Failed to fetch location intelligence", err);
+    } finally {
+      setLoadingIntelligence(false);
+    }
   };
 
   // Custom marker icon
@@ -533,6 +577,36 @@ const EnhancedCargoForm: React.FC<EnhancedCargoFormProps> = ({
 
       const result = await onSubmit(submissionData);
 
+      // Upload pending documents if any
+      const pendingDocs = (formData.documents || []).filter(
+        (doc: any) => 'isPending' in doc && doc.isPending
+      ) as PendingDocument[];
+
+      if (pendingDocs.length > 0 && result && result.id) {
+        try {
+          const uploadResult = await uploadCargoDocumentsWithRetry(
+            result.id,
+            pendingDocs,
+            2, // max retries
+            (current, total, status) => {
+              console.log(`Uploading documents: ${current}/${total} - ${status}`);
+            }
+          );
+
+          if (uploadResult.failed > 0) {
+            toast.error(
+              `${uploadResult.successful} of ${uploadResult.total} documents uploaded. ${uploadResult.failed} failed.`,
+              { duration: 5000 }
+            );
+          } else {
+            toast.success(`All ${uploadResult.successful} documents uploaded successfully!`);
+          }
+        } catch (uploadError) {
+          console.error('Failed to upload documents:', uploadError);
+          toast.error('Cargo created but some documents failed to upload');
+        }
+      }
+
       // If this is a create operation and truck selection is enabled, show truck selection modal
       if (mode === "create" && showTruckSelection && result && result.id) {
         setCreatedCargoId(result.id);
@@ -565,6 +639,7 @@ const EnhancedCargoForm: React.FC<EnhancedCargoFormProps> = ({
     { id: "route", label: "Route & Access", icon: FaLocationArrow },
     { id: "urgency", label: "Urgency & Timing", icon: FaClock },
     { id: "quality", label: "Quality & Inspection", icon: FaCameraRetro },
+    { id: "documents", label: "Documentation", icon: FileText },
   ];
 
   // Simple section validation (customize as needed)
@@ -579,8 +654,6 @@ const EnhancedCargoForm: React.FC<EnhancedCargoFormProps> = ({
         );
       case "route":
         return (
-          !!pickupLocation &&
-          !!deliveryLocation &&
           !!formData.pickupDate &&
           !!formData.deliveryDate
         );
@@ -588,6 +661,35 @@ const EnhancedCargoForm: React.FC<EnhancedCargoFormProps> = ({
         return true; // For demo, mark others as complete
     }
   };
+
+  // Effect to fetch Route Insights when cities change
+  useEffect(() => {
+    const fetchRouteInsights = async () => {
+      // Check if we have valid pickup and delivery locations with cities
+      const pickupCity = pickupLocation?.name || (formData.pickupLocationId ? 'Unknown' : '');
+      const deliveryCity = deliveryLocation?.name || (formData.deliveryLocationId ? 'Unknown' : '');
+
+      // We need at least names to try searching
+      if (pickupCity && deliveryCity && pickupCity !== 'Pickup Location' && deliveryCity !== 'Delivery Location') {
+        setIsRouteLoading(true);
+        try {
+          // Extract city names more reliably if possible, or just use the location name
+          // In a real app, we'd have structured address data
+          const insight = RouteIntelligenceService.getRouteInsights(pickupCity, deliveryCity);
+          setRouteInsight(insight);
+        } catch (err) {
+          console.error("Failed to fetch route insights", err);
+        } finally {
+          setIsRouteLoading(false);
+        }
+      } else {
+        setRouteInsight(null);
+      }
+    };
+
+    const timeoutId = setTimeout(fetchRouteInsights, 1000); // Debounce
+    return () => clearTimeout(timeoutId);
+  }, [pickupLocation, deliveryLocation, formData.pickupLocationId, formData.deliveryLocationId]);
 
   useEffect(() => {
     // Update completed sections on formData/location change
@@ -608,25 +710,7 @@ const EnhancedCargoForm: React.FC<EnhancedCargoFormProps> = ({
   }, [completedSections, sections]);
 
   // Auto-save functionality
-  const handleAutoSave = useCallback(async () => {
-    if (!onSaveDraft || mode === 'edit') return;
-    
-    setIsAutoSaving(true);
-    try {
-      await onSaveDraft({
-        ...formData,
-        pickupLocation,
-        deliveryLocation,
-      });
-      setDraftSaved(true);
-      setLastSaved(new Date());
-      setTimeout(() => setDraftSaved(false), 3000);
-    } catch (error) {
-      console.error('Auto-save failed:', error);
-    } finally {
-      setIsAutoSaving(false);
-    }
-  }, [formData, pickupLocation, deliveryLocation, onSaveDraft, mode]);
+
 
   // Auto-save disabled - drafts are only saved when user clicks "Save Draft" button
   // To re-enable auto-save, uncomment the useEffect below:
@@ -658,37 +742,44 @@ const EnhancedCargoForm: React.FC<EnhancedCargoFormProps> = ({
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="w-full max-w-[95vw] sm:max-w-6xl max-h-[90vh] overflow-hidden p-0">
         {/* Header */}
-        <DialogHeader className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 p-3 sm:p-4 border-b border-gray-200">
+        <DialogHeader className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 border-b border-slate-100 bg-white">
           <div className="flex-1 min-w-0">
-            <DialogTitle className="text-base sm:text-lg font-bold text-gray-900">
-              {mode === "create" ? "Create Cargo" : "Edit Cargo"}
-            </DialogTitle>
-            <DialogDescription className="text-xs text-gray-600 mt-0.5">
-              Enter detailed cargo information for optimal matching
-            </DialogDescription>
-            
-            {/* Progress Indicator */}
-            <div className="mt-3 space-y-1.5">
-              <div className="flex items-center justify-between text-xs">
-                <span className="text-gray-600">Form Completion</span>
-                <span className="font-medium text-gray-900">{completionPercentage}%</span>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-blue-50 flex items-center justify-center">
+                <FaBox className="w-5 h-5 text-[#345E85]" />
               </div>
-              <div className="w-full bg-gray-200 rounded-full h-2">
-                <div 
-                  className="bg-primary-600 h-2 rounded-full transition-all duration-300"
+              <div>
+                <DialogTitle className="text-xl font-black text-[#0f172a] tracking-tight">
+                  {mode === "create" ? "Create Cargo" : "Edit Cargo"}
+                </DialogTitle>
+                <DialogDescription className="text-xs text-slate-500 font-bold uppercase tracking-wider">
+                  Detailed Specifications & Intelligence
+                </DialogDescription>
+              </div>
+            </div>
+
+            {/* Progress Indicator - COMPACT */}
+            <div className="mt-4 max-w-md">
+              <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-[#345E85] mb-1">
+                <span>Completion Status</span>
+                <span>{completionPercentage}%</span>
+              </div>
+              <div className="w-full bg-slate-100 rounded-full h-1.5">
+                <div
+                  className="bg-[#345E85] h-1.5 rounded-full transition-all duration-300"
                   style={{ width: `${completionPercentage}%` }}
                 />
               </div>
-              <div className="flex items-center justify-between text-xs text-gray-500">
+              <div className="flex items-center justify-between text-[10px] font-bold text-slate-400 mt-1">
                 {draftSaved ? (
                   <span className="text-green-600 flex items-center gap-1">
-                    <FaCheck className="w-2.5 h-2.5" />
-                    Draft saved
+                    <FaCheck className="w-2 h-2" />
+                    SAVED
                   </span>
                 ) : lastSaved ? (
-                  <span>Last saved: {lastSaved.toLocaleTimeString()}</span>
+                  <span>LAST SAVED: {lastSaved.toLocaleTimeString()}</span>
                 ) : <span></span>}
-                <span>{sections.filter(s => completedSections[s.id]).length} of {sections.length} sections complete</span>
+                <span>{sections.filter(s => completedSections[s.id]).length}/{sections.length} SECTIONS</span>
               </div>
             </div>
           </div>
@@ -705,7 +796,7 @@ const EnhancedCargoForm: React.FC<EnhancedCargoFormProps> = ({
 
         <div className="flex flex-col lg:flex-row h-[calc(90vh-180px)] min-h-0">
           {/* Sidebar Navigation */}
-          <div className={`${sidebarOpen ? 'block' : 'hidden'} lg:block w-full lg:w-56 bg-gray-50 border-r border-gray-200 overflow-y-auto lg:sticky lg:top-0 flex-shrink-0`}>
+          <div className={`${sidebarOpen ? 'block' : 'hidden'} lg:block w-full lg:w-64 bg-slate-50 border-r border-slate-100 overflow-y-auto lg:sticky lg:top-0 flex-shrink-0`}>
             <nav className="p-2 sm:p-3 space-y-1.5">
               {sections.map((section) => {
                 const Icon = section.icon;
@@ -716,11 +807,10 @@ const EnhancedCargoForm: React.FC<EnhancedCargoFormProps> = ({
                       setActiveSection(section.id);
                       setSidebarOpen(false); // Close sidebar on mobile after selection
                     }}
-                    className={`w-full flex items-center space-x-2 px-2 sm:px-3 py-2 rounded-lg text-left transition-colors ${
-                      activeSection === section.id
-                        ? "bg-primary-100 text-primary-700 border border-primary-200"
-                        : "text-gray-600 hover:bg-gray-100"
-                    }`}
+                    className={`w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl text-left transition-all ${activeSection === section.id
+                      ? "bg-[#345E85] text-white shadow-lg shadow-blue-900/20"
+                      : "text-slate-500 hover:bg-slate-100 font-bold"
+                      }`}
                     title={
                       completedSections[section.id]
                         ? "Section complete"
@@ -1077,6 +1167,31 @@ const EnhancedCargoForm: React.FC<EnhancedCargoFormProps> = ({
                       </MapContainer>
                     </div>
 
+                    {/* Route Intelligence Widget */}
+                    <RouteIntelligenceCard insight={routeInsight} loading={isRouteLoading} />
+
+                    {/* Location Intelligence Widgets */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {pickupLocation && (
+                        <div>
+                          {loadingIntelligence && activeLocation === 'pickup' ? (
+                            <LocationIntelligenceCard intelligence={null} loading={true} />
+                          ) : (
+                            locationIntelligence.pickup && <LocationIntelligenceCard intelligence={locationIntelligence.pickup} />
+                          )}
+                        </div>
+                      )}
+                      {deliveryLocation && (
+                        <div>
+                          {loadingIntelligence && activeLocation === 'delivery' ? (
+                            <LocationIntelligenceCard intelligence={null} loading={true} />
+                          ) : (
+                            locationIntelligence.delivery && <LocationIntelligenceCard intelligence={locationIntelligence.delivery} />
+                          )}
+                        </div>
+                      )}
+                    </div>
+
                     {activeLocation && (
                       <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded-lg">
                         <div className="text-sm text-yellow-800">
@@ -1142,6 +1257,48 @@ const EnhancedCargoForm: React.FC<EnhancedCargoFormProps> = ({
                 activeSection={activeSection}
               />
 
+              {/* Documentation Section - MOVED FROM FOOTER TO TAB */}
+              {activeSection === "documents" && (
+                <div className="space-y-4">
+                  <div className="flex items-center space-x-2 pb-2 border-b border-slate-100">
+                    <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-blue-50">
+                      <FileText className="w-4 h-4 text-[#345E85]" />
+                    </div>
+                    <div>
+                      <h3 className="text-base font-black text-[#0f172a] tracking-tight uppercase">
+                        Documentation
+                      </h3>
+                      <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">
+                        Upload Permits, Invoices & Photos
+                      </p>
+                    </div>
+                  </div>
+                  <div className="bg-white p-6 rounded-xl border border-slate-100 shadow-none">
+                    <DocumentUploadSection
+                      cargoId={createdCargoId || initialData?.id || null}
+                      documents={formData.documents || []}
+                      onDocumentsChange={(docs) => setFormData(prev => ({ ...prev, documents: docs }))}
+                      allowPendingDocuments={true}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Ready to Submit Indicator - Moved inside content área for better flow */}
+              {draftSaved && (
+                <div className="bg-blue-50 p-4 rounded-xl border border-blue-100 mb-4 flex items-start gap-3 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                  <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
+                    <FaCheck className="text-blue-600 w-4 h-4" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-blue-900 text-sm">Draft Saved Successfully</h4>
+                    <p className="text-xs text-blue-700 mt-0.5">
+                      Your progress is secure. Once you're ready, click the <b>Submit</b> button below to publish this cargo.
+                    </p>
+                  </div>
+                </div>
+              )}
+
               {/* Stepper Navigation & Form Actions */}
               <DialogFooter className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-4 border-t border-gray-200">
                 <div className="flex gap-2 w-full sm:w-auto">
@@ -1171,62 +1328,49 @@ const EnhancedCargoForm: React.FC<EnhancedCargoFormProps> = ({
                     }}
                     disabled={
                       sections.findIndex((s) => s.id === activeSection) ===
-                        sections.length - 1 || !completedSections[activeSection]
+                      sections.length - 1 || !completedSections[activeSection]
                     }
                     className="flex-1 sm:flex-initial px-3 py-2 text-xs sm:text-sm border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 disabled:opacity-50 transition-colors"
                   >
                     Next
                   </button>
                 </div>
-                <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
-                  {/* Draft Save Button */}
+                {/* Unified Footer Actions */}
+                <div className="flex flex-col sm:flex-row items-center gap-3 w-full">
                   {onSaveDraft && (
                     <button
                       type="button"
                       onClick={handleSaveDraft}
                       disabled={loading}
-                      className="flex-1 sm:flex-initial px-3 py-2 text-xs sm:text-sm border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors flex items-center justify-center"
+                      className="w-full sm:w-auto px-6 py-2.5 border border-slate-200 rounded-2xl text-slate-600 hover:bg-slate-50 transition-all font-bold text-sm flex items-center justify-center gap-2"
                     >
-                      <FaSave className="w-3.5 h-3.5 mr-1.5" />
-                      <span className="hidden sm:inline">Save Draft</span>
-                      <span className="sm:hidden">Draft</span>
+                      <FaSave className="w-4 h-4" />
+                      <span>SAVE DRAFT</span>
                     </button>
                   )}
 
-                  {/* Draft Saved Indicator */}
-                  {draftSaved && (
-                    <div className="flex items-center text-green-600 text-xs">
-                      <FaCheck className="w-3.5 h-3.5 mr-1" />
-                      Draft saved
-                    </div>
-                  )}
+                  <div className="flex-1" />
 
                   <button
                     type="button"
-                    onClick={(e) => {
-                      console.log("Cancel button clicked");
-                      e.preventDefault();
-                      e.stopPropagation();
-                      onClose();
-                    }}
-                    className="flex-1 sm:flex-initial px-3 py-2 text-xs sm:text-sm border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+                    onClick={onClose}
+                    className="w-full sm:w-auto px-6 py-2.5 border border-slate-200 rounded-2xl text-slate-600 hover:bg-slate-50 transition-all font-bold text-sm"
                   >
-                    Cancel
+                    CANCEL
                   </button>
                   <button
                     type="submit"
                     disabled={loading}
-                    className="flex-1 sm:flex-initial px-3 py-2 text-xs sm:text-sm bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 transition-colors flex items-center justify-center"
+                    className="w-full sm:w-auto px-10 py-2.5 bg-[#345E85] text-white rounded-2xl transition-all font-black text-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg shadow-blue-900/10 hover:bg-slate-800"
                   >
                     {loading ? (
                       <>
-                        <div className="animate-spin rounded-full h-3.5 w-3.5 border-b-2 border-white mr-1.5"></div>
-                        <span>Saving...</span>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                        <span>SAVING...</span>
                       </>
                     ) : (
                       <>
-                        <FaSave className="w-3.5 h-3.5 mr-1.5" />
-                        <span>{mode === "create" ? "Create" : "Update"}</span>
+                        <span>{mode === "create" ? "CREATE CARGO" : "UPDATE CARGO"}</span>
                       </>
                     )}
                   </button>

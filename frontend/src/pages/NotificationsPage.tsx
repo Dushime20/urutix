@@ -55,17 +55,20 @@ const NotificationsPage: React.FC = () => {
   });
 
   // Fetch unread count
-  const { data: unreadCount } = useQuery({
+  const { data: unreadCount, error: unreadError } = useQuery({
     queryKey: ['unreadCount'],
     queryFn: () => notificationApi.getUnreadCount(),
     retry: 1, // Only retry once to avoid overwhelming the server
     retryDelay: 1000,
     staleTime: 5 * 60 * 1000, // Cache for 5 minutes
     refetchOnWindowFocus: false,
-    onError: (error) => {
-      console.warn('Failed to fetch unread count, will show 0:', error);
-    }
   });
+
+  useEffect(() => {
+    if (unreadError) {
+      console.warn('Failed to fetch unread count, will show 0:', unreadError);
+    }
+  }, [unreadError]);
 
 
 

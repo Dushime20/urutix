@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { 
-  FaDollarSign, 
+import {
+  FaDollarSign,
   FaCreditCard,
   FaMobileAlt,
   FaWallet,
@@ -89,9 +89,9 @@ const TruckOwnerFinancialManagement: React.FC = () => {
 
   // Load payment information from profile
   useEffect(() => {
-    const paymentInfoData = profileData?.profile?.preferences?.paymentInfo || 
-                           profileData?.preferences?.paymentInfo ||
-                           profileData?.data?.profile?.preferences?.paymentInfo;
+    const paymentInfoData = profileData?.profile?.preferences?.paymentInfo ||
+      profileData?.preferences?.paymentInfo ||
+      profileData?.data?.profile?.preferences?.paymentInfo;
     if (paymentInfoData) {
       setPaymentInfo(paymentInfoData);
     }
@@ -200,18 +200,18 @@ const TruckOwnerFinancialManagement: React.FC = () => {
       const payerId = payment.payerId;
       const cargoOwnerId = load.cargoOwnerId || load.cargoOwner?.id;
       const isLender = payment.metadata?.financedAmount || payment.metadata?.lenderId;
-      
-      const paidBy: 'cargo_owner' | 'lender' = isLender ? 'lender' : 
+
+      const paidBy: 'cargo_owner' | 'lender' = isLender ? 'lender' :
         (payerId === cargoOwnerId ? 'cargo_owner' : 'cargo_owner');
-      
-      const paidByName = isLender 
+
+      const paidByName = isLender
         ? (payment.metadata?.lenderName || 'Lender')
-        : (load.cargoOwner?.profile?.firstName + ' ' + load.cargoOwner?.profile?.lastName || 
-           load.cargoOwner?.companyName || 'Cargo Owner');
+        : (load.cargoOwner?.profile?.firstName + ' ' + load.cargoOwner?.profile?.lastName ||
+          load.cargoOwner?.companyName || 'Cargo Owner');
 
       const paymentAmount = parseFloat(payment.amount) || 0;
-      const paymentType = payment.paymentType === 'advance' || payment.paymentType === 'ADVANCE' 
-        ? 'advance' 
+      const paymentType = payment.paymentType === 'advance' || payment.paymentType === 'ADVANCE'
+        ? 'advance'
         : 'final';
 
       cargo.payments.push({
@@ -293,15 +293,15 @@ const TruckOwnerFinancialManagement: React.FC = () => {
   // Filter groups
   const filteredGroups = paymentGroups.filter(group => {
     if (filterSource !== 'all' && group.source !== filterSource) return false;
-    
+
     if (searchTerm) {
       const search = searchTerm.toLowerCase();
-      return group.cargos.some(cargo => 
+      return group.cargos.some(cargo =>
         cargo.cargoName.toLowerCase().includes(search) ||
         cargo.tripNumber?.toLowerCase().includes(search)
       );
     }
-    
+
     return true;
   });
 
@@ -343,15 +343,15 @@ const TruckOwnerFinancialManagement: React.FC = () => {
   const totalPaid = paymentGroups.reduce((sum, group) => sum + group.totalPaid, 0);
   const totalRemaining = paymentGroups.reduce((sum, group) => sum + group.totalRemaining, 0);
   const totalCargos = paymentGroups.reduce((sum, group) => sum + group.cargos.length, 0);
-  const completedPayments = cargoPayments.reduce((sum, cargo) => 
+  const completedPayments = cargoPayments.reduce((sum, cargo) =>
     sum + cargo.payments.filter(p => p.status === 'completed' || p.status === 'COMPLETED').length, 0
-  , 0);
+    , 0);
 
   return (
     <div className="space-y-6">
       {/* Financial Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="group relative bg-white rounded-xl shadow-sm border border-gray-200/60 p-6 hover:shadow-md hover:border-primary-200/50 transition-all duration-300 overflow-hidden">
+        <div className="group relative bg-white rounded-xl shadow-sm border border-gray-200/60 p-6 hover:shadow-md hover:border-primary-500 transition-all duration-300 overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-br from-primary-50/0 to-primary-50/0 group-hover:from-primary-50/50 group-hover:to-transparent transition-all duration-300 pointer-events-none" />
           <div className="relative flex items-center justify-between">
             <div className="flex-1 min-w-0">
@@ -365,7 +365,7 @@ const TruckOwnerFinancialManagement: React.FC = () => {
           </div>
         </div>
 
-        <div className="group relative bg-white rounded-xl shadow-sm border border-gray-200/60 p-6 hover:shadow-md hover:border-primary-200/50 transition-all duration-300 overflow-hidden">
+        <div className="group relative bg-white rounded-xl shadow-sm border border-gray-200/60 p-6 hover:shadow-md hover:border-primary-500 transition-all duration-300 overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-br from-primary-50/0 to-primary-50/0 group-hover:from-primary-50/50 group-hover:to-transparent transition-all duration-300 pointer-events-none" />
           <div className="relative flex items-center justify-between">
             <div className="flex-1 min-w-0">
@@ -379,7 +379,7 @@ const TruckOwnerFinancialManagement: React.FC = () => {
           </div>
         </div>
 
-        <div className="group relative bg-white rounded-xl shadow-sm border border-gray-200/60 p-6 hover:shadow-md hover:border-primary-200/50 transition-all duration-300 overflow-hidden">
+        <div className="group relative bg-white rounded-xl shadow-sm border border-gray-200/60 p-6 hover:shadow-md hover:border-primary-500 transition-all duration-300 overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-br from-primary-50/0 to-primary-50/0 group-hover:from-primary-50/50 group-hover:to-transparent transition-all duration-300 pointer-events-none" />
           <div className="relative flex items-center justify-between">
             <div className="flex-1 min-w-0">
@@ -393,7 +393,7 @@ const TruckOwnerFinancialManagement: React.FC = () => {
           </div>
         </div>
 
-        <div className="group relative bg-white rounded-xl shadow-sm border border-gray-200/60 p-6 hover:shadow-md hover:border-primary-200/50 transition-all duration-300 overflow-hidden">
+        <div className="group relative bg-white rounded-xl shadow-sm border border-gray-200/60 p-6 hover:shadow-md hover:border-primary-500 transition-all duration-300 overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-br from-primary-50/0 to-primary-50/0 group-hover:from-primary-50/50 group-hover:to-transparent transition-all duration-300 pointer-events-none" />
           <div className="relative flex items-center justify-between">
             <div className="flex-1 min-w-0">
@@ -413,11 +413,10 @@ const TruckOwnerFinancialManagement: React.FC = () => {
         <div className="flex border-b border-gray-200 bg-gray-50/50">
           <button
             onClick={() => setActiveTab('payment-info')}
-            className={`flex-1 px-6 py-4 text-sm font-semibold transition-all duration-200 ${
-              activeTab === 'payment-info'
-                ? 'text-primary-600 border-b-2 border-primary-600 bg-white shadow-sm'
+            className={`flex-1 px-6 py-4 text-sm font-semibold transition-all duration-200 ${activeTab === 'payment-info'
+                ? 'text-primary-500 border-b-2 border-primary-500 bg-white shadow-sm'
                 : 'text-gray-600 hover:text-gray-900 hover:bg-white/50'
-            }`}
+              }`}
           >
             <div className="flex items-center justify-center gap-2">
               <FaCreditCard className="w-4 h-4" />
@@ -426,11 +425,10 @@ const TruckOwnerFinancialManagement: React.FC = () => {
           </button>
           <button
             onClick={() => setActiveTab('payment-tracking')}
-            className={`flex-1 px-6 py-4 text-sm font-semibold transition-all duration-200 ${
-              activeTab === 'payment-tracking'
+            className={`flex-1 px-6 py-4 text-sm font-semibold transition-all duration-200 ${activeTab === 'payment-tracking'
                 ? 'text-primary-600 border-b-2 border-primary-600 bg-white shadow-sm'
                 : 'text-gray-600 hover:text-gray-900 hover:bg-white/50'
-            }`}
+              }`}
           >
             <div className="flex items-center justify-center gap-2">
               <FaDollarSign className="w-4 h-4" />
@@ -453,7 +451,7 @@ const TruckOwnerFinancialManagement: React.FC = () => {
               <div className="mb-6 flex justify-end">
                 <button
                   onClick={() => setIsEditingPaymentInfo(true)}
-                  className="px-5 py-2.5 bg-primary-600 text-white rounded-lg hover:bg-primary-700 flex items-center gap-2 shadow-sm hover:shadow-md transition-all duration-200"
+                  className="px-5 py-2.5 bg-primary-500 text-white rounded-lg hover:bg-primary-600 flex items-center gap-2 shadow-sm hover:shadow-md transition-all duration-200"
                 >
                   <FaEdit className="w-4 h-4" />
                   <span>Edit Payment Information</span>
@@ -525,7 +523,7 @@ const TruckOwnerFinancialManagement: React.FC = () => {
                   <button
                     onClick={handleSavePaymentInfo}
                     disabled={savePaymentInfoMutation.isPending}
-                    className="px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md transition-all duration-200 font-medium"
+                    className="px-6 py-3 bg-primary-500 text-white rounded-lg hover:bg-primary-600 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md transition-all duration-200 font-medium"
                   >
                     <FaSave className="w-4 h-4" />
                     <span>Save Payment Information</span>
@@ -534,9 +532,9 @@ const TruckOwnerFinancialManagement: React.FC = () => {
                     onClick={() => {
                       setIsEditingPaymentInfo(false);
                       // Reset to original values
-                      const paymentInfoData = profileData?.profile?.preferences?.paymentInfo || 
-                                             profileData?.preferences?.paymentInfo ||
-                                             profileData?.data?.profile?.preferences?.paymentInfo;
+                      const paymentInfoData = profileData?.profile?.preferences?.paymentInfo ||
+                        profileData?.preferences?.paymentInfo ||
+                        profileData?.data?.profile?.preferences?.paymentInfo;
                       if (paymentInfoData) {
                         setPaymentInfo(paymentInfoData);
                       } else {
@@ -555,7 +553,7 @@ const TruckOwnerFinancialManagement: React.FC = () => {
               {!isEditingPaymentInfo && (
                 <div className="mt-6 p-6 bg-gradient-to-br from-primary-50 to-blue-50 rounded-xl border border-primary-200/50">
                   <h4 className="text-base font-bold text-gray-900 mb-4 flex items-center gap-2">
-                    <FaCheckCircle className="w-5 h-5 text-primary-600" />
+                    <FaCheckCircle className="w-5 h-5 text-primary-500" />
                     Current Payment Information
                   </h4>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -640,7 +638,7 @@ const TruckOwnerFinancialManagement: React.FC = () => {
             {/* Loading State */}
             {(tripsLoading || paymentsLoading) && (
               <div className="flex items-center justify-center py-12">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500"></div>
               </div>
             )}
 
@@ -663,13 +661,12 @@ const TruckOwnerFinancialManagement: React.FC = () => {
                           className="w-full p-5 bg-gradient-to-r from-gray-50 to-white hover:from-gray-100 hover:to-gray-50 transition-all duration-200 flex items-center justify-between border-b border-gray-200"
                         >
                           <div className="flex items-center gap-4">
-                            <div className={`p-3 rounded-xl ${
-                              group.source === 'cargo_owner' 
-                                ? 'bg-primary-100' 
+                            <div className={`p-3 rounded-xl ${group.source === 'cargo_owner'
+                                ? 'bg-primary-50'
                                 : 'bg-blue-100'
-                            }`}>
+                              }`}>
                               {group.source === 'cargo_owner' ? (
-                                <FaUser className="w-6 h-6 text-primary-600" />
+                                <FaUser className="w-6 h-6 text-primary-500" />
                               ) : (
                                 <FaBuilding className="w-6 h-6 text-blue-600" />
                               )}
@@ -696,9 +693,8 @@ const TruckOwnerFinancialManagement: React.FC = () => {
                                 </p>
                               </div>
                             )}
-                            <div className={`p-2 rounded-lg transition-all ${
-                              isExpanded ? 'bg-primary-100 text-primary-600' : 'bg-gray-100 text-gray-500'
-                            }`}>
+                            <div className={`p-2 rounded-lg transition-all ${isExpanded ? 'bg-primary-50 text-primary-500' : 'bg-gray-100 text-gray-500'
+                              }`}>
                               {isExpanded ? (
                                 <FaArrowUp className="w-4 h-4" />
                               ) : (
@@ -740,7 +736,7 @@ const TruckOwnerFinancialManagement: React.FC = () => {
                                   </div>
                                   <div className="w-full bg-gray-200 rounded-full h-2">
                                     <div
-                                      className="bg-primary-600 h-2 rounded-full transition-all"
+                                      className="bg-primary-500 h-2 rounded-full transition-all"
                                       style={{
                                         width: `${Math.min(100, (cargo.advancePaid / cargo.totalAmount) * 100)}%`,
                                       }}
@@ -774,7 +770,7 @@ const TruckOwnerFinancialManagement: React.FC = () => {
                                 {cargo.payments.length > 0 && (
                                   <div className="mt-4 pt-4 border-t border-gray-200">
                                     <p className="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2">
-                                      <FaDollarSign className="w-4 h-4 text-primary-600" />
+                                      <FaDollarSign className="w-4 h-4 text-primary-500" />
                                       Payment History
                                     </p>
                                     <div className="space-y-2">
@@ -784,11 +780,10 @@ const TruckOwnerFinancialManagement: React.FC = () => {
                                           className="flex items-center justify-between p-3 bg-gradient-to-r from-gray-50 to-white rounded-lg text-sm border border-gray-200 hover:shadow-sm transition-all"
                                         >
                                           <div className="flex items-center gap-3">
-                                            <div className={`p-2 rounded-lg ${
-                                              payment.status === 'completed' || payment.status === 'COMPLETED'
+                                            <div className={`p-2 rounded-lg ${payment.status === 'completed' || payment.status === 'COMPLETED'
                                                 ? 'bg-green-100'
                                                 : 'bg-yellow-100'
-                                            }`}>
+                                              }`}>
                                               {payment.status === 'completed' || payment.status === 'COMPLETED' ? (
                                                 <FaCheckCircle className="w-4 h-4 text-green-600" />
                                               ) : (

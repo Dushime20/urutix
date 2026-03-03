@@ -29,6 +29,7 @@ import {
   FaCreditCard,
   FaRedo
 } from 'react-icons/fa';
+import LoanRequestsEnlite from '../components/LenderDashboard/LoanRequests.enlite.tsx';
 
 interface Lender {
   id: string;
@@ -44,6 +45,7 @@ interface LoanRequest {
   tenant_id: string;
   trip_id: string;
   requested_amount: number;
+  approved_amount?: number;
   status: 'pending' | 'approved' | 'rejected' | 'disbursed' | 'repaid' | 'overdue';
   priority: 'low' | 'medium' | 'high' | 'urgent';
   created_at: string;
@@ -378,13 +380,9 @@ const EnhancedLoanRequestsPage: React.FC = () => {
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState<'created_at' | 'requested_amount' | 'risk_score' | 'borrower_name'>('created_at');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
-  const [openActionRow, setOpenActionRow] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'approved' | 'rejected' | 'disbursed' | 'repaid' | 'overdue'>('all');
   const [priorityFilter, setPriorityFilter] = useState<'all' | 'low' | 'medium' | 'high' | 'urgent'>('all');
   const [lenderFilter, setLenderFilter] = useState<'all' | string>('all');
-  const [groupByLender, setGroupByLender] = useState(false);
-  const [groupByStatus, setGroupByStatus] = useState(false);
-  const [showAnalytics, setShowAnalytics] = useState(true);
   const [advancePaymentCalculations, setAdvancePaymentCalculations] = useState<Record<string, any>>({});
   const [loadingCalculations, setLoadingCalculations] = useState<Record<string, boolean>>({});
 
@@ -859,7 +857,7 @@ const EnhancedLoanRequestsPage: React.FC = () => {
           }
 
           // Refresh loan requests to get updated status
-          await fetchLoanRequests();
+          await mockFetchLoanRequests();
 
           // Close modal and reset
           setShowPaymentModal(false);
@@ -990,669 +988,39 @@ const EnhancedLoanRequestsPage: React.FC = () => {
   const uniqueLenders = Array.from(new Set(requests.map(r => r.lender).filter(Boolean)));
 
   return (
-    <div className="min-h-screen bg-gray-50 p-2 sm:p-3 md:p-4">
-      <div className="max-w-7xl mx-auto space-y-3 sm:space-y-4">
-        {/* Header */}
-        <div className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg sm:rounded-xl border border-gray-200 px-3 sm:px-4 py-2.5 sm:py-3 mb-3 sm:mb-4">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3">
-            <div className="flex items-center gap-2 sm:gap-2.5 min-w-0 flex-1">
-              <div className="p-1.5 sm:p-2 rounded-lg bg-gradient-to-br from-gray-500 to-gray-600 flex-shrink-0">
-                <FaFileContract className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <h1 className="text-base sm:text-lg font-bold text-gray-900 truncate">Loan Requests Dashboard</h1>
-                <p className="text-xs text-gray-600 mt-0.5 break-words">Review and manage loan applications from cargo borrowers</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
-              <button
-                onClick={() => setGroupByStatus(!groupByStatus)}
-                className={`flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1.5 text-xs border rounded-lg transition-colors touch-manipulation min-h-[44px] sm:min-h-0 ${groupByStatus
-                    ? 'bg-purple-50 border-purple-200 text-purple-700'
-                    : 'bg-white border-gray-200 hover:bg-gray-50'
-                  }`}
-              >
-                <FaBars className="text-purple-600 w-3 h-3 flex-shrink-0" />
-                <span className="hidden sm:inline">{groupByStatus ? 'Grouped' : 'Group'} Status</span>
-                <span className="sm:hidden">Group</span>
-              </button>
-              <button
-                onClick={() => setGroupByLender(!groupByLender)}
-                className={`flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1.5 text-xs border rounded-lg transition-colors touch-manipulation min-h-[44px] sm:min-h-0 ${groupByLender
-                    ? 'bg-blue-50 border-blue-200 text-blue-700'
-                    : 'bg-white border-gray-200 hover:bg-gray-50'
-                  }`}
-              >
-                <FaUsers className="text-blue-600 w-3 h-3 flex-shrink-0" />
-                <span className="hidden sm:inline">{groupByLender ? 'Grouped' : 'Group'} Lender</span>
-                <span className="sm:hidden">Lender</span>
-              </button>
-              <button
-                onClick={() => setShowAnalytics(!showAnalytics)}
-                className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1.5 text-xs bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors touch-manipulation min-h-[44px] sm:min-h-0"
-              >
-                <FaChartLine className="text-blue-600 w-3 h-3 flex-shrink-0" />
-                <span className="hidden sm:inline">{showAnalytics ? 'Hide' : 'Show'} Analytics</span>
-                <span className="sm:hidden">{showAnalytics ? 'Hide' : 'Show'}</span>
-              </button>
-              <button
-                onClick={handleExport}
-                className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1.5 text-xs bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors touch-manipulation min-h-[44px] sm:min-h-0"
-              >
-                <FaDownload className="text-green-600 w-3 h-3 flex-shrink-0" />
-                <span className="hidden sm:inline">Export</span>
-              </button>
-            </div>
+    <div className="min-h-screen bg-gray-50/50 p-6 md:p-8">
+      <div className="max-w-7xl mx-auto">
+        <div className="mb-8 flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 tracking-tight text-uppercase">Loan Requests</h1>
+            <p className="text-gray-500 mt-1 uppercase text-xs font-bold tracking-widest">FINANCING WORKFLOW MANAGEMENT</p>
           </div>
         </div>
 
-        {/* Analytics Dashboard */}
-        {showAnalytics && analytics && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
-            <div className="bg-white rounded-lg p-2.5 sm:p-3 border border-gray-200 shadow-sm">
-              <div className="flex items-center justify-between">
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs text-gray-600 font-medium">Total Requests</p>
-                  <p className="text-base sm:text-lg font-bold text-gray-900 mt-0.5 truncate">{analytics.totalRequests}</p>
-                  <p className="text-xs text-green-600 flex items-center gap-1 mt-1">
-                    <FaArrowUp className="w-2.5 h-2.5 flex-shrink-0" /> <span className="truncate">+{analytics.monthlyGrowth}% this month</span>
-                  </p>
-                </div>
-                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0 ml-2">
-                  <FaFileContract className="text-gray-600 text-xs sm:text-sm" />
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-lg p-2.5 sm:p-3 border border-gray-200 shadow-sm">
-              <div className="flex items-center justify-between">
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs text-gray-600 font-medium">Pending Requests</p>
-                  <p className="text-base sm:text-lg font-bold text-gray-900 mt-0.5 truncate">{analytics.pendingRequests}</p>
-                  <p className="text-xs text-gray-500 mt-1 truncate">
-                    {((analytics.pendingRequests / analytics.totalRequests) * 100).toFixed(1)}% of total
-                  </p>
-                </div>
-                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0 ml-2">
-                  <FaClock className="text-gray-600 text-xs sm:text-sm" />
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-lg p-2.5 sm:p-3 border border-gray-200 shadow-sm">
-              <div className="flex items-center justify-between">
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs text-gray-600 font-medium">Total Requested</p>
-                  <p className="text-base sm:text-lg font-bold text-gray-900 mt-0.5 truncate">RWF {(analytics.totalAmountRequested / 1000000).toFixed(1)}M</p>
-                  <p className="text-xs text-blue-600 flex items-center gap-1 mt-1">
-                    <FaDollarSign className="w-2.5 h-2.5 flex-shrink-0" /> <span className="truncate">Avg: RWF {(analytics.averageAmount / 1000000).toFixed(1)}M</span>
-                  </p>
-                </div>
-                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0 ml-2">
-                  <FaMoneyBillWave className="text-gray-600 text-xs sm:text-sm" />
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-lg p-2.5 sm:p-3 border border-gray-200 shadow-sm">
-              <div className="flex items-center justify-between">
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs text-gray-600 font-medium">Approval Rate</p>
-                  <p className="text-base sm:text-lg font-bold text-gray-900 mt-0.5 truncate">{analytics.approvalRate.toFixed(1)}%</p>
-                  <p className="text-xs text-emerald-600 flex items-center gap-1 mt-1">
-                    <FaStar className="w-2.5 h-2.5 flex-shrink-0" /> <span className="truncate">Avg Risk: {analytics.averageRiskScore.toFixed(1)}</span>
-                  </p>
-                </div>
-                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0 ml-2">
-                  <FaCheckCircle className="text-gray-600 text-xs sm:text-sm" />
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Loan Requests Management Table */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-          <div className="p-2.5 sm:p-3 border-b border-gray-200">
-            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-2 sm:gap-3">
-              <div className="min-w-0 flex-1">
-                <h2 className="text-sm font-semibold text-gray-900">Loan Applications</h2>
-                <p className="text-xs text-gray-500 mt-0.5 break-words">Review borrower applications with advanced filtering and risk assessment</p>
-              </div>
-
-              {/* Advanced Filters */}
-              <div className="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
-                <div className="relative flex-1 sm:flex-initial">
-                  <FaSearch className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 w-3.5 h-3.5" />
-                  <input
-                    value={search}
-                    onChange={e => setSearch(e.target.value)}
-                    placeholder="Search requests..."
-                    className="pl-9 pr-3 py-2 sm:py-1.5 w-full sm:w-64 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 text-sm touch-manipulation min-h-[44px] sm:min-h-0"
-                  />
-                </div>
-
-                <select
-                  value={statusFilter}
-                  onChange={e => setStatusFilter(e.target.value as any)}
-                  className="px-2.5 py-2 sm:py-1.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 text-sm touch-manipulation min-h-[44px] sm:min-h-0"
-                >
-                  <option value="all">All Status</option>
-                  <option value="pending">Pending</option>
-                  <option value="approved">Approved</option>
-                  <option value="rejected">Rejected</option>
-                  <option value="disbursed">Disbursed</option>
-                  <option value="repaid">Repaid</option>
-                  <option value="overdue">Overdue</option>
-                </select>
-
-                <select
-                  value={priorityFilter}
-                  onChange={e => setPriorityFilter(e.target.value as any)}
-                  className="px-2.5 py-2 sm:py-1.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 text-sm touch-manipulation min-h-[44px] sm:min-h-0"
-                >
-                  <option value="all">All Priorities</option>
-                  <option value="low">Low Priority</option>
-                  <option value="medium">Medium Priority</option>
-                  <option value="high">High Priority</option>
-                  <option value="urgent">Urgent</option>
-                </select>
-
-                <select
-                  value={lenderFilter}
-                  onChange={e => setLenderFilter(e.target.value)}
-                  className="px-2.5 py-2 sm:py-1.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 text-sm touch-manipulation min-h-[44px] sm:min-h-0"
-                >
-                  <option value="all">All Lenders</option>
-                  {uniqueLenders.map(lender => (
-                    <option key={lender?.id} value={lender?.id}>{lender?.name}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-          </div>
-
-          <div className="p-2.5 sm:p-3">
-            {fetching && (
-              <div className="animate-pulse space-y-2">
-                {[...Array(3)].map((_, i) => (
-                  <div key={i} className="h-12 bg-gray-100 rounded-lg" />
-                ))}
-              </div>
-            )}
-
-            {!fetching && sorted.length === 0 && (
-              <div className="text-center py-6 sm:py-8 border-2 border-dashed border-gray-200 rounded-lg px-3">
-                <div className="mx-auto mb-2 sm:mb-3 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-blue-50 flex items-center justify-center">
-                  <FaFileContract className="text-blue-500 text-base sm:text-lg" />
-                </div>
-                <h3 className="text-xs sm:text-sm font-semibold text-gray-800 mb-1">No loan requests found</h3>
-                <p className="text-gray-500 text-xs mb-3 sm:mb-4 break-words">
-                  {search || statusFilter !== 'all' || priorityFilter !== 'all' || lenderFilter !== 'all'
-                    ? 'Try adjusting your filters or search terms.'
-                    : 'No loan requests have been submitted yet.'
-                  }
-                </p>
-              </div>
-            )}
-
-            {!fetching && sorted.length > 0 && (
-              <>
-                <div className="relative hidden md:block">
-                  {/* Desktop Table View */}
-                  <div className="overflow-x-auto rounded-lg ring-1 ring-gray-200">
-                    <table className="min-w-full text-xs">
-                      <thead className="bg-gray-50 text-xs uppercase tracking-wide text-gray-600 select-none">
-                        <tr>
-                          <th onClick={() => toggleSort('borrower_name')} className="pl-4 pr-2 py-2.5 font-semibold text-left cursor-pointer group">
-                            <div className="inline-flex items-center gap-1">
-                              Borrower
-                              {sortBy === 'borrower_name' && <span className="text-[10px] font-normal">{sortDir === 'asc' ? '▲' : '▼'}</span>}
-                              {sortBy !== 'borrower_name' && <span className="opacity-0 group-hover:opacity-60 transition">⇅</span>}
-                            </div>
-                          </th>
-                          <th onClick={() => toggleSort('requested_amount')} className="px-2 py-2.5 font-semibold text-left cursor-pointer group">
-                            <div className="inline-flex items-center gap-1">
-                              Loan Details
-                              {sortBy === 'requested_amount' && <span className="text-[10px] font-normal">{sortDir === 'asc' ? '▲' : '▼'}</span>}
-                              {sortBy !== 'requested_amount' && <span className="opacity-0 group-hover:opacity-60 transition">⇅</span>}
-                            </div>
-                          </th>
-                          <th className="px-2 py-2.5 font-semibold text-left">Cargo Information</th>
-                          <th className="px-2 py-2.5 font-semibold text-left">Status & Priority</th>
-                          <th onClick={() => toggleSort('risk_score')} className="px-2 py-2.5 font-semibold text-left cursor-pointer group">
-                            <div className="inline-flex items-center gap-1">
-                              Risk Assessment
-                              {sortBy === 'risk_score' && <span className="text-[10px] font-normal">{sortDir === 'asc' ? '▲' : '▼'}</span>}
-                              {sortBy !== 'risk_score' && <span className="opacity-0 group-hover:opacity-60 transition">⇅</span>}
-                            </div>
-                          </th>
-                          <th className="pr-4 pl-2 py-2.5 font-semibold text-right">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-100 bg-white">
-                        {sorted.map((request) => (
-                          <tr key={request.id} className="group hover:bg-blue-50/60 transition-colors">
-                            <td className="pl-4 pr-2 py-3 align-middle">
-                              <div className="flex items-center gap-2">
-                                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-semibold text-xs ${request.status === 'approved' || request.status === 'disbursed' ? 'bg-green-500' :
-                                    request.status === 'pending' ? 'bg-yellow-500' :
-                                      request.status === 'rejected' || request.status === 'overdue' ? 'bg-red-500' : 'bg-gray-400'
-                                  }`}>
-                                  {request.borrower_name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
-                                </div>
-                                <div>
-                                  <p className="font-semibold text-gray-900 text-xs">{request.borrower_name}</p>
-                                  {request.borrower_company && (
-                                    <p className="text-xs text-gray-500 flex items-center gap-1">
-                                      <FaBuilding className="text-xs w-2.5 h-2.5" />
-                                      {request.borrower_company}
-                                    </p>
-                                  )}
-                                  <div className="flex items-center gap-1 text-xs text-gray-500 mt-0.5">
-                                    <FaEnvelope className="text-xs w-2.5 h-2.5" />
-                                    {request.borrower_email}
-                                  </div>
-                                </div>
-                              </div>
-                            </td>
-                            <td className="px-2 py-3 align-middle">
-                              <div className="space-y-0.5">
-                                <p className="font-semibold text-gray-900 text-xs">RWF {(request.requested_amount / 1000000).toFixed(1)}M</p>
-                                <p className="text-xs text-gray-600">{request.interest_rate}% interest</p>
-                                <p className="text-xs text-gray-500">{request.loan_term_months} months term</p>
-                                {request.monthly_payment && (
-                                  <p className="text-xs text-blue-600">
-                                    RWF {(request.monthly_payment / 1000).toFixed(0)}K/month
-                                  </p>
-                                )}
-                                {/* Advance Payment Calculation */}
-                                {advancePaymentCalculations[request.id] && (() => {
-                                  const calc = advancePaymentCalculations[request.id];
-                                  return (
-                                    <div className="mt-2 pt-2 border-t border-gray-200">
-                                      <p className="text-xs font-medium text-gray-700 mb-1">Advance Payment Info:</p>
-                                      {calc.requireAdvancePayment ? (
-                                        <>
-                                          <p className="text-xs text-green-700 font-semibold">
-                                            Advance: {formatCurrencyUtil(calc.advanceAmount, calc.currency)}
-                                          </p>
-                                          <p className="text-xs text-gray-600">
-                                            ({formatPercentage(calc.advancePaymentPercentage)} of {formatCurrencyUtil(calc.transportationFee, calc.currency)})
-                                          </p>
-                                          <p className="text-xs text-gray-500">
-                                            Final: {formatCurrencyUtil(calc.finalAmount, calc.currency)}
-                                          </p>
-                                        </>
-                                      ) : (
-                                        <p className="text-xs text-gray-600">
-                                          No advance required. Full payment after delivery.
-                                        </p>
-                                      )}
-                                    </div>
-                                  );
-                                })()}
-                                {loadingCalculations[request.id] && (
-                                  <p className="text-xs text-gray-400 italic">Loading payment info...</p>
-                                )}
-                              </div>
-                            </td>
-                            <td className="px-2 py-3 align-middle">
-                              <div className="space-y-0.5">
-                                <p className="font-medium text-gray-900 text-xs">{request.cargo_type}</p>
-                                <p className="text-xs text-gray-600">{request.cargo_weight}kg</p>
-                                <p className="text-xs text-gray-500">
-                                  {request.pickup_location} → {request.delivery_location}
-                                </p>
-                                <p className="text-xs text-gray-500">
-                                  {request.distance}km • {request.estimated_duration}h
-                                </p>
-                              </div>
-                            </td>
-                            <td className="px-2 py-3 align-middle">
-                              <div className="space-y-1.5">
-                                <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(request.status)}`}>
-                                  <span className="w-1.5 h-1.5 rounded-full bg-current"></span>
-                                  {request.status.charAt(0).toUpperCase() + request.status.slice(1)}
-                                </span>
-                                <div>
-                                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border ${getPriorityColor(request.priority)}`}>
-                                    {request.priority === 'urgent' ? <FaExclamationTriangle className="w-2.5 h-2.5" /> :
-                                      request.priority === 'high' ? <FaArrowUp className="w-2.5 h-2.5" /> :
-                                        request.priority === 'medium' ? <FaArrowDown className="w-2.5 h-2.5" /> :
-                                          <FaClock className="w-2.5 h-2.5" />}
-                                    {request.priority.charAt(0).toUpperCase() + request.priority.slice(1)}
-                                  </span>
-                                </div>
-                              </div>
-                            </td>
-                            <td className="px-2 py-3 align-middle">
-                              <div className="space-y-1">
-                                {request.risk_score && (
-                                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium border ${getRiskScoreColor(request.risk_score)}`}>
-                                    <FaStar className="w-2.5 h-2.5" />
-                                    {request.risk_score}
-                                  </span>
-                                )}
-                                <p className="text-xs text-gray-600">Credit: {request.credit_score}</p>
-                                {request.collateral_type && (
-                                  <p className="text-xs text-gray-500">
-                                    Collateral: {request.collateral_type}
-                                  </p>
-                                )}
-                              </div>
-                            </td>
-                            <td className="pr-4 pl-2 py-3 text-right relative">
-                              <div className="flex items-center gap-2 justify-end">
-                                <button
-                                  onClick={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    try {
-                                      // View details action - could show a modal with loan details
-                                      console.log('View details for loan:', request.id);
-                                      alert(`Loan Details:\n\nBorrower: ${request.borrower_name}\nAmount: RWF ${request.requested_amount.toLocaleString()}\nStatus: ${request.status}\nCreated: ${new Date(request.created_at).toLocaleDateString()}`);
-                                    } catch (error) {
-                                      console.error('Error viewing details:', error);
-                                    }
-                                  }}
-                                  className="p-1.5 rounded-lg hover:bg-blue-100 text-blue-600 hover:text-blue-700 transition"
-                                  title="View Details"
-                                >
-                                  <FaEye className="w-4 h-4" />
-                                </button>
-                                {request.status === 'pending' && (
-                                  <>
-                                    <button
-                                      onClick={(e) => {
-                                        e.preventDefault();
-                                        e.stopPropagation();
-                                        try {
-                                          handleApproveLoan(
-                                            request.id,
-                                            request.requested_amount,
-                                            request.interest_rate || 10
-                                          );
-                                        } catch (error) {
-                                          console.error('Error approving loan:', error);
-                                          alert('Error approving loan. Please try again.');
-                                        }
-                                      }}
-                                      className="p-1.5 rounded-lg hover:bg-green-100 text-green-600 hover:text-green-700 transition"
-                                      title="Accept"
-                                    >
-                                      <FaCheck className="w-4 h-4" />
-                                    </button>
-                                    <button
-                                      onClick={(e) => {
-                                        e.preventDefault();
-                                        e.stopPropagation();
-                                        try {
-                                          const reason = prompt('Enter rejection reason:') || 'Application did not meet criteria';
-                                          if (reason) {
-                                            handleRejectLoan(request.id, reason);
-                                          }
-                                        } catch (error) {
-                                          console.error('Error rejecting loan:', error);
-                                          alert('Error rejecting loan. Please try again.');
-                                        }
-                                      }}
-                                      className="p-1.5 rounded-lg hover:bg-red-100 text-red-600 hover:text-red-700 transition"
-                                      title="Reject"
-                                    >
-                                      <FaTimes className="w-4 h-4" />
-                                    </button>
-                                  </>
-                                )}
-                                {request.status === 'approved' && (
-                                  <button
-                                    onClick={(e) => {
-                                      e.preventDefault();
-                                      e.stopPropagation();
-                                      try {
-                                        // Open payment modal for approved loans (not yet disbursed)
-                                        setSelectedLoanForPayment(request);
-                                        setShowPaymentModal(true);
-
-                                        // Fetch truck owner's phone number automatically
-                                        fetchTruckOwnerPhoneNumber(request);
-
-                                        // Fetch advance payment calculation if trip_id exists
-                                        if (request.trip_id) {
-                                          fetchAdvancePaymentCalculation(request.trip_id, request.id);
-                                        }
-                                      } catch (error) {
-                                        console.error('Error opening payment modal:', error);
-                                        alert('Error opening payment modal. Please try again.');
-                                      }
-                                    }}
-                                    className="p-1.5 rounded-lg hover:bg-green-100 text-green-600 hover:text-green-700 transition"
-                                    title="Pay / Retry Payment"
-                                  >
-                                    <FaMoneyBillWave className="w-4 h-4" />
-                                  </button>
-                                )}
-                                {request.status === 'disbursed' && (
-                                  <button
-                                    onClick={(e) => {
-                                      e.preventDefault();
-                                      e.stopPropagation();
-                                      try {
-                                        setSelectedLoanForPaymentDetails(request);
-                                        fetchLoanPayments(request.id);
-                                        setShowPaymentDetailsModal(true);
-                                      } catch (error) {
-                                        console.error('Error opening payment details:', error);
-                                        alert('Error opening payment details. Please try again.');
-                                      }
-                                    }}
-                                    className="p-1.5 rounded-lg hover:bg-blue-100 text-blue-600 hover:text-blue-700 transition"
-                                    title="View Payment Details"
-                                  >
-                                    <FaCreditCard className="w-4 h-4" />
-                                  </button>
-                                )}
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mt-3 text-xs text-gray-500 px-2">
-                    <span>{sorted.length} request{sorted.length !== 1 && 's'} shown</span>
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3">
-                      <span className="hidden sm:inline">Sorted by {sortBy} ({sortDir})</span>
-                      <span className="whitespace-nowrap">Total Requested: RWF {(sorted.reduce((acc, r) => acc + r.requested_amount, 0) / 1000000).toFixed(1)}M</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Mobile Card View */}
-                <div className="md:hidden space-y-3">
-                  {sorted.map((request) => (
-                    <div key={request.id} className="bg-white border border-gray-200 rounded-lg p-3 shadow-sm">
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex items-center gap-2 min-w-0 flex-1">
-                          <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold text-xs flex-shrink-0 ${request.status === 'approved' || request.status === 'disbursed' ? 'bg-green-500' :
-                              request.status === 'pending' ? 'bg-yellow-500' :
-                                request.status === 'rejected' || request.status === 'overdue' ? 'bg-red-500' : 'bg-gray-400'
-                            }`}>
-                            {request.borrower_name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <p className="font-semibold text-gray-900 text-sm break-words">{request.borrower_name}</p>
-                            {request.borrower_company && (
-                              <p className="text-xs text-gray-500 flex items-center gap-1 mt-0.5 break-words">
-                                <FaBuilding className="w-2.5 h-2.5 flex-shrink-0" />
-                                {request.borrower_company}
-                              </p>
-                            )}
-                            <p className="text-xs text-gray-500 flex items-center gap-1 mt-0.5 break-all">
-                              <FaEnvelope className="w-2.5 h-2.5 flex-shrink-0" />
-                              {request.borrower_email}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="space-y-2 mb-3 pt-2 border-t border-gray-100">
-                        <div>
-                          <p className="text-xs text-gray-500">Loan Amount</p>
-                          <p className="font-semibold text-gray-900 text-sm">RWF {(request.requested_amount / 1000000).toFixed(1)}M</p>
-                          <p className="text-xs text-gray-600">{request.interest_rate}% interest • {request.loan_term_months} months</p>
-                          {request.monthly_payment && (
-                            <p className="text-xs text-blue-600">RWF {(request.monthly_payment / 1000).toFixed(0)}K/month</p>
-                          )}
-                        </div>
-
-                        <div>
-                          <p className="text-xs text-gray-500">Cargo Info</p>
-                          <p className="text-xs font-medium text-gray-900">{request.cargo_type}</p>
-                          <p className="text-xs text-gray-600">{request.cargo_weight}kg</p>
-                          <p className="text-xs text-gray-500 break-words">
-                            {request.pickup_location} → {request.delivery_location}
-                          </p>
-                          <p className="text-xs text-gray-500">
-                            {request.distance}km • {request.estimated_duration}h
-                          </p>
-                        </div>
-
-                        <div className="flex flex-wrap gap-2">
-                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(request.status)}`}>
-                            <span className="w-1.5 h-1.5 rounded-full bg-current"></span>
-                            {request.status.charAt(0).toUpperCase() + request.status.slice(1)}
-                          </span>
-                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border ${getPriorityColor(request.priority)}`}>
-                            {request.priority === 'urgent' ? <FaExclamationTriangle className="w-2.5 h-2.5" /> :
-                              request.priority === 'high' ? <FaArrowUp className="w-2.5 h-2.5" /> :
-                                request.priority === 'medium' ? <FaArrowDown className="w-2.5 h-2.5" /> :
-                                  <FaClock className="w-2.5 h-2.5" />}
-                            {request.priority.charAt(0).toUpperCase() + request.priority.slice(1)}
-                          </span>
-                          {request.risk_score && (
-                            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium border ${getRiskScoreColor(request.risk_score)}`}>
-                              <FaStar className="w-2.5 h-2.5" />
-                              {request.risk_score}
-                            </span>
-                          )}
-                        </div>
-
-                        <div>
-                          <p className="text-xs text-gray-500">Credit Score: <span className="font-medium text-gray-900">{request.credit_score}</span></p>
-                          {request.collateral_type && (
-                            <p className="text-xs text-gray-500">Collateral: {request.collateral_type}</p>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="flex gap-2 pt-2 border-t border-gray-100">
-                        <button
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            try {
-                              console.log('View details for loan:', request.id);
-                              alert(`Loan Details:\n\nBorrower: ${request.borrower_name}\nAmount: RWF ${request.requested_amount.toLocaleString()}\nStatus: ${request.status}\nCreated: ${new Date(request.created_at).toLocaleDateString()}`);
-                            } catch (error) {
-                              console.error('Error viewing details:', error);
-                            }
-                          }}
-                          className="flex-1 px-3 py-2 text-xs font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors touch-manipulation min-h-[44px] flex items-center justify-center gap-1.5"
-                        >
-                          <FaEye className="w-3.5 h-3.5" />
-                          View Details
-                        </button>
-                        {request.status === 'pending' && (
-                          <>
-                            <button
-                              onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                try {
-                                  handleApproveLoan(request.id, request.requested_amount, request.interest_rate || 10);
-                                } catch (error) {
-                                  console.error('Error approving loan:', error);
-                                  alert('Error approving loan. Please try again.');
-                                }
-                              }}
-                              className="px-3 py-2 text-xs font-medium text-green-600 bg-green-50 border border-green-200 rounded-lg hover:bg-green-100 transition-colors touch-manipulation min-h-[44px] flex items-center justify-center"
-                              title="Accept"
-                            >
-                              <FaCheck className="w-3.5 h-3.5" />
-                            </button>
-                            <button
-                              onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                try {
-                                  const reason = prompt('Enter rejection reason:') || 'Application did not meet criteria';
-                                  if (reason) {
-                                    handleRejectLoan(request.id, reason);
-                                  }
-                                } catch (error) {
-                                  console.error('Error rejecting loan:', error);
-                                  alert('Error rejecting loan. Please try again.');
-                                }
-                              }}
-                              className="px-3 py-2 text-xs font-medium text-red-600 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 transition-colors touch-manipulation min-h-[44px] flex items-center justify-center"
-                              title="Reject"
-                            >
-                              <FaTimes className="w-3.5 h-3.5" />
-                            </button>
-                          </>
-                        )}
-                        {request.status === 'approved' && (
-                          <button
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              try {
-                                setSelectedLoanForPayment(request);
-                                setShowPaymentModal(true);
-                                fetchTruckOwnerPhoneNumber(request);
-                                if (request.trip_id) {
-                                  fetchAdvancePaymentCalculation(request.trip_id, request.id);
-                                }
-                              } catch (error) {
-                                console.error('Error opening payment modal:', error);
-                                alert('Error opening payment modal. Please try again.');
-                              }
-                            }}
-                            className="px-3 py-2 text-xs font-medium text-green-600 bg-green-50 border border-green-200 rounded-lg hover:bg-green-100 transition-colors touch-manipulation min-h-[44px] flex items-center justify-center"
-                            title="Pay / Retry Payment"
-                          >
-                            <FaMoneyBillWave className="w-3.5 h-3.5" />
-                          </button>
-                        )}
-                        {request.status === 'disbursed' && (
-                          <button
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              try {
-                                setSelectedLoanForPaymentDetails(request);
-                                fetchLoanPayments(request.id);
-                                setShowPaymentDetailsModal(true);
-                              } catch (error) {
-                                console.error('Error opening payment details:', error);
-                                alert('Error opening payment details. Please try again.');
-                              }
-                            }}
-                            className="px-3 py-2 text-xs font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors touch-manipulation min-h-[44px] flex items-center justify-center"
-                            title="View Payment Details"
-                          >
-                            <FaCreditCard className="w-3.5 h-3.5" />
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </>
-            )}
-          </div>
-        </div>
+        <LoanRequestsEnlite
+          loading={fetching}
+          requests={sorted}
+          analytics={analytics}
+          onApprove={handleApproveLoan}
+          onReject={handleRejectLoan}
+          onViewDetails={(req) => {
+            alert(`Loan Details:\n\nBorrower: ${req.borrower_name}\nAmount: RWF ${req.requested_amount.toLocaleString()}\nStatus: ${req.status}\nCreated: ${new Date(req.created_at).toLocaleDateString()}`);
+          }}
+          onProcessPayment={(req) => {
+            setSelectedLoanForPayment(req);
+            setShowPaymentModal(true);
+            fetchTruckOwnerPhoneNumber(req);
+            if (req.trip_id) {
+              fetchAdvancePaymentCalculation(req.trip_id, req.id);
+            }
+          }}
+          onViewPaymentDetails={(req) => {
+            setSelectedLoanForPaymentDetails(req);
+            fetchLoanPayments(req.id);
+            setShowPaymentDetailsModal(true);
+          }}
+          onExport={handleExport}
+        />
       </div>
 
       {/* Payment Modal */}
@@ -1780,8 +1148,8 @@ const EnhancedLoanRequestsPage: React.FC = () => {
                   <button
                     onClick={() => setPaymentMethod('momo')}
                     className={`w-full p-3 sm:p-4 border-2 rounded-lg transition flex items-center gap-2 sm:gap-3 touch-manipulation min-h-[60px] sm:min-h-0 ${paymentMethod === 'momo'
-                        ? 'border-blue-600 bg-blue-50'
-                        : 'border-gray-200 hover:border-gray-300'
+                      ? 'border-blue-600 bg-blue-50'
+                      : 'border-gray-200 hover:border-gray-300'
                       }`}
                   >
                     <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${paymentMethod === 'momo' ? 'bg-blue-600' : 'bg-gray-100'
@@ -1821,8 +1189,8 @@ const EnhancedLoanRequestsPage: React.FC = () => {
                   <button
                     onClick={() => setPaymentMethod('card')}
                     className={`w-full p-3 sm:p-4 border-2 rounded-lg transition flex items-center gap-2 sm:gap-3 touch-manipulation min-h-[60px] sm:min-h-0 ${paymentMethod === 'card'
-                        ? 'border-blue-600 bg-blue-50'
-                        : 'border-gray-200 hover:border-gray-300'
+                      ? 'border-blue-600 bg-blue-50'
+                      : 'border-gray-200 hover:border-gray-300'
                       }`}
                   >
                     <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${paymentMethod === 'card' ? 'bg-blue-600' : 'bg-gray-100'
@@ -1856,8 +1224,8 @@ const EnhancedLoanRequestsPage: React.FC = () => {
                   onClick={handleProcessPayment}
                   disabled={!paymentMethod || processingPayment || (paymentMethod === 'momo' && (!truckOwnerPhone || truckOwnerPhone.trim() === ''))}
                   className={`flex-1 px-4 py-2.5 rounded-lg text-white font-medium transition touch-manipulation min-h-[44px] sm:min-h-0 ${!paymentMethod || processingPayment || (paymentMethod === 'momo' && (!truckOwnerPhone || truckOwnerPhone.trim() === ''))
-                      ? 'bg-gray-400 cursor-not-allowed'
-                      : 'bg-blue-600 hover:bg-blue-700'
+                    ? 'bg-gray-400 cursor-not-allowed'
+                    : 'bg-blue-600 hover:bg-blue-700'
                     }`}
                 >
                   {processingPayment ? 'Processing...' : 'Proceed to Payment'}

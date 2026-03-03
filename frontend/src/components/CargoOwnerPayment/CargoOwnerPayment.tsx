@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import {
-  Package,
   DollarSign,
   CreditCard,
   Smartphone,
@@ -12,7 +12,8 @@ import {
   Filter,
   ArrowRight,
   User,
-  Info
+  Info,
+  Package
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import api from '../../services/api';
@@ -112,6 +113,26 @@ const CargoOwnerPayment: React.FC = () => {
   useEffect(() => {
     fetchLoadsReadyForPayment();
   }, [user]);
+
+  // Handle Deep Linking for Payment Action
+  const [searchParams] = useSearchParams();
+  const deepLinkLoadId = searchParams.get('loadId');
+  const deepLinkAction = searchParams.get('action');
+
+  useEffect(() => {
+    if (deepLinkLoadId && deepLinkAction === 'pay' && loads.length > 0) {
+      const targetLoad = loads.find(l => l.id === deepLinkLoadId);
+      if (targetLoad) {
+        // Delay slightly to ensure UI is ready
+        const timer = setTimeout(() => {
+          handleInitiatePayment(targetLoad);
+          // Optional: Clear params to prevent reopening on refresh? 
+          // Keeping them allows bookmarking/refreshing to work as expected for that action.
+        }, 500);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [deepLinkLoadId, deepLinkAction, loads]);
 
   // Fetch available lenders when loan mode is selected
   useEffect(() => {
@@ -1217,9 +1238,9 @@ const CargoOwnerPayment: React.FC = () => {
                   {/* Loan Officers Selection - No longer needed since loan officers are displayed directly in External tab */}
                   {false && selectedLender &&
                     selectedLenderData &&
-                    !selectedLenderData?.metadata?.isLoanOfficer &&
-                    (selectedLenderData?.metadata?.integrationType === 'uruti_lending_platform' ||
-                      selectedLenderData?.metadata?.integrationType === 'external_lending_system') && (
+                    !selectedLenderData.metadata?.isLoanOfficer &&
+                    (selectedLenderData.metadata?.integrationType === 'uruti_lending_platform' ||
+                      selectedLenderData.metadata?.integrationType === 'external_lending_system') && (
                       <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
                         <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
                           <User className="w-5 h-5 text-blue-600" />

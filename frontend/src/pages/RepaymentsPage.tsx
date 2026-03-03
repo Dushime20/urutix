@@ -1,28 +1,13 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { lendingApi } from '../services/lending/lendingApi';
-import { 
-  FaMoneyBillWave, 
-  FaClock, 
-  FaCheckCircle, 
-  FaExclamationTriangle,
-  FaSearch,
-  FaDownload,
-  FaEye,
+import {
   FaTimesCircle,
-  FaCalendarAlt,
-  FaUser,
-  FaTruck,
-  FaSortAmountDown,
-  FaSortAmountUp,
-  FaArrowUp,
-  FaCreditCard,
-  FaExclamationCircle,
-  FaPhone,
-  FaEnvelope,
-  FaFileInvoice,
-  FaPercent
+  FaExclamationTriangle
 } from 'react-icons/fa';
+import { Search, Download, Filter } from 'lucide-react';
+import RepaymentsEnlite from '../components/LenderDashboard/Repayments.enlite';
+
 
 interface Payment {
   id: string;
@@ -70,7 +55,7 @@ const RepaymentsPage: React.FC = () => {
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
   const [showDetails, setShowDetails] = useState(false);
-  
+
   // Check authentication and get lender ID from user context
   if (!user) {
     return (
@@ -110,7 +95,7 @@ const RepaymentsPage: React.FC = () => {
     const pending = repayments.filter(p => p.status === 'pending').length;
     const overdue = repayments.filter(p => p.status === 'overdue').length;
     const paid = repayments.filter(p => p.status === 'paid').length;
-    
+
     const totalAmount = repayments.reduce((sum, p) => sum + p.totalAmount, 0);
     const paidAmount = repayments
       .filter(p => p.status === 'paid')
@@ -118,7 +103,7 @@ const RepaymentsPage: React.FC = () => {
     const overdueAmount = repayments
       .filter(p => p.status === 'overdue')
       .reduce((sum, p) => sum + p.totalAmount + (p.lateFee || 0), 0);
-    
+
     const collectionRate = total > 0 ? Math.round((paid / total) * 100) : 0;
     const avgDaysOverdue = repayments
       .filter(p => p.status === 'overdue' && p.daysOverdue)
@@ -140,15 +125,15 @@ const RepaymentsPage: React.FC = () => {
   // Filter and sort repayments
   const filteredRepayments = useMemo(() => {
     const filtered = repayments.filter(payment => {
-      const matchesSearch = !searchTerm || 
+      const matchesSearch = !searchTerm ||
         payment.borrowerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
         payment.cargoType.toLowerCase().includes(searchTerm.toLowerCase()) ||
         payment.id.toLowerCase().includes(searchTerm.toLowerCase());
-      
+
       const matchesStatus = statusFilter === 'all' || payment.status === statusFilter;
       const matchesRisk = riskFilter === 'all' || payment.riskLevel === riskFilter;
       const matchesOverdue = !overdueFilter || payment.status === 'overdue';
-      
+
       return matchesSearch && matchesStatus && matchesRisk && matchesOverdue;
     });
 
@@ -156,17 +141,17 @@ const RepaymentsPage: React.FC = () => {
     filtered.sort((a, b) => {
       let aValue: any = a[sortField as keyof Payment];
       let bValue: any = b[sortField as keyof Payment];
-      
+
       if (sortField === 'dueDate' || sortField === 'paidDate') {
         aValue = new Date(aValue).getTime();
         bValue = new Date(bValue).getTime();
       }
-      
+
       if (typeof aValue === 'string') {
         aValue = aValue.toLowerCase();
         bValue = bValue.toLowerCase();
       }
-      
+
       if (sortDirection === 'asc') {
         return aValue > bValue ? 1 : -1;
       } else {
@@ -186,7 +171,7 @@ const RepaymentsPage: React.FC = () => {
     const fetchRepayments = async () => {
       setLoading(true);
       setError(null);
-      
+
       try {
         // Fetch repayments from real API
         const repaymentData = await lendingApi.getLenderRepayments(lenderId, {
@@ -239,9 +224,9 @@ const RepaymentsPage: React.FC = () => {
           url: err.config?.url,
           data: err.response?.data
         });
-        
+
         setError(`Failed to load repayments: ${err.response?.status ? `${err.response.status} - ${err.response.statusText}` : err.message}`);
-        
+
         // Use mock data as fallback if API fails
         setRepayments(mockRepayments);
       } finally {
@@ -435,8 +420,8 @@ const RepaymentsPage: React.FC = () => {
           <FaExclamationTriangle className="h-16 w-16 text-red-500 mx-auto mb-4" />
           <h2 className="text-xl font-semibold text-gray-900 mb-2">Error Loading Repayments</h2>
           <p className="text-gray-600 mb-4">{error}</p>
-          <button 
-            onClick={() => window.location.reload()} 
+          <button
+            onClick={() => window.location.reload()}
             className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
           >
             Retry
@@ -446,36 +431,8 @@ const RepaymentsPage: React.FC = () => {
     );
   }
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'pending': return <FaClock className="text-yellow-500" />;
-      case 'paid': return <FaCheckCircle className="text-green-500" />;
-      case 'overdue': return <FaExclamationTriangle className="text-red-500" />;
-      case 'partial': return <FaExclamationCircle className="text-orange-500" />;
-      case 'failed': return <FaTimesCircle className="text-red-600" />;
-      default: return <FaClock className="text-gray-500" />;
-    }
-  };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'pending': return 'bg-yellow-100 text-yellow-800';
-      case 'paid': return 'bg-green-100 text-green-800';
-      case 'overdue': return 'bg-red-100 text-red-800';
-      case 'partial': return 'bg-orange-100 text-orange-800';
-      case 'failed': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
 
-  const getRiskColor = (risk: string) => {
-    switch (risk) {
-      case 'low': return 'bg-green-100 text-green-800';
-      case 'medium': return 'bg-yellow-100 text-yellow-800';
-      case 'high': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
 
   const handleSort = (field: string) => {
     if (sortField === field) {
@@ -494,7 +451,7 @@ const RepaymentsPage: React.FC = () => {
   const handleExport = () => {
     const csvContent = [
       'Payment ID,Loan ID,Borrower,Amount,Principal,Interest,Due Date,Status,Days Overdue,Risk Level',
-      ...filteredRepayments.map(p => 
+      ...filteredRepayments.map(p =>
         `${p.id},${p.loanId},${p.borrowerName},${p.totalAmount},${p.principalAmount},${p.interestAmount},${p.dueDate},${p.status},${p.daysOverdue || 0},${p.riskLevel}`
       )
     ].join('\n');
@@ -508,510 +465,204 @@ const RepaymentsPage: React.FC = () => {
     window.URL.revokeObjectURL(url);
   };
 
-  const isPaymentOverdue = (dueDate: string, status: string) => {
-    return status === 'overdue' || (status === 'pending' && new Date(dueDate) < new Date());
-  };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Loan Repayments</h1>
-          <p className="text-gray-600">Monitor and manage loan repayment schedules and collection activities</p>
+    <div className="min-h-screen bg-gray-50/50 p-6 md:p-8">
+      <div className="max-w-[1536px] mx-auto space-y-8">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 tracking-tight uppercase">Loan Repayments</h1>
+            <p className="text-gray-500 mt-1 uppercase text-xs font-bold tracking-widest opacity-70">Monitor and manage loan repayment schedules and collection activities</p>
+          </div>
+          <button
+            onClick={handleExport}
+            className="flex items-center gap-2 px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-slate-200 transition-all w-fit"
+          >
+            <Download size={14} /> Export Audit
+          </button>
         </div>
 
-        {/* Statistics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Total Payments</p>
-                <p className="text-2xl font-bold text-gray-900">{repaymentStats.total}</p>
-              </div>
-              <div className="h-12 w-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                <FaFileInvoice className="h-6 w-6 text-blue-600" />
-              </div>
-            </div>
-            <div className="mt-2 flex items-center text-sm">
-              <span className="text-gray-600">Expected: ${repaymentStats.totalAmount.toLocaleString()}</span>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Overdue Payments</p>
-                <p className="text-2xl font-bold text-red-600">{repaymentStats.overdue}</p>
-              </div>
-              <div className="h-12 w-12 bg-red-100 rounded-lg flex items-center justify-center">
-                <FaExclamationTriangle className="h-6 w-6 text-red-600" />
-              </div>
-            </div>
-            <div className="mt-2 flex items-center text-sm">
-              <span className="text-gray-600">Amount: ${repaymentStats.overdueAmount.toLocaleString()}</span>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Collection Rate</p>
-                <p className="text-2xl font-bold text-green-600">{repaymentStats.collectionRate}%</p>
-              </div>
-              <div className="h-12 w-12 bg-green-100 rounded-lg flex items-center justify-center">
-                <FaPercent className="h-6 w-6 text-green-600" />
-              </div>
-            </div>
-            <div className="mt-2 flex items-center text-sm">
-              <FaArrowUp className="h-4 w-4 text-green-500 mr-1" />
-              <span className="text-green-600">+3%</span>
-              <span className="text-gray-600 ml-1">this month</span>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Collected Amount</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  ${repaymentStats.paidAmount.toLocaleString()}
-                </p>
-              </div>
-              <div className="h-12 w-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                <FaMoneyBillWave className="h-6 w-6 text-purple-600" />
-              </div>
-            </div>
-            <div className="mt-2 flex items-center text-sm">
-              <span className="text-gray-600">Avg delay: {repaymentStats.avgDaysOverdue} days</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Filters and Search */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-            <div className="flex flex-col sm:flex-row gap-4 flex-1">
-              {/* Search */}
-              <div className="relative flex-1">
-                <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+        {/* Search and Filters */}
+        <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
+          <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
+            <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+              <div className="relative group min-w-[240px]">
                 <input
                   type="text"
-                  placeholder="Search by borrower, payment ID, loan ID..."
+                  placeholder="SEARCH REPAYMENTS..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="pl-10 pr-4 py-2.5 text-[10px] font-black uppercase tracking-widest border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent w-full bg-[#fafafa] transition-all shadow-sm"
                 />
+                <Search className="absolute left-3.5 top-3 text-slate-400 group-hover:text-indigo-500 transition-colors w-3.5 h-3.5" />
               </div>
 
-              {/* Status Filter */}
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                <option value="all">All Status</option>
-                <option value="pending">Pending</option>
-                <option value="paid">Paid</option>
-                <option value="overdue">Overdue</option>
-                <option value="partial">Partial</option>
-                <option value="failed">Failed</option>
-              </select>
-
-              {/* Risk Filter */}
-              <select
-                value={riskFilter}
-                onChange={(e) => setRiskFilter(e.target.value)}
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                <option value="all">All Risk Levels</option>
-                <option value="low">Low Risk</option>
-                <option value="medium">Medium Risk</option>
-                <option value="high">High Risk</option>
-              </select>
-
-              {/* Overdue Toggle */}
-              <label className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={overdueFilter}
-                  onChange={(e) => setOverdueFilter(e.target.checked)}
-                  className="rounded text-blue-600 focus:ring-blue-500"
-                />
-                <span className="text-sm text-gray-700">Overdue Only</span>
-              </label>
-            </div>
-
-            {/* Export Button */}
-            <button
-              onClick={handleExport}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
-            >
-              <FaDownload className="h-4 w-4" />
-              Export CSV
-            </button>
-          </div>
-        </div>
-
-        {/* Repayments Table */}
-        <div className="bg-white rounded-lg shadow-md overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th 
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                    onClick={() => handleSort('id')}
-                  >
-                    <div className="flex items-center gap-1">
-                      Payment Info
-                      {sortField === 'id' && (
-                        sortDirection === 'asc' ? <FaSortAmountUp className="h-3 w-3" /> : <FaSortAmountDown className="h-3 w-3" />
-                      )}
-                    </div>
-                  </th>
-                  <th 
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                    onClick={() => handleSort('borrowerName')}
-                  >
-                    <div className="flex items-center gap-1">
-                      Borrower
-                      {sortField === 'borrowerName' && (
-                        sortDirection === 'asc' ? <FaSortAmountUp className="h-3 w-3" /> : <FaSortAmountDown className="h-3 w-3" />
-                      )}
-                    </div>
-                  </th>
-                  <th 
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                    onClick={() => handleSort('totalAmount')}
-                  >
-                    <div className="flex items-center gap-1">
-                      Amount
-                      {sortField === 'totalAmount' && (
-                        sortDirection === 'asc' ? <FaSortAmountUp className="h-3 w-3" /> : <FaSortAmountDown className="h-3 w-3" />
-                      )}
-                    </div>
-                  </th>
-                  <th 
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                    onClick={() => handleSort('dueDate')}
-                  >
-                    <div className="flex items-center gap-1">
-                      Due Date
-                      {sortField === 'dueDate' && (
-                        sortDirection === 'asc' ? <FaSortAmountUp className="h-3 w-3" /> : <FaSortAmountDown className="h-3 w-3" />
-                      )}
-                    </div>
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Risk Level
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Contact
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {filteredRepayments.map((payment) => (
-                  <tr key={payment.id} className={`hover:bg-gray-50 ${isPaymentOverdue(payment.dueDate, payment.status) ? 'bg-red-50' : ''}`}>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">{payment.id}</div>
-                      <div className="text-sm text-gray-500">{payment.loanId}</div>
-                      <div className="text-xs text-gray-400">
-                        Payment {payment.paymentNumber}/{payment.totalPayments}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <div className="h-10 w-10 bg-gray-200 rounded-full flex items-center justify-center">
-                          <FaUser className="h-5 w-5 text-gray-600" />
-                        </div>
-                        <div className="ml-3">
-                          <div className="text-sm font-medium text-gray-900">{payment.borrowerName}</div>
-                          <div className="text-sm text-gray-500 flex items-center">
-                            <FaTruck className="h-3 w-3 mr-1" />
-                            {payment.cargoType}
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">
-                        ${payment.totalAmount.toLocaleString()}
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        Principal: ${payment.principalAmount.toLocaleString()}
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        Interest: ${payment.interestAmount.toLocaleString()}
-                      </div>
-                      {payment.lateFee && (
-                        <div className="text-xs text-red-600">
-                          Late Fee: ${payment.lateFee.toLocaleString()}
-                        </div>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center text-sm text-gray-900">
-                        <FaCalendarAlt className="h-4 w-4 text-gray-400 mr-2" />
-                        {new Date(payment.dueDate).toLocaleDateString()}
-                      </div>
-                      {payment.daysOverdue && payment.daysOverdue > 0 && (
-                        <div className="text-sm text-red-600 mt-1">
-                          {payment.daysOverdue} days overdue
-                        </div>
-                      )}
-                      {payment.paidDate && (
-                        <div className="text-sm text-green-600 mt-1">
-                          Paid: {new Date(payment.paidDate).toLocaleDateString()}
-                        </div>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center gap-2">
-                        {getStatusIcon(payment.status)}
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(payment.status)}`}>
-                          {payment.status.toUpperCase()}
-                        </span>
-                      </div>
-                      {payment.partialAmount && (
-                        <div className="text-xs text-gray-500 mt-1">
-                          Paid: ${payment.partialAmount.toLocaleString()}
-                        </div>
-                      )}
-                      {payment.autoPayEnabled && (
-                        <div className="flex items-center text-xs text-blue-600 mt-1">
-                          <FaCreditCard className="h-3 w-3 mr-1" />
-                          Auto-Pay
-                        </div>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getRiskColor(payment.riskLevel)}`}>
-                        {payment.riskLevel.toUpperCase()}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">
-                        Attempts: {payment.contactAttempts}
-                      </div>
-                      {payment.lastContactDate && (
-                        <div className="text-xs text-gray-500">
-                          Last: {new Date(payment.lastContactDate).toLocaleDateString()}
-                        </div>
-                      )}
-                      <div className="flex gap-1 mt-1">
-                        <button 
-                          title="Call borrower"
-                          className="text-blue-600 hover:text-blue-800"
-                        >
-                          <FaPhone className="h-3 w-3" />
-                        </button>
-                        <button 
-                          title="Email borrower"
-                          className="text-green-600 hover:text-green-800"
-                        >
-                          <FaEnvelope className="h-3 w-3" />
-                        </button>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <button
-                        onClick={() => handleViewDetails(payment)}
-                        className="text-blue-600 hover:text-blue-900 flex items-center gap-1"
-                      >
-                        <FaEye className="h-4 w-4" />
-                        View
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {filteredRepayments.length === 0 && (
-            <div className="text-center py-12">
-              <FaFileInvoice className="mx-auto h-12 w-12 text-gray-400" />
-              <h3 className="mt-2 text-sm font-medium text-gray-900">No repayments found</h3>
-              <p className="mt-1 text-sm text-gray-500">
-                Try adjusting your search criteria or filters.
-              </p>
-            </div>
-          )}
-        </div>
-
-        {/* Payment Details Modal */}
-        {showDetails && selectedPayment && (
-          <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-            <div className="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-bold text-gray-900">
-                  Payment Details - {selectedPayment.id}
-                </h3>
-                <button
-                  onClick={() => setShowDetails(false)}
-                  className="text-gray-400 hover:text-gray-600"
+              <div className="flex items-center gap-2">
+                <select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  className="px-4 py-2.5 text-[10px] font-black uppercase tracking-widest border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white shadow-sm cursor-pointer hover:border-indigo-200 transition-all"
                 >
-                  <FaTimesCircle className="h-6 w-6" />
+                  <option value="all">ALL STATUS</option>
+                  <option value="pending">PENDING</option>
+                  <option value="paid">PAID</option>
+                  <option value="overdue">OVERDUE</option>
+                  <option value="partial">PARTIAL</option>
+                  <option value="failed">FAILED</option>
+                </select>
+
+                <select
+                  value={riskFilter}
+                  onChange={(e) => setRiskFilter(e.target.value)}
+                  className="px-4 py-2.5 text-[10px] font-black uppercase tracking-widest border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white shadow-sm cursor-pointer hover:border-indigo-200 transition-all"
+                >
+                  <option value="all">ALL RISK LEVELS</option>
+                  <option value="low">LOW RISK</option>
+                  <option value="medium">MEDIUM RISK</option>
+                  <option value="high">HIGH RISK</option>
+                </select>
+
+                <button
+                  onClick={() => setOverdueFilter(!overdueFilter)}
+                  className={`px-4 py-2.5 text-[10px] font-black uppercase tracking-widest rounded-xl border transition-all flex items-center gap-2 ${overdueFilter ? 'bg-rose-50 border-rose-200 text-rose-600' : 'bg-white border-gray-200 text-slate-600 hover:bg-gray-50'}`}
+                >
+                  <Filter size={14} />
+                  {overdueFilter ? 'OVERDUE ONLY ON' : 'OVERDUE ONLY OFF'}
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
 
-              <div className="space-y-6">
-                {/* Payment Information */}
-                <div>
-                  <h4 className="text-sm font-medium text-gray-900 mb-2">Payment Information</h4>
-                  <div className="bg-gray-50 rounded-lg p-4 space-y-2">
-                    <div className="flex justify-between">
-                      <span className="text-sm text-gray-500">Total Amount:</span>
-                      <span className="text-sm text-gray-900 font-medium">${selectedPayment.totalAmount.toLocaleString()}</span>
+        <RepaymentsEnlite
+          loading={loading}
+          payments={filteredRepayments}
+          analytics={repaymentStats}
+          onSort={handleSort}
+          sortKey={sortField}
+          sortDirection={sortDirection}
+          onViewDetails={handleViewDetails}
+          onContactBorrower={(p) => {
+            alert(`Contacting ${p.borrowerName} at ${p.borrowerPhone}`);
+          }}
+          onRecordPayment={(p) => {
+            alert(`Recording payment for ${p.id}`);
+          }}
+          onExport={handleExport}
+        />
+      </div>
+
+      {/* Payment Details Audit Modal */}
+      {showDetails && selectedPayment && (
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm overflow-y-auto h-full w-full z-50 flex items-center justify-center p-4">
+          <div className="relative bg-white border border-slate-100 w-full max-w-2xl shadow-2xl rounded-3xl overflow-hidden animate-in fade-in zoom-in duration-200">
+            {/* Modal Header */}
+            <div className="bg-slate-50 border-b border-slate-100 px-8 py-6 flex items-center justify-between">
+              <div>
+                <span className="text-[10px] font-black text-indigo-600 uppercase tracking-[0.2em] mb-1 block">Audit Report</span>
+                <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight flex items-center gap-3">
+                  {selectedPayment.id}
+                  <span className={`text-[10px] px-2 py-0.5 rounded-md border ${selectedPayment.status === 'paid' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-amber-50 text-amber-600 border-amber-100'}`}>
+                    {selectedPayment.status.toUpperCase()}
+                  </span>
+                </h3>
+              </div>
+              <button
+                onClick={() => setShowDetails(false)}
+                className="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-400 hover:text-rose-500 hover:border-rose-100 hover:bg-rose-50 transition-all shadow-sm"
+              >
+                <FaTimesCircle className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-8 space-y-8 max-h-[70vh] overflow-y-auto">
+              <div className="grid grid-cols-2 gap-8 text-[11px] font-black uppercase tracking-widest text-slate-400">
+                <div className="space-y-4">
+                  <span className="text-indigo-600 block pb-1 border-b border-slate-100">Fiscal Details</span>
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center group">
+                      <span>Total Liability</span>
+                      <span className="text-slate-900 font-black">${selectedPayment.totalAmount.toLocaleString()}</span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm text-gray-500">Principal:</span>
-                      <span className="text-sm text-gray-900">${selectedPayment.principalAmount.toLocaleString()}</span>
+                    <div className="flex justify-between items-center opacity-60">
+                      <span>Principal</span>
+                      <span className="text-slate-900">${selectedPayment.principalAmount.toLocaleString()}</span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm text-gray-500">Interest:</span>
-                      <span className="text-sm text-gray-900">${selectedPayment.interestAmount.toLocaleString()}</span>
+                    <div className="flex justify-between items-center opacity-60">
+                      <span>Accrued interest</span>
+                      <span className="text-slate-900">${selectedPayment.interestAmount.toLocaleString()}</span>
                     </div>
                     {selectedPayment.lateFee && (
-                      <div className="flex justify-between">
-                        <span className="text-sm text-gray-500">Late Fee:</span>
-                        <span className="text-sm text-red-600">${selectedPayment.lateFee.toLocaleString()}</span>
+                      <div className="flex justify-between items-center text-rose-500 bg-rose-50/50 p-2 rounded-lg -mx-2">
+                        <span>Sanctuary Late Fee</span>
+                        <span className="font-black">${selectedPayment.lateFee.toLocaleString()}</span>
                       </div>
                     )}
-                    <div className="flex justify-between">
-                      <span className="text-sm text-gray-500">Payment:</span>
-                      <span className="text-sm text-gray-900">{selectedPayment.paymentNumber} of {selectedPayment.totalPayments}</span>
-                    </div>
                   </div>
                 </div>
 
-                {/* Loan Information */}
-                <div>
-                  <h4 className="text-sm font-medium text-gray-900 mb-2">Loan Information</h4>
-                  <div className="bg-gray-50 rounded-lg p-4 space-y-2">
-                    <div className="flex justify-between">
-                      <span className="text-sm text-gray-500">Loan ID:</span>
-                      <span className="text-sm text-gray-900">{selectedPayment.loanId}</span>
+                <div className="space-y-4">
+                  <span className="text-indigo-600 block pb-1 border-b border-slate-100">Borrower Identity</span>
+                  <div className="space-y-3">
+                    <div className="flex flex-col gap-1">
+                      <span className="text-slate-900 font-black text-sm">{selectedPayment.borrowerName}</span>
+                      <span className="text-[9px] lowercase font-medium opacity-60">{selectedPayment.borrowerEmail}</span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm text-gray-500">Original Amount:</span>
-                      <span className="text-sm text-gray-900">${selectedPayment.loanAmount.toLocaleString()}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm text-gray-500">Remaining Balance:</span>
-                      <span className="text-sm text-gray-900">${selectedPayment.remainingBalance.toLocaleString()}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm text-gray-500">Cargo Type:</span>
-                      <span className="text-sm text-gray-900">{selectedPayment.cargoType}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm text-gray-500">Route:</span>
-                      <span className="text-sm text-gray-900">{selectedPayment.route.origin} → {selectedPayment.route.destination}</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Borrower Information */}
-                <div>
-                  <h4 className="text-sm font-medium text-gray-900 mb-2">Borrower Information</h4>
-                  <div className="bg-gray-50 rounded-lg p-4 space-y-2">
-                    <div className="flex justify-between">
-                      <span className="text-sm text-gray-500">Name:</span>
-                      <span className="text-sm text-gray-900">{selectedPayment.borrowerName}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm text-gray-500">Email:</span>
-                      <span className="text-sm text-gray-900">{selectedPayment.borrowerEmail}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm text-gray-500">Phone:</span>
-                      <span className="text-sm text-gray-900">{selectedPayment.borrowerPhone}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm text-gray-500">Risk Level:</span>
-                      <span className={`text-sm px-2 py-1 rounded ${getRiskColor(selectedPayment.riskLevel)}`}>
+                    <div className="flex justify-between items-center">
+                      <span>Risk Assessment</span>
+                      <span className={`px-1.5 py-0.5 rounded text-[9px] font-black ${selectedPayment.riskLevel === 'low' ? 'text-emerald-600 bg-emerald-50' : 'text-amber-600 bg-amber-50'}`}>
                         {selectedPayment.riskLevel.toUpperCase()}
                       </span>
                     </div>
+                    <div className="flex justify-between items-center opacity-60">
+                      <span>Contact Index</span>
+                      <span className="text-slate-900">{selectedPayment.borrowerPhone}</span>
+                    </div>
                   </div>
                 </div>
-
-                {/* Collection Information */}
-                <div>
-                  <h4 className="text-sm font-medium text-gray-900 mb-2">Collection Information</h4>
-                  <div className="bg-gray-50 rounded-lg p-4 space-y-2">
-                    <div className="flex justify-between">
-                      <span className="text-sm text-gray-500">Contact Attempts:</span>
-                      <span className="text-sm text-gray-900">{selectedPayment.contactAttempts}</span>
-                    </div>
-                    {selectedPayment.lastContactDate && (
-                      <div className="flex justify-between">
-                        <span className="text-sm text-gray-500">Last Contact:</span>
-                        <span className="text-sm text-gray-900">{new Date(selectedPayment.lastContactDate).toLocaleDateString()}</span>
-                      </div>
-                    )}
-                    <div className="flex justify-between">
-                      <span className="text-sm text-gray-500">Auto-Pay:</span>
-                      <span className={`text-sm ${selectedPayment.autoPayEnabled ? 'text-green-600' : 'text-red-600'}`}>
-                        {selectedPayment.autoPayEnabled ? 'Enabled' : 'Disabled'}
-                      </span>
-                    </div>
-                    {selectedPayment.transactionId && (
-                      <div className="flex justify-between">
-                        <span className="text-sm text-gray-500">Transaction ID:</span>
-                        <span className="text-sm text-gray-900">{selectedPayment.transactionId}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Notes */}
-                {selectedPayment.notes && (
-                  <div>
-                    <h4 className="text-sm font-medium text-gray-900 mb-2">Notes</h4>
-                    <div className="bg-gray-50 rounded-lg p-4">
-                      <p className="text-sm text-gray-900">{selectedPayment.notes}</p>
-                    </div>
-                  </div>
-                )}
               </div>
 
-              <div className="flex justify-end space-x-3 mt-6">
-                <button
-                  onClick={() => setShowDetails(false)}
-                  className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors"
-                >
-                  Close
-                </button>
-                {selectedPayment.status === 'overdue' && (
-                  <>
-                    <button className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors">
-                      Send Reminder
-                    </button>
-                    <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-                      Contact Borrower
-                    </button>
-                  </>
-                )}
-                {(selectedPayment.status === 'pending' || selectedPayment.status === 'partial') && (
-                  <button className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
-                    Mark as Paid
-                  </button>
-                )}
+              {/* Loan Analytics Overlay */}
+              <div className="bg-slate-50 rounded-3xl p-6 border border-slate-100 grid grid-cols-3 gap-6">
+                <div>
+                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Schedule index</span>
+                  <span className="text-sm font-black text-slate-900 uppercase">{selectedPayment.paymentNumber} / {selectedPayment.totalPayments}</span>
+                </div>
+                <div>
+                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Exposure</span>
+                  <span className="text-sm font-black text-slate-900 uppercase">${selectedPayment.remainingBalance.toLocaleString()}</span>
+                </div>
+                <div>
+                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Settlement Status</span>
+                  <span className={`text-sm font-black uppercase ${selectedPayment.autoPayEnabled ? 'text-indigo-600' : 'text-slate-400'}`}>
+                    {selectedPayment.autoPayEnabled ? 'AUTOMATED' : 'MANUAL'}
+                  </span>
+                </div>
               </div>
             </div>
+
+            {/* Modal Footer */}
+            <div className="p-8 border-t border-slate-100 bg-slate-50/50 flex justify-end gap-3">
+              <button
+                onClick={() => setShowDetails(false)}
+                className="px-6 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-slate-600 transition-colors"
+              >
+                Dissmiss Report
+              </button>
+              {selectedPayment.status === 'overdue' && (
+                <button className="px-6 py-3 bg-rose-600 hover:bg-rose-700 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-rose-200 transition-all flex items-center gap-2">
+                  Initiate collection
+                </button>
+              )}
+              {selectedPayment.status !== 'paid' && (
+                <button className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-indigo-200 transition-all flex items-center gap-2">
+                  Confirm clearance
+                </button>
+              )}
+            </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 };

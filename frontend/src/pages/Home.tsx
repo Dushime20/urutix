@@ -8,6 +8,8 @@ import { GlobalCoverage } from "@/components/home/global-coverage"
 import { Footer } from "@/components/home/footer"
 import { TestimonialsSection } from "@/components/home/testimonials-section"
 
+import { VideoTutorial } from "@/components/home/video-tutorial"
+
 export default function Home() {
   return (
     <main className="min-h-screen bg-background">
@@ -16,9 +18,10 @@ export default function Home() {
       <Stats />
       <CoreFeatures />
       <Features />
+      <VideoTutorial />
       <GlobalCoverage />
       <TestimonialsSection />
-     
+
       <Footer />
     </main>
   )

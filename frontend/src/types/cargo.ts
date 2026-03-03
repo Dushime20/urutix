@@ -263,4 +263,5 @@ export interface CargoFormData {
   requiresPreShipmentInspection?: boolean;
   requiresDeliveryInspection?: boolean;
   requiresPhotographicDocumentation?: boolean;
+  documents?: any[]; // Using any[] temporarily, should be Document[]
 }

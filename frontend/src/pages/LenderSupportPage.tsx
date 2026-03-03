@@ -1,28 +1,29 @@
 import React, { useState } from 'react';
-import { 
-  FaQuestionCircle,
-  FaHeadset,
-  FaBook,
-  FaLifeRing,
-  FaPhone,
-  FaEnvelope,
-  FaComments,
-  FaSearch,
-  FaChevronDown,
-  FaChevronUp,
-  FaExternalLinkAlt,
-  FaDownload,
-  FaVideo,
-  FaFileAlt,
-  FaClock,
-  FaGraduationCap,
-  FaTools,
-  FaShieldAlt,
-  FaChartLine,
-  FaStar,
-  FaThumbsUp,
-  FaThumbsDown
-} from 'react-icons/fa';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  HelpCircle,
+  Headphones,
+  BookOpen,
+  LifeBuoy,
+  Phone,
+  Mail,
+  MessageSquare,
+  Search,
+  ChevronDown,
+  ChevronUp,
+  Download,
+  Video,
+  FileText,
+  Clock,
+  GraduationCap,
+  Shield,
+  TrendingUp,
+  ArrowRight,
+  Zap,
+  Send,
+  Plus,
+  CheckCircle2
+} from 'lucide-react';
 
 interface FAQ {
   id: string;
@@ -58,13 +59,6 @@ const LenderSupportPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [expandedFAQ, setExpandedFAQ] = useState<string | null>(null);
-  const [newTicket, setNewTicket] = useState({
-    subject: '',
-    category: '',
-    priority: 'medium',
-    description: ''
-  });
-  const [showTicketForm, setShowTicketForm] = useState(false);
 
   const faqs: FAQ[] = [
     {
@@ -111,20 +105,6 @@ const LenderSupportPage: React.FC = () => {
       question: 'How do I integrate with your API?',
       answer: 'API integration steps: 1) Request API access in your dashboard, 2) Generate API keys, 3) Review API documentation, 4) Test in sandbox environment, 5) Implement webhook endpoints, 6) Go live with production keys. Full documentation available in the developer portal.',
       tags: ['API', 'integration', 'development']
-    },
-    {
-      id: '7',
-      category: 'Lending Operations',
-      question: 'How long does loan approval take?',
-      answer: 'Loan approval times vary: Automated pre-approved loans (under $50K): Instant to 2 hours, Standard review loans: 4-24 hours, Complex loans requiring manual review: 1-3 business days, Large institutional loans (over $1M): 3-7 business days.',
-      tags: ['approval time', 'processing', 'timeline']
-    },
-    {
-      id: '8',
-      category: 'Risk Management',
-      question: 'What happens if a borrower defaults?',
-      answer: 'Default recovery process: 1) Automated payment reminders, 2) Collection agency engagement, 3) Asset seizure if collateralized, 4) Insurance claim filing, 5) Legal proceedings if necessary. Our recovery team handles 90% of the process, with 73% average recovery rate.',
-      tags: ['default', 'recovery', 'collections']
     }
   ];
 
@@ -144,14 +124,6 @@ const LenderSupportPage: React.FC = () => {
       priority: 'high',
       createdAt: new Date(2025, 7, 8),
       lastUpdate: new Date(2025, 7, 9)
-    },
-    {
-      id: 'ST-2024-003',
-      subject: 'Question about compliance reporting',
-      status: 'closed',
-      priority: 'low',
-      createdAt: new Date(2025, 7, 5),
-      lastUpdate: new Date(2025, 7, 6)
     }
   ];
 
@@ -170,7 +142,7 @@ const LenderSupportPage: React.FC = () => {
       description: 'Advanced strategies for evaluating cargo financing risks',
       type: 'pdf',
       category: 'Risk Management',
-      downloadUrl: '/resources/risk-assessment-guide.pdf'
+      downloadUrl: '#'
     },
     {
       id: '3',
@@ -179,603 +151,455 @@ const LenderSupportPage: React.FC = () => {
       type: 'webinar',
       category: 'Technology',
       duration: '45 min'
-    },
-    {
-      id: '4',
-      title: 'Compliance Requirements Overview',
-      description: 'Understanding regulatory requirements for cargo lenders',
-      type: 'video',
-      category: 'Compliance',
-      duration: '25 min'
-    },
-    {
-      id: '5',
-      title: 'Portfolio Management Strategies',
-      description: 'Optimize your lending portfolio for maximum returns',
-      type: 'guide',
-      category: 'Operations',
-      isNew: true
     }
   ];
 
-  const categories = [
-    'all',
-    'Getting Started',
-    'Lending Operations',
-    'Risk Management',
-    'Payments & Fees',
-    'Compliance',
-    'Technology'
-  ];
+  const categories = ['all', 'Getting Started', 'Lending Operations', 'Risk Management', 'Payments & Fees', 'Compliance', 'Technology'];
 
   const filteredFAQs = faqs.filter(faq => {
-    const matchesSearch = searchTerm === '' || 
-                         faq.question.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         faq.answer.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         faq.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()));
-    
+    const matchesSearch = searchTerm === '' ||
+      faq.question.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      faq.answer.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      faq.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()));
     const matchesCategory = selectedCategory === 'all' || faq.category === selectedCategory;
-    
     return matchesSearch && matchesCategory;
   });
 
-  const getStatusColor = (status: string) => {
+  const getStatusStyle = (status: string) => {
     switch (status) {
-      case 'open': return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'in-progress': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'resolved': return 'bg-green-100 text-green-800 border-green-200';
-      case 'closed': return 'bg-gray-100 text-gray-800 border-gray-200';
-      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+      case 'open': return 'bg-sky-50 text-sky-600 border-sky-100';
+      case 'in-progress': return 'bg-amber-50 text-amber-600 border-amber-100';
+      case 'resolved': return 'bg-emerald-50 text-emerald-600 border-emerald-100';
+      case 'closed': return 'bg-slate-50 text-slate-600 border-slate-100';
+      default: return 'bg-slate-50 text-slate-600 border-slate-100';
     }
   };
 
-  const getPriorityColor = (priority: string) => {
+  const getPriorityStyle = (priority: string) => {
     switch (priority) {
-      case 'urgent': return 'bg-red-100 text-red-800 border-red-200';
-      case 'high': return 'bg-orange-100 text-orange-800 border-orange-200';
-      case 'medium': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'low': return 'bg-blue-100 text-blue-800 border-blue-200';
-      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+      case 'urgent': return 'bg-rose-50 text-rose-600 border-rose-100';
+      case 'high': return 'bg-orange-50 text-orange-600 border-orange-100';
+      case 'medium': return 'bg-amber-50 text-amber-600 border-amber-100';
+      case 'low': return 'bg-sky-50 text-sky-600 border-sky-100';
+      default: return 'bg-slate-50 text-slate-600 border-slate-100';
     }
   };
 
-  const getResourceIcon = (type: string) => {
-    switch (type) {
-      case 'guide': return <FaBook className="h-5 w-5 text-blue-600" />;
-      case 'video': return <FaVideo className="h-5 w-5 text-red-600" />;
-      case 'pdf': return <FaFileAlt className="h-5 w-5 text-green-600" />;
-      case 'webinar': return <FaGraduationCap className="h-5 w-5 text-purple-600" />;
-      default: return <FaFileAlt className="h-5 w-5 text-gray-600" />;
-    }
-  };
+  const renderFaqTab = () => (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="space-y-10"
+    >
+      {/* Featured FAQs */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {faqs.filter(f => f.isPopular).map(faq => (
+          <div key={faq.id} className="bg-white p-8 rounded-[32px] border border-slate-100 shadow-sm hover:shadow-md transition-all group">
+            <div className="h-12 w-12 bg-blue-50 rounded-2xl flex items-center justify-center mb-6 text-[#345E85] group-hover:scale-110 transition-transform">
+              <Zap size={24} />
+            </div>
+            <h3 className="text-sm font-black text-slate-900 leading-tight mb-3">{faq.question}</h3>
+            <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed mb-4">{faq.answer}</p>
+            <button
+              onClick={() => {
+                setExpandedFAQ(faq.id);
+                document.getElementById(`faq-${faq.id}`)?.scrollIntoView({ behavior: 'smooth' });
+              }}
+              className="text-[10px] font-black uppercase tracking-widest text-[#345E85] flex items-center gap-2 hover:translate-x-1 transition-transform"
+            >
+              Explore Logic <ArrowRight size={12} />
+            </button>
+          </div>
+        ))}
+      </div>
 
-  const handleTicketSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    // Handle ticket submission
-    console.log('Ticket submitted:', newTicket);
-    setShowTicketForm(false);
-    setNewTicket({ subject: '', category: '', priority: 'medium', description: '' });
-  };
+      {/* Main FAQ List */}
+      <div className="bg-white p-10 rounded-[40px] border border-slate-100 shadow-sm">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-10 pb-6 border-b border-slate-50">
+          <div>
+            <h3 className="text-lg font-black text-slate-900 uppercase tracking-tight">Intelligence Repository</h3>
+            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Foundational knowledge synchronization</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {categories.map(cat => (
+              <button
+                key={cat}
+                onClick={() => setSelectedCategory(cat)}
+                className={`px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${selectedCategory === cat
+                    ? 'bg-[#345E85] text-white shadow-lg shadow-blue-100'
+                    : 'bg-slate-50 text-slate-500 hover:bg-slate-100'
+                  }`}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          {filteredFAQs.map(faq => (
+            <div
+              key={faq.id}
+              id={`faq-${faq.id}`}
+              className={`border rounded-3xl transition-all duration-500 ${expandedFAQ === faq.id ? 'border-[#345E85] bg-blue-50/30' : 'border-slate-100 bg-white hover:border-slate-200'
+                }`}
+            >
+              <button
+                onClick={() => setExpandedFAQ(expandedFAQ === faq.id ? null : faq.id)}
+                className="w-full px-8 py-6 text-left flex items-center justify-between"
+              >
+                <div className="flex items-center gap-4">
+                  <div className={`h-2 w-2 rounded-full ${expandedFAQ === faq.id ? 'bg-[#345E85] scale-150' : 'bg-slate-300'} transition-all`} />
+                  <span className="text-sm font-bold text-slate-800">{faq.question}</span>
+                </div>
+                {expandedFAQ === faq.id ? <ChevronUp size={18} className="text-[#345E85]" /> : <ChevronDown size={18} className="text-slate-400" />}
+              </button>
+              <AnimatePresence>
+                {expandedFAQ === faq.id && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.3 }}
+                    className="overflow-hidden"
+                  >
+                    <div className="px-14 pb-8">
+                      <p className="text-sm text-slate-600 leading-relaxed italic">{faq.answer}</p>
+                      <div className="flex flex-wrap gap-2 mt-6">
+                        {faq.tags.map(tag => (
+                          <span key={tag} className="px-3 py-1 bg-white border border-slate-100 text-[9px] font-black uppercase text-slate-400 rounded-lg tracking-widest">
+                            #{tag}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          ))}
+        </div>
+      </div>
+    </motion.div>
+  );
+
+  const renderContactTab = () => (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.98 }}
+      animate={{ opacity: 1, scale: 1 }}
+      className="grid grid-cols-1 lg:grid-cols-2 gap-10"
+    >
+      <div className="space-y-8">
+        <div className="bg-white p-10 rounded-[40px] border border-slate-100 shadow-sm relative overflow-hidden group">
+          <div className="absolute top-0 right-0 p-10 opacity-5 group-hover:scale-110 transition-transform duration-700">
+            <Headphones size={120} className="text-[#345E85]" />
+          </div>
+          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#345E85] mb-4">Direct Linkage</p>
+          <h3 className="text-3xl font-black text-slate-900 tracking-tight leading-none mb-6">Omni-Channel Support</h3>
+          <p className="text-sm text-slate-500 leading-relaxed mb-10">Select your preferred communication vector for immediate personnel synchronization.</p>
+
+          <div className="space-y-4">
+            {[
+              { icon: MessageSquare, label: 'Real-time Pulse (Live Chat)', detail: 'Latency: < 60s', action: 'Initialize Session' },
+              { icon: Phone, label: 'Voice Authorization', detail: '+1 (555) 123-4567', action: 'Establish Link' },
+              { icon: Mail, label: 'Asynchronous Data', detail: 'support@urutix.com', action: 'Transmit Packet' }
+            ].map((item, idx) => (
+              <div key={idx} className="flex items-center justify-between p-6 bg-slate-50 rounded-3xl border border-transparent hover:border-slate-100 hover:bg-white transition-all group/item">
+                <div className="flex items-center gap-4">
+                  <div className={`h-12 w-12 rounded-2xl flex items-center justify-center bg-white shadow-sm text-slate-600 group-hover/item:text-[#345E85] transition-colors`}>
+                    <item.icon size={20} />
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">{item.label}</p>
+                    <p className="text-sm font-bold text-slate-900">{item.detail}</p>
+                  </div>
+                </div>
+                <button className="text-[9px] font-black uppercase tracking-widest text-[#345E85] opacity-0 group-hover/item:opacity-100 transition-all">
+                  {item.action}
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="bg-[#345E85] p-10 rounded-[40px] text-white shadow-xl shadow-blue-100 relative overflow-hidden">
+          <div className="absolute -right-10 -bottom-10 opacity-10">
+            <Shield size={200} />
+          </div>
+          <h4 className="text-xl font-black uppercase tracking-tight mb-4">SLA Commitment</h4>
+          <p className="text-xs text-blue-100/80 leading-relaxed opacity-80 mb-6">UrutiX maintains a 99.9% uptime for support infrastructure with guaranteed response horizons based on ticket classification.</p>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="p-4 bg-white/10 rounded-2xl backdrop-blur-md">
+              <p className="text-[9px] font-black uppercase tracking-widest opacity-60 mb-1">Critical Response</p>
+              <p className="text-lg font-black">60 Minutes</p>
+            </div>
+            <div className="p-4 bg-white/10 rounded-2xl backdrop-blur-md">
+              <p className="text-[9px] font-black uppercase tracking-widest opacity-60 mb-1">Standard Response</p>
+              <p className="text-lg font-black">12 Hours</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-white p-10 rounded-[40px] border border-slate-100 shadow-sm">
+        <div className="mb-10">
+          <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">Support Manifest</h3>
+          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Formal incident report generation</p>
+        </div>
+
+        <form className="space-y-6" onSubmit={(e) => e.preventDefault()}>
+          <div className="space-y-2">
+            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Incident Subject</label>
+            <input
+              type="text"
+              className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold text-slate-900 focus:ring-4 focus:ring-blue-50 focus:border-[#345E85] outline-none transition-all"
+              placeholder="Primary identifier of support requirement..."
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Domain Category</label>
+              <select className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold text-slate-900 focus:ring-4 focus:ring-blue-50 focus:border-[#345E85] outline-none transition-all appearance-none cursor-pointer">
+                <option>Technical Architecture</option>
+                <option>Financial Settlement</option>
+                <option>Policy Configuration</option>
+                <option>Security/Compliance</option>
+              </select>
+            </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Priority Vector</label>
+              <select className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold text-slate-900 focus:ring-4 focus:ring-blue-50 focus:border-[#345E85] outline-none transition-all appearance-none cursor-pointer">
+                <option>Low Impact</option>
+                <option>Medium (Operational)</option>
+                <option>High (Blocking)</option>
+                <option>Urgent (System Failure)</option>
+              </select>
+            </div>
+          </div>
+          <div className="space-y-2">
+            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Detail Specification</label>
+            <textarea
+              rows={5}
+              className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold text-slate-900 focus:ring-4 focus:ring-blue-50 focus:border-[#345E85] outline-none transition-all resize-none"
+              placeholder="Elaborate on the specific divergence from expected behavior..."
+            ></textarea>
+          </div>
+          <button className="w-full py-5 bg-[#345E85] text-white rounded-3xl text-xs font-black uppercase tracking-[0.2em] hover:opacity-90 transition-all flex items-center justify-center gap-3 shadow-xl shadow-blue-100 active:scale-[0.98]">
+            Transmit Support Request <Send size={16} />
+          </button>
+        </form>
+      </div>
+    </motion.div>
+  );
+
+  const renderResourcesTab = () => (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.98 }}
+      animate={{ opacity: 1, scale: 1 }}
+      className="space-y-10"
+    >
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        {[
+          { icon: GraduationCap, title: 'Foundational Knowledge', count: 12 },
+          { icon: BookOpen, title: 'Technical Manuals', count: 24 },
+          { icon: Shield, title: 'Compliance Assets', count: 8 },
+          { icon: TrendingUp, title: 'Strategic Analytics', count: 15 }
+        ].map((cat, idx) => (
+          <div key={idx} className="bg-white p-6 rounded-[32px] border border-slate-100 shadow-sm text-center group hover:border-[#345E85] transition-all">
+            <div className="h-14 w-14 bg-slate-50 rounded-2xl flex items-center justify-center mx-auto mb-4 text-slate-400 group-hover:bg-blue-50 group-hover:text-[#345E85] transition-all">
+              <cat.icon size={26} />
+            </div>
+            <h4 className="text-[11px] font-black uppercase tracking-widest text-slate-900 mb-1">{cat.title}</h4>
+            <p className="text-[10px] font-bold text-slate-400">{cat.count} Artifacts Available</p>
+          </div>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {resources.map(res => (
+          <div key={res.id} className="bg-white p-8 rounded-[40px] border border-slate-100 shadow-sm hover:shadow-md transition-all flex gap-6 items-center group">
+            <div className={`h-24 w-24 rounded-3xl flex items-center justify-center bg-slate-50 text-slate-400 group-hover:bg-[#345E85] group-hover:text-white transition-all duration-500`}>
+              {res.type === 'guide' ? <BookOpen size={32} /> : res.type === 'video' ? <Video size={32} /> : res.type === 'pdf' ? <FileText size={32} /> : <GraduationCap size={32} />}
+            </div>
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-[9px] font-black uppercase tracking-widest text-[#345E85] bg-blue-50 px-2 py-0.5 rounded-md">{res.category}</span>
+                {res.isNew && <span className="text-[9px] font-black uppercase tracking-widest text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md">New Arrival</span>}
+              </div>
+              <h3 className="text-base font-black text-slate-900 mb-2">{res.title}</h3>
+              <p className="text-xs text-slate-500 mb-4 pr-10">{res.description}</p>
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-bold text-slate-400 flex items-center gap-1.5 uppercase">
+                  <Clock size={12} /> {res.duration || 'Variable Duration'}
+                </span>
+                <button className="h-10 w-10 bg-slate-50 rounded-xl flex items-center justify-center text-slate-400 hover:bg-[#345E85] hover:text-white transition-all group/dl">
+                  <Download size={18} />
+                </button>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </motion.div>
+  );
+
+  const renderTicketsTab = () => (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="bg-white p-10 rounded-[40px] border border-slate-100 shadow-sm"
+    >
+      <div className="flex justify-between items-center mb-10 pb-6 border-b border-slate-50">
+        <div>
+          <h3 className="text-lg font-black text-slate-900 uppercase tracking-tight">Active Liaison Logs</h3>
+          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Personnel incident synchronization status</p>
+        </div>
+        <button
+          onClick={() => setActiveTab('contact')}
+          className="h-12 px-6 bg-[#345E85] text-white rounded-2xl flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest hover:shadow-lg hover:shadow-blue-100 transition-all active:scale-95"
+        >
+          <Plus size={16} /> Initiative Logic
+        </button>
+      </div>
+
+      <div className="overflow-x-auto">
+        <table className="w-full">
+          <thead>
+            <tr className="border-b border-slate-50">
+              <th className="text-left py-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 pl-4">Identification</th>
+              <th className="text-left py-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Subject Payload</th>
+              <th className="text-left py-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Status Vector</th>
+              <th className="text-left py-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Priority Tier</th>
+              <th className="text-left py-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Temporal Stamp</th>
+              <th className="text-right py-4 pr-4"></th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-50">
+            {supportTickets.map(ticket => (
+              <tr key={ticket.id} className="hover:bg-slate-50/50 transition-colors group">
+                <td className="py-6 pl-4">
+                  <span className="text-xs font-black text-[#345E85]">{ticket.id}</span>
+                </td>
+                <td className="py-6">
+                  <p className="text-sm font-bold text-slate-900">{ticket.subject}</p>
+                </td>
+                <td className="py-6">
+                  <span className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border ${getStatusStyle(ticket.status)}`}>
+                    {ticket.status}
+                  </span>
+                </td>
+                <td className="py-6">
+                  <span className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border ${getPriorityStyle(ticket.priority)}`}>
+                    {ticket.priority}
+                  </span>
+                </td>
+                <td className="py-6">
+                  <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">{ticket.createdAt.toLocaleDateString()}</p>
+                </td>
+                <td className="py-6 pr-4 text-right">
+                  <button className="h-10 w-10 bg-white border border-slate-100 rounded-xl flex items-center justify-center text-slate-400 hover:text-[#345E85] hover:border-[#345E85] transition-all opacity-0 group-hover:opacity-100">
+                    <ArrowRight size={18} />
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </motion.div>
+  );
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 mb-6">
-          <div className="text-center">
-            <div className="flex justify-center mb-4">
-              <div className="p-4 bg-blue-100 rounded-full">
-                <FaLifeRing className="h-8 w-8 text-blue-600" />
-              </div>
-            </div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Help & Support Center</h1>
-            <p className="text-lg text-gray-600 mb-6">
-              Get the help you need to succeed with our lending platform
-            </p>
-            
-            {/* Quick Search */}
-            <div className="max-w-2xl mx-auto">
-              <div className="relative">
-                <FaSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-                <input
-                  type="text"
-                  placeholder="Search for answers, guides, or resources..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-12 pr-4 py-4 text-lg border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Quick Contact Options */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-white p-6 rounded-lg border border-gray-200 hover:shadow-md transition-shadow">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-green-100 rounded-lg">
-                <FaHeadset className="h-6 w-6 text-green-600" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-gray-900">Live Chat</h3>
-                <p className="text-sm text-gray-600">Available 24/7</p>
-                <button className="text-blue-600 hover:text-blue-800 text-sm font-medium mt-1">
-                  Start Chat →
-                </button>
-              </div>
-            </div>
+    <div className="min-h-screen bg-slate-50 p-6 md:p-10 animate-in fade-in duration-700">
+      <div className="max-w-7xl mx-auto space-y-10">
+        {/* Header Hero */}
+        <div className="bg-[#345E85] rounded-[48px] p-12 md:p-20 relative overflow-hidden shadow-2xl shadow-blue-100">
+          <div className="absolute top-0 right-0 w-1/3 h-full bg-gradient-to-l from-black/10 to-transparent flex items-center justify-center">
+            <LifeBuoy className="text-white opacity-10 scale-[5.0] animate-pulse" />
           </div>
 
-          <div className="bg-white p-6 rounded-lg border border-gray-200 hover:shadow-md transition-shadow">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-blue-100 rounded-lg">
-                <FaPhone className="h-6 w-6 text-blue-600" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-gray-900">Phone Support</h3>
-                <p className="text-sm text-gray-600">+1 (555) 123-4567</p>
-                <p className="text-xs text-gray-500 mt-1">Mon-Fri 8AM-6PM EST</p>
-              </div>
+          <div className="relative z-10 max-w-3xl space-y-8">
+            <div className="inline-flex items-center gap-3 px-6 py-2 bg-white/10 backdrop-blur-md rounded-full border border-white/20">
+              <span className="h-2 w-2 rounded-full bg-emerald-400 animate-ping" />
+              <span className="text-[10px] font-black uppercase tracking-[0.3em] text-white">System Support Active</span>
             </div>
-          </div>
 
-          <div className="bg-white p-6 rounded-lg border border-gray-200 hover:shadow-md transition-shadow">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-purple-100 rounded-lg">
-                <FaEnvelope className="h-6 w-6 text-purple-600" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-gray-900">Email Support</h3>
-                <p className="text-sm text-gray-600">lender.support@platform.com</p>
-                <p className="text-xs text-gray-500 mt-1">Response within 4 hours</p>
-              </div>
+            <div className="space-y-4">
+              <h1 className="text-4xl md:text-6xl font-black text-white tracking-tighter leading-none">
+                Intelligence <br /> <span className="opacity-60 font-light">Synchronization Hub</span>
+              </h1>
+              <p className="text-lg text-blue-100/80 font-medium max-w-2xl leading-relaxed">
+                Connect with our expert personnel and synchronize your knowledge base through our multi-vector support infrastructure.
+              </p>
+            </div>
+
+            <div className="relative max-w-2xl">
+              <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-white/50" />
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Query our repository for operational logic..."
+                className="w-full bg-white/10 backdrop-blur-xl border border-white/20 rounded-[32px] py-6 pl-16 pr-8 text-white placeholder:text-white/40 focus:bg-white/20 outline-none transition-all shadow-2xl"
+              />
             </div>
           </div>
         </div>
 
-        {/* Tab Navigation */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">
-          <div className="border-b border-gray-200">
-            <nav className="flex space-x-8 px-6">
-              {[
-                { id: 'faq', label: 'FAQs', icon: FaQuestionCircle },
-                { id: 'contact', label: 'Contact Support', icon: FaHeadset },
-                { id: 'resources', label: 'Resources', icon: FaBook },
-                { id: 'tickets', label: 'My Tickets', icon: FaLifeRing }
-              ].map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id as any)}
-                  className={`flex items-center gap-2 py-4 px-2 border-b-2 font-medium text-sm ${
-                    activeTab === tab.id
-                      ? 'border-blue-500 text-blue-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                  }`}
-                >
-                  <tab.icon className="h-4 w-4" />
-                  {tab.label}
-                </button>
-              ))}
-            </nav>
+        {/* Tab Selection */}
+        <div className="bg-white p-3 rounded-[32px] border border-slate-100 shadow-sm flex flex-wrap gap-2 sticky top-6 z-50">
+          {[
+            { id: 'faq', label: 'Intelligence Repository', icon: HelpCircle },
+            { id: 'contact', label: 'Multi-Vector Support', icon: Headphones },
+            { id: 'resources', label: 'Artifact Archive', icon: BookOpen },
+            { id: 'tickets', label: 'Liaison Logs', icon: LifeBuoy }
+          ].map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id as any)}
+              className={`flex-1 min-w-[150px] flex items-center justify-center gap-3 py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all active:scale-95 ${activeTab === tab.id
+                  ? 'bg-[#345E85] text-white shadow-xl shadow-blue-100'
+                  : 'bg-transparent text-slate-400 hover:bg-slate-50'
+                }`}
+            >
+              <tab.icon size={16} />
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Content Area */}
+        <div className="min-h-[600px]">
+          {activeTab === 'faq' && renderFaqTab()}
+          {activeTab === 'contact' && renderContactTab()}
+          {activeTab === 'resources' && renderResourcesTab()}
+          {activeTab === 'tickets' && renderTicketsTab()}
+        </div>
+
+        {/* Footer Guarantee */}
+        <div className="flex flex-col md:flex-row items-center justify-between p-10 bg-slate-100 rounded-[40px] border border-slate-200 border-dashed">
+          <div className="flex items-center gap-6 mb-6 md:mb-0">
+            <div className="h-16 w-16 bg-white rounded-3xl flex items-center justify-center text-[#345E85] shadow-sm">
+              <CheckCircle2 size={32} />
+            </div>
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-widest text-[#345E85]">Verified Infrastructure</p>
+              <h4 className="text-xl font-black text-slate-900 uppercase">Operational Excellence</h4>
+            </div>
           </div>
-
-          <div className="p-6">
-            {/* FAQ Tab */}
-            {activeTab === 'faq' && (
-              <div className="space-y-6">
-                {/* Popular FAQs */}
-                <div className="mb-8">
-                  <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                    <FaStar className="h-5 w-5 text-yellow-500" />
-                    Popular Questions
-                  </h2>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {faqs.filter(faq => faq.isPopular).map((faq) => (
-                      <div key={faq.id} className="p-4 border border-gray-200 rounded-lg hover:border-blue-300">
-                        <h3 className="font-medium text-gray-900 mb-2">{faq.question}</h3>
-                        <p className="text-sm text-gray-600 line-clamp-2">{faq.answer}</p>
-                        <button
-                          onClick={() => setExpandedFAQ(expandedFAQ === faq.id ? null : faq.id)}
-                          className="text-blue-600 hover:text-blue-800 text-sm font-medium mt-2"
-                        >
-                          Read more →
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Category Filter */}
-                <div className="flex flex-wrap gap-2 mb-6">
-                  {categories.map((category) => (
-                    <button
-                      key={category}
-                      onClick={() => setSelectedCategory(category)}
-                      className={`px-4 py-2 rounded-lg text-sm font-medium ${
-                        selectedCategory === category
-                          ? 'bg-blue-600 text-white'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                      }`}
-                    >
-                      {category === 'all' ? 'All Categories' : category}
-                    </button>
-                  ))}
-                </div>
-
-                {/* FAQ List */}
-                <div className="space-y-4">
-                  {filteredFAQs.map((faq) => (
-                    <div key={faq.id} className="border border-gray-200 rounded-lg">
-                      <button
-                        onClick={() => setExpandedFAQ(expandedFAQ === faq.id ? null : faq.id)}
-                        className="w-full flex items-center justify-between p-4 text-left hover:bg-gray-50"
-                      >
-                        <div className="flex-1">
-                          <h3 className="font-medium text-gray-900">{faq.question}</h3>
-                          <div className="flex items-center gap-2 mt-2">
-                            <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
-                              {faq.category}
-                            </span>
-                            {faq.isPopular && (
-                              <span className="text-xs text-yellow-600 bg-yellow-100 px-2 py-1 rounded flex items-center gap-1">
-                                <FaStar className="h-3 w-3" />
-                                Popular
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                        {expandedFAQ === faq.id ? (
-                          <FaChevronUp className="h-4 w-4 text-gray-400" />
-                        ) : (
-                          <FaChevronDown className="h-4 w-4 text-gray-400" />
-                        )}
-                      </button>
-                      {expandedFAQ === faq.id && (
-                        <div className="px-4 pb-4">
-                          <div className="pt-2 border-t border-gray-100">
-                            <p className="text-gray-700 mb-4">{faq.answer}</p>
-                            <div className="flex items-center justify-between">
-                              <div className="flex gap-2">
-                                {faq.tags.map((tag, index) => (
-                                  <span key={index} className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded">
-                                    #{tag}
-                                  </span>
-                                ))}
-                              </div>
-                              <div className="flex items-center gap-4">
-                                <span className="text-sm text-gray-500">Was this helpful?</span>
-                                <button className="text-green-600 hover:text-green-800">
-                                  <FaThumbsUp className="h-4 w-4" />
-                                </button>
-                                <button className="text-red-600 hover:text-red-800">
-                                  <FaThumbsDown className="h-4 w-4" />
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Contact Support Tab */}
-            {activeTab === 'contact' && (
-              <div className="max-w-4xl mx-auto">
-                <div className="text-center mb-8">
-                  <h2 className="text-2xl font-bold text-gray-900 mb-2">Contact Our Support Team</h2>
-                  <p className="text-gray-600">Choose the best way to reach us for your specific need</p>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-                  {/* Support Options */}
-                  <div className="space-y-6">
-                    <div className="p-6 border border-gray-200 rounded-lg">
-                      <div className="flex items-center gap-4 mb-4">
-                        <div className="p-3 bg-green-100 rounded-lg">
-                          <FaComments className="h-6 w-6 text-green-600" />
-                        </div>
-                        <div>
-                          <h3 className="font-semibold text-gray-900">Live Chat</h3>
-                          <p className="text-sm text-gray-600">Get instant help from our support team</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2 text-sm text-green-600">
-                          <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                          Online now
-                        </div>
-                        <button className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
-                          Start Chat
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="p-6 border border-gray-200 rounded-lg">
-                      <div className="flex items-center gap-4 mb-4">
-                        <div className="p-3 bg-blue-100 rounded-lg">
-                          <FaPhone className="h-6 w-6 text-blue-600" />
-                        </div>
-                        <div>
-                          <h3 className="font-semibold text-gray-900">Phone Support</h3>
-                          <p className="text-sm text-gray-600">Speak directly with a support specialist</p>
-                        </div>
-                      </div>
-                      <div className="space-y-2 text-sm">
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">US/Canada:</span>
-                          <span className="font-medium">+1 (555) 123-4567</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">International:</span>
-                          <span className="font-medium">+1 (555) 123-4568</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Hours:</span>
-                          <span className="font-medium">Mon-Fri 8AM-6PM EST</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="p-6 border border-gray-200 rounded-lg">
-                      <div className="flex items-center gap-4 mb-4">
-                        <div className="p-3 bg-purple-100 rounded-lg">
-                          <FaEnvelope className="h-6 w-6 text-purple-600" />
-                        </div>
-                        <div>
-                          <h3 className="font-semibold text-gray-900">Email Support</h3>
-                          <p className="text-sm text-gray-600">Send us a detailed message</p>
-                        </div>
-                      </div>
-                      <div className="space-y-2 text-sm">
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">General Support:</span>
-                          <span className="font-medium">support@platform.com</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Technical Issues:</span>
-                          <span className="font-medium">tech@platform.com</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Response Time:</span>
-                          <span className="font-medium">Within 4 hours</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Support Ticket Form */}
-                  <div className="p-6 border border-gray-200 rounded-lg">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Submit a Support Ticket</h3>
-                    <form onSubmit={handleTicketSubmit} className="space-y-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Subject</label>
-                        <input
-                          type="text"
-                          required
-                          value={newTicket.subject}
-                          onChange={(e) => setNewTicket({...newTicket, subject: e.target.value})}
-                          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                          placeholder="Brief description of your issue"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
-                        <select
-                          required
-                          value={newTicket.category}
-                          onChange={(e) => setNewTicket({...newTicket, category: e.target.value})}
-                          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        >
-                          <option value="">Select a category</option>
-                          <option value="technical">Technical Issue</option>
-                          <option value="account">Account & Billing</option>
-                          <option value="lending">Lending Operations</option>
-                          <option value="compliance">Compliance</option>
-                          <option value="api">API Integration</option>
-                          <option value="other">Other</option>
-                        </select>
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Priority</label>
-                        <select
-                          value={newTicket.priority}
-                          onChange={(e) => setNewTicket({...newTicket, priority: e.target.value})}
-                          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        >
-                          <option value="low">Low</option>
-                          <option value="medium">Medium</option>
-                          <option value="high">High</option>
-                          <option value="urgent">Urgent</option>
-                        </select>
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                        <textarea
-                          required
-                          rows={4}
-                          value={newTicket.description}
-                          onChange={(e) => setNewTicket({...newTicket, description: e.target.value})}
-                          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                          placeholder="Please provide detailed information about your issue..."
-                        />
-                      </div>
-
-                      <button
-                        type="submit"
-                        className="w-full px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700"
-                      >
-                        Submit Ticket
-                      </button>
-                    </form>
-                  </div>
-                </div>
-
-                {/* Response Time Expectations */}
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
-                  <h3 className="font-semibold text-blue-900 mb-3 flex items-center gap-2">
-                    <FaClock className="h-5 w-5" />
-                    Response Time Expectations
-                  </h3>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                    <div className="text-center">
-                      <div className="font-medium text-red-700">Urgent</div>
-                      <div className="text-red-600">Within 1 hour</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="font-medium text-orange-700">High</div>
-                      <div className="text-orange-600">Within 4 hours</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="font-medium text-yellow-700">Medium</div>
-                      <div className="text-yellow-600">Within 24 hours</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="font-medium text-blue-700">Low</div>
-                      <div className="text-blue-600">Within 48 hours</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Resources Tab */}
-            {activeTab === 'resources' && (
-              <div className="space-y-6">
-                <div className="text-center mb-8">
-                  <h2 className="text-2xl font-bold text-gray-900 mb-2">Learning Resources</h2>
-                  <p className="text-gray-600">Guides, tutorials, and documentation to help you succeed</p>
-                </div>
-
-                {/* Resource Categories */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                  {[
-                    { icon: FaGraduationCap, title: 'Getting Started', count: 8, bgColor: 'bg-blue-100', iconColor: 'text-blue-600' },
-                    { icon: FaTools, title: 'Technical Guides', count: 12, bgColor: 'bg-green-100', iconColor: 'text-green-600' },
-                    { icon: FaShieldAlt, title: 'Compliance', count: 6, bgColor: 'bg-purple-100', iconColor: 'text-purple-600' },
-                    { icon: FaChartLine, title: 'Best Practices', count: 10, bgColor: 'bg-orange-100', iconColor: 'text-orange-600' }
-                  ].map((category, index) => (
-                    <div key={index} className="p-6 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
-                      <div className={`p-3 ${category.bgColor} rounded-lg inline-block mb-4`}>
-                        <category.icon className={`h-6 w-6 ${category.iconColor}`} />
-                      </div>
-                      <h3 className="font-semibold text-gray-900 mb-1">{category.title}</h3>
-                      <p className="text-sm text-gray-600">{category.count} resources</p>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Resource List */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  {resources.map((resource) => (
-                    <div key={resource.id} className="p-6 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
-                      <div className="flex items-start gap-4">
-                        <div className="flex-shrink-0">
-                          {getResourceIcon(resource.type)}
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-2">
-                            <h3 className="font-semibold text-gray-900">{resource.title}</h3>
-                            {resource.isNew && (
-                              <span className="px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded">
-                                NEW
-                              </span>
-                            )}
-                          </div>
-                          <p className="text-gray-600 text-sm mb-3">{resource.description}</p>
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-4 text-sm text-gray-500">
-                              <span className="capitalize">{resource.type}</span>
-                              {resource.duration && (
-                                <span className="flex items-center gap-1">
-                                  <FaClock className="h-3 w-3" />
-                                  {resource.duration}
-                                </span>
-                              )}
-                            </div>
-                            <div className="flex gap-2">
-                              {resource.downloadUrl && (
-                                <button className="flex items-center gap-1 px-3 py-1 text-blue-600 hover:text-blue-800 text-sm">
-                                  <FaDownload className="h-3 w-3" />
-                                  Download
-                                </button>
-                              )}
-                              <button className="flex items-center gap-1 px-3 py-1 text-blue-600 hover:text-blue-800 text-sm">
-                                <FaExternalLinkAlt className="h-3 w-3" />
-                                View
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Tickets Tab */}
-            {activeTab === 'tickets' && (
-              <div className="space-y-6">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-2xl font-bold text-gray-900">My Support Tickets</h2>
-                  <button
-                    onClick={() => setShowTicketForm(!showTicketForm)}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                  >
-                    Create New Ticket
-                  </button>
-                </div>
-
-                {/* Ticket List */}
-                <div className="space-y-4">
-                  {supportTickets.map((ticket) => (
-                    <div key={ticket.id} className="p-6 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-3 mb-2">
-                            <h3 className="font-semibold text-gray-900">{ticket.subject}</h3>
-                            <span className={`px-2 py-1 text-xs font-medium rounded border ${getStatusColor(ticket.status)}`}>
-                              {ticket.status.toUpperCase()}
-                            </span>
-                            <span className={`px-2 py-1 text-xs font-medium rounded border ${getPriorityColor(ticket.priority)}`}>
-                              {ticket.priority.toUpperCase()}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-4 text-sm text-gray-600">
-                            <span>Ticket #{ticket.id}</span>
-                            <span>Created: {ticket.createdAt.toLocaleDateString()}</span>
-                            <span>Last update: {ticket.lastUpdate.toLocaleDateString()}</span>
-                          </div>
-                        </div>
-                        <button className="text-blue-600 hover:text-blue-800 text-sm font-medium">
-                          View Details →
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {supportTickets.length === 0 && (
-                  <div className="text-center py-12">
-                    <FaLifeRing className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">No support tickets</h3>
-                    <p className="text-gray-600 mb-4">You haven't created any support tickets yet.</p>
-                    <button
-                      onClick={() => setShowTicketForm(true)}
-                      className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                    >
-                      Create Your First Ticket
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
+          <div className="flex gap-10">
+            <div className="text-center md:text-left">
+              <p className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 mb-1">Human Satisfaction</p>
+              <p className="text-2xl font-black text-slate-900">99.8%</p>
+            </div>
+            <div className="text-center md:text-left">
+              <p className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 mb-1">Resolution Horizon</p>
+              <p className="text-2xl font-black text-slate-900">4.2h</p>
+            </div>
+            <div className="text-center md:text-left">
+              <p className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 mb-1">Network Reliability</p>
+              <p className="text-2xl font-black text-slate-900">365/24</p>
+            </div>
           </div>
         </div>
       </div>

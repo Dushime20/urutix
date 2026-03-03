@@ -24,24 +24,26 @@ const CargoOwnerLayout: React.FC = () => {
     }
   }, [isLoading, user, navigate]);
 
+  const contextValue = React.useMemo(() => ({
+    sidebarCollapsed: false,
+    toggleSidebar: () => { }, // No-op since sidebar is gone
+    setSidebarCollapsed: () => { },
+    hideHeader,
+    setHideHeader,
+  }), [hideHeader, setHideHeader]);
+
   if (isLoading || !user) return null;
 
-  // Check if we're on the index dashboard route (both /dashboard and /cargo-owner)
-  const isDashboardIndex = location.pathname === '/dashboard' || 
-                           location.pathname === '/dashboard/' ||
-                           location.pathname === '/cargo-owner' ||
-                           location.pathname === '/cargo-owner/';
+  // Check if we're on the customized dashboard routes
+  const isDashboardIndex = location.pathname === '/dashboard' ||
+    location.pathname === '/dashboard/' ||
+    location.pathname === '/cargo-owner' ||
+    location.pathname === '/cargo-owner/' ||
+    location.pathname.startsWith('/dashboard/financing') ||
+    location.pathname.startsWith('/cargo-owner/financing');
 
   return (
-    <CargoOwnerLayoutProvider
-      value={{
-        sidebarCollapsed: false,
-        toggleSidebar: () => {}, // No-op since sidebar is gone
-        setSidebarCollapsed: () => {},
-        hideHeader,
-        setHideHeader,
-      }}
-    >
+    <CargoOwnerLayoutProvider value={contextValue}>
       {isDashboardIndex ? (
         // Dashboard index route has its own layout with welcome section (includes header/footer)
         <div className="min-h-screen bg-gray-50 flex flex-col">

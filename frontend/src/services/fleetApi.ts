@@ -7,7 +7,7 @@ export interface FleetItem {
   model: string;
   year: number;
   status: string;
-  currentLocation?: string;
+  currentLocation?: any;
   capacityWeight: number;
   capacityVolume: number;
   assignedDrivers: DriverAssignment[];
@@ -49,6 +49,11 @@ export interface Driver {
   status: string;
   availabilityStatus: string;
   experience: number;
+  dateOfBirth?: string;
+  licenseType?: string;
+  licenseIssueDate?: string;
+  licenseExpiry?: string;
+  hireDate?: string;
   currentTruckId?: string;
   createdAt: string;
   updatedAt: string;
@@ -83,10 +88,144 @@ export interface FleetAnalytics {
   upcomingInspections: number;
 }
 
+export interface FuelEntry {
+  id: string;
+  truckId: string;
+  driverId: string;
+  tripId?: string; // Link to specific trip
+  date: string;
+  gallons: number;
+  costPerGallon: number;
+  totalCost: number;
+  odometer: number;
+  location: string;
+  fuelCardId?: string;
+  fuelType: 'Diesel' | 'DEF' | 'Premium' | 'Regular';
+  isFullTank: boolean;
+  jurisdiction: string; // State/Province for IFTA
+  receiptUrl?: string;
+  odometerImageUrl?: string;
+  notes?: string;
+  status: 'verified' | 'flagged' | 'pending';
+}
+
+// --- Routes ---
+export interface RouteLocation {
+  id: string;
+  name: string;
+  lat: number;
+  lng: number;
+  type: 'origin' | 'destination' | 'cargostop' | 'fuelstop' | 'rest';
+  eta?: string;
+}
+
+export interface OptimizedRoute {
+  id: string;
+  name: string;
+  status: 'planned' | 'active' | 'completed';
+  origin: RouteLocation;
+  destination: RouteLocation;
+  stops: RouteLocation[];
+  totalDistance: number; // km
+  totalDuration: number; // minutes
+  totalCost: number;
+  assignedTruckId?: string;
+  assignedDriverId?: string;
+  createdAt: string;
+}
+
+export interface TCOAnalysis {
+  period: string;
+  totalCost: number;
+  costPerMile: number;
+  breakdown: {
+    fuel: number;
+    maintenance: number;
+    fixed: number; // Insurance, Licenses, etc.
+    labor: number;
+  };
+  vehicleBreakdown: {
+    truckId: string;
+    plateNumber: string;
+    totalCost: number;
+    cpm: number; // Cost Per Mile
+    topExpenseCategory: 'Fuel' | 'Maintenance' | 'Fixed';
+  }[];
+}
+
 // Real API calls using the backend
 export const fleetApi = {
+  // ===== DASHBOARD HELPER METHODS =====
+
+  // Get top performing drivers (mock logic using existing data)
+  async getTopDrivers(limit: number = 3): Promise<any[]> {
+    try {
+      const drivers = await this.getDrivers();
+      // Mock scoring logic: prioritize active drivers, then by experience
+      const sorted = drivers
+        .map(d => ({
+          ...d,
+          rating: 4.5 + (Math.random() * 0.5), // Mock rating 4.5-5.0
+          trips: Math.floor(Math.random() * 50) + 10,
+          performanceStatus: Math.random() > 0.3 ? 'On Time' : 'Efficient'
+        }))
+        .sort((a, b) => b.rating - a.rating)
+        .slice(0, limit);
+
+      return sorted;
+    } catch (error) {
+      console.error('❌ Error getting top drivers:', error);
+      return [];
+    }
+  },
+
+  // Get maintenance alerts from truck data
+  async getMaintenanceAlerts(): Promise<any[]> {
+    try {
+      const trucks = await this.getTrucks();
+      const alerts: any[] = [];
+
+      trucks.forEach(truck => {
+        // Check for maintenance status
+        if (['maintenance', 'repair', 'service'].includes(truck.status?.toLowerCase())) {
+          alerts.push({
+            id: `alert-${truck.id}`,
+            truckId: truck.id,
+            plateNumber: truck.plateNumber,
+            type: 'Critical',
+            message: 'Vehicle currently in maintenance',
+            date: new Date().toISOString()
+          });
+        }
+
+        // Check for upcoming maintenance (mock logic if date is missing)
+        if (truck.nextMaintenanceDate) {
+          const nextDate = new Date(truck.nextMaintenanceDate);
+          const today = new Date();
+          const daysDiff = Math.ceil((nextDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+
+          if (daysDiff < 7) {
+            alerts.push({
+              id: `warn-${truck.id}`,
+              truckId: truck.id,
+              plateNumber: truck.plateNumber,
+              type: 'Warning',
+              message: `Scheduled service due in ${daysDiff} days`,
+              date: truck.nextMaintenanceDate
+            });
+          }
+        }
+      });
+
+      return alerts;
+    } catch (error) {
+      console.error('❌ Error getting maintenance alerts:', error);
+      return [];
+    }
+  },
+
   // Get trucks with optional filters
-  async getTrucks(filters?: { search?: string; status?: string }): Promise<FleetItem[]> {
+  async getTrucks(filters?: { search?: string; status?: string; limit?: number; page?: number }): Promise<FleetItem[]> {
     try {
       console.log('🔑 Fetching trucks with authenticated API');
       console.log('🔑 Filters:', filters);
@@ -94,6 +233,8 @@ export const fleetApi = {
       const params = new URLSearchParams();
       if (filters?.search) params.append('search', filters.search);
       if (filters?.status) params.append('status', filters.status);
+      if (filters?.limit) params.append('limit', filters.limit.toString());
+      if (filters?.page) params.append('page', filters.page.toString());
 
       const url = `/fleet/trucks${params.toString() ? `?${params.toString()}` : ''}`;
       console.log('🔑 Request URL:', url);
@@ -207,12 +348,14 @@ export const fleetApi = {
   // ===== DRIVER MANAGEMENT APIs =====
 
   // Get drivers with optional filters
-  async getDrivers(filters?: { search?: string; status?: string; availabilityStatus?: string }): Promise<Driver[]> {
+  async getDrivers(filters?: { search?: string; status?: string; availabilityStatus?: string; limit?: number; page?: number }): Promise<Driver[]> {
     try {
       const params = new URLSearchParams();
       if (filters?.search) params.append('search', filters.search);
       if (filters?.status) params.append('status', filters.status);
       if (filters?.availabilityStatus) params.append('availabilityStatus', filters.availabilityStatus);
+      if (filters?.limit) params.append('limit', filters.limit.toString());
+      if (filters?.page) params.append('page', filters.page.toString());
 
       const response = await api.get(`/fleet/drivers?${params.toString()}`);
       console.log('✅ Drivers fetch successful:', response.data);
@@ -297,8 +440,54 @@ export const fleetApi = {
       });
       console.log('✅ Bulk driver deletion successful');
       return true;
+      return true;
     } catch (error: any) {
       console.error('❌ Error bulk deleting drivers:', error);
+      throw error;
+    }
+  },
+
+
+
+  // Driver Compliance/Documents (Mocked implementation for now)
+  async getDriverDocuments(driverId: string): Promise<any[]> {
+    try {
+      console.log('📄 Fetching documents for driver:', driverId);
+      // In a real app, this would be: await api.get(`/fleet/drivers/${driverId}/documents`);
+      // For now, return mock data or reuse compliance structure
+      return [
+        {
+          id: 'doc-1',
+          regulation: 'Driver License',
+          requirement: 'DL-12345678',
+          status: 'COMPLIANT',
+          dueDate: '2025-12-31',
+          lastChecked: '2023-01-01',
+          notes: 'Class A Commercial License'
+        },
+        {
+          id: 'doc-2',
+          regulation: 'Medical Certificate',
+          requirement: 'Med-554433',
+          status: 'COMPLIANT',
+          dueDate: '2024-06-30',
+          lastChecked: '2023-06-01',
+          notes: 'Annual physical'
+        }
+      ];
+    } catch (error) {
+      console.error('❌ Error fetching driver documents:', error);
+      return [];
+    }
+  },
+
+  async addDriverDocument(driverId: string, docData: any): Promise<any> {
+    try {
+      console.log('➕ Adding document for driver:', driverId, docData);
+      // In a real app: await api.post(`/fleet/drivers/${driverId}/documents`, docData);
+      return { id: `new-${Date.now()}`, ...docData };
+    } catch (error) {
+      console.error('❌ Error adding driver document:', error);
       throw error;
     }
   },
@@ -333,7 +522,7 @@ export const fleetApi = {
           origin: r.origin,
           destination: r.destination,
           distance: r.distance ?? 0,
-          estimatedTime: r.estimatedDuration ?? r.estimatedTime ?? r.estimatedHours ?? 0,
+          estimatedTime: r.estimatedTime ?? r.estimatedDuration ?? r.estimatedHours ?? 0,
           status: r.status ?? 'active',
           assignedDrivers: Array.isArray(r.assignedDrivers) ? r.assignedDrivers : [],
           assignedTrucks: Array.isArray(r.assignedTrucks) ? r.assignedTrucks : [],
@@ -352,7 +541,7 @@ export const fleetApi = {
           origin: r.origin,
           destination: r.destination,
           distance: r.distance ?? 0,
-          estimatedTime: r.estimatedDuration ?? r.estimatedTime ?? r.estimatedHours ?? 0,
+          estimatedTime: r.estimatedTime ?? r.estimatedDuration ?? r.estimatedHours ?? 0,
           status: r.status ?? 'active',
           assignedDrivers: Array.isArray(r.assignedDrivers) ? r.assignedDrivers : [],
           assignedTrucks: Array.isArray(r.assignedTrucks) ? r.assignedTrucks : [],
@@ -371,7 +560,7 @@ export const fleetApi = {
           origin: r.origin,
           destination: r.destination,
           distance: r.distance ?? 0,
-          estimatedTime: r.estimatedDuration ?? r.estimatedTime ?? r.estimatedHours ?? 0,
+          estimatedTime: r.estimatedTime ?? r.estimatedDuration ?? r.estimatedHours ?? 0,
           status: r.status ?? 'active',
           assignedDrivers: Array.isArray(r.assignedDrivers) ? r.assignedDrivers : [],
           assignedTrucks: Array.isArray(r.assignedTrucks) ? r.assignedTrucks : [],
@@ -581,6 +770,238 @@ export const fleetApi = {
     }
   },
 
+  // ===== TRIP MANAGEMENT & POD APIs =====
+
+  // Complete a trip with POD data
+  async completeTrip(tripId: string, podData: any): Promise<boolean> {
+    try {
+      console.log('🏁 Completing trip:', tripId, 'with POD:', podData);
+      // In a real app: await api.post(`/fleet/trips/${tripId}/complete`, podData);
+      // For now, we simulate success
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      return true;
+    } catch (error: any) {
+      console.error('❌ Error completing trip:', error);
+      throw error;
+    }
+  },
+
+  // Upload POD File (Image/PDF)
+  async uploadPOD(tripId: string, file: File): Promise<string> {
+    try {
+      console.log(' Uploading POD file for trip:', tripId);
+      const formData = new FormData();
+      formData.append('file', file);
+
+      // In real app: const res = await api.post(`/fleet/trips/${tripId}/pod/upload`, formData);
+      // return res.data.url;
+
+      // Simulate upload delay
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      return URL.createObjectURL(file); // Return local preview URL
+    } catch (error: any) {
+      console.error('❌ Error uploading POD:', error);
+      throw error;
+    }
+  },
+
+  // ===== FUEL MANAGEMENT APIs =====
+
+  // Get fuel logs with filters
+  async getFuelLogs(filters?: { truckId?: string; startDate?: string; endDate?: string }): Promise<FuelEntry[]> {
+    try {
+      console.log('⛽ Fetching fuel logs with filters:', filters);
+      // In real app: await api.get('/fleet/fuel', { params: filters });
+
+      // Mock Data
+      return [
+        {
+          id: 'fuel-1',
+          truckId: 'truck-123',
+          driverId: 'driver-456',
+          tripId: 'trip-789',
+          date: new Date(Date.now() - 86400000).toISOString(),
+          gallons: 50,
+          costPerGallon: 4.20,
+          totalCost: 210.00,
+          odometer: 15000,
+          location: 'Shell #402, TX',
+          jurisdiction: 'TX',
+          fuelType: 'Diesel',
+          isFullTank: true,
+          status: 'verified'
+        },
+        {
+          id: 'fuel-2',
+          truckId: 'truck-123',
+          driverId: 'driver-456',
+          date: new Date(Date.now() - 172800000).toISOString(),
+          gallons: 120,
+          costPerGallon: 4.15,
+          totalCost: 498.00,
+          odometer: 15600, // 600 miles / 120 gallons = 5 MPG (Normal)
+          location: 'Love\'s Travel Stop, OK',
+          jurisdiction: 'OK',
+          fuelType: 'Diesel',
+          isFullTank: true,
+          status: 'verified'
+        },
+        {
+          id: 'fuel-3',
+          truckId: 'truck-789',
+          driverId: 'driver-789',
+          date: new Date(Date.now() - 200000000).toISOString(),
+          gallons: 200,
+          costPerGallon: 4.50,
+          totalCost: 900.00,
+          odometer: 20010, // Suspiciously low mileage for high fuel? Fraud detection mock test.
+          location: 'Unknown Station',
+          jurisdiction: 'Unknown',
+          fuelType: 'Diesel',
+          isFullTank: false,
+          notes: 'High volume relative to mileage delta.',
+          status: 'flagged' // Mock flagged status
+        }
+      ];
+    } catch (error) {
+      console.error('❌ Error fetching fuel logs:', error);
+      return [];
+    }
+  },
+
+  // Add new fuel entry with Fraud Detection
+  async addFuelLog(entry: Omit<FuelEntry, 'id' | 'status'>): Promise<FuelEntry> {
+    try {
+      console.log('⛽ Adding fuel log:', entry);
+
+      // --- MOCK FRAUD DETECTION LOGIC ---
+      // Simple rule: If MPG is < 3 or > 12, flag it.
+      // In real app, this would be backend logic checking previous odometer.
+      let status: FuelEntry['status'] = 'verified';
+
+      // We don't have previous odometer easily here without fetching, so we'll just mock random
+      // "smart" checks or rely on user input if we had 'lastOdometer'.
+      // For demo, let's flag if cost > $1000 or gallons > 250 as "Suspicious"
+      if (entry.totalCost > 1000 || entry.gallons > 250) {
+        status = 'flagged';
+        console.warn('⚠️ FRAUD ALERT: Abnormal fuel transaction detected.');
+      }
+
+      const newEntry: FuelEntry = {
+        ...entry,
+        id: `fuel-${Date.now()}`,
+        status
+      };
+
+      // In real app: await api.post('/fleet/fuel', newEntry);
+
+      await new Promise(resolve => setTimeout(resolve, 800)); // Sim network
+      return newEntry;
+    } catch (error) {
+      console.error('❌ Error adding fuel log:', error);
+      throw error;
+    }
+  },
+
+  // Get aggregated fuel stats
+  async getFuelStats(): Promise<any> {
+    try {
+      // Mock aggregated stats
+      return {
+        totalCost: 12450.00, // Monthly
+        avgCostPerGallon: 4.18,
+        totalGallons: 2980,
+        avgMpg: 6.2,
+        theftRisk: 'Low',
+        flaggedTransactions: 2
+      };
+    } catch (error) {
+      console.error('❌ Error getting fuel stats:', error);
+      return {};
+    }
+  },
+
+  // --- Route Planning ---
+
+  async getRoutes(): Promise<OptimizedRoute[]> {
+    try {
+      // Mock data
+      return [
+        {
+          id: 'route-101',
+          name: 'Nairobi - Mombasa Express',
+          status: 'planned',
+          origin: { id: 'loc-1', name: 'Nairobi ICD', lat: -1.2921, lng: 36.8219, type: 'origin' },
+          destination: { id: 'loc-2', name: 'Mombasa Port', lat: -4.0435, lng: 39.6682, type: 'destination' },
+          stops: [
+            { id: 'loc-3', name: 'Sultan Hamud', lat: -2.0226, lng: 37.3756, type: 'rest', eta: '2024-03-20T10:00:00Z' }
+          ],
+          totalDistance: 485,
+          totalDuration: 540, // 9 hours
+          totalCost: 45000,
+          createdAt: new Date().toISOString()
+        }
+      ];
+    } catch (error) {
+      console.error('Error fetching routes:', error);
+      return [];
+    }
+  },
+
+  async calculateRoute(stops: RouteLocation[]): Promise<OptimizedRoute> {
+    // Mock optimization logic
+    const totalDistance = stops.length * 150 + Math.random() * 50;
+    const totalDuration = totalDistance * 1.5;
+
+    return {
+      id: `temp-${Date.now()}`,
+      name: `New Route ${new Date().toLocaleDateString()}`,
+      status: 'planned',
+      origin: stops[0],
+      destination: stops[stops.length - 1],
+      stops: stops.slice(1, -1),
+      totalDistance: Math.round(totalDistance),
+      totalDuration: Math.round(totalDuration),
+      totalCost: Math.round(totalDistance * 120), // Approx cost calc
+      createdAt: new Date().toISOString()
+    };
+  },
+
+  async saveRoute(route: OptimizedRoute): Promise<OptimizedRoute> {
+    console.log('Saving route:', route);
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    return { ...route, id: `route-${Date.now()}` };
+  },
+
+  // --- TCO Analysis ---
+
+  async getTCOAnalysis(period: string = 'monthly'): Promise<TCOAnalysis> {
+    try {
+      // Mock TCO Data
+      return {
+        period,
+        totalCost: 124500,
+        costPerMile: 1.85,
+        breakdown: {
+          fuel: 48000,
+          maintenance: 22000,
+          fixed: 15000,
+          labor: 39500
+        },
+        vehicleBreakdown: [
+          { truckId: 't-1', plateNumber: 'KCD 123A', totalCost: 12500, cpm: 1.75, topExpenseCategory: 'Fuel' },
+          { truckId: 't-2', plateNumber: 'KDA 892J', totalCost: 18200, cpm: 2.10, topExpenseCategory: 'Maintenance' },
+          { truckId: 't-3', plateNumber: 'KCA 450L', totalCost: 9800, cpm: 1.65, topExpenseCategory: 'Fuel' },
+          { truckId: 't-4', plateNumber: 'KDB 771M', totalCost: 11000, cpm: 1.80, topExpenseCategory: 'Fixed' },
+          { truckId: 't-5', plateNumber: 'KCC 333X', totalCost: 14500, cpm: 1.95, topExpenseCategory: 'Fuel' },
+        ]
+      };
+    } catch (error) {
+      console.error('Error fetching TCO analysis:', error);
+      throw error;
+    }
+  },
+
   // ===== ANALYTICS & PERFORMANCE APIs =====
 
   // Get fleet analytics
@@ -682,6 +1103,86 @@ export const fleetApi = {
       console.error('❌ Error scheduling maintenance:', error);
       throw error;
     }
+  },
+
+  // ===== SMART MATCHING BOOKINGS (MOCK) =====
+  async getBookingRequests(): Promise<any[]> {
+    console.log('🔮 Fetching smart matching booking requests...');
+    // Simulate API delay
+    await new Promise(resolve => setTimeout(resolve, 800));
+
+    // Mock Data: Inbound bookings from "Smart Matching"
+    return [
+      {
+        id: 'bk_123456',
+        status: 'PENDING',
+        createdAt: new Date(Date.now() - 1000 * 60 * 30).toISOString(), // 30 mins ago
+        matchScore: 0.98,
+        price: 3200,
+        load: {
+          id: 'ld_88291',
+          title: 'Electronics Shipment - High Priority',
+          origin: { city: 'Kigali', country: 'Rwanda' },
+          destination: { city: 'Nairobi', country: 'Kenya' },
+          pickupDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 2).toISOString(), // 2 days from now
+          weight: 4500, // kg
+          cargoType: 'ELECTRONICS'
+        },
+        cargoOwner: {
+          name: 'TechImports Ltd.',
+          rating: 4.9,
+          verified: true
+        },
+        requestedTruckId: 'tr_9912', // Specifically matched to this truck
+        requestedTruckPlate: 'RAB 123 A'
+      },
+      {
+        id: 'bk_778291',
+        status: 'PENDING',
+        createdAt: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(), // 2 hours ago
+        matchScore: 0.92,
+        price: 1850,
+        load: {
+          id: 'ld_11029',
+          title: 'Fresh Produce (Avocados)',
+          origin: { city: 'Musanze', country: 'Rwanda' },
+          destination: { city: 'Kampala', country: 'Uganda' },
+          pickupDate: new Date(Date.now() + 1000 * 60 * 60 * 24).toISOString(), // Tomorrow
+          weight: 8000,
+          cargoType: 'PERISHABLE'
+        },
+        cargoOwner: {
+          name: 'FreshFarm Co-op',
+          rating: 4.7,
+          verified: true
+        },
+        requestedTruckId: 'tr_5521',
+        requestedTruckPlate: 'RAC 555 B'
+      },
+      {
+        id: 'bk_992102',
+        status: 'ACCEPTED', // History item
+        createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 5).toISOString(),
+        matchScore: 0.95,
+        price: 2100,
+        load: {
+          id: 'ld_55102',
+          title: 'Construction Materials',
+          origin: { city: 'Huye', country: 'Rwanda' },
+          destination: { city: 'Bujumbura', country: 'Burundi' },
+          pickupDate: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2).toISOString(),
+          weight: 12000,
+          cargoType: 'CONSTRUCTION'
+        },
+        cargoOwner: {
+          name: 'BuildRight Construction',
+          rating: 4.5,
+          verified: true
+        },
+        requestedTruckId: 'tr_9912',
+        requestedTruckPlate: 'RAB 123 A'
+      }
+    ];
   },
 
   // Get maintenance history

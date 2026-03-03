@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  CheckCircle, 
-  XCircle, 
-  AlertTriangle, 
-  Camera, 
-  FileText, 
-  Package, 
-  Truck, 
-  MapPin, 
-  Clock, 
+import {
+  CheckCircle,
+  XCircle,
+  AlertTriangle,
+  Camera,
+  FileText,
+  Package,
+  Truck,
+  MapPin,
+  Clock,
   User,
   AlertCircle,
   Info,
@@ -20,12 +20,16 @@ import {
   Eye,
   Edit3,
   Save,
-  Upload
+  Upload,
+  ArrowRight,
+  ArrowLeft,
+  X
 } from 'lucide-react';
 import { driverApi } from '../../services/driverApi';
 import api from '../../services/api';
 import { documentApi } from '../../services/documents/documentApi';
 import toast from 'react-hot-toast';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface CargoItem {
   id: string;
@@ -94,15 +98,14 @@ export const CargoInspection: React.FC<CargoInspectionProps> = ({
     cargoId,
     status: 'PASSED',
     timestamp: new Date().toISOString(),
-    inspector: 'Driver Name', // This would come from auth context
+    inspector: 'Driver Name',
     notes: '',
     issues: [],
     photos: [],
     recommendations: [],
     signature: ''
   });
-  
-  // Track inspection checklist items status
+
   const [checklistStatus, setChecklistStatus] = useState<Record<string, 'passed' | 'failed' | null>>({
     packaging: null,
     seals: null,
@@ -111,22 +114,17 @@ export const CargoInspection: React.FC<CargoInspectionProps> = ({
     temperature: null,
     security: null,
   });
-  
-  // Track uploaded photos (with preview URLs and file objects)
+
   const [uploadedPhotos, setUploadedPhotos] = useState<Array<{ url: string; file?: File; id: string }>>([]);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
-  
-  // Track document verification status
   const [documentStatus, setDocumentStatus] = useState<Record<string, 'verified' | 'missing' | null>>({});
 
-  // Fetch real cargo data from API
   useEffect(() => {
     const fetchCargoData = async () => {
       try {
         setLoading(true);
         const load = await driverApi.getLoadById(cargoId);
-        
-        // Map Load entity to CargoItem interface
+
         const mappedCargo: CargoItem = {
           id: load.id || cargoId,
           name: load.title || 'Cargo',
@@ -160,7 +158,7 @@ export const CargoInspection: React.FC<CargoInspectionProps> = ({
           images: [],
           documents: load.requiredDocuments || []
         };
-        
+
         setCargo(mappedCargo);
       } catch (error: any) {
         console.error('Error fetching cargo data:', error);
@@ -188,7 +186,7 @@ export const CargoInspection: React.FC<CargoInspectionProps> = ({
   const updateIssue = (issueId: string, updates: Partial<InspectionIssue>) => {
     setInspectionResult(prev => ({
       ...prev,
-      issues: prev.issues?.map(issue => 
+      issues: prev.issues?.map(issue =>
         issue.id === issueId ? { ...issue, ...updates } : issue
       ) || []
     }));
@@ -199,9 +197,8 @@ export const CargoInspection: React.FC<CargoInspectionProps> = ({
       ...prev,
       [itemId]: status
     }));
-    
+
     if (status === 'failed') {
-      // Add issue when marked as failed
       addIssue({
         type: 'DAMAGE',
         severity: 'MEDIUM',
@@ -216,37 +213,29 @@ export const CargoInspection: React.FC<CargoInspectionProps> = ({
     const file = event.target.files?.[0];
     if (!file) return;
 
-    // Validate file type
     if (!file.type.startsWith('image/')) {
       toast.error('Please upload an image file');
       return;
     }
 
-    // Validate file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
       toast.error('Image size must be less than 5MB');
       return;
     }
 
-    // Declare photoId outside try block so it's accessible in catch
     const photoId = Date.now().toString();
     let previewUrl: string | null = null;
 
     try {
       setUploadingPhoto(true);
-      
-      // Create preview URL
       previewUrl = URL.createObjectURL(file);
-      
-      // Add to uploaded photos with preview
       setUploadedPhotos(prev => [...prev, { url: previewUrl!, file, id: photoId }]);
-      
-      // Upload using document API
+
       const documentRequest = {
-        entityType: 'CARGO', // Use 'CARGO' as EntityType enum doesn't have 'LOAD'
+        entityType: 'CARGO',
         entityId: cargoId,
-        documentType: 'OTHER', // Use 'OTHER' as DocumentType enum doesn't have 'INSPECTION_PHOTO'
-        category: 'OPERATIONAL', // Use 'OPERATIONAL' as DocumentCategory enum doesn't have 'INSPECTION'
+        documentType: 'OTHER',
+        category: 'OPERATIONAL',
         title: `Inspection Photo - ${new Date().toLocaleString()}`,
         description: 'Cargo inspection photo',
         priority: 'NORMAL',
@@ -254,48 +243,40 @@ export const CargoInspection: React.FC<CargoInspectionProps> = ({
 
       const uploadedDocument = await documentApi.createDocument(documentRequest, file);
 
-      // Update with server URL
       if (uploadedDocument?.fileUrl) {
-        // Revoke preview URL
         if (previewUrl) {
           URL.revokeObjectURL(previewUrl);
         }
-        
-        setUploadedPhotos(prev => 
-          prev.map(photo => 
-            photo.id === photoId 
+
+        setUploadedPhotos(prev =>
+          prev.map(photo =>
+            photo.id === photoId
               ? { ...photo, url: uploadedDocument.fileUrl, file: undefined }
               : photo
           )
         );
-        
-        // Add to inspection result photos
+
         setInspectionResult(prev => ({
           ...prev,
           photos: [...(prev.photos || []), uploadedDocument.fileUrl]
         }));
-        
+
         toast.success('Photo uploaded successfully');
       }
     } catch (error: any) {
       console.error('Error uploading photo:', error);
       const errorMessage = error.response?.data?.message || error.message || 'Failed to upload photo';
       toast.error(errorMessage);
-      
-      // Remove from uploaded photos if upload failed
+
       setUploadedPhotos(prev => {
         const photo = prev.find(p => p.id === photoId);
-        if (photo) {
-          // Revoke blob URL if it's a preview
-          if (photo.url.startsWith('blob:') && previewUrl) {
-            URL.revokeObjectURL(photo.url);
-          }
+        if (photo && photo.url.startsWith('blob:') && previewUrl) {
+          URL.revokeObjectURL(photo.url);
         }
         return prev.filter(p => p.id !== photoId);
       });
     } finally {
       setUploadingPhoto(false);
-      // Reset file input
       if (event.target) {
         event.target.value = '';
       }
@@ -304,628 +285,364 @@ export const CargoInspection: React.FC<CargoInspectionProps> = ({
 
   const removePhoto = (photoId: string) => {
     const photoToRemove = uploadedPhotos.find(p => p.id === photoId);
-    
     if (photoToRemove) {
-      // Revoke blob URL if it's a preview
       if (photoToRemove.url.startsWith('blob:')) {
         URL.revokeObjectURL(photoToRemove.url);
       }
-      
-      // Remove from uploaded photos
       setUploadedPhotos(prev => prev.filter(p => p.id !== photoId));
-      
-      // Remove from inspection result photos
       setInspectionResult(prev => ({
         ...prev,
         photos: prev.photos?.filter(url => url !== photoToRemove.url) || []
       }));
-      
       toast.success('Photo removed');
     }
-  };
-
-  const addPhoto = (photoUrl: string) => {
-    setInspectionResult(prev => ({
-      ...prev,
-      photos: [...(prev.photos || []), photoUrl]
-    }));
-  };
-
-  const addRecommendation = (recommendation: string) => {
-    setInspectionResult(prev => ({
-      ...prev,
-      recommendations: [...(prev.recommendations || []), recommendation]
-    }));
   };
 
   const handleInspectionComplete = () => {
     if (inspectionResult.status && inspectionResult.notes) {
       onInspectionComplete(inspectionResult as InspectionResult);
+    } else {
+      toast.error("Please add inspection notes before completing.");
     }
   };
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div className="flex items-center justify-center p-12">
+        <div className="w-8 h-8 border-4 border-[#345E85] border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   }
 
   if (!cargo) {
     return (
-      <div className="text-center py-8">
-        <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
-        <p className="text-gray-600">Cargo not found</p>
+      <div className="text-center py-12">
+        <AlertCircle className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+        <p className="text-slate-500 font-medium">Cargo not found</p>
       </div>
     );
   }
 
+  const steps = [
+    { id: 'overview', label: 'Overview', icon: Eye },
+    { id: 'physical', label: 'Physical Check', icon: Package },
+    { id: 'documentation', label: 'Documents', icon: FileText },
+    { id: 'final', label: 'Final Review', icon: CheckCircle }
+  ];
+
   return (
-    <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-lg">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="bg-blue-600 text-white px-6 py-4 rounded-t-lg">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-xl font-semibold">Cargo Inspection</h2>
-            <p className="text-blue-100">#{cargo.id} - {cargo.name}</p>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Package className="w-5 h-5" />
-            <span className="text-sm">Pre-Load Inspection</span>
-          </div>
+      <div className="flex items-center justify-between mb-2">
+        <div>
+          <h2 className="text-2xl font-black text-[#0f172a] uppercase tracking-tight">Cargo Inspection</h2>
+          <p className="text-slate-400 font-medium text-sm">Follow protocol to ensure safe transport</p>
         </div>
+        <button
+          onClick={onCancel}
+          className="p-2 hover:bg-slate-100 rounded-full text-slate-400 transition-colors"
+        >
+          <X className="w-6 h-6" />
+        </button>
       </div>
 
-      {/* Progress Steps */}
-      <div className="px-6 py-4 border-b">
-        <div className="flex items-center space-x-4">
-          {[
-            { id: 'overview', label: 'Overview', icon: Eye },
-            { id: 'physical', label: 'Physical Check', icon: Package },
-            { id: 'documentation', label: 'Documents', icon: FileText },
-            { id: 'final', label: 'Final Review', icon: CheckCircle }
-          ].map((step, index) => {
+      {/* Modern Stepper */}
+      <div className="bg-white rounded-[1.5rem] border border-slate-100 p-6 shadow-sm">
+        <div className="flex items-center justify-between relative px-4 md:px-12">
+          {/* Line Background */}
+          <div className="absolute left-6 right-6 top-1/2 -translate-y-1/2 h-1 bg-slate-100 -z-10" />
+
+          {steps.map((step, index) => {
             const Icon = step.icon;
             const isActive = inspectionStep === step.id;
             const isCompleted = ['overview', 'physical', 'documentation', 'final'].indexOf(inspectionStep) > index;
-            
+
             return (
-              <div key={step.id} className="flex items-center">
-                <div className={`flex items-center justify-center w-8 h-8 rounded-full ${
-                  isActive ? 'bg-blue-600 text-white' : 
-                  isCompleted ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-600'
-                }`}>
+              <div key={step.id} className="flex flex-col items-center gap-2 bg-white px-2">
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all duration-300 ${isActive ? 'border-[#345E85] bg-[#345E85] text-white scale-110 shadow-lg shadow-blue-900/20' :
+                    isCompleted ? 'border-emerald-500 bg-emerald-500 text-white' : 'border-slate-200 bg-slate-50 text-slate-300'
+                  }`}>
                   {isCompleted ? <CheckCircle className="w-5 h-5" /> : <Icon className="w-5 h-5" />}
                 </div>
-                <span className={`ml-2 text-sm font-medium ${
-                  isActive ? 'text-blue-600' : 'text-gray-500'
-                }`}>
+                <span className={`text-[10px] font-black uppercase tracking-wider whitespace-nowrap ${isActive ? 'text-[#345E85]' : isCompleted ? 'text-emerald-600' : 'text-slate-300'
+                  }`}>
                   {step.label}
                 </span>
-                {index < 3 && (
-                  <div className={`ml-4 w-16 h-0.5 ${
-                    isCompleted ? 'bg-green-500' : 'bg-gray-200'
-                  }`} />
-                )}
               </div>
             );
           })}
         </div>
       </div>
 
-      {/* Content */}
-      <div className="p-6">
-        {inspectionStep === 'overview' && (
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Cargo Details */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-gray-900">Cargo Information</h3>
-                <div className="space-y-3">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Name:</span>
-                    <span className="font-medium">{cargo.name}</span>
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={inspectionStep}
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: -20 }}
+          transition={{ duration: 0.2 }}
+          className="space-y-6"
+        >
+          {/* OVERVIEW STEP */}
+          {inspectionStep === 'overview' && (
+            <div className="bg-white rounded-[1.5rem] border border-slate-100 shadow-xl shadow-slate-200/50 p-8">
+              <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider mb-6 flex items-center gap-2">
+                <Info className="w-4 h-4 text-slate-400" />
+                Verify Cargo Details
+              </h3>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                <div className="space-y-4">
+                  <div className="flex justify-between p-4 bg-slate-50 rounded-xl">
+                    <span className="text-xs font-bold text-slate-500 uppercase tracking-wide">Name</span>
+                    <span className="font-bold text-slate-900">{cargo.name}</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Quantity:</span>
-                    <span className="font-medium">{cargo.quantity > 0 ? `${cargo.quantity} ${cargo.unit}` : 'Not Available'}</span>
+                  <div className="flex justify-between p-4 bg-slate-50 rounded-xl">
+                    <span className="text-xs font-bold text-slate-500 uppercase tracking-wide">Qty / Weight</span>
+                    <span className="font-bold text-slate-900">{cargo.quantity} units / {cargo.weight} kg</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Weight:</span>
-                    <span className="font-medium">{cargo.weight > 0 ? `${cargo.weight} kg` : 'Not Available'}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Dimensions:</span>
-                    <span className="font-medium">
-                      {cargo.dimensions.length > 0 && cargo.dimensions.width > 0 && cargo.dimensions.height > 0
-                        ? `${cargo.dimensions.length}×${cargo.dimensions.width}×${cargo.dimensions.height} cm`
-                        : 'Not Available'}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Category:</span>
-                    <span className="font-medium">{cargo.category || 'Not Available'}</span>
+                  <div className="flex justify-between p-4 bg-slate-50 rounded-xl">
+                    <span className="text-xs font-bold text-slate-500 uppercase tracking-wide">Category</span>
+                    <span className="font-bold text-slate-900">{cargo.category}</span>
                   </div>
                 </div>
-              </div>
 
-              {/* Special Requirements */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-gray-900">Special Requirements</h3>
-                <div className="space-y-3">
-                  <div className="flex items-center space-x-2">
-                    <Shield className="w-5 h-5 text-blue-600" />
-                    <span className="text-sm">Fragility: <span className="font-medium">{cargo.fragility}</span></span>
-                  </div>
-                  {cargo.temperature.min !== null && cargo.temperature.max !== null ? (
-                    <div className="flex items-center space-x-2">
-                      <Thermometer className="w-5 h-5 text-orange-600" />
-                      <span className="text-sm">Temperature: {cargo.temperature.min}°{cargo.temperature.unit} - {cargo.temperature.max}°{cargo.temperature.unit}</span>
-                    </div>
-                  ) : (
-                    <div className="flex items-center space-x-2">
-                      <Thermometer className="w-5 h-5 text-gray-400" />
-                      <span className="text-sm text-gray-500">No temperature requirements</span>
-                    </div>
-                  )}
-                  {cargo.hazardous && (
-                    <div className="flex items-center space-x-2">
-                      <AlertTriangle className="w-5 h-5 text-red-600" />
-                      <span className="text-sm text-red-600 font-medium">
-                        Hazardous Material{cargo.hazmatClass ? ` - Class ${cargo.hazmatClass}` : ''}
+                <div className="space-y-4">
+                  <h4 className="text-xs font-black text-slate-400 uppercase tracking-wider mb-2">Special Handling</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {cargo.specialRequirements.map((req, i) => (
+                      <span key={i} className="px-3 py-1.5 bg-blue-50 text-[#345E85] text-xs font-bold rounded-lg border border-blue-100">
+                        {req}
                       </span>
-                    </div>
-                  )}
-                  <div className="space-y-2">
-                    <span className="text-sm font-medium text-gray-700">Requirements:</span>
-                    {cargo.specialRequirements.length > 0 ? (
-                      <div className="flex flex-wrap gap-2">
-                        {cargo.specialRequirements.map((req, index) => (
-                          <span key={index} className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
-                            {req}
-                          </span>
-                        ))}
-                      </div>
-                    ) : (
-                      <span className="text-sm text-gray-500">No special requirements</span>
+                    ))}
+                    {cargo.hazardous && (
+                      <span className="px-3 py-1.5 bg-red-50 text-red-600 text-xs font-bold rounded-lg border border-red-100 flex items-center gap-1">
+                        <AlertTriangle className="w-3 h-3" /> Hazardous
+                      </span>
                     )}
                   </div>
                 </div>
               </div>
-            </div>
 
-            <div className="flex justify-end space-x-3">
-              <button
-                onClick={onCancel}
-                className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => setInspectionStep('physical')}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-              >
-                Start Physical Inspection
-              </button>
+              <div className="flex justify-end">
+                <button
+                  onClick={() => setInspectionStep('physical')}
+                  className="px-6 py-3 bg-[#345E85] text-white rounded-xl text-xs font-black uppercase tracking-wider hover:bg-[#2a4b6d] transition-all flex items-center gap-2 shadow-lg shadow-blue-900/20"
+                >
+                  Begin Physical Check <ArrowRight className="w-4 h-4" />
+                </button>
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {inspectionStep === 'physical' && (
-          <div className="space-y-6">
-            <h3 className="text-lg font-semibold text-gray-900">Physical Inspection</h3>
-            
-            {/* Inspection Checklist */}
-            <div className="space-y-4">
+          {/* PHYSICAL STEP */}
+          {inspectionStep === 'physical' && (
+            <div className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {[
-                  { id: 'packaging', label: 'Packaging Integrity', description: 'Check for tears, holes, or damage' },
-                  { id: 'seals', label: 'Seals & Closures', description: 'Verify all seals are intact' },
-                  { id: 'labels', label: 'Labels & Markings', description: 'Ensure all labels are visible and correct' },
-                  { id: 'contents', label: 'Content Verification', description: 'Check quantity and condition of contents' },
-                  { id: 'temperature', label: 'Temperature Control', description: 'Verify temperature monitoring devices' },
-                  { id: 'security', label: 'Security Features', description: 'Check tamper-evident features' }
+                  { id: 'packaging', label: 'Packaging Integrity', description: 'Visibly intact, no dents' },
+                  { id: 'seals', label: 'Seals & Closures', description: 'Tamper-proof seals present' },
+                  { id: 'labels', label: 'Labels & Markings', description: 'Legible and correct placement' },
+                  { id: 'contents', label: 'Content Verification', description: 'Matches manifest quantity' },
+                  { id: 'temperature', label: 'Temp Control', description: 'Within required range' },
+                  { id: 'security', label: 'Security Features', description: 'Locks and safety checks' }
                 ].map((item) => {
                   const status = checklistStatus[item.id];
                   return (
-                    <div 
-                      key={item.id} 
-                      className={`border rounded-lg p-4 ${
-                        status === 'passed' ? 'bg-green-50 border-green-200' :
-                        status === 'failed' ? 'bg-red-50 border-red-200' :
-                        'bg-white border-gray-200'
-                      }`}
-                    >
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <h4 className="font-medium text-gray-900">{item.label}</h4>
-                          <p className="text-sm text-gray-600">{item.description}</p>
-                          {status && (
-                            <p className={`text-xs mt-1 font-medium ${
-                              status === 'passed' ? 'text-green-700' : 'text-red-700'
-                            }`}>
-                              {status === 'passed' ? '✓ Passed' : '✗ Failed'}
-                            </p>
-                          )}
-                        </div>
-                        <div className="flex space-x-2">
+                    <div key={item.id} className={`p-4 rounded-xl border-2 transition-all ${status === 'passed' ? 'bg-emerald-50/50 border-emerald-100' :
+                        status === 'failed' ? 'bg-red-50/50 border-red-100' :
+                          'bg-white border-slate-100'
+                      }`}>
+                      <div className="flex justify-between items-start mb-2">
+                        <h4 className="font-bold text-slate-700">{item.label}</h4>
+                        <div className="flex gap-1">
                           <button
                             onClick={() => handleChecklistItem(item.id, 'passed')}
-                            className={`p-2 rounded transition-colors ${
-                              status === 'passed' 
-                                ? 'bg-green-100 text-green-700' 
-                                : 'text-green-600 hover:bg-green-50'
-                            }`}
-                            title="Mark as passed"
+                            className={`p-1.5 rounded-lg transition-colors ${status === 'passed' ? 'bg-emerald-500 text-white shadow-md' : 'text-slate-300 hover:bg-slate-50'}`}
                           >
                             <CheckCircle className="w-5 h-5" />
                           </button>
                           <button
                             onClick={() => handleChecklistItem(item.id, 'failed')}
-                            className={`p-2 rounded transition-colors ${
-                              status === 'failed' 
-                                ? 'bg-red-100 text-red-700' 
-                                : 'text-red-600 hover:bg-red-50'
-                            }`}
-                            title="Mark as failed"
+                            className={`p-1.5 rounded-lg transition-colors ${status === 'failed' ? 'bg-red-500 text-white shadow-md' : 'text-slate-300 hover:bg-slate-50'}`}
                           >
                             <XCircle className="w-5 h-5" />
                           </button>
                         </div>
                       </div>
+                      <p className="text-xs text-slate-500 font-medium">{item.description}</p>
                     </div>
                   );
                 })}
               </div>
-            </div>
 
-            {/* Photo Documentation */}
-            <div className="space-y-4">
-              <h4 className="font-medium text-gray-900">Photo Documentation</h4>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <label className="border-2 border-dashed border-gray-300 rounded-lg p-6 hover:border-blue-400 hover:bg-blue-50 cursor-pointer transition-colors">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handlePhotoUpload}
-                    disabled={uploadingPhoto}
-                    className="hidden"
-                  />
-                  {uploadingPhoto ? (
-                    <div className="flex flex-col items-center">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-2"></div>
-                      <span className="text-sm text-gray-600">Uploading...</span>
+              <div className="bg-white rounded-[1.5rem] border border-slate-100 p-6 shadow-sm">
+                <h4 className="text-sm font-black text-slate-900 uppercase tracking-wider mb-4 flex items-center gap-2">
+                  <Camera className="w-4 h-4 text-slate-400" /> Photo Evidence
+                </h4>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <label className="aspect-square rounded-xl border-2 border-dashed border-slate-200 hover:border-[#345E85] hover:bg-blue-50 transition-all cursor-pointer flex flex-col items-center justify-center gap-2 group">
+                    <input type="file" accept="image/*" onChange={handlePhotoUpload} disabled={uploadingPhoto} className="hidden" />
+                    <div className="w-10 h-10 rounded-full bg-slate-100 group-hover:bg-white flex items-center justify-center transition-colors">
+                      {uploadingPhoto ? <div className="w-5 h-5 border-2 border-[#345E85] border-t-transparent rounded-full animate-spin" /> : <Upload className="w-5 h-5 text-[#345E85]" />}
                     </div>
-                  ) : (
-                    <div className="flex flex-col items-center">
-                      <Camera className="w-8 h-8 text-gray-400 mb-2" />
-                      <span className="text-sm text-gray-600">Add Photo</span>
-                    </div>
-                  )}
-                </label>
-                {uploadedPhotos.map((photo) => (
-                  <div key={photo.id} className="relative group">
-                    <img 
-                      src={photo.url} 
-                      alt={`Inspection photo`} 
-                      className="w-full h-24 object-cover rounded-lg" 
-                    />
-                    <button
-                      onClick={() => removePhoto(photo.id)}
-                      className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
-                      title="Remove photo"
-                    >
-                      ×
-                    </button>
-                  </div>
-                ))}
-              </div>
-              {uploadedPhotos.length === 0 && (
-                <p className="text-sm text-gray-500">No photos uploaded yet</p>
-              )}
-            </div>
+                    <span className="text-xs font-bold text-slate-400 group-hover:text-[#345E85]">Upload</span>
+                  </label>
 
-            <div className="flex justify-between">
-              <button
-                onClick={() => setInspectionStep('overview')}
-                className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
-              >
-                Back
-              </button>
-              <button
-                onClick={() => setInspectionStep('documentation')}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-              >
-                Continue to Documentation
-              </button>
-            </div>
-          </div>
-        )}
-
-        {inspectionStep === 'documentation' && (
-          <div className="space-y-6">
-            <h3 className="text-lg font-semibold text-gray-900">Documentation Review</h3>
-            
-            {/* Required Documents */}
-            <div className="space-y-4">
-              <h4 className="font-medium text-gray-900">Required Documents</h4>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {cargo.documents.length > 0 ? (
-                  cargo.documents.map((doc, index) => {
-                    const docKey = `doc-${index}`;
-                    const status = documentStatus[docKey];
-                    return (
-                      <div 
-                        key={index} 
-                        className={`border rounded-lg p-4 ${
-                          status === 'verified' ? 'bg-green-50 border-green-200' :
-                          status === 'missing' ? 'bg-red-50 border-red-200' :
-                          'bg-white border-gray-200'
-                        }`}
+                  {uploadedPhotos.map((photo) => (
+                    <div key={photo.id} className="relative aspect-square rounded-xl overflow-hidden group border border-slate-100 shadow-sm">
+                      <img src={photo.url} alt="Evidence" className="w-full h-full object-cover" />
+                      <button
+                        onClick={() => removePhoto(photo.id)}
+                        className="absolute top-2 right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all hover:scale-110 shadow-md"
                       >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-3">
-                            <FileText className="w-5 h-5 text-blue-600" />
-                            <span className="font-medium">{doc}</span>
-                          </div>
-                          <div className="flex space-x-2">
-                            <button
-                              onClick={() => setDocumentStatus(prev => ({ ...prev, [docKey]: 'verified' }))}
-                              className={`p-2 rounded transition-colors ${
-                                status === 'verified' 
-                                  ? 'bg-green-100 text-green-700' 
-                                  : 'text-green-600 hover:bg-green-50'
-                              }`}
-                              title="Mark as verified"
-                            >
-                              <CheckCircle className="w-5 h-5" />
-                            </button>
-                            <button
-                              onClick={() => {
-                                setDocumentStatus(prev => ({ ...prev, [docKey]: 'missing' }));
-                                addIssue({
-                                  type: 'DOCUMENTATION',
-                                  severity: 'MEDIUM',
-                                  description: `Missing or incomplete: ${doc}`,
-                                  location: 'Documentation',
-                                  actionRequired: 'Obtain and verify document'
-                                });
-                              }}
-                              className={`p-2 rounded transition-colors ${
-                                status === 'missing' 
-                                  ? 'bg-red-100 text-red-700' 
-                                  : 'text-red-600 hover:bg-red-50'
-                              }`}
-                              title="Mark as missing"
-                            >
-                              <XCircle className="w-5 h-5" />
-                            </button>
-                          </div>
-                        </div>
-                        {status && (
-                          <p className={`text-xs mt-2 font-medium ${
-                            status === 'verified' ? 'text-green-700' : 'text-red-700'
-                          }`}>
-                            {status === 'verified' ? '✓ Verified' : '✗ Missing'}
-                          </p>
-                        )}
-                      </div>
-                    );
-                  })
-                ) : (
-                  <p className="text-sm text-gray-500">No documents specified</p>
-                )}
-              </div>
-            </div>
-
-            {/* Issues Found */}
-            {inspectionResult.issues && inspectionResult.issues.length > 0 && (
-              <div className="space-y-4">
-                <h4 className="font-medium text-gray-900">Issues Found</h4>
-                <div className="space-y-3">
-                  {inspectionResult.issues.map((issue) => (
-                    <div key={issue.id} className="border rounded-lg p-4">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-2 mb-2">
-                            <span className={`px-2 py-1 text-xs rounded-full ${
-                              issue.severity === 'CRITICAL' ? 'bg-red-100 text-red-800' :
-                              issue.severity === 'HIGH' ? 'bg-orange-100 text-orange-800' :
-                              issue.severity === 'MEDIUM' ? 'bg-yellow-100 text-yellow-800' :
-                              'bg-blue-100 text-blue-800'
-                            }`}>
-                              {issue.severity}
-                            </span>
-                            <span className="text-sm text-gray-600">{issue.type}</span>
-                          </div>
-                          <p className="font-medium text-gray-900">{issue.description}</p>
-                          <p className="text-sm text-gray-600 mt-1">Location: {issue.location}</p>
-                          <p className="text-sm text-gray-600">Action: {issue.actionRequired}</p>
-                        </div>
-                        <div className="flex space-x-2">
-                          <button
-                            onClick={() => updateIssue(issue.id, { resolved: !issue.resolved })}
-                            className={`px-3 py-1 text-xs rounded ${
-                              issue.resolved 
-                                ? 'bg-green-100 text-green-800' 
-                                : 'bg-gray-100 text-gray-800'
-                            }`}
-                          >
-                            {issue.resolved ? 'Resolved' : 'Mark Resolved'}
-                          </button>
-                          <button className="p-1 text-gray-400 hover:text-gray-600">
-                            <Edit3 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </div>
-                      {issue.resolved && (
-                        <div className="mt-3 p-3 bg-green-50 rounded">
-                          <textarea
-                            placeholder="Add resolution notes..."
-                            className="w-full p-2 border rounded text-sm"
-                            rows={2}
-                            value={issue.resolutionNotes || ''}
-                            onChange={(e) => updateIssue(issue.id, { resolutionNotes: e.target.value })}
-                          />
-                        </div>
-                      )}
+                        <X className="w-3 h-3" />
+                      </button>
                     </div>
                   ))}
                 </div>
               </div>
-            )}
 
-            {/* Notes */}
-            <div className="space-y-4">
-              <h4 className="font-medium text-gray-900">Inspection Notes</h4>
-              <textarea
-                placeholder="Add any additional notes about the inspection..."
-                className="w-full p-3 border rounded-lg"
-                rows={4}
-                value={inspectionResult.notes || ''}
-                onChange={(e) => setInspectionResult(prev => ({ ...prev, notes: e.target.value }))}
-              />
+              <div className="flex justify-between pt-4">
+                <button
+                  onClick={() => setInspectionStep('overview')}
+                  className="px-6 py-3 border border-slate-200 text-slate-500 rounded-xl text-xs font-black uppercase tracking-wider hover:bg-slate-50 transition-all"
+                >
+                  Back
+                </button>
+                <button
+                  onClick={() => setInspectionStep('documentation')}
+                  className="px-6 py-3 bg-[#345E85] text-white rounded-xl text-xs font-black uppercase tracking-wider hover:bg-[#2a4b6d] transition-all flex items-center gap-2 shadow-lg shadow-blue-900/20"
+                >
+                  Next Step <ArrowRight className="w-4 h-4" />
+                </button>
+              </div>
             </div>
+          )}
 
-            <div className="flex justify-between">
-              <button
-                onClick={() => setInspectionStep('physical')}
-                className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
-              >
-                Back
-              </button>
-              <button
-                onClick={() => setInspectionStep('final')}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-              >
-                Continue to Final Review
-              </button>
+          {/* DOCUMENTATION STEP */}
+          {inspectionStep === 'documentation' && (
+            <div className="space-y-6">
+              <div className="bg-white rounded-[1.5rem] border border-slate-100 shadow-xl shadow-slate-200/50 p-8">
+                <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider mb-6 flex items-center gap-2">
+                  <FileText className="w-4 h-4 text-slate-400" />
+                  Required Documentation
+                </h3>
+
+                <div className="space-y-4">
+                  {cargo.documents.length > 0 ? (
+                    cargo.documents.map((doc, idx) => {
+                      const docKey = `doc-${idx}`;
+                      const status = documentStatus[docKey];
+                      return (
+                        <div key={idx} className={`flex items-center justify-between p-4 rounded-xl border transition-all ${status === 'verified' ? 'bg-emerald-50 border-emerald-100' :
+                            status === 'missing' ? 'bg-red-50 border-red-100' :
+                              'bg-slate-50 border-slate-100'
+                          }`}>
+                          <div className="flex items-center gap-3">
+                            <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${status === 'verified' ? 'bg-white text-emerald-500' : 'bg-white text-slate-400'}`}>
+                              <FileText className="w-5 h-5" />
+                            </div>
+                            <span className="font-bold text-slate-700">{doc}</span>
+                          </div>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => setDocumentStatus(prev => ({ ...prev, [docKey]: 'verified' }))}
+                              className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-colors ${status === 'verified' ? 'bg-emerald-500 text-white shadow-md' : 'bg-white text-slate-400 hover:bg-emerald-50 hover:text-emerald-500'}`}
+                            >
+                              Verify
+                            </button>
+                            <button
+                              onClick={() => {
+                                setDocumentStatus(prev => ({ ...prev, [docKey]: 'missing' }));
+                                // Add missing issue logic...
+                              }}
+                              className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-colors ${status === 'missing' ? 'bg-red-500 text-white shadow-md' : 'bg-white text-slate-400 hover:bg-red-50 hover:text-red-500'}`}
+                            >
+                              Missing
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <div className="text-center py-8 text-slate-400 italic">No documents required for this cargo.</div>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex justify-between pt-4">
+                <button
+                  onClick={() => setInspectionStep('physical')}
+                  className="px-6 py-3 border border-slate-200 text-slate-500 rounded-xl text-xs font-black uppercase tracking-wider hover:bg-slate-50 transition-all"
+                >
+                  Back
+                </button>
+                <button
+                  onClick={() => setInspectionStep('final')}
+                  className="px-6 py-3 bg-[#345E85] text-white rounded-xl text-xs font-black uppercase tracking-wider hover:bg-[#2a4b6d] transition-all flex items-center gap-2 shadow-lg shadow-blue-900/20"
+                >
+                  Review & Sign <ArrowRight className="w-4 h-4" />
+                </button>
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {inspectionStep === 'final' && (
-          <div className="space-y-6">
-            <h3 className="text-lg font-semibold text-gray-900">Final Review & Submission</h3>
-            
-            {/* Inspection Summary */}
-            <div className="bg-gray-50 rounded-lg p-4">
-              <h4 className="font-medium text-gray-900 mb-3">Inspection Summary</h4>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                <div>
-                  <span className="text-gray-600">Status:</span>
-                  <div className="mt-1">
-                    <select
-                      value={inspectionResult.status}
-                      onChange={(e) => setInspectionResult(prev => ({ ...prev, status: e.target.value as any }))}
-                      className="w-full p-2 border rounded"
-                    >
-                      <option value="PASSED">Passed</option>
-                      <option value="FAILED">Failed</option>
-                      <option value="CONDITIONAL">Conditional</option>
-                    </select>
+          {/* FINAL STEP */}
+          {inspectionStep === 'final' && (
+            <div className="space-y-6">
+              <div className="bg-white rounded-[1.5rem] border border-slate-100 shadow-xl shadow-slate-200/50 p-8">
+                <div className="flex flex-col gap-6">
+                  <div>
+                    <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider mb-2">Final Remarks</h3>
+                    <p className="text-slate-500 text-sm mb-4">Please provide any final notes or observations regarding this inspection.</p>
+                    <textarea
+                      value={inspectionResult.notes}
+                      onChange={(e) => setInspectionResult(prev => ({ ...prev, notes: e.target.value }))}
+                      placeholder="Enter detailed inspection notes here..."
+                      className="w-full h-32 p-4 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#345E85]/20 focus:border-[#345E85] resize-none transition-all"
+                    />
+                  </div>
+
+                  <div className="bg-slate-50 p-6 rounded-xl border border-slate-100">
+                    <h4 className="text-xs font-black text-slate-400 uppercase tracking-wider mb-4">Inspection Summary</h4>
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-slate-600">Physical Checks Passed</span>
+                        <span className="font-bold text-slate-900">{Object.values(checklistStatus).filter(s => s === 'passed').length} / {Object.keys(checklistStatus).length}</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-slate-600">Documents Verified</span>
+                        <span className="font-bold text-slate-900">{Object.values(documentStatus).filter(s => s === 'verified').length} / {cargo.documents.length}</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
-                <div>
-                  <span className="text-gray-600">Issues Found:</span>
-                  <p className="font-medium">{inspectionResult.issues?.length || 0}</p>
-                </div>
-                <div>
-                  <span className="text-gray-600">Photos:</span>
-                  <p className="font-medium">{inspectionResult.photos?.length || 0}</p>
-                </div>
-                <div>
-                  <span className="text-gray-600">Inspector:</span>
-                  <p className="font-medium">{inspectionResult.inspector}</p>
-                </div>
+              </div>
+
+              <div className="flex justify-between pt-4">
+                <button
+                  onClick={() => setInspectionStep('documentation')}
+                  className="px-6 py-3 border border-slate-200 text-slate-500 rounded-xl text-xs font-black uppercase tracking-wider hover:bg-slate-50 transition-all"
+                >
+                  Back
+                </button>
+                <button
+                  onClick={handleInspectionComplete}
+                  className={`px-8 py-3 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 shadow-lg transition-all ${!inspectionResult.notes
+                      ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                      : 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-emerald-900/20'
+                    }`}
+                  disabled={!inspectionResult.notes}
+                >
+                  <Save className="w-4 h-4" />
+                  Submit Inspection
+                </button>
               </div>
             </div>
-
-            {/* Recommendations */}
-            <div className="space-y-4">
-              <h4 className="font-medium text-gray-900">Recommendations</h4>
-              <div className="space-y-3">
-                {inspectionResult.recommendations?.map((rec, index) => (
-                  <div key={index} className="flex items-center space-x-3">
-                    <Info className="w-5 h-5 text-blue-600" />
-                    <span className="flex-1">{rec}</span>
-                    <button
-                      onClick={() => {
-                        setInspectionResult(prev => ({
-                          ...prev,
-                          recommendations: prev.recommendations?.filter((_, i) => i !== index)
-                        }));
-                      }}
-                      className="text-red-500 hover:text-red-700"
-                    >
-                      ×
-                    </button>
-                  </div>
-                ))}
-                <div className="flex space-x-2">
-                  <input
-                    type="text"
-                    placeholder="Add a recommendation..."
-                    className="flex-1 p-2 border rounded"
-                    onKeyPress={(e) => {
-                      if (e.key === 'Enter' && e.currentTarget.value.trim()) {
-                        addRecommendation(e.currentTarget.value.trim());
-                        e.currentTarget.value = '';
-                      }
-                    }}
-                  />
-                  <button
-                    onClick={(e) => {
-                      const input = e.currentTarget.previousElementSibling as HTMLInputElement;
-                      if (input.value.trim()) {
-                        addRecommendation(input.value.trim());
-                        input.value = '';
-                      }
-                    }}
-                    className="px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-                  >
-                    Add
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* Signature */}
-            <div className="space-y-4">
-              <h4 className="font-medium text-gray-900">Digital Signature</h4>
-              <div className="border rounded-lg p-4">
-                <textarea
-                  placeholder="Type your full name to confirm this inspection..."
-                  className="w-full p-3 border rounded-lg"
-                  rows={2}
-                  value={inspectionResult.signature || ''}
-                  onChange={(e) => setInspectionResult(prev => ({ ...prev, signature: e.target.value }))}
-                />
-                <p className="text-sm text-gray-600 mt-2">
-                  By typing your name above, you confirm that this inspection has been completed accurately and completely.
-                </p>
-              </div>
-            </div>
-
-            <div className="flex justify-between">
-              <button
-                onClick={() => setInspectionStep('documentation')}
-                className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
-              >
-                Back
-              </button>
-              <button
-                onClick={handleInspectionComplete}
-                disabled={!inspectionResult.status || !inspectionResult.notes || !inspectionResult.signature}
-                className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
-              >
-                Complete Inspection
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
+          )}
+        </motion.div>
+      </AnimatePresence>
     </div>
   );
 };

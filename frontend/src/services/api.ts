@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { getApiBaseUrl } from '../config/environment';
+import { getSubdomain } from '../utils/subdomain';
 import type { IPaginatedRes } from '../types/apiResponse';
 import type { Tenant, TenantSearchParams } from '../types/tenant';
 
@@ -11,10 +12,11 @@ const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
-// Request interceptor to add auth token and tenant header
+// Request interceptor to add auth token, tenant header, and subdomain
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('accessToken');
+    
     // Resolve tenant ID from stored user or fallback key
     let tenantId: string | null = null;
     const userStr = localStorage.getItem('user');
@@ -29,12 +31,17 @@ api.interceptors.request.use(
     if (!tenantId) {
       tenantId = localStorage.getItem('tenantId');
     }
+    
+    // Get subdomain for multi-tenant routing
+    const subdomain = getSubdomain();
+    
     console.log('🔐 API Request Debug:');
     console.log('URL:', config.url);
     console.log('Method:', config.method);
     console.log('Token found:', !!token);
     console.log('Token preview:', token ? `${token.substring(0, 20)}...` : 'No token');
     console.log('Tenant ID:', tenantId || 'None');
+    console.log('Subdomain:', subdomain || 'None');
     
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
@@ -42,10 +49,17 @@ api.interceptors.request.use(
     } else {
       console.log('❌ No token found in localStorage');
     }
+    
     if (tenantId) {
       // Add multi-tenant header for backend routing
       (config.headers as any)['X-Tenant-ID'] = tenantId;
       console.log('✅ X-Tenant-ID header added');
+    }
+    
+    if (subdomain) {
+      // Add subdomain header for backend tenant resolution
+      (config.headers as any)['X-Tenant-Subdomain'] = subdomain;
+      console.log('✅ X-Tenant-Subdomain header added');
     }
     
     console.log('Final headers:', config.headers);
@@ -77,6 +91,10 @@ export const authAPI = {
     api.post('/auth/lender/setup-password', data),
   setupReceiverPassword: (data: { token: string; password: string; confirmPassword: string }) =>
     api.post('/auth/receiver/setup-password', data),
+  forgotPassword: (email: string) =>
+    api.post('/auth/forgot-password', { email }),
+  resetPassword: (token: string, password: string, confirmPassword: string) =>
+    api.post('/auth/reset-password', { token, password, confirmPassword }),
 };
 
 // Trips API

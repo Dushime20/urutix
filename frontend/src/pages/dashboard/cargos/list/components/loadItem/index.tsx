@@ -172,7 +172,7 @@ export default function LoadItem({
   }, [handleEditCargo, load, navigate]);
 
   return (
-    <div className="group p-4 sm:p-6 lg:p-8 transition-all duration-300 border-l-4 border-l-primary-500 shadow hover:shadow-md hover:-translate-y-1 rounded-lg bg-gray-100 hover:bg-white overflow-hidden w-full max-w-full">
+    <div className="group p-4 sm:p-6 transition-all duration-300 border border-slate-100 hover:border-[#345E85]/20 shadow-sm hover:shadow-xl hover:-translate-y-1 rounded-[2rem] bg-white overflow-hidden w-full">
       {/* Mobile Simplified View */}
       <div className="sm:hidden">
         {!showMobileDetails ? (
@@ -557,21 +557,20 @@ export default function LoadItem({
                   </button>
                 )}
                 {handleAssignReceiver && (
-                   <button
-                     className={`flex-1 min-w-[120px] px-4 py-2.5 bg-white border rounded-lg font-medium text-sm flex items-center justify-center gap-2 touch-manipulation min-h-[44px] ${
-                       load.receiverId 
-                         ? 'text-gray-400 border-gray-200 cursor-not-allowed' 
-                         : 'text-teal-600 border-teal-300 hover:bg-teal-50 transition-colors'
-                     }`}
-                     onClick={() => !load.receiverId && handleAssignReceiver(load)}
-                     disabled={!!load.receiverId}
-                     title={load.receiverId ? "Receiver already assigned" : "Assign Receiver"}
-                   >
-                     <Users className="w-4 h-4" />
-                     <span className="hidden xs:inline">{load.receiverId ? "Receiver Assigned" : "Assign Receiver"}</span>
-                     <span className="xs:hidden">{load.receiverId ? "Assigned" : "Recv"}</span>
-                   </button>
-                 )}
+                  <button
+                    className={`flex-1 min-w-[120px] px-4 py-2.5 bg-white border rounded-lg font-medium text-sm flex items-center justify-center gap-2 touch-manipulation min-h-[44px] ${load.receiverId
+                        ? 'text-gray-400 border-gray-200 cursor-not-allowed'
+                        : 'text-teal-600 border-teal-300 hover:bg-teal-50 transition-colors'
+                      }`}
+                    onClick={() => !load.receiverId && handleAssignReceiver(load)}
+                    disabled={!!load.receiverId}
+                    title={load.receiverId ? "Receiver already assigned" : "Assign Receiver"}
+                  >
+                    <Users className="w-4 h-4" />
+                    <span className="hidden xs:inline">{load.receiverId ? "Receiver Assigned" : "Assign Receiver"}</span>
+                    <span className="xs:hidden">{load.receiverId ? "Assigned" : "Recv"}</span>
+                  </button>
+                )}
                 {handleUnassignBroker && load.broker && (
                   <button
                     className="flex-1 min-w-[120px] px-4 py-2.5 bg-white text-orange-600 border border-orange-300 rounded-lg font-medium text-sm hover:bg-orange-50 transition-colors flex items-center justify-center gap-2 touch-manipulation min-h-[44px]"
@@ -607,11 +606,11 @@ export default function LoadItem({
                 {getCargoTypeIcon(load.cargoType)}
               </div>
               <div className="min-w-0 flex-1 max-w-full overflow-hidden">
-                <h3 className="text-base sm:text-lg font-semibold text-gray-900 break-words overflow-wrap-anywhere">
+                <h3 className="text-lg font-black text-[#0f172a] tracking-tight group-hover:text-[#345E85] transition-colors">
                   {load.title ||
                     `${getCargoTypeDisplayName(load.cargoType)} Shipment`}
                 </h3>
-                <p className="text-xs sm:text-sm text-gray-600 mt-1 break-words overflow-wrap-anywhere line-clamp-3 sm:line-clamp-none">
+                <p className="text-xs font-medium text-slate-500 mt-1 uppercase tracking-wider">
                   {load.description || "Cargo shipment details"}
                 </p>
               </div>
@@ -619,7 +618,7 @@ export default function LoadItem({
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3 sm:flex-shrink-0 w-full sm:w-auto">
               <span
                 className={cn(
-                  `px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs font-medium shadow-sm group-hover:shadow whitespace-nowrap`,
+                  `px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-sm transition-all`,
                   getStatusColor(load.status)
                 )}
               >
@@ -628,7 +627,7 @@ export default function LoadItem({
               {load.urgencyLevel && (
                 <span
                   className={cn(
-                    `px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs font-medium shadow-sm group-hover:shadow whitespace-nowrap`,
+                    `px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-sm transition-all`,
                     getUrgencyColor(load.urgencyLevel)
                   )}
                 >
@@ -964,11 +963,10 @@ export default function LoadItem({
             )}
             {handleAssignReceiver && (
               <button
-                className={`p-3 bg-white rounded-xl transition-all duration-200 shadow-sm ${
-                  load.receiverId 
-                    ? 'text-gray-300 cursor-not-allowed hover:shadow-sm' 
+                className={`p-3 bg-white rounded-xl transition-all duration-200 shadow-sm ${load.receiverId
+                    ? 'text-gray-300 cursor-not-allowed hover:shadow-sm'
                     : 'text-gray-400 hover:text-teal-600 hover:bg-teal-50 hover:shadow-md'
-                }`}
+                  }`}
                 title={load.receiverId ? "Receiver already assigned" : "Assign Receiver"}
                 onClick={() => !load.receiverId && handleAssignReceiver(load)}
                 disabled={!!load.receiverId}

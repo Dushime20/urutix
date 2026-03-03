@@ -38,26 +38,24 @@ export default function BasicSection({
 }: BasicSectionProps) {
   return (
     <div className="space-y-8">
-      {/* Header */}
-      <div className="flex items-center space-x-3 pb-4 border-b border-gray-200">
-        <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-blue-50 to-blue-100">
-          <FaBox className="w-5 h-5 text-blue-600" />
+      <div className="flex items-center space-x-2 pb-2 border-b border-slate-100">
+        <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-blue-50">
+          <FaBox className="w-4 h-4 text-[#345E85]" />
         </div>
         <div>
-          <h3 className="text-lg font-semibold text-gray-900">
+          <h3 className="text-base font-black text-[#0f172a] tracking-tight uppercase">
             Basic Information
           </h3>
-          <p className="text-sm text-gray-600">
-            Enter essential cargo details and specifications
+          <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">
+            Essential cargo specifications
           </p>
         </div>
       </div>
 
-      {/* Cargo Identity Card */}
-      <div className="bg-gradient-to-br from-blue-50 to-white rounded-xl border border-blue-200 p-6 shadow-sm">
-        <div className="flex items-center space-x-2 mb-4">
-          <FaFile className="w-4 h-4 text-blue-600" />
-          <h4 className="font-medium text-gray-900">Cargo Identity</h4>
+      <div className="bg-white rounded-xl border border-slate-100 p-4 shadow-none">
+        <div className="flex items-center space-x-2 mb-3">
+          <FaFile className="w-3.5 h-3.5 text-[#345E85]" />
+          <h4 className="text-xs font-black text-[#345E85] uppercase tracking-widest">Cargo Identity</h4>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -70,7 +68,7 @@ export default function BasicSection({
               type="text"
               {...register("title")}
               placeholder="Enter cargo title"
-              className="transition-all focus:ring-2 focus:ring-blue-500/20"
+              className="bg-slate-50 border-slate-200 transition-all focus:ring-2 focus:ring-blue-500/20 text-sm h-10"
             />
             {errors.title && (
               <p className="text-red-500 text-sm mt-1">
@@ -87,7 +85,7 @@ export default function BasicSection({
               value={formData.cargoType}
               onValueChange={(value) => setValue("cargoType", value)}
             >
-              <SelectTrigger className="transition-all focus:ring-2 focus:ring-blue-500/20">
+              <SelectTrigger className="bg-slate-50 border-slate-200 transition-all focus:ring-2 focus:ring-blue-500/20 text-sm h-10">
                 <SelectValue placeholder="Select cargo type" />
               </SelectTrigger>
               <SelectContent>
@@ -115,7 +113,7 @@ export default function BasicSection({
             {...register("description")}
             rows={3}
             placeholder="Provide detailed cargo description"
-            className="transition-all focus:ring-2 focus:ring-blue-500/20"
+            className="bg-slate-50 border-slate-200 transition-all focus:ring-2 focus:ring-blue-500/20 text-sm"
           />
           {errors.description && (
             <p className="text-red-500 text-sm mt-1">
@@ -125,11 +123,10 @@ export default function BasicSection({
         </div>
       </div>
 
-      {/* Physical Properties Card */}
-      <div className="bg-gradient-to-br from-slate-50 to-white rounded-xl border border-slate-200 p-6 shadow-sm">
-        <div className="flex items-center space-x-2 mb-4">
-          <FaWeight className="w-4 h-4 text-slate-600" />
-          <h4 className="font-medium text-gray-900">Physical Properties</h4>
+      <div className="bg-white rounded-xl border border-slate-100 p-4 shadow-none">
+        <div className="flex items-center space-x-2 mb-3">
+          <FaWeight className="w-3.5 h-3.5 text-[#345E85]" />
+          <h4 className="text-xs font-black text-[#345E85] uppercase tracking-widest">Physical Attributes</h4>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -144,7 +141,7 @@ export default function BasicSection({
               min="0"
               step="0.01"
               placeholder="0.00"
-              className="transition-all focus:ring-2 focus:ring-slate-500/20"
+              className="bg-slate-50 border-slate-200 transition-all focus:ring-2 focus:ring-blue-500/20 text-sm h-10"
             />
             {errors.weight && (
               <p className="text-red-500 text-sm mt-1">
@@ -175,11 +172,10 @@ export default function BasicSection({
         </div>
       </div>
 
-      {/* Financial Information Card */}
-      <div className="bg-gradient-to-br from-emerald-50 to-white rounded-xl border border-emerald-200 p-6 shadow-sm">
-        <div className="flex items-center space-x-2 mb-4">
-          <FaDollarSign className="w-4 h-4 text-emerald-600" />
-          <h4 className="font-medium text-gray-900">Financial Information</h4>
+      <div className="bg-white rounded-xl border border-slate-100 p-4 shadow-none">
+        <div className="flex items-center space-x-2 mb-3">
+          <FaDollarSign className="w-3.5 h-3.5 text-[#345E85]" />
+          <h4 className="text-xs font-black text-[#345E85] uppercase tracking-widest">Financial Hooks</h4>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -225,11 +221,10 @@ export default function BasicSection({
         </div>
       </div>
 
-      {/* Special Requirements Card */}
-      <div className="bg-gradient-to-br from-amber-50 to-white rounded-xl border border-amber-200 p-6 shadow-sm">
-        <div className="flex items-center space-x-2 mb-4">
-          <FaExclamationTriangle className="w-4 h-4 text-amber-600" />
-          <h4 className="font-medium text-gray-900">Special Requirements</h4>
+      <div className="bg-white rounded-xl border border-slate-100 p-4 shadow-none">
+        <div className="flex items-center space-x-2 mb-3">
+          <FaExclamationTriangle className="w-3.5 h-3.5 text-[#345E85]" />
+          <h4 className="text-xs font-black text-[#345E85] uppercase tracking-widest">Compliance & Type</h4>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

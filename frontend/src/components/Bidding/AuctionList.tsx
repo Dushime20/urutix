@@ -1,8 +1,23 @@
 import React, { useState, useEffect } from 'react';
-import { FaGavel, FaClock, FaMapMarkerAlt, FaEye, FaHeart, FaRegHeart } from 'react-icons/fa';
-import { Grid, Table } from 'lucide-react';
+import { createPortal } from 'react-dom';
+import {
+  ArrowRight,
+  Search,
+  Star,
+  ZapIcon,
+  Gavel,
+  Clock,
+  Heart,
+  Grid,
+  Table,
+  Download,
+  X,
+  AlertCircle
+} from 'lucide-react';
+import { cn } from '@/utils/cn';
 import { biddingAPI } from '../../services/biddingApi';
-import BidForm from './BidForm';
+import { fleetApi } from '../../services/fleetApi';
+import toast from 'react-hot-toast';
 import { formatCurrency } from '../../utils/formatNumber';
 
 interface Auction {
@@ -26,6 +41,12 @@ interface Auction {
     deliveryDate: string;
     pickupLocation: string;
     deliveryLocation: string;
+    cargoOwner?: {
+      profile?: {
+        firstName?: string;
+        lastName?: string;
+      };
+    };
   };
 }
 
@@ -48,9 +69,24 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
     showWatchedOnly: false,
   });
   const [watchedAuctions, setWatchedAuctions] = useState<Set<string>>(new Set());
-  const [loadingWatched, setLoadingWatched] = useState(false);
-  const [watchingAuctions, setWatchingAuctions] = useState<Set<string>>(new Set());
   const [viewMode, setViewMode] = useState<'card' | 'table'>('card');
+
+  // Bid States
+  const [showQuickBidModal, setShowQuickBidModal] = useState(false);
+  const [bidAmount, setBidAmount] = useState<string>('');
+  const [quickBidAmount, setQuickBidAmount] = useState<string>('');
+  const [bidNotes, setBidNotes] = useState('');
+  const [proposedPickupDate, setProposedPickupDate] = useState('');
+  const [proposedDeliveryDate, setProposedDeliveryDate] = useState('');
+  const [advancePaymentPercentage, setAdvancePaymentPercentage] = useState<string>('');
+  const [quickAdvancePaymentPercentage, setQuickAdvancePaymentPercentage] = useState<string>('');
+  const [requireAdvancePayment, setRequireAdvancePayment] = useState<boolean>(true);
+  const [quickRequireAdvancePayment, setQuickRequireAdvancePayment] = useState<boolean>(true);
+  const [trucks, setTrucks] = useState<any[]>([]);
+  const [availableDrivers, setAvailableDrivers] = useState<any[]>([]);
+  const [loadingDrivers, setLoadingDrivers] = useState(false);
+  const [selectedTruckId, setSelectedTruckId] = useState<string>('');
+  const [selectedDriverId, setSelectedDriverId] = useState<string>('');
 
   useEffect(() => {
     loadAuctions();
@@ -64,17 +100,14 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
   }, [showWatchedOnly]);
 
   const loadWatchedAuctions = async () => {
-    setLoadingWatched(true);
     try {
       const response = await biddingAPI.getWatchedAuctions();
-      const watchedIds = new Set(response.data.map((auction: Auction) => auction.id));
+      const watchedIds = new Set<string>(response.data.map((auction: Auction) => auction.id));
       setWatchedAuctions(watchedIds);
     } catch (error) {
       console.error('Load watched auctions error:', error);
       // If API fails, start with empty watched set
       setWatchedAuctions(new Set());
-    } finally {
-      setLoadingWatched(false);
     }
   };
 
@@ -86,142 +119,238 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
         // If showing watched only, get watched auctions
         response = await biddingAPI.getWatchedAuctions();
       } else {
+        // Clean filters before sending
+        const apiFilters: any = {};
+        if (filters.status && filters.status !== 'all') apiFilters.status = filters.status;
+        if (filters.auctionType && filters.auctionType !== 'all') apiFilters.auctionType = filters.auctionType;
+        if (filters.minValue) apiFilters.minValue = filters.minValue;
+        if (filters.maxValue) apiFilters.maxValue = filters.maxValue;
+
         // Get all auctions with filters
-        response = await biddingAPI.getAuctions(filters);
+        response = await biddingAPI.getAuctions(apiFilters);
       }
       setAuctions(response.data);
     } catch (error) {
       console.error('Load auctions error:', error);
-
-      // Fallback to mock data if API fails
-      const mockAuctions = [
-        {
-          id: 'mock-auction-1',
-          loadId: 'mock-load-1',
-          auctionType: 'REVERSE',
-          status: 'ACTIVE',
-          auctionStart: new Date().toISOString(),
-          auctionEnd: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-          reservePrice: 1500,
-          minimumBidIncrement: 50,
-          totalBids: 3,
-          uniqueBidders: 2,
-          currentHighestBid: 1400,
-          load: {
-            title: 'Electronics Shipment',
-            description: 'Fragile electronics from NYC to LA',
-            weight: 500,
-            loadValue: 5000,
-            pickupDate: new Date().toISOString(),
-            deliveryDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
-            pickupLocation: 'New York, NY',
-            deliveryLocation: 'Los Angeles, CA',
-          },
-        },
-        {
-          id: 'mock-auction-2',
-          loadId: 'mock-load-2',
-          auctionType: 'FORWARD',
-          status: 'SCHEDULED',
-          auctionStart: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(),
-          auctionEnd: new Date(Date.now() + 26 * 60 * 60 * 1000).toISOString(),
-          reservePrice: 2000,
-          minimumBidIncrement: 100,
-          totalBids: 0,
-          uniqueBidders: 0,
-          currentHighestBid: null,
-          load: {
-            title: 'Furniture Delivery',
-            description: 'Heavy furniture from Chicago to Miami',
-            weight: 1200,
-            loadValue: 3000,
-            pickupDate: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(),
-            deliveryDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(),
-            pickupLocation: 'Chicago, IL',
-            deliveryLocation: 'Miami, FL',
-          },
-        },
-      ];
-
-      setAuctions(mockAuctions);
-      setError('Using demo data - API endpoint not available');
+      setError('Failed to load auctions. Please try again.');
+      setAuctions([]);
+      // Mock data removed to enforce API integration testing
     } finally {
       setLoading(false);
     }
   };
 
-  const handleBidClick = (auction: Auction) => {
-    setSelectedAuction(auction);
-    setShowBidModal(true);
-  };
-
-  const handleWatchToggle = async (auctionId: string) => {
+  const handleExport = async () => {
     try {
-      setWatchingAuctions(prev => new Set(prev).add(auctionId));
+      const toastId = toast.loading('Exporting bid history...');
 
-      if (watchedAuctions.has(auctionId)) {
-        // Unwatch
-        await biddingAPI.unwatchAuction(auctionId);
-        setWatchedAuctions(prev => {
-          const newSet = new Set(prev);
-          newSet.delete(auctionId);
-          return newSet;
-        });
-      } else {
-        // Watch
-        await biddingAPI.watchAuction(auctionId);
-        setWatchedAuctions(prev => new Set(prev).add(auctionId));
-      }
+      // Clean filters
+      const apiFilters: any = {};
+      if (filters.status && filters.status !== 'all') apiFilters.status = filters.status;
+      if (filters.auctionType && filters.auctionType !== 'all') apiFilters.auctionType = filters.auctionType;
+      if (filters.minValue) apiFilters.minValue = filters.minValue;
+      if (filters.maxValue) apiFilters.maxValue = filters.maxValue;
+      if (filters.showWatchedOnly) apiFilters.showWatchedOnly = true;
+
+      const response = await biddingAPI.exportBidHistory(apiFilters);
+
+      // Create download
+      const blob = new Blob([response.data], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `bid-history-${new Date().toISOString().split('T')[0]}.csv`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+
+      toast.dismiss(toastId);
+      toast.success('Bid history exported successfully');
     } catch (error) {
-      console.error('Watch toggle error:', error);
-      // You could add a toast notification here
-    } finally {
-      setWatchingAuctions(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(auctionId);
-        return newSet;
-      });
+      console.error('Export error:', error);
+      toast.error('Failed to export bid history');
     }
   };
 
-  const handleBidSubmit = async (bidData: any) => {
+  const openQuickBidModal = (auction: Auction) => {
+    setSelectedAuction(auction);
+    const defaultAmount = auction?.currentHighestBid
+      ? auction.currentHighestBid - (auction?.minimumBidIncrement || 1)
+      : (auction?.reservePrice || 100) - 1;
+    setQuickBidAmount(String(defaultAmount));
+    setQuickAdvancePaymentPercentage('');
+    setQuickRequireAdvancePayment(true);
+    setProposedPickupDate('');
+    setProposedDeliveryDate('');
+    setShowQuickBidModal(true);
+  };
+
+  const openBidModal = async (auction: Auction) => {
+    setSelectedAuction(auction);
+    setBidAmount(
+      String(
+        auction?.currentHighestBid
+          ? auction.currentHighestBid - (auction?.minimumBidIncrement || 1)
+          : (auction?.reservePrice || 100) - 1
+      )
+    );
+    setBidNotes('');
+    setProposedPickupDate('');
+    setProposedDeliveryDate('');
+    setAdvancePaymentPercentage('');
+    setRequireAdvancePayment(true);
+    setSelectedTruckId('');
+    setSelectedDriverId('');
+    setAvailableDrivers([]);
+    try {
+      const truckList = await fleetApi.getTrucks({});
+      setTrucks(truckList || []);
+    } catch {
+      setTrucks([]);
+    }
+    setShowBidModal(true);
+  };
+
+  const loadAvailableDrivers = async () => {
+    if (!selectedTruckId) {
+      setAvailableDrivers([]);
+      return;
+    }
+    setLoadingDrivers(true);
+    try {
+      const allDrivers = await fleetApi.getDrivers({ status: 'ACTIVE' });
+      const available = allDrivers.filter((driver: any) => !driver.currentTripId);
+      setAvailableDrivers(available || []);
+    } catch (error) {
+      console.error('Error loading available drivers:', error);
+      setAvailableDrivers([]);
+      toast.error('Failed to load available drivers');
+    } finally {
+      setLoadingDrivers(false);
+    }
+  };
+
+  useEffect(() => {
+    if (selectedTruckId) {
+      loadAvailableDrivers();
+    }
+  }, [selectedTruckId]);
+
+  const submitQuickBid = async () => {
+    if (!selectedAuction) return;
+    const amountNum = Number(quickBidAmount);
+    if (!amountNum || amountNum <= 0) {
+      toast.error('Enter a valid bid amount');
+      return;
+    }
+    if (!proposedPickupDate || !proposedDeliveryDate) {
+      toast.error('Please specify pickup and delivery dates');
+      return;
+    }
+    const pickupDate = new Date(proposedPickupDate);
+    const deliveryDate = new Date(proposedDeliveryDate);
+    if (deliveryDate <= pickupDate) {
+      toast.error('Delivery date must be after pickup date');
+      return;
+    }
+    const advancePercentage = quickAdvancePaymentPercentage ? Number(quickAdvancePaymentPercentage) : undefined;
     try {
       await biddingAPI.submitBid({
-        ...bidData,
-        loadId: selectedAuction?.loadId,
+        loadId: selectedAuction.loadId,
+        bidAmount: amountNum,
+        bidCurrency: 'USD',
+        proposedPickupDate: proposedPickupDate,
+        proposedDeliveryDate: proposedDeliveryDate,
+        bidNotes: 'Quick bid from Truck Owner',
+        advancePaymentPercentage: quickRequireAdvancePayment ? advancePercentage : undefined,
+        requireAdvancePayment: quickRequireAdvancePayment,
+        bidDetails: { truckSpecifications: {} },
       });
+      toast.success('Bid submitted successfully!');
+      setShowQuickBidModal(false);
+      loadAuctions();
+    } catch (e: any) {
+      toast.error(e?.response?.data?.message || 'Failed to submit bid');
+    }
+  };
+
+  const placeBid = async () => {
+    if (!selectedAuction) return;
+    const amountNum = Number(bidAmount);
+    if (!amountNum || amountNum <= 0) {
+      toast.error('Enter a valid bid amount');
+      return;
+    }
+    if (!selectedTruckId || !proposedPickupDate || !proposedDeliveryDate) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+    const advancePercentage = advancePaymentPercentage ? Number(advancePaymentPercentage) : undefined;
+    try {
+      await biddingAPI.submitBid({
+        loadId: selectedAuction.loadId,
+        bidAmount: amountNum,
+        bidCurrency: 'USD',
+        proposedPickupDate: proposedPickupDate,
+        proposedDeliveryDate: proposedDeliveryDate,
+        bidNotes: bidNotes || undefined,
+        advancePaymentPercentage: requireAdvancePayment ? advancePercentage : undefined,
+        requireAdvancePayment: requireAdvancePayment,
+        bidDetails: {
+          truckSpecifications: { truckId: selectedTruckId },
+          driverInfo: selectedDriverId ? { driverId: selectedDriverId } : undefined,
+        },
+      });
+      toast.success('Bid submitted successfully!');
       setShowBidModal(false);
-      setSelectedAuction(null);
-      loadAuctions(); // Refresh the list
-    } catch (error) {
-      console.error('Bid submission error:', error);
+      loadAuctions();
+    } catch (e: any) {
+      toast.error(e?.response?.data?.message || 'Failed to submit bid');
+    }
+  };
+
+  const toggleWatch = async (auctionId: string) => {
+    const isWatched = watchedAuctions.has(auctionId);
+    try {
+      if (isWatched) {
+        await biddingAPI.unwatchAuction(auctionId);
+        setWatchedAuctions((prev) => {
+          const next = new Set(prev);
+          next.delete(auctionId);
+          return next;
+        });
+        toast.success('Removed from watched');
+      } else {
+        await biddingAPI.watchAuction(auctionId);
+        setWatchedAuctions((prev) => new Set(prev).add(auctionId));
+        toast.success('Added to watched');
+      }
+    } catch (e: any) {
+      toast.error('Failed to toggle watch');
     }
   };
 
   const getStatusBadge = (status: string) => {
     const variants: { [key: string]: string } = {
-      ACTIVE: 'bg-green-100 text-green-800',
-      SCHEDULED: 'bg-yellow-100 text-yellow-800',
-      CLOSED: 'bg-gray-100 text-gray-800',
-      CANCELLED: 'bg-red-100 text-red-800',
-      PAUSED: 'bg-blue-100 text-blue-800',
+      ACTIVE: 'bg-emerald-50 text-emerald-600 border-emerald-100',
+      SCHEDULED: 'bg-amber-50 text-amber-600 border-amber-100',
+      CLOSED: 'bg-slate-50 text-slate-500 border-slate-100',
+      CANCELLED: 'bg-red-50 text-red-600 border-red-100',
+      PAUSED: 'bg-blue-50 text-blue-600 border-blue-100',
     };
     return (
-      <span className={`px-2 py-1 text-xs font-medium rounded-full ${variants[status] || 'bg-gray-100 text-gray-800'}`}>
+      <span className={cn(
+        "px-3 py-1 text-[9px] font-black uppercase tracking-widest rounded-full border shadow-sm flex items-center gap-1.5",
+        variants[status] || 'bg-slate-50 text-slate-500 border-slate-100'
+      )}>
+        <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse" />
         {status}
       </span>
     );
   };
 
   const getAuctionTypeBadge = (type: string) => {
-    const variants: { [key: string]: string } = {
-      REVERSE: 'bg-blue-100 text-blue-800',
-      FORWARD: 'bg-green-100 text-green-800',
-      DUTCH: 'bg-yellow-100 text-yellow-800',
-      SEALED: 'bg-purple-100 text-purple-800',
-    };
     return (
-      <span className={`px-2 py-1 text-xs font-medium rounded-full ${variants[type] || 'bg-gray-100 text-gray-800'}`}>
+      <span className="px-3 py-1 bg-slate-900 text-white text-[9px] font-black uppercase tracking-widest rounded-full shadow-lg shadow-slate-900/10">
         {type}
       </span>
     );
@@ -240,179 +369,143 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
   };
 
   const renderFilters = () => (
-    <div className="bg-white rounded-lg shadow p-3 sm:p-4 md:p-6 mb-4 sm:mb-6">
-      <h6 className="text-base sm:text-lg font-medium text-gray-900 mb-3 sm:mb-4">Filters</h6>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        <div>
-          <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Status</label>
+    <div className="bg-white p-6 rounded-[2.5rem] border border-slate-100 mb-8 shadow-sm">
+      <div className="flex flex-col lg:flex-row gap-6 items-center">
+        <div className="relative flex-1 w-full group">
+          <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-300 group-focus-within:text-[#345E85] transition-colors" />
+          <input
+            type="text"
+            placeholder="SEARCH MARKETPLACE: ID, LOCATION, TYPE..."
+            className="w-full h-16 pl-14 pr-32 bg-slate-50 border border-slate-100 rounded-3xl text-[10px] font-black uppercase tracking-widest text-slate-600 focus:outline-none focus:ring-4 focus:ring-blue-500/5 focus:bg-white transition-all placeholder:text-slate-300"
+          />
+          <div className="absolute right-6 top-1/2 -translate-y-1/2 flex items-center gap-2">
+            <div className="h-6 w-px bg-slate-200 mr-2" />
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total:</span>
+            <span className="text-sm font-black text-[#345E85]">{auctions.length}</span>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap gap-3 items-center w-full lg:w-auto">
           <select
             value={filters.status}
             onChange={(e) => setFilters({ ...filters, status: e.target.value })}
-            className="w-full px-2.5 sm:px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 touch-manipulation min-h-[44px] sm:min-h-0"
+            className="h-16 pl-8 pr-12 bg-slate-50 border border-slate-100 rounded-3xl text-[10px] font-black uppercase tracking-widest text-slate-600 focus:outline-none focus:ring-4 focus:ring-blue-500/5 appearance-none cursor-pointer hover:bg-white transition-all min-w-[160px]"
           >
-            <option value="all">All Status</option>
+            <option value="all">Any Status</option>
             <option value="ACTIVE">Active</option>
             <option value="SCHEDULED">Scheduled</option>
             <option value="CLOSED">Closed</option>
           </select>
-        </div>
-        <div>
-          <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Auction Type</label>
-          <select
-            value={filters.auctionType}
-            onChange={(e) => setFilters({ ...filters, auctionType: e.target.value })}
-            className="w-full px-2.5 sm:px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 touch-manipulation min-h-[44px] sm:min-h-0"
+
+          <button
+            onClick={() => setFilters({ ...filters, showWatchedOnly: !filters.showWatchedOnly })}
+            className={cn(
+              "w-16 h-16 rounded-3xl border transition-all flex items-center justify-center shadow-sm",
+              filters.showWatchedOnly
+                ? 'bg-amber-50 border-amber-200 text-amber-500 shadow-amber-900/5'
+                : 'bg-white border-slate-100 text-slate-300 hover:text-amber-400'
+            )}
           >
-            <option value="all">All Types</option>
-            <option value="REVERSE">Reverse</option>
-            <option value="FORWARD">Forward</option>
-            <option value="DUTCH">Dutch</option>
-            <option value="SEALED">Sealed</option>
-          </select>
-        </div>
-        <div className="flex items-center pt-6 sm:pt-0">
-          <input
-            type="checkbox"
-            id="showWatchedOnly"
-            checked={filters.showWatchedOnly}
-            onChange={(e) => setFilters({ ...filters, showWatchedOnly: e.target.checked })}
-            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded touch-manipulation"
-          />
-          <label htmlFor="showWatchedOnly" className="ml-2 block text-xs sm:text-sm text-gray-700">
-            Show Watched Only
-          </label>
-        </div>
-        <div>
-          <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Min Value</label>
-          <input
-            type="number"
-            placeholder="Min value"
-            value={filters.minValue}
-            onChange={(e) => setFilters({ ...filters, minValue: e.target.value })}
-            className="w-full px-2.5 sm:px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 touch-manipulation min-h-[44px] sm:min-h-0"
-          />
-        </div>
-        <div>
-          <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Max Value</label>
-          <input
-            type="number"
-            placeholder="Max value"
-            value={filters.maxValue}
-            onChange={(e) => setFilters({ ...filters, maxValue: e.target.value })}
-            className="w-full px-2.5 sm:px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 touch-manipulation min-h-[44px] sm:min-h-0"
-          />
+            <Star size={20} className={filters.showWatchedOnly ? 'fill-current' : ''} />
+          </button>
+
+          <button
+            onClick={handleExport}
+            className="h-16 w-16 bg-white border border-slate-100 text-slate-300 rounded-3xl hover:bg-slate-50 hover:text-[#345E85] transition-all shadow-sm flex items-center justify-center"
+          >
+            <Download size={20} />
+          </button>
         </div>
       </div>
     </div>
   );
 
   const renderAuctionCard = (auction: Auction) => (
-    <div key={auction.id} className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200">
-      <div className="p-3 sm:p-4 md:p-6 border-b border-gray-200">
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 sm:gap-0 mb-3 sm:mb-4">
+    <div key={auction.id} className="relative group bg-white rounded-[3rem] p-1 border border-slate-100 shadow-sm hover:shadow-2xl hover:border-blue-100 transition-all duration-500 overflow-hidden flex flex-col">
+      <div className="p-8 pb-4 flex-1">
+        <div className="flex justify-between items-start mb-6">
           <div className="flex flex-wrap gap-2">
             {getStatusBadge(auction.status)}
             {getAuctionTypeBadge(auction.auctionType)}
           </div>
-          <div className="flex items-center space-x-2 flex-shrink-0">
-            <button
-              onClick={() => handleWatchToggle(auction.id)}
-              disabled={watchingAuctions.has(auction.id)}
-              className={`p-2 rounded-full transition-colors duration-200 touch-manipulation min-w-[36px] min-h-[36px] flex items-center justify-center ${watchedAuctions.has(auction.id)
-                ? 'text-red-500 hover:text-red-600'
-                : 'text-gray-400 hover:text-red-500'
-                } ${watchingAuctions.has(auction.id) ? 'opacity-50 cursor-not-allowed' : ''}`}
-              title={watchedAuctions.has(auction.id) ? 'Unwatch auction' : 'Watch auction'}
-            >
-              {watchingAuctions.has(auction.id) ? (
-                <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-              ) : watchedAuctions.has(auction.id) ? (
-                <FaHeart className="w-4 h-4" />
-              ) : (
-                <FaRegHeart className="w-4 h-4" />
-              )}
-            </button>
-            <FaGavel className="text-gray-500 w-4 h-4" />
-          </div>
+          <button
+            onClick={() => toggleWatch(auction.id)}
+            className={cn(
+              "w-12 h-12 rounded-2xl flex items-center justify-center transition-all shadow-sm",
+              watchedAuctions.has(auction.id)
+                ? 'bg-amber-50 text-amber-500 border border-amber-100'
+                : 'bg-slate-50 border border-slate-100 text-slate-300 hover:text-amber-500 hover:border-amber-100 hover:bg-white'
+            )}
+          >
+            <Star size={20} className={watchedAuctions.has(auction.id) ? 'fill-current' : ''} />
+          </button>
         </div>
 
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
-          <h6 className="text-base sm:text-lg font-semibold text-gray-900 break-words">{auction.load.title}</h6>
-          {watchedAuctions.has(auction.id) && (
-            <span className="text-xs bg-red-100 text-red-800 px-2 py-1 rounded-full flex items-center w-fit">
-              <FaHeart className="w-3 h-3 mr-1" />
-              Watched
-            </span>
-          )}
-        </div>
-        <p className="text-gray-600 text-xs sm:text-sm mb-3 sm:mb-4 line-clamp-2 break-words">{auction.load.description}</p>
-
-        <div className="space-y-1.5 sm:space-y-2 mb-3 sm:mb-4">
-          <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-0 text-xs sm:text-sm">
-            <span className="text-gray-500 flex items-center">
-              <FaMapMarkerAlt className="mr-1 flex-shrink-0" />
-              Pickup
-            </span>
-            <span className="text-gray-700 break-words text-right sm:text-left">{auction.load.pickupLocation}</span>
-          </div>
-          <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-0 text-xs sm:text-sm">
-            <span className="text-gray-500 flex items-center">
-              <FaMapMarkerAlt className="mr-1 flex-shrink-0" />
-              Delivery
-            </span>
-            <span className="text-gray-700 break-words text-right sm:text-left">{auction.load.deliveryLocation}</span>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-3 gap-2 sm:gap-4 text-center mb-3 sm:mb-4">
+        <div className="space-y-4">
           <div>
-            <div className="text-xs sm:text-sm text-gray-500">Weight</div>
-            <div className="font-semibold text-gray-900 text-xs sm:text-sm break-words">{auction.load.weight} kg</div>
+            <h3 className="text-xl font-black text-slate-900 group-hover:text-[#345E85] transition-colors line-clamp-1">
+              {auction.load?.title || 'Unknown Cargo'}
+            </h3>
+            <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mt-2 bg-slate-50 w-fit px-2 py-1 rounded">LOG ID: {auction.id?.slice(0, 8) || 'N/A'}</p>
           </div>
-          <div>
-            <div className="text-xs sm:text-sm text-gray-500">Value</div>
-            <div className="font-semibold text-gray-900 text-xs sm:text-sm break-words">{formatCurrency(auction.load.loadValue)}</div>
-          </div>
-          <div>
-            <div className="text-xs sm:text-sm text-gray-500">Bids</div>
-            <div className="font-semibold text-gray-900 text-xs sm:text-sm">{auction.totalBids}</div>
-          </div>
-        </div>
 
-        {auction.currentHighestBid && (
-          <div className="mb-3 sm:mb-4">
-            <div className="text-xs sm:text-sm text-gray-500">Current Highest Bid:</div>
-            <div className="text-base sm:text-lg font-bold text-green-600 break-words">{formatCurrency(auction.currentHighestBid)}</div>
-          </div>
-        )}
+          <div className="py-6 border-y border-slate-50 space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex flex-col items-start gap-1">
+                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Pricing</span>
+                <span className="text-2xl font-black text-emerald-600 italic">
+                  {auction.currentHighestBid ? formatCurrency(auction.currentHighestBid) : '$-.--'}
+                </span>
+              </div>
+              <div className="text-right">
+                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Payload</span>
+                <span className="text-sm font-black text-slate-900">{auction.load?.weight?.toLocaleString() || '0'} KG</span>
+              </div>
+            </div>
 
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 sm:gap-0 text-xs sm:text-sm text-gray-500">
-          <div className="flex items-center">
-            <FaClock className="mr-1 flex-shrink-0" />
-            <span className="break-words">Ends {formatDate(auction.auctionEnd)}</span>
-          </div>
-          <div>
-            <span>{auction.uniqueBidders} bidders</span>
+            <div className="flex items-center gap-4 py-4 px-5 bg-slate-50/80 rounded-2xl">
+              <div className="flex-1 min-w-0">
+                <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Route Vector</p>
+                <div className="flex items-center gap-3">
+                  <span className="text-[11px] font-black text-slate-900 truncate uppercase">
+                    {(auction.load?.pickupLocation || 'N/A').split(',')[0]}
+                  </span>
+                  <ArrowRight size={10} className="text-slate-300 shrink-0" />
+                  <span className="text-[11px] font-black text-slate-900 truncate uppercase">
+                    {(auction.load?.deliveryLocation || 'N/A').split(',')[0]}
+                  </span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
-      <div className="p-3 sm:p-4 md:p-6 bg-gray-50">
-        <div className="flex flex-col sm:flex-row gap-2">
+      <div className="px-8 pb-8 pt-4 bg-slate-50/30">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-2 text-slate-400">
+            <Clock size={12} />
+            <span className="text-[10px] font-black uppercase tracking-widest">{formatDate(auction.auctionEnd)}</span>
+          </div>
+          <div className="text-right">
+            <span className="text-[10px] font-black text-slate-900 tracking-tighter">{auction.totalBids} ACTIVE OFFERS</span>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
           <button
-            onClick={() => handleBidClick(auction)}
+            onClick={() => openQuickBidModal(auction)}
             disabled={auction.status !== 'ACTIVE' || userRole === 'CARGO_OWNER'}
-            className={`flex-1 px-3 sm:px-4 py-2.5 sm:py-2 text-xs sm:text-sm font-medium rounded-md transition-colors duration-200 touch-manipulation min-h-[44px] sm:min-h-0 flex items-center justify-center gap-1.5 ${auction.status !== 'ACTIVE' || userRole === 'CARGO_OWNER'
-              ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-              : 'bg-blue-600 text-white hover:bg-blue-700'
-              }`}
+            className="py-5 bg-[#8b919d] text-white rounded-2xl text-xs font-black uppercase tracking-[0.2em] hover:bg-slate-500 transition-all shadow-lg active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
           >
-            <FaGavel className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-            <span>{userRole === 'CARGO_OWNER' ? 'View Bids' : 'Place Bid'}</span>
+            <ZapIcon size={14} className="text-yellow-400" /> QUICK BID
           </button>
-          <button className="flex-1 px-3 sm:px-4 py-2.5 sm:py-2 text-xs sm:text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors duration-200 touch-manipulation min-h-[44px] sm:min-h-0 flex items-center justify-center gap-1.5">
-            <FaEye className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-            <span>Details</span>
+          <button
+            onClick={() => openBidModal(auction)}
+            disabled={auction.status !== 'ACTIVE' || userRole === 'CARGO_OWNER'}
+            className="py-5 bg-white border-2 border-slate-50 text-[#8b919d] rounded-2xl text-xs font-black uppercase tracking-[0.2em] hover:bg-slate-50 transition-all active:scale-95 disabled:opacity-50"
+          >
+            CUSTOM BID
           </button>
         </div>
       </div>
@@ -432,146 +525,149 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
     <div className="auction-list">
       {renderFilters()}
 
-      {/* View Mode Toggle */}
-      <div className="flex items-center justify-end gap-2 bg-white border border-gray-200 rounded-lg p-1 w-fit ml-auto mb-4">
+      {/* View Mode Toggle & Actions */}
+      <div className="flex items-center justify-between mb-6">
         <button
-          onClick={() => setViewMode('card')}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${viewMode === 'card'
-            ? 'bg-gray-900 text-white'
-            : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-            }`}
+          onClick={handleExport}
+          className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 text-gray-600 rounded-xl hover:bg-gray-50 transition-all font-black text-[10px] uppercase tracking-wider group"
         >
-          <Grid className="w-3.5 h-3.5" />
-          <span className="hidden sm:inline">Cards</span>
+          <Download size={14} className="group-hover:translate-y-0.5 transition-transform" />
+          Export Data
         </button>
-        <button
-          onClick={() => setViewMode('table')}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${viewMode === 'table'
-            ? 'bg-gray-900 text-white'
-            : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-            }`}
-        >
-          <Table className="w-3.5 h-3.5" />
-          <span className="hidden sm:inline">Table</span>
-        </button>
+
+        <div className="flex items-center gap-1 bg-gray-50/50 p-1 rounded-xl border border-gray-100 shadow-inner">
+          <button
+            onClick={() => setViewMode('card')}
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-tight transition-all ${viewMode === 'card'
+              ? 'bg-white text-gray-900 shadow-sm ring-1 ring-black/5'
+              : 'text-gray-500 hover:text-gray-900'
+              }`}
+          >
+            <Grid size={14} />
+            Cards
+          </button>
+          <button
+            onClick={() => setViewMode('table')}
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-tight transition-all ${viewMode === 'table'
+              ? 'bg-white text-gray-900 shadow-sm ring-1 ring-black/5'
+              : 'text-gray-500 hover:text-gray-900'
+              }`}
+          >
+            <Table size={14} />
+            Table
+          </button>
+        </div>
       </div>
 
       {filters.showWatchedOnly && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-3 sm:p-4 mb-4 sm:mb-6">
-          <div className="flex items-center flex-wrap gap-2">
-            <FaHeart className="text-red-500 mr-1 flex-shrink-0" />
-            <h3 className="text-base sm:text-lg font-medium text-red-800">Watched Auctions</h3>
-            <span className="text-xs sm:text-sm text-red-600">({auctions.length} auctions)</span>
+        <div className="bg-red-50/50 border border-red-100 px-4 py-3 rounded-xl mb-6 flex items-center gap-3">
+          <div className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center shrink-0">
+            <Heart className="text-red-500 fill-current" size={16} />
+          </div>
+          <div>
+            <h3 className="text-xs font-black text-red-900 uppercase tracking-tight italic">
+              Watched Auctions <span className="text-red-400 font-light ml-2">({auctions.length} total)</span>
+            </h3>
           </div>
         </div>
       )}
 
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-3 sm:p-4 mb-4 sm:mb-6">
-          <div className="flex items-start sm:items-center">
-            <div className="flex-shrink-0 mt-0.5 sm:mt-0">
-              <svg className="h-4 w-4 sm:h-5 sm:w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-              </svg>
-            </div>
-            <div className="ml-2 flex-1 min-w-0">
-              <h3 className="text-xs sm:text-sm font-medium text-red-800 break-words">{error}</h3>
-            </div>
-            <div className="ml-2 flex-shrink-0">
-              <button
-                onClick={() => setError(null)}
-                className="inline-flex text-red-400 hover:text-red-500 transition-colors touch-manipulation min-w-[32px] min-h-[32px] flex items-center justify-center"
-                aria-label="Dismiss error"
-              >
-                <svg className="h-4 w-4 sm:h-5 sm:w-5" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                </svg>
-              </button>
-            </div>
+        <div className="bg-red-50 border border-red-100 p-4 rounded-xl mb-6 flex items-center gap-3">
+          <div className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center shrink-0">
+            <AlertCircle className="text-red-600" size={18} />
           </div>
+          <div className="flex-1 min-w-0">
+            <h3 className="text-xs font-black text-red-900 uppercase tracking-tight italic">{error}</h3>
+          </div>
+          <button
+            onClick={() => setError(null)}
+            className="p-1 text-red-400 hover:text-red-600 rounded-lg transition-colors border border-red-100 rounded-lg"
+          >
+            <X size={16} />
+          </button>
         </div>
       )}
 
       {auctions.length === 0 ? (
         <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 sm:p-4">
           <div className="flex items-center gap-2">
-            <FaGavel className="text-gray-400 flex-shrink-0" />
+            <Gavel className="text-gray-400 flex-shrink-0" />
             <span className="text-xs sm:text-sm text-gray-800 break-words">No auctions found matching your criteria.</span>
           </div>
         </div>
       ) : (
         <>
           {viewMode === 'card' ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4 md:gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
               {auctions.map(renderAuctionCard)}
             </div>
           ) : (
-            <div className="bg-white rounded-lg shadow overflow-hidden border border-gray-200">
+            <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
               <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50 text-gray-500 uppercase tracking-wider text-[10px] font-semibold">
-                    <tr>
-                      <th className="px-4 py-3 text-left">Auction / Load</th>
-                      <th className="px-4 py-3 text-left">Route</th>
-                      <th className="px-4 py-3 text-left">Type / weight</th>
-                      <th className="px-4 py-3 text-left font-bold text-gray-900">Current Bid</th>
-                      <th className="px-4 py-3 text-left">Time Left</th>
-                      <th className="px-4 py-3 text-right">Action</th>
+                <table className="w-full text-left">
+                  <thead>
+                    <tr className="bg-gray-50/50 border-b border-gray-100">
+                      <th className="px-6 py-4 text-[10px] font-black text-gray-500 uppercase tracking-widest">Auction / Load</th>
+                      <th className="px-6 py-4 text-[10px] font-black text-gray-500 uppercase tracking-widest">Route</th>
+                      <th className="px-6 py-4 text-[10px] font-black text-gray-500 uppercase tracking-widest">Type / weight</th>
+                      <th className="px-6 py-4 text-[10px] font-black text-gray-500 uppercase tracking-widest">Current Bid</th>
+                      <th className="px-6 py-4 text-[10px] font-black text-gray-500 uppercase tracking-widest">Time Left</th>
+                      <th className="px-6 py-4 text-right text-[10px] font-black text-gray-500 uppercase tracking-widest">Action</th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
+                  <tbody className="divide-y divide-gray-50">
                     {auctions.map((auction) => (
-                      <tr key={auction.id} className="hover:bg-gray-50 transition-colors group">
-                        <td className="px-4 py-3">
-                          <div className="flex items-center gap-3">
-                            <div className="flex-shrink-0 w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
-                              <FaGavel className="w-4 h-4 text-gray-400 group-hover:text-gray-600 transition-colors" />
+                      <tr key={auction.id} className="hover:bg-gray-50/50 transition-colors group">
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-4">
+                            <div className="w-10 h-10 bg-gray-900 rounded-xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                              <Gavel size={18} className="text-white" />
                             </div>
                             <div>
-                              <div className="text-sm font-semibold text-gray-900">{auction.load.title}</div>
-                              <div className="text-[10px] flex gap-1 mt-0.5">
-                                {getStatusBadge(auction.status)}
-                              </div>
+                              <p className="text-sm font-black text-gray-900 leading-tight">{auction.load?.title || 'Unknown Cargo'}</p>
+                              <div className="mt-1">{getStatusBadge(auction.status)}</div>
                             </div>
                           </div>
                         </td>
-                        <td className="px-4 py-3">
-                          <div className="text-xs text-gray-900">{auction.load.pickupLocation}</div>
-                          <div className="text-[10px] text-gray-400">to</div>
-                          <div className="text-xs text-gray-900">{auction.load.deliveryLocation}</div>
+                        <td className="px-6 py-4">
+                          <div className="flex flex-col">
+                            <span className="text-xs font-black text-gray-900">{auction.load?.pickupLocation || 'N/A'}</span>
+                            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-tight italic">to</span>
+                            <span className="text-xs font-black text-gray-900">{auction.load?.deliveryLocation || 'N/A'}</span>
+                          </div>
                         </td>
-                        <td className="px-4 py-3 whitespace-nowrap">
-                          <div className="text-xs text-gray-900">{auction.load.weight} kg</div>
-                          <div className="text-[10px] text-gray-500">{auction.auctionType}</div>
+                        <td className="px-6 py-4">
+                          <div className="flex flex-col gap-1">
+                            <span className="text-xs font-black text-gray-900">{auction.load?.weight?.toLocaleString() || '0'} kg</span>
+                            <div>{getAuctionTypeBadge(auction.auctionType)}</div>
+                          </div>
                         </td>
-                        <td className="px-4 py-3 whitespace-nowrap">
+                        <td className="px-6 py-4">
                           {auction.currentHighestBid ? (
-                            <div className="text-sm font-bold text-green-600">{formatCurrency(auction.currentHighestBid)}</div>
+                            <div className="text-sm font-black text-emerald-600">{formatCurrency(auction.currentHighestBid)}</div>
                           ) : (
-                            <div className="text-sm text-gray-400">No bids</div>
+                            <div className="text-xs font-bold text-gray-300 italic uppercase">No bids</div>
                           )}
-                          <div className="text-[10px] text-gray-500">{auction.totalBids} total bids</div>
+                          <div className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter mt-0.5">{auction.totalBids} total bids</div>
                         </td>
-                        <td className="px-4 py-3 whitespace-nowrap">
-                          <div className="flex items-center text-[11px] text-gray-600 gap-1">
-                            <FaClock className="w-3 h-3 text-gray-400" />
-                            {new Date(auction.auctionEnd).toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-2 text-gray-500">
+                            <Clock size={12} />
+                            <span className="text-[10px] font-black uppercase tracking-tight">{formatDate(auction.auctionEnd)}</span>
                           </div>
                         </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-right">
-                          <div className="flex items-center justify-end gap-2">
-                            <button
-                              onClick={() => handleBidClick(auction)}
-                              disabled={auction.status !== 'ACTIVE' || userRole === 'CARGO_OWNER'}
-                              className={`p-2 rounded-lg transition-all ${auction.status !== 'ACTIVE' || userRole === 'CARGO_OWNER'
-                                ? 'bg-gray-50 text-gray-300 cursor-not-allowed'
-                                : 'bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white'
-                                }`}
-                              title={userRole === 'CARGO_OWNER' ? 'View Bids' : 'Place Bid'}
-                            >
-                              <FaGavel className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
+                        <td className="px-6 py-4 text-right">
+                          <button
+                            onClick={() => openBidModal(auction)}
+                            disabled={auction.status !== 'ACTIVE' || userRole === 'CARGO_OWNER'}
+                            className={`p-2 rounded-xl transition-all ${auction.status !== 'ACTIVE' || userRole === 'CARGO_OWNER'
+                              ? 'bg-gray-50 text-gray-300'
+                              : 'bg-gray-900 text-white hover:bg-black shadow-lg shadow-gray-200'
+                              }`}
+                          >
+                            <Gavel size={16} />
+                          </button>
                         </td>
                       </tr>
                     ))}
@@ -583,31 +679,300 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
         </>
       )}
 
-      {/* Bid Modal */}
-      {showBidModal && selectedAuction && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 p-3 sm:p-4">
-          <div className="relative top-4 sm:top-10 md:top-20 mx-auto p-3 sm:p-4 md:p-5 border w-full max-w-2xl shadow-lg rounded-md bg-white max-h-[90vh] overflow-y-auto">
-            <div className="mt-0 sm:mt-3">
-              <div className="flex justify-between items-center mb-3 sm:mb-4">
-                <h3 className="text-base sm:text-lg font-medium text-gray-900">Place Bid</h3>
-                <button
-                  onClick={() => setShowBidModal(false)}
-                  className="text-gray-400 hover:text-gray-600 transition-colors touch-manipulation min-w-[32px] min-h-[32px] flex items-center justify-center"
-                  aria-label="Close"
-                >
-                  <svg className="h-5 w-5 sm:h-6 sm:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
+      {/* Quick Bid Modal */}
+      {showQuickBidModal && selectedAuction && createPortal(
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
+          <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden border border-gray-100">
+            {/* Header */}
+            <div className="px-10 py-8 border-b border-gray-100">
+              <h2 className="text-3xl font-extrabold text-[#111827] tracking-tight">Quick Bid</h2>
+              <div className="mt-2 space-y-1">
+                <p className="text-lg font-medium text-gray-600">{selectedAuction?.load?.title || 'Untitled Load'}</p>
+                <p className="text-sm text-gray-400 font-medium italic">
+                  Cargo Owner: {selectedAuction?.load?.cargoOwner?.profile?.firstName || ''} {selectedAuction?.load?.cargoOwner?.profile?.lastName || 'Admin'}
+                </p>
               </div>
-              <BidForm
-                auction={selectedAuction}
-                onSubmit={handleBidSubmit}
-                onCancel={() => setShowBidModal(false)}
-              />
+            </div>
+
+            {/* Form Content */}
+            <div className="p-10 space-y-8 overflow-y-auto custom-scrollbar">
+              {/* Bid Amount Input */}
+              <div className="space-y-3">
+                <label className="block text-base font-bold text-gray-700">Bid Amount (USD) *</label>
+                <div className="relative group">
+                  <input
+                    type="number"
+                    value={quickBidAmount}
+                    onChange={(e) => setQuickBidAmount(e.target.value)}
+                    className="w-full h-16 px-6 bg-white border-2 border-gray-200 rounded-2xl text-xl font-bold text-gray-900 focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-[#345E85] transition-all"
+                    placeholder="0.00"
+                  />
+                </div>
+                <div className="text-sm font-medium text-gray-400">
+                  Reserve price: {selectedAuction.reservePrice ? formatCurrency(selectedAuction.reservePrice) : '$0.00'}
+                </div>
+              </div>
+
+              {/* Advance Payment Section */}
+              <div className="space-y-6">
+                <label className="flex items-center gap-3 cursor-pointer group">
+                  <div className="relative flex items-center justify-center">
+                    <input
+                      type="checkbox"
+                      checked={quickRequireAdvancePayment}
+                      onChange={(e) => {
+                        setQuickRequireAdvancePayment(e.target.checked);
+                        if (!e.target.checked) setQuickAdvancePaymentPercentage('');
+                      }}
+                      className="peer appearance-none w-6 h-6 border-2 border-gray-300 rounded-lg checked:bg-blue-600 checked:border-blue-600 transition-all cursor-pointer"
+                    />
+                    <svg className="absolute w-4 h-4 text-white opacity-0 peer-checked:opacity-100 pointer-events-none transition-opacity" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="4">
+                      <path d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                  <span className="text-base font-bold text-gray-700">Require advance payment before trip</span>
+                </label>
+
+                {quickRequireAdvancePayment && (
+                  <div className="animate-in slide-in-from-top-2 duration-300 space-y-3">
+                    <label className="block text-base font-bold text-gray-700">Advance Payment % (Optional)</label>
+                    <input
+                      type="number"
+                      value={quickAdvancePaymentPercentage}
+                      onChange={(e) => setQuickAdvancePaymentPercentage(e.target.value)}
+                      className="w-full h-14 px-6 bg-white border-2 border-gray-100 rounded-2xl text-sm font-medium text-gray-900 focus:outline-none focus:border-blue-500 transition-all"
+                      placeholder="e.g., 70"
+                    />
+                    <p className="text-sm text-gray-400 leading-relaxed font-medium">
+                      Percentage of transportation fee to be paid upfront.
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Schedule Delivery Box */}
+              <div className="bg-[#f0f9ff]/80 p-8 rounded-[1.5rem] border border-blue-100 space-y-6">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center text-[#0369a1]">
+                    <Clock size={18} />
+                  </div>
+                  <h4 className="text-lg font-extrabold text-[#0369a1]">Delivery Schedule</h4>
+                </div>
+
+                <div className="grid grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-gray-700">Pickup Date *</label>
+                    <input
+                      type="datetime-local"
+                      value={proposedPickupDate}
+                      onChange={(e) => setProposedPickupDate(e.target.value)}
+                      className="w-full h-14 px-4 bg-white border-2 border-gray-200 rounded-xl text-sm font-bold text-gray-900 focus:outline-none focus:border-blue-400 transition-all"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-gray-700">Delivery Date *</label>
+                    <input
+                      type="datetime-local"
+                      value={proposedDeliveryDate}
+                      onChange={(e) => setProposedDeliveryDate(e.target.value)}
+                      className="w-full h-14 px-4 bg-white border-2 border-gray-200 rounded-xl text-sm font-bold text-gray-900 focus:outline-none focus:border-blue-400 transition-all"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Footer Actions */}
+            <div className="p-10 pt-0 flex items-center justify-end gap-4">
+              <button
+                onClick={() => {
+                  setShowQuickBidModal(false);
+                  setSelectedAuction(null);
+                }}
+                className="px-10 py-4 bg-gray-100 text-gray-700 rounded-xl text-base font-bold hover:bg-gray-200 transition-all active:scale-95"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={submitQuickBid}
+                disabled={!quickBidAmount || !proposedPickupDate || !proposedDeliveryDate}
+                className="px-10 py-4 bg-[#94a3b8] text-white rounded-xl text-base font-bold hover:bg-[#64748b] transition-all shadow-lg active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Submit Bid
+              </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Custom Bid Modal */}
+      {showBidModal && selectedAuction && createPortal(
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
+          <div className="bg-white rounded-[1.5rem] shadow-2xl w-full max-w-xl max-h-[90vh] overflow-hidden border border-gray-100 flex flex-col">
+            {/* Header */}
+            <div className="px-8 py-6 border-b border-gray-100 flex items-center justify-between shrink-0">
+              <div>
+                <h2 className="text-xl font-bold text-gray-900 tracking-tight">Custom Bid</h2>
+                <p className="text-sm text-gray-500 mt-0.5">{selectedAuction?.load?.title || 'Untitled Shipment'}</p>
+              </div>
+              <button
+                onClick={() => setShowBidModal(false)}
+                className="p-2 rounded-xl hover:bg-gray-100 text-gray-400 transition-colors"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Form Content */}
+            <div className="flex-1 overflow-y-auto p-8 space-y-8 custom-scrollbar">
+              {/* Bid Amount */}
+              <div className="space-y-3">
+                <label className="block text-sm font-bold text-gray-700">Bid Amount (USD) *</label>
+                <div className="relative">
+                  <span className="absolute left-5 top-1/2 -translate-y-1/2 text-lg font-bold text-gray-400">$</span>
+                  <input
+                    value={bidAmount}
+                    onChange={(e) => setBidAmount(e.target.value)}
+                    type="number"
+                    className="w-full h-14 pl-12 pr-6 bg-white border-2 border-gray-200 rounded-xl text-lg font-bold text-gray-900 focus:outline-none focus:border-[#345E85] transition-all"
+                    placeholder="0.00"
+                  />
+                </div>
+                <div className="flex items-center gap-4 text-xs font-medium">
+                  <span className="text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-100">
+                    Floor: {selectedAuction.currentHighestBid ? formatCurrency(selectedAuction.currentHighestBid) : formatCurrency(selectedAuction.reservePrice || 0)}
+                  </span>
+                  {selectedAuction.minimumBidIncrement && (
+                    <span className="text-gray-400">Min. Increment: {formatCurrency(selectedAuction.minimumBidIncrement)}</span>
+                  )}
+                </div>
+              </div>
+
+              {/* Asset Allocation */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <label className="block text-sm font-bold text-gray-700">Select Truck *</label>
+                  <select
+                    value={selectedTruckId}
+                    onChange={(e) => setSelectedTruckId(e.target.value)}
+                    className="w-full h-12 px-4 bg-white border-2 border-gray-200 rounded-xl text-sm font-medium focus:outline-none focus:border-[#345E85] transition-all cursor-pointer"
+                  >
+                    <option value="">Select Unit</option>
+                    {trucks.map((t) => (
+                      <option key={t.id} value={t.id}>{t.plateNumber} • {t.make} {t.model}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <label className="block text-sm font-bold text-gray-700">Select Driver</label>
+                  <select
+                    value={selectedDriverId}
+                    onChange={(e) => setSelectedDriverId(e.target.value)}
+                    disabled={!selectedTruckId || loadingDrivers}
+                    className="w-full h-12 px-4 bg-white border-2 border-gray-200 rounded-xl text-sm font-medium focus:outline-none focus:border-[#345E85] transition-all cursor-pointer disabled:bg-gray-50 disabled:text-gray-400"
+                  >
+                    <option value="">{loadingDrivers ? 'Loading...' : 'Select Driver'}</option>
+                    {availableDrivers.map((d) => (
+                      <option key={d.id} value={d.id}>{d.firstName} {d.lastName}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Schedule Delivery Block */}
+              <div className="bg-blue-50/50 p-6 rounded-2xl border border-blue-100 space-y-5">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 bg-white rounded-lg shadow-sm flex items-center justify-center text-[#0369a1]">
+                    <Clock size={14} />
+                  </div>
+                  <h4 className="text-sm font-bold text-[#0369a1]">Schedule</h4>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-gray-600 px-1">Pickup Date *</label>
+                    <input
+                      type="datetime-local"
+                      value={proposedPickupDate}
+                      onChange={(e) => setProposedPickupDate(e.target.value)}
+                      className="w-full h-12 px-4 bg-white border-2 border-gray-200 rounded-xl text-sm font-medium focus:outline-none focus:border-blue-400"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-gray-600 px-1">Delivery Date *</label>
+                    <input
+                      type="datetime-local"
+                      value={proposedDeliveryDate}
+                      onChange={(e) => setProposedDeliveryDate(e.target.value)}
+                      className="w-full h-12 px-4 bg-white border-2 border-gray-200 rounded-xl text-sm font-medium focus:outline-none focus:border-blue-400"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Advance Payment */}
+              <div className="space-y-5">
+                <label className="flex items-center gap-3 cursor-pointer group">
+                  <input
+                    type="checkbox"
+                    checked={requireAdvancePayment}
+                    onChange={(e) => {
+                      setRequireAdvancePayment(e.target.checked);
+                      if (!e.target.checked) setAdvancePaymentPercentage('');
+                    }}
+                    className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <span className="text-sm font-bold text-gray-700">Require advance payment before trip</span>
+                </label>
+
+                {requireAdvancePayment && (
+                  <div className="animate-in slide-in-from-top-2 duration-300 space-y-2 pl-8">
+                    <label className="block text-xs font-bold text-gray-600">Percentage (0-100)</label>
+                    <div className="relative max-w-[200px]">
+                      <input
+                        type="number"
+                        value={advancePaymentPercentage}
+                        onChange={(e) => setAdvancePaymentPercentage(e.target.value)}
+                        className="w-full h-12 px-4 bg-white border-2 border-gray-200 rounded-xl text-sm font-bold text-gray-900 focus:outline-none focus:border-blue-500"
+                        placeholder="70"
+                      />
+                      <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-bold text-gray-400">%</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Notes */}
+              <div className="space-y-2">
+                <label className="block text-sm font-bold text-gray-700">Notes</label>
+                <textarea
+                  value={bidNotes}
+                  onChange={(e) => setBidNotes(e.target.value)}
+                  className="w-full p-5 bg-white border-2 border-gray-200 rounded-xl text-sm font-medium text-gray-900 focus:outline-none focus:border-[#345E85] transition-all min-h-[120px] resize-none"
+                  placeholder="Add any additional notes..."
+                />
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="px-8 py-6 border-t bg-gray-50 flex items-center justify-end gap-3 shrink-0">
+              <button
+                onClick={() => setShowBidModal(false)}
+                className="px-6 py-3 bg-white border border-gray-200 text-gray-600 rounded-xl text-sm font-bold hover:bg-gray-50 transition-all active:scale-95"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={placeBid}
+                disabled={!bidAmount || !selectedTruckId || !proposedPickupDate || !proposedDeliveryDate}
+                className="px-8 py-3 bg-[#0f172a] text-white rounded-xl text-sm font-bold uppercase tracking-wider hover:bg-black transition-all shadow-lg active:scale-95 disabled:opacity-50"
+              >
+                Submit Bid
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
       )}
     </div>
   );

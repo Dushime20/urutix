@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { 
+import {
   FaTruck, FaEdit, FaTrash, FaPlus, FaSearch, FaFilter, FaDownload,
   FaEye, FaMapMarkerAlt, FaGasPump, FaTools, FaCheckCircle, FaExclamationTriangle
 } from 'react-icons/fa';
+import AdminPageLayout from '../../components/Admin/AdminPageLayout';
 
 interface Truck {
   id: string;
@@ -94,25 +95,23 @@ const FleetManagement: React.FC = () => {
 
   const filteredTrucks = trucks.filter(truck => {
     const matchesSearch = truck.plateNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         truck.make.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         truck.driver.toLowerCase().includes(searchTerm.toLowerCase());
+      truck.make.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      truck.driver.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = !filterStatus || truck.status === filterStatus;
     return matchesSearch && matchesStatus;
   });
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-800">Fleet Management</h2>
-          <p className="text-gray-600">Monitor and manage your truck fleet</p>
-        </div>
+    <AdminPageLayout
+      title="Fleet Management"
+      description="Monitor and manage your truck fleet"
+      actions={
         <button className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors">
           <FaPlus />
           <span>Add Truck</span>
         </button>
-      </div>
+      }
+    >
 
       {/* Filters */}
       <div className="bg-white rounded-xl shadow-lg p-6">
@@ -153,8 +152,8 @@ const FleetManagement: React.FC = () => {
         <div className="bg-white rounded-xl shadow-lg p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-2xl font-bold text-gray-800">{trucks.length}</p>
-              <p className="text-gray-600">Total Trucks</p>
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 leading-none">Total Trucks</p>
+              <p className="text-2xl font-black text-gray-900 leading-none tracking-tight">{trucks.length}</p>
             </div>
             <FaTruck className="text-blue-500 text-3xl" />
           </div>
@@ -162,8 +161,8 @@ const FleetManagement: React.FC = () => {
         <div className="bg-white rounded-xl shadow-lg p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-2xl font-bold text-gray-800">{trucks.filter(t => t.status === 'active').length}</p>
-              <p className="text-gray-600">Active</p>
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 leading-none">Active</p>
+              <p className="text-2xl font-black text-gray-900 leading-none tracking-tight">{trucks.filter(t => t.status === 'active').length}</p>
             </div>
             <FaCheckCircle className="text-green-500 text-3xl" />
           </div>
@@ -171,8 +170,8 @@ const FleetManagement: React.FC = () => {
         <div className="bg-white rounded-xl shadow-lg p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-2xl font-bold text-gray-800">{trucks.filter(t => t.status === 'maintenance').length}</p>
-              <p className="text-gray-600">Maintenance</p>
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 leading-none">Maintenance</p>
+              <p className="text-2xl font-black text-gray-900 leading-none tracking-tight">{trucks.filter(t => t.status === 'maintenance').length}</p>
             </div>
             <FaTools className="text-yellow-500 text-3xl" />
           </div>
@@ -180,8 +179,8 @@ const FleetManagement: React.FC = () => {
         <div className="bg-white rounded-xl shadow-lg p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-2xl font-bold text-gray-800">{Math.round(trucks.reduce((acc, t) => acc + t.fuelLevel, 0) / trucks.length)}%</p>
-              <p className="text-gray-600">Avg Fuel Level</p>
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 leading-none">Avg Fuel Level</p>
+              <p className="text-2xl font-black text-gray-900 leading-none tracking-tight">{Math.round(trucks.reduce((acc, t) => acc + t.fuelLevel, 0) / trucks.length)}%</p>
             </div>
             <FaGasPump className="text-purple-500 text-3xl" />
           </div>
@@ -199,8 +198,8 @@ const FleetManagement: React.FC = () => {
                     <FaTruck className="text-white text-lg" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-800">{truck.plateNumber}</h3>
-                    <p className="text-sm text-gray-500">{truck.make} {truck.model}</p>
+                    <h3 className="text-lg font-black text-gray-900 tracking-tight leading-none mb-1">{truck.plateNumber}</h3>
+                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none">{truck.make} {truck.model}</p>
                   </div>
                 </div>
                 <div className="flex items-center space-x-2">
@@ -228,7 +227,7 @@ const FleetManagement: React.FC = () => {
                   <span className="text-gray-600">Fuel Level:</span>
                   <div className="flex items-center space-x-2">
                     <div className="w-16 h-2 bg-gray-200 rounded-full">
-                      <div 
+                      <div
                         className={`h-2 rounded-full ${getFuelLevelColor(truck.fuelLevel)}`}
                         style={{ width: `${truck.fuelLevel}%` }}
                       ></div>
@@ -263,7 +262,7 @@ const FleetManagement: React.FC = () => {
           </div>
         ))}
       </div>
-    </div>
+    </AdminPageLayout>
   );
 };
 

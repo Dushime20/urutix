@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   AlertCircle,
@@ -9,9 +9,12 @@ import {
   Star,
   Send,
   Download,
+  Upload,
 } from "lucide-react";
+import toast from "react-hot-toast";
 import type { Cargo } from "@/types/cargo";
 import { loadsAPI } from "@/services/load";
+import { documentApi } from "@/services/documents/documentApi";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import {
@@ -69,6 +72,9 @@ const CargoDetails = () => {
   const [showShareModal, setShowShareModal] = useState(false);
   const [exportFormat, setExportFormat] = useState("pdf");
   const [showExportModal, setShowExportModal] = useState(false);
+  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const uploadFileRef = useRef<HTMLInputElement>(null);
 
   const {
     data: cargoResponse,
@@ -94,6 +100,55 @@ const CargoDetails = () => {
     },
     enabled: !!cargoId,
   });
+
+  // Fetch documents for this cargo
+  const {
+    data: documentsData,
+    isLoading: isLoadingDocuments,
+    error: documentsError,
+    refetch: refetchDocuments,
+  } = useQuery({
+    queryKey: ["cargo-documents", cargoId],
+    queryFn: async () => {
+      if (!cargoId) return [];
+      try {
+        console.log('🔍 Fetching documents for cargo:', cargoId);
+        // Fetch documents stored under both CARGO and LOAD entity types
+        // (some documents may have been uploaded with entityType 'LOAD' historically)
+        const [cargoDocs, loadDocs] = await Promise.all([
+          documentApi.getDocumentsByEntity("CARGO", cargoId).catch(() => []),
+          documentApi.getDocumentsByEntity("LOAD", cargoId).catch(() => []),
+        ]);
+        // Merge and deduplicate by document ID
+        const allDocs = [...(cargoDocs || []), ...(loadDocs || [])];
+        const uniqueDocs = allDocs.filter(
+          (doc, index, self) => self.findIndex(d => d.id === doc.id) === index
+        );
+        console.log('📄 Fetched documents for cargo:', uniqueDocs);
+        console.log('📄 Number of documents:', uniqueDocs?.length || 0);
+        return uniqueDocs || [];
+      } catch (error) {
+        console.error("❌ Failed to fetch documents:", error);
+        // Return empty array instead of throwing to prevent UI break
+        return [];
+      }
+    },
+    enabled: !!cargoId,
+    refetchOnWindowFocus: false,
+  });
+
+  // Log documents data for debugging
+  useEffect(() => {
+    if (documentsData) {
+      console.log('📊 Documents data updated:', {
+        count: documentsData.length,
+        documents: documentsData,
+      });
+    }
+    if (documentsError) {
+      console.error('📊 Documents error:', documentsError);
+    }
+  }, [documentsData, documentsError]);
 
   // Extract cargo from response - handle both enriched and regular response structures
   const cargo = useMemo<Cargo | null>(() => {
@@ -294,226 +349,249 @@ const CargoDetails = () => {
                         Documents
                       </h3>
                       <div className="flex items-center space-x-2">
-                        <Button size="sm" className="h-9 px-4 rounded-lg">
-                          <Download className="w-4 h-4 mr-2" />
+                        <Button
+                          size="sm"
+                          className="h-9 px-4 rounded-lg"
+                          onClick={() => setShowUploadModal(true)}
+                        >
+                          <Upload className="w-4 h-4 mr-2" />
                           Upload Document
                         </Button>
+                        {documentsData && documentsData.length > 0 && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-9 px-3 rounded-lg"
+                            onClick={() => {
+                              // Download all documents
+                              documentsData.forEach((doc: any) => {
+                                if (doc.fileUrl) {
+                                  window.open(doc.fileUrl, '_blank');
+                                }
+                              });
+                            }}
+                          >
+                            Download All
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Loading State */}
+                    {isLoadingDocuments && (
+                      <div className="text-center py-8">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
+                        <p className="text-sm text-gray-500 mt-2">Loading documents...</p>
+                      </div>
+                    )}
+
+                    {/* Empty State */}
+                    {!isLoadingDocuments && (!documentsData || documentsData.length === 0) && (
+                      <div className="text-center py-12">
+                        <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                          <Package className="w-8 h-8 text-gray-400" />
+                        </div>
+                        <h4 className="text-lg font-medium text-gray-900 mb-2">No Documents Yet</h4>
+                        <p className="text-sm text-gray-500 mb-4">
+                          Upload documents related to this cargo shipment
+                        </p>
                         <Button
-                          variant="outline"
                           size="sm"
-                          className="h-9 px-3 rounded-lg"
+                          onClick={() => setShowUploadModal(true)}
                         >
-                          Download All
+                          <Upload className="w-4 h-4 mr-2" />
+                          Upload First Document
                         </Button>
                       </div>
-                    </div>
-
-                    {/* Document Categories */}
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                      <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg p-4 border border-blue-200 text-center">
-                        <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center mx-auto mb-2">
-                          <span className="text-white text-xs font-semibold">
-                            I
-                          </span>
-                        </div>
-                        <p className="text-sm font-medium text-gray-900">
-                          Invoices
-                        </p>
-                        <p className="text-xs text-gray-500">3 documents</p>
-                      </div>
-                      <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg p-4 border border-green-200 text-center">
-                        <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center mx-auto mb-2">
-                          <span className="text-white text-xs font-semibold">
-                            R
-                          </span>
-                        </div>
-                        <p className="text-sm font-medium text-gray-900">
-                          Receipts
-                        </p>
-                        <p className="text-xs text-gray-500">2 documents</p>
-                      </div>
-                      <div className="bg-gradient-to-br from-purple-50 to-violet-50 rounded-lg p-4 border border-purple-200 text-center">
-                        <div className="w-8 h-8 bg-purple-500 rounded-lg flex items-center justify-center mx-auto mb-2">
-                          <span className="text-white text-xs font-semibold">
-                            C
-                          </span>
-                        </div>
-                        <p className="text-sm font-medium text-gray-900">
-                          Contracts
-                        </p>
-                        <p className="text-xs text-gray-500">1 document</p>
-                      </div>
-                      <div className="bg-gradient-to-br from-orange-50 to-amber-50 rounded-lg p-4 border border-orange-200 text-center">
-                        <div className="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center mx-auto mb-2">
-                          <span className="text-white text-xs font-semibold">
-                            C
-                          </span>
-                        </div>
-                        <p className="text-sm font-medium text-gray-900">
-                          Compliance
-                        </p>
-                        <p className="text-xs text-gray-500">4 documents</p>
-                      </div>
-                    </div>
+                    )}
 
                     {/* Document List */}
-                    <div className="bg-white rounded-lg border border-gray-200">
-                      <div className="p-4 border-b border-gray-200 bg-gray-50">
-                        <div className="flex items-center justify-between">
-                          <h4 className="font-medium text-gray-900">
-                            All Documents
-                          </h4>
-                          <div className="flex items-center space-x-2">
-                            <Input
-                              placeholder="Search documents..."
-                              className="w-64 h-9 border-gray-200 focus:border-blue-300 focus:ring-blue-200"
-                            />
-                            <Select value="all" onValueChange={() => {}}>
-                              <SelectTrigger className="h-9 border-gray-200">
-                                <SelectValue placeholder="Select Format" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="all">All Types</SelectItem>
-                                <SelectItem value="invoice">
-                                  Invoices
-                                </SelectItem>
-                                <SelectItem value="receipt">
-                                  Receipts
-                                </SelectItem>
-                                <SelectItem value="contract">
-                                  Contracts
-                                </SelectItem>
-                                <SelectItem value="compliance">
-                                  Compliance
-                                </SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="divide-y divide-gray-200">
-                        {/* Document Items */}
-                        {[
-                          {
-                            id: "doc1",
-                            name: "Invoice_001.pdf",
-                            size: "2.3 MB",
-                            type: "blue",
-                            uploaded: "2 days ago",
-                          },
-                          {
-                            id: "doc2",
-                            name: "Delivery_Receipt.pdf",
-                            size: "1.8 MB",
-                            type: "green",
-                            uploaded: "1 day ago",
-                          },
-                          {
-                            id: "doc3",
-                            name: "Transport_Contract.pdf",
-                            size: "3.1 MB",
-                            type: "purple",
-                            uploaded: "3 days ago",
-                          },
-                        ].map((doc) => (
-                          <div
-                            key={doc.id}
-                            className="p-4 hover:bg-gray-50 transition-colors"
-                          >
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center space-x-3">
-                                <input
-                                  type="checkbox"
-                                  checked={selectedDocuments.includes(doc.id)}
-                                  onChange={(e) => {
-                                    if (e.target.checked) {
-                                      setSelectedDocuments([
-                                        ...selectedDocuments,
-                                        doc.id,
-                                      ]);
-                                    } else {
-                                      setSelectedDocuments(
-                                        selectedDocuments.filter(
-                                          (id) => id !== doc.id
-                                        )
-                                      );
-                                    }
-                                  }}
-                                  className="rounded border-gray-300"
-                                />
-                                <div
-                                  className={`w-8 h-8 bg-${doc.type}-500 rounded-lg flex items-center justify-center`}
-                                >
+                    {!isLoadingDocuments && documentsData && documentsData.length > 0 && (
+                      <>
+                        {/* Document Categories Summary */}
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                          {[
+                            { category: 'CARGO', label: 'Cargo Docs', color: 'blue' },
+                            { category: 'INVOICE', label: 'Invoices', color: 'green' },
+                            { category: 'COMPLIANCE', label: 'Compliance', color: 'orange' },
+                            { category: 'OTHER', label: 'Other', color: 'purple' },
+                          ].map(({ category, label, color }) => {
+                            const count = documentsData.filter((doc: any) => doc.category === category).length;
+                            return (
+                              <div key={category} className={`bg-gradient-to-br from-${color}-50 to-${color}-100 rounded-lg p-4 border border-${color}-200 text-center`}>
+                                <div className={`w-8 h-8 bg-${color}-500 rounded-lg flex items-center justify-center mx-auto mb-2`}>
                                   <span className="text-white text-xs font-semibold">
-                                    {doc.name.charAt(0).toUpperCase()}
+                                    {label.charAt(0)}
                                   </span>
                                 </div>
-                                <div>
-                                  <p className="text-sm font-medium text-gray-900">
-                                    {doc.name}
-                                  </p>
-                                  <p className="text-xs text-gray-500">
-                                    {doc.size} • Uploaded {doc.uploaded}
-                                  </p>
+                                <p className="text-sm font-medium text-gray-900">{label}</p>
+                                <p className="text-xs text-gray-500">{count} document{count !== 1 ? 's' : ''}</p>
+                              </div>
+                            );
+                          })}
+                        </div>
+
+                        <div className="bg-white rounded-lg border border-gray-200">
+                          <div className="p-4 border-b border-gray-200 bg-gray-50">
+                            <div className="flex items-center justify-between">
+                              <h4 className="font-medium text-gray-900">
+                                All Documents ({documentsData.length})
+                              </h4>
+                              <div className="flex items-center space-x-2">
+                                <Input
+                                  placeholder="Search documents..."
+                                  className="w-64 h-9 border-gray-200 focus:border-blue-300 focus:ring-blue-200"
+                                  value={searchQuery}
+                                  onChange={(e) => setSearchQuery(e.target.value)}
+                                />
+                                <Select value={selectedFilter} onValueChange={setSelectedFilter}>
+                                  <SelectTrigger className="h-9 border-gray-200">
+                                    <SelectValue placeholder="Select Category" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="all">All Types</SelectItem>
+                                    <SelectItem value="CARGO">Cargo</SelectItem>
+                                    <SelectItem value="INVOICE">Invoices</SelectItem>
+                                    <SelectItem value="COMPLIANCE">Compliance</SelectItem>
+                                    <SelectItem value="OTHER">Other</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="divide-y divide-gray-200">
+                            {documentsData
+                              .filter((doc: any) => {
+                                if (searchQuery && !doc.title?.toLowerCase().includes(searchQuery.toLowerCase()) &&
+                                  !doc.fileName?.toLowerCase().includes(searchQuery.toLowerCase())) {
+                                  return false;
+                                }
+                                if (selectedFilter !== 'all' && doc.category !== selectedFilter) {
+                                  return false;
+                                }
+                                return true;
+                              })
+                              .map((doc: any) => {
+                                const categoryColors: Record<string, string> = {
+                                  CARGO: 'blue',
+                                  INVOICE: 'green',
+                                  COMPLIANCE: 'orange',
+                                  OTHER: 'purple',
+                                };
+                                const color = categoryColors[doc.category] || 'gray';
+
+                                return (
+                                  <div
+                                    key={doc.id}
+                                    className="p-4 hover:bg-gray-50 transition-colors"
+                                  >
+                                    <div className="flex items-center justify-between">
+                                      <div className="flex items-center space-x-3">
+                                        <input
+                                          type="checkbox"
+                                          checked={selectedDocuments.includes(doc.id)}
+                                          onChange={(e) => {
+                                            if (e.target.checked) {
+                                              setSelectedDocuments([...selectedDocuments, doc.id]);
+                                            } else {
+                                              setSelectedDocuments(
+                                                selectedDocuments.filter((id) => id !== doc.id)
+                                              );
+                                            }
+                                          }}
+                                          className="rounded border-gray-300"
+                                        />
+                                        <div className={`w-8 h-8 bg-${color}-500 rounded-lg flex items-center justify-center`}>
+                                          <span className="text-white text-xs font-semibold">
+                                            {(doc.title || doc.fileName).charAt(0).toUpperCase()}
+                                          </span>
+                                        </div>
+                                        <div>
+                                          <p className="text-sm font-medium text-gray-900">
+                                            {doc.title || doc.fileName}
+                                          </p>
+                                          <p className="text-xs text-gray-500">
+                                            {(doc.fileSize / 1024 / 1024).toFixed(2)} MB •
+                                            Uploaded {new Date(doc.createdAt).toLocaleDateString()} •
+                                            {doc.status === 'VERIFIED' && <span className="text-green-600 ml-1">✓ Verified</span>}
+                                            {doc.status === 'PENDING' && <span className="text-yellow-600 ml-1">⏳ Pending</span>}
+                                          </p>
+                                        </div>
+                                      </div>
+                                      <div className="flex items-center space-x-2">
+                                        <Button
+                                          variant="outline"
+                                          size="sm"
+                                          className="h-8 w-8 p-0 rounded-lg"
+                                          onClick={() => {
+                                            if (doc.fileUrl) {
+                                              window.open(doc.fileUrl, '_blank');
+                                            }
+                                          }}
+                                          title="View document"
+                                        >
+                                          <Package className="w-4 h-4" />
+                                        </Button>
+                                        <Button
+                                          variant="outline"
+                                          size="sm"
+                                          className="h-8 w-8 p-0 rounded-lg"
+                                          onClick={() => {
+                                            if (doc.fileUrl) {
+                                              window.open(doc.fileUrl, '_blank');
+                                            }
+                                          }}
+                                          title="Download document"
+                                        >
+                                          <Download className="w-4 h-4" />
+                                        </Button>
+                                      </div>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                          </div>
+
+                          {/* Bulk Actions */}
+                          {selectedDocuments.length > 0 && (
+                            <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-t border-gray-200">
+                              <div className="flex items-center justify-between">
+                                <p className="text-sm text-gray-600">
+                                  {selectedDocuments.length} document(s) selected
+                                </p>
+                                <div className="flex items-center space-x-2">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="h-9 px-3 rounded-lg"
+                                    onClick={() => {
+                                      selectedDocuments.forEach((docId) => {
+                                        const doc = documentsData.find((d: any) => d.id === docId);
+                                        if (doc?.fileUrl) {
+                                          window.open(doc.fileUrl, '_blank');
+                                        }
+                                      });
+                                    }}
+                                  >
+                                    <Download className="w-4 h-4 mr-2" />
+                                    Download Selected
+                                  </Button>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="h-9 px-3 rounded-lg"
+                                    onClick={() => setSelectedDocuments([])}
+                                  >
+                                    Clear Selection
+                                  </Button>
                                 </div>
                               </div>
-                              <div className="flex items-center space-x-2">
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  className="h-8 w-8 p-0 rounded-lg"
-                                >
-                                  <span className="sr-only">View</span>
-                                </Button>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  className="h-8 w-8 p-0 rounded-lg"
-                                >
-                                  <Download className="w-4 h-4" />
-                                </Button>
-                              </div>
                             </div>
-                          </div>
-                        ))}
-                      </div>
-
-                      {/* Bulk Actions */}
-                      {selectedDocuments.length > 0 && (
-                        <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-t border-gray-200">
-                          <div className="flex items-center justify-between">
-                            <p className="text-sm text-gray-600">
-                              {selectedDocuments.length} document(s) selected
-                            </p>
-                            <div className="flex items-center space-x-2">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="h-9 px-3 rounded-lg"
-                              >
-                                <Download className="w-4 h-4 mr-2" />
-                                Download Selected
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="h-9 px-3 rounded-lg"
-                              >
-                                Share Selected
-                              </Button>
-                              <Button
-                                variant="destructive"
-                                size="sm"
-                                className="h-9 px-3 rounded-lg"
-                              >
-                                Delete Selected
-                              </Button>
-                            </div>
-                          </div>
+                          )}
                         </div>
-                      )}
-                    </div>
+                      </>
+                    )}
                   </div>
                 </div>
               )}
@@ -595,7 +673,7 @@ const CargoDetails = () => {
                             Activity Timeline
                           </h4>
                           <div className="flex items-center space-x-2">
-                            <Select value="all" onValueChange={() => {}}>
+                            <Select value="all" onValueChange={() => { }}>
                               <SelectTrigger className="h-9 border-gray-200">
                                 <SelectValue placeholder="Select Format" />
                               </SelectTrigger>
@@ -802,23 +880,23 @@ const CargoDetails = () => {
                             },
                             ...(cargo.requiresRefrigeration
                               ? [
-                                  {
-                                    label: "Refrigeration",
-                                    value: "Required",
-                                    highlight: "green",
-                                  },
-                                ]
+                                {
+                                  label: "Refrigeration",
+                                  value: "Required",
+                                  highlight: "green",
+                                },
+                              ]
                               : []),
                             ...(cargo.isHazardous
                               ? [
-                                  {
-                                    label: "Hazmat Permit",
-                                    value: "Required",
-                                    highlight: "red",
-                                  },
-                                ]
+                                {
+                                  label: "Hazmat Permit",
+                                  value: "Required",
+                                  highlight: "red",
+                                },
+                              ]
                               : []),
-                          ].map((req, index) => (
+                          ].map((req: any, index) => (
                             <div
                               key={index}
                               className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
@@ -827,13 +905,12 @@ const CargoDetails = () => {
                                 {req.label}
                               </span>
                               <span
-                                className={`text-sm font-medium ${
-                                  req.highlight === "green"
-                                    ? "text-green-600"
-                                    : req.highlight === "red"
+                                className={`text-sm font-medium ${req.highlight === "green"
+                                  ? "text-green-600"
+                                  : req.highlight === "red"
                                     ? "text-red-600"
                                     : "text-gray-900"
-                                }`}
+                                  }`}
                               >
                                 {req.value}
                               </span>
@@ -1021,6 +1098,101 @@ const CargoDetails = () => {
         </div>
       </div>
 
+      {/* Document Upload Modal */}
+      {showUploadModal && (
+        <Dialog open={showUploadModal} onOpenChange={setShowUploadModal}>
+          <DialogContent className="w-full max-w-lg p-0 overflow-hidden">
+            <DialogHeader className="p-6 pb-4 border-b border-gray-100">
+              <DialogTitle className="text-lg font-semibold text-gray-900 flex items-center">
+                <Upload className="w-5 h-5 mr-2 text-blue-600" />
+                Upload Document
+              </DialogTitle>
+            </DialogHeader>
+
+            <div className="p-6 space-y-5">
+              {/* Drop zone */}
+              <div
+                onClick={() => !isUploading && uploadFileRef.current?.click()}
+                className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all duration-200 ${isUploading
+                  ? "opacity-50 cursor-not-allowed border-gray-200 bg-gray-50"
+                  : "border-blue-300 hover:border-blue-500 hover:bg-blue-50/50 bg-blue-50/30"
+                  }`}
+              >
+                <input
+                  ref={uploadFileRef}
+                  type="file"
+                  className="hidden"
+                  accept=".pdf,.png,.jpg,.jpeg,.doc,.docx"
+                  disabled={isUploading}
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file || !cargoId) return;
+
+                    if (file.size > 10 * 1024 * 1024) {
+                      toast.error("File size exceeds 10MB limit");
+                      return;
+                    }
+
+                    setIsUploading(true);
+                    try {
+                      await documentApi.createDocument(
+                        {
+                          entityType: "CARGO",
+                          entityId: cargoId,
+                          documentType: "OTHER",
+                          category: "CARGO",
+                          title: file.name,
+                        },
+                        file
+                      );
+                      toast.success("Document uploaded successfully!");
+                      refetchDocuments();
+                      setShowUploadModal(false);
+                    } catch (error) {
+                      console.error("Upload error:", error);
+                      toast.error("Failed to upload document");
+                    } finally {
+                      setIsUploading(false);
+                      if (uploadFileRef.current) uploadFileRef.current.value = "";
+                    }
+                  }}
+                />
+
+                <div className="flex flex-col items-center justify-center space-y-3">
+                  {isUploading ? (
+                    <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500" />
+                  ) : (
+                    <div className="w-14 h-14 rounded-full bg-blue-100 flex items-center justify-center">
+                      <Upload className="w-6 h-6 text-blue-600" />
+                    </div>
+                  )}
+                  <div>
+                    <p className="text-sm font-semibold text-gray-900">
+                      {isUploading ? "Uploading..." : "Click to select a file"}
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      PDF, PNG, JPG, DOC up to 10MB
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex items-center justify-end space-x-3">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowUploadModal(false)}
+                  disabled={isUploading}
+                  className="h-10 px-4 rounded-lg"
+                >
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+
       {/* Share Modal */}
       {showShareModal && (
         <Dialog open={showShareModal} onOpenChange={setShowShareModal}>
@@ -1141,16 +1313,14 @@ const CargoDetails = () => {
                   <button
                     key={star}
                     onClick={() => setRating(star)}
-                    className={`p-1 transition-colors ${
-                      rating >= star
-                        ? "text-yellow-500"
-                        : "text-gray-300 hover:text-yellow-400"
-                    }`}
+                    className={`p-1 transition-colors ${rating >= star
+                      ? "text-yellow-500"
+                      : "text-gray-300 hover:text-yellow-400"
+                      }`}
                   >
                     <Star
-                      className={`w-8 h-8 ${
-                        rating >= star ? "fill-current" : ""
-                      }`}
+                      className={`w-8 h-8 ${rating >= star ? "fill-current" : ""
+                        }`}
                     />
                   </button>
                 ))}

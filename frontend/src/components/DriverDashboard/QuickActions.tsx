@@ -1,252 +1,155 @@
 import React from 'react';
-import { 
-  MapPin, 
-  Clock, 
-  Truck, 
-  MessageSquare, 
-  Phone, 
-  FileText,
+import { motion } from 'framer-motion';
+import {
+  Play,
+  Pause,
+  CheckCircle,
   Navigation,
   AlertTriangle,
-  CheckCircle,
+  MessageSquare,
+  MapPin,
   Calendar,
-  Settings,
-  User,
-  Shield,
-  DollarSign
+  DollarSign,
+  FileText,
+  Clock,
+  Zap,
+  Activity
 } from 'lucide-react';
+import { cn } from '@/utils/cn';
 
 interface QuickActionsProps {
   driverId: string;
 }
 
-export const QuickActions: React.FC<QuickActionsProps> = ({ driverId }) => {
-  const quickActions = [
-    {
-      id: 'start-trip',
-      title: 'Start Trip',
-      description: 'Begin a new trip',
-      icon: Truck,
-      color: 'bg-green-600 hover:bg-green-700',
-      action: () => console.log('Start trip clicked')
-    },
-    {
-      id: 'pause-trip',
-      title: 'Pause Trip',
-      description: 'Take a break',
-      icon: Clock,
-      color: 'bg-yellow-600 hover:bg-yellow-700',
-      action: () => console.log('Pause trip clicked')
-    },
-    {
-      id: 'complete-trip',
-      title: 'Complete Trip',
-      description: 'Finish current trip',
-      icon: CheckCircle,
-      color: 'bg-blue-600 hover:bg-blue-700',
-      action: () => console.log('Complete trip clicked')
-    },
-    {
-      id: 'navigate',
-      title: 'Navigate',
-      description: 'Get directions',
-      icon: Navigation,
-      color: 'bg-purple-600 hover:bg-purple-700',
-      action: () => console.log('Navigate clicked')
-    },
-    {
-      id: 'report-issue',
-      title: 'Report Issue',
-      description: 'Report problems',
-      icon: AlertTriangle,
-      color: 'bg-red-600 hover:bg-red-700',
-      action: () => console.log('Report issue clicked')
-    },
-    {
-      id: 'contact-dispatch',
-      title: 'Contact Dispatch',
-      description: 'Call dispatch',
-      icon: Phone,
-      color: 'bg-indigo-600 hover:bg-indigo-700',
-      action: () => console.log('Contact dispatch clicked')
-    },
-    {
-      id: 'send-message',
-      title: 'Send Message',
-      description: 'Message team',
-      icon: MessageSquare,
-      color: 'bg-pink-600 hover:bg-pink-700',
-      action: () => console.log('Send message clicked')
-    },
-    {
-      id: 'update-location',
-      title: 'Update Location',
-      description: 'Share current location',
-      icon: MapPin,
-      color: 'bg-teal-600 hover:bg-teal-700',
-      action: () => console.log('Update location clicked')
-    }
+export const QuickActions: React.FC<QuickActionsProps> = () => {
+  const primaryProtocols = [
+    { id: 'start', title: 'Start Trip', icon: Play, color: 'bg-emerald-500', desc: 'Begin new trip' },
+    { id: 'pause', title: 'Pause Trip', icon: Pause, color: 'bg-amber-500', desc: 'Take a break' },
+    { id: 'complete', title: 'Complete Trip', icon: CheckCircle, color: 'bg-[#345E85]', desc: 'Finish current trip' },
+    { id: 'navigate', title: 'Navigate', icon: Navigation, color: 'bg-indigo-500', desc: 'Get directions' }
   ];
 
-  const secondaryActions = [
-    {
-      id: 'view-schedule',
-      title: 'View Schedule',
-      description: 'Check upcoming trips',
-      icon: Calendar,
-      color: 'bg-gray-600 hover:bg-gray-700',
-      action: () => console.log('View schedule clicked')
-    },
-    {
-      id: 'view-earnings',
-      title: 'View Earnings',
-      description: 'Check pay information',
-      icon: DollarSign,
-      color: 'bg-green-600 hover:bg-green-700',
-      action: () => console.log('View earnings clicked')
-    },
-    {
-      id: 'view-safety',
-      title: 'Safety Score',
-      description: 'Check safety metrics',
-      icon: Shield,
-      color: 'bg-blue-600 hover:bg-blue-700',
-      action: () => console.log('View safety clicked')
-    },
-    {
-      id: 'view-documents',
-      title: 'Documents',
-      description: 'Access certificates',
-      icon: FileText,
-      color: 'bg-purple-600 hover:bg-purple-700',
-      action: () => console.log('View documents clicked')
-    },
-    {
-      id: 'profile-settings',
-      title: 'Profile',
-      description: 'Update information',
-      icon: User,
-      color: 'bg-indigo-600 hover:bg-indigo-700',
-      action: () => console.log('Profile clicked')
-    },
-    {
-      id: 'app-settings',
-      title: 'Settings',
-      description: 'App preferences',
-      icon: Settings,
-      color: 'bg-gray-600 hover:bg-gray-700',
-      action: () => console.log('Settings clicked')
-    }
+  const intelligenceAccess = [
+    { id: 'earnings', title: 'Earnings', icon: DollarSign, color: 'text-emerald-500' },
+    { id: 'schedule', title: 'Schedule', icon: Calendar, color: 'text-blue-500' },
+    { id: 'performance', title: 'Score', icon: Activity, color: 'text-purple-500' },
+    { id: 'docs', title: 'Documents', icon: FileText, color: 'text-slate-500' },
+    { id: 'msgs', title: 'Messages', icon: MessageSquare, color: 'text-pink-500' },
+    { id: 'hazard', title: 'Report', icon: AlertTriangle, color: 'text-rose-500' }
   ];
 
   return (
-    <div className="space-y-6">
-      {/* Primary Actions */}
-      <div>
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
+    <div className="space-y-10">
+      {/* Strategic Protocols */}
+      <section>
+        <div className="flex items-center gap-4 mb-6">
+          <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-[#345E85] border border-blue-100">
+            <Zap size={18} />
+          </div>
+          <div>
+            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mb-0.5">Quick Actions</h3>
+            <p className="text-sm font-black text-[#0f172a] uppercase tracking-tight">Trip Controls</p>
+          </div>
+        </div>
+
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {quickActions.map((action) => {
-            const Icon = action.icon;
-            return (
-              <button
-                key={action.id}
-                onClick={action.action}
-                className={`${action.color} text-white p-4 rounded-lg transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-50 focus:ring-blue-500`}
-              >
-                <div className="text-center">
-                  <Icon className="w-8 h-8 mx-auto mb-2" />
-                  <h4 className="font-medium text-sm mb-1">{action.title}</h4>
-                  <p className="text-xs opacity-90">{action.description}</p>
+          {primaryProtocols.map((protocol) => (
+            <motion.button
+              key={protocol.id}
+              whileHover={{ scale: 1.02, y: -4 }}
+              whileTap={{ scale: 0.98 }}
+              className="group relative overflow-hidden rounded-[2rem] p-8 text-left transition-all shadow-xl shadow-slate-200/40 border border-transparent hover:border-slate-100 bg-[#345E85]"
+            >
+              <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-150 transition-transform duration-700">
+                <protocol.icon size={80} className="text-white" />
+              </div>
+              <div className="relative z-10">
+                <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center text-white mb-6">
+                  <protocol.icon size={24} />
                 </div>
-              </button>
-            );
-          })}
+                <h4 className="text-sm font-black text-white uppercase tracking-wider mb-1">{protocol.title}</h4>
+                <p className="text-[10px] font-black text-white/70 uppercase tracking-widest">{protocol.desc}</p>
+              </div>
+            </motion.button>
+          ))}
         </div>
-      </div>
+      </section>
 
-      {/* Secondary Actions */}
-      <div>
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Access</h3>
+      {/* Intelligence Grid */}
+      <section>
+        <div className="flex items-center gap-4 mb-6">
+          <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-[#345E85]">
+            <Activity size={18} />
+          </div>
+          <div>
+            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mb-0.5">Quick Access</h3>
+            <p className="text-sm font-black text-[#0f172a] uppercase tracking-tight">Dashboard & Tools</p>
+          </div>
+        </div>
+
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-          {secondaryActions.map((action) => {
-            const Icon = action.icon;
-            return (
-              <button
-                key={action.id}
-                onClick={action.action}
-                className={`${action.color} text-white p-3 rounded-lg transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-50 focus:ring-blue-500`}
-              >
-                <div className="text-center">
-                  <Icon className="w-6 h-6 mx-auto mb-2" />
-                  <h4 className="font-medium text-xs mb-1">{action.title}</h4>
-                  <p className="text-xs opacity-90 leading-tight">{action.description}</p>
-                </div>
-              </button>
-            );
-          })}
+          {intelligenceAccess.map((item) => (
+            <motion.button
+              key={item.id}
+              whileHover={{ scale: 1.05, backgroundColor: '#fff' }}
+              whileTap={{ scale: 0.95 }}
+              className="bg-slate-50/50 border border-slate-100 rounded-[1.5rem] p-6 text-center transition-all hover:shadow-xl hover:shadow-slate-200/40 group"
+            >
+              <div className="w-12 h-12 rounded-xl bg-blue-50 text-[#345E85] shadow-sm flex items-center justify-center mx-auto mb-4 group-hover:rotate-12 transition-transform border border-blue-100">
+                <item.icon size={20} />
+              </div>
+              <p className="text-[10px] font-black text-[#0f172a] uppercase tracking-widest">{item.title}</p>
+            </motion.button>
+          ))}
         </div>
-      </div>
+      </section>
 
-      {/* Emergency Actions */}
-      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-        <h3 className="text-lg font-semibold text-red-900 mb-3 flex items-center">
-          <AlertTriangle className="w-5 h-5 mr-2" />
-          Emergency Actions
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          <button className="bg-red-600 hover:bg-red-700 text-white px-4 py-3 rounded-lg font-medium flex items-center justify-center space-x-2">
-            <Phone className="w-5 h-5" />
-            <span>Emergency Call</span>
-          </button>
-          <button className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-3 rounded-lg font-medium flex items-center justify-center space-x-2">
-            <AlertTriangle className="w-5 h-5" />
-            <span>Report Accident</span>
-          </button>
-          <button className="bg-red-700 hover:bg-red-800 text-white px-4 py-3 rounded-lg font-medium flex items-center justify-center space-x-2">
-            <Shield className="w-5 h-5" />
-            <span>Safety Alert</span>
-          </button>
+      {/* Emergency Response */}
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        whileInView={{ opacity: 1, scale: 1 }}
+        className="bg-rose-50 border border-rose-100 rounded-[2.5rem] p-10 flex flex-col md:flex-row items-center justify-between gap-8 group"
+      >
+        <div className="flex items-center gap-6">
+          <div className="w-16 h-16 rounded-2xl bg-rose-500 flex items-center justify-center text-white shadow-lg shadow-rose-200 group-hover:animate-pulse">
+            <AlertTriangle size={32} />
+          </div>
+          <div>
+            <h3 className="text-sm font-black text-rose-900 uppercase tracking-tight">Emergency Actions</h3>
+            <p className="text-[10px] font-black text-rose-600 uppercase tracking-widest mt-1">Immediate Assistance Required?</p>
+          </div>
         </div>
-      </div>
-
-      {/* Status Updates */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <h3 className="text-lg font-semibold text-blue-900 mb-3 flex items-center">
-          <Clock className="w-5 h-5 mr-2" />
-          Status Updates
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-          <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium text-sm">
-            Available
+        <div className="flex gap-4">
+          <button className="px-8 py-4 bg-rose-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-rose-700 transition-all shadow-lg active:scale-95">
+            Emergency Call
           </button>
-          <button className="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-lg font-medium text-sm">
-            On Break
-          </button>
-          <button className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-medium text-sm">
-            Off Duty
-          </button>
-          <button className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg font-medium text-sm">
-            Maintenance
+          <button className="px-8 py-4 bg-white border border-rose-100 text-rose-600 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-rose-50 transition-all active:scale-95">
+            Report Accident
           </button>
         </div>
-      </div>
+      </motion.div>
 
-      {/* Recent Actions */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Actions</h3>
-        <div className="space-y-3">
-          <div className="flex items-center space-x-3 text-sm text-gray-600">
-            <Clock className="w-4 h-4 text-gray-400" />
-            <span>Trip started 2 hours ago</span>
-          </div>
-          <div className="flex items-center space-x-3 text-sm text-gray-600">
-            <MapPin className="w-4 h-4 text-gray-400" />
-            <span>Location updated 15 minutes ago</span>
-          </div>
-          <div className="flex items-center space-x-3 text-sm text-gray-600">
-            <MessageSquare className="w-4 h-4 text-gray-400" />
-            <span>Message sent to dispatch 1 hour ago</span>
-          </div>
+      {/* Audit Trail */}
+      <div className="bg-white rounded-[2.5rem] border border-slate-100 p-10 shadow-sm relative overflow-hidden">
+        <div className="absolute top-0 right-0 p-10 opacity-5">
+          <Clock size={80} />
+        </div>
+        <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mb-6">Recent Actions</h3>
+        <div className="space-y-6">
+          {[
+            { msg: 'Trip MN-ORD-2024-001 completed', time: '2 hours ago', icon: CheckCircle },
+            { msg: 'Location updated', time: '15 minutes ago', icon: MapPin },
+            { msg: 'Message sent to dispatch', time: '1 hour ago', icon: MessageSquare }
+          ].map((log, i) => (
+            <div key={i} className="flex items-center gap-4 group/log">
+              <div className="w-2 h-2 rounded-full bg-[#345E85]" />
+              <div className="flex-1">
+                <p className="text-sm font-black text-[#0f172a] uppercase tracking-tight group-hover/log:translate-x-1 transition-transform">{log.msg}</p>
+                <p className="text[9px] font-black text-slate-400 uppercase tracking-widest mt-1">{log.time}</p>
+              </div>
+              <log.icon size={14} className="text-[#345E85]" />
+            </div>
+          ))}
         </div>
       </div>
     </div>

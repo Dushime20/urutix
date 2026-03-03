@@ -1,11 +1,10 @@
 import React, { useState, useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { 
-  FaTruck, FaBox, FaDollarSign, FaChartLine, 
-  FaRoute, FaExclamationTriangle,
-  FaArrowUp, FaArrowDown, FaMinus,
-  FaDownload
-} from 'react-icons/fa';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  AlertTriangle as FaExclamationTriangle,
+  Download,
+} from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Line, Bar } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -29,6 +28,11 @@ import FinancialMetrics from './FinancialMetrics';
 import OperationalInsights from './OperationalInsights';
 import PerformanceMetrics from './PerformanceMetrics';
 import RecentActivity from './RecentActivity';
+import SkeletonDashboard from './SkeletonDashboard';
+import TenantUserManagement from './TenantUserManagement';
+import ActiveTrips from './ActiveTrips';
+import TenantSettings from './TenantSettings';
+import TenantBidding from './TenantBidding';
 import { tenantApi, mockTenantData } from '../../services/tenantApi';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -50,14 +54,15 @@ interface TenantDashboardProps {
   className?: string;
 }
 
-const TenantDashboard: React.FC<TenantDashboardProps> = ({ 
-  tenantId, 
-  className = '' 
+const TenantDashboard: React.FC<TenantDashboardProps> = ({
+  tenantId,
+  className = ''
 }) => {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [timeRange, setTimeRange] = useState('7d');
-  const [lastUpdated, setLastUpdated] = useState(new Date());
-  const [selectedView, setSelectedView] = useState<'overview' | 'fleet' | 'cargo' | 'financial' | 'operations'>('overview');
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [selectedView, setSelectedView] = useState<'overview' | 'fleet' | 'cargo' | 'financial' | 'operations' | 'users' | 'trips' | 'settings' | 'bidding'>('overview');
 
   // Create tenant data object from authenticated user
   const currentTenant = useMemo(() => {
@@ -109,9 +114,21 @@ const TenantDashboard: React.FC<TenantDashboardProps> = ({
     activity: mockTenantData.recentActivity
   };
 
-  const handleRefresh = () => {
-    setLastUpdated(new Date());
-    refetch();
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      // Invalidate all tenant-related queries to force a refresh across all components
+      await Promise.all([
+        refetch(),
+        queryClient.invalidateQueries({ queryKey: ['tenant'] }),
+        queryClient.invalidateQueries({ queryKey: ['tenant-notifications'] }),
+        queryClient.invalidateQueries({ queryKey: ['activeTrips'] }),
+        // Add a small delay to let the animation show for at least a moment feels better
+        new Promise(resolve => setTimeout(resolve, 800))
+      ]);
+    } finally {
+      setIsRefreshing(false);
+    }
   };
 
   const handleTimeRangeChange = (range: string) => {
@@ -126,11 +143,11 @@ const TenantDashboard: React.FC<TenantDashboardProps> = ({
         endDate: new Date().toISOString(),
         dataType: 'dashboard'
       });
-      
+
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `tenant-dashboard-${format}-${new Date().toISOString().split('T')[0]}.${format}`;
+      a.download = `tenant - dashboard - ${format} -${new Date().toISOString().split('T')[0]}.${format} `;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
@@ -154,24 +171,45 @@ const TenantDashboard: React.FC<TenantDashboardProps> = ({
         }
       },
       tooltip: {
-        backgroundColor: 'rgba(0, 0, 0, 0.8)',
-        titleColor: 'white',
-        bodyColor: 'white',
-        borderColor: 'rgba(255, 255, 255, 0.2)',
+        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+        titleColor: '#1e293b',
+        bodyColor: '#475569',
+        borderColor: '#e2e8f0',
         borderWidth: 1,
-        cornerRadius: 8,
+        cornerRadius: 12,
+        padding: 12,
+        boxPadding: 6,
+        usePointStyle: true,
         displayColors: true
       }
     },
     scales: {
       y: {
         beginAtZero: true,
-        grid: { color: 'rgba(0, 0, 0, 0.05)' }
+        grid: { color: 'rgba(0, 0, 0, 0.05)', drawBorder: false },
+        ticks: { color: '#94a3b8', font: { size: 10 } }
       },
       x: {
-        grid: { color: 'rgba(0, 0, 0, 0.05)' }
+        grid: { display: false },
+        ticks: { color: '#94a3b8', font: { size: 10 } }
       }
     }
+  };
+
+  // Revenue Gradient Helper
+  const revenueGradient = (ctx: CanvasRenderingContext2D) => {
+    const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+    gradient.addColorStop(0, 'rgba(99, 102, 241, 0.25)');
+    gradient.addColorStop(1, 'rgba(99, 102, 241, 0)');
+    return gradient;
+  };
+
+  // Fleet Gradient Helper
+  const fleetGradient = (ctx: CanvasRenderingContext2D) => {
+    const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+    gradient.addColorStop(0, 'rgba(16, 185, 129, 0.25)');
+    gradient.addColorStop(1, 'rgba(16, 185, 129, 0)');
+    return gradient;
   };
 
   const revenueData = {
@@ -180,16 +218,24 @@ const TenantDashboard: React.FC<TenantDashboardProps> = ({
       {
         label: 'Revenue (RWF)',
         data: data.trends.revenue,
-        borderColor: 'rgb(59, 130, 246)',
-        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+        borderColor: '#6366f1',
+        backgroundColor: (context: any) => {
+          const chart = context.chart;
+          const { ctx, chartArea } = chart;
+          if (!chartArea) return 'rgba(99, 102, 241, 0.1)';
+          return revenueGradient(ctx);
+        },
         borderWidth: 3,
         fill: true,
         tension: 0.4,
-        pointBackgroundColor: 'rgb(59, 130, 246)',
+        pointBackgroundColor: '#6366f1',
         pointBorderColor: 'white',
         pointBorderWidth: 2,
-        pointRadius: 6,
-        pointHoverRadius: 8
+        pointRadius: 0,
+        pointHoverRadius: 6,
+        pointHoverBackgroundColor: '#6366f1',
+        pointHoverBorderColor: 'white',
+        pointHoverBorderWidth: 3,
       }
     ]
   };
@@ -200,16 +246,24 @@ const TenantDashboard: React.FC<TenantDashboardProps> = ({
       {
         label: 'Fleet Utilization (%)',
         data: data.trends.fleetUtilization,
-        borderColor: 'rgb(34, 197, 94)',
-        backgroundColor: 'rgba(34, 197, 94, 0.1)',
+        borderColor: '#10b981',
+        backgroundColor: (context: any) => {
+          const chart = context.chart;
+          const { ctx, chartArea } = chart;
+          if (!chartArea) return 'rgba(16, 185, 129, 0.1)';
+          return fleetGradient(ctx);
+        },
         borderWidth: 3,
         fill: true,
         tension: 0.4,
-        pointBackgroundColor: 'rgb(34, 197, 94)',
+        pointBackgroundColor: '#10b981',
         pointBorderColor: 'white',
         pointBorderWidth: 2,
-        pointRadius: 6,
-        pointHoverRadius: 8
+        pointRadius: 0,
+        pointHoverRadius: 6,
+        pointHoverBackgroundColor: '#10b981',
+        pointHoverBorderColor: 'white',
+        pointHoverBorderWidth: 3,
       }
     ]
   };
@@ -228,192 +282,204 @@ const TenantDashboard: React.FC<TenantDashboardProps> = ({
           (data.metrics.customerSatisfaction / 5) * 100,
         ],
         backgroundColor: [
-          'rgba(59, 130, 246, 0.8)',
-          'rgba(34, 197, 94, 0.8)',
-          'rgba(251, 191, 36, 0.8)',
-          'rgba(239, 68, 68, 0.8)',
-          'rgba(168, 85, 247, 0.8)',
-          'rgba(16, 185, 129, 0.8)',
-          ],
-        borderColor: [
-          'rgb(59, 130, 246)',
-          'rgb(34, 197, 94)',
-          'rgb(251, 191, 36)',
-          'rgb(239, 68, 68)',
-          'rgb(168, 85, 247)',
-          'rgb(16, 185, 129)',
+          'rgba(99, 102, 241, 0.85)',
+          'rgba(16, 185, 129, 0.85)',
+          'rgba(245, 158, 11, 0.85)',
+          'rgba(239, 68, 68, 0.85)',
+          'rgba(139, 92, 246, 0.85)',
+          'rgba(20, 184, 166, 0.85)',
         ],
-        borderWidth: 2
+        borderRadius: 8,
+        barThickness: 12,
       }
     ]
   };
 
   return (
-    <div className={`min-h-screen bg-gray-50 ${className}`}>
+    <div className={`min - h - screen bg - white ${className} `}>
       {/* Header */}
-      <TenantHeader 
+      <TenantHeader
         tenant={currentTenant}
         onRefresh={handleRefresh}
-        lastUpdated={lastUpdated}
+        isRefreshing={isRefreshing}
+        selectedView={selectedView}
+        setSelectedView={setSelectedView}
       />
 
-      {/* Navigation Tabs */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <nav className="flex space-x-8">
-            {[
-              { id: 'overview', label: 'Overview', icon: FaChartLine },
-              { id: 'fleet', label: 'Fleet', icon: FaTruck },
-              { id: 'cargo', label: 'Cargo', icon: FaBox },
-              { id: 'financial', label: 'Financial', icon: FaDollarSign },
-              { id: 'operations', label: 'Operations', icon: FaRoute },
-            ].map((tab) => {
-              const Icon = tab.icon;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setSelectedView(tab.id as any)}
-                  className={`
-                    py-4 px-1 border-b-2 font-medium text-sm transition-colors
-                    ${selectedView === tab.id
-                      ? 'border-blue-500 text-blue-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                    }
-                  `}
-                >
-                  <Icon className="inline-block w-4 h-4 mr-2" />
-                  {tab.label}
-                </button>
-              );
-            })}
-          </nav>
-        </div>
-      </div>
+
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Loading State */}
-        {isLoading && (
-          <div className="flex items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-            <span className="ml-3 text-lg text-gray-600">Loading dashboard data...</span>
-          </div>
-        )}
+        {/* Loading State - Premium Skeleton */}
+        {isLoading && <SkeletonDashboard />}
 
         {/* Error State */}
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-6 mb-8">
-            <div className="flex items-center">
-              <FaExclamationTriangle className="text-red-400 mr-3" />
-              <div>
-                <h3 className="text-lg font-medium text-red-800">Error Loading Data</h3>
-                <p className="text-red-700 mt-1">Using mock data. Please check your connection and try again.</p>
-              </div>
+          <div className="bg-amber-50 border border-amber-100 rounded-[20px] p-6 mb-8 flex items-center">
+            <div className="p-3 bg-amber-100 rounded-xl mr-4">
+              <FaExclamationTriangle className="text-amber-600 w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-sm font-black text-amber-900 uppercase tracking-tight">Intelligence Offline</h3>
+              <p className="text-[13px] text-amber-700 mt-0.5 font-medium">Using local backup data. Reconnecting to node...</p>
             </div>
           </div>
         )}
 
-        {selectedView === 'overview' && (
-          <div className="space-y-8">
-            {/* Quick Stats */}
-            <QuickStats metrics={data.metrics} />
+        <AnimatePresence mode="wait">
+          {!isLoading && selectedView === 'overview' && (
+            <motion.div
+              key="overview"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.4, ease: "easeOut" }}
+              className="space-y-10"
+            >
+              {/* Quick Stats */}
+              <QuickStats metrics={data.metrics} />
 
-            {/* Charts Row */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              {/* Revenue Chart */}
-              <div className="bg-white rounded-lg shadow p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-gray-900">Weekly Revenue</h3>
-                  <div className="flex items-center space-x-2">
-                    <select
-                      value={timeRange}
-                      onChange={(e) => handleTimeRangeChange(e.target.value)}
-                      className="text-sm border border-gray-300 rounded px-2 py-1"
-                    >
-                      <option value="7d">7 Days</option>
-                      <option value="30d">30 Days</option>
-                      <option value="90d">90 Days</option>
-                    </select>
-                    <div className="flex space-x-2 ml-4">
+              {/* Charts Row */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {/* Revenue Chart */}
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.2 }}
+                  className="bg-white rounded-[32px] border border-gray-100 shadow-sm p-8"
+                >
+                  <div className="flex items-center justify-between mb-8">
+                    <div>
+                      <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">Financial Momentum</h3>
+                      <h4 className="text-xl font-black text-slate-800 tracking-tight">Weekly Revenue</h4>
+                    </div>
+                    <div className="flex items-center space-x-3">
+                      <select
+                        value={timeRange}
+                        onChange={(e) => handleTimeRangeChange(e.target.value)}
+                        className="text-[11px] font-bold text-slate-600 bg-gray-50 border-none rounded-lg px-3 py-1.5 focus:ring-2 focus:ring-indigo-500/20"
+                      >
+                        <option value="7d">Last 7d</option>
+                        <option value="30d">Last 30d</option>
+                        <option value="90d">Last 90d</option>
+                      </select>
                       <button
                         onClick={() => handleExportData('csv')}
-                        className="flex items-center px-3 py-1 text-sm text-gray-600 hover:text-gray-800 border border-gray-300 rounded hover:bg-gray-50"
-                        title="Export as CSV"
+                        className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                        title="Export Data"
                       >
-                        <FaDownload className="w-3 h-3 mr-1" />
-                        CSV
-                      </button>
-                      <button
-                        onClick={() => handleExportData('excel')}
-                        className="flex items-center px-3 py-1 text-sm text-gray-600 hover:text-gray-800 border border-gray-300 rounded hover:bg-gray-50"
-                        title="Export as Excel"
-                      >
-                        <FaDownload className="w-3 h-3 mr-1" />
-                        Excel
-                      </button>
-                      <button
-                        onClick={() => handleExportData('pdf')}
-                        className="flex items-center px-3 py-1 text-sm text-gray-600 hover:text-gray-800 border border-gray-300 rounded hover:bg-gray-50"
-                        title="Export as PDF"
-                      >
-                        <FaDownload className="w-3 h-3 mr-1" />
-                        PDF
+                        <Download className="w-4 h-4" />
                       </button>
                     </div>
                   </div>
-                </div>
-                <div className="h-64">
-                  <Line data={revenueData} options={chartOptions} />
-                </div>
-              </div>
-
-              {/* Fleet Utilization Chart */}
-              <div className="bg-white rounded-lg shadow p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-gray-900">Fleet Utilization</h3>
-                  <div className="text-sm text-gray-500">
-                    Average: {data.metrics.averageLoadUtilization}%
+                  <div className="h-72">
+                    <Line data={revenueData} options={chartOptions} />
                   </div>
-                </div>
-                <div className="h-64">
-                  <Line data={fleetUtilizationData} options={chartOptions} />
-                </div>
+                </motion.div>
+
+                {/* Fleet Utilization Chart */}
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.3 }}
+                  className="bg-white rounded-[32px] border border-gray-100 shadow-sm p-8"
+                >
+                  <div className="flex items-center justify-between mb-8">
+                    <div>
+                      <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">Asset Optimization</h3>
+                      <h4 className="text-xl font-black text-slate-800 tracking-tight">Fleet Utilization</h4>
+                    </div>
+                    <div className="px-3 py-1 bg-emerald-50 rounded-full">
+                      <span className="text-[11px] font-black text-emerald-600 uppercase tracking-wider">Avg: {data.metrics.averageLoadUtilization}%</span>
+                    </div>
+                  </div>
+                  <div className="h-72">
+                    <Line data={fleetUtilizationData} options={chartOptions} />
+                  </div>
+                </motion.div>
               </div>
-            </div>
 
-            {/* Performance Metrics */}
-            <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Performance Overview</h3>
-              <div className="h-64">
-                <Bar data={performanceData} options={chartOptions} />
-              </div>
-            </div>
+              {/* Performance Metrics */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4 }}
+                className="bg-white rounded-[32px] border border-gray-100 shadow-sm p-8"
+              >
+                <div className="mb-8">
+                  <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">Operational Health</h3>
+                  <h4 className="text-xl font-black text-slate-800 tracking-tight">Performance Radar</h4>
+                </div>
+                <div className="h-80">
+                  <Bar data={performanceData} options={{
+                    ...chartOptions,
+                    indexAxis: 'y' as const,
+                    plugins: {
+                      ...chartOptions.plugins,
+                      legend: { display: false }
+                    }
+                  }} />
+                </div>
+              </motion.div>
 
-            {/* Detailed Performance Metrics */}
-            <PerformanceMetrics tenantId={tenantId} />
+              {/* Detailed Performance Metrics */}
+              <PerformanceMetrics tenantId={tenantId} />
 
-            {/* Recent Activity */}
-            <RecentActivity activities={data.activity} />
-          </div>
-        )}
+              {/* Recent Activity */}
+              <RecentActivity activities={data.activity} />
+            </motion.div>
+          )}
 
-        {selectedView === 'fleet' && (
-          <FleetOverview tenantId={tenantId} />
-        )}
+          {!isLoading && selectedView === 'fleet' && (
+            <motion.div key="fleet" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+              <FleetOverview tenantId={tenantId} />
+            </motion.div>
+          )}
 
-        {selectedView === 'cargo' && (
-          <CargoAnalytics tenantId={tenantId} />
-        )}
+          {!isLoading && selectedView === 'cargo' && (
+            <motion.div key="cargo" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+              <CargoAnalytics tenantId={tenantId} />
+            </motion.div>
+          )}
 
-        {selectedView === 'financial' && (
-          <FinancialMetrics tenantId={tenantId} />
-        )}
+          {!isLoading && selectedView === 'financial' && (
+            <motion.div key="financial" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+              <FinancialMetrics tenantId={tenantId} />
+            </motion.div>
+          )}
 
-        {selectedView === 'operations' && (
-          <OperationalInsights tenantId={tenantId} />
-        )}
+          {!isLoading && selectedView === 'operations' && (
+            <motion.div key="operations" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+              <OperationalInsights />
+            </motion.div>
+          )}
+
+          {!isLoading && selectedView === 'users' && tenantId && (
+            <motion.div key="users" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+              <TenantUserManagement tenantId={tenantId} />
+            </motion.div>
+          )}
+
+          {!isLoading && selectedView === 'trips' && tenantId && (
+            <motion.div key="trips" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+              <ActiveTrips tenantId={tenantId} />
+            </motion.div>
+          )}
+
+          {!isLoading && selectedView === 'settings' && tenantId && (
+            <motion.div key="settings" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+              <TenantSettings tenantId={tenantId} />
+            </motion.div>
+          )}
+
+          {!isLoading && selectedView === 'bidding' && tenantId && (
+            <motion.div key="bidding" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+              <TenantBidding tenantId={tenantId} />
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
-    </div>
+    </div >
   );
 };
 

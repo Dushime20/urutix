@@ -145,7 +145,33 @@ const TenantSettingsModal: React.FC<TenantSettingsModalProps> = ({
       await fetchTenantData(); // Refresh data
       queryClient.invalidateQueries({ queryKey: ['admin-tenants'] });
     } catch (error: any) {
-      toast.error(error?.response?.data?.message || 'Failed to activate tenant');
+      console.error('❌ Tenant activation failed:', error);
+      
+      // Extract detailed error message from backend
+      const errorMessage = error?.response?.data?.message || error?.message || 'Failed to activate tenant';
+      
+      // Show detailed error with helpful context
+      if (errorMessage.includes('Missing requirements')) {
+        toast.error(
+          <div>
+            <div className="font-semibold">Cannot activate tenant</div>
+            <div className="text-sm mt-1">{errorMessage}</div>
+            <div className="text-xs mt-2 opacity-80">Please ensure all required fields are filled and at least one admin user is assigned.</div>
+          </div>,
+          { duration: 6000 }
+        );
+      } else if (errorMessage.includes('admin user')) {
+        toast.error(
+          <div>
+            <div className="font-semibold">No admin user found</div>
+            <div className="text-sm mt-1">This tenant must have at least one admin user before activation.</div>
+            <div className="text-xs mt-2 opacity-80">Contact support to assign an admin user to this tenant.</div>
+          </div>,
+          { duration: 6000 }
+        );
+      } else {
+        toast.error(errorMessage, { duration: 5000 });
+      }
     } finally {
       setIsChangingStatus(false);
     }

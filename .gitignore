@@ -38,3 +38,7 @@ yarn-error.log*
 
 # Old services logs
 oldservices/**/logs/
+
+# Large video files
+*.mp4
+frontend/public/*.mp4

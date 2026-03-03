@@ -1,24 +1,31 @@
 import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
-  FaQuestionCircle,
-  FaEnvelope,
-  FaPhone,
-  FaComments,
-  FaBook,
-  FaVideo,
-  FaFileAlt,
-  FaSearch,
-  FaChevronDown,
-  FaChevronUp,
-  FaBox,
-  FaList,
-  FaChartBar,
-  FaMapMarkedAlt,
-  FaCreditCard,
-  FaBell,
-  FaStar
-} from 'react-icons/fa';
-import logoUrutiX from '@/assets/logo-urutix.svg';
+  HelpCircle,
+  Mail,
+  Phone,
+  MessageSquare,
+  BookOpen,
+  Video,
+  FileText,
+  Search,
+  ChevronDown,
+  ChevronUp,
+  Package,
+  BarChart2,
+  Map,
+  CreditCard,
+  Bell,
+  Star,
+  ArrowRight,
+  Zap,
+  Globe,
+  Settings,
+  ShieldCheck,
+  Award,
+  ThumbsUp,
+  ThumbsDown
+} from 'lucide-react';
 
 interface FAQItem {
   id: string;
@@ -62,268 +69,184 @@ const CargoHelpSupport: React.FC = () => {
       question: 'How do I view analytics and reports?',
       answer: 'Visit Analytics & Reports to access comprehensive insights about your cargo operations. You can view shipment statistics, cost analysis, delivery performance, and generate PDF reports for your records.',
       category: 'analytics'
-    },
-    {
-      id: '6',
-      question: 'How do I manage my documents?',
-      answer: 'Go to Document Management to upload, view, and manage all your shipping documents including invoices, receipts, insurance papers, and compliance certificates. Documents are organized by type and trip.',
-      category: 'documents'
-    },
-    {
-      id: '7',
-      question: 'How do I receive notifications?',
-      answer: 'Visit Notifications to see all your alerts and updates. You can customize notification preferences, mark items as read, and filter by type. Important notifications will also appear in your dashboard.',
-      category: 'notifications'
-    },
-    {
-      id: '8',
-      question: 'How do I improve my reputation and earn rewards?',
-      answer: 'Go to Reputation & Rewards to view your rating, see your reward points, and check your credit score. Maintain timely payments, provide accurate cargo information, and rate drivers fairly to improve your reputation.',
-      category: 'reputation'
-    },
-    {
-      id: '9',
-      question: 'How do I update my account information?',
-      answer: 'Navigate to Account & Settings to update your profile information, company details, contact information, and account preferences. You can also manage notification settings and security options.',
-      category: 'account'
-    },
-    {
-      id: '10',
-      question: 'What should I do if there is a problem with my shipment?',
-      answer: 'Contact support immediately through Help & Support. You can also use the dispute resolution feature if there are issues with delivery, payment, or service quality. Our team will assist you in resolving the matter.',
-      category: 'support'
     }
   ];
 
   const categories = [
-    { id: 'all', name: 'All Topics', icon: FaQuestionCircle },
-    { id: 'cargo', name: 'Cargo Management', icon: FaBox },
-    { id: 'bidding', name: 'Bidding & Auctions', icon: FaComments },
-    { id: 'tracking', name: 'Tracking & Maps', icon: FaMapMarkedAlt },
-    { id: 'payments', name: 'Payments', icon: FaCreditCard },
-    { id: 'analytics', name: 'Analytics & Reports', icon: FaChartBar },
-    { id: 'documents', name: 'Documents', icon: FaFileAlt },
-    { id: 'notifications', name: 'Notifications', icon: FaBell },
-    { id: 'reputation', name: 'Reputation & Rewards', icon: FaStar },
-    { id: 'account', name: 'Account & Settings', icon: FaQuestionCircle },
-    { id: 'support', name: 'Support', icon: FaQuestionCircle }
+    { id: 'all', name: 'All Topics', icon: HelpCircle },
+    { id: 'cargo', name: 'Cargo Logic', icon: Package },
+    { id: 'bidding', name: 'Bidding Matrix', icon: MessageSquare },
+    { id: 'tracking', name: 'Spatial Ops', icon: Map },
+    { id: 'payments', name: 'Fin-Flow', icon: CreditCard },
+    { id: 'analytics', name: 'Data Dynamics', icon: BarChart2 },
+    { id: 'documents', name: 'Registry', icon: FileText },
+    { id: 'notifications', name: 'Signals', icon: Bell },
+    { id: 'reputation', name: 'Authority', icon: Star },
+    { id: 'account', name: 'Protocol', icon: Settings }
   ];
 
   const filteredFAQs = faqs.filter(faq => {
     const matchesSearch = faq.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         faq.answer.toLowerCase().includes(searchQuery.toLowerCase());
+      faq.answer.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = selectedCategory === 'all' || faq.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
 
-  const toggleFAQ = (id: string) => {
-    setExpandedFAQ(expandedFAQ === id ? null : id);
-  };
-
   return (
-    <div className="min-h-screen bg-gray-50 py-8 relative">
-      {/* Background Logo */}
-      <img 
-        src={logoUrutiX} 
-        alt="UrutiX Logo Background" 
-        className="pointer-events-none select-none fixed inset-0 w-full h-full object-cover opacity-10 z-0" 
-        style={{objectPosition: 'center'}} 
-      />
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        {/* Header */}
-        <div className="text-center mb-12">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-primary-100 rounded-full mb-4">
-            <FaQuestionCircle className="w-8 h-8 text-primary-600" />
+    <div className="min-h-screen bg-[#F8FAFC] p-6 md:p-10 animate-in fade-in duration-700">
+      <div className="max-w-7xl mx-auto space-y-12">
+        {/* Futuristic Header */}
+        <div className="relative bg-white rounded-[40px] border border-slate-100 p-12 overflow-hidden shadow-sm group">
+          <div className="absolute top-0 right-0 p-12 opacity-5 scale-[2] group-hover:rotate-12 transition-transform duration-1000">
+            <Globe size={180} className="text-[#345E85]" />
           </div>
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">Help & Support</h1>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            Find answers to common questions and get the help you need to manage your cargo shipments effectively
-          </p>
+
+          <div className="relative z-10 max-w-2xl">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="h-14 w-14 bg-blue-50 rounded-2xl flex items-center justify-center text-[#345E85] shadow-inner">
+                <HelpCircle size={28} />
+              </div>
+              <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-[#345E85]">System Assistance Paradigm</h2>
+            </div>
+
+            <h1 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tight leading-none mb-6">
+              Operational <span className="text-[#345E85]">Intelligence</span> Hub
+            </h1>
+            <p className="text-slate-500 font-medium text-lg leading-relaxed mb-10">
+              Synchronize your logistics logic through our comprehensive knowledge base and real-time support channels.
+            </p>
+
+            <div className="relative">
+              <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Query the repository for system logic..."
+                className="w-full bg-slate-50 border border-slate-100 rounded-3xl py-6 pl-16 pr-8 text-slate-900 font-bold placeholder:text-slate-300 focus:bg-white focus:ring-4 focus:ring-blue-50 focus:border-[#345E85] outline-none transition-all shadow-inner"
+              />
+            </div>
+          </div>
         </div>
 
-        {/* Search Bar */}
-        <div className="mb-8">
-          <div className="relative max-w-2xl mx-auto">
-            <FaSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search for help topics, questions, or keywords..."
-              className="w-full pl-12 pr-4 py-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-lg"
-            />
-          </div>
+        {/* Contact Vectors */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {[
+            { icon: Mail, label: 'Data Transmission', detail: 'support@urutix.com', color: 'blue', action: 'Send Packet' },
+            { icon: Phone, label: 'Voice Link', detail: '+254 700 000 000', color: 'emerald', action: 'Establish Connection' },
+            { icon: MessageSquare, label: 'Direct Sync', detail: 'Real-time Assistance', color: 'purple', action: 'Initialize Chat' }
+          ].map((vector, idx) => (
+            <div key={idx} className="bg-white p-8 rounded-[32px] border border-slate-100 shadow-sm hover:shadow-md transition-all group cursor-pointer">
+              <div className="flex items-center gap-4 mb-6">
+                <div className={`h-12 w-12 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-[#345E85] group-hover:text-white transition-all`}>
+                  <vector.icon size={24} />
+                </div>
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">{vector.label}</p>
+                  <p className="text-sm font-bold text-slate-900">{vector.detail}</p>
+                </div>
+              </div>
+              <button className="text-[10px] font-black uppercase tracking-widest text-[#345E85] flex items-center gap-2 group-hover:translate-x-2 transition-transform">
+                {vector.action} <ArrowRight size={12} />
+              </button>
+            </div>
+          ))}
         </div>
 
-        {/* Categories */}
-        <div className="mb-8">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Browse by Category</h2>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-            {categories.map((category) => {
-              const IconComponent = category.icon;
-              return (
-                <button
-                  key={category.id}
-                  onClick={() => setSelectedCategory(category.id)}
-                  className={`p-4 rounded-lg border-2 transition-all ${
-                    selectedCategory === category.id
-                      ? 'border-primary-600 bg-primary-50 text-primary-700'
-                      : 'border-gray-200 bg-white text-gray-700 hover:border-primary-300 hover:bg-gray-50'
+        {/* Categories Matrix */}
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <h3 className="text-[11px] font-black uppercase tracking-widest text-slate-400">Logic Domain Filtering</h3>
+            <span className="h-0.5 flex-1 mx-6 bg-slate-200" />
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+            {categories.map(cat => (
+              <button
+                key={cat.id}
+                onClick={() => setSelectedCategory(cat.id)}
+                className={`flex flex-col items-center justify-center p-6 rounded-3xl border transition-all ${selectedCategory === cat.id
+                    ? 'bg-[#345E85] text-white border-transparent shadow-xl shadow-blue-100 scale-105'
+                    : 'bg-white text-slate-400 border-slate-100 hover:border-slate-300'
                   }`}
-                >
-                  <IconComponent className="w-6 h-6 mx-auto mb-2" />
-                  <div className="text-sm font-medium">{category.name}</div>
-                </button>
-              );
-            })}
+              >
+                <cat.icon size={20} className="mb-3" />
+                <span className="text-[10px] font-black uppercase tracking-widest">{cat.name}</span>
+              </button>
+            ))}
           </div>
         </div>
 
-        {/* Quick Contact */}
-        <div className="grid md:grid-cols-3 gap-6 mb-12">
-          <div className="bg-white rounded-lg border border-gray-200 p-6 text-center">
-            <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-100 rounded-full mb-4">
-              <FaEnvelope className="w-6 h-6 text-blue-600" />
+        {/* Knowledge Base */}
+        <div className="bg-white p-10 rounded-[40px] border border-slate-100 shadow-sm">
+          <div className="flex items-center justify-between mb-10 pb-6 border-b border-slate-50">
+            <div>
+              <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">Intelligence Repository</h3>
+              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Foundational knowledge synchronization</p>
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Email Support</h3>
-            <p className="text-gray-600 mb-4">Get help via email</p>
-            <a
-              href="mailto:support@urutix.com"
-              className="text-primary-600 hover:text-primary-700 font-medium"
-            >
-              support@urutix.com
-            </a>
-          </div>
-
-          <div className="bg-white rounded-lg border border-gray-200 p-6 text-center">
-            <div className="inline-flex items-center justify-center w-12 h-12 bg-green-100 rounded-full mb-4">
-              <FaPhone className="w-6 h-6 text-green-600" />
-            </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Phone Support</h3>
-            <p className="text-gray-600 mb-4">Call us for immediate assistance</p>
-            <a
-              href="tel:+254700000000"
-              className="text-primary-600 hover:text-primary-700 font-medium"
-            >
-              +254 700 000 000
-            </a>
-          </div>
-
-          <div className="bg-white rounded-lg border border-gray-200 p-6 text-center">
-            <div className="inline-flex items-center justify-center w-12 h-12 bg-purple-100 rounded-full mb-4">
-              <FaComments className="w-6 h-6 text-purple-600" />
-            </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Live Chat</h3>
-            <p className="text-gray-600 mb-4">Chat with our support team</p>
-            <button className="text-primary-600 hover:text-primary-700 font-medium">
-              Start Chat
-            </button>
-          </div>
-        </div>
-
-        {/* FAQs */}
-        <div className="mb-12">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-gray-900">
-              Frequently Asked Questions
-            </h2>
-            <span className="text-gray-600">
-              {filteredFAQs.length} {filteredFAQs.length === 1 ? 'question' : 'questions'}
-            </span>
+            <Zap className="text-[#345E85] animate-pulse" />
           </div>
 
           <div className="space-y-4">
-            {filteredFAQs.length === 0 ? (
-              <div className="text-center py-12 bg-white rounded-lg border border-gray-200">
-                <FaQuestionCircle className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">No results found</h3>
-                <p className="text-gray-600">Try adjusting your search or category filter</p>
-              </div>
-            ) : (
-              filteredFAQs.map((faq) => (
-                <div
-                  key={faq.id}
-                  className="bg-white rounded-lg border border-gray-200 overflow-hidden"
+            {filteredFAQs.map(faq => (
+              <div
+                key={faq.id}
+                className={`border rounded-3xl transition-all duration-300 ${expandedFAQ === faq.id ? 'border-[#345E85] bg-blue-50/20' : 'border-slate-100 bg-white hover:border-slate-200'
+                  }`}
+              >
+                <button
+                  onClick={() => setExpandedFAQ(expandedFAQ === faq.id ? null : faq.id)}
+                  className="w-full px-8 py-6 text-left flex items-center justify-between"
                 >
-                  <button
-                    onClick={() => toggleFAQ(faq.id)}
-                    className="w-full px-6 py-4 flex items-center justify-between text-left hover:bg-gray-50 transition-colors"
-                  >
-                    <span className="text-lg font-semibold text-gray-900 pr-4">
-                      {faq.question}
-                    </span>
-                    {expandedFAQ === faq.id ? (
-                      <FaChevronUp className="w-5 h-5 text-gray-500 flex-shrink-0" />
-                    ) : (
-                      <FaChevronDown className="w-5 h-5 text-gray-500 flex-shrink-0" />
-                    )}
-                  </button>
+                  <span className="text-sm font-bold text-slate-800">{faq.question}</span>
+                  {expandedFAQ === faq.id ? <ChevronUp size={18} className="text-[#345E85]" /> : <ChevronDown size={18} className="text-slate-400" />}
+                </button>
+                <AnimatePresence>
                   {expandedFAQ === faq.id && (
-                    <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
-                      <p className="text-gray-700 leading-relaxed">{faq.answer}</p>
-                    </div>
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="px-8 pb-8 pt-2">
+                        <p className="text-sm text-slate-600 leading-relaxed italic border-l-4 border-[#345E85] pl-6">{faq.answer}</p>
+                        <div className="flex gap-4 mt-8 pt-6 border-t border-slate-50">
+                          <button className="text-[9px] font-black uppercase tracking-widest text-emerald-600 flex items-center gap-1.5 bg-emerald-50 px-3 py-1.5 rounded-lg active:scale-95 transition-all">
+                            Efficient Logic <ThumbsUp size={12} />
+                          </button>
+                          <button className="text-[9px] font-black uppercase tracking-widest text-rose-600 flex items-center gap-1.5 bg-rose-50 px-3 py-1.5 rounded-lg active:scale-95 transition-all">
+                            Inaccurate Logic <ThumbsDown size={12} />
+                          </button>
+                        </div>
+                      </div>
+                    </motion.div>
                   )}
-                </div>
-              ))
-            )}
+                </AnimatePresence>
+              </div>
+            ))}
           </div>
         </div>
 
-        {/* Resources */}
-        <div className="bg-white rounded-lg border border-gray-200 p-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">Additional Resources</h2>
-          <div className="grid md:grid-cols-3 gap-6">
-            <div className="flex items-start space-x-4">
-              <div className="flex-shrink-0">
-                <div className="w-12 h-12 bg-primary-100 rounded-lg flex items-center justify-center">
-                  <FaBook className="w-6 h-6 text-primary-600" />
-                </div>
+        {/* Global Resources */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {[
+            { icon: BookOpen, title: 'Central Registry', desc: 'Comprehensive guides and documentation for system protocols.' },
+            { icon: Video, title: 'Visual Synapse', desc: 'Step-by-step visual instructionals for interface mastery.' },
+            { icon: ShieldCheck, title: 'Security Protocol', desc: 'Detailed specifications for data protection and safety.' }
+          ].map((res, idx) => (
+            <div key={idx} className="bg-[#345E85] p-8 rounded-[40px] text-white shadow-xl shadow-blue-100 relative overflow-hidden group">
+              <div className="absolute -right-6 -top-6 opacity-10 group-hover:scale-125 transition-transform duration-700">
+                <res.icon size={100} />
               </div>
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Documentation</h3>
-                <p className="text-gray-600 mb-3">
-                  Comprehensive guides and documentation for all features
-                </p>
-                <a href="#" className="text-primary-600 hover:text-primary-700 font-medium">
-                  View Docs →
-                </a>
-              </div>
+              <res.icon size={32} className="mb-6 opacity-80" />
+              <h4 className="text-lg font-black uppercase tracking-tight mb-3 font-serif">{res.title}</h4>
+              <p className="text-xs text-blue-100/70 leading-relaxed mb-6 font-medium">{res.desc}</p>
+              <button className="text-[10px] font-black uppercase tracking-widest text-white border-b-2 border-white/20 pb-1 hover:border-white transition-all">
+                Synchronize Archive
+              </button>
             </div>
-
-            <div className="flex items-start space-x-4">
-              <div className="flex-shrink-0">
-                <div className="w-12 h-12 bg-primary-100 rounded-lg flex items-center justify-center">
-                  <FaVideo className="w-6 h-6 text-primary-600" />
-                </div>
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Video Tutorials</h3>
-                <p className="text-gray-600 mb-3">
-                  Step-by-step video guides to help you get started
-                </p>
-                <a href="#" className="text-primary-600 hover:text-primary-700 font-medium">
-                  Watch Videos →
-                </a>
-              </div>
-            </div>
-
-            <div className="flex items-start space-x-4">
-              <div className="flex-shrink-0">
-                <div className="w-12 h-12 bg-primary-100 rounded-lg flex items-center justify-center">
-                  <FaFileAlt className="w-6 h-6 text-primary-600" />
-                </div>
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Knowledge Base</h3>
-                <p className="text-gray-600 mb-3">
-                  Browse our extensive knowledge base for detailed articles
-                </p>
-                <a href="#" className="text-primary-600 hover:text-primary-700 font-medium">
-                  Browse Articles →
-                </a>
-              </div>
-            </div>
-          </div>
+          ))}
         </div>
       </div>
     </div>
@@ -331,4 +254,3 @@ const CargoHelpSupport: React.FC = () => {
 };
 
 export default CargoHelpSupport;
-

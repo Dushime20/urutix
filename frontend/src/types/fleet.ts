@@ -4,8 +4,7 @@ export const FleetStatus = {
   MAINTENANCE: 'MAINTENANCE',
   OUT_OF_SERVICE: 'OUT_OF_SERVICE'
 } as const;
-
-export type FleetStatus = typeof FleetStatus[keyof typeof FleetStatus];
+export type FleetStatus = (typeof FleetStatus)[keyof typeof FleetStatus];
 
 export const DocumentType = {
   INSURANCE: 'insurance',
@@ -19,8 +18,7 @@ export const DocumentType = {
   WARRANTY: 'warranty',
   OTHER: 'other'
 } as const;
-
-export type DocumentType = typeof DocumentType[keyof typeof DocumentType];
+export type DocumentType = (typeof DocumentType)[keyof typeof DocumentType];
 
 export const DocumentStatus = {
   VALID: 'valid',
@@ -30,8 +28,7 @@ export const DocumentStatus = {
   REJECTED: 'rejected',
   UNDER_REVIEW: 'under_review'
 } as const;
-
-export type DocumentStatus = typeof DocumentStatus[keyof typeof DocumentStatus];
+export type DocumentStatus = (typeof DocumentStatus)[keyof typeof DocumentStatus];
 
 export const InspectionType = {
   SAFETY: 'safety',
@@ -46,8 +43,7 @@ export const InspectionType = {
   ANNUAL: 'annual',
   BIENNIAL: 'biennial'
 } as const;
-
-export type InspectionType = typeof InspectionType[keyof typeof InspectionType];
+export type InspectionType = (typeof InspectionType)[keyof typeof InspectionType];
 
 export const MaintenanceType = {
   PREVENTIVE: 'preventive',
@@ -59,8 +55,7 @@ export const MaintenanceType = {
   REPLACEMENT: 'replacement',
   UPGRADE: 'upgrade'
 } as const;
-
-export type MaintenanceType = typeof MaintenanceType[keyof typeof MaintenanceType];
+export type MaintenanceType = (typeof MaintenanceType)[keyof typeof MaintenanceType];
 
 export const ComplianceStatus = {
   COMPLIANT: 'compliant',
@@ -69,8 +64,7 @@ export const ComplianceStatus = {
   CRITICAL: 'critical',
   PENDING: 'pending'
 } as const;
-
-export type ComplianceStatus = typeof ComplianceStatus[keyof typeof ComplianceStatus];
+export type ComplianceStatus = (typeof ComplianceStatus)[keyof typeof ComplianceStatus];
 
 export interface Route {
   id: string;
@@ -470,37 +464,9 @@ export interface FleetItem {
   hasInsulated?: boolean;
   hasHumidityMonitoring?: boolean;
 
-  // Added for form compatibility (top-level overrides)
-  hasForklift?: boolean;
-  hasCrane?: boolean;
-  hasLoadingDock?: boolean;
-  maxLoadingTime?: string | number;
-  maxUnloadingTime?: string | number;
-  isActive?: boolean;
-  maxLength?: number;
-  maxWidth?: number;
-  maxHeight?: number;
-
   // Equipment list
   equipmentList?: string[];
 
-  loadingCapabilities?: {
-    hasForklift?: boolean;
-    hasCrane?: boolean;
-    hasTailLift?: boolean;
-    hasSideLift?: boolean;
-    hasLoadingDock?: boolean;
-    maxLoadingTime?: string | number;
-    maxUnloadingTime?: string | number;
-    [key: string]: any;
-  };
-  securityFeatures?: {
-    hasGps?: boolean;
-    hasTracking?: boolean;
-    hasTemperatureAlerts?: boolean;
-    hasCargoMonitoring?: boolean;
-    [key: string]: boolean | undefined;
-  };
   // Multiple assignments
   assignedDrivers?: DriverAssignment[];
   primaryDriver?: {
@@ -508,6 +474,30 @@ export interface FleetItem {
     name: string;
   };
   assignedRoutes?: RouteAssignment[];
+
+  // Capabilities (Added for FleetTable compatibility)
+  cargoCapabilities?: {
+    supportedCargoTypes?: string[];
+    temperatureRange?: { min: number; max: number };
+    maxFragileHandling?: boolean;
+    maxHazardousHandling?: boolean;
+    maxRefrigeratedHandling?: boolean;
+    maxLiquidHandling?: boolean;
+    maxOversizedHandling?: boolean;
+    maxValuableHandling?: boolean;
+  };
+  loadingCapabilities?: {
+    hasForklift?: boolean;
+    hasCrane?: boolean;
+    hasTailLift?: boolean;
+    hasSideLift?: boolean;
+  };
+  securityFeatures?: {
+    hasGps?: boolean;
+    hasTracking?: boolean;
+    hasTemperatureAlerts?: boolean;
+    hasCargoMonitoring?: boolean;
+  };
 
   // Comprehensive records
   documents?: TruckDocument[];

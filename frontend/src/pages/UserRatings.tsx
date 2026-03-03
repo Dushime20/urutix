@@ -143,7 +143,7 @@ const UserRatings: React.FC = () => {
   const getRatingTypeIcon = (type: string) => {
     switch (type) {
       case 'transporter':
-        return <FaUsers className="text-blue-500" />;
+        return <FaUsers className="text-primary-500" />;
       case 'financing_community':
         return <FaHandshake className="text-green-500" />;
       case 'platform':
@@ -169,7 +169,7 @@ const UserRatings: React.FC = () => {
   if (loading) {
     return (
       <div className="flex justify-center items-center h-48">
-        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500"></div>
+        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary-500"></div>
       </div>
     );
   }
@@ -194,10 +194,10 @@ const UserRatings: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
           <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-3">
             <div className="flex items-center mb-2">
-              <FaUsers className="text-blue-500 text-lg mr-2" />
+              <FaUsers className="text-primary-500 text-lg mr-2" />
               <h3 className="text-sm font-semibold">Transporter Ratings</h3>
             </div>
-            <div className="text-lg font-bold text-blue-600 mb-1">
+            <div className="text-lg font-bold text-primary-500 mb-1">
               {stats.transporterRatings?.average?.toFixed(1) || '0.0'}
             </div>
             <div className="flex mb-1">
@@ -333,7 +333,7 @@ const UserRatings: React.FC = () => {
             <div className="flex justify-end">
               <button
                 type="submit"
-                className="px-3 py-1.5 text-sm bg-[#345E85] text-white rounded-lg hover:bg-[#2a4d6d] focus:outline-none focus:ring-2 focus:ring-[#345E85] transition-colors"
+                className="px-3 py-1.5 text-sm bg-primary-500 text-white rounded-lg hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-primary-500 transition-colors"
               >
                 Submit Rating
               </button>

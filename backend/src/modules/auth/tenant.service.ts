@@ -32,7 +32,7 @@ export class TenantService {
     @InjectRepository(PasswordResetToken)
     private readonly passwordResetTokenRepository: Repository<PasswordResetToken>,
     private readonly emailService: EmailService,
-  ) {}
+  ) { }
 
   async createTenant(createTenantDto: any): Promise<Tenant> {
     this.logger.log('🏢 Creating tenant...');
@@ -89,27 +89,27 @@ export class TenantService {
 
       if (tenantAdminUser) {
         this.logger.log(`👤 User ${normalizedEmail} already exists, updating...`);
-        
+
         // Update user role to TENANT_ADMIN if not already
         if (tenantAdminUser.role !== UserRole.TENANT_ADMIN) {
           tenantAdminUser.role = UserRole.TENANT_ADMIN;
         }
-        
+
         // Update tenant ID
         tenantAdminUser.tenantId = finalTenant.id;
-        
+
         // Set status to PENDING_VERIFICATION if not active or doesn't have password
         if (tenantAdminUser.status !== UserStatus.ACTIVE || !tenantAdminUser.passwordHash) {
           tenantAdminUser.status = UserStatus.PENDING_VERIFICATION;
         }
-        
+
         await this.userRepository.save(tenantAdminUser);
 
         // Update or create user profile
         let userProfile = await this.userProfileRepository.findOne({
           where: { userId: tenantAdminUser.id },
         });
-        
+
         if (userProfile) {
           // Extract name from tenant name or use defaults
           const nameParts = (finalTenant.name || 'Tenant Admin').split(' ');
@@ -146,7 +146,7 @@ export class TenantService {
       } else {
         // Create new user for tenant admin
         this.logger.log(`👤 Creating new tenant admin user account...`);
-        
+
         // Generate temporary password (will be replaced when tenant admin sets password)
         const tempPassword = crypto.randomBytes(32).toString('hex');
         const tempPasswordHash = await bcrypt.hash(tempPassword, 12);
@@ -213,7 +213,7 @@ export class TenantService {
       this.logger.log(`📧 Tenant name: ${tenantName}`);
       this.logger.log(`📧 First name: ${firstName}, Last name: ${lastName}`);
       this.logger.log(`📧 EmailService instance: ${this.emailService ? 'EXISTS' : 'MISSING'}`);
-      
+
       // Validate email is not empty
       if (!email || email.trim() === '') {
         this.logger.error('❌ Email address is empty! Cannot send email.');
@@ -243,10 +243,10 @@ export class TenantService {
           this.logger.warn('⚠️ EmailService is not available, skipping email send');
           return;
         }
-        
+
         this.logger.log('📧 Calling emailService.sendTenantPasswordSetupEmail...');
         this.logger.log(`📧 Email address being sent to: ${email}`);
-        
+
         await this.emailService.sendTenantPasswordSetupEmail(
           email,
           firstName,
@@ -254,7 +254,7 @@ export class TenantService {
           tenantName,
           token,
         );
-        
+
         this.logger.log(`✅ Password setup email sent successfully to: ${email}`);
         this.logger.log(`✅ Check the inbox (and spam folder) for: ${email}`);
       } catch (emailError: any) {
@@ -275,7 +275,7 @@ export class TenantService {
         this.logger.error(`❌ Full email error:`, JSON.stringify(emailError, Object.getOwnPropertyNames(emailError)));
         // Don't throw - tenant creation should succeed even if email fails
       }
-      
+
       this.logger.log('📧 ========== TENANT EMAIL SENDING PROCESS END ==========');
     } catch (error: any) {
       this.logger.error(`❌ Error in sendTenantPasswordSetupEmail: ${error.message}`);
@@ -377,7 +377,7 @@ export class TenantService {
     if (adminUsers.length === 0) {
       validationErrors.push('Tenant must have at least one admin user before activation');
     }
-    
+
     // 3. Check if tenant is not already deactivated
     if (tenant.status === TenantStatus.DEACTIVATED) {
       validationErrors.push('Cannot activate a deactivated tenant. Please restore it first.');
@@ -476,10 +476,10 @@ export class TenantService {
     console.log('✅ [SERVICE] Found tenants:', tenants.length, 'out of', total);
     console.log('✅ [SERVICE] All tenants from DB (no filters):', JSON.stringify(tenants, null, 2));
     console.log('✅ [SERVICE] Tenant names:', tenants.map(t => t.name));
-    console.log('✅ [SERVICE] Tenant statuses:', tenants.map(t => ({ 
-      name: t.name, 
+    console.log('✅ [SERVICE] Tenant statuses:', tenants.map(t => ({
+      name: t.name,
       status: (t as any).status,
-      isActive: (t as any).isActive 
+      isActive: (t as any).isActive
     })));
 
     const response = PaginatorResponse(tenants, total, maxLimit, skip || 0);
@@ -503,7 +503,96 @@ export class TenantService {
       tenantId: tenant.id,
       name: tenant.name,
       status: tenant.status,
+      // kycStatus: tenant.kycStatus, // TODO: Add KYC fields to Tenant entity
       // Add more stats as needed
     };
+  }
+
+  async submitKYC(id: string, kycData: any): Promise<Tenant> {
+    const tenant = await this.findTenantById(id);
+
+    // TODO: Add KYC fields to Tenant entity
+    // tenant.kycData = { ...tenant.kycData, ...kycData };
+    // tenant.kycStatus = 'SUBMITTED';
+    // tenant.kycSubmittedAt = new Date();
+
+    // Auto-update standard fields if provided in KYC
+    if (kycData.registrationNumber) tenant.businessLicense = kycData.registrationNumber;
+    if (kycData.taxId) tenant.taxId = kycData.taxId;
+
+    this.logger.log(`📝 KYC submitted for tenant ${id}`);
+    return this.tenantRepository.save(tenant);
+  }
+
+  async updateKYCStatus(id: string, status: 'APPROVED' | 'REJECTED' | 'INCOMPLETE', notes?: string): Promise<Tenant> {
+    const tenant = await this.findTenantById(id);
+
+    // TODO: Add KYC fields to Tenant entity
+    // tenant.kycStatus = status;
+    // tenant.kycNotes = notes;
+
+    if (status === 'APPROVED') {
+      // tenant.kycVerifiedAt = new Date();
+      // Optionally activate tenant if they were pending activation
+      if (tenant.status === TenantStatus.PENDING_ACTIVATION) {
+        tenant.status = TenantStatus.ACTIVE;
+        tenant.activatedAt = new Date();
+        tenant.isActive = true;
+      }
+    }
+
+    this.logger.log(`📝 KYC status updated for tenant ${id} to ${status}`);
+    return this.tenantRepository.save(tenant);
+  }
+
+  async getTenantsByKYCStatus(status: 'PENDING' | 'SUBMITTED' | 'APPROVED' | 'REJECTED' | 'INCOMPLETE'): Promise<Tenant[]> {
+    // TODO: Add KYC fields to Tenant entity
+    return this.tenantRepository.find({
+      // where: { kycStatus: status },
+      // order: { kycSubmittedAt: 'DESC' }
+    });
+  }
+
+  async updateOnboardingStep(id: string, step: number): Promise<Tenant> {
+    const tenant = await this.findTenantById(id);
+    // TODO: Add onboardingStep field to Tenant entity
+    // tenant.onboardingStep = step;
+    return this.tenantRepository.save(tenant);
+  }
+
+  async updateBranding(id: string, branding: { primaryColor?: string; secondaryColor?: string; faviconUrl?: string; portalTitle?: string; description?: string; name?: string; }): Promise<Tenant> {
+    const tenant = await this.findTenantById(id);
+    Object.assign(tenant, branding);
+    return this.tenantRepository.save(tenant);
+  }
+
+  async updateTenantConfig(id: string, config: { domain?: string; subdomain?: string; termsUrl?: string; privacyPolicyUrl?: string; dataResidency?: string; }): Promise<Tenant> {
+    const tenant = await this.findTenantById(id);
+
+    // Check subdomain uniqueness if changing
+    if (config.subdomain && config.subdomain !== tenant.subdomain) {
+      const existing = await this.tenantRepository.findOne({ where: { subdomain: config.subdomain } });
+      if (existing) throw new ConflictException('Subdomain already taken');
+    }
+
+    Object.assign(tenant, config);
+    return this.tenantRepository.save(tenant);
+  }
+
+  async setSubscriptionPlan(id: string, plan: string): Promise<Tenant> {
+    const tenant = await this.findTenantById(id);
+    tenant.subscriptionPlan = plan;
+    // Set default limits based on plan (simplified logic)
+    if (plan === 'ENTERPRISE') {
+      tenant.maxUsers = 1000;
+      // tenant.storageLimit = 107374182400; // 100GB // TODO: Add storageLimit to Tenant entity
+    } else if (plan === 'PRO') {
+      tenant.maxUsers = 50;
+      // tenant.storageLimit = 21474836480; // 20GB
+    } else {
+      tenant.maxUsers = 5;
+      // tenant.storageLimit = 5368709120; // 5GB
+    }
+    return this.tenantRepository.save(tenant);
   }
 }

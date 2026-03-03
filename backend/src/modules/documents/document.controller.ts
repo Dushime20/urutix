@@ -258,13 +258,12 @@ export class DocumentController {
     enum: ['LOW', 'NORMAL', 'HIGH', 'URGENT'],
   })
   @ApiQuery({ name: 'search', required: false, type: String })
-  @ApiQuery({ name: 'page', required: false, type: Number, minimum: 1 })
+  @ApiQuery({ name: 'page', required: false, type: Number, schema: { minimum: 1 } })
   @ApiQuery({
     name: 'limit',
     required: false,
     type: Number,
-    minimum: 1,
-    maximum: 100,
+    schema: { minimum: 1, maximum: 100 },
   })
   @ApiResponse({
     status: 200,
@@ -329,8 +328,7 @@ export class DocumentController {
     name: 'limit',
     required: false,
     type: Number,
-    minimum: 1,
-    maximum: 100,
+    schema: { minimum: 1, maximum: 100 },
   })
   @ApiResponse({
     status: 200,
@@ -357,7 +355,7 @@ export class DocumentController {
     description:
       'Retrieve documents that are expiring within a specified number of days',
   })
-  @ApiQuery({ name: 'days', required: false, type: Number, default: 30 })
+  @ApiQuery({ name: 'days', required: false, type: Number, schema: { default: 30 } })
   @ApiResponse({
     status: 200,
     description: 'Documents expiring soon',

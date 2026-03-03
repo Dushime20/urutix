@@ -4,14 +4,17 @@ import {
   BarChart3,
   FileText,
   History,
+  Activity,
+  Plus,
 } from "lucide-react";
+import AdminPageLayout from "@/components/Admin/AdminPageLayout";
 // Dynamically import heavy pages to reduce initial bundle size
 const Analytics = lazy(() => import("@/pages/Analytics"));
 const FinancialReportsPage = lazy(() => import("@/pages/FinancialReportsPage"));
-import CargoList from "@/pages/dashboard/cargos/list";
+const AdminHistory = lazy(() => import("@/pages/AdminHistory"));
 import { cn } from "@/utils/cn";
-import logoUrutiX from "@/assets/logo-urutix.svg";
 import { TranslatedText } from "@/components/translated-text";
+import logoUrutiX from "@/assets/logo-urutix.svg";
 
 type TabType = "analytics" | "reports" | "history";
 
@@ -71,35 +74,50 @@ const UnifiedAnalyticsManagement = () => {
     },
   ];
 
-  // For history, we'll use the cargo list component
+  // For history, we'll use the admin history component
   const renderHistoryContent = () => {
-    // History uses the cargo list which can be filtered to show past shipments
-    return <CargoList />;
+    return (
+      <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-4 border-slate-200 border-t-[#345E85]"></div></div>}>
+        <AdminHistory />
+      </Suspense>
+    );
   };
 
   return (
     <div className="min-h-screen bg-gray-50 relative">
       {/* Background Logo */}
-      <img 
-        src={logoUrutiX} 
-        alt="UrutiX Logo Background" 
-        className="pointer-events-none select-none fixed inset-0 w-full h-full object-cover opacity-10 z-0" 
-        style={{objectPosition: 'center'}} 
+      <img
+        src={logoUrutiX}
+        alt="UrutiX Logo Background"
+        className="pointer-events-none select-none fixed inset-0 w-full h-full object-cover opacity-10 z-0"
+        style={{ objectPosition: 'center' }}
       />
-      <div className="max-w-7xl mx-auto px-2 sm:px-4 md:px-6 lg:px-8 py-3 sm:py-4 md:py-6 relative z-10">
-        {/* Header */}
-        <div className="mb-3 sm:mb-4">
-          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
-            <TranslatedText text="Analytics & Reports" />
-          </h1>
-          <p className="text-xs sm:text-sm text-gray-600 mt-1">
-            <TranslatedText text="Track performance, generate reports, and view history" />
-          </p>
+      <div className="max-w-[1600px] mx-auto p-8 md:p-12 relative z-10">
+        {/* Header Section */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-12">
+          <div className="space-y-3">
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 rounded-2xl bg-blue-50 text-[#345E85] flex items-center justify-center shadow-sm">
+                <Activity className="w-7 h-7" />
+              </div>
+              <h1 className="text-4xl md:text-5xl font-black text-[#0f172a] tracking-tight">
+                Operations <span className="text-[#345E85]">Analytics</span>
+              </h1>
+            </div>
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-[0.2em] max-w-xl">
+              Real-time performance metrics & historical audit logs
+            </p>
+          </div>
+
+          <button className="flex items-center gap-2 px-8 py-4 bg-[#345E85] text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-blue-900/10 hover:bg-slate-800 transition-all">
+            <Plus className="w-4 h-4" />
+            Generate Report
+          </button>
         </div>
 
-        {/* Navigation Tabs */}
-        <div className="bg-white rounded-lg border border-gray-200 mb-3 sm:mb-4 overflow-hidden">
-          <nav className="flex space-x-1 p-1 overflow-x-auto scrollbar-hide scroll-smooth">
+        {/* Premium Navigation Tabs */}
+        <div className="bg-slate-50 border border-slate-100 rounded-[2rem] p-2 mb-10 shadow-inner max-w-fit mx-auto md:mx-0">
+          <nav className="flex items-center gap-1 overflow-x-auto scrollbar-hide">
             {tabs.map((tab) => {
               const Icon = tab.icon;
               const isActive = activeTab === tab.id;
@@ -108,36 +126,33 @@ const UnifiedAnalyticsManagement = () => {
                   key={tab.id}
                   onClick={() => handleTabChange(tab.id)}
                   className={cn(
-                    "px-2 sm:px-3 md:px-4 py-2 sm:py-2.5 rounded-md text-xs sm:text-sm font-medium flex items-center gap-1 sm:gap-1.5 md:gap-2 transition-all whitespace-nowrap flex-shrink-0 touch-manipulation min-h-[44px] sm:min-h-0",
+                    "px-6 py-3 rounded-[1.5rem] text-[10px] font-black uppercase tracking-widest flex items-center gap-2.5 transition-all duration-300 whitespace-nowrap",
                     isActive
-                      ? "bg-gray-100 text-gray-900 border border-gray-300"
-                      : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                      ? "bg-white text-[#345E85] shadow-md border border-slate-200"
+                      : "text-slate-400 hover:text-slate-600 hover:bg-white/50"
                   )}
                 >
-                  <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
-                  <span className="hidden sm:inline"><TranslatedText text={tab.label} /></span>
-                  <span className="sm:hidden"><TranslatedText text={tab.label.split(' ')[0]} /></span>
+                  <Icon className="w-4 h-4 flex-shrink-0" />
+                  <TranslatedText text={tab.label} />
                 </button>
               );
             })}
           </nav>
         </div>
 
-        {/* Tab Content */}
-        <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
-          <div className="p-2 sm:p-3 md:p-4">
-            {activeTab === "analytics" && (
-              <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500"></div></div>}>
-                <Analytics />
-              </Suspense>
-            )}
-            {activeTab === "reports" && (
-              <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500"></div></div>}>
-                <FinancialReportsPage />
-              </Suspense>
-            )}
-            {activeTab === "history" && renderHistoryContent()}
-          </div>
+        {/* Main Content Container */}
+        <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-xl overflow-hidden min-h-[600px] animate-in fade-in slide-in-from-bottom-4 duration-500 p-8 md:p-12">
+          {activeTab === "analytics" && (
+            <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-4 border-slate-200 border-t-[#345E85]"></div></div>}>
+              <Analytics />
+            </Suspense>
+          )}
+          {activeTab === "reports" && (
+            <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-4 border-slate-200 border-t-[#345E85]"></div></div>}>
+              <FinancialReportsPage />
+            </Suspense>
+          )}
+          {activeTab === "history" && renderHistoryContent()}
         </div>
       </div>
     </div>
@@ -145,4 +160,3 @@ const UnifiedAnalyticsManagement = () => {
 };
 
 export default UnifiedAnalyticsManagement;
-

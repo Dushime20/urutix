@@ -21,6 +21,7 @@ import {
   FaSync,
 } from "react-icons/fa";
 import FilterSelect from "@/components/common/FilterSelect";
+import AdminPageLayout from '../../components/Admin/AdminPageLayout';
 
 interface Cargo {
   id: string;
@@ -125,25 +126,23 @@ const CargoManagement: React.FC = () => {
 
   const filteredCargos = cargos.filter(cargo => {
     const matchesSearch = cargo.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         cargo.owner.toLowerCase().includes(searchTerm.toLowerCase());
+      cargo.owner.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = !filterStatus || cargo.status === filterStatus;
     const matchesType = !filterType || cargo.type === filterType;
     return matchesSearch && matchesStatus && matchesType;
   });
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-800">Cargo Management</h2>
-          <p className="text-gray-600">Monitor and manage all cargo shipments</p>
-        </div>
+    <AdminPageLayout
+      title="Cargo Management"
+      description="Monitor and manage all cargo shipments"
+      actions={
         <button className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors">
           <FaPlus />
           <span>Add Cargo</span>
         </button>
-      </div>
+      }
+    >
 
       {/* Filters */}
       <div className="rounded-2xl bg-gradient-to-r from-gray-50 via-white to-gray-50 p-6 shadow-[0_20px_40px_-24px_rgba(15,23,42,0.35)]">
@@ -221,8 +220,8 @@ const CargoManagement: React.FC = () => {
         <div className="bg-white rounded-xl shadow-lg p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-2xl font-bold text-gray-800">{cargos.length}</p>
-              <p className="text-gray-600">Total Cargos</p>
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 leading-none">Total Cargos</p>
+              <p className="text-2xl font-black text-gray-900 leading-none tracking-tight">{cargos.length}</p>
             </div>
             <FaBox className="text-purple-500 text-3xl" />
           </div>
@@ -230,8 +229,8 @@ const CargoManagement: React.FC = () => {
         <div className="bg-white rounded-xl shadow-lg p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-2xl font-bold text-gray-800">{cargos.filter(c => c.status === 'in_transit').length}</p>
-              <p className="text-gray-600">In Transit</p>
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 leading-none">In Transit</p>
+              <p className="text-2xl font-black text-gray-900 leading-none tracking-tight">{cargos.filter(c => c.status === 'in_transit').length}</p>
             </div>
             <FaTruck className="text-green-500 text-3xl" />
           </div>
@@ -239,8 +238,8 @@ const CargoManagement: React.FC = () => {
         <div className="bg-white rounded-xl shadow-lg p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-2xl font-bold text-gray-800">{cargos.filter(c => c.urgency === 'critical').length}</p>
-              <p className="text-gray-600">Critical</p>
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 leading-none">Critical</p>
+              <p className="text-2xl font-black text-gray-900 leading-none tracking-tight">{cargos.filter(c => c.urgency === 'critical').length}</p>
             </div>
             <FaClock className="text-red-500 text-3xl" />
           </div>
@@ -248,8 +247,8 @@ const CargoManagement: React.FC = () => {
         <div className="bg-white rounded-xl shadow-lg p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-2xl font-bold text-gray-800">{cargos.filter(c => c.isHazardous).length}</p>
-              <p className="text-gray-600">Hazardous</p>
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 leading-none">Hazardous</p>
+              <p className="text-2xl font-black text-gray-900 leading-none tracking-tight">{cargos.filter(c => c.isHazardous).length}</p>
             </div>
             <FaExclamationTriangle className="text-yellow-500 text-3xl" />
           </div>
@@ -257,8 +256,8 @@ const CargoManagement: React.FC = () => {
         <div className="bg-white rounded-xl shadow-lg p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-2xl font-bold text-gray-800">${cargos.reduce((acc, c) => acc + c.value, 0).toLocaleString()}</p>
-              <p className="text-gray-600">Total Value</p>
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 leading-none">Total Value</p>
+              <p className="text-2xl font-black text-gray-900 leading-none tracking-tight">${cargos.reduce((acc, c) => acc + c.value, 0).toLocaleString()}</p>
             </div>
             <FaDollarSign className="text-blue-500 text-3xl" />
           </div>
@@ -271,12 +270,12 @@ const CargoManagement: React.FC = () => {
           <table className="w-full">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
-                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cargo</th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Route</th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Details</th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Timeline</th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                <th className="px-6 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Cargo</th>
+                <th className="px-6 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Route</th>
+                <th className="px-6 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Details</th>
+                <th className="px-6 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Status</th>
+                <th className="px-6 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Timeline</th>
+                <th className="px-6 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Actions</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
@@ -362,7 +361,7 @@ const CargoManagement: React.FC = () => {
           </table>
         </div>
       </div>
-    </div>
+    </AdminPageLayout>
   );
 };
 

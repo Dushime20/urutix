@@ -1,19 +1,23 @@
 import React, { useState } from 'react';
-import { 
-  Shield, 
-  AlertTriangle, 
-  CheckCircle, 
-  Clock, 
-  MapPin, 
+import {
+  Shield,
+  AlertTriangle,
+  CheckCircle,
+  Clock,
   TrendingUp,
   TrendingDown,
   Calendar,
   FileText,
   Award,
   Eye,
-  Download
+  Download,
+  Truck,
+  AlertCircle,
+  Filter,
+  Navigation
 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
+import { motion, AnimatePresence } from 'framer-motion';
 import { driverApi } from '../../services/driverApi';
 
 interface SafetyMetricsProps {
@@ -143,45 +147,42 @@ export const SafetyMetrics: React.FC<SafetyMetricsProps> = ({ driverId }) => {
 
   const data = safetyData || mockSafetyData;
 
-  const getScoreColor = (score: number) => {
-    if (score >= 90) return 'text-green-600';
-    if (score >= 80) return 'text-yellow-600';
-    if (score >= 70) return 'text-orange-600';
-    return 'text-red-600';
+  const getScoreColor = (_score: number) => {
+    return 'text-[#0f172a]';
   };
 
   const getScoreBgColor = (score: number) => {
-    if (score >= 90) return 'bg-green-100';
-    if (score >= 80) return 'bg-yellow-100';
-    if (score >= 70) return 'bg-orange-100';
-    return 'bg-red-100';
+    if (score >= 90) return 'bg-emerald-50 text-emerald-600 border-emerald-100';
+    if (score >= 80) return 'bg-blue-50 text-blue-600 border-blue-100';
+    if (score >= 70) return 'bg-amber-50 text-amber-600 border-amber-100';
+    return 'bg-rose-50 text-rose-600 border-rose-100';
   };
 
   const getSeverityColor = (severity: string) => {
     switch (severity) {
-      case 'LOW': return 'bg-green-100 text-green-800';
-      case 'MEDIUM': return 'bg-yellow-100 text-yellow-800';
-      case 'HIGH': return 'bg-orange-100 text-orange-800';
-      case 'CRITICAL': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'LOW': return 'bg-emerald-50 text-emerald-800 border-emerald-100';
+      case 'MEDIUM': return 'bg-blue-50 text-blue-800 border-blue-100';
+      case 'HIGH': return 'bg-amber-50 text-amber-800 border-amber-100';
+      case 'CRITICAL': return 'bg-rose-50 text-rose-800 border-rose-100';
+      default: return 'bg-slate-50 text-slate-800 border-slate-100';
     }
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'ACTIVE': return 'bg-green-100 text-green-800';
-      case 'EXPIRING_SOON': return 'bg-yellow-100 text-yellow-800';
-      case 'EXPIRED': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'ACTIVE': return 'bg-emerald-50 text-emerald-800 border-emerald-100';
+      case 'EXPIRING_SOON': return 'bg-amber-50 text-amber-800 border-amber-100';
+      case 'EXPIRED': return 'bg-rose-50 text-rose-800 border-rose-100';
+      default: return 'bg-slate-50 text-slate-800 border-slate-100';
     }
   };
 
   const getCertificationStatusIcon = (status: string) => {
     switch (status) {
-      case 'ACTIVE': return <CheckCircle className="w-4 h-4 text-green-600" />;
-      case 'EXPIRING_SOON': return <AlertTriangle className="w-4 h-4 text-yellow-600" />;
-      case 'EXPIRED': return <AlertTriangle className="w-4 h-4 text-red-600" />;
-      default: return <Clock className="w-4 h-4 text-gray-600" />;
+      case 'ACTIVE': return <CheckCircle className="w-4 h-4 text-emerald-600" />;
+      case 'EXPIRING_SOON': return <AlertTriangle className="w-4 h-4 text-amber-600" />;
+      case 'EXPIRED': return <AlertTriangle className="w-4 h-4 text-rose-600" />;
+      default: return <Clock className="w-4 h-4 text-slate-600" />;
     }
   };
 
@@ -201,100 +202,148 @@ export const SafetyMetrics: React.FC<SafetyMetricsProps> = ({ driverId }) => {
     return diffDays;
   };
 
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="w-8 h-8 border-4 border-[#345E85] border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-8 animate-in fade-in duration-500">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-gray-900">Safety & Compliance</h2>
-        <div className="flex items-center space-x-4">
-          <select
-            value={selectedPeriod}
-            onChange={(e) => setSelectedPeriod(e.target.value as any)}
-            className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="week">This Week</option>
-            <option value="month">This Month</option>
-            <option value="quarter">This Quarter</option>
-            <option value="year">This Year</option>
-          </select>
-          <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium flex items-center space-x-2">
+      <div className="flex flex-col md:flex-row md:items-end justify-end gap-4">
+
+        <div className="flex items-center gap-3">
+          <div className="relative">
+            <select
+              value={selectedPeriod}
+              onChange={(e) => setSelectedPeriod(e.target.value as any)}
+              className="h-10 pl-4 pr-10 bg-white border border-slate-200 text-slate-600 rounded-xl text-xs font-bold uppercase tracking-wider focus:outline-none focus:ring-2 focus:ring-[#345E85] appearance-none cursor-pointer hover:bg-slate-50 transition-colors shadow-sm"
+            >
+              <option value="week">This Week</option>
+              <option value="month">This Month</option>
+              <option value="quarter">This Quarter</option>
+              <option value="year">This Year</option>
+            </select>
+            <Filter className="absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400 pointer-events-none" />
+          </div>
+
+          <button className="h-10 px-4 bg-[#345E85] text-white rounded-xl text-xs font-black uppercase tracking-wider hover:bg-[#2a4b6d] transition-all flex items-center gap-2 shadow-lg shadow-blue-900/10">
             <Download className="w-4 h-4" />
-            <span>Export Report</span>
+            <span>Export</span>
           </button>
         </div>
       </div>
 
       {/* Safety Score Overview */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className={`p-2 rounded-lg ${getScoreBgColor(data.overallScore)}`}>
-              <Shield className="w-6 h-6 text-gray-600" />
+        {/* Overall Score - Blue Theme */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="bg-white rounded-[1.5rem] p-6 border border-slate-100 shadow-sm flex items-center gap-5 group hover:shadow-lg hover:border-blue-100 transition-all cursor-default"
+        >
+          <div className="w-14 h-14 rounded-full border-[1.5px] border-blue-100 flex items-center justify-center flex-shrink-0 bg-blue-50 group-hover:bg-[#345E85] group-hover:text-white transition-colors text-[#345E85]">
+            <Shield className="w-6 h-6" strokeWidth={1.5} />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h3 className={`text-3xl font-black tracking-tight ${getScoreColor(data.overallScore)}`}>{data.overallScore}</h3>
+              <span className={`px-1.5 py-0.5 rounded text-[10px] font-black uppercase tracking-wide border ${getScoreBgColor(data.overallScore)}`}>
+                {data.overallScore >= 90 ? 'Excellent' : 'Good'}
+              </span>
             </div>
-            <span className={`text-sm font-medium ${getScoreColor(data.overallScore)}`}>
-              {data.overallScore >= 90 ? 'Excellent' : data.overallScore >= 80 ? 'Good' : data.overallScore >= 70 ? 'Fair' : 'Poor'}
-            </span>
+            <p className="text-sm font-bold text-[#345E85]">Overall Score</p>
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Safety Index</p>
           </div>
-          <div className="mb-2">
-            <p className={`text-3xl font-bold ${getScoreColor(data.overallScore)}`}>{data.overallScore}</p>
-            <p className="text-sm font-medium text-gray-600">Overall Safety Score</p>
-          </div>
-          <p className="text-xs text-gray-500">Last updated: {formatDate(data.lastUpdated)}</p>
-        </div>
+        </motion.div>
 
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <MapPin className="w-6 h-6 text-blue-600" />
+        {/* Driving Score - Blue Theme */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="bg-white rounded-[1.5rem] p-6 border border-slate-100 shadow-sm flex items-center gap-5 group hover:shadow-lg hover:border-blue-100 transition-all cursor-default"
+        >
+          <div className="w-14 h-14 rounded-full border-[1.5px] border-blue-100 flex items-center justify-center flex-shrink-0 bg-blue-50 group-hover:bg-[#345E85] group-hover:text-white transition-colors text-[#345E85]">
+            <Navigation className="w-6 h-6" strokeWidth={1.5} />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h3 className={`text-3xl font-black tracking-tight ${getScoreColor(data.drivingScore)}`}>{data.drivingScore}</h3>
+              <span className={`px-1.5 py-0.5 rounded text-[10px] font-black uppercase tracking-wide border ${getScoreBgColor(data.drivingScore)}`}>
+                Behavior
+              </span>
             </div>
-            <TrendingUp className="w-5 h-5 text-green-500" />
+            <p className="text-sm font-bold text-[#345E85]">Driving Score</p>
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">On-Road</p>
           </div>
-          <div className="mb-2">
-            <p className={`text-3xl font-bold ${getScoreColor(data.drivingScore)}`}>{data.drivingScore}</p>
-            <p className="text-sm font-medium text-gray-600">Driving Score</p>
-          </div>
-          <p className="text-xs text-gray-500">Based on driving behavior</p>
-        </div>
+        </motion.div>
 
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="p-2 bg-green-100 rounded-lg">
-              <CheckCircle className="w-6 h-6 text-green-600" />
+        {/* Compliance Score - Blue Theme */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          className="bg-white rounded-[1.5rem] p-6 border border-slate-100 shadow-sm flex items-center gap-5 group hover:shadow-lg hover:border-blue-100 transition-all cursor-default"
+        >
+          <div className="w-14 h-14 rounded-full border-[1.5px] border-blue-100 flex items-center justify-center flex-shrink-0 bg-blue-50 group-hover:bg-[#345E85] group-hover:text-white transition-colors text-[#345E85]">
+            <FileText className="w-6 h-6" strokeWidth={1.5} />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h3 className={`text-3xl font-black tracking-tight ${getScoreColor(data.complianceScore)}`}>{data.complianceScore}</h3>
+              <span className={`px-1.5 py-0.5 rounded text-[10px] font-black uppercase tracking-wide border ${getScoreBgColor(data.complianceScore)}`}>
+                Logs
+              </span>
             </div>
-            <TrendingUp className="w-5 h-5 text-green-500" />
+            <p className="text-sm font-bold text-[#345E85]">Compliance</p>
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Regulatory</p>
           </div>
-          <div className="mb-2">
-            <p className={`text-3xl font-bold ${getScoreColor(data.complianceScore)}`}>{data.complianceScore}</p>
-            <p className="text-sm font-medium text-gray-600">Compliance Score</p>
-          </div>
-          <p className="text-xs text-gray-500">Regulatory compliance</p>
-        </div>
+        </motion.div>
 
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="p-2 bg-purple-100 rounded-lg">
-              <Award className="w-6 h-6 text-purple-600" />
+        {/* Vehicle Score - Blue Theme */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+          className="bg-white rounded-[1.5rem] p-6 border border-slate-100 shadow-sm flex items-center gap-5 group hover:shadow-lg hover:border-blue-100 transition-all cursor-default"
+        >
+          <div className="w-14 h-14 rounded-full border-[1.5px] border-blue-100 flex items-center justify-center flex-shrink-0 bg-blue-50 group-hover:bg-[#345E85] group-hover:text-white transition-colors text-[#345E85]">
+            <Truck className="w-6 h-6" strokeWidth={1.5} />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h3 className={`text-3xl font-black tracking-tight ${getScoreColor(data.vehicleScore)}`}>{data.vehicleScore}</h3>
+              <span className={`px-1.5 py-0.5 rounded text-[10px] font-black uppercase tracking-wide border ${getScoreBgColor(data.vehicleScore)}`}>
+                Health
+              </span>
             </div>
-            <TrendingUp className="w-5 h-5 text-green-500" />
+            <p className="text-sm font-bold text-[#345E85]">Vehicle Score</p>
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Maintenance</p>
           </div>
-          <div className="mb-2">
-            <p className={`text-3xl font-bold ${getScoreColor(data.vehicleScore)}`}>{data.vehicleScore}</p>
-            <p className="text-sm font-medium text-gray-600">Vehicle Score</p>
-          </div>
-          <p className="text-xs text-gray-500">Vehicle maintenance</p>
-        </div>
+        </motion.div>
       </div>
 
       {/* Safety Trends */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Safety Score Trends</h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm p-8">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="p-2 bg-slate-50 rounded-xl">
+            <TrendingUp className="w-5 h-5 text-slate-500" />
+          </div>
+          <h3 className="text-lg font-black text-slate-800">Performance Trends</h3>
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
           {data.trends.map((trend, index) => (
-            <div key={index} className="text-center">
-              <div className={`text-2xl font-bold ${getScoreColor(trend.score)}`}>{trend.score}</div>
-              <div className="text-sm text-gray-600">{trend.period}</div>
-              <div className={`text-xs ${trend.change >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                {trend.change >= 0 ? '+' : ''}{trend.change} pts
+            <div key={index} className="flex flex-col items-center justify-center p-4 rounded-2xl bg-slate-50 border border-slate-100 group hover:border-blue-100 transition-colors">
+              <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-2">{trend.period}</span>
+              <div className={`text-3xl font-black mb-1 ${getScoreColor(trend.score)}`}>{trend.score}</div>
+              <div className={`flex items-center gap-1 text-xs font-bold ${trend.change >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                {trend.change >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+                {Math.abs(trend.change)} pts
               </div>
             </div>
           ))}
@@ -304,104 +353,126 @@ export const SafetyMetrics: React.FC<SafetyMetricsProps> = ({ driverId }) => {
       {/* Violations and Certifications */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Violations */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">Recent Violations</h3>
+        <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm p-8">
+          <div className="flex items-center justify-between mb-8">
+            <h3 className="text-lg font-black text-slate-800 flex items-center gap-2">
+              <AlertCircle className="w-5 h-5 text-rose-500" />
+              Recent Violations
+            </h3>
             <button
               onClick={() => setShowViolations(!showViolations)}
-              className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+              className="px-3 py-1 bg-slate-50 hover:bg-slate-100 rounded-lg text-xs font-bold text-slate-600 transition-colors"
             >
-              {showViolations ? 'Hide' : 'Show'} All
+              {showViolations ? 'Hide' : 'View All'}
             </button>
           </div>
-          
-          <div className="space-y-3">
-            {data.violations.slice(0, showViolations ? undefined : 2).map((violation) => (
-              <div key={violation.id} className="border-l-4 border-red-400 pl-3 py-2">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">{violation.type}</p>
-                    <p className="text-xs text-gray-600">{violation.description}</p>
-                    <p className="text-xs text-gray-500">{formatDate(violation.date)}</p>
-                  </div>
-                  <div className="text-right">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getSeverityColor(violation.severity)}`}>
-                      {violation.severity}
+
+          <div className="space-y-4">
+            {data.violations.length === 0 ? (
+              <div className="text-center py-8 text-slate-400">No recent violations</div>
+            ) : (
+              data.violations.slice(0, showViolations ? undefined : 2).map((violation) => (
+                <div key={violation.id} className="p-4 rounded-2xl border border-slate-100 hover:border-rose-100 hover:bg-rose-50/30 transition-all cursor-default group">
+                  <div className="flex items-start justify-between mb-2">
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider ${getSeverityColor(violation.severity)}`}>
+                          {violation.severity}
+                        </span>
+                        <span className="text-xs font-bold text-slate-400">{formatDate(violation.date)}</span>
+                      </div>
+                      <p className="font-bold text-slate-800">{violation.type}</p>
+                    </div>
+                    <span className="text-xs font-black text-slate-400 bg-slate-100 px-2 py-1 rounded-lg">
+                      {violation.points} pts
                     </span>
-                    <p className="text-xs text-gray-500 mt-1">{violation.points} pts</p>
                   </div>
+                  <p className="text-xs text-slate-500 pl-1 border-l-2 border-slate-200">{violation.description}</p>
                 </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
 
         {/* Certifications */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">Certifications</h3>
+        <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm p-8">
+          <div className="flex items-center justify-between mb-8">
+            <h3 className="text-lg font-black text-slate-800 flex items-center gap-2">
+              <Award className="w-5 h-5 text-[#345E85]" />
+              Certifications
+            </h3>
             <button
               onClick={() => setShowCertifications(!showCertifications)}
-              className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+              className="px-3 py-1 bg-slate-50 hover:bg-slate-100 rounded-lg text-xs font-bold text-slate-600 transition-colors"
             >
-              {showCertifications ? 'Hide' : 'Show'} All
+              {showCertifications ? 'Hide' : 'View All'}
             </button>
           </div>
-          
-          <div className="space-y-3">
-            {data.certifications.slice(0, showCertifications ? undefined : 2).map((cert) => (
-              <div key={cert.id} className="border-l-4 border-green-400 pl-3 py-2">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">{cert.name}</p>
-                    <p className="text-xs text-gray-600">Expires: {formatDate(cert.expiryDate)}</p>
+
+          <div className="space-y-4">
+            {data.certifications.length === 0 ? (
+              <div className="text-center py-8 text-slate-400">No certifications found</div>
+            ) : (
+              data.certifications.slice(0, showCertifications ? undefined : 2).map((cert) => (
+                <div key={cert.id} className="p-4 rounded-2xl border border-slate-100 hover:border-blue-100 hover:bg-blue-50/30 transition-all cursor-default group">
+                  <div className="flex items-start justify-between mb-2">
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider ${getStatusColor(cert.status)}`}>
+                          {cert.status.replace('_', ' ')}
+                        </span>
+                      </div>
+                      <p className="font-bold text-slate-800">{cert.name}</p>
+                    </div>
+                    {getCertificationStatusIcon(cert.status)}
+                  </div>
+                  <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-50">
+                    <span className="text-xs text-slate-400 font-medium">Expires: {formatDate(cert.expiryDate)}</span>
                     {cert.status === 'EXPIRING_SOON' && (
-                      <p className="text-xs text-yellow-600">
-                        Expires in {getDaysUntilExpiry(cert.expiryDate)} days
-                      </p>
+                      <span className="text-[10px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">
+                        {getDaysUntilExpiry(cert.expiryDate)} days left
+                      </span>
                     )}
                   </div>
-                  <div className="flex items-center space-x-2">
-                    {getCertificationStatusIcon(cert.status)}
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(cert.status)}`}>
-                      {cert.status.replace('_', ' ')}
-                    </span>
-                  </div>
                 </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
       </div>
 
       {/* Recent Inspections */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Inspections</h3>
+      <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm p-8">
+        <div className="flex items-center gap-3 mb-8">
+          <div className="p-2 bg-blue-50 rounded-xl">
+            <FileText className="w-5 h-5 text-[#345E85]" />
+          </div>
+          <h3 className="text-lg font-black text-slate-800">Recent Inspections</h3>
+        </div>
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Result</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Notes</th>
+          <table className="w-full">
+            <thead>
+              <tr className="border-b-2 border-slate-50">
+                <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-wider">Type</th>
+                <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-wider">Date</th>
+                <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-wider">Result</th>
+                <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-wider">Notes</th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="divide-y divide-slate-50">
               {data.inspections.map((inspection) => (
-                <tr key={inspection.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{inspection.type}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatDate(inspection.date)}</td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      inspection.result === 'PASS' ? 'bg-green-100 text-green-800' :
-                      inspection.result === 'FAIL' ? 'bg-red-100 text-red-800' :
-                      'bg-yellow-100 text-yellow-800'
-                    }`}>
+                <tr key={inspection.id} className="group hover:bg-slate-50 transition-colors">
+                  <td className="px-6 py-4 text-sm font-bold text-slate-700">{inspection.type}</td>
+                  <td className="px-6 py-4 text-sm font-medium text-slate-500">{formatDate(inspection.date)}</td>
+                  <td className="px-6 py-4">
+                    <span className={`px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider ${inspection.result === 'PASS' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' :
+                      inspection.result === 'FAIL' ? 'bg-rose-50 text-rose-600 border border-rose-100' :
+                        'bg-amber-50 text-amber-600 border border-amber-100'
+                      }`}>
                       {inspection.result}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-500">{inspection.notes || '-'}</td>
+                  <td className="px-6 py-4 text-sm text-slate-500 max-w-xs truncate">{inspection.notes || '-'}</td>
                 </tr>
               ))}
             </tbody>
@@ -410,53 +481,61 @@ export const SafetyMetrics: React.FC<SafetyMetricsProps> = ({ driverId }) => {
       </div>
 
       {/* Safety Alerts */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Safety Alerts</h3>
-        <div className="space-y-3">
-          {data.certifications.some(cert => cert.status === 'EXPIRING_SOON') && (
-            <div className="flex items-center space-x-2 text-yellow-600 bg-yellow-50 p-3 rounded-lg">
-              <AlertTriangle className="w-5 h-5" />
-              <span className="text-sm font-medium">Certifications expiring soon</span>
-            </div>
+      <AnimatePresence>
+        {(data.certifications.some(cert => cert.status === 'EXPIRING_SOON') ||
+          data.violations.some(violation => ['HIGH', 'CRITICAL'].includes(violation.severity)) ||
+          data.overallScore < 80) && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-white rounded-[2rem] border border-slate-100 shadow-sm p-8"
+            >
+              <div className="flex items-center gap-3 mb-6">
+                <div className="p-2 bg-amber-50 rounded-xl">
+                  <AlertTriangle className="w-5 h-5 text-amber-500" />
+                </div>
+                <h3 className="text-lg font-black text-slate-800">Safety Alerts</h3>
+              </div>
+              <div className="space-y-4">
+                {data.certifications.some(cert => cert.status === 'EXPIRING_SOON') && (
+                  <div className="flex items-center gap-4 p-4 rounded-2xl bg-amber-50 border border-amber-100">
+                    <div className="w-2 h-2 rounded-full bg-amber-500 flex-shrink-0" />
+                    <span className="text-sm font-bold text-amber-800">Certifications expiring soon - Action Required</span>
+                  </div>
+                )}
+
+                {data.violations.some(violation => ['HIGH', 'CRITICAL'].includes(violation.severity)) && (
+                  <div className="flex items-center gap-4 p-4 rounded-2xl bg-rose-50 border border-rose-100">
+                    <div className="w-2 h-2 rounded-full bg-rose-500 flex-shrink-0" />
+                    <span className="text-sm font-bold text-rose-800">High severity violations detected - Review Immediately</span>
+                  </div>
+                )}
+
+                {data.overallScore < 80 && (
+                  <div className="flex items-center gap-4 p-4 rounded-2xl bg-orange-50 border border-orange-100">
+                    <div className="w-2 h-2 rounded-full bg-orange-500 flex-shrink-0" />
+                    <span className="text-sm font-bold text-orange-800">Safety score below recommended threshold</span>
+                  </div>
+                )}
+              </div>
+            </motion.div>
           )}
-          
-          {data.violations.some(violation => violation.severity === 'HIGH' || violation.severity === 'CRITICAL') && (
-            <div className="flex items-center space-x-2 text-red-600 bg-red-50 p-3 rounded-lg">
-              <AlertTriangle className="w-5 h-5" />
-              <span className="text-sm font-medium">High severity violations detected</span>
-            </div>
-          )}
-          
-          {data.overallScore < 80 && (
-            <div className="flex items-center space-x-2 text-orange-600 bg-orange-50 p-3 rounded-lg">
-              <AlertTriangle className="w-5 h-5" />
-              <span className="text-sm font-medium">Safety score below recommended threshold</span>
-            </div>
-          )}
-          
-          {data.overallScore >= 90 && data.certifications.every(cert => cert.status === 'ACTIVE') && (
-            <div className="flex items-center space-x-2 text-green-600 bg-green-50 p-3 rounded-lg">
-              <CheckCircle className="w-5 h-5" />
-              <span className="text-sm font-medium">All safety metrics are excellent</span>
-            </div>
-          )}
-        </div>
-      </div>
+      </AnimatePresence>
 
       {/* Quick Actions */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
+      <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm p-8">
+        <h3 className="text-lg font-black text-slate-800 mb-6">Quick Actions</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg font-medium flex items-center justify-center space-x-2">
-            <Eye className="w-5 h-5" />
+          <button className="py-4 bg-white hover:bg-blue-50 text-[#345E85] rounded-2xl text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 group border border-slate-100 hover:border-blue-100 shadow-sm">
+            <Eye className="w-5 h-5 group-hover:scale-110 transition-transform" />
             <span>View Full Report</span>
           </button>
-          <button className="bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded-lg font-medium flex items-center justify-center space-x-2">
-            <FileText className="w-5 h-5" />
-            <span>Download Certificates</span>
+          <button className="py-4 bg-white hover:bg-blue-50 text-[#345E85] rounded-2xl text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 group border border-slate-100 hover:border-blue-100 shadow-sm">
+            <Download className="w-5 h-5 group-hover:scale-110 transition-transform" />
+            <span>Download Docs</span>
           </button>
-          <button className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-3 rounded-lg font-medium flex items-center justify-center space-x-2">
-            <Calendar className="w-5 h-5" />
+          <button className="py-4 bg-white hover:bg-blue-50 text-[#345E85] rounded-2xl text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 group border border-slate-100 hover:border-blue-100 shadow-sm">
+            <Calendar className="w-5 h-5 group-hover:scale-110 transition-transform" />
             <span>Schedule Training</span>
           </button>
         </div>

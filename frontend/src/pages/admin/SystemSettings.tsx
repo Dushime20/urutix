@@ -1,12 +1,13 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  FaCog, FaBell, FaDatabase, FaShieldAlt,
-  FaPalette, FaCode, FaUsers, FaKey, FaHistory,
-  FaEdit, FaSave, FaUndo, FaExclamationTriangle,
-  FaEye, FaEyeSlash, FaCopy, FaSync, FaUpload,
-  FaDownload, FaTrash, FaCheck, FaTimes
-} from 'react-icons/fa';
+import React, { useState } from 'react';
+import {
+  Settings, Bell, Database, Shield,
+  Palette, Code, Users, History,
+  Edit2, Save, RotateCcw, AlertTriangle,
+  Eye, EyeOff, Copy, RefreshCw,
+  Download, Trash2
+} from 'lucide-react';
 import { TranslatedText } from '../../components/translated-text';
+import AdminPageLayout from '../../components/Admin/AdminPageLayout';
 
 const SystemSettings: React.FC = () => {
   const [activeSection, setActiveSection] = useState('general');
@@ -15,16 +16,15 @@ const SystemSettings: React.FC = () => {
   const [showApiKey, setShowApiKey] = useState(false);
 
   const settingSections = [
-    { id: 'general', label: 'General Settings', icon: FaCog },
-    { id: 'users', label: 'User Management', icon: FaUsers },
-    { id: 'security', label: 'Security & Privacy', icon: FaShieldAlt },
-    { id: 'notifications', label: 'Notifications', icon: FaBell },
-    { id: 'database', label: 'Database Config', icon: FaDatabase },
-    { id: 'api', label: 'API Settings', icon: FaCode },
-    { id: 'appearance', label: 'Appearance', icon: FaPalette },
-    { id: 'backup', label: 'Backup & Recovery', icon: FaHistory },
-    { id: 'integrations', label: 'Integrations', icon: FaCode },
-    { id: 'maintenance', label: 'Maintenance', icon: FaCog },
+    { id: 'general', label: 'General Settings', icon: Settings },
+    { id: 'users', label: 'User Management', icon: Users },
+    { id: 'security', label: 'Security & Privacy', icon: Shield },
+    { id: 'notifications', label: 'Notifications', icon: Bell },
+    { id: 'database', label: 'Database Config', icon: Database },
+    { id: 'api', label: 'API Settings', icon: Code },
+    { id: 'appearance', label: 'Appearance', icon: Palette },
+    { id: 'backup', label: 'Backup & Recovery', icon: History },
+    { id: 'integrations', label: 'Integrations', icon: Code },
   ];
 
   const [settings, setSettings] = useState({
@@ -77,7 +77,7 @@ const SystemSettings: React.FC = () => {
       primaryColor: '#3B82F6',
       secondaryColor: '#8B5CF6',
       theme: 'light',
-      logoUrl: '/logo-urutix.svg',
+      logoUrl: '/assets/urutiX Logistics Logo (1).svg',
       faviconUrl: '/favicon.ico',
       customCSS: '',
       enableDarkMode: true,
@@ -202,42 +202,42 @@ const SystemSettings: React.FC = () => {
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Site Name</label>
+          <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">Site Name</label>
           <input
             type="text"
             value={settings.general.siteName}
             onChange={(e) => handleInputChange('general', 'siteName', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+            className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all font-medium text-slate-700"
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Contact Email</label>
+          <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">Contact Email</label>
           <input
             type="email"
             value={settings.general.contactEmail}
             onChange={(e) => handleInputChange('general', 'contactEmail', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+            className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all font-medium text-slate-700"
           />
         </div>
       </div>
-      
+
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">Site Description</label>
+        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">Site Description</label>
         <textarea
           value={settings.general.siteDescription}
           onChange={(e) => handleInputChange('general', 'siteDescription', e.target.value)}
           rows={3}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+          className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all font-medium text-slate-700"
         />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Timezone</label>
+          <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">Timezone</label>
           <select
             value={settings.general.timezone}
             onChange={(e) => handleInputChange('general', 'timezone', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+            className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all font-medium text-slate-700 pointer-cursor"
           >
             <option value="Africa/Kigali">Africa/Kigali</option>
             <option value="UTC">UTC</option>
@@ -247,11 +247,11 @@ const SystemSettings: React.FC = () => {
           </select>
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Language</label>
+          <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">Language</label>
           <select
             value={settings.general.language}
             onChange={(e) => handleInputChange('general', 'language', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+            className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all font-medium text-slate-700"
           >
             <option value="English">English</option>
             <option value="Kinyarwanda">Kinyarwanda</option>
@@ -260,11 +260,11 @@ const SystemSettings: React.FC = () => {
           </select>
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Currency</label>
+          <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">Currency</label>
           <select
             value={settings.general.currency}
             onChange={(e) => handleInputChange('general', 'currency', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+            className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all font-medium text-slate-700"
           >
             <option value="RWF">Rwandan Franc (RWF)</option>
             <option value="USD">US Dollar (USD)</option>
@@ -274,156 +274,69 @@ const SystemSettings: React.FC = () => {
           </select>
         </div>
       </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-          <div>
-            <h4 className="font-medium text-gray-800">Maintenance Mode</h4>
-            <p className="text-sm text-gray-600">Temporarily disable the platform</p>
-          </div>
-          <input
-            type="checkbox"
-            id="maintenanceMode"
-            checked={settings.general.maintenanceMode}
-            onChange={(e) => handleInputChange('general', 'maintenanceMode', e.target.checked)}
-            className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
-          />
-        </div>
-        <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-          <div>
-            <h4 className="font-medium text-gray-800">Business Hours</h4>
-            <p className="text-sm text-gray-600">Platform availability</p>
-          </div>
-          <select
-            value={settings.general.businessHours}
-            onChange={(e) => handleInputChange('general', 'businessHours', e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
-          >
-            <option value="24/7">24/7</option>
-            <option value="8AM-6PM">8AM-6PM</option>
-            <option value="9AM-5PM">9AM-5PM</option>
-          </select>
-        </div>
-      </div>
     </div>
   );
 
   const renderSecuritySettings = () => (
     <div className="space-y-6">
-      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-        <div className="flex items-center">
-          <FaExclamationTriangle className="text-yellow-600 mr-2" />
-          <span className="text-sm text-yellow-800">
-            Changes to security settings will affect all users immediately.
-          </span>
-        </div>
+      <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-center gap-3">
+        <AlertTriangle className="text-amber-600 w-5 h-5 flex-shrink-0" />
+        <span className="text-sm font-medium text-amber-800">
+          Changes to security settings will affect all users immediately. Please proceed with caution.
+        </span>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-4">
-          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-            <div>
-              <h4 className="font-medium text-gray-800">Two-Factor Authentication</h4>
-              <p className="text-sm text-gray-600">Require 2FA for all admin accounts</p>
+          {[
+            { key: 'twoFactorAuth', label: 'Two-Factor Authentication', desc: 'Require 2FA for all admin accounts' },
+            { key: 'ipWhitelist', label: 'IP Whitelist', desc: 'Restrict admin access by IP' },
+            { key: 'sslRequired', label: 'SSL Required', desc: 'Force HTTPS connections' },
+            { key: 'accountLockout', label: 'Account Lockout', desc: 'Lock accounts after failed attempts' }
+          ].map((item) => (
+            <div key={item.key} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-100">
+              <div>
+                <h4 className="font-bold text-slate-800 text-sm">{item.label}</h4>
+                <p className="text-xs text-slate-500">{item.desc}</p>
+              </div>
+              <div className="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in">
+                <input
+                  type="checkbox"
+                  checked={settings.security[item.key as keyof typeof settings.security] as boolean}
+                  onChange={(e) => handleInputChange('security', item.key, e.target.checked)}
+                  className="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer"
+                  style={{ right: settings.security[item.key as keyof typeof settings.security] ? '0' : 'auto', left: settings.security[item.key as keyof typeof settings.security] ? 'auto' : '0' }}
+                />
+                {/*  checkbox styling would ideally use a proper Switch component if available, sticking to simple input for now but styled containers */}
+                <input
+                  type="checkbox"
+                  checked={settings.security[item.key as keyof typeof settings.security] as boolean}
+                  onChange={(e) => handleInputChange('security', item.key, e.target.checked)}
+                  className="w-5 h-5 text-indigo-600 rounded focus:ring-indigo-500 border-gray-300"
+                />
+              </div>
             </div>
-            <input
-              type="checkbox"
-              checked={settings.security.twoFactorAuth}
-              onChange={(e) => handleInputChange('security', 'twoFactorAuth', e.target.checked)}
-              className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
-            />
-          </div>
-          
-          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-            <div>
-              <h4 className="font-medium text-gray-800">IP Whitelist</h4>
-              <p className="text-sm text-gray-600">Restrict admin access by IP</p>
-            </div>
-            <input
-              type="checkbox"
-              checked={settings.security.ipWhitelist}
-              onChange={(e) => handleInputChange('security', 'ipWhitelist', e.target.checked)}
-              className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
-            />
-          </div>
-
-          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-            <div>
-              <h4 className="font-medium text-gray-800">SSL Required</h4>
-              <p className="text-sm text-gray-600">Force HTTPS connections</p>
-            </div>
-            <input
-              type="checkbox"
-              checked={settings.security.sslRequired}
-              onChange={(e) => handleInputChange('security', 'sslRequired', e.target.checked)}
-              className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
-            />
-          </div>
-
-          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-            <div>
-              <h4 className="font-medium text-gray-800">Account Lockout</h4>
-              <p className="text-sm text-gray-600">Lock accounts after failed attempts</p>
-            </div>
-            <input
-              type="checkbox"
-              checked={settings.security.accountLockout}
-              onChange={(e) => handleInputChange('security', 'accountLockout', e.target.checked)}
-              className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
-            />
-          </div>
+          ))}
         </div>
 
         <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Session Timeout (minutes)</label>
-            <input
-              type="number"
-              value={settings.security.sessionTimeout}
-              onChange={(e) => handleInputChange('security', 'sessionTimeout', parseInt(e.target.value))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
-            />
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Password Min Length</label>
-            <input
-              type="number"
-              value={settings.security.passwordMinLength}
-              onChange={(e) => handleInputChange('security', 'passwordMinLength', parseInt(e.target.value))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
-            />
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Max Login Attempts</label>
-            <input
-              type="number"
-              value={settings.security.loginAttempts}
-              onChange={(e) => handleInputChange('security', 'loginAttempts', parseInt(e.target.value))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Password Expiry (days)</label>
-            <input
-              type="number"
-              value={settings.security.passwordExpiry}
-              onChange={(e) => handleInputChange('security', 'passwordExpiry', parseInt(e.target.value))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Lockout Duration (minutes)</label>
-            <input
-              type="number"
-              value={settings.security.lockoutDuration}
-              onChange={(e) => handleInputChange('security', 'lockoutDuration', parseInt(e.target.value))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
-            />
-          </div>
+          {[
+            { key: 'sessionTimeout', label: 'Session Timeout (minutes)' },
+            { key: 'passwordMinLength', label: 'Password Min Length' },
+            { key: 'loginAttempts', label: 'Max Login Attempts' },
+            { key: 'passwordExpiry', label: 'Password Expiry (days)' },
+            { key: 'lockoutDuration', label: 'Lockout Duration (minutes)' }
+          ].map((item) => (
+            <div key={item.key}>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">{item.label}</label>
+              <input
+                type="number"
+                value={settings.security[item.key as keyof typeof settings.security] as number}
+                onChange={(e) => handleInputChange('security', item.key, parseInt(e.target.value))}
+                className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all font-medium text-slate-700"
+              />
+            </div>
+          ))}
         </div>
       </div>
     </div>
@@ -433,15 +346,15 @@ const SystemSettings: React.FC = () => {
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-4">
-          <h3 className="text-lg font-semibold text-gray-800">System Notifications</h3>
-          
+          <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">System Notifications</h3>
+
           {Object.entries(settings.notifications).map(([key, value]) => (
-            <div key={key} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+            <div key={key} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-100">
               <div>
-                <h4 className="font-medium text-gray-800 capitalize">
+                <h4 className="font-bold text-slate-800 text-sm capitalize">
                   {key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
                 </h4>
-                <p className="text-sm text-gray-600">
+                <p className="text-xs text-slate-500">
                   {key === 'emailNotifications' && 'Send notifications via email'}
                   {key === 'smsNotifications' && 'Send notifications via SMS'}
                   {key === 'pushNotifications' && 'Send browser push notifications'}
@@ -457,46 +370,29 @@ const SystemSettings: React.FC = () => {
                 type="checkbox"
                 checked={value as boolean}
                 onChange={(e) => handleInputChange('notifications', key, e.target.checked)}
-                className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
+                className="w-5 h-5 text-indigo-600 rounded focus:ring-indigo-500 border-gray-300"
               />
             </div>
           ))}
         </div>
 
         <div className="space-y-4">
-          <h3 className="text-lg font-semibold text-gray-800">Email Templates</h3>
+          <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Email Templates</h3>
           <div className="space-y-3">
-            <button className="w-full text-left p-4 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-              <div className="flex items-center justify-between">
-                <span className="font-medium text-gray-800">Welcome Email</span>
-                <FaEdit className="text-gray-400" />
-              </div>
-              <p className="text-sm text-gray-600 mt-1">Email sent to new users</p>
-            </button>
-            
-            <button className="w-full text-left p-4 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-              <div className="flex items-center justify-between">
-                <span className="font-medium text-gray-800">Password Reset</span>
-                <FaEdit className="text-gray-400" />
-              </div>
-              <p className="text-sm text-gray-600 mt-1">Password reset instructions</p>
-            </button>
-            
-            <button className="w-full text-left p-4 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-              <div className="flex items-center justify-between">
-                <span className="font-medium text-gray-800">Shipment Updates</span>
-                <FaEdit className="text-gray-400" />
-              </div>
-              <p className="text-sm text-gray-600 mt-1">Cargo status notifications</p>
-            </button>
-
-            <button className="w-full text-left p-4 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-              <div className="flex items-center justify-between">
-                <span className="font-medium text-gray-800">Payment Confirmations</span>
-                <FaEdit className="text-gray-400" />
-              </div>
-              <p className="text-sm text-gray-600 mt-1">Payment success notifications</p>
-            </button>
+            {[
+              { label: 'Welcome Email', desc: 'Email sent to new users' },
+              { label: 'Password Reset', desc: 'Password reset instructions' },
+              { label: 'Shipment Updates', desc: 'Cargo status notifications' },
+              { label: 'Payment Confirmations', desc: 'Payment success notifications' }
+            ].map((item, idx) => (
+              <button key={idx} className="w-full text-left p-4 bg-white border border-gray-200 rounded-xl hover:border-indigo-300 hover:shadow-md transition-all group">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-slate-800 group-hover:text-indigo-700 transition-colors">{item.label}</span>
+                  <Edit2 className="text-gray-400 w-4 h-4 group-hover:text-indigo-500" />
+                </div>
+                <p className="text-xs text-slate-500 mt-1">{item.desc}</p>
+              </button>
+            ))}
           </div>
         </div>
       </div>
@@ -507,107 +403,87 @@ const SystemSettings: React.FC = () => {
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">API Key</label>
+          <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">API Key</label>
           <div className="flex">
             <div className="relative flex-1">
               <input
                 type={showApiKey ? "text" : "password"}
                 value={settings.api.apiKey}
                 onChange={(e) => handleInputChange('api', 'apiKey', e.target.value)}
-                className="w-full pl-4 pr-20 py-2 border border-gray-300 rounded-l-lg focus:ring-2 focus:ring-purple-500"
+                className="w-full pl-4 pr-12 py-2.5 bg-gray-50 border border-gray-200 rounded-l-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all font-mono text-sm text-slate-700"
                 readOnly
               />
               <button
                 onClick={() => setShowApiKey(!showApiKey)}
-                className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-indigo-600 transition-colors"
               >
-                {showApiKey ? <FaEyeSlash /> : <FaEye />}
+                {showApiKey ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
             </div>
-            <button 
+            <button
               onClick={copyApiKey}
-              className="px-4 py-2 bg-gray-600 text-white hover:bg-gray-700 transition-colors"
+              className="px-4 bg-slate-700 text-white hover:bg-slate-600 transition-colors flex items-center justify-center border-r border-slate-600"
             >
-              <FaCopy />
+              <Copy size={16} />
             </button>
-            <button 
+            <button
               onClick={regenerateApiKey}
-              className="px-4 py-2 bg-purple-600 text-white rounded-r-lg hover:bg-purple-700 transition-colors"
+              className="px-4 bg-indigo-600 text-white rounded-r-xl hover:bg-indigo-500 transition-colors flex items-center justify-center"
             >
-              <FaSync />
+              <RefreshCw size={16} />
             </button>
           </div>
-          <p className="text-xs text-gray-500 mt-1">Keep this key secure. Regenerating will invalidate all existing integrations.</p>
+          <p className="text-[10px] text-slate-400 mt-1.5 font-medium">Keep this key secure. Regenerating will invalidate all existing integrations.</p>
         </div>
-        
+
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Requests per Minute</label>
+          <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">Requests per Minute</label>
           <input
             type="number"
             value={settings.api.requestsPerMinute}
             onChange={(e) => handleInputChange('api', 'requestsPerMinute', parseInt(e.target.value))}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+            className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all font-medium text-slate-700"
           />
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-          <div>
-            <h4 className="font-medium text-gray-800">Rate Limiting</h4>
-            <p className="text-sm text-gray-600">Limit API requests</p>
+        {[
+          { key: 'rateLimitEnabled', label: 'Rate Limiting', desc: 'Limit API requests' },
+          { key: 'corsEnabled', label: 'CORS', desc: 'Cross-origin requests' },
+          { key: 'webhooksEnabled', label: 'Webhooks', desc: 'Event notifications' }
+        ].map((item) => (
+          <div key={item.key} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-100">
+            <div>
+              <h4 className="font-bold text-slate-800 text-sm">{item.label}</h4>
+              <p className="text-xs text-slate-500">{item.desc}</p>
+            </div>
+            <input
+              type="checkbox"
+              checked={settings.api[item.key as keyof typeof settings.api] as boolean}
+              onChange={(e) => handleInputChange('api', item.key, e.target.checked)}
+              className="w-5 h-5 text-indigo-600 rounded focus:ring-indigo-500 border-gray-300"
+            />
           </div>
-          <input
-            type="checkbox"
-            checked={settings.api.rateLimitEnabled}
-            onChange={(e) => handleInputChange('api', 'rateLimitEnabled', e.target.checked)}
-            className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
-          />
-        </div>
-        
-        <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-          <div>
-            <h4 className="font-medium text-gray-800">CORS</h4>
-            <p className="text-sm text-gray-600">Cross-origin requests</p>
-          </div>
-          <input
-            type="checkbox"
-            checked={settings.api.corsEnabled}
-            onChange={(e) => handleInputChange('api', 'corsEnabled', e.target.checked)}
-            className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
-          />
-        </div>
-        
-        <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-          <div>
-            <h4 className="font-medium text-gray-800">Webhooks</h4>
-            <p className="text-sm text-gray-600">Event notifications</p>
-          </div>
-          <input
-            type="checkbox"
-            checked={settings.api.webhooksEnabled}
-            onChange={(e) => handleInputChange('api', 'webhooksEnabled', e.target.checked)}
-            className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
-          />
-        </div>
+        ))}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">API Version</label>
+          <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">API Version</label>
           <input
             type="text"
             value={settings.api.apiVersion}
             onChange={(e) => handleInputChange('api', 'apiVersion', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+            className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all font-medium text-slate-700"
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Max Payload Size</label>
+          <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">Max Payload Size</label>
           <select
             value={settings.api.maxPayloadSize}
             onChange={(e) => handleInputChange('api', 'maxPayloadSize', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+            className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all font-medium text-slate-700"
           >
             <option value="1MB">1MB</option>
             <option value="5MB">5MB</option>
@@ -617,43 +493,30 @@ const SystemSettings: React.FC = () => {
           </select>
         </div>
       </div>
-
-      <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-        <div>
-          <h4 className="font-medium text-gray-800">Sandbox Mode</h4>
-          <p className="text-sm text-gray-600">Enable for testing and development</p>
-        </div>
-        <input
-          type="checkbox"
-          checked={settings.api.sandboxMode}
-          onChange={(e) => handleInputChange('api', 'sandboxMode', e.target.checked)}
-          className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
-        />
-      </div>
     </div>
   );
 
   const renderBackupSettings = () => (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-800">Backup & Recovery</h3>
+        <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Backup & Recovery</h3>
         <button
           onClick={createBackup}
           disabled={isLoading}
-          className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
+          className="bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white px-5 py-2.5 rounded-xl flex items-center gap-2 transition-all font-bold text-xs uppercase tracking-wider shadow-lg shadow-indigo-200"
         >
-          {isLoading ? <FaSync className="animate-spin" /> : <FaDownload />}
+          {isLoading ? <RefreshCw size={14} className="animate-spin" /> : <Download size={14} />}
           <span>{isLoading ? 'Creating...' : 'Create Backup'}</span>
         </button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Backup Frequency</label>
+          <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">Backup Frequency</label>
           <select
             value={settings.database.backupFrequency}
             onChange={(e) => handleInputChange('database', 'backupFrequency', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+            className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all font-medium text-slate-700"
           >
             <option value="hourly">Hourly</option>
             <option value="daily">Daily</option>
@@ -662,49 +525,48 @@ const SystemSettings: React.FC = () => {
           </select>
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Retention Period (days)</label>
+          <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">Retention Period (days)</label>
           <input
             type="number"
             value={settings.database.backupRetention}
             onChange={(e) => handleInputChange('database', 'backupRetention', parseInt(e.target.value))}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+            className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all font-medium text-slate-700"
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Connection Pool</label>
+          <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">Connection Pool</label>
           <input
             type="number"
             value={settings.database.connectionPool}
             onChange={(e) => handleInputChange('database', 'connectionPool', parseInt(e.target.value))}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+            className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all font-medium text-slate-700"
           />
         </div>
       </div>
 
-      <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
         <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
-          <h4 className="font-medium text-gray-800">Backup History</h4>
+          <h4 className="font-bold text-slate-800 text-sm">Backup History</h4>
         </div>
-        <div className="divide-y divide-gray-200">
+        <div className="divide-y divide-gray-100">
           {backupHistory.map((backup) => (
-            <div key={backup.id} className="px-6 py-4 flex items-center justify-between">
+            <div key={backup.id} className="px-6 py-4 flex items-center justify-between hover:bg-slate-50 transition-colors">
               <div>
-                <p className="font-medium text-gray-800">{backup.filename}</p>
-                <p className="text-sm text-gray-500">
+                <p className="font-medium text-slate-800 text-sm">{backup.filename}</p>
+                <p className="text-xs text-slate-500 mt-0.5">
                   {backup.timestamp} • {backup.size} • {backup.type}
                 </p>
               </div>
-              <div className="flex items-center space-x-2">
-                <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                  backup.status === 'completed' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                }`}>
+              <div className="flex items-center gap-2">
+                <span className={`inline-flex px-2.5 py-1 text-[10px] font-black uppercase tracking-widest rounded-full ${backup.status === 'completed' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-red-50 text-red-600 border border-red-100'
+                  }`}>
                   {backup.status}
                 </span>
-                <button className="text-blue-600 hover:text-blue-800 p-1">
-                  <FaDownload />
+                <button className="text-slate-400 hover:text-indigo-600 p-1.5 rounded-lg hover:bg-slate-100 transition-all">
+                  <Download size={14} />
                 </button>
-                <button className="text-red-600 hover:text-red-800 p-1">
-                  <FaTrash />
+                <button className="text-slate-400 hover:text-red-600 p-1.5 rounded-lg hover:bg-slate-100 transition-all">
+                  <Trash2 size={14} />
                 </button>
               </div>
             </div>
@@ -729,11 +591,11 @@ const SystemSettings: React.FC = () => {
       default:
         return (
           <div className="text-center py-12">
-            <FaCog className="text-6xl text-gray-300 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-800">
+            <Settings className="w-16 h-16 text-slate-200 mx-auto mb-4" />
+            <h3 className="text-lg font-bold text-slate-800">
               <TranslatedText text="Settings Section" />
             </h3>
-            <p className="text-gray-600">
+            <p className="text-slate-500 mt-2">
               <TranslatedText text="This section is under development." />
             </p>
           </div>
@@ -742,56 +604,52 @@ const SystemSettings: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-800">
-            <TranslatedText text="System Settings" />
-          </h2>
-          <p className="text-gray-600">
-            <TranslatedText text="Configure platform settings and preferences" />
-          </p>
-        </div>
-        {unsavedChanges && (
-          <div className="flex space-x-3">
+    <AdminPageLayout
+      title="System Settings"
+      description="Configure platform settings and preferences"
+      actions={
+        unsavedChanges && (
+          <div className="flex gap-3">
             <button
               onClick={handleReset}
-              className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
+              className="bg-white border border-gray-200 text-slate-700 hover:bg-gray-50 px-4 py-2.5 rounded-xl flex items-center gap-2 transition-all font-bold text-xs uppercase tracking-wider"
             >
-              <FaUndo />
+              <RotateCcw size={14} />
               <span><TranslatedText text="Reset" /></span>
             </button>
             <button
               onClick={handleSave}
               disabled={isLoading}
-              className="bg-purple-600 hover:bg-purple-700 disabled:bg-purple-400 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
+              className="bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white px-6 py-2.5 rounded-xl flex items-center gap-2 transition-all shadow-lg shadow-indigo-200 font-bold text-xs uppercase tracking-wider"
             >
-              {isLoading ? <FaSync className="animate-spin" /> : <FaSave />}
+              {isLoading ? <RefreshCw size={14} className="animate-spin" /> : <Save size={14} />}
               <span>{isLoading ? <TranslatedText text="Saving..." /> : <TranslatedText text="Save Changes" />}</span>
             </button>
           </div>
-        )}
-      </div>
+        )
+      }
+    >
 
       <div className="flex flex-col lg:flex-row gap-6">
         {/* Sidebar */}
-        <div className="lg:w-64 bg-white rounded-xl shadow-lg p-4">
-          <nav className="space-y-2">
+        <div className="lg:w-72 bg-white rounded-[24px] shadow-sm border border-slate-100 p-4 h-fit">
+          <nav className="space-y-1">
             {settingSections.map((section) => {
               const Icon = section.icon;
+              const isActive = activeSection === section.id;
               return (
                 <button
                   key={section.id}
                   onClick={() => setActiveSection(section.id)}
-                  className={`w-full flex items-center px-4 py-3 rounded-lg transition-colors ${
-                    activeSection === section.id
-                      ? 'bg-purple-100 text-purple-700 border-l-4 border-purple-500'
-                      : 'text-gray-600 hover:bg-gray-50'
-                  }`}
+                  className={`w-full flex items-center px-4 py-3.5 rounded-xl transition-all ${isActive
+                    ? 'bg-indigo-50 text-indigo-700 shadow-sm'
+                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-800'
+                    }`}
                 >
-                  <Icon className="mr-3" />
-                  <span className="font-medium"><TranslatedText text={section.label} /></span>
+                  <Icon className={`mr-3 w-5 h-5 ${isActive ? 'text-indigo-600' : 'text-slate-400'}`} />
+                  <span className={`font-bold text-sm ${isActive ? 'text-indigo-900' : 'text-slate-600'}`}>
+                    <TranslatedText text={section.label} />
+                  </span>
                 </button>
               );
             })}
@@ -799,16 +657,17 @@ const SystemSettings: React.FC = () => {
         </div>
 
         {/* Content */}
-        <div className="flex-1 bg-white rounded-xl shadow-lg p-6">
-          <div className="mb-6">
-            <h3 className="text-xl font-semibold text-gray-800">
+        <div className="flex-1 bg-white rounded-[24px] shadow-sm border border-slate-100 p-8 min-h-[600px]">
+          <div className="mb-8 pb-4 border-b border-slate-100">
+            <h3 className="text-xl font-black text-slate-800">
               <TranslatedText text={settingSections.find(s => s.id === activeSection)?.label || ''} />
             </h3>
+            <p className="text-slate-500 text-sm mt-1">Manage your {activeSection} preferences</p>
           </div>
           {renderContent()}
         </div>
       </div>
-    </div>
+    </AdminPageLayout>
   );
 };
 

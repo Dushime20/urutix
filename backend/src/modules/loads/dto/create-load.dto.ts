@@ -11,6 +11,8 @@ import {
   Min,
   Max,
   IsUUID,
+  MaxLength,
+  IsPositive,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
@@ -340,24 +342,31 @@ export class CreateLoadDto {
   @ApiPropertyOptional({ description: 'Client reference number' })
   @IsOptional()
   @IsString()
+  @MaxLength(100)
   reference?: string;
 
   @ApiProperty({ description: 'Load title' })
   @IsString()
+  @MaxLength(200)
   title: string;
 
   @ApiPropertyOptional({ description: 'Load description' })
   @IsOptional()
   @IsString()
+  @MaxLength(2000)
   description?: string;
 
   @ApiProperty({ description: 'Weight in kg' })
   @IsNumber()
+  @IsPositive()
+  @Max(100000) // 100 tons max
   weight: number;
 
   @ApiPropertyOptional({ description: 'Volume in cubic meters' })
   @IsOptional()
   @IsNumber()
+  @IsPositive()
+  @Max(1000) // 1000 cubic meters max
   volume?: number;
 
   @ApiProperty({
@@ -400,6 +409,7 @@ export class CreateLoadDto {
   @ApiProperty({ description: 'Units required', minimum: 1 })
   @IsNumber()
   @Min(1)
+  @Max(100) // Maximum 100 units
   unitsRequired: number;
 
   @ApiProperty({ description: 'Load locations', type: [LoadLocationDto] })
@@ -442,16 +452,21 @@ export class CreateLoadDto {
 
   @ApiProperty({ description: 'Load value' })
   @IsNumber()
+  @Min(0)
+  @Max(1000000000) // 1 billion max
   loadValue: number;
 
   @ApiPropertyOptional({ description: 'Offered price' })
   @IsOptional()
   @IsNumber()
+  @Min(0)
+  @Max(1000000000) // 1 billion max
   offeredPrice?: number;
 
   @ApiPropertyOptional({ description: 'Currency code', default: 'USD' })
   @IsOptional()
   @IsString()
+  @MaxLength(3)
   currencyCode?: string;
 
   @ApiPropertyOptional({ description: 'Pricing structure' })
@@ -622,31 +637,39 @@ export class CreateLoadDto {
   @ApiPropertyOptional({ description: 'Number of pieces' })
   @IsOptional()
   @IsNumber()
+  @Min(0)
+  @Max(10000) // Maximum 10,000 pieces
   numberOfPieces?: number;
 
   @ApiPropertyOptional({ description: 'Number of pallets' })
   @IsOptional()
   @IsNumber()
+  @Min(0)
+  @Max(1000) // Maximum 1,000 pallets
   numberOfPallets?: number;
 
   @ApiPropertyOptional({ description: 'Special handling instructions' })
   @IsOptional()
   @IsString()
+  @MaxLength(1000)
   specialHandlingInstructions?: string;
 
   @ApiPropertyOptional({ description: 'Loading instructions' })
   @IsOptional()
   @IsString()
+  @MaxLength(1000)
   loadingInstructions?: string;
 
   @ApiPropertyOptional({ description: 'Unloading instructions' })
   @IsOptional()
   @IsString()
+  @MaxLength(1000)
   unloadingInstructions?: string;
 
   @ApiPropertyOptional({ description: 'Emergency contact information' })
   @IsOptional()
   @IsString()
+  @MaxLength(500)
   emergencyContactInfo?: string;
 
   @ApiPropertyOptional({ description: 'Metadata for additional properties' })

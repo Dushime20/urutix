@@ -1,9 +1,21 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { FaTruck, FaUser, FaPlus, FaTimes, FaSearch, FaSpinner, FaCheckCircle, FaExclamationCircle } from 'react-icons/fa';
+import {
+  Truck,
+  User,
+  Plus,
+  X,
+  Search,
+  Loader2,
+  CheckCircle2,
+  AlertTriangle,
+  CreditCard,
+  Zap,
+  Layout
+} from 'lucide-react';
 import { fleetApi, type FleetItem, type Driver, type DriverAssignment } from '../../services/fleetApi';
 import toast from 'react-hot-toast';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../ui/Dialog';
-import { Button } from '../ui/Button';
+import { motion, AnimatePresence } from 'framer-motion';
+import { createPortal } from 'react-dom';
 
 export const DriverAssignments: React.FC = () => {
   const [trucks, setTrucks] = useState<FleetItem[]>([]);
@@ -16,7 +28,6 @@ export const DriverAssignments: React.FC = () => {
   const [assigning, setAssigning] = useState(false);
   const [assignmentNotes, setAssignmentNotes] = useState('');
 
-  // Load trucks and drivers
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
@@ -27,8 +38,7 @@ export const DriverAssignments: React.FC = () => {
       setTrucks(trucksData);
       setDrivers(driversData);
     } catch (error: any) {
-      console.error('Error loading data:', error);
-      toast.error('Failed to load trucks and drivers');
+      toast.error('Failed to synchronize personnel matrix');
     } finally {
       setLoading(false);
     }
@@ -38,344 +48,217 @@ export const DriverAssignments: React.FC = () => {
     loadData();
   }, [loadData]);
 
-  // Filter trucks
   const filteredTrucks = trucks.filter(truck => {
     const searchLower = searchTruck.toLowerCase();
     return (
       truck.plateNumber?.toLowerCase().includes(searchLower) ||
       truck.make?.toLowerCase().includes(searchLower) ||
-      truck.model?.toLowerCase().includes(searchLower) ||
-      `${truck.make} ${truck.model}`.toLowerCase().includes(searchLower)
+      truck.model?.toLowerCase().includes(searchLower)
     );
   });
 
-  // Get available drivers for a truck (not already assigned)
   const getAvailableDrivers = (truck: FleetItem): Driver[] => {
     const assignedDriverIds = (truck.assignedDrivers || []).map(a => a.driverId);
     return drivers.filter(driver => !assignedDriverIds.includes(driver.id));
   };
 
-  // Handle assign driver
   const handleAssignDriver = async (truckId: string, driverId: string) => {
     setAssigning(true);
     try {
       await fleetApi.assignDriverToTruck(truckId, driverId, {
         notes: assignmentNotes || undefined
       });
-      toast.success('Driver assigned successfully!');
+      toast.success('Asset synchronization successful');
       setShowAssignModal(false);
       setSelectedTruck(null);
       setAssignmentNotes('');
-      await loadData(); // Refresh data
+      await loadData();
     } catch (error: any) {
-      console.error('Error assigning driver:', error);
-      const errorMessage = error.response?.data?.message || 'Failed to assign driver';
-      toast.error(errorMessage);
+      toast.error(error.response?.data?.message || 'Synchronization failed');
     } finally {
       setAssigning(false);
     }
   };
 
-  // Handle unassign driver
   const handleUnassignDriver = async (truckId: string, driverId: string) => {
-    if (!confirm('Are you sure you want to unassign this driver from the truck?')) {
-      return;
-    }
-
+    if (!confirm('Terminate this asset assignment?')) return;
     try {
       await fleetApi.unassignDriverFromTruck(truckId, driverId);
-      toast.success('Driver unassigned successfully!');
-      await loadData(); // Refresh data
+      toast.success('Assignment terminated');
+      await loadData();
     } catch (error: any) {
-      console.error('Error unassigning driver:', error);
-      const errorMessage = error.response?.data?.message || 'Failed to unassign driver';
-      toast.error(errorMessage);
+      toast.error('Termination failed');
     }
   };
 
-  // Open assign modal
-  const openAssignModal = (truck: FleetItem) => {
-    setSelectedTruck(truck);
-    setShowAssignModal(true);
-    setAssignmentNotes('');
-    setSearchDriver('');
-  };
-
-  if (loading && trucks.length === 0) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <FaSpinner className="w-8 h-8 text-primary-600 animate-spin" />
-        <span className="ml-3 text-gray-600">Loading assignments...</span>
-      </div>
-    );
-  }
-
   return (
-    <div className="space-y-6">
-      {/* Search and Filters */}
-      <div className="bg-white rounded-lg border border-gray-200 p-4">
-        <div className="flex items-center gap-4">
-          <div className="flex-1 relative">
-            <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-            <input
-              type="text"
-              value={searchTruck}
-              onChange={(e) => setSearchTruck(e.target.value)}
-              placeholder="Search trucks by plate, make, or model..."
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-            />
-          </div>
+    <div className="space-y-8">
+      {/* Context Header */}
+      <div className="flex items-center gap-3 px-2">
+        <div className="size-8 bg-primary-50 rounded-lg flex items-center justify-center text-primary-500 shadow-inner">
+          <Layout size={16} />
+        </div>
+        <h2 className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Personnel Deployment Matrix</h2>
+      </div>
+
+      {/* Matrix Control */}
+      <div className="bg-white rounded-[32px] border border-slate-100 p-4">
+        <div className="relative group">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-slate-400 group-focus-within:text-primary-500 transition-colors" />
+          <input
+            type="text"
+            placeholder="Filter by plate, make or model..."
+            value={searchTruck}
+            onChange={(e) => setSearchTruck(e.target.value)}
+            className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-50 rounded-[24px] text-[11px] font-bold text-slate-900 focus:bg-white focus:ring-4 focus:ring-primary-50 focus:border-primary-500 outline-none transition-all"
+          />
         </div>
       </div>
 
-      {/* Trucks List */}
-      <div className="space-y-4">
-        {filteredTrucks.length === 0 ? (
-          <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
-            <FaTruck className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">No Trucks Found</h3>
-            <p className="text-gray-600">
-              {searchTruck ? 'Try adjusting your search criteria' : 'No trucks available for driver assignment'}
-            </p>
-          </div>
-        ) : (
-          filteredTrucks.map((truck) => {
-            const assignedDrivers = truck.assignedDrivers || [];
-            const availableDrivers = getAvailableDrivers(truck);
+      {/* Asset Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <AnimatePresence mode='popLayout'>
+          {filteredTrucks.map(truck => (
+            <motion.div
+              layout
+              key={truck.id}
+              initial={{ opacity: 0, scale: 0.98 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="bg-white p-6 rounded-[32px] border border-slate-100 shadow-sm hover:shadow-xl transition-all relative overflow-hidden group"
+            >
+              <div className="absolute top-0 right-0 p-8 opacity-[0.02] pointer-events-none group-hover:scale-110 transition-transform"><Zap size={80} /></div>
 
-            return (
-              <div key={truck.id} className="bg-white rounded-lg border border-gray-200 p-6">
-                {/* Truck Header */}
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center gap-4">
-                    <div className="p-3 bg-primary-100 rounded-lg">
-                      <FaTruck className="w-6 h-6 text-primary-600" />
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-900">
-                        {truck.make} {truck.model}
-                      </h3>
-                      <p className="text-sm text-gray-600">
-                        Plate: {truck.plateNumber} • Status: <span className="capitalize">{truck.status}</span>
-                      </p>
-                    </div>
-                  </div>
-                  {availableDrivers.length > 0 && (
-                    <button
-                      onClick={() => openAssignModal(truck)}
-                      className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors flex items-center gap-2"
-                    >
-                      <FaPlus className="w-4 h-4" />
-                      Assign Driver
-                    </button>
-                  )}
+              <div className="flex items-start justify-between mb-6">
+                <div className="size-12 bg-primary-50 rounded-2xl flex items-center justify-center text-primary-500 group-hover:bg-primary-500 group-hover:text-white transition-all">
+                  <Truck size={24} />
                 </div>
+                <div className="text-right">
+                  <h3 className="text-lg font-black text-slate-900 tracking-tight">{truck.make} {truck.model}</h3>
+                  <p className="text-[10px] font-bold text-primary-500 uppercase tracking-widest">{truck.plateNumber}</p>
+                </div>
+              </div>
 
-                {/* Assigned Drivers */}
-                <div className="mt-4">
-                  <h4 className="text-sm font-medium text-gray-700 mb-3">
-                    Assigned Drivers ({assignedDrivers.length})
-                  </h4>
-                  {assignedDrivers.length > 0 ? (
-                    <div className="space-y-2">
-                      {assignedDrivers.map((assignment: DriverAssignment, index: number) => {
-                        const driver = drivers.find(d => d.id === assignment.driverId);
-                        return (
-                          <div
-                            key={assignment.driverId || index}
-                            className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-lg"
-                          >
-                            <div className="flex items-center gap-3">
-                              <div className="p-2 bg-green-100 rounded-lg">
-                                <FaUser className="w-4 h-4 text-green-600" />
-                              </div>
-                              <div>
-                                <p className="text-sm font-medium text-gray-900">
-                                  {assignment.driverName || driver ? `${driver?.firstName} ${driver?.lastName}` : 'Unknown Driver'}
-                                </p>
-                                <div className="flex items-center gap-4 mt-1">
-                                  <span className="text-xs text-gray-500">
-                                    Assigned: {assignment.assignmentDate 
-                                      ? new Date(assignment.assignmentDate).toLocaleDateString()
-                                      : 'N/A'}
-                                  </span>
-                                  {assignment.status && (
-                                    <span className={`text-xs px-2 py-0.5 rounded-full ${
-                                      assignment.status === 'active' 
-                                        ? 'bg-green-100 text-green-700' 
-                                        : 'bg-gray-100 text-gray-700'
-                                    }`}>
-                                      {assignment.status}
-                                    </span>
-                                  )}
-                                </div>
-                                {assignment.notes && (
-                                  <p className="text-xs text-gray-600 mt-1">{assignment.notes}</p>
-                                )}
-                              </div>
-                            </div>
-                            <button
-                              onClick={() => handleUnassignDriver(truck.id, assignment.driverId)}
-                              className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                              title="Unassign Driver"
-                            >
-                              <FaTimes className="w-4 h-4" />
-                            </button>
+              <div className="space-y-4">
+                <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Deployed Personnel</p>
+                <div className="space-y-2">
+                  {(truck.assignedDrivers || []).length > 0 ? (
+                    truck.assignedDrivers?.map((assignment: DriverAssignment) => (
+                      <div key={assignment.driverId} className="flex items-center justify-between p-3 bg-slate-50 rounded-2xl border border-slate-50 group/item hover:bg-white hover:border-slate-100 transition-all">
+                        <div className="flex items-center gap-3">
+                          <div className="size-8 bg-white rounded-xl flex items-center justify-center text-slate-400 group-hover/item:text-primary-500 shadow-sm transition-colors">
+                            <User size={14} />
                           </div>
-                        );
-                      })}
-                    </div>
+                          <div>
+                            <p className="text-xs font-bold text-slate-900">{assignment.driverName || 'Personnel Null'}</p>
+                            <p className="text-[9px] font-black uppercase text-primary-500">Active Duty</p>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => handleUnassignDriver(truck.id, assignment.driverId)}
+                          className="size-8 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-all"
+                        >
+                          <X size={14} />
+                        </button>
+                      </div>
+                    ))
                   ) : (
-                    <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg text-center">
-                      <FaUser className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                      <p className="text-sm text-gray-600">No drivers assigned to this truck</p>
+                    <div className="py-4 text-center border-2 border-dashed border-slate-100 rounded-2xl">
+                      <p className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">Available for Deployment</p>
                     </div>
                   )}
                 </div>
               </div>
-            );
-          })
-        )}
+
+              <button
+                onClick={() => {
+                  setSelectedTruck(truck);
+                  setShowAssignModal(true);
+                }}
+                className="mt-6 w-full py-3 bg-slate-50 text-primary-500 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-primary-500 hover:text-white transition-all group-hover:shadow-lg group-hover:shadow-primary-500/20"
+              >
+                <Plus size={14} className="inline mr-2" />
+                Deploy Personnel
+              </button>
+            </motion.div>
+          ))}
+        </AnimatePresence>
       </div>
 
-      {/* Assign Driver Modal */}
-      <Dialog open={showAssignModal} onOpenChange={setShowAssignModal}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Assign Driver to Truck</DialogTitle>
-          </DialogHeader>
-          
-          {selectedTruck && (
-            <div className="space-y-4">
-              {/* Truck Info */}
-              <div className="p-4 bg-gray-50 rounded-lg">
-                <div className="flex items-center gap-3">
-                  <FaTruck className="w-5 h-5 text-primary-600" />
-                  <div>
-                    <p className="font-semibold text-gray-900">
-                      {selectedTruck.make} {selectedTruck.model}
-                    </p>
-                    <p className="text-sm text-gray-600">Plate: {selectedTruck.plateNumber}</p>
-                  </div>
-                </div>
-              </div>
+      {loading && (
+        <div className="flex flex-col items-center justify-center py-20">
+          <Loader2 className="size-8 animate-spin text-primary-500 mb-4" />
+          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Syncing Matrix Pulse...</p>
+        </div>
+      )}
 
-              {/* Available Drivers */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Select Driver
-                </label>
-                {/* Driver Search */}
-                <div className="mb-3 relative">
-                  <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                  <input
-                    type="text"
-                    value={searchDriver}
-                    onChange={(e) => setSearchDriver(e.target.value)}
-                    placeholder="Search drivers by name, email, or license..."
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-                  />
-                </div>
-                <div className="max-h-64 overflow-y-auto border border-gray-200 rounded-lg">
-                  {getAvailableDrivers(selectedTruck).length === 0 ? (
-                    <div className="p-8 text-center">
-                      <FaExclamationCircle className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                      <p className="text-sm text-gray-600">No available drivers</p>
-                      <p className="text-xs text-gray-500 mt-1">All active drivers are already assigned to this truck</p>
-                    </div>
-                  ) : (
-                    <div className="divide-y divide-gray-200">
-                      {getAvailableDrivers(selectedTruck)
-                        .filter(driver => {
-                          const searchLower = searchDriver.toLowerCase();
-                          return (
-                            driver.firstName?.toLowerCase().includes(searchLower) ||
-                            driver.lastName?.toLowerCase().includes(searchLower) ||
-                            driver.email?.toLowerCase().includes(searchLower) ||
-                            driver.licenseNumber?.toLowerCase().includes(searchLower)
-                          );
-                        })
-                        .map((driver) => (
-                          <button
-                            key={driver.id}
-                            onClick={() => handleAssignDriver(selectedTruck.id, driver.id)}
-                            disabled={assigning}
-                            className="w-full p-4 text-left hover:bg-gray-50 transition-colors flex items-center justify-between"
-                          >
-                            <div className="flex items-center gap-3">
-                              <div className="p-2 bg-primary-100 rounded-lg">
-                                <FaUser className="w-4 h-4 text-primary-600" />
-                              </div>
-                              <div>
-                                <p className="font-medium text-gray-900">
-                                  {driver.firstName} {driver.lastName}
-                                </p>
-                                <div className="flex items-center gap-3 mt-1">
-                                  <span className="text-xs text-gray-500">{driver.email}</span>
-                                  <span className="text-xs text-gray-500">License: {driver.licenseNumber}</span>
-                                </div>
-                                <div className="flex items-center gap-2 mt-1">
-                                  <span className={`text-xs px-2 py-0.5 rounded-full ${
-                                    driver.status === 'ACTIVE' 
-                                      ? 'bg-green-100 text-green-700' 
-                                      : 'bg-gray-100 text-gray-700'
-                                  }`}>
-                                    {driver.status}
-                                  </span>
-                                  <span className={`text-xs px-2 py-0.5 rounded-full ${
-                                    driver.availabilityStatus === 'AVAILABLE' 
-                                      ? 'bg-blue-100 text-blue-700' 
-                                      : 'bg-yellow-100 text-yellow-700'
-                                  }`}>
-                                    {driver.availabilityStatus}
-                                  </span>
-                                </div>
-                              </div>
-                            </div>
-                            {assigning ? (
-                              <FaSpinner className="w-4 h-4 text-primary-600 animate-spin" />
-                            ) : (
-                              <FaCheckCircle className="w-5 h-5 text-primary-600" />
-                            )}
-                          </button>
-                        ))}
-                    </div>
-                  )}
-                </div>
+      {/* Assignment Portal */}
+      {showAssignModal && selectedTruck && createPortal(
+        <div className="fixed inset-0 bg-primary-950/40 backdrop-blur-sm flex items-center justify-center z-[9999] p-4" onClick={() => setShowAssignModal(false)}>
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            className="bg-white rounded-[40px] shadow-2xl max-w-lg w-full overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-10 bg-primary-500 text-white text-center relative overflow-hidden">
+              <div className="absolute top-0 right-0 p-8 opacity-10"><Zap size={100} /></div>
+              <div className="size-20 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-6">
+                <Truck size={40} />
               </div>
+              <h2 className="text-3xl font-black tracking-tight mb-2">Initialize Deployment</h2>
+              <p className="text-primary-100 text-[10px] font-black uppercase tracking-[0.2em]">{selectedTruck.plateNumber}</p>
+              <button onClick={() => setShowAssignModal(false)} className="absolute top-6 right-6 size-10 bg-white/10 rounded-full flex items-center justify-center text-white hover:bg-white/20 transition-all">
+                <X size={20} />
+              </button>
+            </div>
 
-              {/* Assignment Notes */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Assignment Notes (Optional)
-                </label>
-                <textarea
-                  value={assignmentNotes}
-                  onChange={(e) => setAssignmentNotes(e.target.value)}
-                  placeholder="Add any notes about this assignment..."
-                  rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+            <div className="p-10 space-y-6">
+              <div className="relative group">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-slate-400 group-focus-within:text-primary-500 transition-colors" />
+                <input
+                  type="text"
+                  placeholder="Search available personnel..."
+                  value={searchDriver}
+                  onChange={(e) => setSearchDriver(e.target.value)}
+                  className="w-full pl-11 pr-4 py-4 bg-slate-50 border-none rounded-2xl text-[11px] font-bold text-slate-900 focus:bg-white focus:ring-4 focus:ring-primary-50 outline-none transition-all"
                 />
               </div>
-            </div>
-          )}
 
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setShowAssignModal(false);
-                setSelectedTruck(null);
-                setAssignmentNotes('');
-              }}
-              disabled={assigning}
-            >
-              Cancel
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+              <div className="max-h-60 overflow-y-auto space-y-2 pr-2 scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent">
+                {getAvailableDrivers(selectedTruck)
+                  .filter(d => `${d.firstName} ${d.lastName}`.toLowerCase().includes(searchDriver.toLowerCase()))
+                  .map(driver => (
+                    <button
+                      key={driver.id}
+                      onClick={() => handleAssignDriver(selectedTruck.id, driver.id)}
+                      disabled={assigning}
+                      className="w-full p-4 flex items-center justify-between bg-slate-50 rounded-2xl border border-transparent hover:border-primary-100 hover:bg-primary-50 transition-all group/driver"
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className="size-10 bg-white rounded-xl flex items-center justify-center text-slate-400 group-hover/driver:text-primary-500 shadow-sm">
+                          <User size={18} />
+                        </div>
+                        <div className="text-left">
+                          <p className="text-sm font-bold text-slate-900">{driver.firstName} {driver.lastName}</p>
+                          <p className="text-[9px] font-black uppercase text-slate-400 tracking-widest">{driver.licenseNumber}</p>
+                        </div>
+                      </div>
+                      <CheckCircle2 size={18} className="text-slate-200 group-hover/driver:text-primary-500" />
+                    </button>
+                  ))}
+              </div>
+
+              <textarea
+                placeholder="Strategic deployment notes (optional)..."
+                value={assignmentNotes}
+                onChange={(e) => setAssignmentNotes(e.target.value)}
+                className="w-full p-4 bg-slate-50 border-none rounded-2xl text-[11px] font-bold text-slate-900 focus:bg-white focus:ring-4 focus:ring-primary-50 outline-none transition-all resize-none h-24"
+              />
+            </div>
+          </motion.div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 };
-

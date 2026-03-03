@@ -198,13 +198,110 @@ export class AdminService {
 
   // Admin-wide listings (no tenant filter or optional filter)
   async listAllTrucks(tenantId?: string) {
-    const where = tenantId ? ({ tenantId } as any) : ({} as any);
-    const trucks = await this.truckRepo.find({
-      where,
-      take: 500,
-      order: { createdAt: 'DESC' } as any,
-    });
-    return { trucks };
+    try {
+      const where = tenantId ? ({ tenantId } as any) : ({} as any);
+      const trucks = await this.truckRepo.find({
+        where,
+        take: 500,
+        order: { createdAt: 'DESC' } as any,
+      });
+
+      // Get all unique tenant IDs and owner IDs
+      const tenantIds = [...new Set(trucks.map(t => t.tenantId).filter(Boolean))];
+      const ownerIds = [...new Set(trucks.map(t => t.ownerId).filter(Boolean))];
+      const driverIds = [...new Set(trucks.map(t => t.currentDriverId).filter(Boolean))];
+
+      // Fetch tenants, owners, and drivers in parallel
+      const [tenants, owners, drivers] = await Promise.all([
+        tenantIds.length > 0 
+          ? this.tenantRepo.findByIds(tenantIds)
+          : Promise.resolve([]),
+        ownerIds.length > 0 
+          ? this.userRepo.findByIds(ownerIds)
+          : Promise.resolve([]),
+        driverIds.length > 0 
+          ? this.userRepo.findByIds(driverIds)
+          : Promise.resolve([]),
+      ]);
+
+      // Create lookup maps for quick access
+      const tenantMap = new Map(tenants.map(t => [t.id, t]));
+      const ownerMap = new Map(owners.map(o => [o.id, o]));
+      const driverMap = new Map(drivers.map(d => [d.id, d]));
+
+      // Format trucks with all related data
+      const formattedTrucks = trucks.map(truck => {
+        let locationString = null;
+        let coordinates = null;
+
+        // Parse PostGIS Point object if it exists
+        if (truck.currentLocation) {
+          try {
+            const loc = truck.currentLocation as any;
+            if (loc.coordinates && Array.isArray(loc.coordinates)) {
+              const [lng, lat] = loc.coordinates;
+              coordinates = { latitude: lat, longitude: lng };
+              locationString = `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+            }
+          } catch (error) {
+            this.logger.warn(`Failed to parse location for truck ${truck.id}:`, error);
+          }
+        }
+
+        // Get related entities
+        const tenant = truck.tenantId ? tenantMap.get(truck.tenantId) : null;
+        const owner = truck.ownerId ? ownerMap.get(truck.ownerId) : null;
+        const driver = truck.currentDriverId ? driverMap.get(truck.currentDriverId) : null;
+
+        return {
+          ...truck,
+          currentLocationString: locationString,
+          coordinates,
+          // Tenant information
+          tenant: tenant ? {
+            id: tenant.id,
+            name: tenant.name,
+            subdomain: tenant.subdomain,
+            status: tenant.status,
+            type: tenant.type,
+          } : null,
+          tenantName: tenant?.name || 'Unknown Tenant',
+          // Owner information
+          owner: owner ? {
+            id: owner.id,
+            email: owner.email,
+            firstName: owner.firstName,
+            lastName: owner.lastName,
+            phoneNumber: owner.phoneNumber,
+            role: owner.role,
+          } : null,
+          ownerName: owner 
+            ? `${owner.firstName || ''} ${owner.lastName || ''}`.trim() || owner.email
+            : 'No Owner',
+          ownerEmail: owner?.email || null,
+          ownerPhone: owner?.phoneNumber || null,
+          // Driver information
+          driver: driver ? {
+            id: driver.id,
+            email: driver.email,
+            firstName: driver.firstName,
+            lastName: driver.lastName,
+            phoneNumber: driver.phoneNumber,
+          } : null,
+          currentDriverName: driver 
+            ? `${driver.firstName || ''} ${driver.lastName || ''}`.trim() || driver.email
+            : null,
+          currentDriverPhone: driver?.phoneNumber || null,
+        };
+      });
+
+      this.logger.log(`Fetched ${formattedTrucks.length} trucks with owner and tenant data`);
+      return { trucks: formattedTrucks };
+    } catch (error) {
+      this.logger.error('Error fetching trucks:', error);
+      // Return empty array instead of throwing to prevent 500 errors
+      return { trucks: [] };
+    }
   }
 
   async listAllLoads(tenantId?: string) {

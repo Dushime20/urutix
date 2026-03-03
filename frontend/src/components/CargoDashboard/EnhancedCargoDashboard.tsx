@@ -133,13 +133,13 @@ const EnhancedCargoDashboard: React.FC<EnhancedCargoDashboardProps> = ({
   const createdCargos = cargos.filter(c => c.status === 'created').length;
   const inTransitCargos = cargos.filter(c => c.status === 'IN_TRANSIT').length;
   const deliveredCargos = cargos.filter(c => c.status === 'delivered').length;
-  
+
   // Enhanced analytics
   const hazardousCargos = cargos.filter(c => c.isHazardous).length;
   const refrigeratedCargos = cargos.filter(c => c.requiresRefrigeration).length;
   const timeCriticalCargos = cargos.filter(c => c.isTimeCritical).length;
   const gpsMonitoredCargos = cargos.filter(c => c.requiresGpsMonitoring).length;
-  
+
   // Urgency distribution
   const urgencyDistribution = {
     CRITICAL: cargos.filter(c => c.urgencyLevel === 'CRITICAL').length,
@@ -155,27 +155,27 @@ const EnhancedCargoDashboard: React.FC<EnhancedCargoDashboardProps> = ({
   }, {} as Record<string, number>);
 
   // Average values
-  const avgWeight = cargos.length > 0 
-    ? cargos.reduce((sum, c) => sum + (c.weight || 0), 0) / cargos.length 
+  const avgWeight = cargos.length > 0
+    ? cargos.reduce((sum, c) => sum + (c.weight || 0), 0) / cargos.length
     : 0;
-  const avgValue = cargos.length > 0 
-    ? cargos.reduce((sum, c) => sum + (c.loadValue || 0), 0) / cargos.length 
+  const avgValue = cargos.length > 0
+    ? cargos.reduce((sum, c) => sum + (c.loadValue || 0), 0) / cargos.length
     : 0;
 
   // Advanced Analytics
   const profitMetrics = {
     totalRevenue: cargos.reduce((sum, c) => sum + (c.loadValue || 0), 0),
     totalCost: cargos.reduce((sum, c) => sum + ((c.offeredPrice || 0) * 0.7), 0), // Estimate 70% of offered price as cost
-    profitMargin: cargos.length > 0 ? 
-      ((cargos.reduce((sum, c) => sum + (c.loadValue || 0), 0) - 
-        cargos.reduce((sum, c) => sum + ((c.offeredPrice || 0) * 0.7), 0)) / 
+    profitMargin: cargos.length > 0 ?
+      ((cargos.reduce((sum, c) => sum + (c.loadValue || 0), 0) -
+        cargos.reduce((sum, c) => sum + ((c.offeredPrice || 0) * 0.7), 0)) /
         cargos.reduce((sum, c) => sum + (c.loadValue || 0), 0)) * 100 : 0
   };
 
   // Performance Metrics
   const performanceMetrics = {
     onTimeDelivery: cargos.filter(c => c.status === 'delivered').length,
-    delayedDeliveries: cargos.filter(c => c.status === 'IN_TRANSIT' && 
+    delayedDeliveries: cargos.filter(c => c.status === 'IN_TRANSIT' &&
       new Date(c.deliveryDate) < new Date()).length,
     averageTransitTime: cargos.filter(c => c.status === 'delivered').length > 0 ?
       cargos.filter(c => c.status === 'delivered').reduce((sum, c) => {
@@ -241,8 +241,8 @@ const EnhancedCargoDashboard: React.FC<EnhancedCargoDashboardProps> = ({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Enhanced Cargo Analytics</h2>
-          <p className="text-gray-600 mt-1">Comprehensive insights into your cargo operations</p>
+          <h2 className="text-2xl font-bold text-gray-900">Cargo Analytics</h2>
+          <p className="text-gray-600 mt-1">Detailed insights into your cargo shipments</p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <FilterSelect
@@ -281,43 +281,39 @@ const EnhancedCargoDashboard: React.FC<EnhancedCargoDashboardProps> = ({
         <div className="flex flex-wrap gap-2">
           <button
             onClick={() => setAnalyticsView('overview')}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              analyticsView === 'overview'
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${analyticsView === 'overview'
                 ? 'bg-blue-600 text-white'
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
+              }`}
           >
             Overview
           </button>
           <button
             onClick={() => setAnalyticsView('profit')}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              analyticsView === 'profit'
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${analyticsView === 'profit'
                 ? 'bg-blue-600 text-white'
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
+              }`}
           >
-            Profit Analysis
+            Profits
           </button>
           <button
             onClick={() => setAnalyticsView('performance')}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              analyticsView === 'performance'
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${analyticsView === 'performance'
                 ? 'bg-blue-600 text-white'
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
+              }`}
           >
             Performance
           </button>
           <button
             onClick={() => setAnalyticsView('market')}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              analyticsView === 'market'
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${analyticsView === 'market'
                 ? 'bg-blue-600 text-white'
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
+              }`}
           >
-            Market Insights
+            Market
           </button>
         </div>
       </div>
@@ -453,7 +449,7 @@ const EnhancedCargoDashboard: React.FC<EnhancedCargoDashboardProps> = ({
                 <p className="text-sm font-medium text-gray-600">On-Time Delivery</p>
                 <p className="text-2xl font-bold text-gray-900">{performanceMetrics.onTimeDelivery}</p>
                 <p className="text-xs text-gray-500">
-                  {performanceMetrics.onTimeDelivery > 0 ? 
+                  {performanceMetrics.onTimeDelivery > 0 ?
                     ((performanceMetrics.onTimeDelivery / (performanceMetrics.onTimeDelivery + performanceMetrics.delayedDeliveries)) * 100).toFixed(1) : 0}% success rate
                 </p>
               </div>
@@ -466,7 +462,7 @@ const EnhancedCargoDashboard: React.FC<EnhancedCargoDashboardProps> = ({
                 <FaClock className="w-8 h-8 text-orange-500" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Delayed Deliveries</p>
+                <p className="text-sm font-medium text-gray-600">Late Deliveries</p>
                 <p className="text-2xl font-bold text-gray-900">{performanceMetrics.delayedDeliveries}</p>
                 <p className="text-xs text-gray-500">
                   {performanceMetrics.delayedDeliveries > 0 ? 'Needs attention' : 'All on time'}
@@ -481,7 +477,7 @@ const EnhancedCargoDashboard: React.FC<EnhancedCargoDashboardProps> = ({
                 <FaRoute className="w-8 h-8 text-blue-500" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Avg Transit Time</p>
+                <p className="text-sm font-medium text-gray-600">Transit Time (Avg)</p>
                 <p className="text-2xl font-bold text-gray-900">{performanceMetrics.averageTransitTime.toFixed(1)}</p>
                 <p className="text-xs text-gray-500">
                   Days
@@ -566,9 +562,9 @@ const EnhancedCargoDashboard: React.FC<EnhancedCargoDashboardProps> = ({
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Market Growth</p>
                 <p className="text-2xl font-bold text-gray-900">
-                  {cargos.length > 0 ? 
-                    ((cargos.filter(c => new Date(c.createdAt) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)).length / 
-                     cargos.filter(c => new Date(c.createdAt) > new Date(Date.now() - 60 * 24 * 60 * 60 * 1000)).length) * 100).toFixed(1) : 0}%
+                  {cargos.length > 0 ?
+                    ((cargos.filter(c => new Date(c.createdAt) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)).length /
+                      cargos.filter(c => new Date(c.createdAt) > new Date(Date.now() - 60 * 24 * 60 * 60 * 1000)).length) * 100).toFixed(1) : 0}%
                 </p>
                 <p className="text-xs text-gray-500">
                   Month-over-month growth
@@ -589,8 +585,8 @@ const EnhancedCargoDashboard: React.FC<EnhancedCargoDashboardProps> = ({
           <div className="space-y-3">
             {[
               { status: 'draft', count: cargos.filter(c => c.status === 'draft').length, label: 'Draft' },
-        { status: 'created', count: createdCargos, label: 'Created' },
-        { status: 'published', count: publishedCargos, label: 'Published' },
+              { status: 'created', count: createdCargos, label: 'Created' },
+              { status: 'published', count: publishedCargos, label: 'Published' },
               { status: 'assigned', count: cargos.filter(c => c.status === 'assigned').length, label: 'Assigned' },
               { status: 'IN_TRANSIT', count: inTransitCargos, label: 'In Transit' },
               { status: 'delivered', count: deliveredCargos, label: 'Delivered' },
@@ -641,7 +637,7 @@ const EnhancedCargoDashboard: React.FC<EnhancedCargoDashboardProps> = ({
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
             <FaShieldAlt className="w-5 h-5 mr-2" />
-            Security & Monitoring
+            Security
           </h3>
           <div className="space-y-4">
             <div className="flex items-center justify-between">
@@ -675,7 +671,7 @@ const EnhancedCargoDashboard: React.FC<EnhancedCargoDashboardProps> = ({
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
             <FaRulerCombined className="w-5 h-5 mr-2" />
-            Dimensional Analysis
+            Dimensions
           </h3>
           <div className="space-y-4">
             <div className="flex items-center justify-between">
@@ -711,7 +707,7 @@ const EnhancedCargoDashboard: React.FC<EnhancedCargoDashboardProps> = ({
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
             <FaDollarSign className="w-5 h-5 mr-2" />
-            Financial Overview
+            Financials
           </h3>
           <div className="space-y-4">
             <div className="flex items-center justify-between">
@@ -779,16 +775,15 @@ const EnhancedCargoDashboard: React.FC<EnhancedCargoDashboardProps> = ({
               <div className="pt-4 border-t">
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-gray-600">Profit Margin</span>
-                  <span className={`font-medium ${
-                    profitMetrics.profitMargin > 20 ? 'text-green-600' : 
-                    profitMetrics.profitMargin > 10 ? 'text-yellow-600' : 'text-red-600'
-                  }`}>
+                  <span className={`font-medium ${profitMetrics.profitMargin > 20 ? 'text-green-600' :
+                      profitMetrics.profitMargin > 10 ? 'text-yellow-600' : 'text-red-600'
+                    }`}>
                     {profitMetrics.profitMargin.toFixed(1)}%
                   </span>
                 </div>
                 <div className="mt-2 text-xs text-gray-500">
-                  {profitMetrics.profitMargin > 20 ? 'Excellent profitability' : 
-                   profitMetrics.profitMargin > 10 ? 'Good profitability' : 'Consider cost optimization'}
+                  {profitMetrics.profitMargin > 20 ? 'Excellent profitability' :
+                    profitMetrics.profitMargin > 10 ? 'Good profitability' : 'Consider cost optimization'}
                 </div>
               </div>
             </div>
@@ -837,7 +832,7 @@ const EnhancedCargoDashboard: React.FC<EnhancedCargoDashboardProps> = ({
                 <div className="flex items-center space-x-2">
                   <span className="text-sm font-medium text-gray-900">{performanceMetrics.onTimeDelivery}</span>
                   <span className="text-xs text-green-600 bg-green-100 px-2 py-1 rounded-full">
-                    {performanceMetrics.onTimeDelivery > 0 ? 
+                    {performanceMetrics.onTimeDelivery > 0 ?
                       ((performanceMetrics.onTimeDelivery / (performanceMetrics.onTimeDelivery + performanceMetrics.delayedDeliveries)) * 100).toFixed(1) : 0}%
                   </span>
                 </div>
@@ -847,7 +842,7 @@ const EnhancedCargoDashboard: React.FC<EnhancedCargoDashboardProps> = ({
                 <div className="flex items-center space-x-2">
                   <span className="text-sm font-medium text-gray-900">{performanceMetrics.delayedDeliveries}</span>
                   <span className="text-xs text-red-600 bg-red-100 px-2 py-1 rounded-full">
-                    {performanceMetrics.delayedDeliveries > 0 ? 
+                    {performanceMetrics.delayedDeliveries > 0 ?
                       ((performanceMetrics.delayedDeliveries / (performanceMetrics.onTimeDelivery + performanceMetrics.delayedDeliveries)) * 100).toFixed(1) : 0}%
                   </span>
                 </div>
@@ -855,14 +850,13 @@ const EnhancedCargoDashboard: React.FC<EnhancedCargoDashboardProps> = ({
               <div className="pt-4 border-t">
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-gray-600">Performance Rating</span>
-                  <span className={`font-medium ${
-                    (performanceMetrics.onTimeDelivery / (performanceMetrics.onTimeDelivery + performanceMetrics.delayedDeliveries)) > 0.9 ? 'text-green-600' :
-                    (performanceMetrics.onTimeDelivery / (performanceMetrics.onTimeDelivery + performanceMetrics.delayedDeliveries)) > 0.8 ? 'text-yellow-600' : 'text-red-600'
-                  }`}>
-                    {performanceMetrics.onTimeDelivery > 0 ? 
+                  <span className={`font-medium ${(performanceMetrics.onTimeDelivery / (performanceMetrics.onTimeDelivery + performanceMetrics.delayedDeliveries)) > 0.9 ? 'text-green-600' :
+                      (performanceMetrics.onTimeDelivery / (performanceMetrics.onTimeDelivery + performanceMetrics.delayedDeliveries)) > 0.8 ? 'text-yellow-600' : 'text-red-600'
+                    }`}>
+                    {performanceMetrics.onTimeDelivery > 0 ?
                       (performanceMetrics.onTimeDelivery / (performanceMetrics.onTimeDelivery + performanceMetrics.delayedDeliveries)) > 0.9 ? 'Excellent' :
-                      (performanceMetrics.onTimeDelivery / (performanceMetrics.onTimeDelivery + performanceMetrics.delayedDeliveries)) > 0.8 ? 'Good' : 'Needs Improvement'
-                    : 'N/A'}
+                        (performanceMetrics.onTimeDelivery / (performanceMetrics.onTimeDelivery + performanceMetrics.delayedDeliveries)) > 0.8 ? 'Good' : 'Needs Improvement'
+                      : 'N/A'}
                   </span>
                 </div>
               </div>
@@ -915,8 +909,8 @@ const EnhancedCargoDashboard: React.FC<EnhancedCargoDashboardProps> = ({
                     <span className="text-sm text-gray-700 truncate flex-1">{route}</span>
                     <div className="flex items-center space-x-2">
                       <div className="w-20 bg-gray-200 rounded-full h-2">
-                        <div 
-                          className="bg-blue-600 h-2 rounded-full" 
+                        <div
+                          className="bg-blue-600 h-2 rounded-full"
                           style={{ width: `${(count / Math.max(...Object.values(marketInsights.highDemandRoutes))) * 100}%` }}
                         ></div>
                       </div>
@@ -944,8 +938,8 @@ const EnhancedCargoDashboard: React.FC<EnhancedCargoDashboardProps> = ({
                       <span className="text-sm text-gray-700 w-12">{monthName}</span>
                       <div className="flex items-center space-x-2 flex-1">
                         <div className="flex-1 bg-gray-200 rounded-full h-2">
-                          <div 
-                            className="bg-green-600 h-2 rounded-full" 
+                          <div
+                            className="bg-green-600 h-2 rounded-full"
                             style={{ width: `${(count / maxCount) * 100}%` }}
                           ></div>
                         </div>

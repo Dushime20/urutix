@@ -45,7 +45,7 @@ import { PricingPrediction } from './entities/pricing-prediction.entity';
 @UseGuards(JwtAuthGuard)
 @Controller('pricing')
 export class PricingController {
-  constructor(private readonly mlPricingService: MLPricingService) {}
+  constructor(private readonly mlPricingService: MLPricingService) { }
 
   @Post('predict')
   @ApiOperation({
@@ -136,12 +136,11 @@ export class PricingController {
   })
   @ApiQuery({ name: 'status', enum: ModelStatus, required: false })
   @ApiQuery({ name: 'modelType', enum: ModelType, required: false })
-  @ApiQuery({ name: 'page', type: Number, minimum: 1, required: false })
+  @ApiQuery({ name: 'page', type: Number, schema: { minimum: 1 }, required: false })
   @ApiQuery({
     name: 'limit',
     type: Number,
-    minimum: 1,
-    maximum: 100,
+    schema: { minimum: 1, maximum: 100 },
     required: false,
   })
   @ApiOkResponse({
@@ -383,21 +382,18 @@ export class PricingController {
   @ApiQuery({
     name: 'startDate',
     type: String,
-    format: 'date-time',
     required: false,
   })
   @ApiQuery({
     name: 'endDate',
     type: String,
-    format: 'date-time',
     required: false,
   })
-  @ApiQuery({ name: 'page', type: Number, minimum: 1, required: false })
+  @ApiQuery({ name: 'page', type: Number, schema: { minimum: 1 }, required: false })
   @ApiQuery({
     name: 'limit',
     type: Number,
-    minimum: 1,
-    maximum: 100,
+    schema: { minimum: 1, maximum: 100 },
     required: false,
   })
   @ApiOkResponse({
@@ -432,13 +428,11 @@ export class PricingController {
   @ApiQuery({
     name: 'startDate',
     type: String,
-    format: 'date-time',
     required: false,
   })
   @ApiQuery({
     name: 'endDate',
     type: String,
-    format: 'date-time',
     required: false,
   })
   @ApiQuery({ name: 'modelId', type: String, required: false })
@@ -488,13 +482,11 @@ export class PricingController {
   @ApiQuery({
     name: 'startDate',
     type: String,
-    format: 'date-time',
     required: false,
   })
   @ApiQuery({
     name: 'endDate',
     type: String,
-    format: 'date-time',
     required: false,
   })
   @ApiOkResponse({
@@ -541,13 +533,11 @@ export class PricingController {
   @ApiQuery({
     name: 'startDate',
     type: String,
-    format: 'date-time',
     required: false,
   })
   @ApiQuery({
     name: 'endDate',
     type: String,
-    format: 'date-time',
     required: false,
   })
   @ApiOkResponse({

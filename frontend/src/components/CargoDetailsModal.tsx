@@ -26,7 +26,6 @@ import {
   AlertCircle,
   Info,
   Zap,
-  Camera,
   Route,
   Target,
   Search,
@@ -60,6 +59,7 @@ import {
   getSpecialRequirements,
   getEnrichedLocationDetails
 } from '@/pages/dashboard/cargos/list/utils';
+import { cn } from '@/utils/cn';
 
 interface CargoDetailsModalProps {
   isOpen: boolean;
@@ -94,7 +94,7 @@ const CargoDetailsModal = ({ isOpen, onClose, cargoId }: CargoDetailsModalProps)
     queryKey: ['documents', cargoId, user?.role],
     queryFn: async () => {
       if (!cargoId) return [];
-      
+
       // Receivers currently don't have access to the documents API
       if (user?.role === 'CARGO_RECEIVER') {
         return [];
@@ -148,33 +148,35 @@ const CargoDetailsModal = ({ isOpen, onClose, cargoId }: CargoDetailsModalProps)
         onClick={onClose}
       >
         <div
-          className="bg-white rounded-lg shadow-xl max-w-6xl w-full max-h-[90vh] overflow-hidden"
+          className="bg-[#f8fafc] rounded-[2rem] shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-hidden border border-white"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
-          <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50">
-            <div className="flex items-center space-x-4">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                {cargo && getCargoTypeIcon(cargo.cargoType)}
+          <div className="flex items-center justify-between p-6 border-b border-slate-100 bg-white">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center">
+                {cargo && <div className="text-[#345E85]">{getCargoTypeIcon(cargo.cargoType)}</div>}
               </div>
               <div>
-                <h2 className="text-2xl font-bold text-gray-900">
+                <h2 className="text-2xl font-black text-[#0f172a] tracking-tight">
                   {cargo?.title || 'Cargo Details'}
                 </h2>
-                <p className="text-gray-600">Cargo ID: {cargoId}</p>
+                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">
+                  Cargo ID: {cargoId}
+                </p>
               </div>
             </div>
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center gap-3">
               {cargo && (
-                <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(cargo.status)}`}>
+                <span className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-sm ${getStatusColor(cargo.status)}`}>
                   {getStatusDisplayName(cargo.status)}
                 </span>
               )}
               <button
                 onClick={onClose}
-                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-xl transition-colors"
               >
-                <X className="w-5 h-5" />
+                <X className="w-6 h-6" />
               </button>
             </div>
           </div>
@@ -213,27 +215,33 @@ const CargoDetailsModal = ({ isOpen, onClose, cargoId }: CargoDetailsModalProps)
             ) : (
               <div className="p-6 space-y-6">
                 {/* Tabs */}
-                <div className="border-b border-gray-200">
-                  <nav className="-mb-px flex flex-wrap sm:flex-nowrap gap-1 sm:gap-2 md:gap-4 lg:gap-8 sm:overflow-x-auto sm:scrollbar-hide sm:scroll-smooth">
+                <div className="mb-8">
+                  <nav className="flex flex-wrap gap-2">
                     {[
-                      { id: 'overview', label: 'Overview', icon: Package },
-                      { id: 'tracking', label: 'Tracking', icon: Navigation },
-                      { id: 'documents', label: 'Documents', icon: FileText },
-                      { id: 'history', label: 'History', icon: Clock3 },
-                      { id: 'matching', label: 'Matching', icon: Target, roles: ['CARGO_OWNER', 'BROKER', 'ADMIN', 'SUPER_ADMIN'] },
-                    ].filter(tab => !tab.roles || (user?.role && tab.roles.includes(user.role))).map((tab) => (
-                      <button
-                        key={tab.id}
-                        onClick={() => setActiveTab(tab.id as any)}
-                        className={`flex items-center justify-center space-x-1 sm:space-x-2 py-2.5 sm:py-3 md:py-4 px-2 sm:px-1 border-b-2 font-medium text-xs sm:text-sm transition-colors whitespace-nowrap flex-1 sm:flex-initial min-w-0 ${activeTab === tab.id
-                          ? 'border-blue-500 text-blue-600'
-                          : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                          }`}
-                      >
-                        <tab.icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
-                        <span className="truncate text-[11px] sm:text-sm">{tab.label}</span>
-                      </button>
-                    ))}
+                      { id: 'overview', label: 'OVERVIEW', icon: Package },
+                      { id: 'tracking', label: 'TRACKING', icon: Navigation },
+                      { id: 'documents', label: 'DOCUMENTS', icon: FileText },
+                      { id: 'history', label: 'HISTORY', icon: Clock3 },
+                      { id: 'matching', label: 'MATCHING', icon: Target, roles: ['CARGO_OWNER', 'BROKER', 'ADMIN', 'SUPER_ADMIN'] },
+                    ].filter(tab => !tab.roles || (user?.role && tab.roles.includes(user.role))).map((tab) => {
+                      const Icon = tab.icon;
+                      const isActive = activeTab === tab.id;
+                      return (
+                        <button
+                          key={tab.id}
+                          onClick={() => setActiveTab(tab.id as any)}
+                          className={cn(
+                            "px-5 py-2.5 rounded-2xl text-xs font-bold flex items-center gap-2 transition-all",
+                            isActive
+                              ? "bg-[#345E85] text-white shadow-lg shadow-blue-900/20"
+                              : "bg-white text-slate-500 border border-slate-100 hover:bg-slate-50"
+                          )}
+                        >
+                          <Icon className={cn("w-4 h-4", isActive ? "text-white" : "text-slate-400")} />
+                          <span className="uppercase tracking-wider">{tab.label}</span>
+                        </button>
+                      );
+                    })}
                   </nav>
                 </div>
 
@@ -243,10 +251,10 @@ const CargoDetailsModal = ({ isOpen, onClose, cargoId }: CargoDetailsModalProps)
                     {/* Main Content */}
                     <div className="lg:col-span-2 space-y-6">
                       {/* Cargo Information */}
-                      <div className="bg-gradient-to-r from-gray-50 to-blue-50 rounded-lg p-6 border border-gray-200">
-                        <div className="flex items-center justify-between mb-4">
-                          <h3 className="text-lg font-semibold text-gray-900">Cargo Information</h3>
-                          {getCargoTypeIcon(cargo.cargoType)}
+                      <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm">
+                        <div className="flex items-center justify-between mb-6">
+                          <h3 className="text-lg font-black text-[#0f172a] tracking-tight">Cargo Information</h3>
+                          <div className="text-[#345E85]">{getCargoTypeIcon(cargo.cargoType)}</div>
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -254,41 +262,51 @@ const CargoDetailsModal = ({ isOpen, onClose, cargoId }: CargoDetailsModalProps)
                             <h4 className="text-md font-medium text-gray-900 mb-2">{cargo.title}</h4>
                             <p className="text-gray-600 mb-4">{cargo.description || 'No description provided'}</p>
 
-                            <div className="space-y-3">
+                            <div className="space-y-4">
                               <div className="flex items-center space-x-3">
-                                <Package className="w-4 h-4 text-gray-400" />
-                                <span className="text-sm text-gray-600">
+                                <div className="p-2 bg-blue-50 rounded-xl">
+                                  <Package className="w-4 h-4 text-[#345E85]" />
+                                </div>
+                                <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">
                                   Type: {getCargoTypeDisplayName(cargo.cargoType)}
                                 </span>
                               </div>
 
                               <div className="flex items-center space-x-3">
-                                <Weight className="w-4 h-4 text-gray-400" />
-                                <span className="text-sm text-gray-600">
+                                <div className="p-2 bg-blue-50 rounded-xl">
+                                  <Weight className="w-4 h-4 text-[#345E85]" />
+                                </div>
+                                <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">
                                   Weight: {formatWeight(cargo.weight)}
                                 </span>
                               </div>
 
                               {cargo.volume && (
                                 <div className="flex items-center space-x-3">
-                                  <Volume className="w-4 h-4 text-gray-400" />
-                                  <span className="text-sm text-gray-600">
+                                  <div className="p-2 bg-blue-50 rounded-xl">
+                                    <Volume className="w-4 h-4 text-[#345E85]" />
+                                  </div>
+                                  <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">
                                     Volume: {formatVolume(cargo.volume)}
                                   </span>
                                 </div>
                               )}
 
                               <div className="flex items-center space-x-3">
-                                <DollarSign className="w-4 h-4 text-gray-400" />
-                                <span className="text-sm text-gray-600">
+                                <div className="p-2 bg-blue-50 rounded-xl">
+                                  <DollarSign className="w-4 h-4 text-[#345E85]" />
+                                </div>
+                                <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">
                                   Value: {formatCurrency(cargo.loadValue, cargo.currencyCode)}
                                 </span>
                               </div>
 
                               {cargo.offeredPrice && (
                                 <div className="flex items-center space-x-3">
-                                  <TrendingUp className="w-4 h-4 text-gray-400" />
-                                  <span className="text-sm text-gray-600">
+                                  <div className="p-2 bg-blue-50 rounded-xl">
+                                    <TrendingUp className="w-4 h-4 text-[#345E85]" />
+                                  </div>
+                                  <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">
                                     Offered Price: {formatCurrency(cargo.offeredPrice, cargo.currencyCode)}
                                   </span>
                                 </div>
@@ -296,9 +314,11 @@ const CargoDetailsModal = ({ isOpen, onClose, cargoId }: CargoDetailsModalProps)
 
                               {cargo.urgencyLevel && (
                                 <div className="flex items-center space-x-3">
-                                  <Zap className="w-4 h-4 text-gray-400" />
-                                  <span className="text-sm text-gray-600">
-                                    Urgency: <span className={`px-2 py-1 rounded-full text-xs font-medium ${getUrgencyColor(cargo.urgencyLevel)}`}>
+                                  <div className="p-2 bg-blue-50 rounded-xl">
+                                    <Zap className="w-4 h-4 text-[#345E85]" />
+                                  </div>
+                                  <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">
+                                    Urgency: <span className={`px-2 py-0.5 rounded-lg text-[10px] font-black shadow-sm ${getUrgencyColor(cargo.urgencyLevel)}`}>
                                       {cargo.urgencyLevel}
                                     </span>
                                   </span>
@@ -348,10 +368,10 @@ const CargoDetailsModal = ({ isOpen, onClose, cargoId }: CargoDetailsModalProps)
                       </div>
 
                       {/* Locations */}
-                      <div className="bg-gradient-to-r from-gray-50 to-green-50 rounded-lg p-6 border border-gray-200">
-                        <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                          <MapPin className="w-5 h-5 mr-2 text-green-600" />
-                          Locations
+                      <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm">
+                        <h3 className="text-lg font-black text-[#0f172a] tracking-tight mb-6 flex items-center">
+                          <MapPin className="w-5 h-5 mr-3 text-[#345E85]" />
+                          Route Intelligence
                         </h3>
 
                         {(() => {
@@ -543,25 +563,31 @@ const CargoDetailsModal = ({ isOpen, onClose, cargoId }: CargoDetailsModalProps)
                     {/* Sidebar */}
                     <div className="space-y-6">
                       {/* Status Card */}
-                      <div className="bg-gradient-to-r from-gray-50 to-purple-50 rounded-lg p-6 border border-gray-200">
-                        <h3 className="font-medium text-gray-900 mb-4 flex items-center">
-                          <Info className="w-4 h-4 mr-2 text-purple-600" />
-                          Status Information
+                      <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm">
+                        <h3 className="text-sm font-black text-[#0f172a] uppercase tracking-widest mb-6 flex items-center">
+                          <Info className="w-4 h-4 mr-3 text-[#345E85]" />
+                          Logistics Context
                         </h3>
 
-                        <div className="space-y-4">
+                        <div className="space-y-6">
                           <div>
                             <div className="flex items-center justify-between mb-2">
-                              <span className="text-sm text-gray-600">Current Status</span>
-                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(cargo.status)}`}>
+                              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Current Status</span>
+                              <span className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest shadow-sm ${getStatusColor(cargo.status)}`}>
                                 {getStatusDisplayName(cargo.status)}
                               </span>
                             </div>
                           </div>
 
-                          <div>
-                            <span className="text-sm text-gray-600">Urgency Level</span>
-                            <p className="text-sm font-medium text-gray-900">{cargo.urgencyLevel || 'Normal'}</p>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Created</span>
+                              <p className="text-xs font-black text-[#0f172a]">{new Date(cargo.createdAt).toLocaleDateString()}</p>
+                            </div>
+                            <div>
+                              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Updated</span>
+                              <p className="text-xs font-black text-[#0f172a]">{new Date(cargo.updatedAt).toLocaleDateString()}</p>
+                            </div>
                           </div>
 
                           <div>
@@ -638,39 +664,34 @@ const CargoDetailsModal = ({ isOpen, onClose, cargoId }: CargoDetailsModalProps)
                       )}
 
                       {/* Actions */}
-                      <div className="bg-gradient-to-r from-gray-50 to-green-50 rounded-lg p-6 border border-gray-200">
-                        <h3 className="font-medium text-gray-900 mb-4 flex items-center">
-                          <Zap className="w-4 h-4 mr-2 text-green-600" />
-                          Actions
+                      <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm">
+                        <h3 className="text-sm font-black text-[#0f172a] uppercase tracking-widest mb-6 flex items-center">
+                          <Zap className="w-4 h-4 mr-3 text-[#345E85]" />
+                          Dynamic Actions
                         </h3>
 
-                        <div className="space-y-3">
+                        <div className="space-y-2">
                           {(user?.role === 'CARGO_OWNER' || user?.role === 'BROKER' || user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN') && (
-                            <button className="w-full btn btn-outline btn-sm hover:bg-blue-50 hover:text-blue-700 transition-colors">
-                              <Edit className="w-4 h-4 mr-2" />
+                            <button className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl bg-[#345E85] text-white text-[10px] font-black uppercase tracking-widest shadow-lg shadow-blue-900/10 hover:bg-slate-800 transition-all">
+                              <Edit className="w-4 h-4" />
                               Edit Cargo
                             </button>
                           )}
 
-                          <button className="w-full btn btn-outline btn-sm hover:bg-purple-50 hover:text-purple-700 transition-colors">
-                            <Eye className="w-4 h-4 mr-2" />
+                          <button className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl border border-slate-100 bg-slate-50 text-slate-500 text-[10px] font-black uppercase tracking-widest hover:bg-slate-100 transition-all">
+                            <Eye className="w-4 h-4" />
                             View Documents
                           </button>
 
-                          <button className="w-full btn btn-outline btn-sm hover:bg-indigo-50 hover:text-indigo-700 transition-colors">
-                            <Navigation className="w-4 h-4 mr-2" />
+                          <button className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl border border-slate-100 bg-slate-50 text-slate-500 text-[10px] font-black uppercase tracking-widest hover:bg-slate-100 transition-all">
+                            <Navigation className="w-4 h-4" />
                             Track Shipment
                           </button>
 
-                          <button className="w-full btn btn-outline btn-sm hover:bg-orange-50 hover:text-orange-700 transition-colors">
-                            <Camera className="w-4 h-4 mr-2" />
-                            Photo Documentation
-                          </button>
-
                           {(user?.role === 'CARGO_OWNER' || user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN') && (
-                            <button className="w-full btn btn-outline btn-sm hover:bg-red-50 hover:text-red-700 transition-colors">
-                              <Trash2 className="w-4 h-4 mr-2" />
-                              Delete Cargo
+                            <button className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl border border-red-100 bg-red-50 text-red-600 text-[10px] font-black uppercase tracking-widest hover:bg-red-100 transition-all mt-4">
+                              <Trash2 className="w-4 h-4" />
+                              Delete Shipment
                             </button>
                           )}
                         </div>
@@ -836,544 +857,381 @@ const CargoDetailsModal = ({ isOpen, onClose, cargoId }: CargoDetailsModalProps)
                 )}
 
                 {activeTab === 'matching' && (
-                  <div className="space-y-6">
+                  <div className="space-y-8">
                     {/* Matching Overview */}
-                    <div className="bg-gradient-to-r from-gray-50 to-green-50 rounded-lg p-6 border border-gray-200">
-                      <h3 className="text-lg font-semibold text-gray-900 mb-2 flex items-center">
-                        <Target className="w-5 h-5 mr-2 text-green-600" />
-                        AI Matching Overview
-                      </h3>
-                      <p className="text-sm text-gray-600 mb-4">
-                        <Zap className="w-4 h-4 inline mr-1" />
-                        Our <strong>AI-powered matching system</strong> evaluates trucks based on multiple criteria including capacity, equipment compatibility, distance, ratings, pricing, and special requirements to find the best matches for your cargo.
-                      </p>
+                    <div className="bg-white rounded-[2rem] p-8 border border-slate-100 shadow-sm">
+                      <div className="flex items-center gap-4 mb-6">
+                        <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center">
+                          <Target className="w-6 h-6 text-[#345E85]" />
+                        </div>
+                        <div>
+                          <h3 className="text-xl font-black text-[#0f172a] tracking-tight">AI Matching Intelligence</h3>
+                          <p className="text-xs text-slate-500 font-bold uppercase tracking-wider mt-1">
+                            Neural-optimized carrier selection & compatibility analysis
+                          </p>
+                        </div>
+                      </div>
 
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                        <div className="bg-white rounded-lg p-4 border border-gray-200">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100">
                           <div className="flex items-center justify-between">
                             <div>
-                              <p className="text-sm font-medium text-gray-600">Total Matches</p>
-                              <p className="text-2xl font-bold text-green-600">
+                              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Signals</p>
+                              <p className="text-2xl font-black text-[#0f172a]">
                                 {matchesLoading ? '...' : matches.length}
                               </p>
                             </div>
-                            <Target className="w-8 h-8 text-green-400" />
+                            <div className="p-3 bg-white rounded-xl shadow-sm">
+                              <Target className="w-5 h-5 text-[#345E85]" />
+                            </div>
                           </div>
                         </div>
 
-                        <div className="bg-white rounded-lg p-4 border border-gray-200">
+                        <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100">
                           <div className="flex items-center justify-between">
                             <div>
-                              <p className="text-sm font-medium text-gray-600">Available Trucks</p>
-                              <p className="text-2xl font-bold text-blue-600">
+                              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Active Carriers</p>
+                              <p className="text-2xl font-black text-[#345E85]">
                                 {matchesLoading ? '...' : matches.filter((m: any) => m.truckStatus === 'AVAILABLE').length}
                               </p>
                             </div>
-                            <Award className="w-8 h-8 text-blue-400" />
+                            <div className="p-3 bg-white rounded-xl shadow-sm">
+                              <Award className="w-5 h-5 text-[#345E85]" />
+                            </div>
                           </div>
                         </div>
 
-                        <div className="bg-white rounded-lg p-4 border border-gray-200">
+                        <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100">
                           <div className="flex items-center justify-between">
                             <div>
-                              <p className="text-sm font-medium text-gray-600">Best Match Score</p>
-                              <p className="text-2xl font-bold text-purple-600">
-                                {matchesLoading ? '...' : matches.length > 0 ? `${Math.round(matches[0].overallScore * 100)}%` : 'N/A'}
+                              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Peak Fidelity</p>
+                              <p className="text-2xl font-black text-emerald-600">
+                                {matchesLoading ? '...' : matches.length > 0 ? `${Math.round((matches[0].overallScore || matches[0].confidence || 0) * 100)}%` : 'N/A'}
                               </p>
                             </div>
-                            <TrendingUp className="w-8 h-8 text-purple-400" />
+                            <div className="p-3 bg-white rounded-xl shadow-sm">
+                              <TrendingUp className="w-5 h-5 text-emerald-500" />
+                            </div>
                           </div>
                         </div>
                       </div>
 
-                      <div className="flex items-center space-x-4 mb-4">
+                      <div className="flex items-center gap-4 mt-8">
                         <button
-                          className="btn btn-primary btn-sm"
+                          className="flex items-center gap-2 px-6 py-3 bg-[#345E85] text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-lg shadow-blue-900/10 hover:bg-slate-800 transition-all flex-1 md:flex-none justify-center"
                           onClick={() => refetchMatches()}
                           disabled={matchesLoading || !cargo?.id}
                         >
-                          <Search className="w-4 h-4 mr-2" />
-                          {matchesLoading ? 'Loading...' : 'Refresh Matches'}
+                          <Search className="w-4 h-4" />
+                          {matchesLoading ? 'PROCESSING...' : 'REFRESH MATCHES'}
                         </button>
                       </div>
-
-                      {matchesError && (
-                        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
-                          <p className="text-sm text-red-800">{matchesError instanceof Error ? matchesError.message : 'Failed to load matches'}</p>
-                        </div>
-                      )}
                     </div>
 
-                    {/* AI Matching Criteria */}
-                    <div className="bg-gradient-to-r from-gray-50 to-blue-50 rounded-lg p-6 border border-gray-200">
-                      <h3 className="text-lg font-semibold text-gray-900 mb-2 flex items-center">
-                        <Filter className="w-5 h-5 mr-2 text-blue-600" />
-                        AI Matching Criteria
-                      </h3>
-                      <p className="text-sm text-gray-600 mb-4">
-                        <Zap className="w-4 h-4 inline mr-1" />
-                        The AI evaluates trucks using <strong>multiple criteria</strong> to find the best matches. Each match is scored based on how well it meets your cargo requirements.
-                      </p>
+                    {/* AI Matching Criteria & Dimensions */}
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                      <div className="lg:col-span-2 bg-white rounded-[2rem] p-8 border border-slate-100 shadow-sm">
+                        <div className="flex items-center gap-4 mb-6">
+                          <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center">
+                            <Filter className="w-6 h-6 text-[#345E85]" />
+                          </div>
+                          <div>
+                            <h3 className="text-xl font-black text-[#0f172a] tracking-tight">Strategic Criteria</h3>
+                            <p className="text-xs text-slate-500 font-bold uppercase tracking-wider mt-1">
+                              Parameters used to calibrate carrier compatibility
+                            </p>
+                          </div>
+                        </div>
 
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {/* Weight/Capacity Criteria */}
-                        <div className="bg-white p-4 rounded-lg border border-blue-200">
-                          <h4 className="font-medium text-gray-900 mb-3 flex items-center">
-                            <Weight className="w-4 h-4 mr-2 text-blue-600" />
-                            Capacity Matching
-                          </h4>
-                          <div className="space-y-2">
-                            <div className="flex items-center justify-between">
-                              <span className="text-xs text-gray-600">Required Weight</span>
-                              <span className="text-xs font-bold text-blue-900">≥ {formatWeight(cargo.weight)}</span>
-                            </div>
-                            {cargo.volume && (
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                          <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100">
+                            <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center">
+                              <Weight className="w-4 h-4 mr-2 text-[#345E85]" />
+                              Capacity
+                            </h4>
+                            <div className="space-y-4">
                               <div className="flex items-center justify-between">
-                                <span className="text-xs text-gray-600">Required Volume</span>
-                                <span className="text-xs font-bold text-blue-900">≥ {formatVolume(cargo.volume)}</span>
+                                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Required</span>
+                                <span className="text-xs font-black text-[#0f172a]">≥ {formatWeight(cargo.weight)}</span>
                               </div>
-                            )}
-                            <div className="text-xs text-gray-500 mt-2">
-                              Trucks must have sufficient capacity to carry your cargo.
+                              {cargo.volume && (
+                                <div className="flex items-center justify-between">
+                                  <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Volume</span>
+                                  <span className="text-xs font-black text-[#0f172a]">≥ {formatVolume(cargo.volume)}</span>
+                                </div>
+                              )}
                             </div>
                           </div>
-                        </div>
 
-                        {/* Equipment Criteria */}
-                        <div className="bg-white p-4 rounded-lg border border-purple-200">
-                          <h4 className="font-medium text-gray-900 mb-3 flex items-center">
-                            <Shield className="w-4 h-4 mr-2 text-purple-600" />
-                            Equipment Requirements
-                          </h4>
-                          <div className="space-y-1">
-                            {cargo.requiresForklift && (
-                              <div className="flex items-center text-xs text-gray-700">
-                                <CheckCircle className="w-3 h-3 mr-1 text-green-500" />
-                                Forklift Required
-                              </div>
-                            )}
-                            {cargo.requiresCrane && (
-                              <div className="flex items-center text-xs text-gray-700">
-                                <CheckCircle className="w-3 h-3 mr-1 text-green-500" />
-                                Crane Required
-                              </div>
-                            )}
-                            {cargo.requiresLoadingDock && (
-                              <div className="flex items-center text-xs text-gray-700">
-                                <CheckCircle className="w-3 h-3 mr-1 text-green-500" />
-                                Loading Dock Required
-                              </div>
-                            )}
-                            {cargo.requiresRefrigeration && (
-                              <div className="flex items-center text-xs text-gray-700">
-                                <CheckCircle className="w-3 h-3 mr-1 text-green-500" />
-                                Refrigeration Required
-                              </div>
-                            )}
-                            {cargo.isHazardous && (
-                              <div className="flex items-center text-xs text-gray-700">
-                                <CheckCircle className="w-3 h-3 mr-1 text-green-500" />
-                                Hazmat Permit Required
-                              </div>
-                            )}
-                            {!cargo.requiresForklift && !cargo.requiresCrane && !cargo.requiresLoadingDock && !cargo.requiresRefrigeration && !cargo.isHazardous && (
-                              <div className="text-xs text-gray-500">No special equipment required</div>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Cargo Type & Special Requirements */}
-                        <div className="bg-white p-4 rounded-lg border border-orange-200">
-                          <h4 className="font-medium text-gray-900 mb-3 flex items-center">
-                            <Package className="w-4 h-4 mr-2 text-orange-600" />
-                            Cargo Type & Requirements
-                          </h4>
-                          <div className="space-y-2">
-                            <div className="flex items-center justify-between">
-                              <span className="text-xs text-gray-600">Cargo Type</span>
-                              <span className="text-xs font-medium text-gray-900">{getCargoTypeDisplayName(cargo.cargoType)}</span>
+                          <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100">
+                            <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center">
+                              <Shield className="w-4 h-4 mr-2 text-[#345E85]" />
+                              Equipment
+                            </h4>
+                            <div className="space-y-2">
+                              {cargo.requiresForklift && (
+                                <div className="flex items-center text-[10px] font-black text-emerald-600 uppercase tracking-wider">
+                                  <CheckCircle className="w-3.5 h-3.5 mr-2" /> Forklift
+                                </div>
+                              )}
+                              {cargo.requiresCrane && (
+                                <div className="flex items-center text-[10px] font-black text-emerald-600 uppercase tracking-wider">
+                                  <CheckCircle className="w-3.5 h-3.5 mr-2" /> Crane
+                                </div>
+                              )}
+                              {cargo.requiresLoadingDock && (
+                                <div className="flex items-center text-[10px] font-black text-emerald-600 uppercase tracking-wider">
+                                  <CheckCircle className="w-3.5 h-3.5 mr-2" /> Loading Dock
+                                </div>
+                              )}
+                              {cargo.requiresRefrigeration && (
+                                <div className="flex items-center text-[10px] font-black text-emerald-600 uppercase tracking-wider">
+                                  <CheckCircle className="w-3.5 h-3.5 mr-2" /> Refrigeration
+                                </div>
+                              )}
+                              {!cargo.requiresForklift && !cargo.requiresCrane && !cargo.requiresLoadingDock && !cargo.requiresRefrigeration && (
+                                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Standard Configuration</div>
+                              )}
                             </div>
-                            {cargo.isFragile && (
-                              <div className="flex items-center text-xs text-gray-700">
-                                <AlertTriangle className="w-3 h-3 mr-1 text-orange-500" />
-                                Fragile Handling
+                          </div>
+
+                          <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100">
+                            <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center">
+                              <Package className="w-4 h-4 mr-2 text-[#345E85]" />
+                              Shipment Type
+                            </h4>
+                            <div className="space-y-4">
+                              <div className="flex items-center justify-between">
+                                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Class</span>
+                                <span className="text-xs font-black text-[#0f172a]">{getCargoTypeDisplayName(cargo.cargoType)}</span>
                               </div>
-                            )}
-                            {cargo.isTimeCritical && (
-                              <div className="flex items-center text-xs text-gray-700">
-                                <Clock3 className="w-3 h-3 mr-1 text-red-500" />
-                                Time Critical
+                              <div className="flex flex-wrap gap-2">
+                                {cargo.isFragile && (
+                                  <span className="px-2 py-0.5 bg-orange-50 text-orange-700 text-[10px] font-black rounded-lg border border-orange-100 uppercase tracking-widest">
+                                    Fragile
+                                  </span>
+                                )}
+                                {cargo.isTimeCritical && (
+                                  <span className="px-2 py-0.5 bg-red-50 text-red-700 text-[10px] font-black rounded-lg border border-red-100 uppercase tracking-widest">
+                                    Critical
+                                  </span>
+                                )}
                               </div>
-                            )}
-                            {cargo.requiresGpsMonitoring && (
-                              <div className="flex items-center text-xs text-gray-700">
-                                <Navigation className="w-3 h-3 mr-1 text-blue-500" />
-                                GPS Monitoring
-                              </div>
-                            )}
+                            </div>
                           </div>
                         </div>
                       </div>
 
-                      {/* Scoring Factors Explanation */}
-                      <div className="mt-4 p-4 bg-indigo-50 rounded-lg border border-indigo-200">
-                        <h4 className="font-medium text-gray-900 mb-2 flex items-center">
-                          <TrendingUp className="w-4 h-4 mr-2 text-indigo-600" />
-                          AI Scoring Factors
+                      <div className="bg-slate-900 rounded-[2rem] p-8 border border-slate-800 shadow-xl shadow-slate-900/20">
+                        <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6 flex items-center">
+                          <Zap className="w-4 h-4 mr-3 text-blue-400" />
+                          Neural Dimensions
                         </h4>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs text-gray-700">
-                          <div className="flex items-center">
-                            <Weight className="w-3 h-3 mr-1 text-indigo-500" />
-                            <span>Capacity Score</span>
-                          </div>
-                          <div className="flex items-center">
-                            <Route className="w-3 h-3 mr-1 text-indigo-500" />
-                            <span>Distance Score</span>
-                          </div>
-                          <div className="flex items-center">
-                            <Shield className="w-3 h-3 mr-1 text-indigo-500" />
-                            <span>Equipment Score</span>
-                          </div>
-                          <div className="flex items-center">
-                            <Star className="w-3 h-3 mr-1 text-indigo-500" />
-                            <span>Rating Score</span>
-                          </div>
-                          <div className="flex items-center">
-                            <DollarSign className="w-3 h-3 mr-1 text-indigo-500" />
-                            <span>Price Score</span>
-                          </div>
-                          <div className="flex items-center">
-                            <Clock3 className="w-3 h-3 mr-1 text-indigo-500" />
-                            <span>Time Score</span>
-                          </div>
-                          <div className="flex items-center">
-                            <Thermometer className="w-3 h-3 mr-1 text-indigo-500" />
-                            <span>Temperature Score</span>
-                          </div>
-                          <div className="flex items-center">
-                            <Target className="w-3 h-3 mr-1 text-indigo-500" />
-                            <span>Overall Score</span>
-                          </div>
+                        <div className="grid grid-cols-1 gap-3">
+                          {[
+                            { icon: Weight, label: 'Payload Capacity', detail: 'Weight/Volume parity' },
+                            { icon: Route, label: 'Geospatial Proximity', detail: 'Current location distance' },
+                            { icon: Shield, label: 'Hardware Alignment', detail: 'Equipment & accessories' },
+                            { icon: Star, label: 'Carrier Authority', detail: 'Rating & reliability' },
+                            { icon: DollarSign, label: 'Yield Optimization', detail: 'Rate competitiveness' },
+                            { icon: Clock3, label: 'Temporal Velocity', detail: 'ETA & pickup window' }
+                          ].map((dim, idx) => (
+                            <div key={idx} className="flex items-center gap-4 p-3 bg-slate-800/50 rounded-2xl border border-slate-700/50 group hover:bg-slate-800 transition-colors">
+                              <div className="p-2 bg-slate-700 rounded-xl group-hover:bg-[#345E85] transition-colors">
+                                <dim.icon className="w-4 h-4 text-slate-300" />
+                              </div>
+                              <div>
+                                <p className="text-[9px] font-black text-white uppercase tracking-tight">{dim.label}</p>
+                                <p className="text-[8px] font-bold text-slate-500 uppercase tracking-tighter">{dim.detail}</p>
+                              </div>
+                            </div>
+                          ))}
                         </div>
                       </div>
                     </div>
 
-                    {/* Top Matches */}
-                    <div className="bg-gradient-to-r from-gray-50 to-purple-50 rounded-lg p-6 border border-gray-200">
-                      <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                        <Award className="w-5 h-5 mr-2 text-purple-600" />
-                        AI-Recommended Trucks
-                      </h3>
-                      <p className="text-sm text-gray-600 mb-4">
-                        Trucks are ranked by AI matching score based on all criteria. Higher scores indicate better overall compatibility with your cargo requirements.
-                      </p>
+                    {/* Top Recommendations */}
+                    <div className="space-y-6">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                          <div className="w-12 h-12 rounded-2xl bg-purple-50 flex items-center justify-center">
+                            <Award className="w-6 h-6 text-purple-600" />
+                          </div>
+                          <div>
+                            <h3 className="text-xl font-black text-[#0f172a] tracking-tight">Tier-1 Recommendations</h3>
+                            <p className="text-xs text-slate-500 font-bold uppercase tracking-wider mt-1">
+                              Elite carrier matches optimized for high-fidelity logistics
+                            </p>
+                          </div>
+                        </div>
+                      </div>
 
                       {matchesLoading ? (
-                        <div className="text-center py-8">
-                          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
-                          <p className="mt-4 text-sm text-gray-600">Finding matching trucks...</p>
+                        <div className="text-center py-24 bg-white rounded-[2rem] border border-slate-100 shadow-sm">
+                          <div className="relative w-20 h-20 mx-auto mb-6">
+                            <div className="absolute inset-0 rounded-full border-4 border-slate-50 border-t-[#345E85] animate-spin"></div>
+                            <div className="absolute inset-4 rounded-full border-4 border-slate-50 border-b-[#345E85] animate-spin-slow"></div>
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              <Target className="w-6 h-6 text-[#345E85]" />
+                            </div>
+                          </div>
+                          <h4 className="text-lg font-black text-[#0f172a] tracking-tight mb-2">Synthesizing Match Data</h4>
+                          <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Applying neural weights to market signals...</p>
                         </div>
                       ) : matchesError ? (
-                        <div className="text-center py-8 bg-red-50 rounded-lg border border-red-200">
-                          <AlertCircle className="w-12 h-12 text-red-400 mx-auto mb-4" />
-                          <h4 className="text-lg font-semibold text-red-900 mb-2">Error Loading Matches</h4>
-                          <p className="text-sm text-red-700 mb-4">
-                            {matchesError instanceof Error ? matchesError.message : 'Failed to load matches'}
+                        <div className="text-center py-12 bg-red-50 rounded-[2rem] border border-red-100">
+                          <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+                          <h4 className="text-lg font-black text-red-900 tracking-tight mb-2">Analysis Interrupted</h4>
+                          <p className="text-xs font-bold text-red-600 uppercase tracking-wider mb-6">
+                            {matchesError instanceof Error ? matchesError.message : 'Failed to synchronize matching engine'}
                           </p>
                           <button
                             onClick={() => refetchMatches()}
-                            className="btn btn-primary btn-sm mt-4"
+                            className="px-6 py-2.5 bg-red-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-red-700 transition-all"
                           >
-                            <Search className="w-4 h-4 mr-2" />
-                            Try Again
+                            RE-INITIALIZE ENGINE
                           </button>
                         </div>
                       ) : matches.length === 0 ? (
-                        <div className="text-center py-8 bg-white rounded-lg border border-gray-200">
-                          <Truck className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                          <h4 className="text-lg font-semibold text-gray-900 mb-2">No Available Matches</h4>
-                          <p className="text-sm text-gray-600 mb-4">
-                            We searched for trucks but couldn't find any that match your cargo requirements at this time.
-                          </p>
-                          <div className="text-left max-w-md mx-auto bg-gray-50 rounded-lg p-4">
-                            <p className="text-xs font-medium text-gray-700 mb-2">Your cargo requirements:</p>
-                            <ul className="text-xs text-gray-600 space-y-1">
-                              <li>• Weight: {formatWeight(cargo.weight)}</li>
-                              {cargo.volume && <li>• Volume: {formatVolume(cargo.volume)}</li>}
-                              {cargo.requiresRefrigeration && <li>• Requires Refrigeration</li>}
-                              {cargo.isHazardous && <li>• Requires Hazmat Permit</li>}
-                              {cargo.requiresForklift && <li>• Requires Forklift/Lift Gate</li>}
-                            </ul>
+                        <div className="text-center py-20 bg-white rounded-[2rem] border border-slate-100 shadow-sm">
+                          <div className="w-20 h-20 rounded-full bg-slate-50 flex items-center justify-center mx-auto mb-6">
+                            <Truck className="w-10 h-10 text-slate-200" />
                           </div>
-                          <p className="text-xs text-gray-500 mt-4">
-                            Try adjusting your requirements or check back later for available trucks.
+                          <h4 className="text-xl font-black text-[#0f172a] tracking-tight mb-2">Zero Compatibility Signals</h4>
+                          <p className="text-sm font-bold text-slate-400 uppercase tracking-widest max-w-sm mx-auto mb-8">
+                            No carrier profiles currently meet the critical architecture of your requirements
                           </p>
-                          <div className="mt-4 text-xs text-gray-500">
-                            <p>💡 <strong>Tip:</strong> You can try:</p>
-                            <ul className="list-disc list-inside mt-2 space-y-1">
-                              <li>Increasing your budget</li>
-                              <li>Adjusting pickup/delivery dates</li>
-                              <li>Relaxing special requirements</li>
-                            </ul>
-                          </div>
                         </div>
                       ) : (
-                        <div className="space-y-4">
+                        <div className="grid grid-cols-1 gap-6">
                           {matches.map((match: any, index: number) => {
                             const matchScore = Math.round((match.overallScore || match.confidence || 0) * 100);
-                            const getScoreColorClass = (score: number) => {
-                              if (score >= 90) return { bg: 'bg-green-500', badge: 'bg-green-100 text-green-800', text: 'text-green-600' };
-                              if (score >= 70) return { bg: 'bg-blue-500', badge: 'bg-blue-100 text-blue-800', text: 'text-blue-600' };
-                              return { bg: 'bg-yellow-500', badge: 'bg-yellow-100 text-yellow-800', text: 'text-yellow-600' };
-                            };
-                            const scoreColor = getScoreColorClass(matchScore);
-
-                            // Extract scoring breakdown if available
-                            const capacityScore = Math.round((match.capacityScore || 0) * 100);
-                            const distanceScore = Math.round((match.distanceScore || 0) * 100);
-                            const equipmentScore = Math.round((match.equipmentScore || 0) * 100);
-                            const ratingScore = Math.round((match.ratingScore || 0) * 100);
-                            const priceScore = Math.round((match.priceScore || 0) * 100);
-                            const routeScore = Math.round((match.routeScore || 0) * 100);
-                            const timeScore = Math.round((match.timeScore || 0) * 100);
+                            const level = matchScore >= 90
+                              ? { label: 'ELITE', color: 'text-emerald-500', bg: 'bg-emerald-50', border: 'border-emerald-100' }
+                              : matchScore >= 75
+                                ? { label: 'OPTIMAL', color: 'text-[#345E85]', bg: 'bg-blue-50', border: 'border-blue-100' }
+                                : { label: 'COMPATIBLE', color: 'text-amber-500', bg: 'bg-amber-50', border: 'border-amber-100' };
 
                             return (
-                              <div key={match.truckId || index} className="bg-white rounded-lg p-6 border border-gray-200 hover:border-purple-300 transition-colors shadow-sm">
-                                {/* Header */}
-                                <div className="flex items-center justify-between mb-4">
-                                  <div className="flex items-center space-x-3">
-                                    <div className={`w-4 h-4 ${scoreColor.bg} rounded-full`}></div>
-                                    <div>
-                                      <span className="font-semibold text-gray-900 text-lg">
-                                        {match.truckMake} {match.truckModel}
-                                      </span>
-                                      <p className="text-sm text-gray-600">{match.plateNumber}</p>
-                                    </div>
-                                    <span className={`px-3 py-1 ${scoreColor.badge} text-sm font-bold rounded-full`}>
-                                      {matchScore}% Match
-                                    </span>
-                                  </div>
-                                  <div className="flex items-center space-x-2">
-                                    <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
-                                    <span className="text-sm font-medium text-gray-900">
-                                      {match.truckRating ? Number(match.truckRating).toFixed(1) : 'N/A'}
-                                    </span>
-                                  </div>
-                                </div>
-
-                                {/* AI Scoring Breakdown */}
-                                <div className="mb-4 p-4 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg border border-indigo-200">
-                                  <h4 className="text-sm font-semibold text-gray-900 mb-3 flex items-center">
-                                    <Target className="w-4 h-4 mr-2 text-indigo-600" />
-                                    AI Scoring Breakdown
-                                  </h4>
-                                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                                    <div className="text-center">
-                                      <div className="text-xs text-gray-600 mb-1">Capacity</div>
-                                      <div className={`text-lg font-bold ${capacityScore >= 80 ? 'text-green-600' : capacityScore >= 60 ? 'text-blue-600' : 'text-yellow-600'}`}>
-                                        {capacityScore}%
+                              <div key={match.truckId || index} className="bg-white rounded-[2rem] p-8 border border-slate-100 shadow-sm hover:shadow-xl hover:border-blue-100 transition-all group overflow-hidden relative">
+                                <div className="flex flex-col lg:flex-row gap-8 relative z-10">
+                                  {/* Truck Identity */}
+                                  <div className="flex-1">
+                                    <div className="flex items-center gap-4 mb-6">
+                                      <div className="w-14 h-14 rounded-[1.25rem] bg-slate-50 border border-slate-100 flex items-center justify-center group-hover:bg-[#345E85] group-hover:border-[#345E85] transition-colors">
+                                        <Truck className="w-7 h-7 text-[#345E85] group-hover:text-white transition-colors" />
                                       </div>
-                                    </div>
-                                    <div className="text-center">
-                                      <div className="text-xs text-gray-600 mb-1">Distance</div>
-                                      <div className={`text-lg font-bold ${distanceScore >= 80 ? 'text-green-600' : distanceScore >= 60 ? 'text-blue-600' : 'text-yellow-600'}`}>
-                                        {distanceScore}%
-                                      </div>
-                                    </div>
-                                    <div className="text-center">
-                                      <div className="text-xs text-gray-600 mb-1">Equipment</div>
-                                      <div className={`text-lg font-bold ${equipmentScore >= 80 ? 'text-green-600' : equipmentScore >= 60 ? 'text-blue-600' : 'text-yellow-600'}`}>
-                                        {equipmentScore}%
-                                      </div>
-                                    </div>
-                                    <div className="text-center">
-                                      <div className="text-xs text-gray-600 mb-1">Rating</div>
-                                      <div className={`text-lg font-bold ${ratingScore >= 80 ? 'text-green-600' : ratingScore >= 60 ? 'text-blue-600' : 'text-yellow-600'}`}>
-                                        {ratingScore}%
-                                      </div>
-                                    </div>
-                                    {priceScore > 0 && (
-                                      <div className="text-center">
-                                        <div className="text-xs text-gray-600 mb-1">Price</div>
-                                        <div className={`text-lg font-bold ${priceScore >= 80 ? 'text-green-600' : priceScore >= 60 ? 'text-blue-600' : 'text-yellow-600'}`}>
-                                          {priceScore}%
-                                        </div>
-                                      </div>
-                                    )}
-                                    {routeScore > 0 && (
-                                      <div className="text-center">
-                                        <div className="text-xs text-gray-600 mb-1">Route</div>
-                                        <div className={`text-lg font-bold ${routeScore >= 80 ? 'text-green-600' : routeScore >= 60 ? 'text-blue-600' : 'text-yellow-600'}`}>
-                                          {routeScore}%
-                                        </div>
-                                      </div>
-                                    )}
-                                    {timeScore > 0 && (
-                                      <div className="text-center">
-                                        <div className="text-xs text-gray-600 mb-1">Time</div>
-                                        <div className={`text-lg font-bold ${timeScore >= 80 ? 'text-green-600' : timeScore >= 60 ? 'text-blue-600' : 'text-yellow-600'}`}>
-                                          {timeScore}%
-                                        </div>
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-
-                                {/* Truck Details */}
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                                  <div className="bg-gray-50 p-3 rounded-lg">
-                                    <span className="text-xs text-gray-500 block mb-1">Truck Type</span>
-                                    <p className="text-sm font-medium text-gray-900">{match.truckType || 'Standard Truck'}</p>
-                                  </div>
-                                  <div className="bg-gray-50 p-3 rounded-lg">
-                                    <span className="text-xs text-gray-500 block mb-1">Weight Capacity</span>
-                                    <p className="text-sm font-medium text-gray-900">
-                                      {formatWeight(match.capacityWeight || 0)}
-                                    </p>
-                                    <p className="text-xs text-gray-500 mt-1">
-                                      Utilization: {Math.round(((cargo.weight / (match.capacityWeight || 1)) * 100))}%
-                                    </p>
-                                  </div>
-                                  <div className="bg-gray-50 p-3 rounded-lg">
-                                    <span className="text-xs text-gray-500 block mb-1">Distance</span>
-                                    <p className="text-sm font-medium text-gray-900">
-                                      {match.distanceKm ? `${match.distanceKm.toFixed(0)} km` : 'N/A'}
-                                    </p>
-                                  </div>
-                                </div>
-
-                                {/* Equipment Match Indicators */}
-                                <div className="mb-4 p-3 bg-green-50 rounded-lg border border-green-200">
-                                  <h5 className="text-xs font-semibold text-gray-900 mb-2">Equipment Compatibility</h5>
-                                  <div className="flex flex-wrap gap-2">
-                                    {match.hasRefrigeration && cargo.requiresRefrigeration && (
-                                      <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">
-                                        ✓ Refrigeration
-                                      </span>
-                                    )}
-                                    {match.hasLiftGate && cargo.requiresForklift && (
-                                      <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">
-                                        ✓ Lift Gate
-                                      </span>
-                                    )}
-                                    {match.hasHazmatPermit && cargo.isHazardous && (
-                                      <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">
-                                        ✓ Hazmat Permit
-                                      </span>
-                                    )}
-                                    {(!match.hasRefrigeration && !match.hasLiftGate && !match.hasHazmatPermit) && (
-                                      <span className="text-xs text-gray-500">Standard equipment</span>
-                                    )}
-                                  </div>
-                                </div>
-
-                                {/* Match Reason */}
-                                {match.matchReason && (
-                                  <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                                    <h5 className="text-xs font-semibold text-gray-900 mb-1 flex items-center">
-                                      <Info className="w-3 h-3 mr-1 text-blue-600" />
-                                      Why This Match?
-                                    </h5>
-                                    <p className="text-xs text-gray-700">
-                                      {match.matchReason}
-                                    </p>
-                                  </div>
-                                )}
-
-                                {/* Driver Information */}
-                                {match.driverName && (
-                                  <div className="mb-4 p-3 bg-purple-50 rounded-lg border border-purple-200">
-                                    <h5 className="text-xs font-semibold text-gray-900 mb-2 flex items-center">
-                                      <Users className="w-3 h-3 mr-1 text-purple-600" />
-                                      Driver Information
-                                    </h5>
-                                    <div className="grid grid-cols-2 gap-2 text-xs">
                                       <div>
-                                        <span className="text-gray-600">Name:</span>
-                                        <span className="ml-2 font-medium text-gray-900">{match.driverName}</span>
+                                        <h4 className="text-xl font-black text-[#0f172a] tracking-tight">
+                                          {match.truckMake} {match.truckModel}
+                                        </h4>
+                                        <div className="flex items-center gap-2 mt-1">
+                                          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{match.plateNumber}</span>
+                                          <span className="w-1 h-1 rounded-full bg-slate-200"></span>
+                                          <span className="text-[10px] font-black text-[#345E85] uppercase tracking-widest">{match.truckType || 'Standard'}</span>
+                                        </div>
                                       </div>
-                                      {match.driverRating && (
-                                        <div>
-                                          <span className="text-gray-600">Rating:</span>
-                                          <span className="ml-2 font-medium text-gray-900">{match.driverRating.toFixed(1)}/5</span>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-6">
+                                      <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Payload</p>
+                                        <p className="text-sm font-black text-[#0f172a]">{formatWeight(match.capacityWeight || 0)}</p>
+                                      </div>
+                                      <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Reputation</p>
+                                        <div className="flex items-center gap-1">
+                                          <Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
+                                          <p className="text-sm font-black text-[#0f172a]">{match.truckRating ? Number(match.truckRating).toFixed(1) : '5.0'}</p>
                                         </div>
-                                      )}
-                                      {match.driverLicenseNumber && (
-                                        <div>
-                                          <span className="text-gray-600">License:</span>
-                                          <span className="ml-2 font-medium text-gray-900">{match.driverLicenseNumber}</span>
-                                        </div>
-                                      )}
+                                      </div>
+                                      <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Distance</p>
+                                        <p className="text-sm font-black text-[#0f172a]">{match.distanceKm ? `${match.distanceKm.toFixed(0)} KM` : 'N/A'}</p>
+                                      </div>
+                                    </div>
+
+                                    {/* Neural Decomposition - Scoring Breakdown */}
+                                    <div className="mt-8 pt-8 border-t border-slate-50">
+                                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center">
+                                        <Zap className="w-3.5 h-3.5 mr-2 text-purple-500" />
+                                        Neural Compatibility Decomposition
+                                      </p>
+                                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                                        {[
+                                          { label: 'Capacity', score: match.capacityScore },
+                                          { label: 'Distance', score: match.distanceScore },
+                                          { label: 'Equipment', score: match.equipmentScore },
+                                          { label: 'Rating', score: match.ratingScore },
+                                          { label: 'Price', score: match.priceScore },
+                                          { label: 'Route', score: match.routeScore },
+                                          { label: 'Velocity', score: match.timeScore }
+                                        ].filter(s => s.score !== undefined).map((s, i) => (
+                                          <div key={i} className="px-3 py-2 bg-slate-50/50 rounded-xl border border-slate-100">
+                                            <div className="flex justify-between items-center mb-1">
+                                              <span className="text-[9px] font-black text-slate-400 uppercase tracking-tight">{s.label}</span>
+                                              <span className="text-[9px] font-black text-[#345E85]">{Math.round(s.score * 100)}%</span>
+                                            </div>
+                                            <div className="h-1 bg-white rounded-full overflow-hidden border border-slate-100">
+                                              <div
+                                                className={cn(
+                                                  "h-full rounded-full transition-all duration-1000",
+                                                  s.score >= 0.8 ? "bg-emerald-500" : s.score >= 0.6 ? "bg-blue-500" : "bg-amber-500"
+                                                )}
+                                                style={{ width: `${s.score * 100}%` }}
+                                              ></div>
+                                            </div>
+                                          </div>
+                                        ))}
+                                      </div>
                                     </div>
                                   </div>
-                                )}
 
-                                {/* Cost & Time Estimates */}
-                                <div className="mb-4 grid grid-cols-2 gap-3">
-                                  {match.estimatedCost && (
-                                    <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-200">
-                                      <span className="text-xs text-gray-600 block mb-1">Estimated Cost</span>
-                                      <p className="text-sm font-bold text-yellow-900">
-                                        {formatCurrency(match.estimatedCost, cargo.currencyCode)}
-                                      </p>
+                                  {/* Match Score & Actions */}
+                                  <div className="lg:w-72 flex flex-col justify-between p-6 bg-slate-50 rounded-[1.5rem] border border-slate-100">
+                                    <div className="text-center mb-6">
+                                      <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-xl ${level.bg} ${level.border} mb-4`}>
+                                        <Zap className={`w-3.5 h-3.5 ${level.color}`} />
+                                        <span className={`text-[10px] font-black uppercase tracking-widest ${level.color}`}>{level.label} MATCH</span>
+                                      </div>
+                                      <div className="relative inline-block">
+                                        <p className="text-5xl font-black text-[#0f172a] tracking-tighter">{matchScore}%</p>
+                                      </div>
+                                      <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-2">Confidence Index</p>
+                                      {match.estimatedCost && (
+                                        <div className="mt-4 p-3 bg-white rounded-xl border border-slate-100 shadow-sm">
+                                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Quota Estimate</p>
+                                          <p className="text-lg font-black text-[#345E85]">
+                                            {formatCurrency(match.estimatedCost, cargo.currencyCode)}
+                                          </p>
+                                        </div>
+                                      )}
                                     </div>
-                                  )}
-                                  {match.estimatedDeliveryTime && (
-                                    <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
-                                      <span className="text-xs text-gray-600 block mb-1">Est. Delivery Time</span>
-                                      <p className="text-sm font-bold text-blue-900">
-                                        {match.estimatedDeliveryTime.toFixed(1)} hours
-                                      </p>
-                                    </div>
-                                  )}
-                                </div>
 
-                                {/* Success Probability & Confidence */}
-                                {(match.successProbability || match.confidence) && (
-                                  <div className="mb-4 p-3 bg-indigo-50 rounded-lg border border-indigo-200">
-                                    <div className="flex items-center justify-between">
-                                      <span className="text-xs font-medium text-gray-700">AI Confidence</span>
-                                      <span className="text-sm font-bold text-indigo-900">
-                                        {Math.round((match.successProbability || match.confidence || 0) * 100)}%
-                                      </span>
-                                    </div>
-                                    <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
-                                      <div
-                                        className="bg-indigo-600 h-2 rounded-full"
-                                        style={{ width: `${(match.successProbability || match.confidence || 0) * 100}%` }}
-                                      ></div>
+                                    <div className="space-y-2">
+                                      <button
+                                        className="w-full flex items-center justify-center gap-2 py-3 bg-[#345E85] text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-blue-900/10 hover:bg-slate-800 transition-all"
+                                        onClick={async (e) => {
+                                          e.stopPropagation();
+                                          try {
+                                            toast.loading('Initializing carrier request...', { id: 'request-match' });
+                                            await enhancedMatchingApi.requestMatch(cargoId!, match.truckId);
+                                            toast.success('Carrier request dispatched!', { id: 'request-match' });
+                                          } catch (err: any) {
+                                            const msg = err.response?.data?.message || 'Synchronization failure';
+                                            toast.error(msg, { id: 'request-match' });
+                                          }
+                                        }}
+                                      >
+                                        <CheckCircle className="w-4 h-4" />
+                                        Secure Carrier
+                                      </button>
+                                      <button className="w-full flex items-center justify-center gap-2 py-3 bg-white text-slate-600 border border-slate-200 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 transition-all">
+                                        <MessageSquare className="w-4 h-4" />
+                                        Message
+                                      </button>
                                     </div>
                                   </div>
-                                )}
-
-                                {/* Action Buttons */}
-                                <div className="grid grid-cols-2 gap-2 pt-3 border-t border-gray-200">
-                                  <button
-                                    className="col-span-2 btn btn-primary btn-sm flex items-center justify-center"
-                                    onClick={async (e) => {
-                                      e.stopPropagation();
-                                      try {
-                                        toast.loading('Sending request...', { id: 'request-match' });
-                                        await enhancedMatchingApi.requestMatch(cargoId!, match.truckId);
-                                        toast.success('Request sent to truck owner!', { id: 'request-match' });
-                                      } catch (err: any) {
-                                        console.error(err);
-                                        const msg = err.response?.data?.message || 'Failed to send request';
-                                        toast.error(msg, { id: 'request-match' });
-                                      }
-                                    }}
-                                  >
-                                    <CheckCircle className="w-4 h-4 mr-2" />
-                                    Request Truck
-                                  </button>
-                                  <button className="btn btn-outline btn-sm flex items-center justify-center">
-                                    <MessageSquare className="w-4 h-4 mr-2" />
-                                    Contact Driver
-                                  </button>
-                                  <button className="btn btn-outline btn-sm flex items-center justify-center">
-                                    <Eye className="w-4 h-4 mr-2" />
-                                    View Full Details
-                                  </button>
                                 </div>
                               </div>
                             );
@@ -1382,92 +1240,81 @@ const CargoDetailsModal = ({ isOpen, onClose, cargoId }: CargoDetailsModalProps)
                       )}
                     </div>
 
-                    {/* Matching Analytics */}
-                    <div className="bg-gradient-to-r from-gray-50 to-indigo-50 rounded-lg p-6 border border-gray-200">
-                      <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                        <TrendingUp className="w-5 h-5 mr-2 text-indigo-600" />
-                        Matching Analytics
-                      </h3>
-
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Market Intelligence */}
+                    <div className="bg-white rounded-[2rem] p-8 border border-slate-100 shadow-sm">
+                      <div className="flex items-center gap-4 mb-8">
+                        <div className="w-12 h-12 rounded-2xl bg-indigo-50 flex items-center justify-center">
+                          <TrendingUp className="w-6 h-6 text-indigo-600" />
+                        </div>
                         <div>
-                          <h4 className="font-medium text-gray-900 mb-3">Match Quality Distribution</h4>
-                          <div className="space-y-2">
+                          <h3 className="text-xl font-black text-[#0f172a] tracking-tight">Market Intelligence</h3>
+                          <p className="text-xs text-slate-500 font-bold uppercase tracking-wider mt-1">
+                            Comparative analytics and rate benchmarks
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+                        {/* Quality Distribution */}
+                        <div>
+                          <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6 border-b border-slate-50 pb-2">Fidelity Distribution</h4>
+                          <div className="space-y-6">
                             {(() => {
                               const excellent = matches.filter((m: any) => (m.overallScore || 0) >= 0.9).length;
                               const good = matches.filter((m: any) => (m.overallScore || 0) >= 0.8 && (m.overallScore || 0) < 0.9).length;
                               const fair = matches.filter((m: any) => (m.overallScore || 0) >= 0.7 && (m.overallScore || 0) < 0.8).length;
                               const total = matches.length;
-                              const excellentPercent = total > 0 ? (excellent / total) * 100 : 0;
-                              const goodPercent = total > 0 ? (good / total) * 100 : 0;
-                              const fairPercent = total > 0 ? (fair / total) * 100 : 0;
 
-                              return (
-                                <>
-                                  <div className="flex items-center justify-between">
-                                    <span className="text-sm text-gray-600">Excellent (90%+)</span>
-                                    <div className="flex items-center space-x-2">
-                                      <div className="w-20 bg-gray-200 rounded-full h-2">
-                                        <div className="bg-green-500 h-2 rounded-full" style={{ width: `${excellentPercent}%` }}></div>
-                                      </div>
-                                      <span className="text-sm font-medium text-gray-900">{excellent}</span>
+                              const items = [
+                                { label: 'Elite (90%+)', count: excellent, color: 'bg-emerald-500' },
+                                { label: 'Optimal (80-89%)', count: good, color: 'bg-[#345E85]' },
+                                { label: 'Compatible (70-79%)', count: fair, color: 'bg-amber-500' }
+                              ];
+
+                              return items.map((item, idx) => {
+                                const percent = total > 0 ? (item.count / total) * 100 : 0;
+                                return (
+                                  <div key={idx} className="space-y-2">
+                                    <div className="flex items-center justify-between">
+                                      <span className="text-[10px] font-black text-[#0f172a] uppercase tracking-widest">{item.label}</span>
+                                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{item.count} UNITS</span>
+                                    </div>
+                                    <div className="h-2 bg-slate-50 rounded-full overflow-hidden border border-slate-100">
+                                      <div className={`h-full ${item.color} rounded-full transition-all duration-1000`} style={{ width: `${percent}%` }}></div>
                                     </div>
                                   </div>
-                                  <div className="flex items-center justify-between">
-                                    <span className="text-sm text-gray-600">Good (80-89%)</span>
-                                    <div className="flex items-center space-x-2">
-                                      <div className="w-20 bg-gray-200 rounded-full h-2">
-                                        <div className="bg-blue-500 h-2 rounded-full" style={{ width: `${goodPercent}%` }}></div>
-                                      </div>
-                                      <span className="text-sm font-medium text-gray-900">{good}</span>
-                                    </div>
-                                  </div>
-                                  <div className="flex items-center justify-between">
-                                    <span className="text-sm text-gray-600">Fair (70-79%)</span>
-                                    <div className="flex items-center space-x-2">
-                                      <div className="w-20 bg-gray-200 rounded-full h-2">
-                                        <div className="bg-yellow-500 h-2 rounded-full" style={{ width: `${fairPercent}%` }}></div>
-                                      </div>
-                                      <span className="text-sm font-medium text-gray-900">{fair}</span>
-                                    </div>
-                                  </div>
-                                </>
-                              );
+                                );
+                              });
                             })()}
                           </div>
                         </div>
 
+                        {/* Price Benchmarks */}
                         <div>
-                          <h4 className="font-medium text-gray-900 mb-3">Price Comparison</h4>
-                          <div className="space-y-3">
-                            <div className="flex items-center justify-between">
-                              <span className="text-sm text-gray-600">Your Budget</span>
-                              <span className="text-sm font-medium text-gray-900">{formatCurrency(cargo.offeredPrice || 0)}</span>
-                            </div>
-                            <div className="flex items-center justify-between">
-                              <span className="text-sm text-gray-600">Average Market Price</span>
-                              <span className="text-sm font-medium text-blue-600">
-                                {matches.length > 0
-                                  ? formatCurrency(matches.reduce((sum: number, m: any) => sum + (m.estimatedCost || m.recommendedPrice || 0), 0) / matches.length)
-                                  : formatCurrency((cargo.offeredPrice || 0) * 1.05)}
-                              </span>
-                            </div>
-                            <div className="flex items-center justify-between">
-                              <span className="text-sm text-gray-600">Lowest Offer</span>
-                              <span className="text-sm font-medium text-green-600">
-                                {matches.length > 0
-                                  ? formatCurrency(Math.min(...matches.map((m: any) => m.estimatedCost || m.recommendedPrice || 0)))
-                                  : formatCurrency((cargo.offeredPrice || 0) * 0.88)}
-                              </span>
-                            </div>
-                            <div className="flex items-center justify-between">
-                              <span className="text-sm text-gray-600">Highest Offer</span>
-                              <span className="text-sm font-medium text-red-600">
-                                {matches.length > 0
-                                  ? formatCurrency(Math.max(...matches.map((m: any) => m.estimatedCost || m.recommendedPrice || 0)))
-                                  : formatCurrency((cargo.offeredPrice || 0) * 1.15)}
-                              </span>
-                            </div>
+                          <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6 border-b border-slate-50 pb-2">Rate Benchmarks</h4>
+                          <div className="grid grid-cols-1 gap-2">
+                            {[
+                              { label: 'Your Offer', value: cargo.offeredPrice || 0, color: 'text-[#0f172a]' },
+                              {
+                                label: 'Market Mean',
+                                value: matches.length > 0
+                                  ? matches.reduce((sum: number, m: any) => sum + (m.estimatedCost || m.recommendedPrice || 0), 0) / matches.length
+                                  : (cargo.offeredPrice || 0) * 1.05,
+                                color: 'text-blue-600'
+                              },
+                              {
+                                label: 'Competitive Floor',
+                                value: matches.length > 0
+                                  ? Math.min(...matches.map((m: any) => m.estimatedCost || m.recommendedPrice || 0))
+                                  : (cargo.offeredPrice || 0) * 0.88,
+                                color: 'text-emerald-600'
+                              }
+                            ].map((item, idx) => (
+                              <div key={idx} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{item.label}</span>
+                                <span className={`text-sm font-black ${item.color}`}>{formatCurrency(item.value, cargo.currencyCode)}</span>
+                              </div>
+                            ))}
                           </div>
                         </div>
                       </div>
@@ -1475,7 +1322,8 @@ const CargoDetailsModal = ({ isOpen, onClose, cargoId }: CargoDetailsModalProps)
                   </div>
                 )}
               </div>
-            )}
+            )
+            }
           </div>
         </div>
       </div>

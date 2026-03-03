@@ -25,6 +25,8 @@ import {
 } from "@/components/ui";
 import type { TruckMatch } from "../../types/truck";
 import type { CargoFormData } from "../../types/cargo";
+import { checkTruckCompatibility, type CargoTruckCompatibility } from "@/services/enhancedCargoApi";
+import TruckCompatibilityAlert from "./TruckCompatibilityAlert";
 
 interface TruckSelectionModalProps {
   isOpen: boolean;
@@ -47,12 +49,35 @@ const TruckSelectionModal: React.FC<TruckSelectionModalProps> = ({
   const [selectedAlgorithm, setSelectedAlgorithm] = useState("WEIGHTED_SCORE");
   const [selectedTruck, setSelectedTruck] = useState<TruckMatch | null>(null);
   const [showDetails, setShowDetails] = useState<string | null>(null);
+  const [compatibilityCheck, setCompatibilityCheck] = useState<CargoTruckCompatibility | null>(null);
+  const [checkingCompatibility, setCheckingCompatibility] = useState(false);
 
   useEffect(() => {
     if (isOpen && loadId) {
       findMatches();
     }
   }, [isOpen, loadId, selectedAlgorithm]);
+
+  useEffect(() => {
+    const runCompatibilityCheck = async () => {
+      if (selectedTruck && loadId) {
+        setCheckingCompatibility(true);
+        try {
+          const result = await checkTruckCompatibility(loadId, selectedTruck);
+          setCompatibilityCheck(result);
+        } catch (err) {
+          console.error("Failed to check compatibility:", err);
+          // Fallback or ignore
+        } finally {
+          setCheckingCompatibility(false);
+        }
+      } else {
+        setCompatibilityCheck(null);
+      }
+    };
+
+    runCompatibilityCheck();
+  }, [selectedTruck, loadId]);
 
   const findMatches = async () => {
     try {
@@ -207,11 +232,10 @@ const TruckSelectionModal: React.FC<TruckSelectionModalProps> = ({
                 {matches.map((truck) => (
                   <div
                     key={truck.truckId}
-                    className={`border rounded-lg p-4 cursor-pointer transition-all ${
-                      selectedTruck?.truckId === truck.truckId
-                        ? "border-primary-500 bg-primary-50"
-                        : "border-gray-200 hover:border-gray-300"
-                    }`}
+                    className={`border rounded-lg p-4 cursor-pointer transition-all ${selectedTruck?.truckId === truck.truckId
+                      ? "border-primary-500 bg-primary-50"
+                      : "border-gray-200 hover:border-gray-300"
+                      }`}
                     onClick={() => handleTruckSelect(truck)}
                   >
                     <div className="flex items-start justify-between">
@@ -410,105 +434,98 @@ const TruckSelectionModal: React.FC<TruckSelectionModalProps> = ({
 
           {/* Selection Panel */}
           <div className="w-1/3 p-6 bg-gray-50">
-            <div className="sticky top-0">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                Selected Truck
-              </h3>
-
-              {selectedTruck ? (
-                <div className="space-y-4">
-                  <div className="bg-white rounded-lg p-4 border border-gray-200">
-                    <div className="flex items-center justify-between mb-3">
-                      <h4 className="font-semibold text-gray-900">
-                        {selectedTruck.truckMake} {selectedTruck.truckModel}
-                      </h4>
-                      <div
-                        className={`px-2 py-1 rounded-full text-xs font-medium ${getScoreBackground(
-                          selectedTruck.overallScore
-                        )} ${getScoreColor(selectedTruck.overallScore)}`}
-                      >
-                        {(selectedTruck.overallScore * 100).toFixed(0)}% Match
-                      </div>
-                    </div>
-
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Distance:</span>
-                        <span className="font-medium">
-                          {formatDistance(selectedTruck.distanceKm)}
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Transit Time:</span>
-                        <span className="font-medium">
-                          {selectedTruck.estimatedTransitTime
-                            ? formatTime(selectedTruck.estimatedTransitTime)
-                            : "N/A"}
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Total Cost:</span>
-                        <span className="font-medium text-lg text-primary-600">
-                          {formatCurrency(selectedTruck.estimatedCost)}
-                        </span>
-                      </div>
-                      {selectedTruck.profitMargin && (
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Profit Margin:</span>
-                          <span
-                            className={`font-medium ${
-                              selectedTruck.profitMargin > 0
-                                ? "text-green-600"
-                                : "text-red-600"
-                            }`}
-                          >
-                            {formatCurrency(selectedTruck.profitMargin)}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-
-                    {selectedTruck.driverName && (
-                      <div className="mt-3 pt-3 border-t border-gray-200">
-                        <h5 className="font-medium text-gray-900 mb-1">
-                          Driver
-                        </h5>
-                        <div className="text-sm text-gray-600">
-                          <div>{selectedTruck.driverName}</div>
-                          {selectedTruck.driverRating && (
-                            <div className="flex items-center space-x-1">
-                              <FaStar className="w-3 h-3 text-yellow-400" />
-                              <span>
-                                {selectedTruck.driverRating.toFixed(1)}
-                              </span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    )}
-
-                    <div className="mt-4 pt-3 border-t border-gray-200">
-                      <p className="text-sm text-gray-600">
-                        {selectedTruck.matchReason}
-                      </p>
+            {selectedTruck ? (
+              <div className="space-y-4">
+                <div className="bg-white rounded-lg p-4 border border-gray-200">
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="font-semibold text-gray-900">
+                      {selectedTruck.truckMake} {selectedTruck.truckModel}
+                    </h4>
+                    <div
+                      className={`px-2 py-1 rounded-full text-xs font-medium ${getScoreBackground(
+                        selectedTruck.overallScore
+                      )} ${getScoreColor(selectedTruck.overallScore)}`}
+                    >
+                      {(selectedTruck.overallScore * 100).toFixed(0)}% Match
                     </div>
                   </div>
 
-                  <Button onClick={handleConfirmSelection} className="w-full">
-                    Book This Truck
-                  </Button>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Distance:</span>
+                      <span className="font-medium">
+                        {formatDistance(selectedTruck.distanceKm)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Transit Time:</span>
+                      <span className="font-medium">
+                        {selectedTruck.estimatedTransitTime
+                          ? formatTime(selectedTruck.estimatedTransitTime)
+                          : "N/A"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Total Cost:</span>
+                      <span className="font-medium text-lg text-primary-600">
+                        {formatCurrency(selectedTruck.estimatedCost)}
+                      </span>
+                    </div>
+                    {selectedTruck.profitMargin && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Profit Margin:</span>
+                        <span
+                          className={`font-medium ${selectedTruck.profitMargin > 0
+                            ? "text-green-600"
+                            : "text-red-600"
+                            }`}
+                        >
+                          {formatCurrency(selectedTruck.profitMargin)}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  {selectedTruck.driverName && (
+                    <div className="mt-3 pt-3 border-t border-gray-200">
+                      <h5 className="font-medium text-gray-900 mb-1">
+                        Driver
+                      </h5>
+                      <div className="text-sm text-gray-600">
+                        <div>{selectedTruck.driverName}</div>
+                        {selectedTruck.driverRating && (
+                          <div className="flex items-center space-x-1">
+                            <FaStar className="w-3 h-3 text-yellow-400" />
+                            <span>
+                              {selectedTruck.driverRating.toFixed(1)}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="mt-4 pt-3 border-t border-gray-200">
+                    <p className="text-sm text-gray-600">
+                      {selectedTruck.matchReason}
+                    </p>
+                  </div>
                 </div>
-              ) : (
-                <div className="text-center text-gray-500">
-                  <FaTruck className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-                  <p>Select a truck from the list to see details</p>
-                </div>
-              )}
-            </div>
+
+                <Button onClick={handleConfirmSelection} className="w-full">
+                  Book This Truck
+                </Button>
+              </div>
+            ) : (
+              <div className="text-center text-gray-500">
+                <FaTruck className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                <p>Select a truck from the list to see details</p>
+              </div>
+            )}
           </div>
         </div>
       </DialogContent>
-    </Dialog>
+    </Dialog >
   );
 };
 

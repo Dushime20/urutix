@@ -43,12 +43,12 @@ const TemplateSelectionModal: React.FC<TemplateSelectionModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="w-full max-w-6xl max-h-[90vh] overflow-hidden p-0 flex flex-col gap-0">
+      <DialogContent className="w-full max-w-6xl max-h-[90vh] overflow-hidden p-0 flex flex-col gap-0 border-none bg-white rounded-[2rem] shadow-2xl">
         {/* Header */}
         <ModalHeader onClose={onClose} />
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-4">
+        <div className="flex-1 overflow-y-auto p-6 lg:p-10 bg-white">
           {/* Search and Filter */}
           <SearchAndFilter
             searchTerm={searchTerm}

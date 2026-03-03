@@ -1,12 +1,12 @@
 import React from 'react';
-import { 
-  X, 
-  Package, 
-  MapPin, 
-  Calendar, 
-  DollarSign, 
-  AlertCircle, 
-  Truck, 
+import {
+  X,
+  Package,
+  MapPin,
+  Calendar,
+  DollarSign,
+  AlertCircle,
+  Truck,
   FileText,
   User,
   Phone,
@@ -90,7 +90,7 @@ export const CargoModal: React.FC<CargoModalProps> = ({ cargo, onClose }) => {
   };
 
   return (
-    <div 
+    <div
       className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto"
       role="dialog"
       aria-modal="true"
@@ -140,10 +140,10 @@ export const CargoModal: React.FC<CargoModalProps> = ({ cargo, onClose }) => {
                 <InfoRow label="Weight" value={cargo.weight ? `${cargo.weight} kg` : null} icon={Weight} />
                 {cargo.volume && <InfoRow label="Volume" value={`${cargo.volume} m³`} icon={Box} />}
                 {cargo.length && cargo.width && cargo.height && (
-                  <InfoRow 
-                    label="Dimensions" 
-                    value={`${cargo.length} × ${cargo.width} × ${cargo.height} cm`} 
-                    icon={Ruler} 
+                  <InfoRow
+                    label="Dimensions"
+                    value={`${cargo.length} × ${cargo.width} × ${cargo.height} cm`}
+                    icon={Ruler}
                   />
                 )}
                 {cargo.numberOfPieces && <InfoRow label="Number of Pieces" value={cargo.numberOfPieces} />}
@@ -159,9 +159,9 @@ export const CargoModal: React.FC<CargoModalProps> = ({ cargo, onClose }) => {
                   <InfoRow label="Name" value={cargo.pickupLocation?.name} />
                   <InfoRow label="Address" value={cargo.pickupLocation?.address} />
                   {cargo.pickupLocation?.coordinates && (
-                    <InfoRow 
-                      label="Coordinates" 
-                      value={`${cargo.pickupLocation?.coordinates?.latitude}, ${cargo.pickupLocation?.coordinates?.longitude}`}
+                    <InfoRow
+                      label="Coordinates"
+                      value={`${cargo.pickupLocation.coordinates.latitude}, ${cargo.pickupLocation.coordinates.longitude}`}
                       icon={Navigation}
                     />
                   )}
@@ -177,9 +177,9 @@ export const CargoModal: React.FC<CargoModalProps> = ({ cargo, onClose }) => {
                   <InfoRow label="Name" value={cargo.deliveryLocation?.name} />
                   <InfoRow label="Address" value={cargo.deliveryLocation?.address} />
                   {cargo.deliveryLocation?.coordinates && (
-                    <InfoRow 
-                      label="Coordinates" 
-                      value={`${cargo.deliveryLocation?.coordinates?.latitude}, ${cargo.deliveryLocation?.coordinates?.longitude}`}
+                    <InfoRow
+                      label="Coordinates"
+                      value={`${cargo.deliveryLocation.coordinates.latitude}, ${cargo.deliveryLocation.coordinates.longitude}`}
                       icon={Navigation}
                     />
                   )}
@@ -206,86 +206,86 @@ export const CargoModal: React.FC<CargoModalProps> = ({ cargo, onClose }) => {
             </InfoSection>
 
             {/* Special Requirements */}
-            {(cargo.isFragile || cargo.isHazardous || cargo.requiresRefrigeration || 
+            {(cargo.isFragile || cargo.isHazardous || cargo.requiresRefrigeration ||
               cargo.requiresForklift || cargo.requiresCrane || cargo.requiresLoadingDock ||
-              cargo.requiresHumidityControl || cargo.requiresGpsMonitoring || 
+              cargo.requiresHumidityControl || cargo.requiresGpsMonitoring ||
               cargo.requiresTemperatureMonitoring) && (
-              <InfoSection icon={AlertCircle} title="Special Requirements">
-                <div className="flex flex-wrap gap-2">
-                  {cargo.isFragile && (
-                    <span className="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm font-medium">
-                      Fragile
-                    </span>
-                  )}
-                  {cargo.isHazardous && (
-                    <span className="px-3 py-1 bg-red-100 text-red-800 rounded-full text-sm font-medium">
-                      Hazardous
-                    </span>
-                  )}
-                  {cargo.requiresRefrigeration && (
-                    <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium flex items-center gap-1">
-                      <Thermometer className="w-3 h-3" />
-                      Refrigeration Required
-                    </span>
-                  )}
-                  {cargo.requiresForklift && (
-                    <span className="px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm font-medium">
-                      Forklift Required
-                    </span>
-                  )}
-                  {cargo.requiresCrane && (
-                    <span className="px-3 py-1 bg-indigo-100 text-indigo-800 rounded-full text-sm font-medium">
-                      Crane Required
-                    </span>
-                  )}
-                  {cargo.requiresLoadingDock && (
-                    <span className="px-3 py-1 bg-teal-100 text-teal-800 rounded-full text-sm font-medium">
-                      Loading Dock Required
-                    </span>
-                  )}
-                  {cargo.requiresHumidityControl && (
-                    <span className="px-3 py-1 bg-cyan-100 text-cyan-800 rounded-full text-sm font-medium">
-                      Humidity Control
-                    </span>
-                  )}
-                  {cargo.requiresGpsMonitoring && (
-                    <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium">
-                      GPS Monitoring
-                    </span>
-                  )}
-                  {cargo.requiresTemperatureMonitoring && (
-                    <span className="px-3 py-1 bg-orange-100 text-orange-800 rounded-full text-sm font-medium">
-                      Temperature Monitoring
-                    </span>
-                  )}
-                </div>
-                {cargo.temperatureMin && cargo.temperatureMax && (
-                  <div className="mt-3 pt-3 border-t border-gray-200">
-                    <InfoRow 
-                      label="Temperature Range" 
-                      value={`${cargo.temperatureMin}°C to ${cargo.temperatureMax}°C`}
-                      icon={Thermometer}
-                    />
+                <InfoSection icon={AlertCircle} title="Special Requirements">
+                  <div className="flex flex-wrap gap-2">
+                    {cargo.isFragile && (
+                      <span className="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm font-medium">
+                        Fragile
+                      </span>
+                    )}
+                    {cargo.isHazardous && (
+                      <span className="px-3 py-1 bg-red-100 text-red-800 rounded-full text-sm font-medium">
+                        Hazardous
+                      </span>
+                    )}
+                    {cargo.requiresRefrigeration && (
+                      <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium flex items-center gap-1">
+                        <Thermometer className="w-3 h-3" />
+                        Refrigeration Required
+                      </span>
+                    )}
+                    {cargo.requiresForklift && (
+                      <span className="px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm font-medium">
+                        Forklift Required
+                      </span>
+                    )}
+                    {cargo.requiresCrane && (
+                      <span className="px-3 py-1 bg-indigo-100 text-indigo-800 rounded-full text-sm font-medium">
+                        Crane Required
+                      </span>
+                    )}
+                    {cargo.requiresLoadingDock && (
+                      <span className="px-3 py-1 bg-teal-100 text-teal-800 rounded-full text-sm font-medium">
+                        Loading Dock Required
+                      </span>
+                    )}
+                    {cargo.requiresHumidityControl && (
+                      <span className="px-3 py-1 bg-cyan-100 text-cyan-800 rounded-full text-sm font-medium">
+                        Humidity Control
+                      </span>
+                    )}
+                    {cargo.requiresGpsMonitoring && (
+                      <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium">
+                        GPS Monitoring
+                      </span>
+                    )}
+                    {cargo.requiresTemperatureMonitoring && (
+                      <span className="px-3 py-1 bg-orange-100 text-orange-800 rounded-full text-sm font-medium">
+                        Temperature Monitoring
+                      </span>
+                    )}
                   </div>
-                )}
-                {cargo.hazmatClass && (
-                  <div className="mt-3 pt-3 border-t border-gray-200">
-                    <InfoRow label="Hazmat Class" value={cargo.hazmatClass} />
-                    {cargo.hazmatNumber && <InfoRow label="Hazmat Number" value={cargo.hazmatNumber} />}
-                  </div>
-                )}
-                {cargo.specialRequirements && (
-                  <div className="mt-3 pt-3 border-t border-gray-200">
-                    <InfoRow label="Special Requirements" value={cargo.specialRequirements} icon={Info} />
-                  </div>
-                )}
-                {cargo.specialHandlingInstructions && (
-                  <div className="mt-3 pt-3 border-t border-gray-200">
-                    <InfoRow label="Special Handling Instructions" value={cargo.specialHandlingInstructions} icon={Info} />
-                  </div>
-                )}
-              </InfoSection>
-            )}
+                  {cargo.temperatureMin && cargo.temperatureMax && (
+                    <div className="mt-3 pt-3 border-t border-gray-200">
+                      <InfoRow
+                        label="Temperature Range"
+                        value={`${cargo.temperatureMin}°C to ${cargo.temperatureMax}°C`}
+                        icon={Thermometer}
+                      />
+                    </div>
+                  )}
+                  {cargo.hazmatClass && (
+                    <div className="mt-3 pt-3 border-t border-gray-200">
+                      <InfoRow label="Hazmat Class" value={cargo.hazmatClass} />
+                      {cargo.hazmatNumber && <InfoRow label="Hazmat Number" value={cargo.hazmatNumber} />}
+                    </div>
+                  )}
+                  {cargo.specialRequirements && (
+                    <div className="mt-3 pt-3 border-t border-gray-200">
+                      <InfoRow label="Special Requirements" value={cargo.specialRequirements} icon={Info} />
+                    </div>
+                  )}
+                  {cargo.specialHandlingInstructions && (
+                    <div className="mt-3 pt-3 border-t border-gray-200">
+                      <InfoRow label="Special Handling Instructions" value={cargo.specialHandlingInstructions} icon={Info} />
+                    </div>
+                  )}
+                </InfoSection>
+              )}
 
             {/* Contact Information */}
             {cargo.contactInfo && (
@@ -304,18 +304,48 @@ export const CargoModal: React.FC<CargoModalProps> = ({ cargo, onClose }) => {
               </InfoSection>
             )}
 
-            {/* Broker Information */}
-            {cargo.broker && (
-              <InfoSection icon={Truck} title="Assigned Broker">
+            {/* Operator Information (Transporter / Truck / Broker) */}
+            {(cargo.transporter || cargo.truckOwner || cargo.assignedTruck || cargo.broker || cargo.brokerId) && (
+              <InfoSection icon={Truck} title="Operator Information">
                 <dl className="space-y-0">
-                  <InfoRow 
-                    label="Broker Name" 
-                    value={cargo.broker?.profile?.firstName && cargo.broker?.profile?.lastName
-                      ? `${cargo.broker?.profile?.firstName} ${cargo.broker?.profile?.lastName}`
-                      : cargo.broker?.profile?.companyName || 'N/A'
-                    }
-                  />
-                  <InfoRow label="Email" value={cargo.broker?.email} icon={Mail} />
+                  {/* Transporter Details */}
+                  {cargo.transporter && (
+                    <>
+                      <InfoRow label="Transporter" value={cargo.transporter.name} icon={User} />
+                      {cargo.transporter.email && <InfoRow label="Email" value={cargo.transporter.email} icon={Mail} />}
+                      {cargo.transporter.phone && <InfoRow label="Phone" value={cargo.transporter.phone} icon={Phone} />}
+                    </>
+                  )}
+
+                  {/* Truck Owner (if different/specific) */}
+                  {!cargo.transporter && cargo.truckOwner && (
+                    <InfoRow label="Truck Owner" value={cargo.truckOwner.name} icon={User} />
+                  )}
+
+                  {/* Assigned Truck */}
+                  {cargo.assignedTruck && (
+                    <>
+                      <InfoRow label="Truck Plate" value={cargo.assignedTruck.plateNumber} icon={Truck} />
+                      {cargo.assignedTruck.driverName && <InfoRow label="Driver" value={cargo.assignedTruck.driverName} icon={User} />}
+                    </>
+                  )}
+
+                  {/* Broker Details (Fallback or Additional) */}
+                  {cargo.broker && (
+                    <>
+                      <div className="pt-2 mt-2 border-t border-gray-100 first:border-0 first:pt-0 first:mt-0">
+                        <InfoRow
+                          label="Broker"
+                          value={cargo.broker.profile?.firstName ? `${cargo.broker.profile.firstName} ${cargo.broker.profile.lastName || ''}` : (cargo.broker.profile?.companyName || cargo.broker.email)}
+                          icon={User}
+                        />
+                        {cargo.broker.email && <InfoRow label="Broker Email" value={cargo.broker.email} icon={Mail} />}
+                      </div>
+                    </>
+                  )}
+                  {!cargo.broker && cargo.brokerId && (
+                    <InfoRow label="Broker" value="Broker Assigned (Details restricted)" icon={User} />
+                  )}
                 </dl>
               </InfoSection>
             )}

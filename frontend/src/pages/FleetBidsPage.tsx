@@ -1,33 +1,42 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-  FaBox,
-  FaMapMarkerAlt,
-  FaDollarSign,
-  FaCalendarAlt,
-  FaCheckCircle,
-  FaTimesCircle,
-  FaSearch,
-  FaFilter,
-  FaSpinner,
-  FaSync,
-  FaEye,
-  FaWeight,
-  FaRuler,
-  FaSnowflake,
-  FaExclamationTriangle,
-  FaClock,
-  FaUser,
-  FaBuilding,
-  FaPhone,
-  FaEnvelope,
-  FaTruck,
-  FaRoute
-} from 'react-icons/fa';
-import { Grid, Table } from 'lucide-react';
-import { useAuth } from '../contexts/AuthContext';
+  Package,
+  MapPin,
+  DollarSign,
+  Calendar,
+  CheckCircle,
+  XCircle,
+  Search,
+  Filter,
+  Loader2,
+  RefreshCw,
+  Scale,
+  Ruler,
+  Snowflake,
+  AlertTriangle,
+  Clock,
+  Building2,
+  Phone,
+  Mail,
+  Truck,
+  LayoutGrid,
+  List,
+  Gavel,
+  ArrowRight,
+  ShieldAlert
+} from 'lucide-react';
+
 import toast from 'react-hot-toast';
 import { useConfirmDialog } from '../hooks/useConfirmDialog';
 import type { Cargo } from '../types/cargo';
+import StatCard from '../components/EnliteUI/Cards/StatCard';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/Dialog';
+import { cn } from '../utils/cn';
+
+import { FleetHeader } from '../components/FleetDashboard/FleetHeader';
+import { FleetFooter } from '../components/FleetDashboard/FleetFooter';
+import QuickBidModal from '../components/Fleet/QuickBidModal';
+import logoUrutiX from '../assets/logo-urutix.png';
 
 interface CargoBid extends Cargo {
   bidStatus?: 'pending' | 'accepted' | 'rejected';
@@ -47,11 +56,11 @@ const FleetBidsPage: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'accepted' | 'rejected'>('all');
   const [cargoTypeFilter, setCargoTypeFilter] = useState<string>('all');
   const [selectedBid, setSelectedBid] = useState<CargoBid | null>(null);
-  const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [processingAction, setProcessingAction] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'card' | 'table'>('card');
+  const [showQuickBidModal, setShowQuickBidModal] = useState(false);
+  const [bidCargo, setBidCargo] = useState<CargoBid | null>(null);
   const { confirm, DialogComponent } = useConfirmDialog();
-  const { user } = useAuth();
 
   // Generate dummy cargo bids based on the Cargo interface
   const generateDummyBids = (): CargoBid[] => {
@@ -144,7 +153,7 @@ const FleetBidsPage: React.FC = () => {
         viewCount: 10 + i * 5,
         createdAt: new Date(now.getTime() - i * 3 * 60 * 60 * 1000).toISOString(),
         updatedAt: new Date(now.getTime() - i * 2 * 60 * 60 * 1000).toISOString(),
-        bidStatus: i % 3 === 0 ? 'pending' : i % 3 === 1 ? 'accepted' : 'pending',
+        bidStatus: i % 3 === 0 ? 'pending' : i % 3 === 1 ? 'accepted' : 'rejected', // Adjusted logic for distribution
         cargoOwnerName: owner.name,
         cargoOwnerPhone: owner.phone,
         cargoOwnerEmail: owner.email,
@@ -241,9 +250,7 @@ const FleetBidsPage: React.FC = () => {
       );
 
       toast.success('Cargo bid accepted successfully!');
-      if (showDetailsModal) {
-        setShowDetailsModal(false);
-      }
+      setSelectedBid(null);
     } catch (error: any) {
       console.error('Error accepting bid:', error);
       toast.error('Failed to accept bid');
@@ -276,15 +283,24 @@ const FleetBidsPage: React.FC = () => {
       );
 
       toast.success('Cargo bid rejected');
-      if (showDetailsModal) {
-        setShowDetailsModal(false);
-      }
+      setSelectedBid(null);
     } catch (error: any) {
       console.error('Error rejecting bid:', error);
       toast.error('Failed to reject bid');
     } finally {
       setProcessingAction(null);
     }
+  };
+
+  const handleQuickBid = (bid: CargoBid) => {
+    setBidCargo(bid);
+    setShowQuickBidModal(true);
+  };
+
+  const handleBidSubmitted = () => {
+    // Refresh bids after successful submission
+    loadBids();
+    toast.success('Your bid has been submitted and is now pending review');
   };
 
   const filteredBids = bids.filter(bid => {
@@ -319,551 +335,552 @@ const FleetBidsPage: React.FC = () => {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
     });
   };
 
-  const getUrgencyColor = (urgency?: string) => {
-    // All urgency levels use gray colors for consistency
-    return 'bg-gray-100 text-gray-700 border-gray-200';
+  const getStatusColor = (status?: string) => {
+    switch (status) {
+      case 'accepted': return 'bg-emerald-100 text-emerald-700';
+      case 'rejected': return 'bg-rose-100 text-rose-700';
+      default: return 'bg-amber-100 text-amber-700';
+    }
   };
 
-  const getStatusColor = (status?: string) => {
-    // All statuses use gray colors for consistency
-    return 'bg-gray-100 text-gray-700';
+  const getStatusIcon = (status?: string) => {
+    switch (status) {
+      case 'accepted': return <CheckCircle size={14} className="text-emerald-500" />;
+      case 'rejected': return <XCircle size={14} className="text-rose-500" />;
+      default: return <Clock size={14} className="text-amber-500" />;
+    }
   };
+
+
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-900 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-4">
-      {/* Header */}
-      <div className="mb-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-bold text-gray-900 mb-1">Cargo Bids</h1>
-            <p className="text-xs text-gray-600">View and accept cargo bids from cargo owners</p>
+    <div className="min-h-screen bg-gray-50 flex flex-col font-sans selection:bg-blue-500/30">
+      <FleetHeader />
+
+      <img
+        src={logoUrutiX}
+        alt="UrutiX Logo Background"
+        className="pointer-events-none select-none fixed inset-0 w-full h-full object-cover opacity-10 z-0"
+        style={{ objectPosition: 'center' }}
+      />
+
+      <main className="flex-1 max-w-[1920px] mx-auto w-full px-4 md:px-8 lg:px-12 xl:px-20 py-8 md:py-12 space-y-8 relative z-10">
+        {/* Page Header */}
+        <div>
+          <div className="flex items-center gap-3 mb-2">
+            <div className="h-10 w-10 bg-blue-50 rounded-xl flex items-center justify-center text-[#345E85] shadow-inner">
+              <Gavel size={20} />
+            </div>
+            <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-[#345E85]">Bids</h2>
           </div>
-          <button
-            onClick={loadBids}
-            disabled={loading}
-            className="px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 flex items-center gap-2 disabled:opacity-50 transition-colors"
-          >
-            <FaSync className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-            Refresh
-          </button>
+          <div className="flex justify-between items-end">
+            <div>
+              <h1 className="text-3xl font-black text-slate-900 tracking-tight">Bids</h1>
+              <p className="text-slate-500 font-medium mt-1">Review and place bids.</p>
+            </div>
+            <button
+              onClick={loadBids}
+              className="hidden md:flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-xl text-slate-600 hover:text-[#345E85] hover:border-[#345E85] transition-all text-sm font-bold active:scale-95"
+            >
+              <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
+              Refresh
+            </button>
+          </div>
         </div>
-      </div>
 
-      {/* View Mode Toggle */}
-      <div className="flex items-center justify-end gap-2 bg-white border border-gray-200 rounded-lg p-1 w-fit ml-auto mb-4">
-        <button
-          onClick={() => setViewMode('card')}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${viewMode === 'card'
-            ? 'bg-gray-900 text-white'
-            : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-            }`}
-        >
-          <Grid className="w-3.5 h-3.5" />
-          <span className="hidden sm:inline">Cards</span>
-        </button>
-        <button
-          onClick={() => setViewMode('table')}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${viewMode === 'table'
-            ? 'bg-gray-900 text-white'
-            : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-            }`}
-        >
-          <Table className="w-3.5 h-3.5" />
-          <span className="hidden sm:inline">Table</span>
-        </button>
-      </div>
+        {/* Stats Matrix */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <StatCard
+            title="Active"
+            value={bids.filter(b => b.bidStatus === 'pending').length}
+            icon={<Gavel />}
+            color="primary"
+            subtitle="Awaiting action"
+          />
+          <StatCard
+            title="Accepted"
+            value={bids.filter(b => b.bidStatus === 'accepted').length}
+            icon={<CheckCircle />}
+            color="success"
+            subtitle="Secured"
+          />
+          <StatCard
+            title="Rejected"
+            value={bids.filter(b => b.bidStatus === 'rejected').length}
+            icon={<XCircle />}
+            color="error" // Will map to error/rose
+            subtitle="Passed"
+          />
+          <StatCard
+            title="Value"
+            value={formatCurrency(bids.reduce((acc, curr) => acc + (curr.offeredPrice || 0), 0))}
+            icon={<DollarSign />}
+            color="info"
+            subtitle="Potential"
+          />
+        </div>
 
-      {/* Filters */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3">
-        <div className="flex flex-col md:flex-row gap-2">
-          <div className="flex-1">
-            <div className="relative">
-              <FaSearch className="absolute left-2.5 top-1/2 transform -translate-y-1/2 text-gray-400 w-3.5 h-3.5" />
+        {/* Filters and Controls */}
+        <div className="bg-white rounded-[24px] border border-slate-100 shadow-sm p-4">
+          <div className="flex flex-col lg:flex-row gap-4">
+            <div className="flex-1 relative">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
               <input
                 type="text"
-                placeholder="Search by cargo title, origin, destination, or cargo owner..."
+                placeholder="Search by title, location, or company..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-9 pr-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-400 focus:border-transparent"
+                className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-100 rounded-xl text-sm font-medium text-slate-900 focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-[#345E85] outline-none transition-all"
               />
             </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <FaFilter className="text-gray-400 w-3.5 h-3.5" />
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value as any)}
-              className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-400 focus:border-transparent"
-            >
-              <option value="all">All Status</option>
-              <option value="pending">Pending</option>
-              <option value="accepted">Accepted</option>
-              <option value="rejected">Rejected</option>
-            </select>
-            <select
-              value={cargoTypeFilter}
-              onChange={(e) => setCargoTypeFilter(e.target.value)}
-              className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-400 focus:border-transparent"
-            >
-              <option value="all">All Types</option>
-              <option value="ELECTRONICS">Electronics</option>
-              <option value="AGRICULTURAL">Agricultural</option>
-              <option value="CONSTRUCTION">Construction</option>
-              <option value="FOOD_BEVERAGES">Food & Beverages</option>
-              <option value="TEXTILES">Textiles</option>
-              <option value="MACHINERY">Machinery</option>
-              <option value="PHARMACEUTICALS">Pharmaceuticals</option>
-              <option value="FURNITURE">Furniture</option>
-            </select>
-          </div>
-        </div>
-      </div>
 
-      {/* Bids Grid */}
-      {loading ? (
-        <div className="flex items-center justify-center py-8">
-          <FaSpinner className="w-6 h-6 text-gray-400 animate-spin" />
-        </div>
-      ) : filteredBids.length === 0 ? (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
-          <FaBox className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-          <h3 className="text-sm font-medium text-gray-900 mb-1.5">No Cargo Bids Found</h3>
-          <p className="text-xs text-gray-600">
-            {searchTerm || statusFilter !== 'all' || cargoTypeFilter !== 'all'
-              ? 'No bids match your search criteria.'
-              : 'There are currently no cargo bids available.'}
-          </p>
-        </div>
-      ) : (
-        <>
-          {viewMode === 'card' ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-              {filteredBids.map((bid) => (
-                <div
-                  key={bid.id}
-                  className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 hover:shadow-md transition-shadow"
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="relative group">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Filter size={14} className="text-slate-400" />
+                </div>
+                <select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value as any)}
+                  className="pl-9 pr-8 py-3 bg-slate-50 border border-slate-100 rounded-xl text-sm font-medium text-slate-700 focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-[#345E85] outline-none appearance-none cursor-pointer hover:bg-slate-100 transition-colors"
                 >
-                  {/* Header */}
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-1.5 mb-1.5">
-                        <FaBox className="w-4 h-4 text-gray-600" />
-                        <h3 className="text-sm font-semibold text-gray-900">{bid.title}</h3>
+                  <option value="all">All Status</option>
+                  <option value="pending">Pending</option>
+                  <option value="accepted">Accepted</option>
+                  <option value="rejected">Rejected</option>
+                </select>
+              </div>
+
+              <select
+                value={cargoTypeFilter}
+                onChange={(e) => setCargoTypeFilter(e.target.value)}
+                className="px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl text-sm font-medium text-slate-700 focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-[#345E85] outline-none appearance-none cursor-pointer hover:bg-slate-100 transition-colors"
+              >
+                <option value="all">All Cargo Types</option>
+                <option value="ELECTRONICS">Electronics</option>
+                <option value="AGRICULTURAL">Agricultural</option>
+                <option value="CONSTRUCTION">Construction</option>
+                <option value="FOOD_BEVERAGES">Food & Beverages</option>
+              </select>
+
+              <div className="flex items-center gap-1 bg-slate-50 p-1 rounded-xl border border-slate-100">
+                <button
+                  onClick={() => setViewMode('card')}
+                  className={cn(
+                    "p-2 rounded-lg transition-all",
+                    viewMode === 'card' ? "bg-white text-[#345E85] shadow-sm" : "text-slate-400 hover:text-slate-600"
+                  )}
+                >
+                  <LayoutGrid size={18} />
+                </button>
+                <button
+                  onClick={() => setViewMode('table')}
+                  className={cn(
+                    "p-2 rounded-lg transition-all",
+                    viewMode === 'table' ? "bg-white text-[#345E85] shadow-sm" : "text-slate-400 hover:text-slate-600"
+                  )}
+                >
+                  <List size={18} />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Results */}
+        {filteredBids.length === 0 ? (
+          <div className="text-center py-20 bg-white rounded-[32px] border border-slate-100 shadow-sm">
+            <div className="h-20 w-20 bg-slate-50 rounded-[28px] flex items-center justify-center mx-auto mb-6 text-slate-300">
+              <Package size={40} />
+            </div>
+            <h3 className="text-lg font-black text-slate-900 mb-2">No bids found</h3>
+            <p className="text-slate-500 font-medium max-w-xs mx-auto">
+              Try adjusting your filters or search terms.
+            </p>
+          </div>
+        ) : (
+          <>
+            {viewMode === 'card' ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredBids.map((bid) => (
+                  <div
+                    key={bid.id}
+                    className="bg-white rounded-[24px] border border-slate-100 p-6 hover:shadow-xl transition-all group relative overflow-hidden flex flex-col h-full"
+                  >
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex items-center gap-3">
+                        <div className="h-12 w-12 bg-blue-50 rounded-2xl flex items-center justify-center text-[#345E85]">
+                          <Package size={24} />
+                        </div>
+                        <div>
+                          <h3 className="text-base font-black text-slate-900 tracking-tight line-clamp-1" title={bid.title}>{bid.title}</h3>
+                          <p className="text-xs font-medium text-slate-400">{bid.cargoType?.replace('_', ' ')}</p>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        {bid.urgencyLevel && (
-                          <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-gray-100 text-gray-700 border border-gray-200">
-                            {bid.urgencyLevel}
-                          </span>
-                        )}
+                      <span className={cn(
+                        "px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5",
+                        getStatusColor(bid.bidStatus)
+                      )}>
+                        {getStatusIcon(bid.bidStatus)}
+                        {bid.bidStatus}
+                      </span>
+                    </div>
+
+                    <div className="space-y-4 mb-6 flex-1">
+                      <div className="relative pl-6 space-y-4 before:absolute before:left-[7px] before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-100">
+                        <div className="relative">
+                          <div className="absolute -left-6 top-1 h-3.5 w-3.5 bg-white border-2 border-emerald-500 rounded-full" />
+                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest opacity-70 mb-0.5">Origin</p>
+                          <p className="text-xs font-bold text-slate-900 line-clamp-1">{bid.pickupLocation?.address}</p>
+                        </div>
+                        <div className="relative">
+                          <div className="absolute -left-6 top-1 h-3.5 w-3.5 bg-white border-2 border-rose-500 rounded-full" />
+                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest opacity-70 mb-0.5">Destination</p>
+                          <p className="text-xs font-bold text-slate-900 line-clamp-1">{bid.deliveryLocation?.address}</p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 flex-wrap">
                         {bid.isHazardous && (
-                          <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-gray-100 text-gray-700 border border-gray-200">
-                            <FaExclamationTriangle className="w-2.5 h-2.5 inline mr-0.5" />
-                            Hazmat
+                          <span className="px-2 py-1 bg-rose-50 text-rose-600 rounded-lg text-[10px] font-bold uppercase tracking-wider border border-rose-100 flex items-center gap-1">
+                            <ShieldAlert size={10} /> Hazmat
                           </span>
                         )}
                         {bid.requiresRefrigeration && (
-                          <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-gray-100 text-gray-700 border border-gray-200">
-                            <FaSnowflake className="w-2.5 h-2.5 inline mr-0.5" />
-                            Refrigerated
+                          <span className="px-2 py-1 bg-sky-50 text-sky-600 rounded-lg text-[10px] font-bold uppercase tracking-wider border border-sky-100 flex items-center gap-1">
+                            <Snowflake size={10} /> Cold Chain
                           </span>
                         )}
-                        {bid.isFragile && (
-                          <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-gray-100 text-gray-700 border border-gray-200">
-                            Fragile
+                        <span className="px-2 py-1 bg-slate-50 text-slate-600 rounded-lg text-[10px] font-bold uppercase tracking-wider border border-slate-100 flex items-center gap-1">
+                          <Scale size={10} /> {bid.weight?.toLocaleString()} kg
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="pt-4 mt-auto border-t border-slate-50 flex items-center justify-between">
+                      <div className="flex flex-col">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Price</span>
+                        <span className="text-lg font-black text-[#345E85]">{formatCurrency(bid.offeredPrice || 0, bid.currencyCode)}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => handleQuickBid(bid)}
+                          className="px-4 py-2 bg-[#345E85] text-white rounded-xl text-xs font-black uppercase tracking-wider hover:bg-[#2a4d6d] transition-colors flex items-center gap-2"
+                        >
+                          <Gavel size={14} />
+                          Bid
+                        </button>
+                        <button
+                          onClick={() => setSelectedBid(bid)}
+                          className="h-10 w-10 bg-slate-100 rounded-xl flex items-center justify-center text-slate-400 hover:text-[#345E85] hover:bg-blue-50 transition-colors"
+                        >
+                          <ArrowRight size={20} />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="bg-white rounded-[24px] border border-slate-100 shadow-sm overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-slate-100">
+                    <thead className="bg-slate-50/50">
+                      <tr>
+                        <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-wider">Cargo</th>
+                        <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-wider">Route</th>
+                        <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-wider">Details</th>
+                        <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-wider">Price</th>
+                        <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-wider">Status</th>
+                        <th className="px-6 py-4 text-right text-[10px] font-black text-slate-400 uppercase tracking-wider">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-slate-50">
+                      {filteredBids.map((bid) => (
+                        <tr key={bid.id} className="hover:bg-blue-50/30 transition-colors group">
+                          <td className="px-6 py-4">
+                            <div className="flex items-center gap-3">
+                              <div className="h-8 w-8 bg-blue-50 rounded-lg flex items-center justify-center text-[#345E85]">
+                                <Package size={14} />
+                              </div>
+                              <div className="max-w-[180px]">
+                                <p className="text-sm font-bold text-slate-900 truncate">{bid.title}</p>
+                                <p className="text-[10px] font-medium text-slate-400">{bid.cargoOwnerCompany}</p>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="flex flex-col gap-1 max-w-[200px]">
+                              <div className="flex items-center gap-2">
+                                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+                                <span className="text-xs font-medium text-slate-600 truncate">{bid.pickupLocation?.address}</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <div className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0" />
+                                <span className="text-xs font-medium text-slate-600 truncate">{bid.deliveryLocation?.address}</span>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center gap-3">
+                              <span className="flex items-center gap-1.5 text-xs font-medium text-slate-600 bg-slate-50 px-2 py-1 rounded-lg">
+                                <Scale size={12} className="text-slate-400" />
+                                {bid.weight?.toLocaleString()} kg
+                              </span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className="text-sm font-black text-[#345E85]">{formatCurrency(bid.offeredPrice || 0, bid.currencyCode)}</span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className={cn(
+                              "px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider inline-flex items-center gap-1.5",
+                              getStatusColor(bid.bidStatus)
+                            )}>
+                              {getStatusIcon(bid.bidStatus)}
+                              {bid.bidStatus}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              <button
+                                onClick={() => handleQuickBid(bid)}
+                                className="px-3 py-2 bg-[#345E85] text-white rounded-lg text-xs font-black uppercase tracking-wider hover:bg-[#2a4d6d] transition-all flex items-center gap-1.5"
+                              >
+                                <Gavel size={14} />
+                                Bid
+                              </button>
+                              <button
+                                onClick={() => setSelectedBid(bid)}
+                                className="p-2 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-[#345E85] transition-colors"
+                              >
+                                <ArrowRight size={18} />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+
+        {/* Details Modal */}
+        <Dialog open={!!selectedBid} onOpenChange={(open) => !open && setSelectedBid(null)}>
+          <DialogContent className="max-w-4xl bg-white rounded-[32px] p-0 border-0 overflow-hidden shadow-2xl h-[85vh] flex flex-col">
+            <DialogHeader className="p-8 pb-4 border-b border-slate-50 shrink-0">
+              <DialogTitle className="flex items-center gap-3">
+                <div className="h-12 w-12 bg-blue-50 rounded-2xl flex items-center justify-center text-[#345E85]">
+                  <Gavel size={24} />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-black text-slate-900 tracking-tight">Bid Details</h2>
+                  <p className="text-sm font-medium text-slate-400">Ref: {selectedBid?.bidId}</p>
+                </div>
+              </DialogTitle>
+            </DialogHeader>
+
+            {selectedBid && (
+              <div className="flex-1 overflow-y-auto p-8 pt-6">
+                <div className="space-y-8">
+                  {/* Status & ID */}
+                  <div className={cn(
+                    "p-6 rounded-[24px] flex flex-col md:flex-row items-center justify-between gap-6",
+                    getStatusColor(selectedBid.bidStatus).replace('text-', 'bg-').replace('100', '50/50')
+                  )}>
+                    <div className="flex items-center gap-4">
+                      <span className={cn(
+                        "h-12 w-12 rounded-full flex items-center justify-center bg-white shadow-sm",
+                        getStatusColor(selectedBid.bidStatus).split(' ')[1]
+                      )}>
+                        {getStatusIcon(selectedBid.bidStatus)}
+                      </span>
+                      <div>
+                        <p className="text-xs font-black uppercase tracking-widest opacity-60 mb-1">Current Status</p>
+                        <p className="text-xl font-black tracking-tight">{selectedBid.bidStatus?.toUpperCase()}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-8">
+                      <div className="text-right">
+                        <p className="text-[10px] font-black uppercase tracking-widest opacity-60 mb-1">Price</p>
+                        <p className="text-2xl font-black tracking-tight">{formatCurrency(selectedBid.offeredPrice || 0, selectedBid.currencyCode)}</p>
+                      </div>
+                      <div className="h-10 w-px bg-current opacity-20 hidden md:block" />
+                      <div className="text-right hidden md:block">
+                        <p className="text-[10px] font-black uppercase tracking-widest opacity-60 mb-1">Cargo Value</p>
+                        <p className="text-lg font-bold tracking-tight opacity-80">{formatCurrency(selectedBid.loadValue || 0, selectedBid.currencyCode)}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    {/* Left Column: Route & Cargo */}
+                    <div className="space-y-8">
+                      <section>
+                        <h3 className="text-xs font-black text-[#345E85] uppercase tracking-widest border-b border-slate-100 pb-3 mb-4 flex items-center gap-2">
+                          <MapPin size={14} /> Route Information
+                        </h3>
+                        <div className="relative pl-6 space-y-8 before:absolute before:left-[7px] before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-100">
+                          <div className="relative">
+                            <div className="absolute -left-[27px] top-1 h-4 w-4 bg-white border-[3px] border-emerald-500 rounded-full" />
+                            <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100">
+                              <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Pickup</p>
+                              <p className="text-sm font-bold text-slate-900 mb-2">{selectedBid.pickupLocation?.address}</p>
+                              <div className="flex items-center gap-2 text-xs font-medium text-slate-500">
+                                <Calendar size={12} /> {formatDate(selectedBid.pickupDate)}
+                              </div>
+                            </div>
+                          </div>
+                          <div className="relative">
+                            <div className="absolute -left-[27px] top-1 h-4 w-4 bg-white border-[3px] border-rose-500 rounded-full" />
+                            <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100">
+                              <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Delivery</p>
+                              <p className="text-sm font-bold text-slate-900 mb-2">{selectedBid.deliveryLocation?.address}</p>
+                              <div className="flex items-center gap-2 text-xs font-medium text-slate-500">
+                                <Calendar size={12} /> {formatDate(selectedBid.deliveryDate)}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </section>
+
+                      <section>
+                        <h3 className="text-xs font-black text-[#345E85] uppercase tracking-widest border-b border-slate-100 pb-3 mb-4 flex items-center gap-2">
+                          <Package size={14} /> Cargo Specs
+                        </h3>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Total Weight</p>
+                            <p className="text-lg font-black text-slate-900">{selectedBid.weight?.toLocaleString()} <span className="text-sm text-slate-500 font-medium">kg</span></p>
+                          </div>
+                          <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Volume</p>
+                            <p className="text-lg font-black text-slate-900">{selectedBid.volume} <span className="text-sm text-slate-500 font-medium">m³</span></p>
+                          </div>
+                          {selectedBid.length && (
+                            <div className="col-span-2 p-4 bg-slate-50 rounded-2xl border border-slate-100 flex items-center justify-between">
+                              <div>
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Dimensions</p>
+                                <p className="text-sm font-bold text-slate-900">{selectedBid.length}x{selectedBid.width}x{selectedBid.height}m</p>
+                              </div>
+                              <Ruler size={24} className="text-slate-300" />
+                            </div>
+                          )}
+                        </div>
+                      </section>
+                    </div>
+
+                    {/* Right Column: Owner & Requirements & Actions */}
+                    <div className="space-y-8 flex flex-col h-full">
+                      <section>
+                        <h3 className="text-xs font-black text-[#345E85] uppercase tracking-widest border-b border-slate-100 pb-3 mb-4 flex items-center gap-2">
+                          <Building2 size={14} /> Cargo Owner
+                        </h3>
+                        <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-4">
+                          <div className="flex items-center gap-4">
+                            <div className="h-12 w-12 bg-slate-100 rounded-xl flex items-center justify-center text-slate-400">
+                              <Building2 size={24} />
+                            </div>
+                            <div>
+                              <p className="text-sm font-extrabold text-slate-900">{selectedBid.cargoOwnerCompany}</p>
+                              <p className="text-xs font-medium text-slate-500">{selectedBid.cargoOwnerName}</p>
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-2 gap-3 pt-3 border-t border-slate-100">
+                            <a href={`tel:${selectedBid.cargoOwnerPhone}`} className="flex items-center gap-2 p-2 rounded-lg hover:bg-slate-50 transition-colors text-xs font-medium text-slate-600">
+                              <Phone size={14} /> {selectedBid.cargoOwnerPhone}
+                            </a>
+                            <a href={`mailto:${selectedBid.cargoOwnerEmail}`} className="flex items-center gap-2 p-2 rounded-lg hover:bg-slate-50 transition-colors text-xs font-medium text-slate-600">
+                              <Mail size={14} /> Email
+                            </a>
+                          </div>
+                        </div>
+                      </section>
+
+                      <section className="flex-1">
+                        <h3 className="text-xs font-black text-[#345E85] uppercase tracking-widest border-b border-slate-100 pb-3 mb-4 flex items-center gap-2">
+                          <AlertTriangle size={14} /> Requirements
+                        </h3>
+                        <div className="flex flex-wrap gap-2">
+                          {selectedBid.isHazardous && (
+                            <span className="px-3 py-1.5 bg-rose-50 text-rose-700 rounded-xl text-xs font-bold border border-rose-100 flex items-center gap-2">
+                              <ShieldAlert size={14} /> Hazmat
+                            </span>
+                          )}
+                          {selectedBid.requiresRefrigeration && (
+                            <span className="px-3 py-1.5 bg-sky-50 text-sky-700 rounded-xl text-xs font-bold border border-sky-100 flex items-center gap-2">
+                              <Snowflake size={14} /> Cold Chain
+                            </span>
+                          )}
+                          <span className="px-3 py-1.5 bg-slate-50 text-slate-600 rounded-xl text-xs font-bold border border-slate-100 flex items-center gap-2">
+                            <Truck size={14} /> {selectedBid.packagingType?.replace('_', ' ') || 'Standard'}
                           </span>
-                        )}
-                      </div>
-                    </div>
-                    {bid.bidStatus && (
-                      <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-gray-100 text-gray-700">
-                        {bid.bidStatus}
-                      </span>
-                    )}
-                  </div>
+                        </div>
+                      </section>
 
-                  {/* Route */}
-                  <div className="mb-3 space-y-1.5">
-                    <div className="flex items-center gap-1.5 text-xs text-gray-600">
-                      <FaMapMarkerAlt className="w-3 h-3 text-gray-500" />
-                      <span className="font-medium truncate">{bid.pickupLocation?.address || 'N/A'}</span>
+                      {/* Action Buttons */}
+                      {selectedBid.bidStatus === 'pending' && (
+                        <div className="pt-6 border-t border-slate-100 grid grid-cols-2 gap-4 mt-auto">
+                          <button
+                            onClick={() => handleAcceptBid(selectedBid)}
+                            disabled={processingAction === selectedBid.id}
+                            className="py-4 bg-[#345E85] text-white rounded-xl text-sm font-black uppercase tracking-widest hover:bg-[#2a4d6d] active:scale-95 transition-all shadow-lg shadow-blue-900/10 flex items-center justify-center gap-2"
+                          >
+                            {processingAction === selectedBid.id ? <Loader2 className="animate-spin" /> : <CheckCircle />}
+                            Accept Bid
+                          </button>
+                          <button
+                            onClick={() => handleRejectBid(selectedBid)}
+                            disabled={processingAction === selectedBid.id}
+                            className="py-4 bg-white text-rose-600 border border-rose-100 rounded-xl text-sm font-black uppercase tracking-widest hover:bg-rose-50 active:scale-95 transition-all flex items-center justify-center gap-2"
+                          >
+                            {processingAction === selectedBid.id ? <Loader2 className="animate-spin" /> : <XCircle />}
+                            Reject
+                          </button>
+                        </div>
+                      )}
                     </div>
-                    <div className="flex items-center gap-1.5 text-xs text-gray-500 ml-4.5">
-                      <FaRoute className="w-2.5 h-2.5" />
-                      <span>{bid.distance} km • {bid.estimatedDuration} hrs</span>
-                    </div>
-                    <div className="flex items-center gap-1.5 text-xs text-gray-600">
-                      <FaMapMarkerAlt className="w-3 h-3 text-gray-500" />
-                      <span className="font-medium truncate">{bid.deliveryLocation?.address || 'N/A'}</span>
-                    </div>
-                  </div>
-
-                  {/* Cargo Details */}
-                  <div className="grid grid-cols-2 gap-2 mb-3 text-xs">
-                    <div className="flex items-center gap-1.5">
-                      <FaWeight className="w-3 h-3 text-gray-400" />
-                      <span className="text-gray-600">{bid.weight?.toLocaleString()} kg</span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <FaRuler className="w-3 h-3 text-gray-400" />
-                      <span className="text-gray-600">{bid.volume} m³</span>
-                    </div>
-                    {bid.numberOfPallets && (
-                      <div className="flex items-center gap-1.5">
-                        <FaBox className="w-3 h-3 text-gray-400" />
-                        <span className="text-gray-600">{bid.numberOfPallets} pallets</span>
-                      </div>
-                    )}
-                    <div className="flex items-center gap-1.5">
-                      <FaCalendarAlt className="w-3 h-3 text-gray-400" />
-                      <span className="text-gray-600 truncate">{formatDate(bid.pickupDate)}</span>
-                    </div>
-                  </div>
-
-                  {/* Price */}
-                  <div className="mb-3 p-2 bg-gray-50 rounded-md border border-gray-200">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-medium text-gray-600">Offered Price</span>
-                      <span className="text-base font-bold text-gray-900 flex items-center gap-0.5">
-                        <FaDollarSign className="w-3 h-3" />
-                        {formatCurrency(bid.offeredPrice || 0, bid.currencyCode)}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Cargo Owner */}
-                  <div className="mb-3 p-2 bg-gray-50 rounded-md border border-gray-200">
-                    <div className="flex items-center gap-1.5 mb-1">
-                      <FaBuilding className="w-3 h-3 text-gray-400" />
-                      <span className="text-xs font-medium text-gray-900 truncate">{bid.cargoOwnerCompany}</span>
-                    </div>
-                    <div className="flex items-center gap-1.5 text-[10px] text-gray-600">
-                      <FaUser className="w-2.5 h-2.5" />
-                      <span className="truncate">{bid.cargoOwnerName}</span>
-                    </div>
-                  </div>
-
-                  {/* Actions */}
-                  <div className="flex items-center gap-1.5">
-                    <div className="relative group">
-                      <button
-                        onClick={() => {
-                          setSelectedBid(bid);
-                          setShowDetailsModal(true);
-                        }}
-                        className="px-2 py-1.5 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 flex items-center justify-center transition-colors"
-                      >
-                        <FaEye className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                    {bid.bidStatus === 'pending' && (
-                      <>
-                        <button
-                          onClick={() => handleAcceptBid(bid)}
-                          disabled={processingAction === bid.id}
-                          className="flex-1 px-2 py-1.5 bg-gray-600 text-white rounded-md hover:bg-gray-700 flex items-center justify-center disabled:opacity-50 text-xs transition-colors"
-                        >
-                          {processingAction === bid.id ? (
-                            <FaSpinner className="w-3 h-3 animate-spin" />
-                          ) : (
-                            <span>Accept</span>
-                          )}
-                        </button>
-                        <button
-                          onClick={() => handleRejectBid(bid)}
-                          disabled={processingAction === bid.id}
-                          className="flex-1 px-2 py-1.5 bg-gray-500 text-white rounded-md hover:bg-gray-600 flex items-center justify-center disabled:opacity-50 text-xs transition-colors"
-                        >
-                          {processingAction === bid.id ? (
-                            <FaSpinner className="w-3 h-3 animate-spin" />
-                          ) : (
-                            <span>Reject</span>
-                          )}
-                        </button>
-                      </>
-                    )}
-                    {bid.bidStatus === 'accepted' && (
-                      <div className="flex-1 px-2 py-1.5 bg-gray-100 text-gray-700 rounded-md text-center text-xs font-medium">
-                        Accepted
-                      </div>
-                    )}
-                    {bid.bidStatus === 'rejected' && (
-                      <div className="flex-1 px-2 py-1.5 bg-gray-100 text-gray-700 rounded-md text-center text-xs font-medium">
-                        Rejected
-                      </div>
-                    )}
                   </div>
                 </div>
-              ))}
-            </div>
-          ) : (
-            <div className="bg-white rounded-lg shadow overflow-hidden border border-gray-200">
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cargo</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Route</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                      <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {filteredBids.map((bid) => (
-                      <tr key={bid.id} className="hover:bg-gray-50 transition-colors">
-                        <td className="px-4 py-3">
-                          <div className="text-sm font-medium text-gray-900">{bid.title}</div>
-                          <div className="text-[10px] text-gray-500">{bid.cargoType} • {bid.weight}kg</div>
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="text-xs text-gray-900 truncate max-w-[150px]">{bid.pickupLocation?.address}</div>
-                          <div className="text-[10px] text-gray-400">→</div>
-                          <div className="text-xs text-gray-900 truncate max-w-[150px]">{bid.deliveryLocation?.address}</div>
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap">
-                          <div className="text-sm font-bold text-gray-900">{formatCurrency(bid.offeredPrice || 0, bid.currencyCode)}</div>
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap">
-                          <span className="px-2 py-1 rounded text-[10px] font-medium bg-gray-100 text-gray-700">
-                            {bid.bidStatus || 'Pending'}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 text-right">
-                          <button
-                            onClick={() => {
-                              setSelectedBid(bid);
-                              setShowDetailsModal(true);
-                            }}
-                            className="p-1.5 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors"
-                          >
-                            <FaEye className="w-3.5 h-3.5" />
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
               </div>
-            </div>
-          )}
-        </>
-      )}
-
-      {/* Details Modal */}
-      {showDetailsModal && selectedBid && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[10000] p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="sticky top-0 bg-white border-b border-gray-200 p-6 flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-gray-900">Cargo Details</h2>
+            )}
+            <div className="p-6 border-t border-slate-50 bg-slate-50/50 flex justify-end shrink-0">
               <button
-                onClick={() => setShowDetailsModal(false)}
-                className="text-gray-400 hover:text-gray-600"
+                onClick={() => setSelectedBid(null)}
+                className="px-6 py-2.5 bg-white border border-slate-200 text-slate-600 rounded-xl font-bold text-sm hover:bg-slate-50 transition-colors"
               >
-                <FaTimesCircle className="w-6 h-6" />
+                Close Details
               </button>
             </div>
-            <div className="p-6 space-y-6">
-              {/* Basic Info */}
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Basic Information</h3>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-sm font-medium text-gray-500">Cargo Title</label>
-                    <p className="text-gray-900">{selectedBid.title}</p>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-gray-500">Cargo Type</label>
-                    <p className="text-gray-900">{selectedBid.cargoType}</p>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-gray-500">Weight</label>
-                    <p className="text-gray-900">{selectedBid.weight?.toLocaleString()} kg</p>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-gray-500">Volume</label>
-                    <p className="text-gray-900">{selectedBid.volume} m³</p>
-                  </div>
-                  {selectedBid.length && (
-                    <>
-                      <div>
-                        <label className="text-sm font-medium text-gray-500">Dimensions</label>
-                        <p className="text-gray-900">{selectedBid.length}m × {selectedBid.width}m × {selectedBid.height}m</p>
-                      </div>
-                      <div>
-                        <label className="text-sm font-medium text-gray-500">Pallets</label>
-                        <p className="text-gray-900">{selectedBid.numberOfPallets || 'N/A'}</p>
-                      </div>
-                    </>
-                  )}
-                </div>
-                {selectedBid.description && (
-                  <div className="mt-4">
-                    <label className="text-sm font-medium text-gray-500">Description</label>
-                    <p className="text-gray-900">{selectedBid.description}</p>
-                  </div>
-                )}
-              </div>
-
-              {/* Route Information */}
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Route Information</h3>
-                <div className="space-y-3">
-                  <div className="flex items-start gap-3 p-3 bg-green-50 rounded-lg">
-                    <FaMapMarkerAlt className="w-5 h-5 text-green-600 mt-1" />
-                    <div>
-                      <label className="text-sm font-medium text-gray-500">Pickup Location</label>
-                      <p className="text-gray-900 font-medium">{selectedBid.pickupLocation?.address}</p>
-                      <p className="text-xs text-gray-500 mt-1">
-                        <FaCalendarAlt className="w-3 h-3 inline mr-1" />
-                        {formatDate(selectedBid.pickupDate)}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 ml-6 text-sm text-gray-600">
-                    <FaRoute className="w-4 h-4" />
-                    <span>Distance: {selectedBid.distance} km</span>
-                    <span>•</span>
-                    <span>Estimated Duration: {selectedBid.estimatedDuration} hours</span>
-                  </div>
-                  <div className="flex items-start gap-3 p-3 bg-red-50 rounded-lg">
-                    <FaMapMarkerAlt className="w-5 h-5 text-red-600 mt-1" />
-                    <div>
-                      <label className="text-sm font-medium text-gray-500">Delivery Location</label>
-                      <p className="text-gray-900 font-medium">{selectedBid.deliveryLocation?.address}</p>
-                      <p className="text-xs text-gray-500 mt-1">
-                        <FaCalendarAlt className="w-3 h-3 inline mr-1" />
-                        {formatDate(selectedBid.deliveryDate)}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Pricing */}
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Pricing</h3>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="p-4 bg-green-50 rounded-lg border border-green-200">
-                    <label className="text-sm font-medium text-gray-500">Offered Price</label>
-                    <p className="text-2xl font-bold text-green-700">
-                      {formatCurrency(selectedBid.offeredPrice || 0, selectedBid.currencyCode)}
-                    </p>
-                  </div>
-                  <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-                    <label className="text-sm font-medium text-gray-500">Cargo Value</label>
-                    <p className="text-2xl font-bold text-blue-700">
-                      {formatCurrency(selectedBid.loadValue || 0, selectedBid.currencyCode)}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Cargo Owner */}
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Cargo Owner</h3>
-                <div className="p-4 bg-gray-50 rounded-lg space-y-2">
-                  <div className="flex items-center gap-2">
-                    <FaBuilding className="w-4 h-4 text-gray-400" />
-                    <span className="font-medium text-gray-900">{selectedBid.cargoOwnerCompany}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <FaUser className="w-4 h-4 text-gray-400" />
-                    <span className="text-gray-700">{selectedBid.cargoOwnerName}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <FaPhone className="w-4 h-4 text-gray-400" />
-                    <span className="text-gray-700">{selectedBid.cargoOwnerPhone}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <FaEnvelope className="w-4 h-4 text-gray-400" />
-                    <span className="text-gray-700">{selectedBid.cargoOwnerEmail}</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Special Requirements */}
-              {(selectedBid.isHazardous || selectedBid.requiresRefrigeration || selectedBid.isFragile || selectedBid.requiresGpsMonitoring) && (
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Special Requirements</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {selectedBid.isHazardous && (
-                      <span className="px-3 py-1 bg-red-100 text-red-800 rounded-full text-sm font-medium border border-red-200">
-                        <FaExclamationTriangle className="w-3 h-3 inline mr-1" />
-                        Hazardous Materials
-                      </span>
-                    )}
-                    {selectedBid.requiresRefrigeration && (
-                      <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium border border-blue-200">
-                        <FaSnowflake className="w-3 h-3 inline mr-1" />
-                        Refrigeration Required
-                        {selectedBid.temperatureMin && selectedBid.temperatureMax && (
-                          <span className="ml-1">({selectedBid.temperatureMin}°C - {selectedBid.temperatureMax}°C)</span>
-                        )}
-                      </span>
-                    )}
-                    {selectedBid.isFragile && (
-                      <span className="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm font-medium border border-yellow-200">
-                        Fragile Handling Required
-                      </span>
-                    )}
-                    {selectedBid.requiresGpsMonitoring && (
-                      <span className="px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm font-medium border border-purple-200">
-                        GPS Monitoring Required
-                      </span>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* Actions */}
-              {selectedBid.bidStatus === 'pending' && (
-                <div className="flex items-center gap-3 pt-4 border-t border-gray-200">
-                  <button
-                    onClick={() => {
-                      handleAcceptBid(selectedBid);
-                    }}
-                    disabled={processingAction === selectedBid.id}
-                    className="flex-1 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center justify-center disabled:opacity-50 font-medium"
-                  >
-                    {processingAction === selectedBid.id ? (
-                      <>
-                        <FaSpinner className="w-5 h-5 animate-spin" />
-                        Processing...
-                      </>
-                    ) : (
-                      <span>Accept Cargo Bid</span>
-                    )}
-                  </button>
-                  <button
-                    onClick={() => {
-                      handleRejectBid(selectedBid);
-                    }}
-                    disabled={processingAction === selectedBid.id}
-                    className="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center justify-center disabled:opacity-50 font-medium"
-                  >
-                    {processingAction === selectedBid.id ? (
-                      <FaSpinner className="w-5 h-5 animate-spin" />
-                    ) : (
-                      <span>Reject</span>
-                    )}
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
+          </DialogContent>
+        </Dialog>
+      </main >
+      <FleetFooter />
       {DialogComponent}
-    </div>
+
+      {/* Quick Bid Modal */}
+      <QuickBidModal
+        isOpen={showQuickBidModal}
+        onClose={() => setShowQuickBidModal(false)}
+        cargo={bidCargo}
+        onBidSubmitted={handleBidSubmitted}
+      />
+    </div >
   );
 };
 
 export default FleetBidsPage;
-

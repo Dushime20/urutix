@@ -1,14 +1,52 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import { Truck, Wifi, AlertTriangle, Shield, Navigation, Activity, Target, TrendingUp, Loader2, CheckCircle, X, MessageCircle, MessageSquare, User } from 'lucide-react';
 import { Icon } from 'leaflet';
-import { FaTruck, FaMapMarkedAlt, FaClock, FaUser, FaWifi, FaExclamationTriangle } from 'react-icons/fa';
 import 'leaflet/dist/leaflet.css';
 import { trackingWebSocket } from '../services/websocket';
 import type { ShipmentUpdate } from '../services/websocket';
-import { TranslatedText } from '../components/translated-text';
 import { useTranslation } from '../hooks/useTranslation';
 import { useAuth } from '../contexts/AuthContext';
 import receiverService from '../services/receiverService';
+import { cn } from '@/utils/cn';
+
+const StatsCard = ({ title, value, icon: Icon, colorClass, secondaryColor }: any) => (
+  <div className="flex flex-col items-center group">
+    <div className="relative w-40 h-40 rounded-full bg-white border-[8px] border-slate-50 flex flex-col items-center justify-center transition-all duration-500 hover:border-slate-100 hover:shadow-xl hover:shadow-slate-200/50">
+      <svg className="absolute inset-0 w-full h-full -rotate-90 scale-[1.05]">
+        <circle
+          cx="80"
+          cy="80"
+          r="72"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="3"
+          strokeDasharray="452"
+          strokeDashoffset="350"
+          className={cn("opacity-10 transition-all duration-1000 group-hover:stroke-dashoffset-[200]", secondaryColor)}
+        />
+      </svg>
+
+      <div className={cn("p-2 rounded-2xl mb-1 bg-slate-50 text-slate-400 group-hover:bg-white group-hover:text-inherit transition-all duration-500 shadow-sm", colorClass)}>
+        <Icon className="w-5 h-5" />
+      </div>
+
+      <div className="flex flex-col items-center px-4 w-full overflow-hidden">
+        <span className="text-xl font-black text-[#0f172a] tracking-tight group-hover:scale-110 transition-transform duration-500 truncate w-full text-center">
+          {value}
+        </span>
+      </div>
+
+      <div className="absolute inset-4 rounded-full border border-dashed border-slate-100 opacity-50 group-wheel:rotate-90 transition-transform duration-1000" />
+    </div>
+
+    <div className="mt-4 text-center">
+      <p className="text-[8px] font-black text-slate-400 uppercase tracking-[0.2em] group-hover:text-[#345E85] transition-colors duration-300 line-clamp-1">
+        {title}
+      </p>
+    </div>
+  </div>
+);
 
 interface Shipment {
   id: string;
@@ -64,7 +102,6 @@ const Tracking: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [wsConnected, setWsConnected] = useState(false);
   const [wsError, setWsError] = useState<string | null>(null);
-  const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
   const [showUpdateNotification, setShowUpdateNotification] = useState(false);
   const [showMessaging, setShowMessaging] = useState(false);
   const [messages, setMessages] = useState<{ id: string, sender: 'me' | 'driver', text: string, timestamp: Date }[]>([]);
@@ -104,14 +141,14 @@ const Tracking: React.FC = () => {
   // Handle WebSocket updates
   const handleShipmentUpdate = useCallback((update: ShipmentUpdate) => {
     // Update last update timestamp
-    setLastUpdate(new Date());
+    // setLastUpdate(new Date()); // Unused at the moment, keeping commented if needed later
 
     // Show update notification
     setShowUpdateNotification(true);
     setTimeout(() => setShowUpdateNotification(false), 3000);
 
-    setShipments(prevShipments => {
-      return prevShipments.map(shipment => {
+    setShipments((prevShipments: Shipment[]) => {
+      return prevShipments.map((shipment: Shipment) => {
         if (shipment.id === update.shipmentId) {
           const updatedShipment = { ...shipment };
 
@@ -173,133 +210,133 @@ const Tracking: React.FC = () => {
       try {
         setLoading(true);
         if (user?.role === 'CARGO_RECEIVER') {
-            const myCargos = await receiverService.getMyCargos();
-            const activeCargos = myCargos.filter(c => c.status === 'IN_TRANSIT' || c.status === 'ASSIGNED' || c.status === 'PICKED_UP');
-            
-            const mappedShipments: Shipment[] = activeCargos.map(c => ({
-              id: c.id,
-              cargoId: c.id.substring(0, 8).toUpperCase(),
-              cargoTitle: c.cargoType || 'My Shipment',
-              status: (c.status === 'ASSIGNED' ? 'PICKED_UP' : c.status) as any,
+          const myCargos = await receiverService.getMyCargos();
+          const activeCargos = myCargos.filter((c: any) => c.status === 'IN_TRANSIT' || c.status === 'ASSIGNED' || c.status === 'PICKED_UP');
+
+          const mappedShipments: Shipment[] = activeCargos.map((c: any) => ({
+            id: c.id,
+            cargoId: c.id.substring(0, 8).toUpperCase(),
+            cargoTitle: c.cargoType || 'My Shipment',
+            status: (c.status === 'ASSIGNED' ? 'PICKED_UP' : c.status) as any,
+            pickupLocation: {
+              name: c.pickupLocation || 'Pickup Point',
+              address: c.pickupLocation || '',
+              latitude: -1.2921, // Mock lat/lng if not available
+              longitude: 36.8219,
+            },
+            deliveryLocation: {
+              name: c.deliveryLocation || 'Delivery Point',
+              address: c.deliveryLocation || '',
+              latitude: -4.0435, // Mock lat/lng
+              longitude: 39.6682,
+            },
+            currentLocation: {
+              latitude: -2.5, // Mock current location
+              longitude: 38.0,
+              timestamp: new Date().toISOString(),
+            },
+            driver: {
+              name: c.assignedTruck?.driverName || 'Assigned Driver',
+              phone: c.assignedTruck?.driverPhone || '',
+            },
+            vehicle: {
+              plateNumber: c.assignedTruck?.plateNumber || 'Truck',
+              type: c.assignedTruck?.model || 'Truck',
+            },
+            estimatedDelivery: c.deliveryDate || new Date().toISOString(),
+            progress: 50, // Mock progress
+            etaConfidence: 85,
+            distanceRemaining: 120
+          }));
+
+          setShipments(mappedShipments);
+        } else {
+          // Default dummy data for non-receivers
+          setShipments([
+            {
+              id: '1',
+              cargoId: 'CARGO-001',
+              cargoTitle: 'Electronics Shipment',
+              status: 'IN_TRANSIT',
               pickupLocation: {
-                name: c.pickupLocation || 'Pickup Point',
-                address: c.pickupLocation || '',
-                latitude: -1.2921, // Mock lat/lng if not available
-                longitude: 36.8219, 
+                name: 'Nairobi Warehouse',
+                address: '123 Industrial Area, Nairobi',
+                latitude: -1.2921,
+                longitude: 36.8219,
               },
               deliveryLocation: {
-                name: c.deliveryLocation || 'Delivery Point',
-                address: c.deliveryLocation || '',
-                latitude: -4.0435, // Mock lat/lng
+                name: 'Mombasa Port',
+                address: '456 Port Road, Mombasa',
+                latitude: -4.0435,
                 longitude: 39.6682,
               },
               currentLocation: {
-                latitude: -2.5, // Mock current location
+                latitude: -2.5,
                 longitude: 38.0,
                 timestamp: new Date().toISOString(),
               },
               driver: {
-                name: c.assignedTruck?.driverName || 'Assigned Driver',
-                phone: c.assignedTruck?.driverPhone || '',
+                name: 'John Kamau',
+                phone: '+254700123456',
               },
               vehicle: {
-                plateNumber: c.assignedTruck?.plateNumber || 'Truck',
-                type: c.assignedTruck?.model || 'Truck',
+                plateNumber: 'KCA 123A',
+                type: 'Flatbed Truck',
               },
-              estimatedDelivery: c.deliveryDate || new Date().toISOString(),
-              progress: 50, // Mock progress
-              etaConfidence: 85,
-              distanceRemaining: 120
-            }));
-            
-            setShipments(mappedShipments);
-        } else {
-            // Default dummy data for non-receivers
-            setShipments([
-              {
-                id: '1',
-                cargoId: 'CARGO-001',
-                cargoTitle: 'Electronics Shipment',
-                status: 'IN_TRANSIT',
-                pickupLocation: {
-                  name: 'Nairobi Warehouse',
-                  address: '123 Industrial Area, Nairobi',
-                  latitude: -1.2921,
-                  longitude: 36.8219,
-                },
-                deliveryLocation: {
-                  name: 'Mombasa Port',
-                  address: '456 Port Road, Mombasa',
-                  latitude: -4.0435,
-                  longitude: 39.6682,
-                },
-                currentLocation: {
-                  latitude: -2.5,
-                  longitude: 38.0,
-                  timestamp: new Date().toISOString(),
-                },
-                driver: {
-                  name: 'John Kamau',
-                  phone: '+254700123456',
-                },
-                vehicle: {
-                  plateNumber: 'KCA 123A',
-                  type: 'Flatbed Truck',
-                },
-                estimatedDelivery: '2024-01-20T14:00:00Z',
-                actualPickup: '2024-01-18T08:30:00Z',
-                progress: 65,
-                milestones: [
-                  { type: 'PICKUP', location: 'Nairobi Warehouse', timestamp: '2024-01-18T08:30:00Z', status: 'COMPLETED' },
-                  { type: 'CHECKPOINT', location: 'Machakos Junction', timestamp: '2024-01-18T11:00:00Z', status: 'COMPLETED' },
-                  { type: 'CHECKPOINT', location: 'Voi Checkpoint', timestamp: undefined, status: 'CURRENT' },
-                  { type: 'DELIVERY', location: 'Mombasa Port', timestamp: undefined, status: 'PENDING' },
-                ],
-                etaConfidence: 88,
-                distanceRemaining: 180,
+              estimatedDelivery: '2024-01-20T14:00:00Z',
+              actualPickup: '2024-01-18T08:30:00Z',
+              progress: 65,
+              milestones: [
+                { type: 'PICKUP', location: 'Nairobi Warehouse', timestamp: '2024-01-18T08:30:00Z', status: 'COMPLETED' },
+                { type: 'CHECKPOINT', location: 'Machakos Junction', timestamp: '2024-01-18T11:00:00Z', status: 'COMPLETED' },
+                { type: 'CHECKPOINT', location: 'Voi Checkpoint', timestamp: undefined, status: 'CURRENT' },
+                { type: 'DELIVERY', location: 'Mombasa Port', timestamp: undefined, status: 'PENDING' },
+              ],
+              etaConfidence: 88,
+              distanceRemaining: 180,
+            },
+            {
+              id: '2',
+              cargoId: 'CARGO-002',
+              cargoTitle: 'Agricultural Products',
+              status: 'PICKED_UP',
+              pickupLocation: {
+                name: 'Kisumu Farm',
+                address: '789 Farm Road, Kisumu',
+                latitude: -0.0917,
+                longitude: 34.7680,
               },
-              {
-                id: '2',
-                cargoId: 'CARGO-002',
-                cargoTitle: 'Agricultural Products',
-                status: 'PICKED_UP',
-                pickupLocation: {
-                  name: 'Kisumu Farm',
-                  address: '789 Farm Road, Kisumu',
-                  latitude: -0.0917,
-                  longitude: 34.7680,
-                },
-                deliveryLocation: {
-                  name: 'Nairobi Market',
-                  address: '321 Market Street, Nairobi',
-                  latitude: -1.2921,
-                  longitude: 36.8219,
-                },
-                currentLocation: {
-                  latitude: -0.5,
-                  longitude: 36.0,
-                  timestamp: new Date().toISOString(),
-                },
-                driver: {
-                  name: 'Mary Wanjiku',
-                  phone: '+254700654321',
-                },
-                vehicle: {
-                  plateNumber: 'KCA 456B',
-                  type: 'Refrigerated Truck',
-                },
-                estimatedDelivery: '2024-01-19T16:00:00Z',
-                actualPickup: '2024-01-18T10:15:00Z',
-                progress: 35,
-                milestones: [
-                  { type: 'PICKUP', location: 'Kisumu Farm', timestamp: '2024-01-18T10:15:00Z', status: 'COMPLETED' },
-                  { type: 'CHECKPOINT', location: 'Kericho Stop', timestamp: undefined, status: 'CURRENT' },
-                  { type: 'DELIVERY', location: 'Nairobi Market', timestamp: undefined, status: 'PENDING' },
-                ],
-                etaConfidence: 92,
-                distanceRemaining: 245,
+              deliveryLocation: {
+                name: 'Nairobi Market',
+                address: '321 Market Street, Nairobi',
+                latitude: -1.2921,
+                longitude: 36.8219,
               },
-            ]);
+              currentLocation: {
+                latitude: -0.5,
+                longitude: 36.0,
+                timestamp: new Date().toISOString(),
+              },
+              driver: {
+                name: 'Mary Wanjiku',
+                phone: '+254700654321',
+              },
+              vehicle: {
+                plateNumber: 'KCA 456B',
+                type: 'Refrigerated Truck',
+              },
+              estimatedDelivery: '2024-01-19T16:00:00Z',
+              actualPickup: '2024-01-18T10:15:00Z',
+              progress: 35,
+              milestones: [
+                { type: 'PICKUP', location: 'Kisumu Farm', timestamp: '2024-01-18T10:15:00Z', status: 'COMPLETED' },
+                { type: 'CHECKPOINT', location: 'Kericho Stop', timestamp: undefined, status: 'CURRENT' },
+                { type: 'DELIVERY', location: 'Nairobi Market', timestamp: undefined, status: 'PENDING' },
+              ],
+              etaConfidence: 92,
+              distanceRemaining: 245,
+            },
+          ]);
         }
       } catch (err) {
         console.error("Error loading tracking data", err);
@@ -307,24 +344,24 @@ const Tracking: React.FC = () => {
         setLoading(false);
       }
     };
-    
+
     loadData();
   }, [user]);
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'IN_TRANSIT':
-        return 'text-blue-600 bg-blue-100';
-      case 'PICKED_UP':
-        return 'text-yellow-600 bg-yellow-100';
-      case 'DELIVERED':
-        return 'text-green-600 bg-green-100';
-      case 'DELAYED':
-        return 'text-red-600 bg-red-100';
-      default:
-        return 'text-gray-600 bg-gray-100';
-    }
-  };
+  // const getStatusColor = (status: string) => { // Removed as unused in new UI
+  //   switch (status) {
+  //     case 'IN_TRANSIT':
+  //       return 'text-blue-600 bg-blue-100';
+  //     case 'PICKED_UP':
+  //       return 'text-yellow-600 bg-yellow-100';
+  //     case 'DELIVERED':
+  //       return 'text-green-600 bg-green-100';
+  //     case 'DELAYED':
+  //       return 'text-red-600 bg-red-100';
+  //     default:
+  //       return 'text-gray-600 bg-gray-100';
+  //   }
+  // };
 
   const getStatusText = (status: string) => {
     switch (status) {
@@ -353,185 +390,194 @@ const Tracking: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+      <div className="flex flex-col items-center justify-center h-64 gap-4">
+        <Loader2 className="animate-spin text-[#345E85]" size={32} />
+        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Accessing Tracking Nexus...</p>
       </div>
     );
   }
 
+  const activeCount = shipments.filter((s: Shipment) => s.status !== 'DELIVERED').length;
+  const deliveryCount = shipments.filter((s: Shipment) => s.status === 'DELIVERED').length;
+  const onTimeRate = shipments.length > 0 ? Math.round((shipments.filter((s: Shipment) => s.status !== 'DELAYED').length / shipments.length) * 100) : 100;
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-12">
+      {/* Search & Global Stats */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 place-items-center bg-slate-50/50 p-10 rounded-[3rem] border border-slate-100 shadow-inner">
+        <StatsCard
+          title="Active Channels"
+          value={activeCount}
+          icon={Activity}
+          colorClass="bg-blue-50 text-[#345E85]"
+          secondaryColor="text-[#345E85]"
+        />
+        <StatsCard
+          title="Fulfillment"
+          value={deliveryCount}
+          icon={CheckCircle}
+          colorClass="bg-emerald-50 text-emerald-600"
+          secondaryColor="text-emerald-600"
+        />
+        <StatsCard
+          title="Schedule Integrity"
+          value={`${onTimeRate}%`}
+          icon={Shield}
+          colorClass="bg-amber-50 text-amber-600"
+          secondaryColor="text-amber-600"
+        />
+        <StatsCard
+          title="Network Velocity"
+          value="42 KM/H"
+          icon={TrendingUp}
+          colorClass="bg-purple-50 text-purple-600"
+          secondaryColor="text-purple-600"
+        />
+      </div>
+
       {/* Header with WebSocket Status */}
-      <div className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl border border-gray-200 px-4 py-3 mb-4">
-        <div className="flex items-center justify-between">
+      <div className="flex flex-col md:flex-row justify-between items-center gap-4 bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm">
+        <div className="flex items-center gap-4">
+          <div className={`p-3 rounded-2xl ${wsConnected ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'}`}>
+            <Wifi size={20} className={wsConnected ? 'animate-pulse' : ''} />
+          </div>
           <div>
-            <h1 className="text-lg font-bold text-gray-900 mb-1 flex items-center gap-2">
-              <div className="bg-gradient-to-br from-gray-500 to-gray-600 rounded-lg p-1.5">
-                <FaMapMarkedAlt className="text-white" size={16} />
-              </div>
-              <TranslatedText text="Live Tracking" />
-            </h1>
-            <p className="text-xs text-gray-600">
-              <TranslatedText text="Track your shipments in real-time" />
+            <h3 className="text-sm font-black text-[#0f172a] uppercase tracking-widest">Telemetry Stream</h3>
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+              {wsConnected ? 'Encrypted live data active' : 'Connecting to infrastructure...'}
             </p>
           </div>
-
-          {/* WebSocket Connection Status */}
-          <div className="flex items-center space-x-2">
-            {wsError && (
-              <div className="flex items-center space-x-1.5 px-2.5 py-1.5 bg-red-100 text-red-700 rounded-lg border border-red-200">
-                <FaExclamationTriangle className="w-3.5 h-3.5" />
-                <span className="text-xs">{wsError}</span>
-                <button
-                  onClick={async () => {
-                    try {
-                      setWsError(null);
-                      await trackingWebSocket.connect();
-                      setWsConnected(true);
-                    } catch (error) {
-                      setWsError('Reconnection failed');
-                    }
-                  }}
-                  className="ml-1.5 px-2 py-0.5 bg-red-200 hover:bg-red-300 rounded text-xs font-medium"
-                >
-                  <TranslatedText text="Retry" />
-                </button>
-              </div>
-            )}
-
-            <div className={`flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-medium ${wsConnected
-                ? 'bg-green-100 text-green-700 border-green-200'
-                : 'bg-yellow-100 text-yellow-700 border-yellow-200'
-              }`}>
-              <FaWifi className={`w-3.5 h-3.5 ${wsConnected ? 'text-green-600' : 'text-yellow-600'}`} />
-              <span>
-                {wsConnected ? <TranslatedText text="Live Updates" /> : <TranslatedText text="Connecting..." />}
-              </span>
-            </div>
-          </div>
         </div>
+
+        {wsError && (
+          <div className="flex items-center gap-3 px-4 py-2 bg-red-50 text-red-600 rounded-xl border border-red-100 cursor-pointer hover:bg-red-100 transition-colors"
+            onClick={async () => {
+              try {
+                setWsError(null);
+                await trackingWebSocket.connect();
+                setWsConnected(true);
+              } catch (error) {
+                setWsError('Reconnection failed');
+              }
+            }}>
+            <AlertTriangle size={14} />
+            <span className="text-[10px] font-black uppercase tracking-widest leading-none">Re-establish link</span>
+          </div>
+        )}
       </div>
 
       {/* Real-time Update Notification */}
       {showUpdateNotification && wsConnected && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 animate-pulse">
-          <div className="flex items-center space-x-2">
+        <div className="bg-blue-50 border border-blue-100 rounded-2xl p-4 animate-in slide-in-from-top-4">
+          <div className="flex items-center gap-3">
             <div className="w-2 h-2 bg-blue-500 rounded-full animate-ping"></div>
             <div className="flex-1">
-              <p className="text-xs font-medium text-blue-800">
-                <TranslatedText text="Real-time update received" />
-              </p>
-              <p className="text-xs text-blue-600">
-                <TranslatedText text="Last updated" />: {lastUpdate?.toLocaleTimeString()}
+              <p className="text-[10px] font-black text-[#345E85] uppercase tracking-widest">
+                Real-time updates received
               </p>
             </div>
-            <button
-              onClick={() => setShowUpdateNotification(false)}
-              className="text-blue-400 hover:text-blue-600 text-lg leading-none"
-            >
-              ×
+            <button onClick={() => setShowUpdateNotification(false)} className="text-slate-400 hover:text-slate-600">
+              <X size={16} />
             </button>
           </div>
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Shipment List */}
-        <div className="lg:col-span-1">
-          <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
-            <div className="p-3 border-b border-gray-200">
-              <h2 className="text-sm font-semibold text-gray-900">
-                <TranslatedText text="Active Shipments" />
-              </h2>
-              <p className="text-xs text-gray-600 mt-0.5">
-                {shipments.length} <TranslatedText text="shipments in transit" />
-              </p>
+        <div className="lg:col-span-1 space-y-6">
+          <div className="flex items-center justify-between px-2">
+            <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Active Manifests</h5>
+            <div className="px-3 py-1 bg-slate-100 rounded-full">
+              <span className="text-[10px] font-black text-slate-900">{shipments.length} UNIT(S)</span>
             </div>
-            <div className="p-3 space-y-3">
-              {shipments.map((shipment) => (
-                <div
-                  key={shipment.id}
-                  className={`p-3 rounded-lg border cursor-pointer transition-all hover:shadow-md ${selectedShipment?.id === shipment.id
-                      ? 'border-primary-500 bg-primary-50 shadow-sm'
-                      : 'border-gray-200 hover:border-gray-300'
-                    }`}
-                  onClick={() => setSelectedShipment(shipment)}
-                >
-                  <div className="flex items-start justify-between mb-2.5">
-                    <div className="flex items-center space-x-2 flex-1">
-                      <div className="flex-1 min-w-0">
-                        <h3 className="text-sm font-semibold text-gray-900 truncate">{shipment.cargoTitle}</h3>
-                        <p className="text-xs text-gray-600">#{shipment.cargoId}</p>
-                      </div>
-                      {/* Real-time update indicator */}
-                      {wsConnected && (
-                        <div className="flex items-center space-x-1 flex-shrink-0">
-                          <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
-                          <span className="text-xs text-green-600 font-medium">
-                            <TranslatedText text="LIVE" />
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ml-2 flex-shrink-0 ${getStatusColor(shipment.status)}`}>
-                      {getStatusText(shipment.status)}
-                    </span>
-                  </div>
+          </div>
 
-                  <div className="space-y-1.5 mb-2.5">
-                    <div className="flex items-center text-xs text-gray-600">
-                      <FaTruck className="w-3 h-3 mr-1.5 flex-shrink-0" />
-                      <span className="truncate">{shipment.vehicle.plateNumber}</span>
-                    </div>
-                    <div className="flex items-center text-xs text-gray-600">
-                      <FaUser className="w-3 h-3 mr-1.5 flex-shrink-0" />
-                      <span className="truncate">{shipment.driver.name}</span>
-                    </div>
-                    <div className="flex items-center text-xs text-gray-600">
-                      <FaClock className="w-3 h-3 mr-1.5 flex-shrink-0" />
-                      <span className="truncate">
-                        <TranslatedText text="ETA" />: {new Date(shipment.estimatedDelivery).toLocaleString()}
-                      </span>
-                    </div>
+          <div className="space-y-4 max-h-[800px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-slate-200">
+            {shipments.map((shipment) => (
+              <div
+                key={shipment.id}
+                className={cn(
+                  "p-6 rounded-[2rem] border transition-all cursor-pointer group",
+                  selectedShipment?.id === shipment.id
+                    ? "bg-[#345E85] border-[#345E85] text-white shadow-xl shadow-blue-900/20"
+                    : "bg-white border-slate-100 hover:border-slate-300 shadow-sm"
+                )}
+                onClick={() => setSelectedShipment(shipment)}
+              >
+                <div className="flex items-start justify-between mb-4">
+                  <div className="min-w-0">
+                    <h3 className={cn("text-sm font-black truncate tracking-tight", selectedShipment?.id === shipment.id ? "text-white" : "text-[#0f172a]")}>
+                      {shipment.cargoTitle}
+                    </h3>
+                    <p className={cn("text-[10px] font-black uppercase tracking-widest mt-1", selectedShipment?.id === shipment.id ? "text-blue-200" : "text-slate-400")}>
+                      #{shipment.cargoId}
+                    </p>
                   </div>
-
-                  {/* Progress Bar */}
-                  <div className="mt-2.5">
-                    <div className="flex justify-between text-xs text-gray-600 mb-1">
-                      <span><TranslatedText text="Progress" /></span>
-                      <div className="flex items-center space-x-1.5">
-                        <span className="font-medium">{shipment.progress}%</span>
-                        {wsConnected && (
-                          <div className="flex items-center space-x-1">
-                            <div className="w-1 h-1 bg-green-500 rounded-full animate-pulse"></div>
-                            <span className="text-green-600 text-xs">
-                              <TranslatedText text="Live" />
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-1.5">
-                      <div
-                        className="bg-gradient-to-r from-primary-500 to-primary-600 h-1.5 rounded-full transition-all duration-500 ease-out"
-                        style={{ width: `${shipment.progress}%` }}
-                      ></div>
-                    </div>
+                  <div className={cn(
+                    "px-3 py-1 rounded-xl text-[9px] font-black uppercase tracking-widest flex items-center gap-1.5",
+                    selectedShipment?.id === shipment.id ? "bg-white/20 text-white" : "bg-slate-100 text-slate-600"
+                  )}>
+                    {getStatusText(shipment.status)}
                   </div>
                 </div>
-              ))}
-            </div>
+
+                <div className="space-y-3 mb-6">
+                  <div className="flex items-center gap-2">
+                    <div className={cn("w-6 h-6 rounded-lg flex items-center justify-center", selectedShipment?.id === shipment.id ? "bg-white/10" : "bg-slate-50")}>
+                      <Truck size={12} className={selectedShipment?.id === shipment.id ? "text-white" : "text-[#345E85]"} />
+                    </div>
+                    <span className={cn("text-[10px] font-black uppercase tracking-tight", selectedShipment?.id === shipment.id ? "text-blue-50" : "text-slate-600")}>
+                      {shipment.vehicle.plateNumber}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className={cn("w-6 h-6 rounded-lg flex items-center justify-center", selectedShipment?.id === shipment.id ? "bg-white/10" : "bg-slate-50")}>
+                      <User size={12} className={selectedShipment?.id === shipment.id ? "text-white" : "text-[#345E85]"} />
+                    </div>
+                    <span className={cn("text-[10px] font-black uppercase tracking-tight", selectedShipment?.id === shipment.id ? "text-blue-50" : "text-slate-600")}>
+                      {shipment.driver.name}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Simplified Progress */}
+                <div className="space-y-2">
+                  <div className="flex justify-between items-end">
+                    <span className={cn("text-[10px] font-black uppercase tracking-widest", selectedShipment?.id === shipment.id ? "text-white" : "text-slate-400")}>Quantum Progress</span>
+                    <span className={cn("text-xs font-black", selectedShipment?.id === shipment.id ? "text-white" : "text-[#0f172a]")}>{shipment.progress}%</span>
+                  </div>
+                  <div className={cn("w-full h-1.5 rounded-full overflow-hidden", selectedShipment?.id === shipment.id ? "bg-white/20" : "bg-slate-100")}>
+                    <div
+                      className={cn("h-full transition-all duration-700", selectedShipment?.id === shipment.id ? "bg-white" : "bg-[#345E85]")}
+                      style={{ width: `${shipment.progress}%` }}
+                    />
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
 
         {/* Map and Details */}
-        <div className="lg:col-span-2 space-y-4">
+        <div className="lg:col-span-2 space-y-8">
           {/* Map */}
-          <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-3">
-            <h2 className="text-sm font-semibold text-gray-900 mb-3">
-              <TranslatedText text="Live Map" />
-            </h2>
-            <div className="h-80 rounded-lg overflow-hidden border border-gray-200">
+          <div className="bg-white rounded-[2.5rem] p-6 border border-slate-100 shadow-sm relative overflow-hidden group">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-slate-50 text-[#345E85] rounded-xl flex items-center justify-center border border-slate-100">
+                  <Navigation size={18} />
+                </div>
+                <h2 className="text-[10px] font-black text-[#0f172a] uppercase tracking-[0.2em]">Geospatial View</h2>
+              </div>
+              {selectedShipment && (
+                <div className="px-4 py-2 bg-blue-50 text-[#345E85] rounded-full text-[10px] font-black uppercase tracking-widest border border-blue-100">
+                  Tracking Instance: {selectedShipment.cargoId}
+                </div>
+              )}
+            </div>
+
+            <div className="h-[400px] rounded-[2rem] overflow-hidden border border-slate-100 shadow-inner relative z-0">
               <MapContainer
                 center={[-1.2921, 36.8219]}
                 zoom={6}
@@ -551,12 +597,9 @@ const Tracking: React.FC = () => {
                       icon={createCustomIcon('#10B981')}
                     >
                       <Popup>
-                        <div>
-                          <h3 className="font-medium">
-                            <TranslatedText text="Pickup Location" />
-                          </h3>
-                          <p className="text-sm">{selectedShipment.pickupLocation.name}</p>
-                          <p className="text-xs text-gray-600">{selectedShipment.pickupLocation.address}</p>
+                        <div className="p-2">
+                          <h3 className="text-xs font-black uppercase tracking-widest text-emerald-600 mb-1">Origin Point</h3>
+                          <p className="text-[10px] font-bold text-slate-600">{selectedShipment.pickupLocation.address}</p>
                         </div>
                       </Popup>
                     </Marker>
@@ -566,12 +609,9 @@ const Tracking: React.FC = () => {
                       icon={createCustomIcon('#EF4444')}
                     >
                       <Popup>
-                        <div>
-                          <h3 className="font-medium">
-                            <TranslatedText text="Delivery Location" />
-                          </h3>
-                          <p className="text-sm">{selectedShipment.deliveryLocation.name}</p>
-                          <p className="text-xs text-gray-600">{selectedShipment.deliveryLocation.address}</p>
+                        <div className="p-2">
+                          <h3 className="text-xs font-black uppercase tracking-widest text-red-600 mb-1">Final Destination</h3>
+                          <p className="text-[10px] font-bold text-slate-600">{selectedShipment.deliveryLocation.address}</p>
                         </div>
                       </Popup>
                     </Marker>
@@ -581,16 +621,9 @@ const Tracking: React.FC = () => {
                       icon={createCustomIcon('#3B82F6')}
                     >
                       <Popup>
-                        <div>
-                          <h3 className="font-medium">
-                            <TranslatedText text="Current Location" />
-                          </h3>
-                          <p className="text-sm">
-                            <TranslatedText text="Driver" />: {selectedShipment.driver.name}
-                          </p>
-                          <p className="text-xs text-gray-600">
-                            <TranslatedText text="Updated" />: {new Date(selectedShipment.currentLocation.timestamp).toLocaleString()}
-                          </p>
+                        <div className="p-2">
+                          <h3 className="text-xs font-black uppercase tracking-widest text-blue-600 mb-1">Current Coordinates</h3>
+                          <p className="text-[10px] font-bold text-slate-600">Updated: {new Date(selectedShipment.currentLocation.timestamp).toLocaleTimeString()}</p>
                         </div>
                       </Popup>
                     </Marker>
@@ -600,147 +633,136 @@ const Tracking: React.FC = () => {
             </div>
           </div>
 
-          {/* Shipment Details */}
+          {/* Shipment Details - Intelligence Report Style */}
           {selectedShipment && (
-            <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-4">
-              <div className="flex items-center justify-between mb-3">
-                <h2 className="text-sm font-semibold text-gray-900">
-                  <TranslatedText text="Shipment Details" />
-                </h2>
-                {wsConnected && (
-                  <div className="flex items-center space-x-1.5 px-2.5 py-1 bg-green-100 text-green-700 rounded-full border border-green-200">
-                    <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
-                    <span className="text-xs font-medium">
-                      <TranslatedText text="Live Tracking" />
-                    </span>
-                  </div>
-                )}
-              </div>
+            <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-sm relative overflow-hidden group">
+              <div className="absolute -right-12 -top-12 w-32 h-32 bg-slate-50 rounded-full opacity-50 group-hover:scale-150 transition-transform duration-700" />
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <h3 className="text-xs font-semibold text-gray-900 mb-2">
-                    <TranslatedText text="Cargo Information" />
-                  </h3>
-                  <div className="space-y-1.5">
-                    <div className="flex justify-between items-center">
-                      <span className="text-xs text-gray-600">
-                        <TranslatedText text="Cargo ID" />:
-                      </span>
-                      <span className="text-xs font-medium">{selectedShipment.cargoId}</span>
+              <div className="relative">
+                <div className="flex items-center justify-between mb-10">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-slate-50 text-[#345E85] rounded-xl flex items-center justify-center border border-slate-100 shadow-sm">
+                      <Shield size={20} />
                     </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-xs text-gray-600">
-                        <TranslatedText text="Title" />:
-                      </span>
-                      <span className="text-xs font-medium truncate ml-2">{selectedShipment.cargoTitle}</span>
+                    <h2 className="text-[10px] font-black text-[#0f172a] uppercase tracking-[0.2em]">Intelligence Report</h2>
+                  </div>
+                  {wsConnected && (
+                    <div className="flex items-center gap-2 px-4 py-1.5 bg-emerald-50 text-emerald-600 rounded-full text-[9px] font-black uppercase tracking-widest border border-emerald-100">
+                      <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></div>
+                      Telemeteric Active
                     </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-xs text-gray-600">
-                        <TranslatedText text="Status" />:
-                      </span>
-                      <span className={`text-xs font-medium px-2 py-0.5 rounded ${getStatusColor(selectedShipment.status)}`}>
-                        {getStatusText(selectedShipment.status)}
-                      </span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-xs text-gray-600">
-                        <TranslatedText text="Progress" />:
-                      </span>
-                      <span className="text-xs font-medium">{selectedShipment.progress}%</span>
-                    </div>
-                    {selectedShipment.etaConfidence && (
-                      <div className="flex justify-between items-center">
-                        <span className="text-xs text-gray-600">
-                          <TranslatedText text="ETA Confidence" />:
-                        </span>
-                        <span className={`text-xs font-medium px-2 py-0.5 rounded ${selectedShipment.etaConfidence >= 80 ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
-                          {selectedShipment.etaConfidence}%
-                        </span>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                  <div className="space-y-6">
+                    <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Operational Dynamics</h3>
+                    <div className="space-y-4">
+                      <div className="flex justify-between items-center p-3 bg-slate-50 rounded-2xl border border-slate-100">
+                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Instance ID</span>
+                        <span className="text-[10px] font-black text-[#0f172a]">{selectedShipment.cargoId}</span>
                       </div>
-                    )}
-                    {selectedShipment.distanceRemaining && (
-                      <div className="flex justify-between items-center">
-                        <span className="text-xs text-gray-600">
-                          <TranslatedText text="Distance Remaining" />:
-                        </span>
-                        <span className="text-xs font-medium">{selectedShipment.distanceRemaining} km</span>
+                      <div className="flex justify-between items-center p-3 bg-slate-50 rounded-2xl border border-slate-100">
+                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Manifest</span>
+                        <span className="text-[10px] font-black text-[#0f172a] truncate ml-4">{selectedShipment.cargoTitle}</span>
                       </div>
-                    )}
+                      <div className="flex justify-between items-center p-3 bg-slate-50 rounded-2xl border border-slate-100">
+                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Temporal Bound (ETA)</span>
+                        <span className="text-[10px] font-black text-[#0f172a]">{new Date(selectedShipment.estimatedDelivery).toLocaleDateString()}</span>
+                      </div>
+                      <div className="flex justify-between items-center p-4 bg-[#345E85]/5 rounded-[2rem] border border-[#345E85]/10">
+                        <div className="flex items-center gap-2">
+                          <Target size={14} className="text-[#345E85]" />
+                          <span className="text-[9px] font-black text-[#345E85] uppercase tracking-widest">ETA Confidence</span>
+                        </div>
+                        <span className="text-sm font-black text-[#345E85]">{selectedShipment.etaConfidence || 0}%</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-6">
+                    <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Trajectory Milestones</h3>
+                    <div className="relative pl-6 space-y-6">
+                      <div className="absolute left-[11px] top-2 bottom-2 w-0.5 bg-slate-100" />
+                      {selectedShipment.milestones?.map((milestone, index) => (
+                        <div key={index} className="relative flex items-center gap-4">
+                          <div className={cn(
+                            "absolute -left-[30px] w-4 h-4 rounded-full border-4 border-white z-10",
+                            milestone.status === 'COMPLETED' ? "bg-emerald-500" :
+                              milestone.status === 'CURRENT' ? "bg-blue-500 animate-pulse" : "bg-slate-200"
+                          )} />
+                          <div className="flex-1">
+                            <p className={cn(
+                              "text-[10px] font-black uppercase tracking-widest",
+                              milestone.status === 'PENDING' ? "text-slate-400" : "text-[#0f172a]"
+                            )}>
+                              {milestone.location}
+                            </p>
+                            {milestone.timestamp && (
+                              <p className="text-[9px] font-bold text-slate-400 mt-0.5">{new Date(milestone.timestamp).toLocaleString()}</p>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
 
-                <div>
-                  <h3 className="text-xs font-semibold text-gray-900 mb-2">
-                    <TranslatedText text="Milestones" />
-                  </h3>
-                  <div className="space-y-2">
-                    {selectedShipment.milestones?.map((milestone, index) => (
-                      <div key={index} className="flex items-start gap-2">
-                        <div className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center ${milestone.status === 'COMPLETED' ? 'bg-green-500' :
-                            milestone.status === 'CURRENT' ? 'bg-blue-500' :
-                              'bg-gray-300'
-                          }`}>
-                          {milestone.status === 'COMPLETED' ? (
-                            <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                            </svg>
-                          ) : milestone.status === 'CURRENT' ? (
-                            <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
-                          ) : (
-                            <div className="w-2 h-2 bg-gray-500 rounded-full"></div>
-                          )}
-                        </div>
-                        <div className="flex-1">
-                          <p className={`text-xs font-medium ${milestone.status === 'PENDING' ? 'text-gray-500' : 'text-gray-900'}`}>
-                            {milestone.location}
-                          </p>
-                          {milestone.timestamp && (
-                            <p className="text-[10px] text-gray-500">{new Date(milestone.timestamp).toLocaleString()}</p>
-                          )}
-                        </div>
-                      </div>
-                    ))}
+                {/* Tracking Action Hub */}
+                <div className="mt-10 pt-8 border-t border-slate-50 flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center overflow-hidden border border-slate-200">
+                      <User size={20} className="text-slate-400" />
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-black text-[#0f172a] uppercase tracking-widest">{selectedShipment.driver.name}</p>
+                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Active Dispatcher</p>
+                    </div>
                   </div>
-                </div>
-              </div>
 
-              {/* Messaging Button */}
-              <div className="mt-4 pt-4 border-t border-gray-200">
-                <button
-                  onClick={() => setShowMessaging(!showMessaging)}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
-                  </svg>
-                  Message Driver
-                </button>
+                  <button
+                    onClick={() => setShowMessaging(!showMessaging)}
+                    className="px-8 py-3 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-[#345E85] transition-all shadow-lg flex items-center gap-2"
+                  >
+                    <Activity size={14} />
+                    Secure Comm-Link
+                  </button>
+                </div>
               </div>
             </div>
           )}
 
-          {/* Messaging Panel */}
           {showMessaging && selectedShipment && (
-            <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-4 mt-4">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="text-sm font-semibold text-gray-900">Chat with {selectedShipment.driver.name}</h3>
-                <button onClick={() => setShowMessaging(false)} className="text-gray-500 hover:text-gray-700">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
-                  </svg>
+            <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-sm mt-8 animate-in slide-in-from-bottom-6">
+              <div className="flex items-center justify-between mb-8">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-slate-50 text-[#345E85] rounded-xl flex items-center justify-center border border-slate-100 shadow-sm">
+                    <MessageCircle size={20} />
+                  </div>
+                  <h3 className="text-[10px] font-black text-[#0f172a] uppercase tracking-[0.2em]">Secure Dispatch: {selectedShipment.driver.name}</h3>
+                </div>
+                <button onClick={() => setShowMessaging(false)} className="text-slate-400 hover:text-slate-600 transition-colors">
+                  <X size={24} />
                 </button>
               </div>
-              <div className="h-64 overflow-y-auto mb-3 space-y-2 bg-gray-50 rounded-lg p-3">
+              <div className="h-64 overflow-y-auto mb-6 space-y-4 bg-slate-50 rounded-[2rem] p-6 border border-slate-100 shadow-inner">
                 {messages.length === 0 ? (
-                  <p className="text-xs text-gray-500 text-center py-8">No messages yet. Say hello!</p>
+                  <div className="flex flex-col items-center justify-center h-full gap-2 opacity-50">
+                    <MessageSquare size={24} className="text-slate-400" />
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Awaiting Initial Transmission...</p>
+                  </div>
                 ) : (
                   messages.map((msg) => (
                     <div key={msg.id} className={`flex ${msg.sender === 'me' ? 'justify-end' : 'justify-start'}`}>
-                      <div className={`max-w-[70%] px-3 py-2 rounded-lg text-sm ${msg.sender === 'me' ? 'bg-indigo-600 text-white' : 'bg-white border border-gray-200'
-                        }`}>
-                        <p>{msg.text}</p>
-                        <p className={`text-[10px] mt-1 ${msg.sender === 'me' ? 'text-indigo-200' : 'text-gray-500'}`}>
+                      <div className={cn(
+                        "max-w-[70%] px-5 py-3 rounded-[1.5rem] shadow-sm",
+                        msg.sender === 'me' ? "bg-slate-900 text-white rounded-br-none" : "bg-white border border-slate-100 text-[#0f172a] rounded-bl-none"
+                      )}>
+                        <p className="text-xs font-medium leading-relaxed">{msg.text}</p>
+                        <p className={cn(
+                          "text-[8px] font-black uppercase tracking-widest mt-2",
+                          msg.sender === 'me' ? "text-slate-400" : "text-slate-400"
+                        )}>
                           {msg.timestamp.toLocaleTimeString()}
                         </p>
                       </div>
@@ -748,7 +770,7 @@ const Tracking: React.FC = () => {
                   ))
                 )}
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-3">
                 <input
                   type="text"
                   value={messageInput}
@@ -759,8 +781,8 @@ const Tracking: React.FC = () => {
                       setMessageInput('');
                     }
                   }}
-                  placeholder="Type a message..."
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  placeholder="ENCRYPTED MESSAGE..."
+                  className="flex-1 px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-[10px] font-black uppercase tracking-widest focus:outline-none focus:ring-4 focus:ring-blue-500/5 focus:bg-white focus:border-[#345E85] transition-all"
                 />
                 <button
                   onClick={() => {
@@ -769,9 +791,9 @@ const Tracking: React.FC = () => {
                       setMessageInput('');
                     }
                   }}
-                  className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium"
+                  className="px-8 py-4 bg-[#345E85] text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-900 transition-all shadow-lg"
                 >
-                  Send
+                  Transmit
                 </button>
               </div>
             </div>

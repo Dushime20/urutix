@@ -1,20 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import { lendingApi } from '../services/lending/lendingApi';
-import { 
-  FaUser,
-  FaBuilding,
-  FaCog,
-  FaBell,
-  FaLock,
-  FaEye,
-  FaEyeSlash,
-  FaCamera,
-  FaEdit,
-  FaTimes,
-  FaExclamationTriangle,
-  FaUniversity,
-  FaPlus,
-  FaDollarSign} from 'react-icons/fa';
+import { useAuth } from '../contexts/AuthContext';
+import {
+  User,
+  Building,
+  Settings,
+  Bell,
+  Lock,
+  Eye,
+  EyeOff,
+  Camera,
+  Edit,
+  X,
+  AlertTriangle,
+  Landmark,
+  Plus,
+  DollarSign,
+  Briefcase,
+  CheckCircle2
+} from 'lucide-react';
 
 interface LenderProfile {
   personal: {
@@ -78,13 +82,9 @@ interface LenderProfile {
   };
 }
 
-interface SocialMedia {
-  platform: string;
-  url: string;
-  verified: boolean;
-}
 
 const LenderProfilePage: React.FC = () => {
+  const { user } = useAuth();
   const [profile, setProfile] = useState<LenderProfile>({
     personal: {
       firstName: 'John',
@@ -147,10 +147,6 @@ const LenderProfilePage: React.FC = () => {
     }
   });
 
-  const [socialMedia, setSocialMedia] = useState<SocialMedia[]>([
-    { platform: 'LinkedIn', url: 'https://linkedin.com/in/johndavidson', verified: true },
-    { platform: 'Twitter', url: 'https://twitter.com/johndavidson', verified: false }
-  ]);
 
   const [activeTab, setActiveTab] = useState('personal');
   const [isEditing, setIsEditing] = useState<string | null>(null);
@@ -171,14 +167,14 @@ const LenderProfilePage: React.FC = () => {
       try {
         setLoading(true);
         setError(null);
-        
-        // Get lender ID from localStorage or context
-        const lenderId = localStorage.getItem('lenderId') || 'default-lender-id';
-        
+
+        // Get lender ID from user context
+        const lenderId = user?.role === 'LENDER' ? user.id : (localStorage.getItem('lenderId') || 'default-lender-id');
+
         try {
           // Try to fetch comprehensive profile data from new API
           const profileData = await lendingApi.getLenderProfile(lenderId);
-          
+
           if (profileData) {
             setProfile({
               personal: profileData.personal || profile.personal,
@@ -190,10 +186,10 @@ const LenderProfilePage: React.FC = () => {
           }
         } catch (profileError) {
           console.warn('Comprehensive profile API not available, trying basic lender data:', profileError);
-          
+
           // Fallback to basic lender API
           const lenderData = await lendingApi.getLender(lenderId);
-          
+
           if (lenderData) {
             setProfile(prev => ({
               ...prev,
@@ -223,12 +219,12 @@ const LenderProfilePage: React.FC = () => {
   }, []);
 
   const tabs = [
-    { id: 'personal', name: 'Personal Info', icon: <FaUser className="h-4 w-4" /> },
-    { id: 'business', name: 'Business Details', icon: <FaBuilding className="h-4 w-4" /> },
-    { id: 'banking', name: 'Banking Info', icon: <FaUniversity className="h-4 w-4" /> },
-    { id: 'preferences', name: 'Preferences', icon: <FaCog className="h-4 w-4" /> },
-    { id: 'security', name: 'Security', icon: <FaLock className="h-4 w-4" /> },
-    { id: 'notifications', name: 'Notifications', icon: <FaBell className="h-4 w-4" /> }
+    { id: 'personal', name: 'Personal Info', icon: <User className="h-4 w-4" /> },
+    { id: 'business', name: 'Business Details', icon: <Building className="h-4 w-4" /> },
+    { id: 'banking', name: 'Banking Info', icon: <Landmark className="h-4 w-4" /> },
+    { id: 'preferences', name: 'Preferences', icon: <Settings className="h-4 w-4" /> },
+    { id: 'security', name: 'Security', icon: <Lock className="h-4 w-4" /> },
+    { id: 'notifications', name: 'Notifications', icon: <Bell className="h-4 w-4" /> }
   ];
 
   const handleInputChange = (section: keyof LenderProfile, field: string, value: any) => {
@@ -260,9 +256,9 @@ const LenderProfilePage: React.FC = () => {
     try {
       setSaving(true);
       setError(null);
-      
-      const lenderId = localStorage.getItem('lenderId') || 'default-lender-id';
-      
+
+      const lenderId = user?.role === 'LENDER' ? user.id : (localStorage.getItem('lenderId') || 'default-lender-id');
+
       try {
         // Try to use the comprehensive profile update API
         await lendingApi.updateLenderProfile(lenderId, {
@@ -271,42 +267,42 @@ const LenderProfilePage: React.FC = () => {
           banking: profile.banking,
           preferences: profile.preferences
         });
-        
+
         setHasUnsavedChanges(false);
         setIsEditing(null);
         setError(null);
         alert('Profile updated successfully!');
-        
+
       } catch (comprehensiveError) {
         console.warn('Comprehensive profile update not available, trying section-specific updates:', comprehensiveError);
-        
+
         // Fallback to section-specific updates
         const updatePromises = [];
-        
+
         if (isEditing === 'personal' || !isEditing) {
           updatePromises.push(lendingApi.updateLenderPersonal(lenderId, profile.personal));
         }
-        
+
         if (isEditing === 'business' || !isEditing) {
           updatePromises.push(lendingApi.updateLenderBusiness(lenderId, profile.business));
         }
-        
+
         if (isEditing === 'banking' || !isEditing) {
           updatePromises.push(lendingApi.updateLenderBanking(lenderId, profile.banking));
         }
-        
+
         if (isEditing === 'preferences' || !isEditing) {
           updatePromises.push(lendingApi.updateLenderPreferences(lenderId, profile.preferences));
         }
-        
+
         await Promise.all(updatePromises);
-        
+
         setHasUnsavedChanges(false);
         setIsEditing(null);
         setError(null);
         alert('Profile updated successfully!');
       }
-      
+
     } catch (error) {
       console.error('Failed to save profile:', error);
       setError('Failed to save profile. Please try again.');
@@ -321,7 +317,7 @@ const LenderProfilePage: React.FC = () => {
       alert('New passwords do not match!');
       return;
     }
-    
+
     if (passwordForm.newPassword.length < 8) {
       alert('Password must be at least 8 characters long!');
       return;
@@ -335,169 +331,128 @@ const LenderProfilePage: React.FC = () => {
   };
 
   const renderPersonalTab = () => (
-    <div className="space-y-6">
-      {/* Profile Image */}
-      <div className="bg-white p-6 rounded-lg border border-gray-200">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Profile Picture</h3>
-        <div className="flex items-center gap-6">
+    <div className="space-y-10 animate-in fade-in slide-in-from-bottom-6 duration-500">
+      {/* Profile Essence Card */}
+      <div className="bg-white p-8 md:p-12 rounded-[40px] border border-slate-100 shadow-sm relative overflow-hidden group">
+        <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:scale-110 transition-transform duration-700">
+          <User size={120} className="text-[#345E85]" />
+        </div>
+
+        <div className="flex flex-col md:flex-row items-center gap-10 relative z-10">
           <div className="relative">
-            <div className="h-24 w-24 bg-blue-100 rounded-full flex items-center justify-center">
+            <div className="h-32 w-32 md:h-40 md:w-40 bg-slate-50 rounded-[40px] flex items-center justify-center border border-slate-100 shadow-inner overflow-hidden">
               {profile.personal.profileImage ? (
                 <img
                   src={profile.personal.profileImage}
                   alt="Profile"
-                  className="h-24 w-24 rounded-full object-cover"
+                  className="h-full w-full object-cover"
                 />
               ) : (
-                <FaUser className="h-12 w-12 text-blue-600" />
+                <User className="h-16 w-16 text-[#345E85]/50" />
               )}
             </div>
-            <button className="absolute bottom-0 right-0 h-8 w-8 bg-blue-600 text-white rounded-full flex items-center justify-center hover:bg-blue-700">
-              <FaCamera className="h-4 w-4" />
+            <button className="absolute -bottom-2 -right-2 h-12 w-12 bg-[#345E85] text-white rounded-2xl flex items-center justify-center shadow-lg border-2 border-white hover:scale-110 transition-transform active:scale-95 group/btn">
+              <Camera className="h-5 w-5 group-hover/btn:rotate-12 transition-transform" />
             </button>
           </div>
-          <div>
-            <h4 className="text-lg font-medium text-gray-900">
-              {profile.personal.firstName} {profile.personal.lastName}
-            </h4>
-            <p className="text-gray-600">{profile.personal.title}</p>
-            <div className="mt-3 flex gap-3">
-              <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-                Upload New Photo
+
+          <div className="text-center md:text-left space-y-4 flex-1">
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#345E85] mb-2">Authority Figure</p>
+              <h4 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tight leading-none">
+                {profile.personal.firstName} {profile.personal.lastName}
+              </h4>
+              <p className="text-slate-500 mt-2 font-bold uppercase text-[10px] tracking-widest flex items-center justify-center md:justify-start gap-2">
+                <Briefcase size={12} className="text-slate-400" /> {profile.personal.title}
+              </p>
+            </div>
+
+            <div className="flex flex-wrap justify-center md:justify-start gap-3">
+              <button className="px-6 py-3 bg-[#345E85] text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:opacity-90 transition-all active:scale-95 shadow-lg shadow-blue-100">
+                Update Security Credential
               </button>
-              <button className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
-                Remove Photo
+              <button className="px-6 py-3 bg-white border border-slate-200 text-slate-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 transition-all active:scale-95">
+                Revoke Visual Asset
               </button>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Personal Information */}
-      <div className="bg-white p-6 rounded-lg border border-gray-200">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-semibold text-gray-900">Personal Information</h3>
+      {/* Attributes Grid */}
+      <div className="bg-white p-10 rounded-[40px] border border-slate-100 shadow-sm relative overflow-hidden">
+        <div className="flex justify-between items-center mb-10 pb-6 border-b border-slate-50">
+          <div>
+            <h3 className="text-lg font-black text-slate-900 uppercase tracking-tight">Core Attributes</h3>
+            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Personnel detail synchronization</p>
+          </div>
           <button
             onClick={() => setIsEditing(isEditing === 'personal' ? null : 'personal')}
-            className="text-blue-600 hover:text-blue-800"
+            className={`h-12 w-12 rounded-2xl flex items-center justify-center transition-all active:scale-90 ${isEditing === 'personal' ? 'bg-rose-50 text-rose-600' : 'bg-slate-50 text-[#345E85] hover:bg-blue-50'
+              }`}
           >
-            {isEditing === 'personal' ? <FaTimes className="h-4 w-4" /> : <FaEdit className="h-4 w-4" />}
+            {isEditing === 'personal' ? <X className="h-5 w-5" /> : <Edit className="h-5 w-5" />}
           </button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">First Name</label>
-            {isEditing === 'personal' ? (
-              <input
-                type="text"
-                value={profile.personal.firstName}
-                onChange={(e) => handleInputChange('personal', 'firstName', e.target.value)}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
-            ) : (
-              <p className="text-gray-900">{profile.personal.firstName}</p>
-            )}
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Last Name</label>
-            {isEditing === 'personal' ? (
-              <input
-                type="text"
-                value={profile.personal.lastName}
-                onChange={(e) => handleInputChange('personal', 'lastName', e.target.value)}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
-            ) : (
-              <p className="text-gray-900">{profile.personal.lastName}</p>
-            )}
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
-            {isEditing === 'personal' ? (
-              <input
-                type="email"
-                value={profile.personal.email}
-                onChange={(e) => handleInputChange('personal', 'email', e.target.value)}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
-            ) : (
-              <p className="text-gray-900">{profile.personal.email}</p>
-            )}
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
-            {isEditing === 'personal' ? (
-              <input
-                type="tel"
-                value={profile.personal.phone}
-                onChange={(e) => handleInputChange('personal', 'phone', e.target.value)}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
-            ) : (
-              <p className="text-gray-900">{profile.personal.phone}</p>
-            )}
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Date of Birth</label>
-            {isEditing === 'personal' ? (
-              <input
-                type="date"
-                value={profile.personal.dateOfBirth}
-                onChange={(e) => handleInputChange('personal', 'dateOfBirth', e.target.value)}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
-            ) : (
-              <p className="text-gray-900">{new Date(profile.personal.dateOfBirth).toLocaleDateString()}</p>
-            )}
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Job Title</label>
-            {isEditing === 'personal' ? (
-              <input
-                type="text"
-                value={profile.personal.title}
-                onChange={(e) => handleInputChange('personal', 'title', e.target.value)}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
-            ) : (
-              <p className="text-gray-900">{profile.personal.title}</p>
-            )}
-          </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-8">
+          {[
+            { label: 'Primary Recognition', value: profile.personal.firstName, field: 'firstName', type: 'text' },
+            { label: 'Ancestral Identifier', value: profile.personal.lastName, field: 'lastName', type: 'text' },
+            { label: 'Synchronous Pulse', value: profile.personal.email, field: 'email', type: 'email' },
+            { label: 'Voice Link Number', value: profile.personal.phone, field: 'phone', type: 'tel' },
+            { label: 'Temporal Entry Date', value: profile.personal.dateOfBirth, field: 'dateOfBirth', type: 'date', render: (v: string) => new Date(v).toLocaleDateString() },
+            { label: 'Executive Mandate', value: profile.personal.title, field: 'title', type: 'text' },
+          ].map((item, idx) => (
+            <div key={idx} className="space-y-2 group">
+              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest group-hover:text-[#345E85] transition-colors">{item.label}</label>
+              {isEditing === 'personal' ? (
+                <input
+                  type={item.type}
+                  value={item.value}
+                  onChange={(e) => handleInputChange('personal', item.field, e.target.value)}
+                  className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold text-slate-900 focus:ring-4 focus:ring-blue-50 focus:border-[#345E85] outline-none transition-all shadow-inner"
+                />
+              ) : (
+                <div className="px-5 py-4 bg-slate-50/50 rounded-2xl flex items-center justify-between group-hover:bg-white border border-transparent group-hover:border-slate-50 transition-all duration-300">
+                  <span className="text-sm font-bold text-slate-800">{item.render ? item.render(item.value) : item.value}</span>
+                  <div className="h-1 w-1 rounded-full bg-slate-200 group-hover:bg-[#345E85] group-hover:scale-150 transition-all" />
+                </div>
+              )}
+            </div>
+          ))}
         </div>
 
-        <div className="mt-6">
-          <label className="block text-sm font-medium text-gray-700 mb-2">Bio</label>
+        <div className="mt-10 pt-10 border-t border-slate-50">
+          <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Strategic Narrative (Bio)</label>
           {isEditing === 'personal' ? (
             <textarea
               rows={4}
               value={profile.personal.bio}
               onChange={(e) => handleInputChange('personal', 'bio', e.target.value)}
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold text-slate-900 focus:ring-4 focus:ring-blue-50 focus:border-[#345E85] outline-none transition-all shadow-inner resize-none"
+              placeholder="Explicate your professional trajectory and mission objectives..."
             />
           ) : (
-            <p className="text-gray-900">{profile.personal.bio}</p>
+            <div className="px-6 py-6 bg-slate-50/50 rounded-3xl border border-transparent hover:border-slate-100 transition-all">
+              <p className="text-sm font-medium text-slate-600 leading-relaxed italic">{profile.personal.bio}</p>
+            </div>
           )}
         </div>
 
         {isEditing === 'personal' && (
-          <div className="flex justify-end gap-3 mt-6">
+          <div className="flex justify-end gap-3 mt-10">
             <button
               onClick={() => setIsEditing(null)}
-              className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+              className="px-8 py-4 border border-slate-200 text-slate-500 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 transition-all active:scale-95"
             >
-              Cancel
+              Cancel Sync
             </button>
             <button
               onClick={handleSave}
-              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              className="px-8 py-4 bg-[#345E85] text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:opacity-90 transition-all active:scale-95 shadow-xl shadow-blue-50"
             >
-              Save Changes
+              Commit Attribute Data
             </button>
           </div>
         )}
@@ -515,7 +470,7 @@ const LenderProfilePage: React.FC = () => {
             onClick={() => setIsEditing(isEditing === 'business' ? null : 'business')}
             className="text-blue-600 hover:text-blue-800"
           >
-            {isEditing === 'business' ? <FaTimes className="h-4 w-4" /> : <FaEdit className="h-4 w-4" />}
+            {isEditing === 'business' ? <X className="h-4 w-4" /> : <Edit className="h-4 w-4" />}
           </button>
         </div>
 
@@ -664,7 +619,7 @@ const LenderProfilePage: React.FC = () => {
             onClick={() => setIsEditing(isEditing === 'address' ? null : 'address')}
             className="text-blue-600 hover:text-blue-800"
           >
-            {isEditing === 'address' ? <FaTimes className="h-4 w-4" /> : <FaEdit className="h-4 w-4" />}
+            {isEditing === 'address' ? <X className="h-4 w-4" /> : <Edit className="h-4 w-4" />}
           </button>
         </div>
 
@@ -766,7 +721,7 @@ const LenderProfilePage: React.FC = () => {
             onClick={() => setIsEditing(isEditing === 'operations' ? null : 'operations')}
             className="text-blue-600 hover:text-blue-800"
           >
-            {isEditing === 'operations' ? <FaTimes className="h-4 w-4" /> : <FaEdit className="h-4 w-4" />}
+            {isEditing === 'operations' ? <X className="h-4 w-4" /> : <Edit className="h-4 w-4" />}
           </button>
         </div>
 
@@ -794,7 +749,7 @@ const LenderProfilePage: React.FC = () => {
                       }}
                       className="text-red-600 hover:text-red-800"
                     >
-                      <FaTimes className="h-4 w-4" />
+                      <X className="h-4 w-4" />
                     </button>
                   </div>
                 ))}
@@ -805,7 +760,7 @@ const LenderProfilePage: React.FC = () => {
                   }}
                   className="flex items-center gap-2 text-blue-600 hover:text-blue-800"
                 >
-                  <FaPlus className="h-4 w-4" />
+                  <Plus className="h-4 w-4" />
                   Add Country
                 </button>
               </div>
@@ -855,7 +810,7 @@ const LenderProfilePage: React.FC = () => {
                       }}
                       className="text-red-600 hover:text-red-800"
                     >
-                      <FaTimes className="h-4 w-4" />
+                      <X className="h-4 w-4" />
                     </button>
                   </div>
                 ))}
@@ -866,7 +821,7 @@ const LenderProfilePage: React.FC = () => {
                   }}
                   className="flex items-center gap-2 text-blue-600 hover:text-blue-800"
                 >
-                  <FaPlus className="h-4 w-4" />
+                  <Plus className="h-4 w-4" />
                   Add Currency
                 </button>
               </div>
@@ -908,7 +863,7 @@ const LenderProfilePage: React.FC = () => {
             onClick={() => setIsEditing(isEditing === 'capacity' ? null : 'capacity')}
             className="text-blue-600 hover:text-blue-800"
           >
-            {isEditing === 'capacity' ? <FaTimes className="h-4 w-4" /> : <FaEdit className="h-4 w-4" />}
+            {isEditing === 'capacity' ? <X className="h-4 w-4" /> : <Edit className="h-4 w-4" />}
           </button>
         </div>
 
@@ -917,7 +872,7 @@ const LenderProfilePage: React.FC = () => {
             <label className="block text-sm font-medium text-gray-700 mb-2">Minimum Loan Amount</label>
             {isEditing === 'capacity' ? (
               <div className="relative">
-                <FaDollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                 <input
                   type="number"
                   value={profile.business.lendingCapacity.minLoanAmount}
@@ -934,7 +889,7 @@ const LenderProfilePage: React.FC = () => {
             <label className="block text-sm font-medium text-gray-700 mb-2">Maximum Loan Amount</label>
             {isEditing === 'capacity' ? (
               <div className="relative">
-                <FaDollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                 <input
                   type="number"
                   value={profile.business.lendingCapacity.maxLoanAmount}
@@ -951,7 +906,7 @@ const LenderProfilePage: React.FC = () => {
             <label className="block text-sm font-medium text-gray-700 mb-2">Total Lending Capacity</label>
             {isEditing === 'capacity' ? (
               <div className="relative">
-                <FaDollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                 <input
                   type="number"
                   value={profile.business.lendingCapacity.totalCapacity}
@@ -1009,7 +964,7 @@ const LenderProfilePage: React.FC = () => {
             onClick={() => setIsEditing(isEditing === 'specializations' ? null : 'specializations')}
             className="text-blue-600 hover:text-blue-800"
           >
-            {isEditing === 'specializations' ? <FaTimes className="h-4 w-4" /> : <FaEdit className="h-4 w-4" />}
+            {isEditing === 'specializations' ? <X className="h-4 w-4" /> : <Edit className="h-4 w-4" />}
           </button>
         </div>
 
@@ -1037,7 +992,7 @@ const LenderProfilePage: React.FC = () => {
                       }}
                       className="text-red-600 hover:text-red-800"
                     >
-                      <FaTimes className="h-4 w-4" />
+                      <X className="h-4 w-4" />
                     </button>
                   </div>
                 ))}
@@ -1048,7 +1003,7 @@ const LenderProfilePage: React.FC = () => {
                   }}
                   className="flex items-center gap-2 text-blue-600 hover:text-blue-800"
                 >
-                  <FaPlus className="h-4 w-4" />
+                  <Plus className="h-4 w-4" />
                   Add Specialization
                 </button>
               </div>
@@ -1086,7 +1041,7 @@ const LenderProfilePage: React.FC = () => {
                       }}
                       className="text-red-600 hover:text-red-800"
                     >
-                      <FaTimes className="h-4 w-4" />
+                      <X className="h-4 w-4" />
                     </button>
                   </div>
                 ))}
@@ -1097,7 +1052,7 @@ const LenderProfilePage: React.FC = () => {
                   }}
                   className="flex items-center gap-2 text-blue-600 hover:text-blue-800"
                 >
-                  <FaPlus className="h-4 w-4" />
+                  <Plus className="h-4 w-4" />
                   Add Certification
                 </button>
               </div>
@@ -1142,7 +1097,7 @@ const LenderProfilePage: React.FC = () => {
             onClick={() => setIsEditing(isEditing === 'banking' ? null : 'banking')}
             className="text-blue-600 hover:text-blue-800"
           >
-            {isEditing === 'banking' ? <FaTimes className="h-4 w-4" /> : <FaEdit className="h-4 w-4" />}
+            {isEditing === 'banking' ? <X className="h-4 w-4" /> : <Edit className="h-4 w-4" />}
           </button>
         </div>
 
@@ -1317,7 +1272,7 @@ const LenderProfilePage: React.FC = () => {
       {/* Password Change */}
       <div className="bg-white p-6 rounded-lg border border-gray-200">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Change Password</h3>
-        
+
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Current Password</label>
@@ -1333,7 +1288,7 @@ const LenderProfilePage: React.FC = () => {
                 onClick={() => setShowPassword(!showPassword)}
                 className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
               >
-                {showPassword ? <FaEyeSlash className="h-4 w-4" /> : <FaEye className="h-4 w-4" />}
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
             </div>
           </div>
@@ -1372,7 +1327,7 @@ const LenderProfilePage: React.FC = () => {
       {/* Two-Factor Authentication */}
       <div className="bg-white p-6 rounded-lg border border-gray-200">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Two-Factor Authentication</h3>
-        
+
         <div className="flex items-center justify-between">
           <div>
             <p className="text-gray-900 font-medium">Two-Factor Authentication</p>
@@ -1395,7 +1350,7 @@ const LenderProfilePage: React.FC = () => {
       {/* Security Information */}
       <div className="bg-white p-6 rounded-lg border border-gray-200">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Security Information</h3>
-        
+
         <div className="space-y-4">
           <div className="flex justify-between">
             <span className="text-gray-600">Last Password Change:</span>
@@ -1488,22 +1443,30 @@ const LenderProfilePage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-6xl mx-auto">
+    <div className="min-h-screen bg-slate-50/50 p-6 md:p-10 space-y-10">
+      <div className="max-w-7xl mx-auto">
         {/* Loading State */}
         {loading && (
-          <div className="flex items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-            <span className="ml-3 text-gray-600">Loading profile...</span>
+          <div className="flex flex-col items-center justify-center py-20 bg-white/50 backdrop-blur-sm rounded-[40px] border border-slate-100">
+            <div className="relative">
+              <div className="h-16 w-16 rounded-full border-4 border-slate-100 border-t-[#345E85] animate-spin" />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="h-8 w-8 rounded-full bg-[#345E85]/10 animate-pulse" />
+              </div>
+            </div>
+            <span className="mt-6 text-slate-500 font-black text-[10px] uppercase tracking-widest">Synchronizing Profile Data</span>
           </div>
         )}
 
         {/* Error State */}
         {error && (
-          <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-            <div className="flex items-center">
-              <FaExclamationTriangle className="h-5 w-5 mr-2" />
-              <span>{error}</span>
+          <div className="mb-10 bg-rose-50 border border-rose-100 text-rose-700 px-6 py-4 rounded-3xl flex items-center gap-4 animate-in slide-in-from-top-4 duration-500">
+            <div className="h-10 w-10 rounded-xl bg-rose-100 flex items-center justify-center flex-shrink-0">
+              <AlertTriangle className="h-5 w-5 text-rose-600" />
+            </div>
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-widest text-rose-500">System Alert</p>
+              <p className="text-sm font-bold">{error}</p>
             </div>
           </div>
         )}
@@ -1511,52 +1474,72 @@ const LenderProfilePage: React.FC = () => {
         {/* Main Content */}
         {!loading && (
           <>
-            {/* Header */}
-            <div className="mb-8">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="h-10 w-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                  <FaUser className="h-5 w-5 text-blue-600" />
+            {/* Super Premium Header Section */}
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-12">
+              <div className="space-y-4">
+                <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-[#345E85]/10 rounded-full">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#345E85] animate-pulse" />
+                  <span className="text-[10px] font-black text-[#345E85] uppercase tracking-widest">Entity Core Identity</span>
                 </div>
                 <div>
-              <h1 className="text-2xl font-bold text-gray-900">Profile Settings</h1>
-              <p className="text-gray-600">Manage your personal information and account preferences</p>
-            </div>
-          </div>
-
-          {hasUnsavedChanges && (
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
-              <div className="flex items-center gap-2">
-                <FaExclamationTriangle className="h-4 w-4 text-yellow-600" />
-                <span className="text-yellow-800">You have unsaved changes</span>
+                  <h1 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tight leading-none">
+                    Lender Profile
+                  </h1>
+                  <p className="text-slate-500 mt-3 text-xs font-bold uppercase tracking-[0.2em] opacity-60">
+                    Authority management & operational configuration
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                {hasUnsavedChanges && (
+                  <button
+                    onClick={handleSave}
+                    disabled={saving}
+                    className="px-8 py-4 bg-[#345E85] text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-opacity-90 transition-all flex items-center gap-3 shadow-2xl shadow-blue-200 border border-white/20 active:scale-95 group"
+                  >
+                    {saving ? (
+                      <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    ) : (
+                      <CheckCircle2 size={16} className="group-hover:rotate-12 transition-transform" />
+                    )}
+                    Commit Changes
+                  </button>
+                )}
+                <button
+                  onClick={() => setIsEditing(null)}
+                  className="px-8 py-4 bg-white border border-slate-200 text-slate-600 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 transition-all active:scale-95"
+                >
+                  Dashboard Overview
+                </button>
               </div>
             </div>
-          )}
 
-          {/* Navigation Tabs */}
-          <div className="border-b border-gray-200">
-            <nav className="flex space-x-8 overflow-x-auto">
-              {tabs.map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`py-2 px-1 border-b-2 font-medium text-sm flex items-center gap-2 whitespace-nowrap ${
-                    activeTab === tab.id
-                      ? 'border-blue-500 text-blue-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                  }`}
-                >
-                  {tab.icon}
-                  {tab.name}
-                </button>
-              ))}
-            </nav>
-          </div>
-        </div>
+            {/* Premium Tab Navigation */}
+            <div className="bg-white/70 backdrop-blur-xl p-2 rounded-[32px] border border-white shadow-sm mb-12 flex overflow-x-auto no-scrollbar gap-2 sticky top-6 z-40">
+              {tabs.map((tab) => {
+                const isActive = activeTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`flex items-center gap-3 px-6 py-4 rounded-3xl transition-all duration-300 whitespace-nowrap group ${isActive
+                      ? 'bg-[#345E85] text-white shadow-xl shadow-blue-100'
+                      : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
+                      }`}
+                  >
+                    <div className={`p-1.5 rounded-xl transition-colors ${isActive ? 'bg-white/20' : 'bg-slate-100 group-hover:bg-white'}`}>
+                      {tab.icon}
+                    </div>
+                    <span className="text-[11px] font-black uppercase tracking-widest">{tab.name}</span>
+                  </button>
+                );
+              })}
+            </div>
 
-        {/* Tab Content */}
-        <div className="mb-8">
-          {renderTabContent()}
-        </div>
+            {/* Dynamic Content Area with Micro-animations */}
+            <div className="animate-in fade-in slide-in-from-bottom-6 duration-700 delay-200 min-h-[600px]">
+              {renderTabContent()}
+            </div>
           </>
         )}
       </div>

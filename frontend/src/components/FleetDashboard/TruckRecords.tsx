@@ -434,7 +434,7 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto mb-4"></div>
           <p className="text-gray-600">Loading truck records...</p>
         </div>
       </div>
@@ -496,7 +496,7 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
             <p className="text-gray-600">VIN: {truck.vin || 'N/A'}</p>
           </div>
           <div className="flex items-center gap-2">
-            <button className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 flex items-center gap-2">
+            <button className="px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 flex items-center gap-2">
               <FaDownload className="w-4 h-4" />
               Export Records
             </button>
@@ -512,7 +512,7 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
           <div className="flex items-center">
-            <FaFileAlt className="w-8 h-8 text-blue-600" />
+            <FaFileAlt className="w-8 h-8 text-primary-500" />
             <div className="ml-3">
               <p className="text-sm font-medium text-gray-500">Documents</p>
               <p className="text-2xl font-bold text-gray-900">{truck.documents?.length || 0}</p>
@@ -564,7 +564,7 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={`py-2 px-1 border-b-2 font-medium text-sm flex items-center gap-2 ${activeTab === tab.id
-                ? 'border-primary-500 text-primary-600'
+                ? 'border-primary-500 text-primary-500'
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
             >
@@ -632,7 +632,7 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
               <div className="bg-white border border-gray-200 rounded-lg p-5 shadow-sm hover:shadow-md transition-shadow">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
-                    <FaFileAlt className="w-5 h-5 text-blue-600" />
+                    <FaFileAlt className="w-5 h-5 text-primary-500" />
                     <h3 className="font-medium text-gray-900">Insurance</h3>
                   </div>
                   {truck.insuranceExpiry && (
@@ -693,7 +693,7 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
                   </div>
                   {truck.nextMaintenanceDate && (
                     <span className={`px-2 py-1 rounded text-xs font-medium ${
-                      new Date(truck.nextMaintenanceDate) < new Date() ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800'
+                      new Date(truck.nextMaintenanceDate) < new Date() ? 'bg-red-100 text-red-800' : 'bg-primary-50 text-primary-700'
                     }`}>
                       {new Date(truck.nextMaintenanceDate) < new Date() ? 'Overdue' : 'Scheduled'}
                     </span>
@@ -754,7 +754,7 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
                 </button>
                 <button
                   onClick={() => setShowAddDocument(true)}
-                  className="px-3 py-1 bg-primary-600 text-white rounded text-sm hover:bg-primary-700 flex items-center gap-1"
+                  className="px-3 py-1 bg-primary-500 text-white rounded text-sm hover:bg-primary-600 flex items-center gap-1"
                 >
                   <FaPlus className="w-3 h-3" />
                   Add Document
@@ -763,7 +763,7 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
             </div>
             {loadingDocuments ? (
               <div className="text-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mx-auto mb-2"></div>
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500 mx-auto mb-2"></div>
                 <p className="text-gray-500">Loading documents...</p>
               </div>
             ) : documents.length === 0 ? (
@@ -778,7 +778,7 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
                   <div key={doc.id} className="border border-gray-200 rounded-lg p-4">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <FaFileAlt className="w-6 h-6 text-blue-600" />
+                        <FaFileAlt className="w-6 h-6 text-primary-500" />
                         <div>
                           <h3 className="font-medium text-gray-900">{doc.title}</h3>
                           <p className="text-sm text-gray-500">
@@ -894,7 +894,7 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
                 </button>
                 <button
                   onClick={() => setShowScheduleMaintenance(true)}
-                  className="px-3 py-1 bg-primary-600 text-white rounded text-sm hover:bg-primary-700 flex items-center gap-1"
+                  className="px-3 py-1 bg-primary-500 text-white rounded text-sm hover:bg-primary-600 flex items-center gap-1"
                 >
                   <FaPlus className="w-3 h-3" />
                   Schedule Maintenance
@@ -904,7 +904,7 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
             <div className="space-y-4">
               {loadingMaintenance ? (
                 <div className="flex items-center justify-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500"></div>
                 </div>
               ) : maintenanceRecords.length === 0 && (!truck.maintenance || truck.maintenance.length === 0) ? (
                 <div className="text-center py-8 text-gray-500">
@@ -1018,7 +1018,7 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
                 </button>
                 <button
                   onClick={() => setShowScheduleInspection(true)}
-                  className="px-3 py-1 bg-primary-600 text-white rounded text-sm hover:bg-primary-700 flex items-center gap-1"
+                  className="px-3 py-1 bg-primary-500 text-white rounded text-sm hover:bg-primary-600 flex items-center gap-1"
                 >
                   <FaPlus className="w-3 h-3" />
                   Schedule Inspection
@@ -1028,7 +1028,7 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
             <div className="space-y-4">
               {loadingInspections ? (
                 <div className="flex items-center justify-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500"></div>
                 </div>
               ) : inspectionRecords.length === 0 && (!truck.inspections || truck.inspections.length === 0) ? (
                 <div className="text-center py-8 text-gray-500">
@@ -1051,7 +1051,7 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
                           {record.status}
                         </span>
                         {record.score !== undefined && (
-                          <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                          <span className="px-2 py-1 rounded-full text-xs font-medium bg-primary-50 text-primary-700">
                             Score: {record.score}
                           </span>
                         )}
@@ -1146,7 +1146,7 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
                 </button>
                 <button
                   onClick={() => setShowAddInsurance(true)}
-                  className="px-3 py-1 bg-primary-600 text-white rounded text-sm hover:bg-primary-700 flex items-center gap-1"
+                  className="px-3 py-1 bg-primary-500 text-white rounded text-sm hover:bg-primary-600 flex items-center gap-1"
                 >
                   <FaPlus className="w-3 h-3" />
                   Add Insurance
@@ -1156,7 +1156,7 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
             <div className="space-y-4">
               {loadingInsurance ? (
                 <div className="flex items-center justify-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500"></div>
                 </div>
               ) : insuranceRecords.length === 0 && (!truck.insurance || truck.insurance.length === 0) ? (
                 <div className="text-center py-8 text-gray-500">
@@ -1168,7 +1168,7 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
                   <div key={record.id} className="border border-gray-200 rounded-lg p-4">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <FaShieldAlt className="w-6 h-6 text-blue-600" />
+                        <FaShieldAlt className="w-6 h-6 text-primary-500" />
                         <div>
                           <h3 className="font-medium text-gray-900">{record.policyType} Insurance</h3>
                           <p className="text-sm text-gray-500">Policy: {record.policyNumber}</p>
@@ -1268,7 +1268,7 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
               <h2 className="text-xl font-semibold text-gray-900">Fuel Records</h2>
               <button
                 onClick={() => setShowAddFuel(true)}
-                className="px-3 py-1 bg-primary-600 text-white rounded text-sm hover:bg-primary-700 flex items-center gap-1"
+                className="px-3 py-1 bg-primary-500 text-white rounded text-sm hover:bg-primary-600 flex items-center gap-1"
               >
                 <FaPlus className="w-3 h-3" />
                 Add Fuel Record
@@ -1276,7 +1276,7 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
             </div>
             {loadingFuel ? (
               <div className="flex items-center justify-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500"></div>
               </div>
             ) : fuelRecords.length === 0 ? (
               <div className="text-center py-8 text-gray-500">
@@ -1395,7 +1395,7 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
               <h2 className="text-xl font-semibold text-gray-900">Tire Records</h2>
               <button
                 onClick={() => setShowAddTire(true)}
-                className="px-3 py-1 bg-primary-600 text-white rounded text-sm hover:bg-primary-700 flex items-center gap-1"
+                className="px-3 py-1 bg-primary-500 text-white rounded text-sm hover:bg-primary-600 flex items-center gap-1"
               >
                 <FaPlus className="w-3 h-3" />
                 Add Tire Record
@@ -1403,7 +1403,7 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
             </div>
             {loadingTires ? (
               <div className="flex items-center justify-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500"></div>
               </div>
             ) : tireRecords.length === 0 ? (
               <div className="text-center py-8 text-gray-500">
@@ -1542,7 +1542,7 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
               <h2 className="text-xl font-semibold text-gray-900">Compliance Records</h2>
               <button
                 onClick={() => setShowAddCompliance(true)}
-                className="px-3 py-1 bg-primary-600 text-white rounded text-sm hover:bg-primary-700 flex items-center gap-1"
+                className="px-3 py-1 bg-primary-500 text-white rounded text-sm hover:bg-primary-600 flex items-center gap-1"
               >
                 <FaPlus className="w-3 h-3" />
                 Add Compliance Record
@@ -1550,7 +1550,7 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
             </div>
             {loadingCompliance ? (
               <div className="flex items-center justify-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500"></div>
               </div>
             ) : complianceRecords.length === 0 ? (
               <div className="text-center py-8 text-gray-500">
@@ -1571,7 +1571,7 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
                       case 'critical':
                         return 'bg-red-200 text-red-900';
                       case 'pending':
-                        return 'bg-blue-100 text-blue-800';
+                        return 'bg-primary-50 text-primary-700';
                       default:
                         return 'bg-gray-100 text-gray-800';
                     }
@@ -1580,7 +1580,7 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
                     <div key={record.id} className="border border-gray-200 rounded-lg p-4">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                          <FaCertificate className="w-6 h-6 text-indigo-600" />
+                          <FaCertificate className="w-6 h-6 text-primary-500" />
                           <div>
                             <h3 className="font-medium text-gray-900">{record.requirement}</h3>
                             <p className="text-sm text-gray-500">{record.regulation}</p>
@@ -1741,7 +1741,7 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
                         toast.error('Failed to download document');
                       }
                     }}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
+                    className="px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 flex items-center gap-2"
                   >
                     <FaDownload className="w-4 h-4" />
                     Download
@@ -1777,7 +1777,7 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
               {loadingDocumentView ? (
                 <div className="flex items-center justify-center min-h-[400px]">
                   <div className="text-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto mb-4"></div>
                     <p className="text-gray-600">Loading document...</p>
                   </div>
                 </div>
@@ -1820,7 +1820,7 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
                             toast.error('Failed to download document');
                           }
                         }}
-                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
+                        className="px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 flex items-center gap-2"
                       >
                         <FaDownload className="w-4 h-4" />
                         Download to View
@@ -2136,7 +2136,7 @@ const ScheduleMaintenanceModal: React.FC<ScheduleMaintenanceModalProps> = ({ tru
       <div className="bg-white rounded-lg shadow-xl max-w-3xl w-full mx-4 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <div className="flex items-center gap-3">
-            <FaTools className="w-6 h-6 text-primary-600" />
+            <FaTools className="w-6 h-6 text-primary-500" />
             <h2 className="text-2xl font-bold text-gray-900">
               {isEditMode ? 'Edit Maintenance Record' : 'Schedule Maintenance'}
             </h2>
@@ -2381,7 +2381,7 @@ const ScheduleMaintenanceModal: React.FC<ScheduleMaintenanceModalProps> = ({ tru
               <button
                 type="submit"
                 disabled={submitting}
-                className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 flex items-center gap-2"
+                className="px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 disabled:opacity-50 flex items-center gap-2"
               >
                 {submitting ? (
                   <>
@@ -2533,7 +2533,7 @@ const ScheduleInspectionModal: React.FC<ScheduleInspectionModalProps> = ({ truck
       <div className="bg-white rounded-lg shadow-xl max-w-3xl w-full mx-4 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <div className="flex items-center gap-3">
-            <FaClipboardCheck className="w-6 h-6 text-primary-600" />
+            <FaClipboardCheck className="w-6 h-6 text-primary-500" />
             <h2 className="text-2xl font-bold text-gray-900">
               {isEditMode ? 'Edit Inspection Record' : 'Schedule Inspection'}
             </h2>
@@ -2729,7 +2729,7 @@ const ScheduleInspectionModal: React.FC<ScheduleInspectionModalProps> = ({ truck
                 id="isRequired"
                 checked={formData.isRequired}
                 onChange={handleChange}
-                className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
+                className="w-4 h-4 text-primary-500 border-gray-300 rounded focus:ring-primary-500"
               />
               <label htmlFor="isRequired" className="ml-2 text-sm font-medium text-gray-700">
                 Required Inspection
@@ -2748,7 +2748,7 @@ const ScheduleInspectionModal: React.FC<ScheduleInspectionModalProps> = ({ truck
               <button
                 type="submit"
                 disabled={submitting}
-                className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 flex items-center gap-2"
+                className="px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 disabled:opacity-50 flex items-center gap-2"
               >
                 {submitting ? (
                   <>
@@ -2966,7 +2966,7 @@ const AddInsuranceModal: React.FC<AddInsuranceModalProps> = ({ truckId, insuranc
       <div className="bg-white rounded-lg shadow-xl max-w-3xl w-full mx-4 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <div className="flex items-center gap-3">
-            <FaShieldAlt className="w-6 h-6 text-primary-600" />
+            <FaShieldAlt className="w-6 h-6 text-primary-500" />
             <h2 className="text-2xl font-bold text-gray-900">
               {isEditMode ? 'Edit Insurance Record' : 'Add Insurance'}
             </h2>
@@ -3232,7 +3232,7 @@ const AddInsuranceModal: React.FC<AddInsuranceModalProps> = ({ truckId, insuranc
                         setFormData(prev => ({ ...prev, documentUrl: '' }));
                         fileInputRef.current?.click();
                       }}
-                      className="text-primary-600 hover:text-primary-700 text-sm"
+                      className="text-primary-500 hover:text-primary-600 text-sm"
                     >
                       Replace
                     </button>
@@ -3269,7 +3269,7 @@ const AddInsuranceModal: React.FC<AddInsuranceModalProps> = ({ truckId, insuranc
                 id="autoRenewal"
                 checked={formData.autoRenewal}
                 onChange={handleChange}
-                className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
+                className="w-4 h-4 text-primary-500 border-gray-300 rounded focus:ring-primary-500"
               />
               <label htmlFor="autoRenewal" className="ml-2 text-sm font-medium text-gray-700">
                 Auto Renewal
@@ -3288,7 +3288,7 @@ const AddInsuranceModal: React.FC<AddInsuranceModalProps> = ({ truckId, insuranc
               <button
                 type="submit"
                 disabled={submitting || uploadingDocument}
-                className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 flex items-center gap-2"
+                className="px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 disabled:opacity-50 flex items-center gap-2"
               >
                 {submitting || uploadingDocument ? (
                   <>
@@ -3396,7 +3396,7 @@ const AddFuelRecordModal: React.FC<AddFuelRecordModalProps> = ({ truckId, fuel, 
       <div className="bg-white rounded-lg shadow-xl max-w-3xl w-full mx-4 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <div className="flex items-center gap-3">
-            <FaGasPump className="w-6 h-6 text-primary-600" />
+            <FaGasPump className="w-6 h-6 text-primary-500" />
             <h2 className="text-2xl font-bold text-gray-900">
               {isEditMode ? 'Edit Fuel Record' : 'Add Fuel Record'}
             </h2>
@@ -3582,7 +3582,7 @@ const AddFuelRecordModal: React.FC<AddFuelRecordModalProps> = ({ truckId, fuel, 
               <button
                 type="submit"
                 disabled={submitting}
-                className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 flex items-center gap-2"
+                className="px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 disabled:opacity-50 flex items-center gap-2"
               >
                 {submitting ? (
                   <>
@@ -3706,7 +3706,7 @@ const AddTireRecordModal: React.FC<AddTireRecordModalProps> = ({ truckId, tire, 
       <div className="bg-white rounded-lg shadow-xl max-w-3xl w-full mx-4 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <div className="flex items-center gap-3">
-            <FaTachometerAlt className="w-6 h-6 text-primary-600" />
+            <FaTachometerAlt className="w-6 h-6 text-primary-500" />
             <h2 className="text-2xl font-bold text-gray-900">
               {isEditMode ? 'Edit Tire Record' : 'Add Tire Record'}
             </h2>
@@ -3958,7 +3958,7 @@ const AddTireRecordModal: React.FC<AddTireRecordModalProps> = ({ truckId, tire, 
               <button
                 type="submit"
                 disabled={submitting}
-                className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 flex items-center gap-2"
+                className="px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 disabled:opacity-50 flex items-center gap-2"
               >
                 {submitting ? (
                   <>
@@ -4061,7 +4061,7 @@ const AddComplianceRecordModal: React.FC<AddComplianceRecordModalProps> = ({ tru
       <div className="bg-white rounded-lg shadow-xl max-w-3xl w-full mx-4 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <div className="flex items-center gap-3">
-            <FaCertificate className="w-6 h-6 text-primary-600" />
+            <FaCertificate className="w-6 h-6 text-primary-500" />
             <h2 className="text-2xl font-bold text-gray-900">
               {isEditMode ? 'Edit Compliance Record' : 'Add Compliance Record'}
             </h2>
@@ -4223,7 +4223,7 @@ const AddComplianceRecordModal: React.FC<AddComplianceRecordModalProps> = ({ tru
               <button
                 type="submit"
                 disabled={submitting}
-                className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 flex items-center gap-2"
+                className="px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 disabled:opacity-50 flex items-center gap-2"
               >
                 {submitting ? (
                   <>
@@ -4361,7 +4361,7 @@ const AddDocumentModal: React.FC<AddDocumentModalProps> = ({ truckId, onClose, o
         </DialogHeader>
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <div className="flex items-center gap-3">
-            <FaFileAlt className="w-6 h-6 text-primary-600" />
+            <FaFileAlt className="w-6 h-6 text-primary-500" />
             <h2 className="text-2xl font-bold text-gray-900">Add Document</h2>
           </div>
           <button
@@ -4508,7 +4508,7 @@ const AddDocumentModal: React.FC<AddDocumentModalProps> = ({ truckId, onClose, o
                     <button
                       type="button"
                       onClick={() => fileInputRef.current?.click()}
-                      className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
+                      className="px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600"
                     >
                       Choose File
                     </button>
@@ -4557,7 +4557,7 @@ const AddDocumentModal: React.FC<AddDocumentModalProps> = ({ truckId, onClose, o
               <button
                 type="submit"
                 disabled={uploading || !file}
-                className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 flex items-center gap-2"
+                className="px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 disabled:opacity-50 flex items-center gap-2"
               >
                 {uploading ? (
                   <>

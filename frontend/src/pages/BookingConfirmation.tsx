@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { FaCheckCircle, FaTimesCircle, FaShieldAlt, FaDollarSign, FaClock, FaMapMarkerAlt } from 'react-icons/fa';
+import { cargoOwnerAPI } from '../services/cargoOwnerAPI';
+import toast from 'react-hot-toast';
 
 interface BookingData {
   matchId: string;
@@ -43,13 +45,22 @@ const BookingConfirmation: React.FC = () => {
   const handleConfirmBooking = async () => {
     setConfirming(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
+      if (!matchId) throw new Error('No match ID found');
+
+      await cargoOwnerAPI.confirmBooking(matchId, {
+        status: 'CONFIRMED',
+        agreedPrice: bookingData?.agreedPrice,
+        paymentTerms: bookingData?.terms?.paymentTerms,
+        confirmedAt: new Date().toISOString()
+      });
+
+      toast.success('Booking confirmed successfully');
+
       // Navigate to contract negotiation
-      navigate(`/dashboard/contract-negotiation/booking-${Date.now()}`);
-    } catch (error) {
+      navigate(`/dashboard/contract-negotiation/booking-${matchId}`);
+    } catch (error: any) {
       console.error('Error confirming booking:', error);
+      toast.error(error.message || 'Failed to confirm booking');
     } finally {
       setConfirming(false);
     }
@@ -106,7 +117,7 @@ const BookingConfirmation: React.FC = () => {
                   <FaCheckCircle className="text-green-500" />
                   Booking Summary
                 </h2>
-                
+
                 <div className="space-y-3">
                   <div className="flex justify-between">
                     <span className="text-gray-600">Match ID:</span>
@@ -118,11 +129,10 @@ const BookingConfirmation: React.FC = () => {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Status:</span>
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      bookingData.status === 'CONFIRMED' ? 'bg-green-100 text-green-800' :
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${bookingData.status === 'CONFIRMED' ? 'bg-green-100 text-green-800' :
                       bookingData.status === 'REJECTED' ? 'bg-red-100 text-red-800' :
-                      'bg-yellow-100 text-yellow-800'
-                    }`}>
+                        'bg-yellow-100 text-yellow-800'
+                      }`}>
                       {bookingData.status}
                     </span>
                   </div>
@@ -134,7 +144,7 @@ const BookingConfirmation: React.FC = () => {
                   <FaShieldAlt className="text-blue-500" />
                   Payment & Security
                 </h2>
-                
+
                 <div className="space-y-3">
                   <div className="flex justify-between">
                     <span className="text-gray-600">Payment Method:</span>
@@ -206,7 +216,7 @@ const BookingConfirmation: React.FC = () => {
                   </>
                 )}
               </button>
-              
+
               <button
                 onClick={handleRejectBooking}
                 className="flex-1 bg-gray-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-gray-700 flex items-center justify-center gap-2"

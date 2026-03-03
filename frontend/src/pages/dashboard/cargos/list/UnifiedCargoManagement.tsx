@@ -29,7 +29,6 @@ import toast from "react-hot-toast";
 import type { ICargoBody, ICargoResponse } from "../create/types/cargo";
 import FilterSelect from "@/components/common/FilterSelect";
 import { FaLayerGroup, FaBox } from "react-icons/fa";
-import logoUrutiX from "@/assets/logo-urutix.svg";
 import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 import { loadStatusWebSocket } from "@/services/loadStatusWebSocket";
 import { BrokerAssignmentWizard } from "@/components/Cargo/BrokerAssignmentWizard";
@@ -129,7 +128,7 @@ const UnifiedCargoManagement = () => {
   // Broker assignment state
   const [showAssignBrokerModal, setShowAssignBrokerModal] = useState(false);
   const [selectedLoadForBroker, setSelectedLoadForBroker] = useState<any>(null);
-  
+
   // Receiver assignment state
   const [showAssignReceiverModal, setShowAssignReceiverModal] = useState(false);
   const [selectedLoadForReceiver, setSelectedLoadForReceiver] = useState<any>(null);
@@ -622,98 +621,96 @@ const UnifiedCargoManagement = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50 relative">
-      {/* Background Logo */}
-      <img
-        src={logoUrutiX}
-        alt="UrutiX Logo Background"
-        className="pointer-events-none select-none fixed inset-0 w-full h-full object-cover opacity-10 z-0"
-        style={{ objectPosition: 'center' }}
-      />
-      <div className="max-w-7xl mx-auto px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8 py-3 sm:py-4 md:py-6 relative z-10">
-        {/* Header - Hide for bidding tab */}
+    <>
+      <div className="space-y-6">
+        {/* Header - Enlite Prime Style */}
         {activeTab !== "bidding" && (
-          <div className="mb-3 sm:mb-4 rounded-lg px-4 py-3" style={{ backgroundColor: '#345E85' }}>
-            <h1 className="text-xl sm:text-2xl font-bold text-white">Cargo Management</h1>
-            <p className="text-xs sm:text-sm text-white/90 mt-1">
-              Manage shipments, create new cargo, and track bidding
-            </p>
+          <div className="mb-6 rounded-2xl p-6 bg-white border border-slate-100 shadow-sm flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center">
+                <FaBox className="w-6 h-6 text-[#345E85]" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-black text-[#0f172a] tracking-tight">Cargo Management</h1>
+                <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">
+                  Shipments, Analytics & Intelligence
+                </p>
+              </div>
+            </div>
+            <div className="hidden md:flex items-center gap-2">
+              <div className="text-right mr-4 px-4 py-2 border-r border-slate-100">
+                <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Active Loads</div>
+                <div className="text-lg font-black text-[#345E85] leading-tight">{activeLoads.length}</div>
+              </div>
+              <button
+                onClick={() => handleTabChange("create")}
+                className="px-6 py-2.5 bg-[#345E85] text-white rounded-2xl transition-all font-black text-sm shadow-lg shadow-blue-900/10 hover:bg-slate-800 flex items-center gap-2"
+              >
+                <Plus className="w-4 h-4" />
+                <span>CREATE CARGO</span>
+              </button>
+            </div>
           </div>
         )}
 
-        {/* Navigation Tabs - Hide for bidding tab */}
-        {activeTab !== "bidding" && (
-          <div className="bg-white rounded-lg border border-gray-200 mb-3 sm:mb-4 overflow-hidden">
-            <nav className="flex flex-wrap sm:flex-nowrap gap-1.5 sm:gap-1 sm:space-x-1 p-1.5 sm:p-1 sm:overflow-x-auto sm:scrollbar-hide sm:scroll-smooth">
-              {tabs.map((tab) => {
-                const Icon = tab.icon;
-                const isActive = activeTab === tab.id;
-                return (
-                  <button
-                    key={tab.id}
-                    onClick={() => handleTabChange(tab.id)}
-                    className={cn(
-                      "group px-2.5 sm:px-3 md:px-4 py-2 sm:py-2.5 rounded-md text-xs sm:text-sm font-medium flex items-center justify-center sm:justify-start gap-1.5 sm:gap-2 transition-all relative whitespace-nowrap flex-1 sm:flex-initial min-w-0 touch-manipulation min-h-[44px] sm:min-h-0",
-                      isActive
-                        ? "bg-gray-100 text-gray-900 border border-gray-300"
-                        : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
-                    )}
-                    title={tab.label}
-                  >
-                    <Icon className={cn(
-                      "w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0",
-                      isActive ? "text-gray-700" : "text-gray-500"
-                    )} />
-                    <span className="hidden sm:inline truncate">{tab.label}</span>
-                    {/* Mobile tooltip - shows on hover/touch */}
-                    <span className="sm:hidden absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-gray-900 text-white text-xs font-medium rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 pointer-events-none z-50 whitespace-nowrap">
-                      {tab.label}
-                      {tab.count !== undefined && (
-                        <span className="ml-1.5 px-1.5 py-0.5 bg-white/20 text-white text-[10px] font-semibold rounded-full">
-                          {tab.count}
-                        </span>
+        <div className="mb-6">
+          <nav className="flex flex-wrap gap-2">
+            {tabs.map((tab) => {
+              const Icon = tab.icon;
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => handleTabChange(tab.id)}
+                  className={cn(
+                    "px-5 py-2.5 rounded-2xl text-xs sm:text-sm font-bold flex items-center gap-2 transition-all relative",
+                    isActive
+                      ? "bg-[#345E85] text-white shadow-lg shadow-blue-900/20"
+                      : "bg-white text-slate-500 border border-slate-100 hover:bg-slate-50"
+                  )}
+                >
+                  <Icon className={cn(
+                    "w-4 h-4",
+                    isActive ? "text-white" : "text-slate-400"
+                  )} />
+                  <span className="uppercase tracking-wider">{tab.label}</span>
+                  {tab.count !== undefined && (
+                    <span
+                      className={cn(
+                        "ml-1 px-2 py-0.5 text-[10px] font-bold rounded-lg",
+                        isActive
+                          ? "bg-white/20 text-white"
+                          : "bg-slate-100 text-slate-500"
                       )}
-                      {/* Tooltip arrow */}
-                      <span className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-gray-900"></span>
+                    >
+                      {tab.count}
                     </span>
-                    {tab.count !== undefined && (
-                      <span
-                        className={cn(
-                          "hidden sm:inline ml-1 px-1.5 sm:px-2 py-0.5 text-[10px] sm:text-xs font-semibold rounded-full flex-shrink-0",
-                          isActive
-                            ? "bg-gray-200 text-gray-700"
-                            : "bg-gray-100 text-gray-600"
-                        )}
-                      >
-                        {tab.count}
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-            </nav>
-          </div>
-        )}
+                  )}
+                </button>
+              );
+            })}
+          </nav>
+        </div>
 
         {/* Content Container - Hide for bidding tab */}
         {activeTab !== "bidding" && (
-          <div className="bg-white rounded-lg border border-gray-200 mb-4 sm:mb-6">
+          <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm mb-8 overflow-hidden">
 
             {/* Tab Content */}
             <div className="p-3 sm:p-4 md:p-6 pt-3 sm:pt-4 md:pt-6">
               {/* Filters - Only show for list views */}
               {(activeTab === "all" || activeTab === "active" || activeTab === "drafts") && (
                 <div className="mb-4 sm:mb-6">
-                  <div className="flex flex-col gap-2 sm:gap-3 lg:flex-row lg:items-end">
+                  <div className="flex flex-col gap-4 lg:flex-row lg:items-end">
                     <div className="relative flex-1 w-full">
-                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 transform text-gray-400 w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                      <Search className="absolute left-4 top-1/2 -translate-y-1/2 transform text-slate-400 w-4 h-4" />
                       <input
                         type="text"
-                        placeholder="Search cargo by name..."
+                        placeholder="Search cargo by title, ID or type..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full rounded-lg sm:rounded-xl border border-transparent bg-white px-3 sm:px-4 py-2.5 sm:py-3 pl-9 sm:pl-11 text-sm text-gray-700 shadow-inner transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100 touch-manipulation min-h-[44px] sm:min-h-0"
-                        aria-label="Search cargo by name"
+                        className="w-full rounded-2xl border border-slate-200 bg-slate-50/50 px-4 py-3 pl-11 text-sm text-slate-700 transition focus:border-[#345E85] focus:outline-none focus:ring-4 focus:ring-blue-500/10"
+                        aria-label="Search cargo"
                       />
                     </div>
                     <div className="w-full sm:w-auto">
@@ -756,31 +753,31 @@ const UnifiedCargoManagement = () => {
                     </div>
                   </div>
 
-                  {/* View Mode Toggle */}
-                  <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-lg p-1">
+                  {/* View Mode Toggle - Prime Style */}
+                  <div className="flex items-center gap-2 bg-slate-100/50 p-1.5 rounded-2xl border border-slate-100">
                     <button
                       onClick={() => setViewMode('card')}
                       className={cn(
-                        "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors",
+                        "flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all",
                         viewMode === 'card'
-                          ? "bg-gray-900 text-white"
-                          : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                          ? "bg-white text-[#345E85] shadow-sm"
+                          : "text-slate-500 hover:text-slate-800"
                       )}
                     >
-                      <Grid className="w-3.5 h-3.5" />
-                      <span className="hidden sm:inline">Cards</span>
+                      <Grid className="w-4 h-4" />
+                      <span className="uppercase tracking-wider">GRID VIEW</span>
                     </button>
                     <button
                       onClick={() => setViewMode('table')}
                       className={cn(
-                        "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors",
+                        "flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all",
                         viewMode === 'table'
-                          ? "bg-gray-900 text-white"
-                          : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                          ? "bg-white text-[#345E85] shadow-sm"
+                          : "text-slate-500 hover:text-slate-800"
                       )}
                     >
-                      <Table className="w-3.5 h-3.5" />
-                      <span className="hidden sm:inline">Table</span>
+                      <Table className="w-4 h-4" />
+                      <span className="uppercase tracking-wider">LIST VIEW</span>
                     </button>
                   </div>
                 </div>
@@ -814,13 +811,15 @@ const UnifiedCargoManagement = () => {
                             : "Create your first cargo shipment to get started."}
                       </p>
                       {(activeTab === "all" || activeTab === "drafts") && (
-                        <button
-                          onClick={() => setActiveTab("create")}
-                          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors touch-manipulation min-h-[44px] sm:min-h-0"
-                        >
-                          <Plus className="w-4 h-4" />
-                          Create Cargo
-                        </button>
+                        <div className="mt-8 flex justify-center">
+                          <button
+                            onClick={() => setActiveTab("create")}
+                            className="inline-flex items-center justify-center gap-3 px-8 py-3 bg-[#345E85] text-white rounded-2xl transition-all font-black text-sm shadow-lg shadow-blue-900/10 hover:bg-slate-800"
+                          >
+                            <Plus className="w-5 h-5" />
+                            CREATE CARGO
+                          </button>
+                        </div>
                       )}
                     </div>
                   ) : (
@@ -977,14 +976,20 @@ const UnifiedCargoManagement = () => {
           </div>
         )}
 
-        {/* Bidding Tab - Outside the container */}
         {activeTab === "bidding" && (
-          <div>
-            <div className="mb-3 sm:mb-4 rounded-lg px-4 py-3" style={{ backgroundColor: '#345E85' }}>
-              <h1 className="text-xl sm:text-2xl font-bold text-white">Bidding Dashboard</h1>
-              <p className="text-xs sm:text-sm text-white/90 mt-1">
-                Manage bids and auctions for your cargo
-              </p>
+          <div className="space-y-6">
+            <div className="rounded-2xl p-6 bg-white border border-slate-100 shadow-sm flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center">
+                  <Gavel className="w-6 h-6 text-[#345E85]" />
+                </div>
+                <div>
+                  <h1 className="text-2xl font-black text-[#0f172a] tracking-tight">Bidding Dashboard</h1>
+                  <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">
+                    Auctions, Offers & Negotiations
+                  </p>
+                </div>
+              </div>
             </div>
             {user ? (
               <BiddingDashboard
@@ -1093,7 +1098,7 @@ const UnifiedCargoManagement = () => {
 
       {/* Confirmation Dialog */}
       {DialogComponent}
-    </div >
+    </>
   );
 };
 

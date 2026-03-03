@@ -15,7 +15,7 @@ export const fetchAnalytics = async () => {
 // User management
 export const fetchUsers = async () => {
   const res = await api.get('/admin/users');
-  return res.data;
+  return res.data.users || res.data;
 };
 
 export const fetchAllUsers = async (tenantId?: string) => {
@@ -98,18 +98,18 @@ export const fetchAuditLogs = async () => {
   return res.data;
 };
 
-// Tenants
+// Tenants - Enhanced with new tenant management endpoints
 export const fetchTenants = async () => {
   console.log("🔍 fetchTenants: Making API call to /tenants");
   try {
     const res = await api.get('/tenants');
     console.log("📦 fetchTenants: Full response:", res);
     console.log("📦 fetchTenants: Response.data:", res.data);
-    
+
     // Backend returns: { success: true, data: [...tenants], message: "..." }
     // Check for data.data (nested) or data.tenants or direct array
     let tenantsArray: any[] = [];
-    
+
     if (res.data?.data && Array.isArray(res.data.data)) {
       tenantsArray = res.data.data;
       console.log("✅ fetchTenants: Found tenants in res.data.data:", tenantsArray.length);
@@ -123,12 +123,12 @@ export const fetchTenants = async () => {
       console.warn("⚠️ fetchTenants: No tenants array found in response");
       console.warn("⚠️ fetchTenants: Response structure:", JSON.stringify(res.data, null, 2));
     }
-    
+
     if (tenantsArray.length > 0) {
       console.log("✅ fetchTenants: Successfully fetched", tenantsArray.length, "tenants");
       console.log("✅ fetchTenants: First tenant:", JSON.stringify(tenantsArray[0], null, 2));
     }
-    
+
     // Return in a consistent format
     return {
       tenants: tenantsArray,
@@ -143,6 +143,61 @@ export const fetchTenants = async () => {
     console.error("❌ fetchTenants: Error response status:", error?.response?.status);
     throw error;
   }
+};
+
+// Fetch enriched tenants with subscription, credits, and user data
+export const fetchEnrichedTenants = async (filters?: {
+  status?: string[];
+  search?: string;
+  hasLowBalance?: boolean;
+  hasExpiringSubscription?: boolean;
+}) => {
+  const params = new URLSearchParams();
+  if (filters?.status) {
+    filters.status.forEach(s => params.append('status', s));
+  }
+  if (filters?.search) params.append('search', filters.search);
+  if (filters?.hasLowBalance !== undefined) params.append('hasLowBalance', String(filters.hasLowBalance));
+  if (filters?.hasExpiringSubscription !== undefined) params.append('hasExpiringSubscription', String(filters.hasExpiringSubscription));
+
+  const res = await api.get(`/admin/tenant-management?${params.toString()}`);
+  return res.data;
+};
+
+// Get tenant details with full context
+export const getTenantDetailsEnriched = async (tenantId: string) => {
+  const res = await api.get(`/admin/tenant-management/${tenantId}`);
+  return res.data;
+};
+
+// Get tenant health score
+export const getTenantHealth = async (tenantId: string) => {
+  const res = await api.get(`/admin/tenant-management/${tenantId}/health`);
+  return res.data;
+};
+
+// Get all tenant health scores
+export const getAllTenantHealth = async () => {
+  const res = await api.get('/admin/tenant-management/health/all');
+  return res.data;
+};
+
+// Set tenant status (activate/deactivate)
+export const setTenantStatus = async (tenantId: string, active: boolean) => {
+  const res = await api.post(`/admin/tenant-management/${tenantId}/status`, { active });
+  return res.data;
+};
+
+// Bulk update tenants
+export const bulkUpdateTenants = async (tenantIds: string[], updates: any) => {
+  const res = await api.post('/admin/tenant-management/bulk/update', { tenantIds, updates });
+  return res.data;
+};
+
+// Get tenant resource usage
+export const getTenantResources = async (tenantId: string) => {
+  const res = await api.get(`/admin/tenant-management/${tenantId}/resources`);
+  return res.data;
 };
 
 // Admin-wide listings
@@ -175,8 +230,19 @@ export const getTenantById = async (tenantId: string) => {
 
 // Update tenant
 export const updateTenant = async (tenantId: string, payload: any) => {
-  const res = await api.put(`/tenants/${tenantId}`, payload);
-  return res.data;
+  console.log('🔄 updateTenant API call:', { tenantId, payload });
+  try {
+    const res = await api.put(`/tenants/${tenantId}`, payload);
+    console.log('✅ updateTenant success:', res.data);
+    return res.data;
+  } catch (error: any) {
+    console.error('❌ updateTenant error:', error);
+    console.error('Error response:', error?.response);
+    console.error('Error status:', error?.response?.status);
+    console.error('Error data:', error?.response?.data);
+    console.error('Error headers:', error?.response?.headers);
+    throw error;
+  }
 };
 
 // Activate tenant
@@ -353,4 +419,100 @@ export const fetchRoutePerformance = async (routeId: string, period: 'day' | 'we
       profit: 0
     };
   }
+};
+
+
+// ============================================================================
+// System Health API Functions (Phase 1)
+// ============================================================================
+
+// Get current system health metrics
+export const fetchCurrentSystemHealth = async () => {
+  const res = await api.get('/admin/system-health/enhanced/current');
+  return res.data;
+};
+
+// Get historical system health metrics
+export const fetchHistoricalSystemHealth = async (params?: {
+  startDate?: string;
+  endDate?: string;
+  category?: string;
+}) => {
+  const res = await api.get('/admin/system-health/enhanced/historical', { params });
+  return res.data;
+};
+
+// Export system health metrics
+export const exportSystemHealthMetrics = async (format: 'csv' | 'json' = 'csv') => {
+  const res = await api.get('/admin/system-health/enhanced/export', {
+    params: { format },
+    responseType: 'blob',
+  });
+  return res.data;
+};
+
+// ============================================================================
+// Security Center API Functions (Phase 1)
+// ============================================================================
+
+// Get security events
+export const fetchSecurityEvents = async (params?: {
+  severity?: string;
+  type?: string;
+  startDate?: string;
+  endDate?: string;
+}) => {
+  const res = await api.get('/admin/security-center/events', { params });
+  return res.data;
+};
+
+// Get failed login attempts
+export const fetchFailedLogins = async (params?: {
+  startDate?: string;
+  endDate?: string;
+  tenantId?: string;
+}) => {
+  const res = await api.get('/admin/security-center/failed-logins', { params });
+  return res.data;
+};
+
+// Get active user sessions
+export const fetchActiveSessions = async () => {
+  const res = await api.get('/admin/security-center/sessions');
+  return res.data;
+};
+
+// Get flagged accounts
+export const fetchFlaggedAccounts = async () => {
+  const res = await api.get('/admin/security-center/flagged-accounts');
+  return res.data;
+};
+
+// Get permission change history
+export const fetchPermissionHistory = async (params?: {
+  userId?: string;
+  startDate?: string;
+  endDate?: string;
+}) => {
+  const res = await api.get('/admin/security-center/permission-history', { params });
+  return res.data;
+};
+
+// Terminate a user session
+export const terminateSession = async (sessionId: string) => {
+  const res = await api.post(`/admin/security-center/sessions/${sessionId}/terminate`);
+  return res.data;
+};
+
+// Export security logs
+export const exportSecurityLogs = async (params?: {
+  startDate?: string;
+  endDate?: string;
+  format?: 'csv' | 'json';
+}) => {
+  const res = await api.get('/admin/security-center/export', {
+    params,
+    responseType: 'blob',
+  });
+  return res.data;
 };

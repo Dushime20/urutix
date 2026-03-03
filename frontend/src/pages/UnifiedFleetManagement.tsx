@@ -123,10 +123,15 @@ const UnifiedFleetManagement: React.FC = () => {
   const handleTruckFormClose = () => {
     setShowTruckForm(false);
     setEditingTruck(null);
-    // Refresh trucks list after form closes
-    if (activeTab === 'my-trucks') {
-      loadTrucks();
+
+    // Switch back to 'my-trucks' if we were on the 'add-truck' tab
+    if (activeTab === 'add-truck') {
+      setActiveTab('my-trucks');
     }
+
+    // Refresh trucks list after form closes
+    loadTrucks();
+    setTrucksListRefreshKey(prev => prev + 1);
   };
 
   const handleTruckFormSubmit = async (truckData: any) => {
@@ -157,7 +162,7 @@ const UnifiedFleetManagement: React.FC = () => {
     switch (status?.toUpperCase()) {
       case 'IN_PROGRESS':
       case 'IN_TRANSIT':
-        return 'bg-blue-100 text-blue-800';
+        return 'bg-primary-50 text-primary-700';
       case 'COMPLETED':
         return 'bg-green-100 text-green-800';
       case 'CANCELLED':
@@ -180,10 +185,7 @@ const UnifiedFleetManagement: React.FC = () => {
 
             <button
               onClick={handleCreateTruck}
-              className="px-4 py-2 text-white rounded-lg transition-colors flex items-center gap-2"
-              style={{ backgroundColor: '#345E85' }}
-              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#2a4d6d'}
-              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#345E85'}
+              className="px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white rounded-lg transition-colors flex items-center gap-2 shadow-md hover:shadow-lg active:scale-95 transition-all"
             >
               <FaPlus className="w-4 h-4" />
               <span className="hidden sm:inline">Add New Truck</span>
@@ -204,7 +206,7 @@ const UnifiedFleetManagement: React.FC = () => {
               <p className="text-gray-600 mb-6">Click the button below to start adding a new truck to your fleet</p>
               <button
                 onClick={handleCreateTruck}
-                className="px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors flex items-center gap-2 mx-auto"
+                className="px-6 py-3 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors flex items-center gap-2 mx-auto"
               >
                 <FaPlus className="w-4 h-4" />
                 Add Truck
@@ -247,7 +249,7 @@ const UnifiedFleetManagement: React.FC = () => {
               </div>
               <button
                 onClick={loadTrucks}
-                className="px-5 py-2.5 bg-primary-600 text-white rounded-lg hover:bg-primary-700 active:bg-primary-800 transition-all duration-200 flex items-center gap-2.5 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-md font-medium text-sm"
+                className="px-5 py-2.5 bg-primary-500 text-white rounded-lg hover:bg-primary-600 active:bg-primary-700 transition-all duration-200 flex items-center gap-2.5 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-md font-medium text-sm"
                 disabled={loadingTrucks}
               >
                 {loadingTrucks ? (
@@ -267,7 +269,7 @@ const UnifiedFleetManagement: React.FC = () => {
 
           {loadingTrucks ? (
             <div className="text-center py-12">
-              <FaSpinner className="w-8 h-8 text-primary-600 animate-spin mx-auto mb-4" />
+              <FaSpinner className="w-8 h-8 text-primary-500 animate-spin mx-auto mb-4" />
               <p className="text-gray-600">Loading trucks...</p>
             </div>
           ) : trucks.length === 0 ? (
@@ -369,7 +371,7 @@ const UnifiedFleetManagement: React.FC = () => {
             <h2>Active Trips</h2>
             <button
               onClick={loadActiveTrips}
-              className="px-4 py-2.5 bg-primary-600 text-white rounded-lg hover:bg-primary-700 active:bg-primary-800 transition-all duration-200 flex items-center gap-2 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-md font-medium text-sm"
+              className="px-4 py-2.5 bg-primary-500 text-white rounded-lg hover:bg-primary-600 active:bg-primary-700 transition-all duration-200 flex items-center gap-2 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-md font-medium text-sm"
               disabled={loadingTrips}
             >
               {loadingTrips ? (
@@ -388,7 +390,7 @@ const UnifiedFleetManagement: React.FC = () => {
 
           {loadingTrips ? (
             <div className="text-center py-12">
-              <FaSpinner className="w-8 h-8 text-primary-600 animate-spin mx-auto mb-4" />
+              <FaSpinner className="w-8 h-8 text-primary-500 animate-spin mx-auto mb-4" />
               <p className="text-gray-600">Loading active trips...</p>
             </div>
           ) : activeTrips.length === 0 ? (
@@ -482,4 +484,5 @@ const UnifiedFleetManagement: React.FC = () => {
 };
 
 export default UnifiedFleetManagement;
+
 

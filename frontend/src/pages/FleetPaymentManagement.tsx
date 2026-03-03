@@ -1,24 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { 
-  FaTruck,
-  FaUser,
-  FaDollarSign,
-  FaCheckCircle,
-  FaTimesCircle,
-  FaSpinner,
-  FaSync,
-  FaSearch,
-  FaFilter,
-  FaMapMarkerAlt,
-  FaCalendarAlt,
-  FaBox,
-  FaFileInvoice,
-  FaEye
-} from 'react-icons/fa';
-import { fleetApi, type FleetItem, type Driver } from '../services/fleetApi';
-import { useAuth } from '../contexts/AuthContext';
 import toast from 'react-hot-toast';
+import { FaSearch, FaFilter, FaTruck, FaBox, FaDollarSign, FaCheckCircle, FaFileInvoice, FaSpinner } from 'react-icons/fa';
+import { fleetApi, type FleetItem } from '../services/fleetApi';
 import { ReceiptModal, type Receipt } from '../components/FleetDashboard/ReceiptModal';
+import { useAuth } from '../contexts/AuthContext';
 
 interface InTransitTruck {
   id: string;
@@ -91,8 +76,7 @@ const FleetPaymentManagement: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'paid' | 'unpaid'>('all');
-  const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
-  const [receipts, setReceipts] = useState<Receipt[]>([]);
+
   const [selectedReceipt, setSelectedReceipt] = useState<Receipt | null>(null);
   const [showReceiptModal, setShowReceiptModal] = useState(false);
   const { user } = useAuth();
@@ -102,10 +86,10 @@ const FleetPaymentManagement: React.FC = () => {
     try {
       // Fetch all trucks
       const allTrucks = await fleetApi.getTrucks();
-      
+
       // Filter for trucks with status "inTransit" (case-insensitive)
-      const inTransitTrucks = allTrucks.filter((truck: FleetItem) => 
-        truck.status?.toLowerCase() === 'intransit' || 
+      const inTransitTrucks = allTrucks.filter((truck: FleetItem) =>
+        truck.status?.toLowerCase() === 'intransit' ||
         truck.status?.toLowerCase() === 'in_transit' ||
         truck.status?.toLowerCase() === 'in-transit'
       );
@@ -115,9 +99,9 @@ const FleetPaymentManagement: React.FC = () => {
         const driver = generateDummyDriver(index);
         const cargo = generateDummyCargo(index);
         const price = generateDummyPrice();
-        
+
         return {
-          id: `transit-${truck.id}`,
+          id: `transit - ${truck.id} `,
           truckId: truck.id,
           plateNumber: truck.plateNumber,
           make: truck.make,
@@ -148,15 +132,15 @@ const FleetPaymentManagement: React.FC = () => {
   const generateReceiptNumber = () => {
     const timestamp = Date.now();
     const random = Math.floor(Math.random() * 1000);
-    return `RCP-${timestamp}-${random}`;
+    return `RCP - ${timestamp} -${random} `;
   };
 
   const generateReceipt = (truck: InTransitTruck): Receipt => {
     const receiptNumber = generateReceiptNumber();
     const paymentDate = new Date().toISOString();
-    
+
     return {
-      id: `receipt-${truck.id}`,
+      id: `receipt - ${truck.id} `,
       receiptNumber,
       tripId: truck.id,
       truckId: truck.truckId,
@@ -180,101 +164,39 @@ const FleetPaymentManagement: React.FC = () => {
       tripStartDate: truck.startDate,
       generatedAt: paymentDate,
       truckOwner: {
-        name: user?.profile?.firstName && user?.profile?.lastName 
-          ? `${user.profile.firstName} ${user.profile.lastName}`
+        name: (user as any)?.profile?.firstName && (user as any)?.profile?.lastName
+          ? `${(user as any).profile.firstName} ${(user as any).profile.lastName} `
           : user?.email || 'Truck Owner',
-        company: user?.profile?.companyName || undefined,
+        company: (user as any)?.profile?.companyName || undefined,
         email: user?.email || undefined,
-        phone: user?.profile?.phone || undefined,
+        phone: (user as any)?.profile?.phone || undefined,
       },
       status: 'pending', // Will be sent to cargo owner
     };
   };
 
-  const sendReceiptToCargoOwner = async (receipt: Receipt) => {
-    try {
-      // Simulate API call to send receipt to cargo owner
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // In a real implementation, this would:
-      // 1. Store receipt in database
-      // 2. Send notification/email to cargo owner with receipt
-      // 3. Update receipt status to 'sent'
-      
-      const updatedReceipt = { ...receipt, status: 'sent' as const };
-      setReceipts(prev => {
-        const existing = prev.find(r => r.id === receipt.id);
-        if (existing) {
-          return prev.map(r => r.id === receipt.id ? updatedReceipt : r);
-        }
-        return [...prev, updatedReceipt];
-      });
-      
-      return updatedReceipt;
-    } catch (error) {
-      console.error('Error sending receipt to cargo owner:', error);
-      throw error;
-    }
-  };
 
-  const handleUpdatePaymentStatus = async (truckId: string, newStatus: 'paid' | 'unpaid') => {
-    setUpdatingStatus(truckId);
-    try {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      const truck = trucks.find(t => t.id === truckId);
-      if (!truck) return;
-      
-      // Update local state
-      setTrucks(prevTrucks =>
-        prevTrucks.map(t =>
-          t.id === truckId ? { ...t, paymentStatus: newStatus } : t
-        )
-      );
-      
-      // If marking as paid, generate and store receipt
-      if (newStatus === 'paid' && truck.paymentStatus !== 'paid') {
-        const receipt = generateReceipt(truck);
-        setReceipts(prev => [...prev, receipt]);
-        
-        // Update truck with receipt ID
-        setTrucks(prevTrucks =>
-          prevTrucks.map(t =>
-            t.id === truckId ? { ...t, receiptId: receipt.id } : t
-          )
-        );
-        
-        // Send receipt to cargo owner
-        try {
-          await sendReceiptToCargoOwner(receipt);
-          toast.success('Payment marked as paid and receipt sent to cargo owner');
-        } catch (error) {
-          toast.success('Payment marked as paid. Receipt generated but failed to send to cargo owner.');
-        }
-      } else {
-        toast.success(`Payment status updated to ${newStatus}`);
-      }
-    } catch (error: any) {
-      console.error('Error updating payment status:', error);
-      toast.error('Failed to update payment status');
-    } finally {
-      setUpdatingStatus(null);
-    }
-  };
+
+
 
   const handleViewReceipt = (truck: InTransitTruck) => {
-    const receipt = receipts.find(r => r.tripId === truck.id || r.id === truck.receiptId);
-    if (receipt) {
-      setSelectedReceipt(receipt);
-      setShowReceiptModal(true);
-    } else {
-      toast.error('Receipt not found for this trip');
-    }
+    const newReceipt = generateReceipt(truck);
+    setSelectedReceipt(newReceipt);
+    setShowReceiptModal(true);
+  };
+
+  // Helper for formatting currency
+  const formatCurrency = (amount: number, currency: string) => {
+    return new Intl.NumberFormat('en-KE', {
+      style: 'currency',
+      currency: currency,
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount);
   };
 
   const filteredTrucks = trucks.filter(truck => {
-    const matchesSearch = 
+    const matchesSearch =
       !searchTerm ||
       truck.plateNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       truck.driver?.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -282,378 +204,254 @@ const FleetPaymentManagement: React.FC = () => {
       truck.cargo?.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       truck.cargo?.origin?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       truck.cargo?.destination?.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesStatus = 
+
+    const matchesStatus =
       statusFilter === 'all' ||
       truck.paymentStatus === statusFilter;
-    
+
     return matchesSearch && matchesStatus;
   });
 
-  const formatCurrency = (amount: number, currency: string = 'USD') => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: currency,
-    }).format(amount);
-  };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    });
-  };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="mb-6">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div>
-            <h1 className="mb-2 text-2xl sm:text-3xl font-bold">Payment Management</h1>
-            <p className="text-sm text-gray-600">View and manage payments for trucks in transit</p>
-          </div>
-          <button
-            onClick={loadTrucks}
-            disabled={loading}
-            className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
-          >
-            <FaSync className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-            <span className="hidden sm:inline">Refresh</span>
-          </button>
-        </div>
-      </div>
+    <div className="flex flex-col min-h-screen w-full bg-[#f8fafc] text-[#0f172a] font-sans">
+      <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-10 space-y-8">
 
-      {/* Filters */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 sm:p-4">
-        <div className="flex flex-col gap-3">
-          <div className="w-full">
-            <div className="relative">
-              <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+        {/* Premium Header */}
+        <div className="flex flex-wrap justify-between items-end gap-3">
+          <div className="flex flex-col gap-1">
+            <h1 className="text-3xl sm:text-4xl font-black text-[#0f172a] uppercase tracking-tight">Payments</h1>
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-[0.2em]">Manage your payments</p>
+          </div>
+        </div>
+
+        {/* Filters */}
+        <div className="bg-white rounded-[1.5rem] border border-slate-100 p-6 shadow-sm">
+          <div className="flex flex-col gap-4">
+            <div className="w-full relative group">
+              <FaSearch className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-blue-600 transition-colors w-4 h-4" />
               <input
                 type="text"
-                placeholder="Search truck, driver, cargo..."
+                placeholder="Search"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
+                className="w-full pl-14 pr-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:bg-white transition-all placeholder:text-slate-300"
               />
             </div>
-          </div>
-          <div className="flex items-center gap-2 w-full">
-            <FaFilter className="text-gray-400 w-4 h-4 flex-shrink-0" />
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value as 'all' | 'paid' | 'unpaid')}
-              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
-            >
-              <option value="all">All Status</option>
-              <option value="paid">Paid</option>
-              <option value="unpaid">Unpaid</option>
-            </select>
+            <div className="flex items-center gap-2 w-full">
+              <div className="flex-1 flex items-center gap-2">
+                <FaFilter className="text-slate-300 w-4 h-4 flex-shrink-0" />
+                <select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value as 'all' | 'paid' | 'unpaid')}
+                  className="w-full md:w-auto px-6 py-3 bg-white border border-slate-100 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 cursor-pointer hover:bg-slate-50 transition-all"
+                >
+                  <option value="all">Status: ALL</option>
+                  <option value="paid">Status: PAID</option>
+                  <option value="unpaid">Status: PENDING</option>
+                </select>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Trips Table/Cards */}
-      {loading ? (
-        <div className="flex items-center justify-center py-12">
-          <FaSpinner className="w-8 h-8 text-primary-600 animate-spin" />
-        </div>
-      ) : filteredTrucks.length === 0 ? (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 sm:p-12 text-center">
-          <FaTruck className="w-12 h-12 sm:w-16 sm:h-16 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-2">No Trucks in Transit</h3>
-          <p className="text-xs sm:text-sm text-gray-600">
-            {searchTerm || statusFilter !== 'all'
-              ? 'No trucks match your search criteria.'
-              : 'There are currently no trucks with "inTransit" status.'}
-          </p>
-        </div>
-      ) : (
-        <>
-          {/* Desktop Table View */}
-          <div className="hidden md:block bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="custom-table w-full">
-                <thead>
-                  <tr>
-                    <th>Truck</th>
-                    <th>Driver</th>
-                    <th>Cargo</th>
-                    <th>Route</th>
-                    <th>Price</th>
-                    <th>Payment Status</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredTrucks.map((truck) => (
-                    <tr key={truck.id}>
-                      <td>
-                        <div className="font-medium text-gray-900 flex items-center gap-2">
-                          <FaTruck className="w-4 h-4 text-primary-600" />
-                          {truck.plateNumber}
-                        </div>
-                        <div className="text-xs text-gray-500">
-                          {truck.make} {truck.model}
-                        </div>
-                      </td>
-                      <td>
-                        <div className="font-medium text-gray-900 flex items-center gap-2">
-                          <FaUser className="w-4 h-4 text-blue-600" />
-                          {truck.driver.firstName} {truck.driver.lastName}
-                        </div>
-                        {truck.driver.phone && (
-                          <div className="text-xs text-gray-500">{truck.driver.phone}</div>
-                        )}
-                      </td>
-                      <td>
-                        <div className="font-medium text-gray-900 flex items-center gap-2">
-                          <FaBox className="w-4 h-4 text-green-600" />
-                          {truck.cargo.title}
-                        </div>
-                        <div className="text-xs text-gray-500 mt-1">
-                          Owner: {truck.cargo.cargoOwner}
-                        </div>
-                      </td>
-                      <td>
-                        <div className="text-sm text-gray-900 flex items-center gap-1">
-                          <FaMapMarkerAlt className="w-3 h-3 text-gray-400" />
-                          {truck.cargo.origin} → {truck.cargo.destination}
-                        </div>
-                        <div className="text-xs text-gray-500 mt-1">
-                          Started: {formatDate(truck.startDate)}
-                        </div>
-                      </td>
-                      <td>
-                        <div className="font-semibold text-gray-900 flex items-center gap-2">
-                          <FaDollarSign className="w-4 h-4 text-green-600" />
-                          {formatCurrency(truck.price, truck.currency)}
-                        </div>
-                      </td>
-                      <td>
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap ${
-                          truck.paymentStatus === 'paid'
-                            ? 'bg-green-100 text-green-800'
-                            : 'bg-red-100 text-red-800'
-                        }`}>
-                          {truck.paymentStatus === 'paid' ? (
-                            <span className="flex items-center gap-1">
-                              <FaCheckCircle className="w-3 h-3" />
-                              Paid
+        {/* Trips Table/Cards */}
+        {loading ? (
+          <div className="flex items-center justify-center py-20">
+            <FaSpinner className="w-10 h-10 text-blue-600 animate-spin" />
+          </div>
+        ) : filteredTrucks.length === 0 ? (
+          <div className="bg-white rounded-[2rem] border border-slate-100 dashed border-2 p-12 text-center shadow-none flex flex-col items-center justify-center">
+            <div className="w-20 h-20 bg-slate-50 rounded-[1.5rem] flex items-center justify-center mb-6">
+              <FaTruck className="w-8 h-8 text-slate-300" />
+            </div>
+            <h3 className="text-xl font-black text-[#0f172a] uppercase tracking-tight mb-2">No Data Detected</h3>
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+              {searchTerm || statusFilter !== 'all'
+                ? 'Adjust filters to locate records.'
+                : 'No active transit records found.'}
+            </p>
+          </div>
+        ) : (
+          <>
+            {/* Desktop Table View */}
+            <div className="hidden md:block bg-white rounded-[2rem] border border-slate-100 overflow-hidden shadow-sm">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left">
+                  <thead className="bg-slate-50/50 border-b border-slate-100">
+                    <tr>
+                      <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Vehicle</th>
+                      <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Driver</th>
+                      <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Cargo</th>
+                      <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Route</th>
+                      <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Price</th>
+                      <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Status</th>
+                      <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-50">
+                    {filteredTrucks.map((truck) => (
+                      <tr key={truck.id} className="hover:bg-slate-50/80 transition-colors group">
+                        <td className="px-8 py-6">
+                          <div className="font-black text-[#0f172a] flex items-center gap-3 uppercase italic tracking-tight">
+                            <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
+                              <FaTruck className="w-3 h-3" />
+                            </div>
+                            {truck.plateNumber}
+                          </div>
+                          <div className="text-[10px] font-bold text-slate-400 pl-11 mt-1 uppercase tracking-wider">
+                            {truck.make} {truck.model}
+                          </div>
+                        </td>
+                        <td className="px-8 py-6">
+                          <div className="flex flex-col">
+                            <span className="font-bold text-[#0f172a] text-sm">{truck.driver.firstName} {truck.driver.lastName}</span>
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                              {truck.driver.phone || 'NO PHONE'}
                             </span>
-                          ) : (
-                            <span className="flex items-center gap-1">
-                              <FaTimesCircle className="w-3 h-3" />
-                              Unpaid
+                          </div>
+                        </td>
+                        <td className="px-8 py-6">
+                          <div className="flex flex-col">
+                            <span className="font-bold text-[#0f172a] text-sm">{truck.cargo.title}</span>
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
+                              <FaBox className="w-2.5 h-2.5" />
+                              {truck.cargo.cargoOwner}
                             </span>
-                          )}
-                        </span>
-                      </td>
-                      <td>
-                        <div className="flex items-center gap-2">
-                          {truck.paymentStatus === 'paid' && receipts.find(r => r.tripId === truck.id || r.id === truck.receiptId) && (
-                            <div className="relative group">
+                          </div>
+                        </td>
+                        <td className="px-8 py-6">
+                          <div className="flex flex-col gap-2">
+                            <div className="flex items-center gap-2 text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                              <span className="truncate max-w-[120px]" title={truck.cargo.origin}>{truck.cargo.origin}</span>
+                            </div>
+                            <div className="flex items-center gap-2 text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                              <span className="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
+                              <span className="truncate max-w-[120px]" title={truck.cargo.destination}>{truck.cargo.destination}</span>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-8 py-6">
+                          <div className="font-black text-[#0f172a] text-base tracking-tight">
+                            {formatCurrency(truck.price, truck.currency)}
+                          </div>
+                        </td>
+                        <td className="px-8 py-6">
+                          <div className="flex items-center">
+                            {truck.paymentStatus === 'paid' ? (
+                              <span className="px-3 py-1.5 rounded-xl text-[10px] font-black bg-emerald-50 text-emerald-600 border border-emerald-100 flex items-center gap-1.5 uppercase tracking-wider">
+                                <FaCheckCircle className="w-3 h-3" /> Paid
+                              </span>
+                            ) : (
+                              <span className="px-3 py-1.5 rounded-xl text-[10px] font-black bg-amber-50 text-amber-600 border border-amber-100 flex items-center gap-1.5 uppercase tracking-wider">
+                                <FaDollarSign className="w-3 h-3" /> Pending
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-8 py-6">
+                          <div className="flex items-center gap-2 opacity-50 group-hover:opacity-100 transition-opacity">
+                            {truck.paymentStatus === 'paid' ? (
                               <button
                                 onClick={() => handleViewReceipt(truck)}
-                                className="px-3 py-1.5 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors flex items-center gap-2"
+                                className="text-slate-400 hover:text-blue-600 transition-colors p-2 rounded-xl hover:bg-blue-50 group border border-transparent hover:border-blue-100"
                                 title="View Receipt"
                               >
                                 <FaFileInvoice className="w-4 h-4" />
-                                <span className="text-sm">Receipt</span>
                               </button>
-                              <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-white text-gray-900 text-xs font-medium rounded-md shadow-lg border border-gray-200 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
-                                View Receipt
-                                <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-white"></div>
-                              </div>
-                            </div>
-                          )}
-                          <select
-                            value={truck.paymentStatus}
-                            onChange={(e) => handleUpdatePaymentStatus(truck.id, e.target.value as 'paid' | 'unpaid')}
-                            disabled={updatingStatus === truck.id}
-                            className={`px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent whitespace-nowrap ${
-                              updatingStatus === truck.id ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
-                            }`}
-                          >
-                            <option value="unpaid">Unpaid</option>
-                            <option value="paid">Paid</option>
-                          </select>
-                          {updatingStatus === truck.id && (
-                            <FaSpinner className="w-4 h-4 text-primary-600 animate-spin" />
-                          )}
+                            ) : (
+                              <button
+                                className="text-slate-200 cursor-not-allowed p-2"
+                                title="Pending Settlement"
+                              >
+                                <FaFileInvoice className="w-4 h-4" />
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Mobile Card View */}
+            <div className="md:hidden space-y-4">
+              {filteredTrucks.map((truck) => (
+                <div key={truck.id} className="bg-white rounded-[1.5rem] border border-slate-100 p-6 shadow-sm">
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600">
+                        <FaTruck />
+                      </div>
+                      <div>
+                        <h3 className="font-black text-[#0f172a] uppercase tracking-tight">{truck.plateNumber}</h3>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{truck.driver.firstName} {truck.driver.lastName}</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-black text-[#0f172a]">
+                        {formatCurrency(truck.price, truck.currency)}
+                      </p>
+                      <span className={`text-[9px] font-black uppercase tracking-widest ${truck.paymentStatus === 'paid' ? 'text-emerald-600' : 'text-amber-600'}`}>
+                        {truck.paymentStatus === 'paid' ? 'PAID' : 'PENDING'}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3 mb-4">
+                    <div className="flex items-start gap-4">
+                      <div className="flex flex-col items-center gap-1 mt-1">
+                        <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-sm shadow-emerald-200"></div>
+                        <div className="w-0.5 h-6 bg-slate-100"></div>
+                        <div className="w-2 h-2 rounded-full bg-rose-500 shadow-sm shadow-rose-200"></div>
+                      </div>
+                      <div className="flex-1 space-y-3">
+                        <div>
+                          <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest leading-none mb-1">Origin</p>
+                          <p className="text-xs font-bold text-[#0f172a] uppercase">{truck.cargo.origin}</p>
                         </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          {/* Mobile Card View */}
-          <div className="md:hidden space-y-4">
-            {filteredTrucks.map((truck) => (
-              <div key={truck.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 space-y-3">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1 min-w-0">
-                    <div className="font-medium text-gray-900 flex items-center gap-2">
-                      <FaTruck className="w-4 h-4 text-primary-600 flex-shrink-0" />
-                      <span className="truncate">{truck.plateNumber}</span>
-                    </div>
-                    <div className="text-xs text-gray-500 mt-1">
-                      {truck.make} {truck.model}
+                        <div>
+                          <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest leading-none mb-1">Target</p>
+                          <p className="text-xs font-bold text-[#0f172a] uppercase">{truck.cargo.destination}</p>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium flex-shrink-0 ${
-                    truck.paymentStatus === 'paid'
-                      ? 'bg-green-100 text-green-800'
-                      : 'bg-red-100 text-red-800'
-                  }`}>
-                    {truck.paymentStatus === 'paid' ? (
-                      <span className="flex items-center gap-1">
-                        <FaCheckCircle className="w-3 h-3" />
-                        Paid
-                      </span>
-                    ) : (
-                      <span className="flex items-center gap-1">
-                        <FaTimesCircle className="w-3 h-3" />
-                        Unpaid
-                      </span>
+
+                  <div className="flex justify-end pt-4 border-t border-slate-50 gap-2">
+                    {truck.paymentStatus === 'paid' && (
+                      <button
+                        onClick={() => handleViewReceipt(truck)}
+                        className="px-4 py-2 bg-blue-50 text-blue-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-100 transition-colors"
+                      >
+                        Receipt
+                      </button>
                     )}
-                  </span>
-                </div>
-
-                <div className="border-t border-gray-200 pt-3 space-y-2 text-sm">
-                  <div className="flex items-start gap-2">
-                    <FaUser className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <div className="font-medium text-gray-900">
-                        {truck.driver.firstName} {truck.driver.lastName}
-                      </div>
-                      {truck.driver.phone && (
-                        <div className="text-xs text-gray-500 truncate">{truck.driver.phone}</div>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="flex items-start gap-2">
-                    <FaBox className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <div className="font-medium text-gray-900 truncate">{truck.cargo.title}</div>
-                      <div className="text-xs text-gray-500 truncate">Owner: {truck.cargo.cargoOwner}</div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start gap-2">
-                    <FaMapMarkerAlt className="w-3 h-3 text-gray-400 mt-1 flex-shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <div className="text-gray-900 truncate">
-                        {truck.cargo.origin} → {truck.cargo.destination}
-                      </div>
-                      <div className="text-xs text-gray-500">Started: {formatDate(truck.startDate)}</div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2 pt-2">
-                    <FaDollarSign className="w-4 h-4 text-green-600" />
-                    <div className="font-semibold text-gray-900">
-                      {formatCurrency(truck.price, truck.currency)}
-                    </div>
                   </div>
                 </div>
-
-                <div className="border-t border-gray-200 pt-3 flex items-center gap-2 flex-wrap">
-                  {truck.paymentStatus === 'paid' && receipts.find(r => r.tripId === truck.id || r.id === truck.receiptId) && (
-                    <button
-                      onClick={() => handleViewReceipt(truck)}
-                      className="flex-1 min-w-[120px] px-3 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors flex items-center justify-center gap-2 text-sm"
-                      title="View Receipt"
-                    >
-                      <FaFileInvoice className="w-4 h-4" />
-                      <span>Receipt</span>
-                    </button>
-                  )}
-                  <select
-                    value={truck.paymentStatus}
-                    onChange={(e) => handleUpdatePaymentStatus(truck.id, e.target.value as 'paid' | 'unpaid')}
-                    disabled={updatingStatus === truck.id}
-                    className={`flex-1 min-w-[120px] px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
-                      updatingStatus === truck.id ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
-                    }`}
-                  >
-                    <option value="unpaid">Unpaid</option>
-                    <option value="paid">Paid</option>
-                  </select>
-                  {updatingStatus === truck.id && (
-                    <FaSpinner className="w-4 h-4 text-primary-600 animate-spin" />
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        </>
-      )}
-
-      {/* Summary Stats */}
-      {!loading && filteredTrucks.length > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-            <div className="flex items-center gap-3">
-              <FaTruck className="w-8 h-8 text-blue-600 flex-shrink-0" />
-              <div className="min-w-0 flex-1">
-                <p className="text-xs sm:text-sm font-medium text-gray-500">Total Trucks</p>
-                <p className="text-xl sm:text-2xl font-bold text-gray-900">{filteredTrucks.length}</p>
-              </div>
+              ))}
             </div>
-          </div>
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-            <div className="flex items-center gap-3">
-              <FaCheckCircle className="w-8 h-8 text-green-600 flex-shrink-0" />
-              <div className="min-w-0 flex-1">
-                <p className="text-xs sm:text-sm font-medium text-gray-500">Paid</p>
-                <p className="text-xl sm:text-2xl font-bold text-gray-900">
-                  {filteredTrucks.filter(t => t.paymentStatus === 'paid').length}
-                </p>
-              </div>
-            </div>
-          </div>
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:col-span-2 lg:col-span-1">
-            <div className="flex items-center gap-3">
-              <FaDollarSign className="w-8 h-8 text-purple-600 flex-shrink-0" />
-              <div className="min-w-0 flex-1">
-                <p className="text-xs sm:text-sm font-medium text-gray-500">Total Amount</p>
-                <p className="text-xl sm:text-2xl font-bold text-gray-900 truncate">
-                  {formatCurrency(
-                    filteredTrucks.reduce((sum, truck) => sum + truck.price, 0),
-                    filteredTrucks[0]?.currency || 'KES'
-                  )}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+          </>
+        )}
 
-      {/* Receipt Modal */}
-      <ReceiptModal
-        receipt={selectedReceipt}
-        isOpen={showReceiptModal}
-        onClose={() => {
-          setShowReceiptModal(false);
-          setSelectedReceipt(null);
-        }}
-        onDownload={() => {
-          // TODO: Implement PDF download
-          toast.success('Receipt download functionality coming soon');
-        }}
-        onPrint={() => {
-          window.print();
-        }}
-      />
-    </div>
+        {/* Receipt Modal */}
+        <ReceiptModal
+          isOpen={showReceiptModal}
+          onClose={() => setShowReceiptModal(false)}
+          receipt={selectedReceipt}
+          onDownload={() => {
+            toast.success('Downloading receipt...');
+            window.print();
+          }}
+        />
+      </main>
+    </div >
   );
 };
+
 
 export default FleetPaymentManagement;

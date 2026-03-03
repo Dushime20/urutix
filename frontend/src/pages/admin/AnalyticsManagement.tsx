@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { 
+import {
   FaChartLine, FaUsers, FaTruck, FaBox, FaDollarSign,
-  FaExclamationTriangle, FaCheckCircle, FaClock, FaMapMarkerAlt,
-  FaThermometerHalf, FaShieldAlt, FaRoute, FaCalendarAlt
+  FaExclamationTriangle, FaCheckCircle, FaClock, FaMapMarkerAlt
 } from 'react-icons/fa';
 import { Line, Bar, Doughnut, Radar } from 'react-chartjs-2';
 import {
@@ -18,6 +17,7 @@ import {
   ArcElement,
   RadialLinearScale,
 } from 'chart.js';
+import AdminPageLayout from '../../components/Admin/AdminPageLayout';
 
 ChartJS.register(
   CategoryScale,
@@ -34,7 +34,6 @@ ChartJS.register(
 
 const AnalyticsManagement: React.FC = () => {
   const [timeRange, setTimeRange] = useState('7d');
-  const [selectedMetric, setSelectedMetric] = useState('overview');
   const [isRealTime, setIsRealTime] = useState(false);
 
   // Real-time data simulation
@@ -182,16 +181,13 @@ const AnalyticsManagement: React.FC = () => {
   ];
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-800">Analytics & Insights</h2>
-          <p className="text-gray-600">Comprehensive platform analytics and performance metrics</p>
-        </div>
-        <div className="flex items-center space-x-4">
-          <select 
-            value={timeRange} 
+    <AdminPageLayout
+      title="Analytics & Insights"
+      description="Comprehensive platform analytics and performance metrics"
+      actions={
+        <>
+          <select
+            value={timeRange}
             onChange={(e) => setTimeRange(e.target.value)}
             className="border border-gray-300 rounded-lg px-3 py-2 bg-white"
           >
@@ -203,17 +199,17 @@ const AnalyticsManagement: React.FC = () => {
           </select>
           <button
             onClick={() => setIsRealTime(!isRealTime)}
-            className={`px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors ${
-              isRealTime 
-                ? 'bg-green-600 hover:bg-green-700 text-white' 
-                : 'bg-gray-200 hover:bg-gray-300 text-gray-700'
-            }`}
+            className={`px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors ${isRealTime
+              ? 'bg-green-600 hover:bg-green-700 text-white'
+              : 'bg-gray-200 hover:bg-gray-300 text-gray-700'
+              }`}
           >
             <FaChartLine />
             <span>{isRealTime ? 'Live' : 'Real-time'}</span>
           </button>
-        </div>
-      </div>
+        </>
+      }
+    >
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -221,15 +217,14 @@ const AnalyticsManagement: React.FC = () => {
           <div key={index} className="bg-white rounded-xl shadow-lg p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">{card.title}</p>
-                <p className="text-2xl font-bold text-gray-900">{card.value}</p>
-                <div className="flex items-center space-x-2 mt-1">
-                  <span className={`text-sm font-medium ${
-                    card.changeType === 'positive' ? 'text-green-600' : 'text-red-600'
-                  }`}>
+                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 leading-none">{card.title}</p>
+                <p className="text-2xl font-black text-gray-900 leading-none tracking-tight">{card.value}</p>
+                <div className="flex items-center space-x-2 mt-2">
+                  <span className={`text-[10px] font-black uppercase tracking-widest ${card.changeType === 'positive' ? 'text-green-600' : 'text-red-600'
+                    }`}>
                     {card.change}
                   </span>
-                  <span className="text-sm text-gray-500">{card.description}</span>
+                  <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{card.description}</span>
                 </div>
               </div>
               <div className={`p-3 rounded-full bg-gradient-to-r ${card.color}`}>
@@ -249,8 +244,8 @@ const AnalyticsManagement: React.FC = () => {
                 <alert.icon className={`text-2xl ${alert.color}`} />
               </div>
               <div>
-                <p className="text-3xl font-bold text-gray-900">{alert.count}</p>
-                <p className="text-sm text-gray-600">{alert.label}</p>
+                <p className="text-3xl font-black text-gray-900 leading-none tracking-tight">{alert.count}</p>
+                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1 leading-none">{alert.label}</p>
               </div>
             </div>
           </div>
@@ -262,8 +257,8 @@ const AnalyticsManagement: React.FC = () => {
         {/* Revenue & Profit Chart */}
         <div className="bg-white rounded-xl shadow-lg p-6">
           <h3 className="text-lg font-semibold text-gray-800 mb-4">Revenue & Profit Trends</h3>
-          <Line 
-            data={revenueData} 
+          <Line
+            data={revenueData}
             options={{
               responsive: true,
               plugins: {
@@ -280,8 +275,8 @@ const AnalyticsManagement: React.FC = () => {
         {/* User Growth Chart */}
         <div className="bg-white rounded-xl shadow-lg p-6">
           <h3 className="text-lg font-semibold text-gray-800 mb-4">User Growth</h3>
-          <Bar 
-            data={userGrowthData} 
+          <Bar
+            data={userGrowthData}
             options={{
               responsive: true,
               plugins: {
@@ -298,8 +293,8 @@ const AnalyticsManagement: React.FC = () => {
         {/* Performance Radar Chart */}
         <div className="bg-white rounded-xl shadow-lg p-6">
           <h3 className="text-lg font-semibold text-gray-800 mb-4">Performance Metrics</h3>
-          <Radar 
-            data={performanceMetrics} 
+          <Radar
+            data={performanceMetrics}
             options={{
               responsive: true,
               plugins: {
@@ -307,7 +302,7 @@ const AnalyticsManagement: React.FC = () => {
                 title: { display: false }
               },
               scales: {
-                r: { 
+                r: {
                   beginAtZero: true,
                   max: 100,
                   ticks: { stepSize: 20 }
@@ -320,8 +315,8 @@ const AnalyticsManagement: React.FC = () => {
         {/* Load Distribution Chart */}
         <div className="bg-white rounded-xl shadow-lg p-6">
           <h3 className="text-lg font-semibold text-gray-800 mb-4">Load Type Distribution</h3>
-          <Doughnut 
-            data={loadDistributionData} 
+          <Doughnut
+            data={loadDistributionData}
             options={{
               responsive: true,
               plugins: {
@@ -391,7 +386,7 @@ const AnalyticsManagement: React.FC = () => {
           </div>
         </div>
       </div>
-    </div>
+    </AdminPageLayout>
   );
 };
 

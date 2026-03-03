@@ -102,22 +102,22 @@ const sanitizeLocations = (locations: ILocation[] = []) => {
       },
       requirements: location.requirements
         ? {
-            requiresForklift: !!location.requirements.requiresForklift,
-            requiresCrane: !!location.requirements.requiresCrane,
-            requiresLoadingDock: !!location.requirements.requiresLoadingDock,
-            hazmatCertified: !!location.requirements.hazmatCertified,
-            temperatureControlled: !!location.requirements.temperatureControlled,
-            securityClearance:
-              location.requirements.securityClearance?.trim() || "STANDARD",
-          }
+          requiresForklift: !!location.requirements.requiresForklift,
+          requiresCrane: !!location.requirements.requiresCrane,
+          requiresLoadingDock: !!location.requirements.requiresLoadingDock,
+          hazmatCertified: !!location.requirements.hazmatCertified,
+          temperatureControlled: !!location.requirements.temperatureControlled,
+          securityClearance:
+            location.requirements.securityClearance?.trim() || "STANDARD",
+        }
         : {
-            requiresForklift: false,
-            requiresCrane: false,
-            requiresLoadingDock: false,
-            hazmatCertified: false,
-            temperatureControlled: false,
-            securityClearance: "STANDARD",
-          },
+          requiresForklift: false,
+          requiresCrane: false,
+          requiresLoadingDock: false,
+          hazmatCertified: false,
+          temperatureControlled: false,
+          securityClearance: "STANDARD",
+        },
     };
 
     return sanitizedLocation;
@@ -191,7 +191,7 @@ export const loadsAPI = {
   getById: (id: string) => api.get(`/loads/${id}`),
   create: (data: ICargoBody) =>
     api.post<ICargoResponse>("/loads", sanitizeCargoPayload(data)).then((res) => res.data),
-  update: (id: string, data: any) => 
+  update: (id: string, data: any) =>
     api.patch(`/loads/${id}`, sanitizeCargoPayload(data)).then((res) => res.data),
   delete: (id: string) => api.delete(`/loads/${id}`),
   saveDraft: (data: any) => {
@@ -204,6 +204,17 @@ export const loadsAPI = {
     };
     return api.post("/loads/draft", sanitizedData);
   },
+  updateDraft: (id: string, data: any) => {
+    const sanitizedData = {
+      ...data,
+      pickupDate: data.pickupDate || new Date().toISOString(),
+      deliveryDate: data.deliveryDate || new Date().toISOString(),
+      status: 'DRAFT',
+    };
+    return api.patch(`/loads/draft/${id}`, sanitizedData);
+  },
+  deleteDraft: (id: string) => api.delete(`/loads/${id}`),
+  publishDraft: (id: string) => api.post(`/loads/${id}/publish`),
 
   // Enriched locations from OSM
   getLoadsWithEnrichedLocations: () => api.get("/loads/enriched-locations"),

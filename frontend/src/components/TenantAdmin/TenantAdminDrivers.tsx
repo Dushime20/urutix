@@ -1,30 +1,33 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
-import { fleetApi, type Driver, type FleetItem } from '../../services/fleetApi';
+import { fleetApi, type Driver } from '../../services/fleetApi';
 import { driverApi } from '../../services/driverApi';
-import { useAuth } from '../../contexts/AuthContext';
 import {
-  FaUsers,
-  FaPlus,
-  FaEdit,
-  FaTrash,
-  FaSearch,
-  FaFilter,
-  FaUser,
-  FaEnvelope,
-  FaPhone,
-  FaIdCard,
-  FaTruck,
-  FaCheckCircle,
-  FaTimesCircle,
-  FaExclamationTriangle,
-  FaEye,
-  FaSync,
-  FaClock,
-  FaStar,
-  FaMapMarkerAlt,
-} from 'react-icons/fa';
+  Users,
+  Plus,
+  Edit2,
+  Trash2,
+  Search,
+  Filter,
+  User,
+  Mail,
+  Phone,
+  CreditCard,
+  Truck,
+  CheckCircle2,
+  XCircle,
+  AlertTriangle,
+  Eye,
+  RefreshCw,
+  Clock,
+  Briefcase,
+  UserX,
+  X,
+  LayoutGrid,
+  List
+} from 'lucide-react';
+import StatCard from '../EnliteUI/Cards/StatCard';
 
 interface DriverStats {
   totalDrivers: number;
@@ -36,10 +39,10 @@ interface DriverStats {
 }
 
 const TenantAdminDrivers: React.FC = () => {
-  const { user } = useAuth();
   const queryClient = useQueryClient();
 
   // State
+  const [viewMode, setViewMode] = useState<'table' | 'grid'>('table');
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [availabilityFilter, setAvailabilityFilter] = useState<string>('all');
@@ -51,11 +54,11 @@ const TenantAdminDrivers: React.FC = () => {
   const [editingDriver, setEditingDriver] = useState<Driver | null>(null);
   const [sortBy, setSortBy] = useState<'name' | 'experience' | 'status' | 'createdAt'>('name');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
-  
+
   // Driver creation mode: 'new' or 'existing'
   const [driverCreationMode, setDriverCreationMode] = useState<'new' | 'existing'>('new');
   const [existingDriverSearch, setExistingDriverSearch] = useState('');
-  const [selectedExistingDriver, setSelectedExistingDriver] = useState<Driver | null>(null);
+  const [selectedExistingDriver, setSelectedExistingDriver] = useState<any | null>(null);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -96,7 +99,7 @@ const TenantAdminDrivers: React.FC = () => {
     queryKey: ['all-available-drivers', existingDriverSearch],
     queryFn: async () => {
       try {
-        const data = await driverApi.getDrivers({ 
+        const data = await driverApi.getDrivers({
           search: existingDriverSearch,
           status: 'ACTIVE'
         });
@@ -130,7 +133,7 @@ const TenantAdminDrivers: React.FC = () => {
     mutationFn: async (driverId: string) => {
       // Update the driver to assign them to the current tenant
       // This assumes the backend will handle tenant assignment
-      const driver = await driverApi.getDriverProfile(driverId);
+      await driverApi.getDriverProfile(driverId);
       return await fleetApi.updateDriver(driverId, {
         // The backend should handle tenant/employer assignment based on the authenticated user
         status: 'ACTIVE',
@@ -329,7 +332,7 @@ const TenantAdminDrivers: React.FC = () => {
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (driverCreationMode === 'existing') {
       if (!selectedExistingDriver) {
         toast.error('Please select a driver to add');
@@ -338,7 +341,7 @@ const TenantAdminDrivers: React.FC = () => {
       addExistingDriverMutation.mutate(selectedExistingDriver.id);
       return;
     }
-    
+
     createMutation.mutate({
       firstName: formData.firstName,
       lastName: formData.lastName,
@@ -391,10 +394,10 @@ const TenantAdminDrivers: React.FC = () => {
 
   const getStatusIcon = (status?: string) => {
     const s = (status || '').toUpperCase();
-    if (s === 'ACTIVE') return <FaCheckCircle className="w-4 h-4" />;
-    if (s === 'INACTIVE' || s === 'TERMINATED') return <FaTimesCircle className="w-4 h-4" />;
-    if (s === 'SUSPENDED' || s === 'ON_LEAVE') return <FaExclamationTriangle className="w-4 h-4" />;
-    return <FaTimesCircle className="w-4 h-4" />;
+    if (s === 'ACTIVE') return <CheckCircle2 className="w-4 h-4" />;
+    if (s === 'INACTIVE' || s === 'TERMINATED') return <XCircle className="w-4 h-4" />;
+    if (s === 'SUSPENDED' || s === 'ON_LEAVE') return <AlertTriangle className="w-4 h-4" />;
+    return <XCircle className="w-4 h-4" />;
   };
 
   const getAvailabilityColor = (availability?: string) => {
@@ -419,96 +422,86 @@ const TenantAdminDrivers: React.FC = () => {
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-              <FaUsers className="text-blue-600" />
-              Driver Management
-            </h1>
-            <p className="text-gray-600 mt-2">Manage and monitor your tenant drivers</p>
+            <div className="flex items-center gap-3 mb-2">
+              <div className="h-10 w-10 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600 shadow-inner">
+                <Users size={20} />
+              </div>
+              <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-blue-600">Driver Management</h2>
+            </div>
+            <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Fleet Drivers</h1>
+            <p className="text-gray-500 font-medium mt-1">Manage and monitor your tenant drivers</p>
           </div>
           <div className="flex items-center gap-3">
             <button
               onClick={() => refetchDrivers()}
-              className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2"
+              className="px-4 py-2 border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-50 transition-colors flex items-center gap-2 font-medium"
             >
-              <FaSync className="w-4 h-4" />
+              <RefreshCw className="w-4 h-4" />
               Refresh
             </button>
             <button
               onClick={openCreateModal}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2 font-medium"
             >
-              <FaPlus className="w-4 h-4" />
+              <Plus className="w-4 h-4" />
               New Driver
             </button>
           </div>
         </div>
 
         {/* Statistics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-blue-600 font-medium">Total Drivers</p>
-                <p className="text-2xl font-bold text-blue-900">{stats.totalDrivers}</p>
-              </div>
-              <FaUsers className="w-8 h-8 text-blue-600 opacity-50" />
-            </div>
-          </div>
-          <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-green-600 font-medium">Active Drivers</p>
-                <p className="text-2xl font-bold text-green-900">{stats.activeDrivers}</p>
-              </div>
-              <FaCheckCircle className="w-8 h-8 text-green-600 opacity-50" />
-            </div>
-          </div>
-          <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 font-medium">Inactive Drivers</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.inactiveDrivers}</p>
-              </div>
-              <FaTimesCircle className="w-8 h-8 text-gray-600 opacity-50" />
-            </div>
-          </div>
-          <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-green-600 font-medium">Available</p>
-                <p className="text-2xl font-bold text-green-900">{stats.availableDrivers}</p>
-              </div>
-              <FaCheckCircle className="w-8 h-8 text-green-600 opacity-50" />
-            </div>
-          </div>
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-blue-600 font-medium">In Transit</p>
-                <p className="text-2xl font-bold text-blue-900">{stats.inTransitDrivers}</p>
-              </div>
-              <FaTruck className="w-8 h-8 text-blue-600 opacity-50" />
-            </div>
-          </div>
-          <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-purple-600 font-medium">Total Experience</p>
-                <p className="text-2xl font-bold text-purple-900">
-                  {stats.totalExperience.toFixed(0)} yrs
-                </p>
-              </div>
-              <FaClock className="w-8 h-8 text-purple-600 opacity-50" />
-            </div>
-          </div>
+        {/* Statistics Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+          <StatCard
+            title="Total Drivers"
+            value={stats.totalDrivers}
+            icon={<Users />}
+            color="primary"
+            subtitle="Fleet Size"
+          />
+          <StatCard
+            title="Active Drivers"
+            value={stats.activeDrivers}
+            icon={<CheckCircle2 />}
+            color="success"
+            subtitle="Operational"
+          />
+          <StatCard
+            title="Inactive"
+            value={stats.inactiveDrivers}
+            icon={<UserX />}
+            color="secondary"
+            subtitle="Off Duty"
+          />
+          <StatCard
+            title="Available"
+            value={stats.availableDrivers}
+            icon={<Clock />}
+            color="info"
+            subtitle="Ready"
+          />
+          <StatCard
+            title="In Transit"
+            value={stats.inTransitDrivers}
+            icon={<Truck />}
+            color="warning"
+            subtitle="On Job"
+          />
+          <StatCard
+            title="Experience"
+            value={`${stats.totalExperience.toFixed(0)} yrs`}
+            icon={<Briefcase />}
+            color="accent"
+            subtitle="Cumulative"
+          />
         </div>
       </div>
 
       {/* Filters and Search */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-          <div className="relative">
-            <FaSearch className="absolute left-3 top-3 text-gray-400" />
+        <div className="flex flex-col lg:flex-row gap-4">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-3 text-gray-400" />
             <input
               type="text"
               placeholder="Search drivers..."
@@ -517,46 +510,69 @@ const TenantAdminDrivers: React.FC = () => {
               className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          >
-            <option value="all">All Status</option>
-            <option value="ACTIVE">Active</option>
-            <option value="INACTIVE">Inactive</option>
-            <option value="SUSPENDED">Suspended</option>
-            <option value="ON_LEAVE">On Leave</option>
-            <option value="TERMINATED">Terminated</option>
-            <option value="IN_TRANSIT">In Transit</option>
-          </select>
-          <select
-            value={availabilityFilter}
-            onChange={(e) => setAvailabilityFilter(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          >
-            <option value="all">All Availability</option>
-            <option value="AVAILABLE">Available</option>
-            <option value="UNAVAILABLE">Unavailable</option>
-            <option value="IN_TRANSIT">In Transit</option>
-          </select>
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value as any)}
-            className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          >
-            <option value="name">Sort by Name</option>
-            <option value="experience">Sort by Experience</option>
-            <option value="status">Sort by Status</option>
-            <option value="createdAt">Sort by Date</option>
-          </select>
-          <button
-            onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-            className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
-          >
-            <FaFilter className="w-4 h-4" />
-            {sortOrder === 'asc' ? 'Ascending' : 'Descending'}
-          </button>
+          <div className="flex flex-wrap items-center gap-3">
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              <option value="all">All Status</option>
+              <option value="ACTIVE">Active</option>
+              <option value="INACTIVE">Inactive</option>
+              <option value="SUSPENDED">Suspended</option>
+              <option value="ON_LEAVE">On Leave</option>
+              <option value="TERMINATED">Terminated</option>
+              <option value="IN_TRANSIT">In Transit</option>
+            </select>
+            <select
+              value={availabilityFilter}
+              onChange={(e) => setAvailabilityFilter(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              <option value="all">All Availability</option>
+              <option value="AVAILABLE">Available</option>
+              <option value="UNAVAILABLE">Unavailable</option>
+              <option value="IN_TRANSIT">In Transit</option>
+            </select>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as any)}
+              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              <option value="name">Sort by Name</option>
+              <option value="experience">Sort by Experience</option>
+              <option value="status">Sort by Status</option>
+              <option value="createdAt">Sort by Date</option>
+            </select>
+            <button
+              onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+              className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
+            >
+              <Filter className="w-4 h-4" />
+              {sortOrder === 'asc' ? 'Ascending' : 'Descending'}
+            </button>
+
+            <div className="flex bg-gray-100 p-1 rounded-lg">
+              <button
+                onClick={() => setViewMode('table')}
+                className={`p-2 rounded-md transition-all ${viewMode === 'table'
+                  ? 'bg-white text-blue-600 shadow-sm'
+                  : 'text-gray-500 hover:text-gray-700'
+                  }`}
+              >
+                <List className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => setViewMode('grid')}
+                className={`p-2 rounded-md transition-all ${viewMode === 'grid'
+                  ? 'bg-white text-blue-600 shadow-sm'
+                  : 'text-gray-500 hover:text-gray-700'
+                  }`}
+              >
+                <LayoutGrid className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -574,9 +590,9 @@ const TenantAdminDrivers: React.FC = () => {
           </div>
         ) : filteredAndSortedDrivers.length === 0 ? (
           <div className="p-12 text-center">
-            <FaUsers className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <p className="text-gray-600 text-lg mb-2">No drivers found</p>
-            <p className="text-gray-500 text-sm mb-4">
+            <Users className="w-16 h-16 text-slate-300 mx-auto mb-4" />
+            <p className="text-slate-600 text-lg mb-2">No drivers found</p>
+            <p className="text-slate-500 text-sm mb-4">
               {searchTerm || statusFilter !== 'all' || availabilityFilter !== 'all'
                 ? 'Try adjusting your filters'
                 : 'Create your first driver to get started'}
@@ -590,7 +606,7 @@ const TenantAdminDrivers: React.FC = () => {
               </button>
             )}
           </div>
-        ) : (
+        ) : viewMode === 'table' ? (
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
@@ -627,7 +643,7 @@ const TenantAdminDrivers: React.FC = () => {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <div className="flex-shrink-0 h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
-                          <FaUser className="w-5 h-5 text-blue-600" />
+                          <User className="w-5 h-5 text-blue-600" />
                         </div>
                         <div className="ml-4">
                           <div className="text-sm font-medium text-gray-900">
@@ -641,7 +657,7 @@ const TenantAdminDrivers: React.FC = () => {
                       <div className="text-sm text-gray-700">
                         {driver.phone && (
                           <div className="flex items-center gap-2">
-                            <FaPhone className="w-3 h-3 text-gray-400" />
+                            <Phone className="w-3 h-3 text-gray-400" />
                             {driver.phone}
                           </div>
                         )}
@@ -649,13 +665,13 @@ const TenantAdminDrivers: React.FC = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center gap-2 text-sm text-gray-700">
-                        <FaIdCard className="w-4 h-4 text-gray-400" />
+                        <CreditCard className="w-4 h-4 text-gray-400" />
                         {driver.licenseNumber}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
                       <div className="flex items-center gap-2">
-                        <FaClock className="w-4 h-4 text-gray-400" />
+                        <Briefcase className="w-4 h-4 text-gray-400" />
                         {typeof driver.experience === 'number'
                           ? `${driver.experience} yrs`
                           : driver.experience || '0 yrs'}
@@ -683,7 +699,7 @@ const TenantAdminDrivers: React.FC = () => {
                     <td className="px-6 py-4 whitespace-nowrap">
                       {driver.currentTruckId ? (
                         <div className="flex items-center gap-2 text-sm text-gray-700">
-                          <FaTruck className="w-4 h-4 text-gray-400" />
+                          <Truck className="w-4 h-4 text-gray-400" />
                           <span className="text-xs">Assigned</span>
                         </div>
                       ) : (
@@ -697,28 +713,28 @@ const TenantAdminDrivers: React.FC = () => {
                           className="text-blue-600 hover:text-blue-900 p-2 hover:bg-blue-50 rounded transition-colors"
                           title="View Details"
                         >
-                          <FaEye className="w-4 h-4" />
+                          <Eye className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => openEditModal(driver)}
                           className="text-gray-600 hover:text-gray-900 p-2 hover:bg-gray-50 rounded transition-colors"
                           title="Edit Driver"
                         >
-                          <FaEdit className="w-4 h-4" />
+                          <Edit2 className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => openAssignModal(driver)}
                           className="text-green-600 hover:text-green-900 p-2 hover:bg-green-50 rounded transition-colors"
                           title="Assign to Truck"
                         >
-                          <FaTruck className="w-4 h-4" />
+                          <Truck className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => handleDelete(driver)}
                           className="text-red-600 hover:text-red-900 p-2 hover:bg-red-50 rounded transition-colors"
                           title="Delete Driver"
                         >
-                          <FaTrash className="w-4 h-4" />
+                          <Trash2 className="w-4 h-4" />
                         </button>
                       </div>
                     </td>
@@ -726,6 +742,77 @@ const TenantAdminDrivers: React.FC = () => {
                 ))}
               </tbody>
             </table>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 p-6">
+            {filteredAndSortedDrivers.map((driver) => (
+              <div
+                key={driver.id}
+                className="bg-white rounded-[24px] border border-slate-100 p-6 hover:shadow-xl transition-all group relative overflow-hidden"
+              >
+                <div className="flex items-start justify-between mb-4">
+                  <div className="h-12 w-12 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover:text-blue-600 transition-colors">
+                    <User className="w-6 h-6" />
+                  </div>
+                  <span
+                    className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${getStatusColor(
+                      driver.status,
+                    )}`}
+                  >
+                    {getStatusIcon(driver.status)}
+                    {(driver.status || 'ACTIVE')}
+                  </span>
+                </div>
+
+                <div className="mb-6">
+                  <h3 className="text-lg font-bold text-slate-900 tracking-tight mb-1">
+                    {driver.firstName} {driver.lastName}
+                  </h3>
+                  <div className="flex items-center gap-2 text-xs font-medium text-slate-500 uppercase tracking-wider">
+                    <CreditCard className="w-3 h-3" />
+                    {driver.licenseNumber}
+                  </div>
+                </div>
+
+                <div className="space-y-3 mb-6">
+                  <div className="flex items-center gap-3 text-sm text-slate-600">
+                    <Mail className="w-4 h-4 text-blue-400" />
+                    <span className="truncate">{driver.email}</span>
+                  </div>
+                  <div className="flex items-center gap-3 text-sm text-slate-600">
+                    <Phone className="w-4 h-4 text-blue-400" />
+                    <span>{driver.phone || 'N/A'}</span>
+                  </div>
+                  <div className="flex items-center gap-3 text-sm text-slate-600">
+                    <Truck className="w-4 h-4 text-blue-400" />
+                    <span className="truncate">
+                      {driver.currentTruckId ? 'Assigned to Truck' : 'Unassigned'}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex items-center pt-4 border-t border-slate-50 gap-2">
+                  <button
+                    onClick={() => openDetailsModal(driver)}
+                    className="flex-1 h-9 bg-slate-50 hover:bg-slate-100 text-slate-600 rounded-lg text-xs font-bold uppercase tracking-wider transition-colors"
+                  >
+                    View
+                  </button>
+                  <button
+                    onClick={() => openEditModal(driver)}
+                    className="h-9 w-9 flex items-center justify-center bg-slate-50 hover:bg-blue-50 text-slate-400 hover:text-blue-600 rounded-lg transition-colors"
+                  >
+                    <Edit2 className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => handleDelete(driver)}
+                    className="h-9 w-9 flex items-center justify-center bg-slate-50 hover:bg-red-50 text-slate-400 hover:text-red-600 rounded-lg transition-colors"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>
@@ -736,7 +823,7 @@ const TenantAdminDrivers: React.FC = () => {
           <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <div className="sticky top-0 bg-white border-b border-gray-200 p-6 flex items-center justify-between">
               <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                <FaPlus className="text-blue-600" />
+                <Plus className="text-blue-600" />
                 {driverCreationMode === 'new' ? 'Create New Driver' : 'Add Existing Driver'}
               </h2>
               <button
@@ -746,7 +833,7 @@ const TenantAdminDrivers: React.FC = () => {
                 }}
                 className="text-gray-400 hover:text-gray-600 transition-colors"
               >
-                <FaTimesCircle className="w-6 h-6" />
+                <X className="w-6 h-6" />
               </button>
             </div>
             <form onSubmit={handleCreate} className="p-6 space-y-4">
@@ -789,7 +876,7 @@ const TenantAdminDrivers: React.FC = () => {
                       Search for Driver *
                     </label>
                     <div className="relative">
-                      <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                       <input
                         type="text"
                         value={existingDriverSearch}
@@ -816,9 +903,8 @@ const TenantAdminDrivers: React.FC = () => {
                                 setSelectedExistingDriver(driver);
                                 setExistingDriverSearch(`${driver.firstName} ${driver.lastName} - ${driver.email}`);
                               }}
-                              className={`p-3 cursor-pointer hover:bg-blue-50 transition-colors ${
-                                selectedExistingDriver?.id === driver.id ? 'bg-blue-100 border-l-4 border-blue-600' : ''
-                              }`}
+                              className={`p-3 cursor-pointer hover:bg-blue-50 transition-colors ${selectedExistingDriver?.id === driver.id ? 'bg-blue-100 border-l-4 border-blue-600' : ''
+                                }`}
                             >
                               <div className="flex items-center justify-between">
                                 <div>
@@ -833,7 +919,7 @@ const TenantAdminDrivers: React.FC = () => {
                                   </div>
                                 </div>
                                 {selectedExistingDriver?.id === driver.id && (
-                                  <FaCheckCircle className="w-5 h-5 text-blue-600" />
+                                  <CheckCircle2 className="w-5 h-5 text-blue-600" />
                                 )}
                               </div>
                             </div>
@@ -846,7 +932,7 @@ const TenantAdminDrivers: React.FC = () => {
                   {selectedExistingDriver && (
                     <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
                       <div className="flex items-center gap-2 text-green-800">
-                        <FaCheckCircle className="w-5 h-5" />
+                        <CheckCircle2 className="w-5 h-5" />
                         <span className="font-medium">
                           Selected: {selectedExistingDriver.firstName} {selectedExistingDriver.lastName}
                         </span>
@@ -859,93 +945,93 @@ const TenantAdminDrivers: React.FC = () => {
               {/* New Driver Form */}
               {driverCreationMode === 'new' && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    First Name *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.firstName}
-                    onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="John"
-                  />
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      First Name *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.firstName}
+                      onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="John"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Last Name *</label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.lastName}
+                      onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="Doe"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Email *</label>
+                    <input
+                      type="email"
+                      required
+                      value={formData.email}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="john.doe@example.com"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Phone</label>
+                    <input
+                      type="tel"
+                      value={formData.phone}
+                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="+1234567890"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      License Number *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.licenseNumber}
+                      onChange={(e) => setFormData({ ...formData, licenseNumber: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="DL123456789"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Status *</label>
+                    <select
+                      value={formData.status}
+                      onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    >
+                      <option value="ACTIVE">Active</option>
+                      <option value="INACTIVE">Inactive</option>
+                      <option value="SUSPENDED">Suspended</option>
+                      <option value="ON_LEAVE">On Leave</option>
+                      <option value="TERMINATED">Terminated</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Availability Status *
+                    </label>
+                    <select
+                      value={formData.availabilityStatus}
+                      onChange={(e) => setFormData({ ...formData, availabilityStatus: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    >
+                      <option value="AVAILABLE">Available</option>
+                      <option value="UNAVAILABLE">Unavailable</option>
+                      <option value="IN_TRANSIT">In Transit</option>
+                    </select>
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Last Name *</label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.lastName}
-                    onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Doe"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Email *</label>
-                  <input
-                    type="email"
-                    required
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="john.doe@example.com"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Phone</label>
-                  <input
-                    type="tel"
-                    value={formData.phone}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="+1234567890"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    License Number *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.licenseNumber}
-                    onChange={(e) => setFormData({ ...formData, licenseNumber: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="DL123456789"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Status *</label>
-                  <select
-                    value={formData.status}
-                    onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  >
-                    <option value="ACTIVE">Active</option>
-                    <option value="INACTIVE">Inactive</option>
-                    <option value="SUSPENDED">Suspended</option>
-                    <option value="ON_LEAVE">On Leave</option>
-                    <option value="TERMINATED">Terminated</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Availability Status *
-                  </label>
-                  <select
-                    value={formData.availabilityStatus}
-                    onChange={(e) => setFormData({ ...formData, availabilityStatus: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  >
-                    <option value="AVAILABLE">Available</option>
-                    <option value="UNAVAILABLE">Unavailable</option>
-                    <option value="IN_TRANSIT">In Transit</option>
-                  </select>
-                </div>
-              </div>
               )}
               <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-200">
                 <button
@@ -970,7 +1056,7 @@ const TenantAdminDrivers: React.FC = () => {
                     </>
                   ) : (
                     <>
-                      <FaPlus className="w-4 h-4" />
+                      <Plus className="w-4 h-4" />
                       {driverCreationMode === 'existing' ? 'Add Driver' : 'Create Driver'}
                     </>
                   )}
@@ -987,7 +1073,7 @@ const TenantAdminDrivers: React.FC = () => {
           <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <div className="sticky top-0 bg-white border-b border-gray-200 p-6 flex items-center justify-between">
               <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                <FaEdit className="text-blue-600" />
+                <Edit2 className="text-blue-600" />
                 Edit Driver
               </h2>
               <button
@@ -997,7 +1083,7 @@ const TenantAdminDrivers: React.FC = () => {
                 }}
                 className="text-gray-400 hover:text-gray-600 transition-colors"
               >
-                <FaTimesCircle className="w-6 h-6" />
+                <X className="w-6 h-6" />
               </button>
             </div>
             <form onSubmit={handleUpdate} className="p-6 space-y-4">
@@ -1107,7 +1193,7 @@ const TenantAdminDrivers: React.FC = () => {
                     </>
                   ) : (
                     <>
-                      <FaEdit className="w-4 h-4" />
+                      <Edit2 className="w-4 h-4" />
                       Save Changes
                     </>
                   )}
@@ -1124,14 +1210,14 @@ const TenantAdminDrivers: React.FC = () => {
           <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <div className="sticky top-0 bg-white border-b border-gray-200 p-6 flex items-center justify-between">
               <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                <FaUser className="text-blue-600" />
+                <User className="text-blue-600" />
                 Driver Details
               </h2>
               <button
                 onClick={() => setShowDetailsModal(false)}
                 className="text-gray-400 hover:text-gray-600 transition-colors"
               >
-                <FaTimesCircle className="w-6 h-6" />
+                <X className="w-6 h-6" />
               </button>
             </div>
             <div className="p-6 space-y-6">
@@ -1156,28 +1242,28 @@ const TenantAdminDrivers: React.FC = () => {
                 <div>
                   <label className="text-sm font-medium text-gray-500">Email</label>
                   <p className="text-gray-900 flex items-center gap-2">
-                    <FaEnvelope className="w-4 h-4 text-gray-400" />
+                    <Mail className="w-4 h-4 text-gray-400" />
                     {selectedDriver.email}
                   </p>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-500">Phone</label>
                   <p className="text-gray-900 flex items-center gap-2">
-                    <FaPhone className="w-4 h-4 text-gray-400" />
+                    <Phone className="w-4 h-4 text-gray-400" />
                     {selectedDriver.phone || 'N/A'}
                   </p>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-500">License Number</label>
                   <p className="text-gray-900 flex items-center gap-2">
-                    <FaIdCard className="w-4 h-4 text-gray-400" />
+                    <CreditCard className="w-4 h-4 text-gray-400" />
                     {selectedDriver.licenseNumber}
                   </p>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-500">Experience</label>
                   <p className="text-gray-900 flex items-center gap-2">
-                    <FaClock className="w-4 h-4 text-gray-400" />
+                    <Clock className="w-4 h-4 text-gray-400" />
                     {typeof selectedDriver.experience === 'number'
                       ? `${selectedDriver.experience} years`
                       : selectedDriver.experience || '0 years'}
@@ -1196,7 +1282,7 @@ const TenantAdminDrivers: React.FC = () => {
                 <div>
                   <label className="text-sm font-medium text-gray-500">Assigned Truck</label>
                   <p className="text-gray-900 flex items-center gap-2">
-                    <FaTruck className="w-4 h-4 text-gray-400" />
+                    <Truck className="w-4 h-4 text-gray-400" />
                     {selectedDriver.currentTruckId ? 'Assigned' : 'Not assigned'}
                   </p>
                 </div>
@@ -1212,14 +1298,14 @@ const TenantAdminDrivers: React.FC = () => {
           <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <div className="sticky top-0 bg-white border-b border-gray-200 p-6 flex items-center justify-between">
               <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                <FaTruck className="text-green-600" />
+                <Truck className="text-green-600" />
                 Assign Driver to Truck
               </h2>
               <button
                 onClick={() => setShowAssignModal(false)}
                 className="text-gray-400 hover:text-gray-600 transition-colors"
               >
-                <FaTimesCircle className="w-6 h-6" />
+                <X className="w-6 h-6" />
               </button>
             </div>
             <div className="p-6">
@@ -1239,16 +1325,15 @@ const TenantAdminDrivers: React.FC = () => {
                     return (
                       <div
                         key={truck.id}
-                        className={`p-4 border rounded-lg transition-colors ${
-                          isAssigned
-                            ? 'bg-green-50 border-green-200'
-                            : 'bg-white border-gray-200 hover:border-blue-300'
-                        }`}
+                        className={`p-4 border rounded-lg transition-colors ${isAssigned
+                          ? 'bg-green-50 border-green-200'
+                          : 'bg-white border-gray-200 hover:border-blue-300'
+                          }`}
                       >
                         <div className="flex items-center justify-between">
                           <div className="flex-1">
                             <div className="flex items-center gap-3">
-                              <FaTruck className="w-5 h-5 text-gray-400" />
+                              <Truck className="w-5 h-5 text-gray-400" />
                               <div>
                                 <p className="font-medium text-gray-900">
                                   {truck.plateNumber} - {truck.make} {truck.model}
@@ -1262,7 +1347,7 @@ const TenantAdminDrivers: React.FC = () => {
                           <div>
                             {isAssigned ? (
                               <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium flex items-center gap-2">
-                                <FaCheckCircle className="w-4 h-4" />
+                                <CheckCircle2 className="w-4 h-4" />
                                 Assigned
                               </span>
                             ) : (

@@ -27,6 +27,7 @@ import {
   ApiTooManyRequestsResponse,
 } from '@nestjs/swagger';
 import { EnhancedAuthService } from './enhanced-auth.service';
+import { PermissionService } from '../../services/permissionService';
 import { LoginDto, LoginResponseDto } from './dto/login.dto';
 import { RegisterDto, RegisterResponseDto } from './dto/register.dto';
 import {
@@ -64,7 +65,8 @@ export class EnhancedAuthController {
   constructor(
     private readonly authService: EnhancedAuthService,
     private readonly rateLimitGuard: EnhancedRateLimitGuard,
-  ) {}
+    private readonly permissionService: PermissionService,
+  ) { }
 
   @Post('login')
   @HttpCode(HttpStatus.OK)
@@ -864,6 +866,48 @@ export class EnhancedAuthController {
       this.logger.error(
         `Profile retrieval failed for user ${req?.user?.userId} from IP: ${clientIp}: ${error.message}`,
       );
+      throw error;
+    }
+  }
+
+  @Get('permissions')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({
+    summary: 'Get user permissions',
+    description: 'Retrieve all permissions for the current user',
+  })
+  @ApiOkResponse({
+    description: 'Permissions retrieved successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean', example: true },
+        data: {
+          type: 'array',
+          items: { type: 'string', example: 'cargo:create' },
+        },
+      },
+    },
+  })
+  async getPermissions(@Req() req: Request): Promise<ApiResponseDto> {
+    try {
+      const userId = req['user']?.userId;
+      if (!userId) {
+        throw new UnauthorizedException('User not authenticated');
+      }
+
+      const permissions = await this.permissionService.getUserPermissions(userId);
+
+      return {
+        success: true,
+        message: 'Permissions retrieved successfully',
+        data: permissions,
+        statusCode: 200,
+        timestamp: new Date().toISOString(),
+      };
+    } catch (error) {
+      this.logger.error(`Failed to fetch permissions: ${error.message}`);
       throw error;
     }
   }

@@ -2,19 +2,18 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useParams } from 'react-router-dom';
-import { Plus, Search, Eye, Trash2, Download, FileText, Box, Truck, CreditCard, X, Clock, CheckCircle, XCircle, AlertCircle, Info } from 'lucide-react';
+import { Search, Eye, Trash2, Download, FileText, Box, Truck, CreditCard, X, Clock, CheckCircle, XCircle, AlertCircle, Info } from 'lucide-react';
 import { documentApi } from '../services/documents/documentApi';
 import toast from 'react-hot-toast';
 import { DocumentEmptyState } from '../components/documents/DocumentEmptyState';
 import { useConfirmDialog } from '../hooks/useConfirmDialog';
 import DocumentPreviewModal from '../components/documents/DocumentPreviewModal';
 import DocumentUploadModal from '../components/documents/DocumentUploadModal';
+import { cn } from '../utils/cn';
 
 interface DocumentsPageProps {
   entityTypeOverride?: string;
 }
-
-
 
 const DocumentsPage: React.FC<DocumentsPageProps> = ({ entityTypeOverride }) => {
   const { user } = useAuth();
@@ -22,8 +21,7 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ entityTypeOverride }) => 
   const { confirm, DialogComponent } = useConfirmDialog();
   const { entityType: urlEntityType, entityId } = useParams();
 
-  // For VIEWING/FILTERING: Only use override or URL params (no role-based default)
-  // This ensures "All Documents" view shows all documents, not filtered by role
+  // For VIEWING/FILTERING: Only use override or URL params
   const entityType = entityTypeOverride || urlEntityType;
 
   const [filters, setFilters] = useState({
@@ -50,7 +48,6 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ entityTypeOverride }) => 
         setFilters(prev => ({ ...prev, entityType, category: '' }));
       }
     } else {
-      // When viewing all documents (no entityType), clear filters
       setFilters(prev => ({ ...prev, entityType: '', category: '' }));
     }
   }, [entityType]);
@@ -69,7 +66,6 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ entityTypeOverride }) => 
   };
 
   const entityInfo = getEntityInfo(entityType || 'CARGO');
-  const EntityIcon = entityInfo.icon;
 
   // Fetch documents
   const { data: documentsData, isLoading, error, refetch } = useQuery({
@@ -79,9 +75,8 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ entityTypeOverride }) => 
       page: currentPage,
       limit: 20,
     }),
-    retry: 2, // Retry failed requests up to 2 times
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000), // Exponential backoff
-    staleTime: 5 * 60 * 1000, // Consider data fresh for 5 minutes
+    retry: 2,
+    staleTime: 5 * 60 * 1000,
   });
 
   // Fetch document statistics
@@ -89,11 +84,10 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ entityTypeOverride }) => 
     queryKey: ['documentStatistics', entityType],
     queryFn: () => documentApi.getDocumentStatistics(entityType),
     retry: 2,
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
-    staleTime: 10 * 60 * 1000, // Statistics can be cached longer
+    staleTime: 10 * 60 * 1000,
   });
 
-  // Provide fallback data if API fails
+  // Fallback data
   const safeDocumentsData = documentsData || {
     documents: [],
     total: 0,
@@ -112,26 +106,19 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ entityTypeOverride }) => 
 
   const onUploadSuccess = () => {
     refetch();
+    queryClient.invalidateQueries({ queryKey: ['documentStatistics'] });
   };
 
   // Delete document mutation
   const deleteMutation = useMutation({
     mutationFn: (id: string) => documentApi.deleteDocument(id),
     onSuccess: async () => {
-      // Invalidate ALL document queries to force refetch
-      await queryClient.invalidateQueries({ queryKey: ['documents'], refetchType: 'all' });
-      await queryClient.invalidateQueries({ queryKey: ['documentStatistics'], refetchType: 'all' });
-      toast.success('Document deleted successfully', {
-        duration: 3000,
-        icon: '🗑️',
-      });
+      await queryClient.invalidateQueries({ queryKey: ['documents'] });
+      await queryClient.invalidateQueries({ queryKey: ['documentStatistics'] });
+      toast.success('Document deleted');
     },
     onError: (error: any) => {
-      const errorMessage = error?.response?.data?.message || error?.message || 'Failed to delete document';
-      toast.error(errorMessage, {
-        duration: 4000,
-        icon: '❌',
-      });
+      toast.error(error?.message || 'Failed to delete asset');
     },
   });
 
@@ -139,28 +126,16 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ entityTypeOverride }) => 
   const bulkDeleteMutation = useMutation({
     mutationFn: (ids: string[]) => Promise.all(ids.map(id => documentApi.deleteDocument(id))),
     onSuccess: async () => {
-      // Invalidate ALL document queries to force refetch
-      await queryClient.invalidateQueries({ queryKey: ['documents'], refetchType: 'all' });
-      await queryClient.invalidateQueries({ queryKey: ['documentStatistics'], refetchType: 'all' });
-      toast.success(`${selectedDocuments.length} document(s) deleted successfully`, {
-        duration: 3000,
-        icon: '🗑️',
-      });
+      await queryClient.invalidateQueries({ queryKey: ['documents'] });
+      await queryClient.invalidateQueries({ queryKey: ['documentStatistics'] });
+      toast.success(`${selectedDocuments.length} assets removed`);
       setSelectedDocuments([]);
     },
     onError: (error: any) => {
-      const errorMessage = error?.response?.data?.message || error?.message || 'Failed to delete documents';
-      toast.error(errorMessage, {
-        duration: 4000,
-        icon: '❌',
-      });
+      toast.error(error?.message || 'Failed to delete assets');
     },
   });
 
-
-
-
-  // Handle document selection
   const handleDocumentSelect = useCallback((documentId: string, checked: boolean) => {
     if (checked) {
       setSelectedDocuments(prev => [...prev, documentId]);
@@ -169,12 +144,11 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ entityTypeOverride }) => 
     }
   }, []);
 
-  // Handle bulk delete
   const handleBulkDelete = useCallback(async () => {
     if (selectedDocuments.length > 0) {
       const confirmed = await confirm({
-        title: "Delete Documents",
-        message: `Are you sure you want to delete ${selectedDocuments.length} document(s)? This action cannot be undone.`,
+        title: "Delete Documents?",
+        message: `Permanently remove ${selectedDocuments.length} documents?`,
         confirmText: "Delete",
         cancelText: "Cancel",
         variant: "danger",
@@ -185,81 +159,28 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ entityTypeOverride }) => 
     }
   }, [selectedDocuments, bulkDeleteMutation, confirm]);
 
-  // Handle filter change
   const handleFilterChange = useCallback((key: string, value: string) => {
     setFilters(prev => ({ ...prev, [key]: value }));
     setCurrentPage(1);
   }, []);
 
-  // Handle search
   const handleSearch = useCallback((searchTerm: string) => {
     setFilters(prev => ({ ...prev, search: searchTerm }));
     setCurrentPage(1);
   }, []);
 
-
-
-
-
-  // Check if all documents are selected
   const allSelected = selectedDocuments.length > 0 && selectedDocuments.length === (safeDocumentsData.documents.length || 0);
 
   if (error) {
     return (
       <div className="p-6">
-        <div className="bg-red-50 border border-red-200 rounded-lg p-6">
-          <div className="flex items-start">
-            <div className="flex-shrink-0">
-              <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-              </svg>
-            </div>
-            <div className="ml-3 flex-1">
-              <h3 className="text-sm font-medium text-red-800">
-                Error Loading Documents
-              </h3>
-              <div className="mt-2 text-sm text-red-700">
-                <p className="mb-3">{error.message}</p>
-
-                {/* Provide specific guidance based on error type */}
-                {error.message?.includes('Tenant ID not found') && (
-                  <div className="bg-red-100 p-3 rounded-md mb-3">
-                    <p className="font-medium">Authentication Issue:</p>
-                    <ul className="list-disc list-inside mt-1 space-y-1">
-                      <li>Please ensure you are logged in</li>
-                      <li>Check if your session has expired</li>
-                      <li>Try refreshing the page or logging in again</li>
-                    </ul>
-                  </div>
-                )}
-
-                {error.message?.includes('Server error') && (
-                  <div className="bg-red-100 p-3 rounded-md mb-3">
-                    <p className="font-medium">Server Issue:</p>
-                    <ul className="list-disc list-inside mt-1 space-y-1">
-                      <li>The documents service may be temporarily unavailable</li>
-                      <li>Please try again in a few moments</li>
-                      <li>Contact support if the issue persists</li>
-                    </ul>
-                  </div>
-                )}
-              </div>
-
-              <div className="mt-4 flex space-x-3">
-                <button
-                  onClick={() => refetch()}
-                  className="bg-red-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-                >
-                  Try Again
-                </button>
-                <button
-                  onClick={() => window.location.reload()}
-                  className="bg-gray-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
-                >
-                  Refresh Page
-                </button>
-              </div>
-            </div>
+        <div className="bg-rose-50 border border-rose-100 rounded-[2rem] p-8 text-center">
+          <AlertCircle className="w-12 h-12 text-rose-500 mx-auto mb-4" />
+          <h3 className="text-xl font-black text-rose-900 mb-2 uppercase tracking-tight">Error loading documents</h3>
+          <p className="text-sm text-rose-700 mb-6 font-medium">{error.message}</p>
+          <div className="flex justify-center gap-4">
+            <button onClick={() => refetch()} className="bg-rose-600 text-white px-8 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-rose-700 transition-all">Retry</button>
+            <button onClick={() => window.location.reload()} className="bg-slate-900 text-white px-8 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-800 transition-all">Reload</button>
           </div>
         </div>
       </div>
@@ -268,146 +189,118 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ entityTypeOverride }) => 
 
   return (
     <div className="space-y-6 py-4 px-2">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-100 px-4 py-3 mb-4">
-        <div className="flex justify-between items-center">
-          <div className="flex items-center gap-2.5">
-            <div className={`p-2 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 ${entityInfo.color.includes('blue') ? '' : 'from-gray-500 to-gray-600'}`}>
-              <EntityIcon className="w-4 h-4 text-white" />
-            </div>
-            <div>
-              <h1 className="text-lg font-bold text-gray-900">
-                {entityType ? `${entityInfo.name} Documents` : 'Document Management'}
-              </h1>
-              <p className="text-xs text-gray-600 mt-0.5">
-                {entityType
-                  ? `Manage all ${entityInfo.name.toLowerCase()} documents and files`
-                  : 'Manage all documents across the platform'
-                }
-              </p>
-            </div>
+      {/* Sub-Header */}
+      {!entityTypeOverride && (
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+          <div>
+            <h1 className="text-3xl font-black text-[#0f172a] tracking-tight">
+              {entityType ? `${entityInfo.name} Documents` : 'Documents'}
+            </h1>
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">
+              {entityType
+                ? `Documents for ${entityInfo.name.toLowerCase()}`
+                : 'Manage your files and documents'
+              }
+            </p>
           </div>
-          <button
-            onClick={() => setShowUploadModal(true)}
-            className="bg-blue-600 text-white px-3 py-1.5 text-sm rounded-lg hover:bg-blue-700 flex items-center gap-1.5 transition-colors"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            Add Document
-          </button>
         </div>
-        {entityType && (
-          <div className="text-xs text-gray-600 mt-2 pt-2 border-t border-blue-200">
-            Entity Type: <span className="font-medium text-gray-700">{entityType}</span>
-            {entityId && (
-              <> • ID: <span className="font-medium text-gray-700">{entityId}</span></>
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* Statistics - Only show for non-Cargo Owners */}
-      {!isCargoOwner && (
-        <>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-            <div className="bg-white p-3 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all duration-200 group relative overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-br from-gray-50/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-              <div className="relative">
-                <div className="bg-gradient-to-br from-gray-500 to-gray-600 rounded-lg p-2 w-fit mb-2 group-hover:scale-110 transition-transform">
-                  <FileText className="text-white w-4 h-4" />
-                </div>
-                <div className="text-xl font-bold text-gray-900 mb-0.5">
-                  {isLoading ? '...' : safeStatistics.totalDocuments || 0}
-                </div>
-                <div className="text-xs text-gray-600">Total Documents</div>
-              </div>
-            </div>
-            <div className="bg-white p-3 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all duration-200 group relative overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-br from-gray-50/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-              <div className="relative">
-                <div className="bg-gradient-to-br from-gray-500 to-gray-600 rounded-lg p-2 w-fit mb-2 group-hover:scale-110 transition-transform">
-                  <FileText className="text-white w-4 h-4" />
-                </div>
-                <div className="text-xl font-bold text-gray-900 mb-0.5">
-                  {isLoading ? '...' : safeStatistics.documentsByStatus?.PENDING || 0}
-                </div>
-                <div className="text-xs text-gray-600">Pending Review</div>
-              </div>
-            </div>
-            <div className="bg-white p-3 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all duration-200 group relative overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-br from-gray-50/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-              <div className="relative">
-                <div className="bg-gradient-to-br from-gray-500 to-gray-600 rounded-lg p-2 w-fit mb-2 group-hover:scale-110 transition-transform">
-                  <CheckCircle className="text-white w-4 h-4" />
-                </div>
-                <div className="text-xl font-bold text-gray-900 mb-0.5">
-                  {isLoading ? '...' : safeStatistics.documentsByStatus?.VERIFIED || 0}
-                </div>
-                <div className="text-xs text-gray-600">Verified</div>
-              </div>
-            </div>
-            <div className="bg-white p-3 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all duration-200 group relative overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-br from-gray-50/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-              <div className="relative">
-                <div className="bg-gradient-to-br from-gray-500 to-gray-600 rounded-lg p-2 w-fit mb-2 group-hover:scale-110 transition-transform">
-                  <XCircle className="text-white w-4 h-4" />
-                </div>
-                <div className="text-xl font-bold text-gray-900 mb-0.5">
-                  {isLoading ? '...' : safeStatistics.documentsByStatus?.EXPIRED || 0}
-                </div>
-                <div className="text-xs text-gray-600">Expired</div>
-              </div>
-            </div>
-          </div>
-
-          {/* Category Statistics */}
-          {!isLoading && safeStatistics.documentsByCategory && Object.keys(safeStatistics.documentsByCategory).length > 0 && (
-            <div className="flex flex-wrap gap-2 mb-2">
-              {Object.entries(safeStatistics.documentsByCategory)
-                .sort((a, b) => (b[1] as number) - (a[1] as number))
-                .map(([category, count]) => (
-                  <div
-                    key={category}
-                    className="flex items-center bg-white border border-gray-200 rounded-full px-2.5 py-1 shadow-sm hover:border-blue-300 transition-all cursor-default group"
-                  >
-                    <span className="text-[10px] font-bold text-blue-600 mr-1.5 group-hover:scale-110 transition-transform">{count as number}</span>
-                    <span className="text-[9px] font-medium text-gray-500 uppercase tracking-wider">{category.replace('_', ' ')}</span>
-                  </div>
-                ))}
-            </div>
-          )}
-
-          {/* Show warning if using fallback data */}
-          {!statistics && !isLoading && (
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-2.5">
-              <div className="flex items-center">
-                <svg className="h-4 w-4 text-yellow-400 mr-1.5" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                </svg>
-                <span className="text-xs text-yellow-800">
-                  Statistics temporarily unavailable. Showing default values.
-                </span>
-              </div>
-            </div>
-          )}
-        </>
       )}
 
-      {/* Filters and Search - Conditional Rendering */}
-      {isCargoOwner ? (
-        // Simplified search/filter for Cargo Owners
-        <div className="bg-white p-3 rounded-lg border border-gray-200 space-y-3">
-          <div className="relative">
-            <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 text-gray-400 w-3.5 h-3.5" />
+      {/* Premium Statistics Grid */}
+      {!isCargoOwner && (
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
+          {[
+            { label: 'Total Documents', value: safeStatistics.totalDocuments || 0, icon: FileText, color: 'emerald' },
+            { label: 'Pending Review', value: safeStatistics.documentsByStatus?.PENDING || 0, icon: Clock, color: 'amber' },
+            { label: 'Verified Files', value: safeStatistics.documentsByStatus?.VERIFIED || 0, icon: CheckCircle, color: 'blue' },
+            { label: 'Deadlines / Expired', value: safeStatistics.documentsByStatus?.EXPIRED || 0, icon: XCircle, color: 'rose' }
+          ].map((stat, i) => (
+            <div key={i} className="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-xl transition-all duration-300 group">
+              <div className={cn(
+                "w-12 h-12 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform",
+                stat.color === 'emerald' ? "bg-emerald-50 text-emerald-600" :
+                  stat.color === 'amber' ? "bg-amber-50 text-amber-600" :
+                    stat.color === 'blue' ? "bg-blue-50 text-blue-600" : "bg-rose-50 text-rose-600"
+              )}>
+                <stat.icon size={24} />
+              </div>
+              <div className="space-y-1">
+                <div className="text-3xl font-black text-slate-900 leading-none">
+                  {isLoading ? '...' : stat.value}
+                </div>
+                <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                  {stat.label}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Category Pills */}
+      {!isLoading && safeStatistics.documentsByCategory && Object.keys(safeStatistics.documentsByCategory).length > 0 && (
+        <div className="flex flex-wrap gap-2 mb-6">
+          {Object.entries(safeStatistics.documentsByCategory)
+            .sort((a, b) => (b[1] as number) - (a[1] as number))
+            .map(([category, count]) => (
+              <div
+                key={category}
+                className="flex items-center bg-white border border-slate-100 rounded-full px-4 py-2 shadow-sm hover:border-[#345E85] transition-all cursor-default group"
+              >
+                <span className="text-[10px] font-black text-[#345E85] mr-2 group-hover:scale-110 transition-transform">{count as number}</span>
+                <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider">{category.replace('_', ' ')}</span>
+              </div>
+            ))}
+        </div>
+      )}
+
+      {/* Premium Search & Filters */}
+      <div className="bg-white p-6 rounded-[2rem] border border-slate-100 mb-8 shadow-sm">
+        <div className="flex flex-col lg:flex-row gap-6 items-center">
+          <div className="relative flex-1 w-full group">
+            <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-300 group-focus-within:text-[#345E85] transition-colors" />
             <input
               type="text"
-              placeholder="Search your documents..."
-              className="w-full pl-9 pr-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="SEARCH DOCUMENTS: TITLE, CATEGORY, STATUS..."
+              className="w-full h-16 pl-14 pr-32 bg-slate-50 border border-slate-100 rounded-3xl text-[10px] font-black uppercase tracking-widest text-slate-600 focus:outline-none focus:ring-4 focus:ring-blue-500/5 focus:bg-white transition-all placeholder:text-slate-300"
               value={filters.search}
               onChange={(e) => handleSearch(e.target.value)}
             />
+            <div className="absolute right-6 top-1/2 -translate-y-1/2 flex items-center gap-2">
+              <div className="h-6 w-px bg-slate-200 mr-2" />
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total:</span>
+              <span className="text-sm font-black text-[#345E85]">{safeDocumentsData.total || 0}</span>
+            </div>
           </div>
-          {filters.search && (
-            <div className="flex justify-end">
+
+          <div className="flex flex-wrap gap-3 items-center w-full lg:w-auto">
+            {!entityType && !isCargoOwner && (
+              <select
+                className="h-16 pl-8 pr-12 bg-slate-50 border border-slate-100 rounded-3xl text-[10px] font-black uppercase tracking-widest text-slate-600 focus:outline-none focus:ring-4 focus:ring-blue-500/5 appearance-none cursor-pointer hover:bg-white transition-all min-w-[150px]"
+                value={filters.entityType}
+                onChange={(e) => handleFilterChange('entityType', e.target.value)}
+              >
+                <option value="">All Entities</option>
+                <option value="DRIVER">Driver</option>
+                <option value="VEHICLE">Vehicle</option>
+                <option value="CARGO">Cargo</option>
+                <option value="TRIP">Trip</option>
+              </select>
+            )}
+
+            <select
+              className="h-16 pl-8 pr-12 bg-slate-50 border border-slate-100 rounded-3xl text-[10px] font-black uppercase tracking-widest text-slate-600 focus:outline-none focus:ring-4 focus:ring-blue-500/5 appearance-none cursor-pointer hover:bg-white transition-all min-w-[150px]"
+              value={filters.status}
+              onChange={(e) => handleFilterChange('status', e.target.value)}
+            >
+              <option value="">All Statuses</option>
+              <option value="VERIFIED">Verified</option>
+              <option value="PENDING">Pending</option>
+              <option value="REJECTED">Rejected</option>
+              <option value="EXPIRED">Expired</option>
+            </select>
+
+            {(filters.search || filters.category || filters.status || (!entityType && filters.entityType)) && (
               <button
                 onClick={() => {
                   setFilters({
@@ -419,158 +312,65 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ entityTypeOverride }) => 
                   });
                   setCurrentPage(1);
                 }}
-                className="text-xs text-blue-600 hover:text-blue-800 flex items-center gap-1"
+                className="w-16 h-16 bg-slate-900 text-white rounded-3xl hover:bg-slate-800 transition-all shadow-lg flex items-center justify-center group"
+                title="Clear Filters"
               >
-                Clear search
+                <X size={20} className="group-hover:rotate-90 transition-transform" />
               </button>
-            </div>
-          )}
-        </div>
-      ) : (
-        // Full filters for other roles (Admin, etc.)
-        <div className="bg-white p-3 rounded-lg border border-gray-200 space-y-3">
-          <div className="flex flex-col md:flex-row gap-3">
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 text-gray-400 w-3.5 h-3.5" />
-                <input
-                  type="text"
-                  placeholder="Search documents by title, type, or entity..."
-                  className="w-full pl-9 pr-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  value={filters.search}
-                  onChange={(e) => handleSearch(e.target.value)}
-                />
-              </div>
-            </div>
-            <div className="flex gap-2">
-              {/* Only show entity type filter if not already filtered by tab */}
-              {(!entityType && !isCargoOwner) && (
-                <select
-                  className="px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  value={filters.entityType}
-                  onChange={(e) => handleFilterChange('entityType', e.target.value)}
-                >
-                  <option value="">All Entity Types</option>
-                  <option value="DRIVER">Driver</option>
-                  <option value="VEHICLE">Vehicle</option>
-                  <option value="CARGO">Cargo</option>
-                  <option value="TRIP">Trip</option>
-                  <option value="USER">User</option>
-                </select>
-              )}
-              {/* Category filter - distinct from entity type */}
-              <select
-                className="px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                value={filters.category}
-                onChange={(e) => handleFilterChange('category', e.target.value)}
-              >
-                <option value="">All Categories</option>
-                <option value="CARGO">Cargo</option>
-                <option value="VEHICLE">Vehicle</option>
-                <option value="DRIVER">Driver</option>
-                <option value="TRIP">Trip</option>
-                <option value="BUSINESS">Business</option>
-                <option value="COMPLIANCE">Compliance</option>
-                <option value="FINANCIAL">Financial</option>
-                <option value="LEGAL">Legal</option>
-                <option value="OPERATIONAL">Operational</option>
-                <option value="OTHER">Other</option>
-              </select>
-              <select
-                className="px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                value={filters.status}
-                onChange={(e) => handleFilterChange('status', e.target.value)}
-              >
-                <option value="">All Statuses</option>
-                <option value="PENDING">Pending</option>
-                <option value="VERIFIED">Verified</option>
-                <option value="REJECTED">Rejected</option>
-                <option value="EXPIRED">Expired</option>
-              </select>
-              {/* Clear filters button */}
-              {(filters.search || filters.category || filters.status || (!entityType && filters.entityType)) && (
-                <button
-                  onClick={() => {
-                    setFilters({
-                      entityType: entityType || '',
-                      category: entityType || '',
-                      status: '',
-                      priority: '',
-                      search: '',
-                    });
-                    setCurrentPage(1);
-                  }}
-                  className="px-2.5 py-1.5 text-xs text-gray-600 hover:text-gray-900 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-1"
-                >
-                  <X className="w-3 h-3" />
-                  Clear
-                </button>
-              )}
-            </div>
+            )}
           </div>
-          {/* Active filter indicator */}
-          {entityType && (
-            <div className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded border border-blue-200 flex items-center gap-1">
-              <Info className="w-3 h-3" />
-              Filtering by: <span className="font-medium">{entityType}</span>
-            </div>
-          )}
         </div>
-      )}
+      </div>
 
-      {/* Bulk Actions */}
+      {/* Batch Actions */}
       {selectedDocuments.length > 0 ? (
-        <div className="sticky top-0 bg-blue-600 text-white rounded-lg p-3 shadow-lg z-10">
-          <div className="flex justify-between items-center">
-            <span className="text-sm font-medium">
+        <div className="sticky top-0 bg-[#345E85] text-white rounded-[1.5rem] p-4 shadow-xl z-20 flex justify-between items-center animate-in slide-in-from-top-4 duration-300">
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+              <FileText size={20} />
+            </div>
+            <span className="text-xs font-black uppercase tracking-widest leading-none">
               {selectedDocuments.length} document(s) selected
             </span>
-            <div className="flex gap-2">
-              <button
-                onClick={() => {
-                  // Download selected documents
-                  selectedDocuments.forEach(id => {
-                    documentApi.downloadDocument(id);
-                  });
-                }}
-                className="bg-white text-blue-600 px-3 py-1.5 text-xs rounded-lg hover:bg-blue-50 flex items-center gap-1.5 transition-colors font-medium"
-              >
-                <Download className="w-3.5 h-3.5" />
-                Download
-              </button>
-              <button
-                onClick={handleBulkDelete}
-                className="bg-red-600 text-white px-3 py-1.5 text-xs rounded-lg hover:bg-red-700 flex items-center gap-1.5 transition-colors font-medium"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-                Delete
-              </button>
-              <button
-                onClick={() => setSelectedDocuments([])}
-                className="bg-white/20 text-white px-3 py-1.5 text-xs rounded-lg hover:bg-white/30 flex items-center gap-1.5 transition-colors"
-              >
-                <X className="w-3.5 h-3.5" />
-                Clear
-              </button>
-            </div>
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={() => selectedDocuments.forEach(id => documentApi.downloadDocument(id))}
+              className="bg-white text-[#345E85] px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 transition-all shadow-sm"
+            >
+              Download
+            </button>
+            <button
+              onClick={handleBulkDelete}
+              className="bg-rose-500 text-white px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-rose-600 transition-all shadow-sm"
+            >
+              Delete
+            </button>
+            <button
+              onClick={() => setSelectedDocuments([])}
+              className="bg-white/10 text-white px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-white/20 transition-all"
+            >
+              Cancel
+            </button>
           </div>
         </div>
       ) : safeDocumentsData.documents.length > 0 && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-2 text-xs text-blue-800">
-          💡 Tip: Select multiple documents using checkboxes to perform bulk actions
+        <div className="bg-slate-50 border border-slate-100 rounded-[1.5rem] p-4 text-[10px] text-slate-400 font-black uppercase tracking-widest flex items-center gap-3 mb-6">
+          <Info className="w-4 h-4 text-[#345E85]" />
+          Select multiple to delete or download
         </div>
       )}
 
       {/* Documents Table */}
-      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm">
+      <div className="bg-white rounded-[2.5rem] border border-slate-100 overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+          <table className="min-w-full divide-y divide-slate-50">
+            <thead>
+              <tr className="bg-slate-50/50">
+                <th className="px-8 py-6 text-left">
                   <input
                     type="checkbox"
-                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-4 h-4"
+                    className="rounded-lg border-slate-200 text-[#345E85] focus:ring-[#345E85] w-5 h-5 cursor-pointer"
                     onChange={(e) => {
                       if (e.target.checked) {
                         setSelectedDocuments(safeDocumentsData.documents.map(d => d.id) || []);
@@ -581,39 +381,27 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ entityTypeOverride }) => 
                     checked={allSelected}
                   />
                 </th>
-                <th className="px-2 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  #
-                </th>
-                <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Document
-                </th>
-                <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Type
-                </th>
-                <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Priority
-                </th>
-                <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Expiry
-                </th>
-                <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
-                </th>
+                <th className="px-4 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest text-left">ID</th>
+                <th className="px-4 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest text-left">Document</th>
+                <th className="px-4 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest text-left">Type</th>
+                <th className="px-4 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest text-left">Status</th>
+                <th className="px-4 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest text-left">Expiry</th>
+                <th className="px-8 py-6 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest">Actions</th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-white divide-y divide-slate-50">
               {isLoading ? (
                 <tr>
-                  <td colSpan={8} className="px-4 py-4 text-center text-xs text-gray-500">
-                    Loading documents...
+                  <td colSpan={7} className="px-8 py-24 text-center">
+                    <div className="flex flex-col items-center gap-4">
+                      <div className="w-12 h-12 border-4 border-slate-100 border-t-[#345E85] rounded-full animate-spin" />
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Loading documents...</p>
+                    </div>
                   </td>
                 </tr>
               ) : safeDocumentsData.documents.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="px-4 py-8">
+                  <td colSpan={7} className="px-8 py-24 text-center">
                     <DocumentEmptyState
                       entityType={entityType}
                       hasFilters={!!(filters.search || filters.category || filters.status || (!entityType && filters.entityType))}
@@ -632,115 +420,105 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ entityTypeOverride }) => 
                   </td>
                 </tr>
               ) : (
-                safeDocumentsData.documents.map((document, index) => (
-                  <tr key={document.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-4 py-3 whitespace-nowrap">
+                safeDocumentsData.documents.map((document) => (
+                  <tr key={document.id} className="hover:bg-slate-50/50 transition-colors group">
+                    <td className="px-8 py-6">
                       <input
                         type="checkbox"
-                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-4 h-4"
+                        className="rounded-lg border-slate-200 text-[#345E85] focus:ring-[#345E85] w-5 h-5 cursor-pointer"
                         checked={selectedDocuments.includes(document.id)}
                         onChange={(e) => handleDocumentSelect(document.id, e.target.checked)}
                       />
                     </td>
-                    <td className="px-2 py-3 whitespace-nowrap text-xs text-gray-500">
-                      {(currentPage - 1) * 20 + index + 1}
+                    <td className="px-4 py-6">
+                      <span className="text-[10px] font-black text-[#345E85] bg-slate-100 px-3 py-1.5 rounded-full uppercase tracking-widest whitespace-nowrap">
+                        DOC-{document.id.slice(0, 6)}
+                      </span>
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <div className="flex-shrink-0 h-8 w-8">
-                          <div className="h-8 w-8 rounded-lg bg-gray-100 flex items-center justify-center">
-                            <span className="text-sm">{documentApi.getFileTypeIcon(document.mimeType)}</span>
-                          </div>
+                    <td className="px-4 py-6">
+                      <div className="flex items-center gap-4 text-left">
+                        <div className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center text-xl shadow-sm group-hover:bg-white group-hover:shadow-md transition-all">
+                          {documentApi.getFileTypeIcon(document.mimeType)}
                         </div>
-                        <div className="ml-3">
-                          <div className="text-xs font-medium text-gray-900">
+                        <div className="min-w-0">
+                          <div className="text-sm font-black text-slate-800 leading-tight group-hover:text-[#345E85] transition-colors truncate max-w-[200px]">
                             {document.title}
                           </div>
-                          <div className="text-xs text-gray-500">
-                            {documentApi.formatFileSize(document.fileSize)}
+                          <div className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">
+                            {documentApi.formatFileSize(document.fileSize)} • ARCHIVED
                           </div>
                         </div>
                       </div>
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      <div className="text-xs font-medium text-gray-900">
-                        {document.documentType.split('_').map(word => word.charAt(0) + word.slice(1).toLowerCase()).join(' ')}
+                    <td className="px-4 py-6 text-left">
+                      <div className="text-[10px] font-black text-slate-700 uppercase tracking-wider">
+                        {document.documentType.split('_').join(' ')}
                       </div>
-                      <div className="text-[10px] text-gray-500 uppercase tracking-wider">
+                      <div className="text-[9px] font-bold text-slate-400 uppercase tracking-[0.15em] mt-1 bg-slate-100 w-fit px-2 py-0.5 rounded">
                         {document.category}
                       </div>
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      <div className="flex items-center gap-1.5">
-                        {document.status === 'PENDING' && <Clock className="w-3 h-3 text-gray-600" />}
-                        {document.status === 'VERIFIED' && <CheckCircle className="w-3 h-3 text-gray-600" />}
-                        {document.status === 'REJECTED' && <XCircle className="w-3 h-3 text-gray-600" />}
-                        {document.status === 'EXPIRED' && <AlertCircle className="w-3 h-3 text-gray-600" />}
-                        <span className={`inline-flex px-2 py-0.5 text-xs font-semibold rounded-full ${documentApi.getDocumentStatusColor(document.status)}`}>
-                          {document.status === 'PENDING' ? 'Pending Review' :
-                            document.status === 'VERIFIED' ? 'Verified' :
-                              document.status === 'REJECTED' ? 'Rejected' :
-                                document.status === 'EXPIRED' ? 'Expired' : document.status}
-                        </span>
+                    <td className="px-4 py-6 text-left">
+                      <div className={cn(
+                        "inline-flex items-center gap-2 px-4 py-1.5 rounded-full border shadow-sm text-[9px] font-black uppercase tracking-[0.1em]",
+                        document.status === 'VERIFIED' ? "bg-emerald-50 text-emerald-600 border-emerald-100" :
+                          document.status === 'PENDING' ? "bg-amber-50 text-amber-600 border-amber-100" :
+                            document.status === 'REJECTED' ? "bg-rose-50 text-rose-600 border-rose-100" :
+                              "bg-slate-50 text-slate-600 border-slate-100"
+                      )}>
+                        <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse" />
+                        {document.status}
                       </div>
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      <span className={`inline-flex px-2 py-0.5 text-xs font-semibold rounded-full ${documentApi.getDocumentPriorityColor(document.priority)}`}>
-                        {document.priority}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-xs text-gray-900">
+                    <td className="px-4 py-6 text-left">
                       {document.expiryDate ? (
-                        <div>
-                          <div>{new Date(document.expiryDate).toLocaleDateString()}</div>
+                        <div className="space-y-1">
+                          <div className="text-[10px] font-black text-slate-700 uppercase">
+                            {new Date(document.expiryDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                          </div>
                           {document.isExpired && (
-                            <span className="text-red-600 text-xs">Expired</span>
+                            <span className="text-[8px] font-black bg-rose-500 text-white px-2 py-0.5 rounded tracking-widest uppercase">Expired</span>
                           )}
-                          {document.requiresRenewal && (
-                            <span className="text-yellow-600 text-xs">Renewal Required</span>
+                          {document.requiresRenewal && !document.isExpired && (
+                            <span className="text-[8px] font-black bg-amber-500 text-white px-2 py-0.5 rounded tracking-widest uppercase">Renewal Due</span>
                           )}
                         </div>
                       ) : (
-                        <span className="text-gray-400">No expiry</span>
+                        <span className="text-[10px] font-black text-slate-300 uppercase italic">No expiry</span>
                       )}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-xs font-medium">
-                      <div className="flex gap-1.5">
-                        <button
-                          onClick={() => setPreviewDoc({
-                            id: document.id,
-                            title: document.title,
-                            fileName: document.fileName
-                          })}
-                          className="text-blue-600 hover:text-blue-900 transition-colors"
-                          title="View"
-                        >
-                          <Eye className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          onClick={() => documentApi.downloadDocument(document.id)}
-                          className="text-green-600 hover:text-green-900 transition-colors"
-                          title="Download"
-                        >
-                          <Download className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          onClick={async () => {
-                            const confirmed = await confirm({
-                              title: 'Delete Document',
-                              message: `Are you sure you want to delete "${document.title}"? This action cannot be undone.`,
-                              confirmText: 'Delete',
-                              cancelText: 'Cancel',
-                            });
-                            if (confirmed) {
-                              deleteMutation.mutate(document.id);
-                            }
-                          }}
-                          className="text-red-600 hover:text-red-900 transition-colors"
-                          title="Delete"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+                    <td className="px-8 py-6 text-right">
+                      <div className="flex items-center justify-end gap-2 text-left">
+                        {[
+                          { icon: Eye, onClick: () => setPreviewDoc({ id: document.id, title: document.title, fileName: document.fileName }), label: 'View', color: 'blue' },
+                          { icon: Download, onClick: () => documentApi.downloadDocument(document.id), label: 'Download', color: 'emerald' },
+                          {
+                            icon: Trash2, onClick: async () => {
+                              const confirmed = await confirm({
+                                title: 'Delete Document',
+                                message: `Are you sure you want to delete "${document.title}"? This action cannot be undone.`,
+                                confirmText: 'Delete',
+                                cancelText: 'Cancel',
+                                variant: 'danger'
+                              });
+                              if (confirmed) deleteMutation.mutate(document.id);
+                            }, label: 'Delete', color: 'rose'
+                          }
+                        ].map((action, i) => (
+                          <button
+                            key={i}
+                            onClick={action.onClick}
+                            className={cn(
+                              "w-10 h-10 rounded-2xl flex items-center justify-center transition-all bg-white border border-slate-100 shadow-sm",
+                              action.color === 'blue' ? "text-blue-500 hover:bg-blue-50 hover:border-blue-100" :
+                                action.color === 'emerald' ? "text-emerald-500 hover:bg-emerald-50 hover:border-emerald-100" :
+                                  "text-rose-500 hover:bg-rose-50 hover:border-rose-100"
+                            )}
+                            title={action.label}
+                          >
+                            <action.icon size={16} />
+                          </button>
+                        ))}
                       </div>
                     </td>
                   </tr>
@@ -753,23 +531,25 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ entityTypeOverride }) => 
 
       {/* Pagination */}
       {safeDocumentsData.totalPages > 1 && (
-        <div className="flex justify-center">
-          <nav className="flex space-x-1.5">
+        <div className="flex justify-center mt-12 pb-8">
+          <nav className="flex items-center gap-1.5 p-2 bg-slate-50 border border-slate-100 rounded-[1.5rem] shadow-inner">
             <button
               onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
               disabled={currentPage === 1}
-              className="px-2.5 py-1.5 text-xs border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors"
+              className="px-6 h-12 text-[10px] font-black uppercase tracking-widest text-[#345E85] disabled:opacity-30 disabled:cursor-not-allowed hover:bg-white hover:shadow-md rounded-[1.2rem] transition-all"
             >
-              Previous
+              PREV
             </button>
             {Array.from({ length: safeDocumentsData.totalPages }, (_, i) => i + 1).map((page) => (
               <button
                 key={page}
                 onClick={() => setCurrentPage(page)}
-                className={`px-2.5 py-1.5 text-xs border rounded-lg transition-colors ${currentPage === page
-                  ? 'bg-blue-600 text-white border-blue-600'
-                  : 'border-gray-300 hover:bg-gray-50'
-                  }`}
+                className={cn(
+                  "w-12 h-12 text-[10px] font-black flex items-center justify-center rounded-[1.2rem] transition-all",
+                  currentPage === page
+                    ? 'bg-white text-[#345E85] shadow-md border border-slate-200'
+                    : 'text-slate-400 hover:text-slate-600 hover:bg-white/50'
+                )}
               >
                 {page}
               </button>
@@ -777,15 +557,15 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ entityTypeOverride }) => 
             <button
               onClick={() => setCurrentPage(prev => Math.min(safeDocumentsData.totalPages, prev + 1))}
               disabled={currentPage === safeDocumentsData.totalPages}
-              className="px-2.5 py-1.5 text-xs border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors"
+              className="px-6 h-12 text-[10px] font-black uppercase tracking-widest text-[#345E85] disabled:opacity-30 disabled:cursor-not-allowed hover:bg-white hover:shadow-md rounded-[1.2rem] transition-all"
             >
-              Next
+              NEXT
             </button>
           </nav>
         </div>
       )}
 
-      {/* Upload Modal */}
+      {/* Modals */}
       <DocumentUploadModal
         isOpen={showUploadModal}
         onClose={() => setShowUploadModal(false)}
@@ -795,10 +575,8 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ entityTypeOverride }) => 
         lockEntity={!!entityType}
       />
 
-      {/* Confirmation Dialog */}
       {DialogComponent}
 
-      {/* Document Preview Modal */}
       {previewDoc && (
         <DocumentPreviewModal
           isOpen={!!previewDoc}

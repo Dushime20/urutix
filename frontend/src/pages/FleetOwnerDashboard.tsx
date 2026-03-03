@@ -1,64 +1,41 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { 
-  FaTruck, 
-  FaUsers, 
-  FaDollarSign, 
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import { Icon } from 'leaflet';
+import 'leaflet/dist/leaflet.css';
+import {
+  FaTruck,
+  FaDollarSign,
   FaRoute,
   FaChartLine,
-  FaClock,
-  FaBox,
-  FaEye,
-  FaSync,
-  FaSpinner,
-  FaArrowUp,
-  FaArrowDown,
-  FaCalendarAlt,
-  FaTachometerAlt,
-  FaShieldAlt,
-  FaCreditCard,
-  FaFileAlt,
-  FaHistory,
-  FaPlus,
-  FaUser,
   FaCheckCircle,
-  FaExclamationTriangle
+  FaUser,
+  FaStar,
+  FaBolt,
+  FaClipboardCheck
 } from 'react-icons/fa';
-import { 
-  Clock, 
-  Layout, 
-  Truck, 
-  Users, 
-  FileText, 
-  BarChart3, 
-  Wallet, 
-  History, 
-  HelpCircle,
-  Mic,
-  Camera,
-  Sparkles,
-  ArrowUpRight,
-  TrendingUp,
-  Activity
-} from 'lucide-react';
-import { fleetApi, type FleetItem, type Driver, type FleetAnalytics as FleetAnalyticsType } from '../services/fleetApi';
+import { Clock, Zap, AlertTriangle, Bell, Search, X, Settings, LogOut, Fuel, Droplets, CheckCircle, Plus } from 'lucide-react';
+import { fleetApi, type FleetItem } from '../services/fleetApi';
 import { tripsAPI } from '../services/api';
-import { cargoOwnerAPI } from '../services/cargoApi';
 import { useAuth } from '../contexts/AuthContext';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import logoUrutiX from '../assets/urutiX Logistics Logo (1).svg';
 import toast from 'react-hot-toast';
-import logoUrutiX from '../assets/logo-urutix.svg';
-import DashboardHeader from '../components/Layout/DashboardHeader';
-import DashboardFooter from '../components/Layout/DashboardFooter';
-import { cn } from '../utils/cn';
-import { TranslatedText } from '../components/translated-text';
+import { FleetFormEnhanced as FleetForm } from '../components/FleetDashboard/FleetFormEnhanced';
 
-// Feature Components
-const UnifiedFleetManagement = React.lazy(() => import('./UnifiedFleetManagement'));
-const UnifiedDriverManagement = React.lazy(() => import('./UnifiedDriverManagement'));
-const UnifiedFinancialManagement = React.lazy(() => import('./dashboard/financial/UnifiedFinancialManagement'));
-const UnifiedDocumentManagement = React.lazy(() => import('./dashboard/documents/UnifiedDocumentManagement'));
-const FleetAnalytics = React.lazy(() => import('./FleetAnalytics'));
-const FleetHelpSupport = React.lazy(() => import('./FleetHelpSupport'));
+// Fix Leaflet icons
+import iconUrl from 'leaflet/dist/images/marker-icon.png';
+import iconRetinaUrl from 'leaflet/dist/images/marker-icon-2x.png';
+import iconShadow from 'leaflet/dist/images/marker-shadow.png';
+
+const fleetIcon = new Icon({
+  iconUrl,
+  iconRetinaUrl,
+  shadowUrl: iconShadow,
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41],
+});
 
 interface DashboardStats {
   totalTrucks: number;
@@ -75,110 +52,108 @@ interface DashboardStats {
   utilizationRate: number;
 }
 
-interface RecentActivity {
-  id: string;
-  type: 'trip_completed' | 'payment_received' | 'maintenance_due' | 'driver_assigned' | 'trip_started';
-  title: string;
-  description: string;
-  timestamp: string;
-  icon: any;
-  color: string;
-}
-
 const FleetOwnerDashboard: React.FC = () => {
-  const [loading, setLoading] = useState(true);
-  const location = useLocation();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const { user } = useAuth();
-
-  // Tab state
-  const [activeTab, setActiveTab] = useState('Overview');
-  const tabs = [
-    { name: 'Overview', icon: Layout },
-    { name: 'Fleet', icon: Truck },
-    { name: 'Drivers', icon: Users },
-    { name: 'Analytics', icon: BarChart3 },
-    { name: 'Financial', icon: Wallet },
-    { name: 'Documents', icon: FileText },
-    { name: 'Support', icon: HelpCircle },
-  ];
-
+  const [loading, setLoading] = useState(true);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement>(null);
   const [stats, setStats] = useState<DashboardStats>({
-    totalTrucks: 0,
-    trucksInTransit: 0,
-    trucksAvailable: 0,
-    trucksInMaintenance: 0,
-    totalDrivers: 0,
-    activeDrivers: 0,
-    totalRevenue: 0,
-    monthlyRevenue: 0,
-    pendingPayments: 0,
-    activeTrips: 0,
-    completedTrips: 0,
-    utilizationRate: 0,
+    totalTrucks: 0, trucksInTransit: 0, trucksAvailable: 0, trucksInMaintenance: 0,
+    totalDrivers: 0, activeDrivers: 0, totalRevenue: 0, monthlyRevenue: 0,
+    pendingPayments: 0, activeTrips: 0, completedTrips: 0, utilizationRate: 0,
   });
-  const [recentActivities, setRecentActivities] = useState<RecentActivity[]>([]);
   const [trucks, setTrucks] = useState<FleetItem[]>([]);
-  const [drivers, setDrivers] = useState<Driver[]>([]);
-  const [assignedLoads, setAssignedLoads] = useState<any[]>([]);
-  const [loadingLoads, setLoadingLoads] = useState(false);
+  const [topDrivers, setTopDrivers] = useState<any[]>([]);
+  const [maintenanceAlerts, setMaintenanceAlerts] = useState<any[]>([]);
+  const [recentInspections, setRecentInspections] = useState<any[]>([]);
+  const [trips, setTrips] = useState<any[]>([]);
+
+  // Truck creation state (matching cargo creation pattern)
+  const [showTruckForm, setShowTruckForm] = useState(false);
+  const [formMode, setFormMode] = useState<'create' | 'edit'>('create');
+  const [editingTruck, setEditingTruck] = useState<FleetItem | null>(null);
+
+  // Close user menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
+        setShowUserMenu(false);
+      }
+    };
+    if (showUserMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showUserMenu]);
+
+  const handleLogout = () => {
+    setShowUserMenu(false);
+    try {
+      if (logout && typeof logout === 'function') {
+        logout();
+      } else {
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('refreshToken');
+        localStorage.removeItem('user');
+      }
+      navigate('/auth');
+    } catch (error) {
+      console.error('Logout error:', error);
+      navigate('/auth');
+    }
+  };
+
+  const [fuelStats, setFuelStats] = useState<any>(null);
 
   const loadDashboardData = useCallback(async () => {
     setLoading(true);
     try {
-      // Load trucks - fleetApi.getTrucks() already returns the trucks array directly
       const trucksData = await fleetApi.getTrucks();
-      console.log('🚛 FleetOwnerDashboard - Trucks data:', trucksData);
-      console.log('🚛 FleetOwnerDashboard - Trucks length:', Array.isArray(trucksData) ? trucksData.length : 'N/A');
       setTrucks(Array.isArray(trucksData) ? trucksData : []);
 
-      // Load drivers
       const driversData = await fleetApi.getDrivers();
-      setDrivers(driversData);
+      // setDrivers(driversData);
 
-      // Load trips
+      // Fetch Top Drivers & Alerts
+      const topDriversData = await fleetApi.getTopDrivers(5);
+      setTopDrivers(topDriversData);
+
+      const alertsData = await fleetApi.getMaintenanceAlerts();
+      setMaintenanceAlerts(alertsData);
+
+      const inspectionsData = await fleetApi.getSafetyInspections();
+      setRecentInspections(inspectionsData.slice(0, 5)); // Get recent 5
+
+      // Fetch Fuel Stats
+      try {
+        const fuelData = await fleetApi.getFuelStats();
+        setFuelStats(fuelData);
+      } catch (e) {
+        console.warn('Failed to load fuel stats:', e);
+      }
+
       let tripsData: any[] = [];
       try {
         const tripsResponse = await tripsAPI.getAll({});
-        tripsData = tripsResponse.data?.data || tripsResponse.data?.trips || tripsResponse.data || [];
-        if (!Array.isArray(tripsData)) tripsData = [];
+        tripsData = tripsResponse.data?.data || tripsResponse.data?.trips || [];
+        setTrips(tripsData);
       } catch (e) {
         console.warn('Failed to load trips:', e);
       }
 
-      // Calculate stats
-      const trucksInTransit = trucksData.filter(t => 
-        t.status?.toLowerCase() === 'intransit' || 
-        t.status?.toLowerCase() === 'in_transit' ||
-        t.status?.toLowerCase() === 'in-transit'
-      ).length;
+      const analyticsData = await fleetApi.fetchAnalytics();
 
-      const trucksAvailable = trucksData.filter(t => 
-        t.status?.toLowerCase() === 'available' || 
-        t.status?.toLowerCase() === 'idle'
-      ).length;
+      // Calculations
+      const trucksInTransit = trucksData.filter(t => ['intransit', 'in_transit', 'in-transit'].includes(t.status?.toLowerCase())).length;
+      const trucksAvailable = trucksData.filter(t => ['available', 'idle'].includes(t.status?.toLowerCase())).length;
+      const trucksInMaintenance = trucksData.filter(t => ['maintenance', 'repair'].includes(t.status?.toLowerCase())).length;
 
-      const trucksInMaintenance = trucksData.filter(t => 
-        t.status?.toLowerCase() === 'maintenance' || 
-        t.status?.toLowerCase() === 'repair'
-      ).length;
-
-      const activeTrips = tripsData.filter(t => 
-        ['IN_TRANSIT', 'IN_PROGRESS', 'ACTIVE', 'ONGOING'].includes(t.status?.toUpperCase())
-      ).length;
-
-      const completedTrips = tripsData.filter(t => 
-        t.status?.toUpperCase() === 'COMPLETED'
-      ).length;
-
-      // Calculate revenue (dummy for now)
       const totalRevenue = trucksData.reduce((sum, truck) => sum + (truck.totalRevenue || 0), 0);
-      const monthlyRevenue = totalRevenue * 0.3; // Approximate 30% of total as monthly
-      const pendingPayments = trucksInTransit * 5000; // Dummy calculation
-
-      const utilizationRate = trucksData.length > 0 
-        ? (trucksInTransit / trucksData.length) * 100 
-        : 0;
+      const utilizationRate = trucksData.length > 0 ? (trucksInTransit / trucksData.length) * 100 : 0;
 
       setStats({
         totalTrucks: trucksData.length,
@@ -186,587 +161,742 @@ const FleetOwnerDashboard: React.FC = () => {
         trucksAvailable,
         trucksInMaintenance,
         totalDrivers: driversData.length,
-        activeDrivers: driversData.filter(d => d.status === 'ACTIVE').length,
-        totalRevenue,
-        monthlyRevenue,
-        pendingPayments,
-        activeTrips,
-        completedTrips,
-        utilizationRate: Math.round(utilizationRate),
+        activeDrivers: driversData.filter((d: any) => d.status === 'ACTIVE').length,
+        totalRevenue: analyticsData.totalRevenue || totalRevenue,
+        monthlyRevenue: (analyticsData.totalRevenue || totalRevenue) * 0.3,
+        pendingPayments: trucksInTransit * 5000,
+        activeTrips: tripsData.filter(t => ['active', 'in_progress', 'started'].includes(t.status?.toLowerCase())).length,
+        completedTrips: tripsData.filter(t => ['completed', 'delivered'].includes(t.status?.toLowerCase())).length,
+        utilizationRate: analyticsData.utilizationRate || Math.round(utilizationRate),
       });
 
-      // Generate recent activities
-      const activities: RecentActivity[] = [
-        ...tripsData.slice(0, 3).map((trip, idx) => ({
-          id: `trip-${trip.id}`,
-          type: 'trip_completed' as const,
-          title: 'Trip Completed',
-          description: `Trip ${trip.tripNumber || trip.id} completed successfully`,
-          timestamp: new Date(Date.now() - idx * 2 * 60 * 60 * 1000).toISOString(),
-          icon: FaCheckCircle,
-          color: 'text-green-600',
-        })),
-        ...trucksData.filter(t => trucksInMaintenance > 0).slice(0, 2).map((truck, idx) => ({
-          id: `maintenance-${truck.id}`,
-          type: 'maintenance_due' as const,
-          title: 'Maintenance Due',
-          description: `${truck.plateNumber} requires scheduled maintenance`,
-          timestamp: new Date(Date.now() - (idx + 3) * 2 * 60 * 60 * 1000).toISOString(),
-          icon: FaExclamationTriangle,
-          color: 'text-orange-600',
-        })),
-      ].slice(0, 5).sort((a, b) => 
-        new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
-      );
-
-      setRecentActivities(activities);
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error loading dashboard data:', error);
-      toast.error('Failed to load dashboard data');
+      toast.error('Failed to load fleet data');
     } finally {
       setLoading(false);
     }
   }, []);
 
-  const loadAssignedLoads = useCallback(async () => {
-    if (!user || user.role !== 'TRUCK_OWNER') return;
-    
-    setLoadingLoads(true);
-    try {
-      const response = await cargoOwnerAPI.getAssignedLoads({
-        page: 1,
-        limit: 10,
-        sortBy: 'pickupDate',
-        sortOrder: 'ASC',
-      });
-      const loads = response.data?.data || response.data || [];
-      setAssignedLoads(Array.isArray(loads) ? loads : []);
-    } catch (error: any) {
-      console.error('Error loading assigned loads:', error);
-      // Don't show error toast as this is optional data
-    } finally {
-      setLoadingLoads(false);
-    }
-  }, [user]);
-
   useEffect(() => {
     loadDashboardData();
-    loadAssignedLoads();
-  }, [loadDashboardData, loadAssignedLoads]);
+  }, [loadDashboardData]);
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'KES',
-      minimumFractionDigits: 0,
-    }).format(amount);
-  };
+  // Truck creation handlers (matching cargo creation pattern)
+  const handleCreateTruck = useCallback(() => {
+    setEditingTruck(null);
+    setFormMode('create');
+    setShowTruckForm(true);
+  }, []);
 
-  const formatTimeAgo = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
-    
-    if (diffInHours < 1) return 'Just now';
-    if (diffInHours < 24) return `${diffInHours}h ago`;
-    const diffInDays = Math.floor(diffInHours / 24);
-    if (diffInDays < 7) return `${diffInDays}d ago`;
-    return date.toLocaleDateString();
-  };
+  const handleSubmitTruck = useCallback(async (data: any) => {
+    try {
+      await fleetApi.createTruck(data);
+      toast.success('Truck added successfully!');
+      setShowTruckForm(false);
+      setEditingTruck(null);
+      loadDashboardData(); // Refresh stats
+    } catch (error) {
+      console.error('Error creating truck:', error);
+      toast.error('Failed to add truck. Please try again.');
+      throw error;
+    }
+  }, [loadDashboardData]);
 
-  const statCards = [
-    {
-      title: 'Total Trucks',
-      value: stats.totalTrucks,
-      subtitle: `${stats.trucksAvailable} available`,
-      icon: FaTruck,
-      color: 'bg-blue-500',
-      bgColor: 'bg-blue-50',
-      textColor: 'text-blue-600',
-      link: '/dashboard/fleet/trucks',
-    },
-    {
-      title: 'In Transit',
-      value: stats.trucksInTransit,
-      subtitle: `${stats.activeTrips} active trips`,
-      icon: FaRoute,
-      color: 'bg-purple-500',
-      bgColor: 'bg-purple-50',
-      textColor: 'text-purple-600',
-      link: '/dashboard/fleet/payments',
-    },
-    {
-      title: 'Monthly Revenue',
-      value: formatCurrency(stats.monthlyRevenue),
-      subtitle: `${stats.completedTrips} trips completed`,
-      icon: FaDollarSign,
-      color: 'bg-green-500',
-      bgColor: 'bg-green-50',
-      textColor: 'text-green-600',
-      link: '/dashboard/fleet/analytics',
-    },
-    {
-      title: 'Pending Payments',
-      value: formatCurrency(stats.pendingPayments),
-      subtitle: `${stats.trucksInTransit} trucks awaiting payment`,
-      icon: FaCreditCard,
-      color: 'bg-orange-500',
-      bgColor: 'bg-orange-50',
-      textColor: 'text-orange-600',
-      link: '/dashboard/fleet/payments',
-    },
-    {
-      title: 'Active Drivers',
-      value: stats.activeDrivers,
-      subtitle: `${stats.totalDrivers} total drivers`,
-      icon: FaUsers,
-      color: 'bg-indigo-500',
-      bgColor: 'bg-indigo-50',
-      textColor: 'text-indigo-600',
-      link: '/dashboard/fleet/drivers',
-    },
-    {
-      title: 'Fleet Utilization',
-      value: `${stats.utilizationRate}%`,
-      subtitle: `${stats.trucksInTransit} of ${stats.totalTrucks} trucks active`,
-      icon: FaChartLine,
-      color: 'bg-teal-500',
-      bgColor: 'bg-teal-50',
-      textColor: 'text-teal-600',
-      link: '/dashboard/fleet/analytics',
-    },
-  ];
-
-  const quickActions = [
-    {
-      title: 'Add Truck',
-      description: 'Register a new truck',
-      icon: FaPlus,
-      action: () => navigate('/dashboard/fleet/trucks'),
-    },
-    {
-      title: 'Add Driver',
-      description: 'Register a new driver',
-      icon: FaUser,
-      action: () => navigate('/dashboard/fleet/drivers'),
-    },
-    {
-      title: 'View Payments',
-      description: 'Manage payments',
-      icon: FaCreditCard,
-      action: () => navigate('/dashboard/fleet/payments'),
-    },
-    {
-      title: 'View Analytics',
-      description: 'Fleet performance',
-      icon: FaChartLine,
-      action: () => navigate('/dashboard/fleet/analytics'),
-    },
-  ];
+  const handleCloseTruckForm = useCallback(() => {
+    setShowTruckForm(false);
+    setEditingTruck(null);
+  }, []);
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen bg-gray-50">
-        <div className="text-center">
-          <FaSpinner className="animate-spin text-primary-600 text-3xl mx-auto mb-4" />
-          <p className="text-sm text-gray-500 font-medium">Loading your fleet dashboard...</p>
-        </div>
+      <div className="min-h-screen bg-slate-900 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
       </div>
     );
   }
 
-  const renderOverview = () => (
-    <div className="relative z-10 space-y-4">
-      {/* 1. Statistics Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-        {statCards.map((card, index) => {
-          const Icon = card.icon;
-          return (
-            <div
-              key={index}
-              onClick={() => {
-                if (card.title === 'Total Trucks') setActiveTab('Fleet');
-                else if (card.title === 'Active Drivers') setActiveTab('Drivers');
-                else if (card.title === 'Monthly Revenue') setActiveTab('Financial');
-                else navigate(card.link);
-              }}
-              className="bg-white rounded-xl shadow-sm border border-gray-200 p-3 hover:shadow-md transition-all cursor-pointer group hover:border-primary-200"
-            >
-              <div className="flex items-center justify-between mb-2">
-                <div className={`${card.bgColor} p-2 rounded-lg`}>
-                  <Icon className={`w-4 h-4 ${card.textColor}`} />
-                </div>
-                <FaEye className="w-3.5 h-3.5 text-gray-300 group-hover:text-primary-600 transition-colors" />
-              </div>
-              <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">{card.title}</h3>
-              <p className="text-lg font-extrabold text-gray-900 mb-0.5">{card.value}</p>
-              <p className="text-[10px] text-gray-500 font-medium leading-tight">{card.subtitle}</p>
-            </div>
-          );
-        })}
-      </div>
+  // --- UI COMPONENTS ---
 
-      {/* 2. Advanced Features Section (The "Everything" part) */}
-      <section aria-label="Advanced Features">
-        <div className="flex items-center gap-2 mb-4">
-          <h2 className="text-sm font-bold text-gray-800 flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-primary-500" />
-            Advanced Fleet Tools
-          </h2>
-          <span className="text-[10px] bg-primary-100 text-primary-700 px-2 py-0.5 rounded-full font-bold">PREMIUM</span>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <button
-            onClick={() => setActiveTab('Fleet')}
-            className="p-5 bg-white border border-gray-200 rounded-2xl text-left hover:shadow-lg transition-all group relative overflow-hidden"
-          >
-            <div className="absolute top-0 right-0 p-2 opacity-5 group-hover:opacity-10 transition-opacity">
-              <Mic className="w-16 h-16" />
-            </div>
-            <div className="flex justify-between items-start mb-3">
-              <h3 className="text-sm font-bold text-gray-900">Voice Logs</h3>
-              <div className="bg-gray-50 rounded-lg p-2 group-hover:bg-primary-50 transition-colors">
-                <Mic className="w-5 h-5 text-gray-600 group-hover:text-primary-600" />
-              </div>
-            </div>
-            <p className="text-xs text-gray-500 leading-relaxed">Speak to record trip updates or maintenance notes</p>
-          </button>
+  const Header = () => (
+    <>
+      {/* Marquee Alert Bar */}
+      <div className="bg-[#0a101f] text-white py-2 overflow-hidden border-b border-white/5">
+        <div className="flex items-center animate-marquee whitespace-nowrap">
+          <div className="flex gap-16 items-center text-[11px] font-bold tracking-widest uppercase opacity-80">
+            {maintenanceAlerts.length > 0 ? (
+              <span className="flex items-center gap-2 text-amber-400">
+                <AlertTriangle size={14} /> Attention: {maintenanceAlerts.length} vehicles need service
+              </span>
+            ) : (
+              <span className="flex items-center gap-2 text-emerald-400">
+                <CheckCircle size={14} /> Health: All vehicles running
+              </span>
+            )}
 
-          <button
-            onClick={() => setActiveTab('Documents')}
-            className="p-5 bg-white border border-gray-200 rounded-2xl text-left hover:shadow-lg transition-all group relative overflow-hidden"
-          >
-            <div className="absolute top-0 right-0 p-2 opacity-5 group-hover:opacity-10 transition-opacity">
-              <Camera className="w-16 h-16" />
-            </div>
-            <div className="flex justify-between items-start mb-3">
-              <h3 className="text-sm font-bold text-gray-900">Scan Receipts</h3>
-              <div className="bg-gray-50 rounded-lg p-2 group-hover:bg-primary-50 transition-colors">
-                <Camera className="w-5 h-5 text-gray-600 group-hover:text-primary-600" />
-              </div>
-            </div>
-            <p className="text-xs text-gray-500 leading-relaxed">Instant OCR for fuel receipts and toll invoices</p>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('Analytics')}
-            className="p-5 bg-gradient-to-br from-indigo-500 to-primary-600 rounded-2xl text-left shadow-lg hover:shadow-xl transition-all group text-white border-none"
-          >
-            <div className="flex justify-between items-start mb-3">
-              <h3 className="text-sm font-bold">Smart Insights</h3>
-              <div className="bg-white/20 backdrop-blur-sm rounded-lg p-2">
-                <BarChart3 className="w-5 h-5 text-white" />
-              </div>
-            </div>
-            <p className="text-xs text-indigo-50 leading-relaxed">AI-powered analytics for fleet performance optimization</p>
-          </button>
-
-          <button
-            onClick={() => navigate('/dashboard/fleet/routes')}
-            className="p-5 bg-white border border-gray-200 rounded-2xl text-left hover:shadow-lg transition-all group relative overflow-hidden"
-          >
-             <div className="absolute top-0 right-0 p-2 opacity-5 group-hover:opacity-10 transition-opacity">
-              <FaRoute className="w-16 h-16" />
-            </div>
-            <div className="flex justify-between items-start mb-3">
-              <h3 className="text-sm font-bold text-gray-900">Route AI</h3>
-              <div className="bg-gray-50 rounded-lg p-2 group-hover:bg-primary-50 transition-colors">
-                <FaRoute className="w-5 h-5 text-gray-600 group-hover:text-primary-600" />
-              </div>
-            </div>
-            <p className="text-xs text-gray-500 leading-relaxed">Optimize multi-stop routes for maximum fuel efficiency</p>
-          </button>
-        </div>
-      </section>
-
-      {/* 3. Quick Actions & Recent Activity */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* Quick Actions */}
-        <div className="lg:col-span-1">
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-4 h-full">
-            <h2 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-amber-500" />
-              Quick Actions
-            </h2>
-            <div className="grid grid-cols-1 gap-2">
-              {quickActions.map((action, index) => {
-                const Icon = action.icon;
-                return (
-                  <button
-                    key={index}
-                    onClick={action.action}
-                    className="w-full bg-gray-50 hover:bg-white hover:shadow-md border border-gray-200 text-gray-700 rounded-xl p-3 flex items-center gap-3 transition-all hover:border-primary-300"
-                  >
-                    <div className="bg-white p-2 rounded-lg shadow-sm border border-gray-100 group-hover:bg-primary-50 transition-colors">
-                      <Icon className="w-4 h-4 text-primary-600" />
-                    </div>
-                    <div className="text-left flex-1 min-w-0">
-                      <div className="font-bold text-xs text-gray-900 truncate">{action.title}</div>
-                      <div className="text-[10px] text-gray-400 truncate font-medium">{action.description}</div>
-                    </div>
-                    <ArrowUpRight className="w-3.5 h-3.5 text-gray-300" />
-                  </button>
-                );
-              })}
-            </div>
+            <span className="flex items-center gap-2">
+              <Droplets size={14} className="text-blue-400" /> Weather Update: Heavy Rain Expected (Nairobi-Mombasa)
+            </span>
+            <span className="flex items-center gap-2 text-green-400">
+              <CheckCircle size={14} /> Border Status: Busia & Malaba operating normally
+            </span>
+            <span className="flex items-center gap-2 text-amber-400">
+              <Fuel size={14} /> Fuel Price: Diesel KES 210.00 (+2% effective Jan 15th)
+            </span>
           </div>
         </div>
+      </div>
 
-        {/* Recent Activity */}
-        <div className="lg:col-span-2">
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-4">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-sm font-bold text-gray-900 flex items-center gap-2">
-                <Activity className="w-4 h-4 text-primary-500" />
-                Live Fleet Activity
-              </h2>
-              <button
-                onClick={() => navigate('/dashboard/fleet/notifications')}
-                className="text-xs font-bold text-primary-600 hover:text-primary-700 bg-primary-50 px-3 py-1 rounded-full transition-colors"
-              >
-                View Logs
-              </button>
-            </div>
-            <div className="space-y-3">
-              {recentActivities.length === 0 ? (
-                <div className="text-center py-10 bg-gray-50 rounded-xl border border-dashed border-gray-200">
-                  <Clock className="w-8 h-8 mx-auto mb-2 text-gray-300" />
-                  <p className="text-xs font-medium text-gray-500">No recent activity detected</p>
-                </div>
-              ) : (
-                recentActivities.map((activity) => {
-                  const Icon = activity.icon;
-                  return (
-                    <div key={activity.id} className="flex items-start gap-3 p-3 rounded-xl hover:bg-gray-50 transition-all border border-transparent hover:border-gray-100">
-                      <div className={`${activity.color.replace('text-', 'bg-').replace('-600', '-100')} ${activity.color} p-2 rounded-lg`}>
-                        <Icon className="w-4 h-4" />
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex justify-between items-start">
-                          <h4 className="font-bold text-xs text-gray-900">{activity.title}</h4>
-                          <span className="text-[10px] font-bold text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">{formatTimeAgo(activity.timestamp)}</span>
-                        </div>
-                        <p className="text-xs text-gray-500 mt-0.5 font-medium">{activity.description}</p>
-                      </div>
-                    </div>
-                  );
-                })
+      {/* Header Section - Dark Theme (matches Cargo Owner) */}
+      <div className="bg-[#0f172a] text-white">
+        <header className="max-w-[1920px] mx-auto flex items-center justify-between px-4 md:px-8 lg:px-12 xl:px-20 py-5 border-b border-white/10">
+          <div className="flex items-center gap-4 md:gap-10">
+            {/* Mobile Menu Toggle */}
+            <button
+              className="lg:hidden p-2 -ml-2 text-gray-400 hover:text-white"
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            >
+              {isMobileMenuOpen ? <X size={24} /> : (
+                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
               )}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* 4. Bottom Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-         {/* Fleet Status Overview */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-sm font-bold text-gray-800 flex items-center gap-2">
-              <Truck className="w-4 h-4 text-primary-500" />
-              Fleet Composition
-            </h2>
-            <div className="flex gap-1">
-               <div className="w-2 h-2 rounded-full bg-blue-500"></div>
-               <div className="w-2 h-2 rounded-full bg-purple-500"></div>
-               <div className="w-2 h-2 rounded-full bg-orange-500"></div>
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="bg-blue-50/50 p-4 rounded-2xl border border-blue-100">
-              <div className="text-[10px] font-bold text-blue-600 uppercase tracking-widest mb-1">Available</div>
-              <div className="text-3xl font-black text-blue-900">{stats.trucksAvailable}</div>
-              <div className="text-[10px] text-blue-500 font-bold mt-1">READY FOR LOADS</div>
-            </div>
-            <div className="bg-purple-50/50 p-4 rounded-2xl border border-purple-100">
-              <div className="text-[10px] font-bold text-purple-600 uppercase tracking-widest mb-1">In Transit</div>
-              <div className="text-3xl font-black text-purple-900">{stats.trucksInTransit}</div>
-              <div className="text-[10px] text-purple-500 font-bold mt-1">GENERATE REVENUE</div>
-            </div>
-            <div className="bg-orange-50/50 p-4 rounded-2xl border border-orange-100 col-span-2">
-              <div className="flex justify-between items-center">
-                <div>
-                  <div className="text-[10px] font-bold text-orange-600 uppercase tracking-widest mb-1">Maintenance</div>
-                  <div className="text-3xl font-black text-orange-900">{stats.trucksInMaintenance}</div>
-                </div>
-                <div className="text-right">
-                   <div className="text-[10px] text-orange-500 font-bold">REQUIRES ATTENTION</div>
-                   <div className="text-[9px] text-orange-400 mt-1 uppercase">Next service due: 2 days</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Financial Performance Highlights */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-5">
-           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-sm font-bold text-gray-800 flex items-center gap-2">
-              <Wallet className="w-4 h-4 text-primary-500" />
-              Financial Pulse
-            </h2>
-            <button 
-              onClick={() => setActiveTab('Financial')}
-              className="text-[10px] font-bold text-primary-600 hover:underline flex items-center gap-1"
-            >
-              FULL REPORT <ArrowUpRight className="w-3 h-3" />
             </button>
-          </div>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl border border-gray-100 group hover:bg-white hover:shadow-md transition-all">
-              <div className="flex items-center gap-3">
-                <div className="bg-green-100 p-2 rounded-xl text-green-600">
-                  <FaDollarSign className="w-4 h-4" />
-                </div>
-                <div>
-                  <div className="text-[10px] font-bold text-gray-400 uppercase tracking-tight">Total Revenue</div>
-                  <div className="text-lg font-black text-gray-900">{formatCurrency(stats.totalRevenue)}</div>
-                </div>
-              </div>
-              <div className="text-right">
-                <div className="text-[10px] font-bold text-green-600 flex items-center gap-0.5">
-                   <TrendingUp className="w-3 h-3" /> 14%
-                </div>
-                <div className="text-[9px] text-gray-400">vs last period</div>
-              </div>
+
+            {/* Logo */}
+            <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate('/dashboard/fleet')}>
+              <img src={logoUrutiX} alt="UrutiX Logistics Logo" className="h-14 md:h-20 w-auto object-contain py-1" />
             </div>
 
-             <div className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl border border-gray-100 group hover:bg-white hover:shadow-md transition-all">
-              <div className="flex items-center gap-3">
-                <div className="bg-orange-100 p-2 rounded-xl text-orange-600">
-                  <FaCreditCard className="w-4 h-4" />
-                </div>
-                <div>
-                  <div className="text-[10px] font-bold text-gray-400 uppercase tracking-tight">Pending Payments</div>
-                  <div className="text-lg font-black text-gray-900">{formatCurrency(stats.pendingPayments)}</div>
-                </div>
-              </div>
-              <div className="text-right">
-                <div className="text-[10px] font-bold text-orange-600 bg-orange-50 px-2 py-0.5 rounded-full">
-                   DUE SOON
-                </div>
-                <div className="text-[9px] text-gray-400 mt-1">3 invoices open</div>
-              </div>
-            </div>
+            {/* Desktop Navigation */}
+            <nav className="hidden lg:flex items-center gap-10">
+              <a className="text-white text-sm font-bold relative after:content-[''] after:absolute after:bottom-[-4px] after:left-0 after:w-full after:h-0.5 after:bg-blue-500" href="/dashboard/fleet">Dashboard</a>
+              <a className="text-white/60 hover:text-white text-sm font-semibold transition-all" href="/dashboard/fleet/trucks">Fleet</a>
+              <a className="text-white/60 hover:text-white text-sm font-semibold transition-all" href="/fleet-manager">Manage</a>
+              <a className="text-white/60 hover:text-white text-sm font-semibold transition-all" href="/dashboard/fleet/drivers">Drivers</a>
+              <a className="text-white/60 hover:text-white text-sm font-semibold transition-all" href="/dashboard/fleet/maintenance">Maintenance</a>
+              <a className="text-white/60 hover:text-white text-sm font-semibold transition-all" href="/dashboard/fleet/fuel">Fuel</a>
+              <a className="text-white/60 hover:text-white text-sm font-semibold transition-all" href="/dashboard/fleet/bids">Load Board</a>
+              <a className="text-white/60 hover:text-white text-sm font-semibold transition-all" href="/dashboard/fleet/smart-bookings">Bookings</a>
+              <a className="text-white/60 hover:text-white text-sm font-semibold transition-all" href="/dashboard/fleet/reports">Reports</a>
+            </nav>
 
-            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl border border-gray-100 group hover:bg-white hover:shadow-md transition-all">
-              <div className="flex items-center gap-3">
-                <div className="bg-indigo-100 p-2 rounded-xl text-indigo-600">
-                  <Activity className="w-4 h-4" />
-                </div>
-                <div>
-                  <div className="text-[10px] font-bold text-gray-400 uppercase tracking-tight">Utilization Rate</div>
-                  <div className="text-lg font-black text-gray-900">{stats.utilizationRate}%</div>
-                </div>
-              </div>
-               <div className="w-24 bg-gray-200 rounded-full h-2 overflow-hidden">
-                 <div className="bg-indigo-500 h-full rounded-full" style={{ width: `${stats.utilizationRate}%` }}></div>
-               </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-    </div>
-  );
-
-  return (
-    <div className="min-h-screen bg-gray-50 flex flex-col relative overflow-hidden">
-      {/* Background Logo Overlay */}
-      <img 
-        src={logoUrutiX} 
-        alt="UrutiX Logo Background" 
-        className="pointer-events-none select-none fixed inset-0 w-full h-full object-cover opacity-5 z-0 grayscale" 
-        style={{objectPosition: 'center'}} 
-      />
-
-      <DashboardHeader />
-
-      <main className="flex-1 relative z-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          
-          {/* Dashboard Title & Quick Nav */}
-          <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4">
-            <div>
-              <div className="flex items-center gap-2 mb-1">
-                <div className="w-8 h-1 bg-primary-600 rounded-full"></div>
-                <span className="text-[10px] font-black text-primary-600 uppercase tracking-[0.2em]">Command Center</span>
-              </div>
-              <h1 className="text-3xl font-black text-gray-900 tracking-tight">
-                Fleet <span className="text-primary-600">Overview</span>
-              </h1>
-              <p className="text-gray-500 text-sm font-medium mt-1">
-                Welcome back, {user?.firstName}. Managing <span className="text-gray-900 font-bold">{stats.totalTrucks} vehicles</span> across all routes.
-              </p>
-            </div>
-
-            {/* Premium Tab Selection */}
-            <div className="bg-white p-1 rounded-2xl shadow-sm border border-gray-200 inline-flex overflow-x-auto scrollbar-hide max-w-full">
-              {tabs.map((tab) => {
-                const Icon = tab.icon;
-                const isActive = activeTab === tab.name;
-                return (
-                  <button
-                    key={tab.name}
-                    onClick={() => setActiveTab(tab.name)}
-                    className={cn(
-                      "flex items-center gap-2 px-4 py-2.5 rounded-xl transition-all duration-200 whitespace-nowrap",
-                      isActive 
-                        ? "bg-gray-900 text-white shadow-lg scale-105" 
-                        : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"
-                    )}
-                  >
-                    <Icon className={cn("w-4 h-4", isActive ? "text-primary-400" : "text-gray-400")} />
-                    <span className="text-xs font-bold uppercase tracking-tight">{tab.name}</span>
-                  </button>
-                );
-              })}
+            {/* Search Bar */}
+            <div className="hidden xl:flex items-center relative ml-8 group">
+              <Search className="absolute left-3 text-white/40 group-focus-within:text-blue-500 transition-colors" size={16} />
+              <input
+                type="text"
+                placeholder="Search trucks, drivers, IDs..."
+                className="bg-white/5 border border-white/10 rounded-full py-2 pl-10 pr-12 text-sm text-white focus:outline-none focus:border-blue-500/50 w-64 transition-all"
+              />
+              <span className="absolute right-3 text-[10px] font-bold text-white/20 border border-white/10 rounded px-1.5 py-0.5">⌘K</span>
             </div>
           </div>
 
-          {/* Unified Tab Content Section */}
-          <div className="mt-6">
-            <React.Suspense fallback={
-              <div className="flex items-center justify-center min-h-[400px]">
-                <div className="flex flex-col items-center gap-4">
-                  <div className="w-12 h-12 border-4 border-primary-100 border-t-primary-600 rounded-full animate-spin"></div>
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-widest animate-pulse">Initializing Component...</p>
+          <div className="flex items-center gap-4 md:gap-6">
+            {/* Fleet Status Badge */}
+            <div className="hidden 2xl:flex items-center gap-2 px-4 py-1.5 bg-white/5 border border-white/10 rounded-full">
+              <span className="text-blue-400">🚛</span>
+              <span className="text-[10px] font-bold text-white/80 uppercase tracking-wider">Active</span>
+            </div>
+
+            {/* Quick Actions Button */}
+            <button
+              onClick={() => navigate('/dashboard/fleet/dispatch')}
+              className="hidden md:flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold rounded-lg shadow-lg shadow-blue-600/20 transition-all"
+            >
+              <Zap size={16} /> Dispatch
+            </button>
+
+            {/* Notification Bell */}
+            <button className="p-2 text-white/60 hover:text-white transition-all relative">
+              <Bell size={24} />
+              <span className="absolute top-2 right-2 size-2 bg-blue-500 rounded-full border-2 border-[#0f172a]"></span>
+            </button>
+
+            {/* User Profile with Dropdown */}
+            <div className="relative" ref={userMenuRef}>
+              <button
+                onClick={() => setShowUserMenu(!showUserMenu)}
+                className="flex items-center gap-3 pl-4 md:pl-6 border-l border-white/10 hover:opacity-80 transition-opacity cursor-pointer"
+              >
+                <div className="text-right hidden sm:block">
+                  <p className="text-sm font-bold">{user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : user?.email || 'Fleet Manager'}</p>
+                  <p className="text-[9px] font-bold text-blue-400 uppercase tracking-widest">Fleet Owner</p>
                 </div>
-              </div>
-            }>
-              {activeTab === 'Overview' && renderOverview()}
-              
-              {activeTab === 'Fleet' && <UnifiedFleetManagement />}
-              
-              {activeTab === 'Drivers' && <UnifiedDriverManagement />}
-              
-              {activeTab === 'Analytics' && <FleetAnalytics />}
-              
-              {activeTab === 'Financial' && <UnifiedFinancialManagement />}
-              
-              {activeTab === 'Documents' && (
-                <div className="space-y-6">
-                  <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
-                    <h2 className="text-xl font-bold text-gray-900 mb-2 flex items-center gap-2">
-                       <FileText className="w-6 h-6 text-primary-500" />
-                       Document Library
-                    </h2>
-                    <p className="text-sm text-gray-500 mb-6">Access and manage all fleet-related legal, compliance, and transaction documents.</p>
-                    <UnifiedDocumentManagement />
+                <div className="size-10 rounded-full bg-gradient-to-br from-blue-400 to-indigo-600 border-2 border-white/20 shadow-inner overflow-hidden">
+                  <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.email || 'Fleet'}`} alt="User" className="size-full" />
+                </div>
+              </button>
+
+              {/* Dropdown Menu */}
+              {showUserMenu && (
+                <div className="absolute top-full right-0 mt-2 w-56 bg-[#1e293b] rounded-lg shadow-2xl border border-white/10 z-[9999] overflow-hidden">
+                  <div className="p-2">
+                    <div className="px-3 py-2 border-b border-white/10">
+                      <div className="text-sm font-semibold text-white">
+                        {user?.firstName && user?.lastName
+                          ? `${user.firstName} ${user.lastName}`
+                          : user?.firstName || user?.email || 'User'
+                        }
+                      </div>
+                      <div className="text-xs text-gray-400 truncate">{user?.email}</div>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setShowUserMenu(false);
+                        navigate('/dashboard/fleet/settings');
+                      }}
+                      className="w-full text-left px-3 py-2 text-sm text-white hover:bg-white/10 rounded-md transition-colors flex items-center gap-2 mt-1"
+                    >
+                      <Settings size={16} />
+                      Profile Settings
+                    </button>
+                    <button
+                      onClick={() => {
+                        setShowUserMenu(false);
+                        navigate('/dashboard/fleet/trucks');
+                      }}
+                      className="w-full text-left px-3 py-2 text-sm text-white hover:bg-white/10 rounded-md transition-colors flex items-center gap-2"
+                    >
+                      <FaTruck size={16} />
+                      Fleet
+                    </button>
+                    <div className="border-t border-white/10 my-1"></div>
+                    <button
+                      onClick={handleLogout}
+                      className="w-full text-left px-3 py-2 text-sm text-red-400 hover:bg-red-500/10 rounded-md transition-colors flex items-center gap-2"
+                    >
+                      <LogOut size={16} />
+                      Logout
+                    </button>
                   </div>
                 </div>
               )}
-              
-              {activeTab === 'Support' && <FleetHelpSupport />}
-            </React.Suspense>
+            </div>
           </div>
+        </header>
+
+        {/* Mobile Nav Menu */}
+        {isMobileMenuOpen && (
+          <div className="lg:hidden absolute top-[120px] left-0 right-0 bg-[#0f172a] border-b border-white/10 p-4 z-50 shadow-xl">
+            <nav className="flex flex-col space-y-3 text-sm font-semibold text-gray-400">
+              <a href="/dashboard/fleet" className="text-white px-3 py-2 bg-white/5 rounded-lg">Dashboard</a>
+              <a href="/dashboard/fleet/trucks" className="hover:text-white px-3 py-2">Fleet</a>
+              <a href="/fleet-manager" className="hover:text-white px-3 py-2">Manage</a>
+              <a href="/dashboard/fleet/drivers" className="hover:text-white px-3 py-2">Drivers</a>
+              <a href="/dashboard/fleet/maintenance" className="hover:text-white px-3 py-2">Maintenance</a>
+              <a href="/dashboard/fleet/fuel" className="hover:text-white px-3 py-2">Fuel</a>
+              <a href="/dashboard/fleet/bids" className="hover:text-white px-3 py-2">Load Board</a>
+              <a href="/dashboard/fleet/smart-bookings" className="hover:text-white px-3 py-2">Bookings</a>
+              <a href="/dashboard/fleet/reports" className="hover:text-white px-3 py-2">Reports</a>
+            </nav>
+          </div>
+        )}
+      </div>
+    </>
+  );
+
+  // Footer Component - Matching Cargo Owner Pattern
+  const Footer = () => (
+    <footer className="bg-[#0a101f] text-white pt-16 md:pt-20 pb-8 md:pb-10 border-t border-white/5">
+      <div className="max-w-[1536px] mx-auto px-4 md:px-8 lg:px-12 xl:px-20">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-8 md:gap-12 mb-12 md:mb-16">
+          {/* Brand Section */}
+          <div className="lg:col-span-4">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="size-10 bg-gradient-to-br from-blue-500 to-indigo-700 flex items-center justify-center rounded-xl shadow-lg shadow-blue-500/20">
+                <FaTruck className="size-5 text-white" />
+              </div>
+              <h2 className="text-2xl font-black tracking-tighter text-white">UrutiX<span className="text-blue-400">.</span></h2>
+            </div>
+            <p className="text-slate-400 text-sm leading-relaxed mb-8 max-w-sm">
+              UrutiX Fleet is Africa's premier fleet management and logistics platform, empowering fleet owners to optimize operations and maximize profitability.
+            </p>
+            <div className="flex gap-4">
+              <a className="size-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center hover:bg-blue-500 transition-all" href="#">𝕏</a>
+              <a className="size-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center hover:bg-blue-500 transition-all" href="#">in</a>
+              <a className="size-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center hover:bg-blue-500 transition-all" href="#">📸</a>
+            </div>
+          </div>
+
+          {/* Platform Links */}
+          <div className="lg:col-span-2">
+            <h4 className="text-sm font-black uppercase tracking-widest text-white mb-4 md:mb-6">Fleet</h4>
+            <ul className="space-y-3 md:space-y-4">
+              <li><a className="text-slate-400 text-sm hover:text-blue-400 transition-colors" href="/dashboard/fleet/trucks">Fleet</a></li>
+              <li><a className="text-slate-400 text-sm hover:text-blue-400 transition-colors" href="/dashboard/fleet/drivers">Drivers</a></li>
+              <li><a className="text-slate-400 text-sm hover:text-blue-400 transition-colors" href="/dashboard/fleet/dispatch">Dispatch</a></li>
+              <li><a className="text-slate-400 text-sm hover:text-blue-400 transition-colors" href="/dashboard/fleet/maintenance">Maintenance</a></li>
+            </ul>
+          </div>
+
+          {/* Support Links */}
+          <div className="lg:col-span-3">
+            <h4 className="text-sm font-black uppercase tracking-widest text-white mb-4 md:mb-6">Support</h4>
+            <ul className="space-y-3 md:space-y-4">
+              <li><a className="text-slate-400 text-sm hover:text-blue-400 transition-colors" href="#">Help Center</a></li>
+              <li><a className="text-slate-400 text-sm hover:text-blue-400 transition-colors flex items-center gap-2" href="#">Live Chat <span className="size-1.5 bg-green-500 rounded-full"></span></a></li>
+              <li><a className="text-slate-400 text-sm hover:text-blue-400 transition-colors" href="#">Route Status</a></li>
+              <li><a className="text-slate-400 text-sm hover:text-blue-400 transition-colors" href="#">API Documentation</a></li>
+            </ul>
+          </div>
+
+          {/* Legal Links */}
+          <div className="lg:col-span-3">
+            <h4 className="text-sm font-black uppercase tracking-widest text-white mb-4 md:mb-6">Legal</h4>
+            <ul className="space-y-3 md:space-y-4">
+              <li><a className="text-slate-400 text-sm hover:text-blue-400 transition-colors" href="#">Privacy Policy</a></li>
+              <li><a className="text-slate-400 text-sm hover:text-blue-400 transition-colors" href="#">Terms of Service</a></li>
+              <li><a className="text-slate-400 text-sm hover:text-blue-400 transition-colors" href="#">Compliance</a></li>
+              <li><a className="text-slate-400 text-sm hover:text-blue-400 transition-colors" href="#">Driver Safety Policy</a></li>
+            </ul>
+          </div>
+        </div>
+
+        {/* Bottom Bar */}
+        <div className="pt-6 md:pt-8 border-t border-white/5 flex flex-col lg:flex-row items-center justify-between gap-6 md:gap-8">
+          <div className="flex flex-col md:flex-row items-center gap-4 md:gap-8">
+            <p className="text-slate-500 text-xs font-bold uppercase tracking-widest text-center md:text-left">
+              © 2026 UrutiX Technologies Inc. All Rights Reserved.
+            </p>
+            <div className="flex items-center gap-4 md:gap-6">
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-white/5 rounded-lg border border-white/10 cursor-pointer hover:border-blue-500 transition-all">
+                <span className="text-[10px] font-bold uppercase tracking-wider">English</span>
+              </div>
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-white/5 rounded-lg border border-white/10 cursor-pointer hover:border-blue-500 transition-all">
+                <span className="text-[10px] font-bold uppercase tracking-wider">KES (Ksh)</span>
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center gap-4">
+            {/* System Status Badge */}
+            <div className="flex items-center gap-3 px-4 py-2 bg-white/5 rounded-xl border border-white/5">
+              <span className="relative flex h-2.5 w-2.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+              </span>
+              <div className="text-left">
+                <p className="text-[9px] font-black uppercase text-white tracking-widest">Systems Online</p>
+                <span className="text-xs font-semibold text-slate-400">{new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}</span>
+              </div>
+            </div>
+            {/* Dispatch Quick Action */}
+            <button
+              onClick={() => navigate('/dashboard/fleet/dispatch')}
+              className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold rounded-xl shadow-lg shadow-blue-600/20 transition-all"
+            >
+              <Zap size={16} /> Quick Dispatch
+            </button>
+          </div>
+        </div>
+      </div>
+    </footer>
+  );
+
+  return (
+    <div className="min-h-screen bg-gray-50 text-gray-900 font-sans selection:bg-blue-500/30 flex flex-col">
+      {/* Dark Header */}
+      <Header />
+
+      {/* Dark Welcome Section */}
+      <section className="bg-slate-900 text-white px-4 md:px-8 lg:px-12 xl:px-20 py-6">
+        <div className="max-w-[1536px] mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-white tracking-tight mb-2">Welcome back</h1>
+            <div className="flex items-center gap-2 text-sm">
+              <span className="relative flex h-2.5 w-2.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+              </span>
+              <span className="text-slate-400">Operational: <strong className="text-white">{stats.activeTrips} Active</strong> | {stats.trucksAvailable} Available</span>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleCreateTruck}
+              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-sm font-bold shadow-lg shadow-emerald-600/20 transition-all flex items-center gap-2"
+            >
+              <Plus className="w-4 h-4" /> Add Truck
+            </button>
+            <button
+              onClick={() => navigate('/dashboard/fleet/trucks')}
+              className="px-4 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg text-sm font-semibold text-white transition-all flex items-center gap-2"
+            >
+              <FaChartLine className="text-slate-400" /> Vehicles
+            </button>
+            <button
+              onClick={() => navigate('/dashboard/fleet/smart-bookings')}
+              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-bold shadow-lg shadow-indigo-600/20 transition-all flex items-center gap-2"
+            >
+              <Zap className="w-4 h-4" /> Bookings
+            </button>
+            <button
+              onClick={() => navigate('/dashboard/fleet/fuel')}
+              className="px-4 py-2 bg-orange-600 hover:bg-orange-500 text-white rounded-lg text-sm font-bold shadow-lg shadow-orange-600/20 transition-all flex items-center gap-2"
+            >
+              <Fuel className="w-4 h-4" /> Fuel
+            </button>
+            <button
+              onClick={() => navigate('/dashboard/fleet/dispatch')}
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-bold shadow-lg shadow-blue-600/20 transition-all flex items-center gap-2"
+            >
+              <Zap className="w-4 h-4" /> Dispatch
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* Light Main Content */}
+      <main className="flex-1 px-4 md:px-8 lg:px-12 xl:px-20 py-8 md:py-12 space-y-8 max-w-[1536px] mx-auto w-full">
+
+        {/* Metric Cards - Light Theme */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+          {/* Live Status */}
+          <div className="bg-white border border-gray-200 rounded-2xl p-5 relative overflow-hidden group hover:border-blue-300 hover:shadow-lg transition-all shadow-sm">
+            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+              <FaTruck className="w-16 h-16 text-blue-500" />
+            </div>
+            <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Fleet Status</p>
+            <div className="flex items-end gap-3 mb-2">
+              <span className="text-4xl font-black text-gray-900">{stats.totalTrucks}</span>
+              <span className="text-sm font-medium text-emerald-600 mb-1.5 flex items-center gap-1"><FaCheckCircle /> All Systems</span>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-1.5 overflow-hidden flex">
+              <div style={{ width: `${stats.utilizationRate}%` }} className="bg-blue-500 h-full"></div>
+              <div style={{ width: `${100 - stats.utilizationRate}%` }} className="bg-emerald-500 h-full"></div>
+            </div>
+            <div className="flex justify-between text-[10px] mt-2 font-medium text-gray-500">
+              <span className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div> In Transit ({stats.trucksInTransit})</span>
+              <span className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div> Available ({stats.trucksAvailable})</span>
+            </div>
+          </div>
+
+          {/* Fuel Costs */}
+          <div className="bg-white border border-gray-200 rounded-2xl p-5 relative overflow-hidden group hover:border-orange-300 hover:shadow-lg transition-all shadow-sm">
+            <div className="absolute top-4 right-4 text-orange-500"><Fuel className="w-6 h-6" /></div>
+            <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Fuel Costs</p>
+            <div className="flex items-end gap-3 mb-4">
+              <span className="text-3xl font-black text-gray-900">
+                ${fuelStats?.totalCost ? (fuelStats.totalCost / 1000).toFixed(1) + 'k' : '0'}
+              </span>
+            </div>
+            <div className={`flex items-center gap-1 text-xs px-2 py-1 rounded border ${fuelStats?.avgMpg > 6 ? 'text-emerald-600 bg-emerald-50 border-emerald-200' : 'text-orange-600 bg-orange-50 border-orange-200'}`}>
+              <Zap className="w-3 h-3" /> <strong>{fuelStats?.avgMpg || 0}</strong> MPG
+            </div>
+          </div>
+
+          {/* Reputation */}
+          <div className="bg-white border border-gray-200 rounded-2xl p-5 relative overflow-hidden group hover:border-yellow-300 hover:shadow-lg transition-all shadow-sm">
+            <div className="absolute top-4 right-4 text-yellow-500"><FaStar className="w-5 h-5" /></div>
+            <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Reputation</p>
+            <div className="flex items-end gap-3 mb-4">
+              <span className="text-4xl font-black text-gray-900">4.82<span className="text-lg text-gray-400">/5</span></span>
+            </div>
+            <div className="flex items-center gap-1 text-xs text-emerald-600 bg-emerald-50 w-fit px-2 py-1 rounded border border-emerald-200">
+              <FaChartLine /> <strong>+0.2</strong> Rating
+            </div>
+          </div>
+
+          {/* Utilization */}
+          <div className="bg-white border border-gray-200 rounded-2xl p-5 relative overflow-hidden group hover:border-emerald-300 hover:shadow-lg transition-all shadow-sm">
+            <div className="absolute top-4 right-4 text-emerald-500"><FaUser className="w-5 h-5" /></div>
+            <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Driver Utilization</p>
+            <div className="flex items-end gap-3 mb-4">
+              <span className="text-4xl font-black text-gray-900">{stats.utilizationRate}%</span>
+            </div>
+            <div className="flex items-center gap-1 text-xs text-emerald-600 bg-emerald-50 w-fit px-2 py-1 rounded border border-emerald-200">
+              <FaBolt /> <strong>+2%</strong> efficiency
+            </div>
+          </div>
+
+          {/* Revenue */}
+          <div className="bg-white border border-gray-200 rounded-2xl p-5 relative overflow-hidden group hover:border-amber-300 hover:shadow-lg transition-all shadow-sm">
+            <div className="absolute top-4 right-4 text-amber-500"><FaDollarSign className="w-5 h-5" /></div>
+            <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Revenue (MTD)</p>
+            <div className="flex items-end gap-3 mb-4">
+              <span className="text-3xl font-black text-gray-900">KES 2.4M</span>
+            </div>
+            <div className="flex items-center gap-1 text-xs text-emerald-600 bg-emerald-50 w-fit px-2 py-1 rounded border border-emerald-200">
+              <FaChartLine /> <strong>+12%</strong> monthly growth
+            </div>
+          </div>
+        </div>
+
+        {/* Main Content: Map & Drivers - Light Theme */}
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+
+          {/* Interactive Map */}
+          <div className="xl:col-span-2 bg-white border border-gray-200 rounded-2xl p-1 overflow-hidden flex flex-col h-[500px] shadow-sm">
+            <div className="p-4 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center text-blue-600"><FaRoute /></div>
+                <div>
+                  <h3 className="text-sm font-bold text-gray-900">Dispatch Map</h3>
+                  <span className="text-xs text-orange-600 bg-orange-50 border border-orange-200 px-2 py-0.5 rounded ml-2">3 PENDING REQUESTS</span>
+                </div>
+              </div>
+              <button className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1 bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-200 transition-all hover:bg-blue-100">
+                <FaBolt /> Quick Assign Nearest
+              </button>
+            </div>
+            <div className="flex-1 rounded-xl overflow-hidden relative border border-gray-200 mx-4 mb-4">
+              <MapContainer
+                center={[0.0236, 37.9062]} // Kenya Center
+                zoom={6}
+                style={{ height: '100%', width: '100%' }}
+                className="z-0"
+              >
+                <TileLayer
+                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                />
+                {trucks.map(truck => {
+                  const coords = truck.currentLocation?.coordinates?.coordinates; // [lng, lat]
+                  if (coords && coords.length === 2) {
+                    return (
+                      <Marker key={truck.id} position={[coords[1], coords[0]]} icon={fleetIcon}>
+                        <Popup className="custom-popup">
+                          <div className="text-slate-900">
+                            <strong>{truck.plateNumber}</strong><br />
+                            {truck.status}
+                          </div>
+                        </Popup>
+                      </Marker>
+                    )
+                  }
+                  return null;
+                })}
+              </MapContainer>
+
+              {/* Map Controls Overlay (Visual Only) */}
+              <div className="absolute bottom-4 right-4 z-[400] flex flex-col gap-2">
+                <button className="w-8 h-8 bg-white border border-gray-300 text-gray-700 rounded flex items-center justify-center hover:bg-gray-50 font-bold text-lg shadow-sm">+</button>
+                <button className="w-8 h-8 bg-white border border-gray-300 text-gray-700 rounded flex items-center justify-center hover:bg-gray-50 font-bold text-lg shadow-sm">-</button>
+              </div>
+            </div>
+          </div>
+
+          {/* Top Driver & Perf Panel - Light Theme */}
+          <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden flex flex-col shadow-sm">
+            {/* Featured Driver */}
+            <div className="p-6 bg-gradient-to-br from-blue-50 to-indigo-50 border-b border-gray-200 relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-blue-200/30 rounded-full blur-3xl -mr-10 -mt-10"></div>
+              <div className="flex items-center gap-2 mb-4">
+                <FaStar className="text-yellow-500" />
+                <span className="text-xs font-bold text-gray-700 uppercase tracking-wider">Top Driver</span>
+              </div>
+              <div className="flex items-center gap-4 relative z-10">
+                <div className="w-16 h-16 rounded-full border-2 border-yellow-500 p-0.5">
+                  <div className="w-full h-full rounded-full bg-gray-100 flex items-center justify-center overflow-hidden">
+                    <FaUser className="text-2xl text-gray-400" />
+                  </div>
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-gray-900">Samuel Karanja</h3>
+                  <span className="text-[10px] font-bold bg-yellow-500 text-black px-1.5 py-0.5 rounded">GOLD STAR</span>
+                  <div className="flex items-center gap-3 mt-1 text-sm text-gray-600">
+                    <span className="flex items-center gap-1"><FaStar className="text-yellow-500 w-3 h-3" /> 4.96/5.0</span>
+                    <span className="text-gray-400">(242 Trips)</span>
+                  </div>
+                </div>
+              </div>
+              <button className="w-full mt-6 py-2 bg-white hover:bg-gray-50 border border-gray-300 rounded-lg text-sm text-blue-600 font-medium transition-all shadow-sm">
+                View Performance Profile
+              </button>
+            </div>
+
+            {/* Driver List */}
+            <div className="p-4 flex-1 bg-gray-50">
+              <div className="flex justify-between items-center mb-4">
+                <h4 className="text-sm font-bold text-gray-900">Driver Performance</h4>
+                <button className="text-xs text-blue-600 hover:text-blue-700">View All</button>
+              </div>
+              <div className="space-y-3">
+                {topDrivers.length > 0 ? topDrivers.map((driver, i) => (
+                  <div key={i} className="flex items-center justify-between p-3 bg-white hover:bg-blue-50 rounded-xl transition-colors cursor-pointer group border border-gray-200 shadow-sm">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center border border-gray-200 group-hover:border-blue-300">
+                        {/* Fallback avatar logic */}
+                        <span className="font-bold text-xs text-gray-500">{(driver.name || driver.firstName || 'D').charAt(0)}</span>
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-gray-900">{driver.name || `${driver.firstName} ${driver.lastName}`}</p>
+                        <p className="text-xs text-gray-500 flex items-center gap-1"><FaStar className="text-yellow-500 w-3 h-3" /> {driver.rating?.toFixed(1) || '4.5'}/5</p>
+                      </div>
+                    </div>
+                    <span className={`text-[10px] font-bold px-2 py-1 rounded border ${driver.performanceStatus === 'On Time' ? 'bg-emerald-50 border-emerald-200 text-emerald-600' : 'bg-blue-50 border-blue-200 text-blue-600'}`}>
+                      {driver.performanceStatus || 'Active'}
+                    </span>
+                  </div>
+                )) : (
+                  <div className="text-center py-4 text-gray-500 text-sm">No driver data available</div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Bottom Section: History & Maintenance - Already Light Theme */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+          {/* Trip History */}
+          <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm p-6 border border-gray-200">
+            <div className="flex items-center gap-2 mb-6">
+              <Clock className="w-5 h-5 text-gray-400" />
+              <h3 className="text-lg font-bold text-gray-900">Recent Trips</h3>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="text-left border-b border-gray-100">
+                    <th className="pb-3 text-xs font-bold text-gray-400 uppercase tracking-wider">Dispatch ID</th>
+                    <th className="pb-3 text-xs font-bold text-gray-400 uppercase tracking-wider">Truck & Driver</th>
+                    <th className="pb-3 text-xs font-bold text-gray-400 uppercase tracking-wider">Destination</th>
+                    <th className="pb-3 text-xs font-bold text-gray-400 uppercase tracking-wider">Status</th>
+                    <th className="pb-3 text-xs font-bold text-gray-400 uppercase tracking-wider text-right">Rating</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-50">
+                  {trips.length > 0 ? trips.slice(0, 5).map((trip, i) => (
+                    <tr key={i} className="group hover:bg-gray-50/50">
+                      <td className="py-4">
+                        <span className="text-sm font-bold text-blue-600">
+                          {trip.tripId || trip.id ? `#${(trip.tripId || trip.id).substring(0, 8)}` : `DISP-${4420 + i}`}
+                        </span>
+                      </td>
+                      <td className="py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 bg-gray-100 rounded-lg text-gray-400"><FaTruck /></div>
+                          <div>
+                            <p className="text-sm font-bold text-gray-900">{trip.truck?.plateNumber || trip.truckId || 'Unassigned'}</p>
+                            <p className="text-xs text-gray-500">{trip.driver?.name || trip.driverId || 'No Driver'}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="py-4 text-sm text-gray-600">{trip.route?.destination || trip.destination || 'N/A'}</td>
+                      <td className="py-4">
+                        <span className={`text-[10px] font-bold px-2 py-1 rounded-full border ${['completed', 'delivered'].includes(trip.status?.toLowerCase()) ? 'bg-emerald-100 text-emerald-700 border-emerald-200' :
+                          ['active', 'in_progress', 'started'].includes(trip.status?.toLowerCase()) ? 'bg-blue-100 text-blue-700 border-blue-200' :
+                            'bg-gray-100 text-gray-700 border-gray-200'
+                          }`}>
+                          {trip.status || 'PENDING'}
+                        </span>
+                      </td>
+                      <td className="py-4 text-right">
+                        <div className="flex items-center justify-end gap-1 text-sm font-medium text-gray-900">
+                          {['completed', 'delivered'].includes(trip.status?.toLowerCase()) ? (
+                            <><FaStar className="text-yellow-400" /> 5.0</>
+                          ) : (
+                            <span className="text-gray-400 text-xs">In Progress</span>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  )) : (
+                    <tr>
+                      <td colSpan={5} className="py-8 text-center text-gray-500 text-sm">
+                        No recent trips found.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Maintenance Alerts */}
+          <div className="bg-white rounded-2xl shadow-sm p-6 border border-gray-200">
+            <div className="flex items-center gap-2 mb-6">
+              <AlertTriangle className="w-5 h-5 text-orange-500" />
+              <h3 className="text-lg font-bold text-gray-900">Maintenance Alerts</h3>
+            </div>
+
+            {maintenanceAlerts.length > 0 ? maintenanceAlerts.map((alert, i) => (
+              <div key={i} className={`rounded-xl p-4 flex items-start gap-4 mb-4 ${alert.type === 'Critical' ? 'bg-red-50 border border-red-200' : 'bg-orange-50 border border-orange-200'}`}>
+                <div className={`p-2 bg-white rounded-full shadow-sm ${alert.type === 'Critical' ? 'text-red-500' : 'text-orange-500'}`}>
+                  {alert.type === 'Critical' ? <AlertTriangle className="w-5 h-5" /> : <Clock className="w-5 h-5" />}
+                </div>
+                <div>
+                  <h4 className={`text-sm font-bold ${alert.type === 'Critical' ? 'text-red-700' : 'text-orange-700'}`}>
+                    {alert.plateNumber}: {alert.type}
+                  </h4>
+                  <p className={`text-xs mt-1 ${alert.type === 'Critical' ? 'text-red-600' : 'text-orange-600'}`}>{alert.message}</p>
+                  {alert.type === 'Critical' && (
+                    <button className="mt-3 text-xs font-bold text-red-700 underline decoration-red-300 hover:decoration-red-700">BOOK SERVICE</button>
+                  )}
+                </div>
+              </div>
+            )) : (
+              <div className="text-center py-6 text-gray-500 text-sm">
+                <CheckCircle className="w-8 h-8 mx-auto text-emerald-500 mb-2" />
+                No maintenance alerts. Fleet is healthy!
+              </div>
+            )}
+          </div>
+
+          <div className="bg-white rounded-2xl shadow-sm p-6 border border-gray-200 mt-6">
+            <div className="flex items-center gap-2 mb-6">
+              <div className="p-2 bg-purple-100 rounded-lg text-purple-600">
+                <FaClipboardCheck className="w-5 h-5" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-900">Recent Inspections</h3>
+            </div>
+
+            {recentInspections.length > 0 ? (
+              <div className="space-y-4">
+                {recentInspections.map((inspection, i) => (
+                  <div key={i} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-100">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-2 h-10 rounded-full ${inspection.status === 'PASSED' ? 'bg-emerald-500' :
+                        inspection.status === 'FAILED' ? 'bg-red-500' : 'bg-amber-500'
+                        }`}></div>
+                      <div>
+                        <p className="text-sm font-bold text-gray-900">
+                          {inspection.truckPlate || inspection.truck?.plateNumber || inspection.truckId}
+                        </p>
+                        <p className="text-xs text-gray-500">{inspection.inspector || inspection.inspectorName || 'Unknown Inspector'}</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <span className={`text-[10px] font-bold px-2 py-1 rounded border ${inspection.status === 'PASSED' ? 'bg-emerald-50 text-emerald-600 border-emerald-200' :
+                        inspection.status === 'FAILED' ? 'bg-red-50 text-red-600 border-red-200' : 'bg-amber-50 text-amber-600 border-amber-200'
+                        }`}>
+                        {inspection.status}
+                      </span>
+                      <p className="text-[10px] text-gray-400 mt-1">
+                        {new Date(inspection.inspectionDate || inspection.date).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-6 text-gray-500 text-sm">
+                <FaClipboardCheck className="w-8 h-8 mx-auto text-gray-300 mb-2" />
+                No recent inspections found.
+              </div>
+            )}
+          </div>
+
         </div>
       </main>
 
-      <DashboardFooter />
+      {/* Dark Footer */}
+      <Footer />
+
+      {/* Truck Creation Form Modal */}
+      <FleetForm
+        isOpen={showTruckForm}
+        onClose={handleCloseTruckForm}
+        onSubmit={handleSubmitTruck}
+        initialData={editingTruck as any}
+        mode={formMode}
+        activeTab="trucks"
+      />
     </div>
   );
 };
 
 export default FleetOwnerDashboard;
-
