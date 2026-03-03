@@ -132,7 +132,7 @@ const TruckDetailsModal = ({ isOpen, onClose, truckId }: TruckDetailsModalProps)
                             </div>
                         </div>
                         <div className="flex items-center gap-3">
-                            {truck?.status && (
+                            {typeof truck?.status === 'string' && (
                                 <span className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border shadow-sm ${getStatusColor(truck.status)}`}>
                                     {truck.status.replace(/_/g, ' ')}
                                 </span>
@@ -216,7 +216,7 @@ const TruckDetailsModal = ({ isOpen, onClose, truckId }: TruckDetailsModalProps)
                                                     <InfoItem icon={Hash} label="Plate Number" value={truck.plateNumber} />
                                                     <InfoItem icon={Truck} label="Make & Model" value={`${truck.make || 'N/A'} ${truck.model || ''}`} />
                                                     <InfoItem icon={Calendar} label="Year" value={truck.year?.toString() || 'N/A'} />
-                                                    <InfoItem icon={Truck} label="Truck Type" value={truck.truckType?.replace(/_/g, ' ') || 'N/A'} />
+                                                    <InfoItem icon={Truck} label="Truck Type" value={typeof truck.truckType === 'string' ? truck.truckType.replace(/_/g, ' ') : String(truck.truckType || 'N/A')} />
                                                     <InfoItem icon={Weight} label="Capacity (Weight)" value={truck.capacityWeight ? `${Number(truck.capacityWeight).toLocaleString()} kg` : 'N/A'} />
                                                     <InfoItem icon={Gauge} label="Capacity (Volume)" value={truck.capacityVolume ? `${Number(truck.capacityVolume).toLocaleString()} m³` : 'N/A'} />
                                                     <InfoItem icon={MapPin} label="Current Location" value={location} />
@@ -234,7 +234,7 @@ const TruckDetailsModal = ({ isOpen, onClose, truckId }: TruckDetailsModalProps)
                                                     <MiniStat label="Total Trips" value={truck.totalTrips?.toString() || '0'} icon={Route} />
                                                     <MiniStat label="Revenue" value={truck.totalRevenue ? `KES ${Number(truck.totalRevenue).toLocaleString()}` : 'KES 0'} icon={Star} />
                                                     <MiniStat label="Fuel Efficiency" value={truck.fuelEfficiency ? `${truck.fuelEfficiency} km/l` : 'N/A'} icon={Fuel} />
-                                                    <MiniStat label="Rating" value={truck.averageRating ? `${truck.averageRating.toFixed(1)} ★` : 'N/A'} icon={Star} />
+                                                    <MiniStat label="Rating" value={truck.averageRating ? `${Number(truck.averageRating).toFixed(1)} ★` : 'N/A'} icon={Star} />
                                                 </div>
                                             </div>
                                         </div>
@@ -278,7 +278,7 @@ const TruckDetailsModal = ({ isOpen, onClose, truckId }: TruckDetailsModalProps)
                                             {/* Assigned Drivers Preview */}
                                             <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm">
                                                 <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Assigned Drivers</h4>
-                                                {truck.assignedDrivers && truck.assignedDrivers.length > 0 ? (
+                                                {Array.isArray(truck.assignedDrivers) && truck.assignedDrivers.length > 0 ? (
                                                     <div className="space-y-3">
                                                         {truck.assignedDrivers.map((driver: any, idx: number) => (
                                                             <div key={idx} className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl">
@@ -444,7 +444,7 @@ const TruckDetailsModal = ({ isOpen, onClose, truckId }: TruckDetailsModalProps)
                                             </div>
                                         </div>
 
-                                        {truck.maintenance && truck.maintenance.length > 0 ? (
+                                        {Array.isArray(truck.maintenance) && truck.maintenance.length > 0 ? (
                                             <div className="space-y-3">
                                                 {truck.maintenance.map((record: any, idx: number) => (
                                                     <div key={record.id || idx} className="bg-white rounded-2xl border border-slate-100 p-5 flex items-start gap-4">
@@ -486,7 +486,7 @@ const TruckDetailsModal = ({ isOpen, onClose, truckId }: TruckDetailsModalProps)
                                             <Users className="w-5 h-5 text-primary-500" />
                                         </div>
 
-                                        {truck.assignedDrivers && truck.assignedDrivers.length > 0 ? (
+                                        {Array.isArray(truck.assignedDrivers) && truck.assignedDrivers.length > 0 ? (
                                             <div className="space-y-4">
                                                 {truck.assignedDrivers.map((driver: any, idx: number) => (
                                                     <div key={idx} className="bg-white rounded-2xl border border-slate-100 p-6 flex items-center gap-5">
@@ -519,7 +519,7 @@ const TruckDetailsModal = ({ isOpen, onClose, truckId }: TruckDetailsModalProps)
                                         )}
 
                                         {/* Route Assignments */}
-                                        {truck.assignedRoutes && truck.assignedRoutes.length > 0 && (
+                                        {Array.isArray(truck.assignedRoutes) && truck.assignedRoutes.length > 0 && (
                                             <>
                                                 <h3 className="text-lg font-black text-[#0f172a] tracking-tight mt-8">Route Assignments</h3>
                                                 <div className="space-y-3">

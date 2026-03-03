@@ -69,6 +69,44 @@ import { TaxRecord } from '../modules/financial/entities/tax-record.entity';
 import { Document } from '../entities/document.entity';
 import { Notification } from '../entities/notification.entity';
 
+// Missing core entities
+import { SystemSettings } from '../entities/system-settings.entity';
+import { SecurityEvent } from '../entities/security-event.entity';
+import { UserSession } from '../entities/user-session.entity';
+import { ActivityLog } from '../entities/activity-log.entity';
+import { Alert } from '../entities/alert.entity';
+import { AuditEvent } from '../entities/audit-event.entity';
+import { SystemHealthLog } from '../entities/system-health.entity';
+
+// Credit and Subscription entities
+import { CreditAccount } from '../entities/credit-account.entity';
+import { CreditPackage } from '../entities/credit-package.entity';
+import { CreditPricingRule } from '../entities/credit-pricing-rule.entity';
+import { CreditTransaction } from '../entities/credit-transaction.entity';
+import { TenantSubscription } from '../entities/tenant-subscription.entity';
+import { SubscriptionPlan } from '../entities/subscription-plan.entity';
+import { SubscriptionPayment } from '../entities/subscription-payment.entity';
+
+// RBAC entities
+import { Role } from '../entities/role.entity';
+import { Permission } from '../entities/permission.entity';
+import { UserPermissionOverride } from '../entities/user-permission-override.entity';
+
+// Team and Lender entities
+import { LenderUser, LenderRole, LenderPermission } from '../entities/LenderTeam';
+
+// Fuel and Wallet entities
+import { FuelWallet } from '../entities/fuel-wallet.entity';
+import { FuelWalletTransaction } from '../entities/fuel-wallet-transaction.entity';
+import { FuelBudget } from '../entities/fuel-budget.entity';
+import { DriverFuelAdvance } from '../entities/driver-fuel-advance.entity';
+
+// Other system entities
+import { EmailTemplate } from '../entities/email-template.entity';
+import { BulkEmailLog } from '../entities/bulk-email-log.entity';
+import { LoadTemplate } from '../entities/load-template.entity';
+import { Receipt } from '../entities/receipt.entity';
+
 import { config } from 'dotenv';
 config();
 
@@ -159,6 +197,40 @@ export const databaseConfig: TypeOrmModuleOptions = {
     LoadMatch,
     // Fuel entities
     FuelLog,
+    // Core/Security entities
+    SystemSettings,
+    SecurityEvent,
+    UserSession,
+    ActivityLog,
+    Alert,
+    AuditEvent,
+    SystemHealthLog,
+    // Credit and Subscription entities
+    CreditAccount,
+    CreditPackage,
+    CreditPricingRule,
+    CreditTransaction,
+    TenantSubscription,
+    SubscriptionPlan,
+    SubscriptionPayment,
+    // RBAC entities
+    Role,
+    Permission,
+    UserPermissionOverride,
+    // Team and Lender entities
+    LenderUser,
+    LenderRole,
+    LenderPermission,
+    // Fuel and Wallet entities
+    FuelWallet,
+    FuelWalletTransaction,
+    FuelBudget,
+    DriverFuelAdvance,
+    // Other system entities
+    EmailTemplate,
+    BulkEmailLog,
+    LoadTemplate,
+    Receipt,
 
   ],
   synchronize: false,
@@ -249,6 +321,40 @@ export const testDatabaseConfig: TypeOrmModuleOptions = {
     BrokerTransporterPerformance,
     // Fuel entities
     FuelLog,
+    // Core/Security entities
+    SystemSettings,
+    SecurityEvent,
+    UserSession,
+    ActivityLog,
+    Alert,
+    AuditEvent,
+    SystemHealthLog,
+    // Credit and Subscription entities
+    CreditAccount,
+    CreditPackage,
+    CreditPricingRule,
+    CreditTransaction,
+    TenantSubscription,
+    SubscriptionPlan,
+    SubscriptionPayment,
+    // RBAC entities
+    Role,
+    Permission,
+    UserPermissionOverride,
+    // Team and Lender entities
+    LenderUser,
+    LenderRole,
+    LenderPermission,
+    // Fuel and Wallet entities
+    FuelWallet,
+    FuelWalletTransaction,
+    FuelBudget,
+    DriverFuelAdvance,
+    // Other system entities
+    EmailTemplate,
+    BulkEmailLog,
+    LoadTemplate,
+    Receipt,
   ],
   synchronize: true,
   autoLoadEntities: false,

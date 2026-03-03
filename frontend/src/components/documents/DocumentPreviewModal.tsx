@@ -28,13 +28,13 @@ const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
 
   const loadDocument = useCallback(async () => {
     if (!isOpen || !documentId) return;
-    
+
     setLoading(true);
     setError(null);
-    
+
     try {
       const blob = await documentApi.downloadDocument(documentId);
-      
+
       // Safety check: if blob is actually an error message
       if (blob.size < 500) {
         const text = await blob.text();
@@ -117,8 +117,8 @@ const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center z-[100] p-4 animate-in fade-in duration-300">
-      <div 
+    <div className="fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center z-[100000] p-4 animate-in fade-in duration-300">
+      <div
         className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl h-[92vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-300 border border-white/20"
         onClick={(e) => e.stopPropagation()}
       >
@@ -142,11 +142,11 @@ const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
               </div>
             </div>
           </div>
-          
+
           <div className="flex items-center space-x-3 shrink-0">
-            <Button 
-              variant="outline" 
-              size="sm" 
+            <Button
+              variant="outline"
+              size="sm"
               onClick={handleDownloadInternal}
               disabled={loading || !!error}
               className="h-10 px-4 border-gray-200 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-100 transition-all active:scale-95"
@@ -154,10 +154,10 @@ const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
               <Download className="w-4 h-4 mr-2" />
               Download
             </Button>
-            
-            <Button 
-              variant="outline" 
-              size="sm" 
+
+            <Button
+              variant="outline"
+              size="sm"
               onClick={handleExternalOpen}
               className="h-10 px-4 border-gray-200 hover:bg-gray-50 transition-all active:scale-95"
             >
@@ -166,7 +166,7 @@ const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
             </Button>
 
             <div className="h-8 w-px bg-gray-200 mx-1" />
-            
+
             <button
               onClick={onClose}
               className="p-2.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all active:scale-90"
@@ -183,7 +183,7 @@ const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
               <div className="relative">
                 <div className="w-16 h-16 border-[5px] border-blue-100 border-t-blue-600 rounded-full animate-spin"></div>
                 <div className="absolute inset-0 flex items-center justify-center">
-                   <div className="w-3 h-3 bg-blue-600 rounded-full animate-pulse"></div>
+                  <div className="w-3 h-3 bg-blue-600 rounded-full animate-pulse"></div>
                 </div>
               </div>
               <div className="mt-6 text-center">
@@ -199,17 +199,17 @@ const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
               <h4 className="text-2xl font-black text-gray-900 mb-3">Preview Interrupted</h4>
               <p className="text-gray-500 max-w-md mb-8 leading-relaxed">{error}</p>
               <div className="flex flex-col sm:flex-row gap-4">
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   onClick={loadDocument}
                   className="bg-white h-12 px-6 rounded-xl border-gray-200 hover:border-blue-400"
                 >
                   <RefreshCw className="w-4 h-4 mr-2" />
                   Try Again
                 </Button>
-                <Button 
-                   onClick={handleExternalOpen}
-                   className="bg-blue-600 hover:bg-blue-700 text-white h-12 px-8 rounded-xl shadow-lg shadow-blue-200 transition-all hover:translate-y-[-2px]"
+                <Button
+                  onClick={handleExternalOpen}
+                  className="bg-blue-600 hover:bg-blue-700 text-white h-12 px-8 rounded-xl shadow-lg shadow-blue-200 transition-all hover:translate-y-[-2px]"
                 >
                   Force Open In New Tab
                 </Button>
@@ -224,7 +224,7 @@ const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
               />
             </div>
           ) : null}
-          
+
           {/* Subtle Decorative Border */}
           <div className="absolute inset-0 pointer-events-none border border-black/5" />
         </div>
@@ -239,7 +239,7 @@ const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
           </div>
           {!loading && !error && (
             <div className="flex items-center gap-4">
-               <span className="text-[10px] text-gray-400 uppercase tracking-widest font-black">
+              <span className="text-[10px] text-gray-400 uppercase tracking-widest font-black">
                 Uruti Document Service v2
               </span>
             </div>

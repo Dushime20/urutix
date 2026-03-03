@@ -263,7 +263,7 @@ export const fleetApi = {
   async getTruckById(truckId: string): Promise<FleetItem | null> {
     try {
       const response = await api.get(`/fleet/trucks/${truckId}`);
-      return response.data.truck || null;
+      return response.data.truck || response.data || null;
     } catch (error) {
       console.error('❌ Error fetching truck by ID:', error);
       return null;
