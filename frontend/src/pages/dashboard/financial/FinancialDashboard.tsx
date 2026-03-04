@@ -81,7 +81,7 @@ export const FinancialDashboard: React.FC = () => {
     { name: 'Transportation', value: 72, amount: 90360, color: '#345E85' },
     { name: 'Insurance', value: 11, amount: 13797, color: '#EC4899' },
     { name: 'Platform Fees', value: 8, amount: 10034, color: '#F59E0B' },
-    { name: 'Additional Services', value: 9, amount: 11288, color: '#10B981' }
+    { name: 'Additional Services', value: 9, amount: 11288, color: '#6B8DAD' }
   ];
 
   const budgetAnalysis: BudgetItem[] = [
@@ -165,7 +165,7 @@ export const FinancialDashboard: React.FC = () => {
       {/* Primary Metrics Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {[
-          { label: 'Total Expenditure', value: formatCurrency(financialStats.totalSpent), icon: Wallet, color: 'emerald', change: '+12.5%' },
+          { label: 'Total Expenditure', value: formatCurrency(financialStats.totalSpent), icon: Wallet, color: 'blue', change: '+12.5%' },
           { label: 'Current Period', value: formatCurrency(financialStats.thisMonth), icon: Calendar, color: 'blue', sub: '42 Active Assets' },
           { label: 'Pending Liquidity', value: formatCurrency(financialStats.pending), icon: Clock, color: 'amber', sub: '3 Scheduled Syncs' },
           { label: 'Risk Threshold', value: formatCurrency(financialStats.overdue), icon: AlertCircle, color: 'rose', sub: 'Immediate Audit Required' }
@@ -173,9 +173,8 @@ export const FinancialDashboard: React.FC = () => {
           <div key={i} className="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-xl transition-all duration-300 group">
             <div className={cn(
               "w-12 h-12 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform",
-              stat.color === 'emerald' ? "bg-emerald-50 text-emerald-600" :
-                stat.color === 'blue' ? "bg-blue-50 text-blue-600" :
-                  stat.color === 'amber' ? "bg-amber-50 text-amber-600" : "bg-rose-50 text-rose-600"
+              stat.color === 'blue' ? "bg-blue-50 text-[#345E85]" :
+                stat.color === 'amber' ? "bg-amber-50 text-amber-600" : "bg-rose-50 text-rose-600"
             )}>
               <stat.icon size={24} />
             </div>
@@ -185,7 +184,7 @@ export const FinancialDashboard: React.FC = () => {
               </div>
               <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center justify-between">
                 <span>{stat.label}</span>
-                {stat.change && <span className="text-emerald-500">{stat.change}</span>}
+                {stat.change && <span className="text-[#345E85]">{stat.change}</span>}
               </div>
               {stat.sub && (
                 <div className={cn(
@@ -300,7 +299,7 @@ export const FinancialDashboard: React.FC = () => {
                 </div>
                 <div className={cn(
                   "text-[10px] font-black px-3 py-1 rounded-full border",
-                  item.variance < 0 ? "bg-emerald-50 text-emerald-600 border-emerald-100" : "bg-rose-50 text-rose-600 border-rose-100"
+                  item.variance < 0 ? "bg-blue-50 text-[#345E85] border-blue-100" : "bg-rose-50 text-rose-600 border-rose-100"
                 )}>
                   {item.variance < 0 ? "Under Budget" : "Over Budget"}
                 </div>
@@ -355,7 +354,7 @@ export const FinancialDashboard: React.FC = () => {
                   <p className="text-xl font-black">{formatCurrency(transaction.amount)}</p>
                   <span className={cn(
                     "inline-flex items-center h-6 px-3 rounded-lg text-[9px] font-black uppercase tracking-widest mt-2 border",
-                    transaction.status === 'completed' ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30" : "bg-amber-500/20 text-amber-400 border-amber-500/30"
+                    transaction.status === 'completed' ? "bg-[#345E85]/20 text-[#6B8DAD] border-[#345E85]/30" : "bg-amber-500/20 text-amber-400 border-amber-500/30"
                   )}>
                     {transaction.status}
                   </span>
@@ -366,7 +365,7 @@ export const FinancialDashboard: React.FC = () => {
         </div>
         {/* Background Decorative Element */}
         <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-500/10 rounded-full -mr-64 -mt-64 blur-[120px] pointer-events-none" />
-        <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-emerald-500/10 rounded-full -ml-32 -mb-32 blur-[100px] pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-blue-500/10 rounded-full -ml-32 -mb-32 blur-[100px] pointer-events-none" />
       </div>
     </div>
   );

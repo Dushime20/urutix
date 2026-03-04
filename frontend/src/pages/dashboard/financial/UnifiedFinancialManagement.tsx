@@ -146,11 +146,11 @@ const UnifiedFinancialManagement = () => {
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-12">
           <div className="space-y-3">
             <div className="flex items-center gap-4">
-              <div className="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center shadow-sm">
+              <div className="w-14 h-14 rounded-2xl bg-blue-50 text-[#345E85] flex items-center justify-center shadow-sm">
                 <Wallet className="w-7 h-7" />
               </div>
               <h1 className="text-4xl md:text-5xl font-black text-[#0f172a] tracking-tight">
-                Financial <span className="text-emerald-600">Hub</span>
+                Financial <span className="text-[#345E85]">Hub</span>
               </h1>
             </div>
             <p className="text-xs font-bold text-slate-400 uppercase tracking-[0.2em] max-w-xl">

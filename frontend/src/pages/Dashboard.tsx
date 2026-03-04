@@ -21,8 +21,6 @@ import {
   MapPin,
   Mic,
   Camera,
-  FileText,
-  Settings,
   Plus
 } from 'lucide-react';
 // Dynamically import recharts to reduce initial bundle size
@@ -58,7 +56,6 @@ import { useOnboardingStore, useShouldShowOnboarding } from '../stores/onboardin
 import VoiceCargoInput from '../components/VoiceInput/VoiceCargoInput';
 import CameraDocumentScanner from '../components/Camera/CameraDocumentScanner';
 import { formatNumber, formatCurrency } from '../utils/formatNumber';
-import StatCard from '../components/EnliteUI/Cards/StatCard';
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -659,91 +656,118 @@ const CargoOwnerDashboard = () => {
         </div>
       </section>
 
-      {/* 2. Key Performance Indicators - ENLITE STYLE */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-        <StatCard
-          title="Total Shipments"
-          value={stats.totalCargos}
-          icon={<Package />}
-          color="primary"
-          trend={`${stats.growthRate}%`}
-          trendDirection="up"
-          subtitle="All Time"
-          variant="modern"
-          onClick={() => setActiveTab('All Cargos')}
-        />
-        <StatCard
-          title="Active Shipments"
-          value={stats.activeCargos}
-          icon={<Truck />}
-          color="primary"
-          trend="Live"
-          trendDirection="neutral"
-          subtitle="En Route / Assigned"
-          variant="modern"
-          onClick={() => setActiveTab('Tracking')}
-        />
-        <StatCard
-          title="Delivery Rate"
-          value={`${formatNumber(stats.onTimeDeliveryRate)}%`}
-          icon={<CheckCircle />}
-          color="primary"
-          trend="+2.4%"
-          trendDirection="up"
-          subtitle="On-Time Delivery"
-          variant="modern"
-        />
-        <StatCard
-          title="Drafts"
-          value={stats.incompleteCargos}
-          icon={<Clock />}
-          color="primary"
-          trend={stats.incompleteCargos > 0 ? "Attention" : "Clear"}
-          trendDirection={stats.incompleteCargos > 0 ? "down" : "up"}
-          subtitle="Pending Information"
-          variant="modern"
-          onClick={() => navigate('/dashboard/cargos/list?status=DRAFT')}
-        />
-      </div>
-
-      {/* 2. Recent Activity - MOVED TO SECOND */}
-      <section className="bg-white rounded-xl border border-slate-200 shadow-none overflow-hidden">
-        <div className="p-6 border-b border-gray-100 flex justify-between items-center">
-          <div className="flex items-center gap-2">
-            <h3 className="font-bold text-gray-900">Recent Activity</h3>
-            <div className="p-2 rounded-lg bg-gray-50">
-              <Clock className="w-5 h-5 text-gray-600" />
+      {/* 2. Key Performance Indicators - Circular Style */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 mb-10 place-items-center bg-white p-10 rounded-[3rem] border border-slate-100 shadow-sm">
+        {[
+          { icon: Package, label: 'Total Shipments', value: stats.totalCargos, colorClass: 'bg-blue-50 text-[#345E85]', secondaryColor: 'text-[#345E85]', onClick: () => navigate('/dashboard/cargos/list') },
+          { icon: Truck, label: 'Active Shipments', value: stats.activeCargos, colorClass: 'bg-blue-50 text-[#345E85]', secondaryColor: 'text-[#345E85]', onClick: () => navigate('/dashboard/tracking') },
+          { icon: CheckCircle, label: 'Delivery Rate', value: `${formatNumber(stats.onTimeDeliveryRate)}%`, colorClass: 'bg-primary-50 text-primary-500', secondaryColor: 'text-primary-500', onClick: undefined },
+          { icon: Clock, label: 'Drafts', value: stats.incompleteCargos, colorClass: 'bg-rose-50 text-rose-600', secondaryColor: 'text-rose-600', onClick: () => navigate('/dashboard/cargos/list?status=DRAFT') },
+        ].map(({ icon: Icon, label, value, colorClass, secondaryColor, onClick }) => (
+          <div
+            key={label}
+            onClick={onClick}
+            className={`flex flex-col items-center group ${onClick ? 'cursor-pointer' : ''}`}
+          >
+            <div className="relative w-40 h-40 rounded-full bg-white border-[8px] border-slate-50 flex flex-col items-center justify-center transition-all duration-500 hover:border-slate-100 hover:shadow-xl hover:shadow-slate-200/50">
+              <svg className="absolute inset-0 w-full h-full -rotate-90 scale-[1.05]">
+                <circle
+                  cx="80" cy="80" r="72"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="3"
+                  strokeDasharray="452"
+                  strokeDashoffset="350"
+                  className={`opacity-10 transition-all duration-1000 ${secondaryColor}`}
+                />
+              </svg>
+              <div className={`p-2 rounded-2xl mb-2 bg-slate-50 group-hover:bg-white transition-all duration-500 shadow-sm ${colorClass}`}>
+                <Icon size={18} />
+              </div>
+              <div className="flex flex-col items-center px-4 w-full overflow-hidden">
+                <span className="text-xl font-black text-[#0f172a] tracking-tight group-hover:scale-110 transition-transform duration-500 truncate w-full text-center">
+                  {value}
+                </span>
+              </div>
+              <div className="absolute inset-4 rounded-full border border-dashed border-slate-100 opacity-50 group-hover:rotate-90 transition-transform duration-1000" />
+            </div>
+            <div className="mt-4 text-center px-2">
+              <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] group-hover:text-[#345E85] transition-colors duration-300 line-clamp-1">
+                {label}
+              </p>
             </div>
           </div>
-          <button onClick={() => setActiveTab('All Cargos')} className="text-sm text-violet-600 hover:text-violet-700 font-medium">View All</button>
+        ))}
+      </div>
+
+      {/* Recent Activity */}
+      <section className="bg-white rounded-[32px] border border-slate-100 overflow-hidden shadow-sm">
+        <div className="px-7 py-5 border-b border-slate-100 flex justify-between items-center">
+          <div className="flex items-center gap-3">
+            <div className="size-9 bg-slate-50 rounded-xl flex items-center justify-center">
+              <Clock className="w-4 h-4 text-[#345E85]" />
+            </div>
+            <div>
+              <h3 className="text-sm font-black text-slate-900 tracking-tight">Recent Activity</h3>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Latest cargo updates</p>
+            </div>
+          </div>
+          <button
+            onClick={() => navigate('/dashboard/cargos/list')}
+            className="px-4 py-2 bg-slate-50 hover:bg-[#345E85] hover:text-white text-[10px] font-black uppercase tracking-widest text-slate-500 rounded-xl transition-all"
+          >
+            View All
+          </button>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full text-sm text-left">
-            <thead className="bg-gray-50 text-gray-500 font-medium border-b border-gray-100">
-              <tr>
-                <th className="px-6 py-3">Cargo</th>
-                <th className="px-6 py-3">Type</th>
-                <th className="px-6 py-3">Date</th>
-                <th className="px-6 py-3">Amount</th>
-                <th className="px-6 py-3">Status</th>
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-slate-50/50 border-b border-slate-100">
+                <th className="px-7 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Cargo</th>
+                <th className="px-7 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Type</th>
+                <th className="px-7 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Date</th>
+                <th className="px-7 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Amount</th>
+                <th className="px-7 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Status</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-slate-50">
               {recentCargoActivity.length === 0 ? (
-                <tr><td colSpan={5} className="px-6 py-8 text-center text-gray-400">No drafts or created cargos yet</td></tr>
+                <tr>
+                  <td colSpan={5} className="px-7 py-12 text-center">
+                    <div className="flex flex-col items-center gap-3">
+                      <div className="size-12 bg-slate-50 rounded-2xl flex items-center justify-center">
+                        <Package className="w-5 h-5 text-slate-300" />
+                      </div>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">No drafts or created cargos yet</p>
+                    </div>
+                  </td>
+                </tr>
               ) : (
                 recentCargoActivity.map(tx => (
                   <tr
                     key={tx.id}
-                    className="hover:bg-blue-50 transition-colors cursor-pointer group"
+                    className="hover:bg-slate-50/50 transition-colors cursor-pointer group"
                     onClick={() => handleCargoRowClick(tx.fullCargo)}
                   >
-                    <td className="px-6 py-4 font-medium text-gray-900 group-hover:text-blue-700">{tx.name}</td>
-                    <td className="px-6 py-4 text-gray-500">{tx.type}</td>
-                    <td className="px-6 py-4 text-gray-500">{tx.date}</td>
-                    <td className="px-6 py-4 font-medium text-gray-900">{formatCurrency(tx.amount)}</td>
-                    <td className="px-6 py-4">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${tx.statusColor}`}>
+                    <td className="px-7 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="size-9 bg-slate-50 rounded-xl flex items-center justify-center text-slate-400 group-hover:text-[#345E85] transition-colors shrink-0">
+                          <span className="text-xs font-black">{tx.logo}</span>
+                        </div>
+                        <p className="text-sm font-black text-slate-900 group-hover:text-[#345E85] transition-colors">{tx.name}</p>
+                      </div>
+                    </td>
+                    <td className="px-7 py-4">
+                      <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">{tx.type}</span>
+                    </td>
+                    <td className="px-7 py-4">
+                      <span className="text-xs font-medium text-slate-500">{tx.date}</span>
+                    </td>
+                    <td className="px-7 py-4">
+                      <span className="text-sm font-black text-slate-900">{formatCurrency(tx.amount)}</span>
+                    </td>
+                    <td className="px-7 py-4">
+                      <span className={`inline-flex px-3 py-1 rounded-full border text-[9px] font-black uppercase tracking-widest ${tx.statusColor}`}>
                         {tx.status}
                       </span>
                     </td>
@@ -989,87 +1013,98 @@ const CargoOwnerDashboard = () => {
                     <Activity className="w-6 h-6" />
                   </div>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                  {/* Bidding */}
-                  <div className="p-6 rounded-[2rem] bg-slate-50 border border-slate-100 cursor-pointer hover:bg-white hover:shadow-lg hover:border-blue-100 transition-all group" onClick={() => navigate('/dashboard/bidding')}>
-                    <div className="flex justify-between items-start mb-4">
-                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Global Bidding</span>
-                      <Gavel className="w-4 h-4 text-slate-400 group-hover:text-[#345E85]" />
+                {/* Circular cards row */}
+                <div className="grid grid-cols-2 gap-6 place-items-center bg-slate-50/50 rounded-[2rem] p-6 border border-slate-100">
+                  {[
+                    { icon: Gavel, label: 'Global Bidding', value: biddingData.activeAuctions, sub: `Pending: ${biddingData.pendingBids}`, colorClass: 'bg-blue-50 text-[#345E85]', secondaryColor: 'text-[#345E85]', onClick: () => navigate('/dashboard/bidding') },
+                    { icon: Zap, label: 'Smart Matching', value: matchingData.matchRecommendations, sub: `Success: ${formatNumber(matchingData.matchSuccessRate)}%`, colorClass: 'bg-blue-50 text-[#345E85]', secondaryColor: 'text-[#345E85]', onClick: () => navigate('/dashboard/cargos?filter=matching') },
+                  ].map(({ icon: Icon, label, value, sub, colorClass, secondaryColor, onClick }) => (
+                    <div
+                      key={label}
+                      onClick={onClick}
+                      className="flex flex-col items-center group cursor-pointer"
+                    >
+                      <div className="relative w-36 h-36 rounded-full bg-white border-[8px] border-white flex flex-col items-center justify-center transition-all duration-500 hover:shadow-xl hover:shadow-slate-200/50 shadow-sm">
+                        <svg className="absolute inset-0 w-full h-full -rotate-90 scale-[1.05]">
+                          <circle
+                            cx="72" cy="72" r="64"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="3"
+                            strokeDasharray="402"
+                            strokeDashoffset="310"
+                            className={`opacity-10 transition-all duration-1000 ${secondaryColor}`}
+                          />
+                        </svg>
+                        <div className={`p-2 rounded-2xl mb-1.5 bg-slate-50 group-hover:bg-white transition-all duration-500 shadow-sm ${colorClass}`}>
+                          <Icon size={16} />
+                        </div>
+                        <div className="flex flex-col items-center px-3 w-full overflow-hidden">
+                          <span className="text-xl font-black text-[#0f172a] tracking-tight group-hover:scale-110 transition-transform duration-500 truncate w-full text-center">
+                            {value}
+                          </span>
+                        </div>
+                        <div className="absolute inset-3 rounded-full border border-dashed border-slate-100 opacity-50 group-hover:rotate-90 transition-transform duration-1000" />
+                      </div>
+                      <div className="mt-3 text-center px-2">
+                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] group-hover:text-[#345E85] transition-colors duration-300 line-clamp-1">{label}</p>
+                        <p className="text-[9px] font-bold text-slate-300 uppercase tracking-widest mt-1">{sub}</p>
+                      </div>
                     </div>
-                    <div className="flex items-baseline gap-2">
-                      <span className="text-3xl font-black text-[#0f172a] group-hover:text-[#345E85]">{biddingData.activeAuctions}</span>
-                      <span className="text-[10px] font-black text-slate-400 uppercase">Auctions</span>
-                    </div>
-                    <div className="mt-6 flex items-center justify-between">
-                      <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.1em]">Pending: {biddingData.pendingBids}</div>
-                      <ArrowUpRight className="w-4 h-4 text-[#345E85]" />
-                    </div>
-                  </div>
-
-                  {/* Matching */}
-                  <div className="p-6 rounded-[2rem] bg-slate-50 border border-slate-100 cursor-pointer hover:bg-white hover:shadow-lg hover:border-blue-100 transition-all group" onClick={() => { setActiveTab('All Cargos'); navigate('/dashboard/cargos?filter=matching'); }}>
-                    <div className="flex justify-between items-start mb-4">
-                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Smart Matching</span>
-                      <Zap className="w-4 h-4 text-slate-400 group-hover:text-[#345E85]" />
-                    </div>
-                    <div className="flex items-baseline gap-2">
-                      <span className="text-3xl font-black text-[#0f172a] group-hover:text-[#345E85]">{matchingData.matchRecommendations}</span>
-                      <span className="text-[10px] font-black text-slate-400 uppercase">Matches</span>
-                    </div>
-                    <div className="mt-6 flex items-center justify-between">
-                      <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.1em]">Success: {formatNumber(matchingData.matchSuccessRate)}%</div>
-                      <ArrowUpRight className="w-4 h-4 text-[#345E85]" />
-                    </div>
-                  </div>
+                  ))}
                 </div>
               </div>
 
-              {/* Financial Status */}
+              {/* Financial Overview */}
               <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm p-10 hover:shadow-xl transition-all">
                 <div className="flex justify-between items-center mb-8">
                   <div>
                     <h3 className="text-xl font-black text-[#0f172a] tracking-tight">Financial Overview</h3>
                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Capital distribution & payment lifecycle</p>
                   </div>
-                  <div className="p-3 rounded-2xl bg-emerald-50 text-emerald-600">
+                  <div className="p-3 rounded-2xl bg-blue-50 text-[#345E85]">
                     <Wallet className="w-6 h-6" />
                   </div>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                  {/* Wallet */}
-                  <div className="p-6 rounded-[2rem] bg-slate-50 border border-slate-100">
-                    <div className="flex justify-between items-start mb-4">
-                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Available Balance</span>
-                      <CreditCard className="w-4 h-4 text-slate-400" />
-                    </div>
-                    <div className="text-2xl font-black text-[#0f172a] truncate">
-                      {(() => {
-                        const balance = (Number(stats.totalValue) || 0) * 0.15;
-                        return formatCurrency(balance);
-                      })()}
-                    </div>
-                    <div className="mt-6">
-                      <div className="h-1.5 w-full bg-white rounded-full overflow-hidden">
-                        <div className="h-full bg-emerald-500 w-3/4 rounded-full"></div>
+                {/* Circular cards row */}
+                <div className="grid grid-cols-2 gap-6 place-items-center bg-slate-50/50 rounded-[2rem] p-6 border border-slate-100">
+                  {[
+                    { icon: CreditCard, label: 'Available Balance', value: formatCurrency((Number(stats.totalValue) || 0) * 0.15), sub: '75% utilization', colorClass: 'bg-blue-50 text-[#345E85]', secondaryColor: 'text-[#345E85]', onClick: undefined },
+                    { icon: AlertCircle, label: 'Accounts Payable', value: paymentData.pendingPayments, sub: `Value: ${formatCurrency(paymentData.totalAmount)}`, colorClass: 'bg-amber-50 text-amber-500', secondaryColor: 'text-amber-500', onClick: () => navigate('/dashboard/financial') },
+                  ].map(({ icon: Icon, label, value, sub, colorClass, secondaryColor, onClick }) => (
+                    <div
+                      key={label}
+                      onClick={onClick}
+                      className={`flex flex-col items-center group ${onClick ? 'cursor-pointer' : ''}`}
+                    >
+                      <div className="relative w-36 h-36 rounded-full bg-white border-[8px] border-white flex flex-col items-center justify-center transition-all duration-500 hover:shadow-xl hover:shadow-slate-200/50 shadow-sm">
+                        <svg className="absolute inset-0 w-full h-full -rotate-90 scale-[1.05]">
+                          <circle
+                            cx="72" cy="72" r="64"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="3"
+                            strokeDasharray="402"
+                            strokeDashoffset="310"
+                            className={`opacity-10 transition-all duration-1000 ${secondaryColor}`}
+                          />
+                        </svg>
+                        <div className={`p-2 rounded-2xl mb-1.5 bg-slate-50 group-hover:bg-white transition-all duration-500 shadow-sm ${colorClass}`}>
+                          <Icon size={16} />
+                        </div>
+                        <div className="flex flex-col items-center px-3 w-full overflow-hidden">
+                          <span className="text-sm font-black text-[#0f172a] tracking-tight group-hover:scale-110 transition-transform duration-500 truncate w-full text-center leading-tight">
+                            {value}
+                          </span>
+                        </div>
+                        <div className="absolute inset-3 rounded-full border border-dashed border-slate-100 opacity-50 group-hover:rotate-90 transition-transform duration-1000" />
+                      </div>
+                      <div className="mt-3 text-center px-2">
+                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] group-hover:text-[#345E85] transition-colors duration-300 line-clamp-1">{label}</p>
+                        <p className="text-[9px] font-bold text-slate-300 uppercase tracking-widest mt-1">{sub}</p>
                       </div>
                     </div>
-                  </div>
-
-                  {/* Due Payments */}
-                  <div className="p-6 rounded-[2rem] bg-slate-50 border border-slate-100 cursor-pointer hover:bg-white hover:shadow-lg hover:border-blue-100 transition-all group" onClick={() => setActiveTab('Transactions')}>
-                    <div className="flex justify-between items-start mb-4">
-                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Accounts Payable</span>
-                      <AlertCircle className="w-4 h-4 text-slate-400 group-hover:text-amber-500" />
-                    </div>
-                    <div className="flex items-baseline gap-2">
-                      <span className="text-3xl font-black text-[#0f172a] group-hover:text-amber-500">{paymentData.pendingPayments}</span>
-                      <span className="text-[10px] font-black text-slate-400 uppercase">Items</span>
-                    </div>
-                    <div className="mt-6 flex items-center justify-between">
-                      <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.1em]">Value: {formatCurrency(paymentData.totalAmount)}</div>
-                      <ArrowUpRight className="w-4 h-4 text-amber-500" />
-                    </div>
-                  </div>
+                  ))}
                 </div>
               </div>
             </section>
@@ -1133,35 +1168,7 @@ const CargoOwnerDashboard = () => {
             )}
           </div>
 
-          {/* Clean Navigation Tabs - Hidden for CARGO_RECEIVER role */}
-          {user?.role !== 'CARGO_RECEIVER' && (
-            <div className="mt-8 flex gap-1 overflow-x-auto scrollbar-hide">
-              {[
-                { id: 'Overview', label: 'Overview', icon: Activity },
-                { id: 'All Cargos', label: 'Cargos', icon: Package },
-                ...(cargos.some(c => c.brokerId) ? [{ id: 'Contracts', label: 'Contracts', icon: FileText }] : []),
-                { id: 'Transactions', label: 'Financials', icon: Wallet },
-                { id: 'Analytics', label: 'Analytics', icon: BarChart3 },
-                { id: 'Documents', label: 'Documents', icon: FileText },
-                { id: 'Settings', label: 'Settings', icon: Settings }
-              ].map((tab) => {
-                const Icon = tab.icon;
-                return (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id)}
-                    className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-all whitespace-nowrap ${activeTab === tab.id
-                      ? 'bg-primary-50 text-primary-700'
-                      : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-                      }`}
-                  >
-                    <Icon className="w-4 h-4" />
-                    <span className="text-sm">{tab.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-          )}
+
         </div>
       </div>
 
