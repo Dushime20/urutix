@@ -164,7 +164,7 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
 
   // --- Filtering + Sorting + Pagination ---
   const filteredAndSortedTrucks = useMemo(() => {
-    let result = trucks.filter(truck => {
+    const result = trucks.filter(truck => {
       const matchesSearch = !search ||
         truck.plateNumber?.toLowerCase().includes(search.toLowerCase()) ||
         truck.make?.toLowerCase().includes(search.toLowerCase()) ||

@@ -35,7 +35,7 @@ import { UserRole } from '../../entities/user.entity';
 @UseGuards(JwtAuthGuard)
 @Controller('bidding')
 export class BiddingController {
-  constructor(private readonly biddingService: BiddingService) {}
+  constructor(private readonly biddingService: BiddingService) { }
 
   @Get('test')
   @ApiOperation({
@@ -551,6 +551,32 @@ export class BiddingController {
     );
   }
 
+  @Delete('auctions/:auctionId')
+  @ApiOperation({
+    summary: 'Delete an auction',
+    description: 'Cargo owners or brokers can delete an auction if it hasn\'t been closed.',
+  })
+  @ApiParam({ name: 'auctionId', description: 'ID of the auction to delete' })
+  @ApiResponse({ status: 200, description: 'Auction deleted successfully' })
+  @ApiResponse({ status: 400, description: 'Cannot delete a closed auction' })
+  @ApiResponse({ status: 403, description: 'No permission to delete this auction' })
+  @ApiResponse({ status: 404, description: 'Auction not found' })
+  async deleteAuction(
+    @Param('auctionId') auctionId: string,
+    @Request() req: any,
+  ): Promise<{ success: boolean }> {
+    if (!req.user) {
+      throw new Error('User not authenticated');
+    }
+    await this.biddingService.deleteAuction(
+      auctionId,
+      req.user.userId,
+      req.user.tenantId,
+      req.user.role as UserRole,
+    );
+    return { success: true };
+  }
+
   @Get('loads/:loadId/auction')
   @ApiOperation({
     summary: 'Get auction for a load',
@@ -669,7 +695,7 @@ export class BiddingController {
   }
 
   @Get('history')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Get bid history',
     description: 'Get bid history - for truck owners: their submitted bids, for cargo owners: bids on their auctions'
   })

@@ -12,7 +12,9 @@ import {
   Table,
   Download,
   X,
-  AlertCircle
+  AlertCircle,
+  Eye,
+  Truck
 } from 'lucide-react';
 import { cn } from '@/utils/cn';
 import { biddingAPI } from '../../services/biddingApi';
@@ -70,6 +72,13 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
   });
   const [watchedAuctions, setWatchedAuctions] = useState<Set<string>>(new Set());
   const [viewMode, setViewMode] = useState<'card' | 'table'>('card');
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [detailsAuction, setDetailsAuction] = useState<Auction | null>(null);
+
+  const openDetailsModal = (auction: Auction) => {
+    setDetailsAuction(auction);
+    setShowDetailsModal(true);
+  };
 
   // Bid States
   const [showQuickBidModal, setShowQuickBidModal] = useState(false);
@@ -179,8 +188,17 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
     setQuickBidAmount(String(defaultAmount));
     setQuickAdvancePaymentPercentage('');
     setQuickRequireAdvancePayment(true);
-    setProposedPickupDate('');
-    setProposedDeliveryDate('');
+
+    // Initialize dates from auction load if available
+    const pickupDate = auction?.load?.pickupDate
+      ? new Date(auction.load.pickupDate).toISOString().slice(0, 16)
+      : '';
+    const deliveryDate = auction?.load?.deliveryDate
+      ? new Date(auction.load.deliveryDate).toISOString().slice(0, 16)
+      : '';
+
+    setProposedPickupDate(pickupDate);
+    setProposedDeliveryDate(deliveryDate);
     setShowQuickBidModal(true);
   };
 
@@ -235,7 +253,8 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
     }
   }, [selectedTruckId]);
 
-  const submitQuickBid = async () => {
+  const submitQuickBid = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     if (!selectedAuction) return;
     const amountNum = Number(quickBidAmount);
     if (!amountNum || amountNum <= 0) {
@@ -273,7 +292,8 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
     }
   };
 
-  const placeBid = async () => {
+  const placeBid = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     if (!selectedAuction) return;
     const amountNum = Number(bidAmount);
     if (!amountNum || amountNum <= 0) {
@@ -492,20 +512,24 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-3 gap-3">
           <button
             onClick={() => openQuickBidModal(auction)}
-            disabled={auction.status !== 'ACTIVE' || userRole === 'CARGO_OWNER'}
-            className="py-5 bg-[#8b919d] text-white rounded-2xl text-xs font-black uppercase tracking-[0.2em] hover:bg-slate-500 transition-all shadow-lg active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
+            className="py-4 bg-[#345E85] text-white rounded-2xl text-[9px] font-black uppercase tracking-[0.15em] hover:bg-[#2a4d6d] transition-all shadow-lg active:scale-95 flex items-center justify-center gap-1.5"
           >
-            <ZapIcon size={14} className="text-yellow-400" /> QUICK BID
+            <ZapIcon size={12} className="text-yellow-300" /> Quick
           </button>
           <button
             onClick={() => openBidModal(auction)}
-            disabled={auction.status !== 'ACTIVE' || userRole === 'CARGO_OWNER'}
-            className="py-5 bg-white border-2 border-slate-50 text-[#8b919d] rounded-2xl text-xs font-black uppercase tracking-[0.2em] hover:bg-slate-50 transition-all active:scale-95 disabled:opacity-50"
+            className="py-4 bg-white border-2 border-slate-100 text-slate-600 rounded-2xl text-[9px] font-black uppercase tracking-[0.15em] hover:bg-slate-50 hover:border-slate-200 transition-all active:scale-95"
           >
-            CUSTOM BID
+            Custom
+          </button>
+          <button
+            onClick={() => openDetailsModal(auction)}
+            className="py-4 bg-slate-50 border border-slate-100 text-[#345E85] rounded-2xl text-[9px] font-black uppercase tracking-[0.15em] hover:bg-blue-50 hover:border-blue-100 transition-all active:scale-95 flex items-center justify-center gap-1.5"
+          >
+            <Eye size={12} /> View
           </button>
         </div>
       </div>
@@ -658,16 +682,26 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
                           </div>
                         </td>
                         <td className="px-6 py-4 text-right">
-                          <button
-                            onClick={() => openBidModal(auction)}
-                            disabled={auction.status !== 'ACTIVE' || userRole === 'CARGO_OWNER'}
-                            className={`p-2 rounded-xl transition-all ${auction.status !== 'ACTIVE' || userRole === 'CARGO_OWNER'
-                              ? 'bg-gray-50 text-gray-300'
-                              : 'bg-gray-900 text-white hover:bg-black shadow-lg shadow-gray-200'
-                              }`}
-                          >
-                            <Gavel size={16} />
-                          </button>
+                          <div className="flex items-center justify-end gap-2">
+                            <button
+                              onClick={() => openQuickBidModal(auction)}
+                              className="px-3 py-2 rounded-xl text-xs font-black uppercase tracking-wide transition-all flex items-center gap-1.5 bg-[#345E85] text-white hover:bg-[#2a4d6d] shadow-lg"
+                            >
+                              <ZapIcon size={12} /> Quick
+                            </button>
+                            <button
+                              onClick={() => openBidModal(auction)}
+                              className="px-3 py-2 rounded-xl text-xs font-black uppercase tracking-wide transition-all bg-slate-900 text-white hover:bg-black shadow-lg"
+                            >
+                              <Gavel size={14} />
+                            </button>
+                            <button
+                              onClick={() => openDetailsModal(auction)}
+                              className="p-2 rounded-xl bg-blue-50 text-[#345E85] hover:bg-blue-100 transition-all"
+                            >
+                              <Eye size={16} />
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -682,9 +716,12 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
       {/* Quick Bid Modal */}
       {showQuickBidModal && selectedAuction && createPortal(
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
-          <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden border border-gray-100">
+          <form
+            onSubmit={submitQuickBid}
+            className="bg-white rounded-[2rem] shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden border border-gray-100"
+          >
             {/* Header */}
-            <div className="px-10 py-8 border-b border-gray-100">
+            <div className="px-10 py-8 border-b border-gray-100 relative">
               <h2 className="text-3xl font-extrabold text-[#111827] tracking-tight">Quick Bid</h2>
               <div className="mt-2 space-y-1">
                 <p className="text-lg font-medium text-gray-600">{selectedAuction?.load?.title || 'Untitled Load'}</p>
@@ -692,6 +729,11 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
                   Cargo Owner: {selectedAuction?.load?.cargoOwner?.profile?.firstName || ''} {selectedAuction?.load?.cargoOwner?.profile?.lastName || 'Admin'}
                 </p>
               </div>
+              {selectedAuction.status !== 'ACTIVE' && (
+                <div className="absolute top-8 right-10 bg-amber-50 text-amber-600 text-[10px] font-bold uppercase tracking-widest px-4 py-2 rounded-xl border border-amber-100">
+                  Status: {selectedAuction.status}
+                </div>
+              )}
             </div>
 
             {/* Form Content */}
@@ -783,25 +825,32 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
             </div>
 
             {/* Footer Actions */}
-            <div className="p-10 pt-0 flex items-center justify-end gap-4">
-              <button
-                onClick={() => {
-                  setShowQuickBidModal(false);
-                  setSelectedAuction(null);
-                }}
-                className="px-10 py-4 bg-gray-100 text-gray-700 rounded-xl text-base font-bold hover:bg-gray-200 transition-all active:scale-95"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={submitQuickBid}
-                disabled={!quickBidAmount || !proposedPickupDate || !proposedDeliveryDate}
-                className="px-10 py-4 bg-[#94a3b8] text-white rounded-xl text-base font-bold hover:bg-[#64748b] transition-all shadow-lg active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Submit Bid
-              </button>
+            <div className="p-10 pt-0 flex flex-col gap-4">
+              {selectedAuction.status !== 'ACTIVE' && (
+                <p className="text-[10px] font-bold text-amber-500 uppercase tracking-widest text-center bg-amber-50 border border-amber-100 rounded-xl py-3 w-full">
+                  Bidding available on ACTIVE auctions only.
+                </p>
+              )}
+              <div className="flex items-center justify-end gap-4 w-full">
+                <button
+                  onClick={() => {
+                    setShowQuickBidModal(false);
+                    setSelectedAuction(null);
+                  }}
+                  className="px-10 py-4 bg-gray-100 text-gray-700 rounded-xl text-base font-bold hover:bg-gray-200 transition-all active:scale-95"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={!quickBidAmount || !proposedPickupDate || !proposedDeliveryDate || selectedAuction.status !== 'ACTIVE'}
+                  className="px-10 py-4 bg-[#345E85] text-white rounded-xl text-base font-bold hover:bg-[#2a4d6d] transition-all shadow-lg active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Submit Bid
+                </button>
+              </div>
             </div>
-          </div>
+          </form>
         </div>,
         document.body
       )}
@@ -809,38 +858,42 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
       {/* Custom Bid Modal */}
       {showBidModal && selectedAuction && createPortal(
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
-          <div className="bg-white rounded-[1.5rem] shadow-2xl w-full max-w-xl max-h-[90vh] overflow-hidden border border-gray-100 flex flex-col">
+          <form
+            onSubmit={placeBid}
+            className="bg-white rounded-[2rem] shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden border border-gray-100"
+          >
             {/* Header */}
-            <div className="px-8 py-6 border-b border-gray-100 flex items-center justify-between shrink-0">
-              <div>
-                <h2 className="text-xl font-bold text-gray-900 tracking-tight">Custom Bid</h2>
-                <p className="text-sm text-gray-500 mt-0.5">{selectedAuction?.load?.title || 'Untitled Shipment'}</p>
+            <div className="px-10 py-8 border-b border-gray-100 relative">
+              <h2 className="text-3xl font-extrabold text-[#111827] tracking-tight">Custom Bid</h2>
+              <div className="mt-2 space-y-1">
+                <p className="text-lg font-medium text-gray-600">{selectedAuction?.load?.title || 'Untitled Shipment'}</p>
+                <p className="text-sm text-gray-400 font-medium italic">
+                  Cargo Owner: {selectedAuction?.load?.cargoOwner?.profile?.firstName || ''} {selectedAuction?.load?.cargoOwner?.profile?.lastName || 'Admin'}
+                </p>
               </div>
-              <button
-                onClick={() => setShowBidModal(false)}
-                className="p-2 rounded-xl hover:bg-gray-100 text-gray-400 transition-colors"
-              >
-                <X size={18} />
-              </button>
+              {selectedAuction.status !== 'ACTIVE' && (
+                <div className="absolute top-8 right-10 bg-amber-50 text-amber-600 text-[10px] font-bold uppercase tracking-widest px-4 py-2 rounded-xl border border-amber-100">
+                  Status: {selectedAuction.status}
+                </div>
+              )}
             </div>
 
             {/* Form Content */}
-            <div className="flex-1 overflow-y-auto p-8 space-y-8 custom-scrollbar">
+            <div className="p-10 space-y-8 overflow-y-auto custom-scrollbar">
               {/* Bid Amount */}
               <div className="space-y-3">
-                <label className="block text-sm font-bold text-gray-700">Bid Amount (USD) *</label>
-                <div className="relative">
-                  <span className="absolute left-5 top-1/2 -translate-y-1/2 text-lg font-bold text-gray-400">$</span>
+                <label className="block text-base font-bold text-gray-700">Bid Amount (USD) *</label>
+                <div className="relative group">
                   <input
+                    type="number"
                     value={bidAmount}
                     onChange={(e) => setBidAmount(e.target.value)}
-                    type="number"
-                    className="w-full h-14 pl-12 pr-6 bg-white border-2 border-gray-200 rounded-xl text-lg font-bold text-gray-900 focus:outline-none focus:border-[#345E85] transition-all"
+                    className="w-full h-16 px-6 bg-white border-2 border-gray-200 rounded-2xl text-xl font-bold text-gray-900 focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-[#345E85] transition-all"
                     placeholder="0.00"
                   />
                 </div>
                 <div className="flex items-center gap-4 text-xs font-medium">
-                  <span className="text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-100">
+                  <span className="text-emerald-600 bg-emerald-50 px-3 py-1 rounded-lg border border-emerald-100 font-bold">
                     Floor: {selectedAuction.currentHighestBid ? formatCurrency(selectedAuction.currentHighestBid) : formatCurrency(selectedAuction.reservePrice || 0)}
                   </span>
                   {selectedAuction.minimumBidIncrement && (
@@ -850,101 +903,115 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
               </div>
 
               {/* Asset Allocation */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <label className="block text-sm font-bold text-gray-700">Select Truck *</label>
-                  <select
-                    value={selectedTruckId}
-                    onChange={(e) => setSelectedTruckId(e.target.value)}
-                    className="w-full h-12 px-4 bg-white border-2 border-gray-200 rounded-xl text-sm font-medium focus:outline-none focus:border-[#345E85] transition-all cursor-pointer"
-                  >
-                    <option value="">Select Unit</option>
-                    {trucks.map((t) => (
-                      <option key={t.id} value={t.id}>{t.plateNumber} • {t.make} {t.model}</option>
-                    ))}
-                  </select>
+              <div className="bg-[#f0f9ff]/80 p-8 rounded-[1.5rem] border border-blue-100 space-y-6">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center text-[#0369a1]">
+                    <Truck size={18} />
+                  </div>
+                  <h4 className="text-lg font-extrabold text-[#0369a1]">Asset Selection</h4>
                 </div>
-                <div className="space-y-2">
-                  <label className="block text-sm font-bold text-gray-700">Select Driver</label>
-                  <select
-                    value={selectedDriverId}
-                    onChange={(e) => setSelectedDriverId(e.target.value)}
-                    disabled={!selectedTruckId || loadingDrivers}
-                    className="w-full h-12 px-4 bg-white border-2 border-gray-200 rounded-xl text-sm font-medium focus:outline-none focus:border-[#345E85] transition-all cursor-pointer disabled:bg-gray-50 disabled:text-gray-400"
-                  >
-                    <option value="">{loadingDrivers ? 'Loading...' : 'Select Driver'}</option>
-                    {availableDrivers.map((d) => (
-                      <option key={d.id} value={d.id}>{d.firstName} {d.lastName}</option>
-                    ))}
-                  </select>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-gray-700">Select Truck *</label>
+                    <select
+                      value={selectedTruckId}
+                      onChange={(e) => setSelectedTruckId(e.target.value)}
+                      className="w-full h-14 px-4 bg-white border-2 border-gray-200 rounded-xl text-sm font-bold text-gray-900 focus:outline-none focus:border-slate-400 transition-all cursor-pointer"
+                    >
+                      <option value="">Select Unit</option>
+                      {trucks.map((t) => (
+                        <option key={t.id} value={t.id}>{t.plateNumber} • {t.make} {t.model}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-gray-700">Select Driver</label>
+                    <select
+                      value={selectedDriverId}
+                      onChange={(e) => setSelectedDriverId(e.target.value)}
+                      disabled={!selectedTruckId || loadingDrivers}
+                      className="w-full h-14 px-4 bg-white border-2 border-gray-200 rounded-xl text-sm font-bold text-gray-900 focus:outline-none focus:border-slate-400 transition-all cursor-pointer disabled:bg-gray-50 disabled:text-gray-400"
+                    >
+                      <option value="">{loadingDrivers ? 'Loading...' : 'Select Driver'}</option>
+                      {availableDrivers.map((d) => (
+                        <option key={d.id} value={d.id}>{d.firstName} {d.lastName}</option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
               </div>
 
               {/* Schedule Delivery Block */}
-              <div className="bg-blue-50/50 p-6 rounded-2xl border border-blue-100 space-y-5">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 bg-white rounded-lg shadow-sm flex items-center justify-center text-[#0369a1]">
-                    <Clock size={14} />
+              <div className="bg-[#f0f9ff]/80 p-8 rounded-[1.5rem] border border-blue-100 space-y-6">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center text-[#0369a1]">
+                    <Clock size={18} />
                   </div>
-                  <h4 className="text-sm font-bold text-[#0369a1]">Schedule</h4>
+                  <h4 className="text-lg font-extrabold text-[#0369a1]">Delivery Schedule</h4>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-gray-600 px-1">Pickup Date *</label>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-gray-700">Pickup Date *</label>
                     <input
                       type="datetime-local"
                       value={proposedPickupDate}
                       onChange={(e) => setProposedPickupDate(e.target.value)}
-                      className="w-full h-12 px-4 bg-white border-2 border-gray-200 rounded-xl text-sm font-medium focus:outline-none focus:border-blue-400"
+                      className="w-full h-14 px-4 bg-white border-2 border-gray-200 rounded-xl text-sm font-bold text-gray-900 focus:outline-none focus:border-blue-400 transition-all"
                     />
                   </div>
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-gray-600 px-1">Delivery Date *</label>
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-gray-700">Delivery Date *</label>
                     <input
                       type="datetime-local"
                       value={proposedDeliveryDate}
                       onChange={(e) => setProposedDeliveryDate(e.target.value)}
-                      className="w-full h-12 px-4 bg-white border-2 border-gray-200 rounded-xl text-sm font-medium focus:outline-none focus:border-blue-400"
+                      className="w-full h-14 px-4 bg-white border-2 border-gray-200 rounded-xl text-sm font-bold text-gray-900 focus:outline-none focus:border-blue-400 transition-all"
                     />
                   </div>
                 </div>
               </div>
 
-              {/* Advance Payment */}
-              <div className="space-y-5">
+              {/* Advance Payment Section */}
+              <div className="space-y-6">
                 <label className="flex items-center gap-3 cursor-pointer group">
-                  <input
-                    type="checkbox"
-                    checked={requireAdvancePayment}
-                    onChange={(e) => {
-                      setRequireAdvancePayment(e.target.checked);
-                      if (!e.target.checked) setAdvancePaymentPercentage('');
-                    }}
-                    className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                  />
-                  <span className="text-sm font-bold text-gray-700">Require advance payment before trip</span>
+                  <div className="relative flex items-center justify-center">
+                    <input
+                      type="checkbox"
+                      checked={requireAdvancePayment}
+                      onChange={(e) => {
+                        setRequireAdvancePayment(e.target.checked);
+                        if (!e.target.checked) setAdvancePaymentPercentage('');
+                      }}
+                      className="peer appearance-none w-6 h-6 border-2 border-gray-300 rounded-lg checked:bg-blue-600 checked:border-blue-600 transition-all cursor-pointer"
+                    />
+                    <svg className="absolute w-4 h-4 text-white opacity-0 peer-checked:opacity-100 pointer-events-none transition-opacity" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="4">
+                      <path d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                  <span className="text-base font-bold text-gray-700">Require advance payment before trip</span>
                 </label>
 
                 {requireAdvancePayment && (
-                  <div className="animate-in slide-in-from-top-2 duration-300 space-y-2 pl-8">
-                    <label className="block text-xs font-bold text-gray-600">Percentage (0-100)</label>
-                    <div className="relative max-w-[200px]">
-                      <input
-                        type="number"
-                        value={advancePaymentPercentage}
-                        onChange={(e) => setAdvancePaymentPercentage(e.target.value)}
-                        className="w-full h-12 px-4 bg-white border-2 border-gray-200 rounded-xl text-sm font-bold text-gray-900 focus:outline-none focus:border-blue-500"
-                        placeholder="70"
-                      />
-                      <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-bold text-gray-400">%</span>
-                    </div>
+                  <div className="animate-in slide-in-from-top-2 duration-300 space-y-3">
+                    <label className="block text-base font-bold text-gray-700">Advance Payment % (Optional)</label>
+                    <input
+                      type="number"
+                      value={advancePaymentPercentage}
+                      onChange={(e) => setAdvancePaymentPercentage(e.target.value)}
+                      className="w-full h-14 px-6 bg-white border-2 border-gray-100 rounded-2xl text-sm font-medium text-gray-900 focus:outline-none focus:border-blue-500 transition-all"
+                      placeholder="e.g., 70"
+                    />
+                    <p className="text-sm text-gray-400 leading-relaxed font-medium">
+                      Percentage of transportation fee to be paid upfront.
+                    </p>
                   </div>
                 )}
               </div>
 
               {/* Notes */}
-              <div className="space-y-2">
-                <label className="block text-sm font-bold text-gray-700">Notes</label>
+              <div className="space-y-3">
+                <label className="block text-base font-bold text-gray-700">Notes</label>
                 <textarea
                   value={bidNotes}
                   onChange={(e) => setBidNotes(e.target.value)}
@@ -954,28 +1021,199 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
               </div>
             </div>
 
-            {/* Footer */}
-            <div className="px-8 py-6 border-t bg-gray-50 flex items-center justify-end gap-3 shrink-0">
-              <button
-                onClick={() => setShowBidModal(false)}
-                className="px-6 py-3 bg-white border border-gray-200 text-gray-600 rounded-xl text-sm font-bold hover:bg-gray-50 transition-all active:scale-95"
-              >
-                Cancel
+            {/* Footer Actions */}
+            <div className="p-10 pt-0 flex flex-col gap-4">
+              {selectedAuction.status !== 'ACTIVE' && (
+                <p className="text-[10px] font-bold text-amber-500 uppercase tracking-widest text-center bg-amber-50 border border-amber-100 rounded-xl py-3 w-full">
+                  Bidding available on ACTIVE auctions only.
+                </p>
+              )}
+              <div className="flex items-center justify-end gap-4 w-full">
+                <button
+                  onClick={() => setShowBidModal(false)}
+                  className="px-10 py-4 bg-gray-100 text-gray-700 rounded-xl text-base font-bold hover:bg-gray-200 transition-all active:scale-95"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={!bidAmount || !selectedTruckId || !proposedPickupDate || !proposedDeliveryDate || selectedAuction.status !== 'ACTIVE'}
+                  className="px-10 py-4 bg-[#345E85] text-white rounded-xl text-base font-bold hover:bg-[#2a4d6d] transition-all shadow-lg active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Submit Bid
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>,
+        document.body
+      )}
+
+      {/* Bid Details Modal */}
+      {showDetailsModal && detailsAuction && createPortal(
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
+          <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden border border-slate-100 animate-in fade-in zoom-in-95 duration-300">
+            {/* Header */}
+            <div className="px-8 py-6 border-b border-slate-100 flex items-center justify-between shrink-0">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center">
+                  <Gavel className="text-[#345E85]" size={22} />
+                </div>
+                <div>
+                  <h2 className="text-xl font-black text-slate-900 tracking-tight">{detailsAuction.load?.title || 'Auction Details'}</h2>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Ref: {detailsAuction.id?.slice(0, 12)}</p>
+                </div>
+              </div>
+              <button onClick={() => setShowDetailsModal(false)} className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-slate-100 text-slate-400 transition-colors">
+                <X size={18} />
               </button>
-              <button
-                onClick={placeBid}
-                disabled={!bidAmount || !selectedTruckId || !proposedPickupDate || !proposedDeliveryDate}
-                className="px-8 py-3 bg-[#0f172a] text-white rounded-xl text-sm font-bold uppercase tracking-wider hover:bg-black transition-all shadow-lg active:scale-95 disabled:opacity-50"
-              >
-                Submit Bid
-              </button>
+            </div>
+
+            {/* Status Banner */}
+            <div className="px-8 py-4 border-b border-slate-50 flex items-center justify-between shrink-0 bg-slate-50/50">
+              <div className="flex items-center gap-3">
+                {getStatusBadge(detailsAuction.status)}
+                {getAuctionTypeBadge(detailsAuction.auctionType)}
+              </div>
+              <div className="flex items-center gap-6">
+                <div className="text-right">
+                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Current Bid</p>
+                  <p className="text-xl font-black text-[#345E85]">
+                    {detailsAuction.currentHighestBid ? formatCurrency(detailsAuction.currentHighestBid) : '—'}
+                  </p>
+                </div>
+                <div className="h-10 w-px bg-slate-200" />
+                <div className="text-right">
+                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Total Bids</p>
+                  <p className="text-xl font-black text-slate-900">{detailsAuction.totalBids}</p>
+                </div>
+                <div className="h-10 w-px bg-slate-200" />
+                <div className="text-right">
+                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Bidders</p>
+                  <p className="text-xl font-black text-slate-900">{detailsAuction.uniqueBidders}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Body */}
+            <div className="flex-1 overflow-y-auto p-8 space-y-6">
+              {/* Route */}
+              <div className="relative pl-6 space-y-4 before:absolute before:left-[7px] before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-100">
+                <h3 className="absolute -left-2 -top-1 hidden">Route</h3>
+                <div className="relative">
+                  <div className="absolute -left-6 top-1.5 h-3.5 w-3.5 bg-white border-[3px] border-[#345E85] rounded-full" />
+                  <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100">
+                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-1">Pickup</p>
+                    <p className="text-sm font-bold text-slate-900">{detailsAuction.load?.pickupLocation || 'N/A'}</p>
+                    <p className="text-[10px] font-medium text-slate-400 mt-1 flex items-center gap-1">
+                      <Clock size={10} /> {formatDate(detailsAuction.load?.pickupDate)}
+                    </p>
+                  </div>
+                </div>
+                <div className="relative">
+                  <div className="absolute -left-6 top-1.5 h-3.5 w-3.5 bg-white border-[3px] border-rose-500 rounded-full" />
+                  <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100">
+                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-1">Delivery</p>
+                    <p className="text-sm font-bold text-slate-900">{detailsAuction.load?.deliveryLocation || 'N/A'}</p>
+                    <p className="text-[10px] font-medium text-slate-400 mt-1 flex items-center gap-1">
+                      <Clock size={10} /> {formatDate(detailsAuction.load?.deliveryDate)}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Cargo & Pricing Grid */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-5 bg-slate-50 rounded-2xl border border-slate-100 space-y-1">
+                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider">Payload</p>
+                  <p className="text-xl font-black text-slate-900">{detailsAuction.load?.weight?.toLocaleString() || '0'} <span className="text-sm font-medium text-slate-400">kg</span></p>
+                </div>
+                <div className="p-5 bg-slate-50 rounded-2xl border border-slate-100 space-y-1">
+                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider">Cargo Value</p>
+                  <p className="text-xl font-black text-slate-900">{detailsAuction.load?.loadValue ? formatCurrency(detailsAuction.load.loadValue) : '—'}</p>
+                </div>
+                <div className="p-5 bg-blue-50/50 rounded-2xl border border-blue-100 space-y-1">
+                  <p className="text-[9px] font-black text-[#345E85]/60 uppercase tracking-wider">Reserve Price</p>
+                  <p className="text-xl font-black text-[#345E85]">{detailsAuction.reservePrice ? formatCurrency(detailsAuction.reservePrice) : '—'}</p>
+                </div>
+                <div className="p-5 bg-slate-50 rounded-2xl border border-slate-100 space-y-1">
+                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider">Min. Increment</p>
+                  <p className="text-xl font-black text-slate-900">{detailsAuction.minimumBidIncrement ? formatCurrency(detailsAuction.minimumBidIncrement) : '—'}</p>
+                </div>
+              </div>
+
+              {/* Auction Window */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-1">Auction Opens</p>
+                  <p className="text-sm font-bold text-slate-900">{formatDate(detailsAuction.auctionStart)}</p>
+                </div>
+                <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-1">Auction Closes</p>
+                  <p className="text-sm font-bold text-slate-900">{formatDate(detailsAuction.auctionEnd)}</p>
+                </div>
+              </div>
+
+              {/* Owner */}
+              {detailsAuction.load?.cargoOwner && (
+                <div className="flex items-center gap-4 p-5 bg-slate-50 rounded-2xl border border-slate-100">
+                  <div className="w-12 h-12 bg-white rounded-xl border border-slate-200 flex items-center justify-center text-slate-500 font-black text-sm shadow-sm">
+                    {(detailsAuction.load.cargoOwner.profile?.firstName?.[0] || 'C')}
+                  </div>
+                  <div>
+                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-0.5">Cargo Owner</p>
+                    <p className="text-sm font-black text-slate-900">
+                      {detailsAuction.load.cargoOwner.profile?.firstName} {detailsAuction.load.cargoOwner.profile?.lastName || 'Owner'}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Footer Actions */}
+            <div className="px-8 py-6 border-t border-slate-100 bg-slate-50/50 flex flex-col gap-3 shrink-0">
+              {detailsAuction.status !== 'ACTIVE' && (
+                <p className="text-[9px] font-bold text-amber-500 uppercase tracking-widest text-center bg-amber-50 border border-amber-100 rounded-xl py-2">
+                  Bidding available on ACTIVE auctions only — this auction is {detailsAuction.status}
+                </p>
+              )}
+              {userRole === 'TRUCK_OWNER' && (
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => { setShowDetailsModal(false); openQuickBidModal(detailsAuction); }}
+                    disabled={detailsAuction.status !== 'ACTIVE'}
+                    className="flex-1 py-4 bg-[#345E85] text-white rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-[#2a4d6d] transition-all shadow-lg shadow-blue-900/10 active:scale-95 disabled:opacity-40 flex items-center justify-center gap-2"
+                  >
+                    <ZapIcon size={14} className="text-yellow-300" /> Quick Bid
+                  </button>
+                  <button
+                    onClick={() => { setShowDetailsModal(false); openBidModal(detailsAuction); }}
+                    disabled={detailsAuction.status !== 'ACTIVE'}
+                    className="flex-1 py-4 bg-slate-900 text-white rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-black transition-all shadow-lg active:scale-95 disabled:opacity-40 flex items-center justify-center gap-2"
+                  >
+                    <Gavel size={14} /> Custom Bid
+                  </button>
+                  <button
+                    onClick={() => setShowDetailsModal(false)}
+                    className="px-6 py-4 bg-white border border-slate-200 text-slate-500 rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-slate-50 transition-all active:scale-95"
+                  >
+                    Close
+                  </button>
+                </div>
+              )}
+              {userRole !== 'TRUCK_OWNER' && (
+                <button onClick={() => setShowDetailsModal(false)} className="py-4 bg-white border border-slate-200 text-slate-600 rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-slate-50 transition-all active:scale-95">
+                  Close
+                </button>
+              )}
             </div>
           </div>
         </div>,
         document.body
-      )}
-    </div>
+      )
+      }
+    </div >
   );
 };
 
-export default AuctionList; 
+export default AuctionList;

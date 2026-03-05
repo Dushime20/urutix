@@ -46,7 +46,7 @@ const CreateAuction: React.FC = () => {
       const response = await loadsAPI.getAll();
 
       // Fetch existing auctions to filter out cargos that are already being auctioned
-      let activeAuctionLoadIds = new Set<string>();
+      const activeAuctionLoadIds = new Set<string>();
       try {
         const auctionsResponse = await biddingAPI.getAuctions({ limit: 1000 });
         const auctions = auctionsResponse.data || [];

@@ -90,7 +90,7 @@ const DocumentAssignmentModal: React.FC<DocumentAssignmentModalProps> = ({ isOpe
         e.preventDefault();
         setSubmitting(true);
         try {
-            let documentUrls: string[] = [];
+            const documentUrls: string[] = [];
 
             // Handle file upload if a file is selected
             if (selectedFile) {

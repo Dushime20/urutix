@@ -11,10 +11,12 @@ import {
     Loader2,
     RefreshCw,
     Star,
+    Trash2,
 } from 'lucide-react';
 import { biddingAPI } from '../../services/biddingApi';
 import toast from 'react-hot-toast';
 import { cn } from '@/utils/cn';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 
 interface Bid {
     id: string;
@@ -78,6 +80,7 @@ const MyAuctions: React.FC = () => {
     const [loadingBids, setLoadingBids] = useState<{ [auctionId: string]: boolean }>({});
     const [acceptingBid, setAcceptingBid] = useState<string | null>(null);
     const [statusFilter, setStatusFilter] = useState<string>('all');
+    const { confirm, DialogComponent } = useConfirmDialog();
 
     useEffect(() => {
         loadAuctions();
@@ -136,11 +139,36 @@ const MyAuctions: React.FC = () => {
                 const auction = auctions.find(a => a.id === expandedAuction);
                 if (auction) loadBidsForAuction(auction);
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error('Failed to accept bid:', error);
-            toast.error('Failed to accept bid');
+            const errorMessage = error?.response?.data?.message || 'Failed to accept bid';
+            toast.error(errorMessage);
         } finally {
             setAcceptingBid(null);
+        }
+    };
+
+    const handleDeleteAuction = async (auctionId: string, e: React.MouseEvent) => {
+        e.stopPropagation();
+
+        const isConfirmed = await confirm({
+            title: 'Delete Auction',
+            message: 'Are you sure you want to delete this auction? It will no longer be visible to truck owners.',
+            confirmText: 'Delete',
+            cancelText: 'Cancel',
+            variant: 'danger',
+        });
+
+        if (!isConfirmed) return;
+
+        try {
+            toast.loading('Deleting auction...', { id: 'deleteAuction' });
+            await biddingAPI.deleteAuction(auctionId);
+            toast.success('Auction deleted successfully', { id: 'deleteAuction' });
+            setAuctions(prev => prev.filter(a => a.id !== auctionId));
+        } catch (error) {
+            console.error('Failed to delete auction:', error);
+            toast.error('Failed to delete auction', { id: 'deleteAuction' });
         }
     };
 
@@ -316,8 +344,17 @@ const MyAuctions: React.FC = () => {
                                         </div>
                                     </div>
 
-                                    {/* Bid Count */}
+                                    {/* Bid Count and Actions */}
                                     <div className="flex items-center gap-4 shrink-0">
+                                        {auction.status !== 'CLOSED' && (
+                                            <button
+                                                onClick={(e) => handleDeleteAuction(auction.id, e)}
+                                                className="hidden sm:flex w-8 h-8 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors border border-blue-100 items-center justify-center"
+                                                title="Delete Auction"
+                                            >
+                                                <Trash2 size={14} />
+                                            </button>
+                                        )}
                                         {pendingBids.length > 0 && (
                                             <span className="px-3 py-1.5 rounded-xl bg-amber-50 text-amber-700 text-xs font-bold border border-amber-200">
                                                 {pendingBids.length} pending
@@ -474,6 +511,7 @@ const MyAuctions: React.FC = () => {
                     })}
                 </div>
             )}
+            {DialogComponent}
         </div>
     );
 };
